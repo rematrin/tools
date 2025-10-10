@@ -32,7 +32,7 @@
       padding-bottom: 2px;
     }
     .row::-webkit-scrollbar { height: 6px; }
-    .row::-webkit-scrollbar-thumb { background: #d6daf0; border-radius: 999px; }
+    .row::-webkit-scrollbar-thumb { background: #d6daf0; border-radius: 8px; }
     input[type="text"] {
       width: 8ch; min-width: 6ch;
       padding: 8px 10px; font-size: 1.05rem;
@@ -52,13 +52,13 @@
 
     /* круглые кнопки выбора */
     .toggle {
-      display: inline-flex; gap: 6px; padding: 4px; border-radius: 999px;
+      display: inline-flex; gap: 6px; padding: 4px; border-radius: 8px;
       background: #eef2ff; border: 1px solid #dbe5ff;
     }
     .toggle input { display: none; }
     .opt {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 38px; height: 38px; border-radius: 999px; cursor: pointer;
+      width: 38px; height: 38px; border-radius: 10px; cursor: pointer;
       border: 1px solid #cfd5e1; background: #fff; font-weight: 700;
       user-select: none;
     }
@@ -75,13 +75,10 @@
     <div class="card" id="calcA">
       <div class="row">
         <input type="text" inputmode="decimal" autocomplete="off" aria-label="Число X" data-role="x">
-        <span class="text">— это сколько процентов от</span>
+        <span class="text">это сколько % от</span>
         <input type="text" inputmode="decimal" autocomplete="off" aria-label="Число Y" data-role="y">
         <span class="eq">=</span>
-        <span class="result" data-role="out"></span>
-      </div>
-      <div class="hint">
-        Формула: <code>(X / Y) × 100</code>. Поддерживается запятая (12,5 → 12.5).
+        <span class="result" data-role="out">-</span>
       </div>
     </div>
 
@@ -92,10 +89,7 @@
         <span class="text">% от</span>
         <input type="text" inputmode="decimal" autocomplete="off" aria-label="Число M" data-role="m">
         <span class="eq">=</span>
-        <span class="result" data-role="out"></span>
-      </div>
-      <div class="hint">
-        Формула: <code>(N / 100) × M</code>. Запятая тоже ок.
+        <span class="result" data-role="out">-</span>
       </div>
     </div>
 
@@ -108,11 +102,9 @@
           <label class="opt"><input type="radio" name="op" value="-"> − </label>
         </div>
         <input type="text" inputmode="decimal" autocomplete="off" aria-label="Проценты Y" data-role="y">
+        <span class="text">%</span>
         <span class="eq">=</span>
-        <span class="result" data-role="out"></span>
-      </div>
-      <div class="hint">
-        Формула: <code>X ± (Y / 100) × X</code>. Выбери «+» или «−».
+        <span class="result" data-role="out">-</span>
       </div>
     </div>
   </div>
@@ -125,7 +117,7 @@
       return Number(v);
     }
     function formatOut(num) {
-      if (!isFinite(num)) return '—';
+      if (!isFinite(num)) return '-';
       const abs = Math.abs(num);
       if ((abs !== 0 && (abs < 0.01 || abs >= 1_000_000))) {
         return num.toExponential(2).replace('e', '×10^');
@@ -142,7 +134,7 @@
       function recompute(){
         const xv = parseNum(x.value);
         const yv = parseNum(y.value);
-        if (!isFinite(xv) || !isFinite(yv) || yv === 0) { out.textContent = '—'; return; }
+        if (!isFinite(xv) || !isFinite(yv) || yv === 0) { out.textContent = '-'; return; }
         const res = (xv / yv) * 100;
         out.textContent = formatOut(res) + ' %';
       }
@@ -159,7 +151,7 @@
       function recompute(){
         const nv = parseNum(n.value);
         const mv = parseNum(m.value);
-        if (!isFinite(nv) || !isFinite(mv)) { out.textContent = '—'; return; }
+        if (!isFinite(nv) || !isFinite(mv)) { out.textContent = '-'; return; }
         const res = (nv / 100) * mv;
         out.textContent = formatOut(res);
       }
@@ -177,7 +169,7 @@
       function recompute(){
         const xv = parseNum(x.value);
         const yv = parseNum(y.value);
-        if (!isFinite(xv) || !isFinite(yv)) { out.textContent = '—'; return; }
+        if (!isFinite(xv) || !isFinite(yv)) { out.textContent = '-'; return; }
         const op = Array.from(ops).find(o => o.checked)?.value || '+';
         const delta = (yv / 100) * xv;
         const res = op === '+' ? (xv + delta) : (xv - delta);

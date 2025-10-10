@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Процентные калькуляторы</title>
+  <style>
+    :root { --gap: 12px; --pad: 14px; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0; padding: 24px;
+      line-height: 1.45;
+      background: #f8f9fb; color: #111;
+    }
+    h1 { font-size: 1.4rem; margin: 0 0 16px; }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    .card {
+      background: #fff; border: 1px solid #e6e8ee; border-radius: 12px;
+      padding: var(--pad); margin-bottom: 16px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+    }
+    .row {
+      display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap);
+      font-size: 1.1rem;
+    }
+    .row .text { opacity: .85; }
+    input[type="text"] {
+      width: 8ch; /* короткое поле */
+      padding: 8px 10px; font-size: 1.05rem;
+      border: 1px solid #cfd5e1; border-radius: 8px;
+      background: #fff;
+    }
+    input[type="text"]:focus { outline: none; border-color: #7aa2ff; box-shadow: 0 0 0 3px rgba(122,162,255,.15); }
+    .eq { font-weight: 600; }
+    .result {
+      min-width: 10ch; font-weight: 700;
+      padding: 6px 10px; border-radius: 8px;
+      background: #f1f4ff; border: 1px solid #dbe5ff;
+    }
+    .hint { margin-top: 8px; font-size: .92rem; color: #444; }
+    .muted { opacity: .7; }
+    .grid {
+      display: grid; gap: 16px;
+    }
+    @media (min-width: 600px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+    }
+    footer { margin-top: 20px; font-size: .9rem; color: #555; }
+    code { background: #eef2ff; padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Процентные калькуляторы (live)</h1>
+    <div class="grid">
+      <!-- Calculator A: X is what percent of Y -->
+      <div class="card" id="calcA">
+        <div class="row">
+          <input type="text" inputmode="decimal" autocomplete="off" placeholder="25" aria-label="Число X" data-role="x">
+          <span class="text">— это сколько процентов от</span>
+          <input type="text" inputmode="decimal" autocomplete="off" placeholder="138" aria-label="Число Y" data-role="y">
+          <span class="eq">=</span>
+          <span class="result" data-role="out">—</span>
+        </div>
+        <div class="hint">
+          Формула: <code>(X / Y) × 100</code>. <span class="muted">Ноль/пусто игнорируются. Поддерживается запятая: 12,5 → 12.5.</span>
+        </div>
+      </div>
+
+      <!-- Calculator B: N% of M -->
+      <div class="card" id="calcB">
+        <div class="row">
+          <input type="text" inputmode="decimal" autocomplete="off" placeholder="15" aria-label="Проценты N" data-role="n">
+          <span class="text">% от</span>
+          <input type="text" inputmode="decimal" autocomplete="off" placeholder="100" aria-label="Число M" data-role="m">
+          <span class="eq">=</span>
+          <span class="result" data-role="out">—</span>
+        </div>
+        <div class="hint">
+          Формула: <code>(N / 100) × M</code>. <span class="muted">Запятая тоже ок.</span>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Добавить ещё калькуляторы легко: скопируйте одну «card» и поменяйте формулы в JS.
+    </footer>
+  </div>
+
+  <script>
+    function parseNum(v) {
+      if (typeof v !== 'string') return NaN;
+      v = v.replace(',', '.').trim();
+      if (v === '' || v === '-' || v === '.') return NaN;
+      return Number(v);
+    }
+    function formatOut(num) {
+      if (!isFinite(num)) return '—';
+      // показываем до 4 значащих при больших/малых, иначе 2 знака
+      const abs = Math.abs(num);
+      if ((abs !== 0 && (abs < 0.01 || abs >= 1000000))) {
+        return num.toExponential(2).replace('e', '×10^');
+      }
+      return (Math.round(num * 100) / 100).toString();
+    }
+
+    // Calc A
+    (function(){
+      const root = document.getElementById('calcA');
+      const x = root.querySelector('[data-role="x"]');
+      const y = root.querySelector('[data-role="y"]');
+      const out = root.querySelector('[data-role="out"]');
+      function recompute(){
+        const xv = parseNum(x.value);
+        const yv = parseNum(y.value);
+        if (!isFinite(xv) || !isFinite(yv) || yv === 0) { out.textContent = '—'; return; }
+        const res = (xv / yv) * 100;
+        out.textContent = formatOut(res) + ' %';
+        out.title = res.toString();
+      }
+      x.addEventListener('input', recompute);
+      y.addEventListener('input', recompute);
+      recompute();
+    })();
+
+    // Calc B
+    (function(){
+      const root = document.getElementById('calcB');
+      const n = root.querySelector('[data-role="n"]');
+      const m = root.querySelector('[data-role="m"]');
+      const out = root.querySelector('[data-role="out"]');
+      function recompute(){
+        const nv = parseNum(n.value);
+        const mv = parseNum(m.value);
+        if (!isFinite(nv) || !isFinite(mv)) { out.textContent = '—'; return; }
+        const res = (nv / 100) * mv;
+        out.textContent = formatOut(res);
+        out.title = res.toString();
+      }
+      n.addEventListener('input', recompute);
+      m.addEventListener('input', recompute);
+      recompute();
+    })();
+  </script>
+</body>
+</html>

@@ -40,16 +40,18 @@
 
   <script>
     const currencies = [
-      {code:'CZK', label:'Kč', flag:'🇨🇿', precision:2},
-      {code:'RUB', label:'₽',  flag:'🇷🇺', precision:2},
-      {code:'UAH', label:'₴',  flag:'🇺🇦', precision:2},
-      {code:'USD', label:'$',  flag:'🇺🇸', precision:2},
-      {code:'EUR', label:'€',  flag:'🇪🇺', precision:2},
-      {code:'BYN', label:'BYN',flag:'🇧🇾', precision:2},
-      {code:'GBP', label:'£',  flag:'🇬🇧', precision:2},
-      {code:'PLN', label:'zł', flag:'🇵🇱', precision:2},
-      {code:'TRY', label:'TRY',flag:'🇹🇷', precision:2},
+      {code:'CZK', label:'Kč', flag:'cz', precision:2},
+      {code:'RUB', label:'₽',  flag:'ru', precision:2},
+      {code:'UAH', label:'₴',  flag:'ua', precision:2},
+      {code:'USD', label:'$',  flag:'us', precision:2},
+      {code:'EUR', label:'€',  flag:'eu', precision:2},
+      {code:'BYN', label:'BYN',flag:'by', precision:2},
+      {code:'GBP', label:'£',  flag:'gb', precision:2},
+      {code:'PLN', label:'zł', flag:'pl', precision:2},
+      {code:'TRY', label:'TRY',flag:'tr', precision:2},
+      {code:'KZT', label:'₸',  flag:'kz', precision:2},
     ];
+
     const base = 'USD';
     let rates = null;
     const fxBox = document.getElementById('fx');
@@ -67,13 +69,22 @@
       if (str === '' || str === '-' || str === '.') return NaN;
       return Number(str);
     }
-    function renderRows(){
+    function renderRows() {
       fxBox.innerHTML = '';
       currencies.forEach(({code, flag}) => {
         const row = document.createElement('div');
         row.className = 'row';
-        row.innerHTML = `<div class="code"><span class="flag">${flag}</span><span>${code}</span></div>
-                         <div class="amount"><input type="text" inputmode="decimal" data-code="${code}" aria-label="Сумма в ${code}"></div>`;
+        row.innerHTML = `
+          <div class="code">
+            <img src="https://flagcdn.com/w40/${flag}.png"
+                 width="24" height="18" alt="${code}"
+                 loading="lazy" style="border-radius:4px; margin-right:6px; vertical-align:middle;">
+            <span>${code}</span>
+          </div>
+          <div class="amount">
+            <input type="text" inputmode="decimal" data-code="${code}" aria-label="Сумма в ${code}">
+          </div>
+        `;
         fxBox.appendChild(row);
       });
       fxBox.querySelectorAll('input').forEach(inp => inp.addEventListener('input', onInput));

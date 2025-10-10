@@ -58,11 +58,11 @@
     <!-- Calculator A: X is what percent of Y -->
     <div class="card" id="calcA">
       <div class="row">
-        <input type="text" inputmode="decimal" autocomplete="off" placeholder="25" aria-label="Число X" data-role="x">
+        <input type="text" inputmode="decimal" autocomplete="off" aria-label="Число X" data-role="x">
         <span class="text">— это сколько процентов от</span>
-        <input type="text" inputmode="decimal" autocomplete="off" placeholder="138" aria-label="Число Y" data-role="y">
+        <input type="text" inputmode="decimal" autocomplete="off" aria-label="Число Y" data-role="y">
         <span class="eq">=</span>
-        <span class="result" data-role="out">—</span>
+        <span class="result" data-role="out"></span>
       </div>
       <div class="hint">
         Формула: <code>(X / Y) × 100</code>. Поддерживается запятая (12,5 → 12.5).
@@ -72,11 +72,11 @@
     <!-- Calculator B: N% of M -->
     <div class="card" id="calcB">
       <div class="row">
-        <input type="text" inputmode="decimal" autocomplete="off" placeholder="15" aria-label="Проценты N" data-role="n">
+        <input type="text" inputmode="decimal" autocomplete="off" aria-label="Проценты N" data-role="n">
         <span class="text">% от</span>
-        <input type="text" inputmode="decimal" autocomplete="off" placeholder="100" aria-label="Число M" data-role="m">
+        <input type="text" inputmode="decimal" autocomplete="off" aria-label="Число M" data-role="m">
         <span class="eq">=</span>
-        <span class="result" data-role="out">—</span>
+        <span class="result" data-role="out"></span>
       </div>
       <div class="hint">
         Формула: <code>(N / 100) × M</code>. Запятая тоже ок.

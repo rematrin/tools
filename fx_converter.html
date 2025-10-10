@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Конвертер валют</title>
+  <style>
+    :root { --pad: 14px; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #f4f6fb; color: #0b0d12; }
+    .wrap { max-width: 560px; margin: 0 auto; padding: 22px 14px 28px; }
+    header { display:flex; justify-content: space-between; align-items:center; margin-bottom: 12px; gap:10px; flex-wrap:wrap; }
+    h1 { font-size: 1.25rem; margin: 0; }
+    .muted { opacity: .7; font-size: .9rem; }
+    .card { background: #fff; border: 1px solid #e6e9f2; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 0 rgba(0,0,0,.03); }
+    .row { display:flex; align-items:center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #eef1f6; }
+    .row:last-child { border-bottom: 0; }
+    .code { width: 88px; font-weight: 700; display:flex; align-items:center; gap:8px; }
+    .code .flag { font-size: 18px; }
+    .amount { margin-left: auto; }
+    input[type="text"] { width: 200px; max-width: 50vw; text-align: right; font-size: 1.15rem; padding: 10px 12px; border: 1px solid #cfd5e1; border-radius: 10px; background:#fff; }
+    input[type="text"]:focus { outline: none; border-color: #7aa2ff; box-shadow: 0 0 0 3px rgba(122,162,255,.16); }
+    .status { display:flex; gap:10px; align-items:center; }
+    .btn { border: 1px solid #cfd5e1; background:#fff; border-radius:8px; padding:7px 12px; cursor:pointer; }
+    .btn:active { transform: translateY(1px); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Конвертер валют</h1>
+      <div class="status">
+        <span class="muted" data-role="updated">Загрузка курсов…</span>
+        <button class="btn" data-role="refresh">Обновить</button>
+      </div>
+    </header>
+
+    <div class="card" id="fx"></div>
+  </div>
+
+  <script>
+    const currencies = [
+      {code:'CZK', label:'Kč', flag:'🇨🇿', precision:2},
+      {code:'RUB', label:'₽',  flag:'🇷🇺', precision:2},
+      {code:'UAH', label:'₴',  flag:'🇺🇦', precision:2},
+      {code:'USD', label:'$',  flag:'🇺🇸', precision:2},
+      {code:'EUR', label:'€',  flag:'🇪🇺', precision:2},
+      {code:'BYN', label:'BYN',flag:'🇧🇾', precision:2},
+      {code:'GBP', label:'£',  flag:'🇬🇧', precision:2},
+      {code:'PLN', label:'zł', flag:'🇵🇱', precision:2},
+      {code:'TRY', label:'TRY',flag:'🇹🇷', precision:2},
+    ];
+    const base = 'USD';
+    let rates = null;
+    const fxBox = document.getElementById('fx');
+    const updatedLbl = document.querySelector('[data-role="updated"]');
+    const refreshBtn = document.querySelector('[data-role="refresh"]');
+
+    function numberFormat(code, n){
+      const cur = currencies.find(c=>c.code===code) || {precision:2};
+      const fmt = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: cur.precision, maximumFractionDigits: cur.precision });
+      return fmt.format(n);
+    }
+    function parseNum(str){
+      if (typeof str !== 'string') return NaN;
+      str = str.replace(/\s/g,'').replace(',', '.').trim();
+      if (str === '' || str === '-' || str === '.') return NaN;
+      return Number(str);
+    }
+    function renderRows(){
+      fxBox.innerHTML = '';
+      currencies.forEach(({code, flag}) => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `<div class="code"><span class="flag">${flag}</span><span>${code}</span></div>
+                         <div class="amount"><input type="text" inputmode="decimal" data-code="${code}" aria-label="Сумма в ${code}"></div>`;
+        fxBox.appendChild(row);
+      });
+      fxBox.querySelectorAll('input').forEach(inp => inp.addEventListener('input', onInput));
+    }
+    function onInput(e){
+      if (!rates) return;
+      const el = e.target, code = el.dataset.code, val = parseNum(el.value);
+      if (!isFinite(val)){ fxBox.querySelectorAll('input').forEach(i=>{ if(i!==el) i.value=''; }); return; }
+      const inBase = val / rates[code];
+      currencies.forEach(({code:c}) => {
+        if (c===code) return;
+        const target = fxBox.querySelector(`input[data-code="${c}"]`);
+        target.value = numberFormat(c, inBase * rates[c]);
+      });
+    }
+    async function loadRates(force=false){
+      try{
+        const symbols = currencies.map(x=>x.code).join(',');
+        const url = `https://api.exchangerate.host/latest?base=${base}&symbols=${symbols}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        rates = data.rates; rates[base] = 1;
+        updatedLbl.textContent = `Обновлено: ${new Date().toLocaleString()}`;
+      }catch(e){
+        updatedLbl.textContent = 'Не удалось загрузить курсы (нужен интернет).';
+      }
+    }
+    refreshBtn.addEventListener('click', loadRates);
+    (async function init(){ renderRows(); await loadRates(); })();
+  </script>
+</body>
+</html>

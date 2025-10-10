@@ -92,7 +92,7 @@
     async function loadRates(force=false){
       try{
         const symbols = currencies.map(x=>x.code).join(',');
-        const url = `https://api.exchangerate.host/latest?base=${base}&symbols=${symbols}`;
+        const url = `https://open.er-api.com/v6/latest/${base}`;
         const res = await fetch(url);
         const data = await res.json();
         rates = data.rates; rates[base] = 1;

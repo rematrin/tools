@@ -62,12 +62,14 @@
   const infoRows  = document.getElementById('infoRows');
   const apiErrEl  = document.getElementById('apiErr');
 
-  const placeholder = "https://placehold.co/800x450?text=Вставьте+ссылку,+чтобы+скачать+превью&font=roboto";
-
-  // Плейсхолдер виден сразу
-  img.src = placeholder;
-  link.href = placeholder;
-  out.hidden = false;
+ const placeholder = "https://placehold.co/800x450?text=Вставьте+ссылку,+чтобы+скачать+превью&font=roboto";
+ 
+ // сразу показываем плейсхолдер
+ img.src = placeholder;
+ out.hidden = false;
+ link.removeAttribute("href"); // <== убираем ссылку, пока видео нет
+ link.style.pointerEvents = "none"; // <== отключаем клики
+ link.style.cursor = "default";     // <== курсор обычный, не “рука”
 
   function parseYouTubeId(url){
     if (!url) return null;
@@ -112,45 +114,54 @@
   }
 
   let t; // debounce
-  function update(){
-    clearTimeout(t);
-    t = setTimeout(async ()=>{
-      apiErrEl.hidden = true; apiErrEl.textContent = '';
-      const id = parseYouTubeId(input.value);
+ function update(){
+  clearTimeout(t);
+  t = setTimeout(async ()=>{
+    apiErrEl.hidden = true; 
+    apiErrEl.textContent = '';
+    const id = parseYouTubeId(input.value);
 
-      if (!id){
-        // вернём плейсхолдер и спрячем инфо
-        img.src = placeholder;
-        link.href = placeholder;
-        infoBox.hidden = true;
-        return;
-      }
+    if (!id){
+      // 🟡 Нет ссылки → возвращаем плейсхолдер и отключаем клики
+      img.src = placeholder;
+      link.removeAttribute("href");
+      link.style.pointerEvents = "none";
+      link.style.cursor = "default";
+      infoBox.hidden = true;
+      return;
+    }
 
-      // превью
-      const max = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
-      const hq  = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
-      img.src = max;
-      link.href = max;
-      img.onerror = () => { img.onerror=null; img.src = hq; link.href = hq; };
+    // 🟢 Есть ID → включаем превью и активируем клики
+    const max = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+    const hq  = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+    img.src = max;
+    link.href = max;
+    link.style.pointerEvents = "auto";
+    link.style.cursor = "pointer";
+    img.onerror = () => { 
+      img.onerror = null; 
+      img.src = hq; 
+      link.href = hq; 
+    };
 
-      // инфо о видео
-      try{
-        const meta = await fetchVideoMeta(id);
-        const dateStr = meta.publishedAt ? formatMoscow(meta.publishedAt) : '—';
-        infoRows.innerHTML = `
-          <div><span class="k"><strong>Название:</strong></span> ${escapeHtml(meta.title)}</div>
-          <div><span class="k"><strong>Канал:</strong></span> ${escapeHtml(meta.channel)}</div>
-          <div><span class="k"><strong>Опубликовано:</strong></span> ${dateStr}</div>
-        `;
-        infoBox.hidden = false;
-      }catch(err){
-        infoBox.hidden = false; // показываем коробку с ошибкой
-        infoRows.innerHTML = '';
-        apiErrEl.textContent = (err && err.message) ? err.message : String(err);
-        apiErrEl.hidden = false;
-      }
-    }, 250);
-  }
+    // 🔵 Информация о видео
+    try {
+      const meta = await fetchVideoMeta(id);
+      const dateStr = meta.publishedAt ? formatMoscow(meta.publishedAt) : '—';
+      infoRows.innerHTML = `
+        <div><span class="k"><strong>Название:</strong></span> ${escapeHtml(meta.title)}</div>
+        <div><span class="k"><strong>Канал:</strong></span> ${escapeHtml(meta.channel)}</div>
+        <div><span class="k"><strong>Опубликовано:</strong></span> ${dateStr}</div>
+      `;
+      infoBox.hidden = false;
+    } catch(err) {
+      infoBox.hidden = false; // показываем коробку с ошибкой
+      infoRows.innerHTML = '';
+      apiErrEl.textContent = (err && err.message) ? err.message : String(err);
+      apiErrEl.hidden = false;
+    }
+  }, 250);
+}
 
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 

@@ -24,7 +24,7 @@
   .err{color:#b00020;margin-top:8px}
   .muted{opacity:.7;font-size:.9rem}
 
-  /* Галочка верификации */
+  /* Галочка верификации (иконка как у YouTube) */
   .vmark{display:inline-flex;vertical-align:middle;margin-left:6px;width:16px;height:16px;color:#3ea6ff}
   .vmark svg{display:block;width:16px;height:16px}
 </style>
@@ -54,8 +54,8 @@
 </div>
 
 <script>
-  // 🔑 ВСТАВЬТЕ СВОЙ API KEY (YouTube Data API v3)
-  const API_KEY = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
+  // 🔑 ВСТАВЬ СВОЙ API KEY (YouTube Data API v3)
+  const API_KEY = "YOUR_API_KEY_HERE";
 
   const input = document.getElementById('yturl');
   const out   = document.getElementById('out');
@@ -97,7 +97,7 @@
     return `${date} в ${time} по мск`;
   }
 
-  // YouTube API: метаданные видео
+  // Метаданные видео
   async function fetchVideoMeta(id){
     if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
       throw new Error('Не указан API ключ. Вставьте свой YouTube Data API ключ в переменную API_KEY.');
@@ -119,22 +119,33 @@
     };
   }
 
-  // НЕофициальная проверка верификации (через публичный эндпоинт с badge-ами)
+  // 🔵 Проверка "верифицирован" (основной источник — Piped, фолбэк — Lemnos Life)
   async function isChannelVerified(channelId){
     if (!channelId) return false;
+
+    // 1) Piped API (часто даёт verified: true/false и есть CORS)
     try{
-      const r = await fetch(`https://yt.lemnoslife.com/channels?part=badges&id=${encodeURIComponent(channelId)}`);
-      if (!r.ok) return false;
-      const j = await r.json();
-      const badges = j?.items?.[0]?.badges || [];
-      // возможные значения: "Verified", "Official Artist Channel"
-      return badges.includes("Verified") || badges.includes("Official Artist Channel");
-    }catch(e){
-      return false;
-    }
+      const r = await fetch(`https://piped.video/api/v1/channel/${encodeURIComponent(channelId)}`);
+      if (r.ok){
+        const j = await r.json();
+        if (typeof j.verified === 'boolean') return j.verified;
+      }
+    }catch(e){ /* игнор, идём на фолбэк */ }
+
+    // 2) Lemnos Life (иногда badges бывают недоступны — пробуем)
+    try{
+      const r2 = await fetch(`https://yt.lemnoslife.com/channels?part=badges&id=${encodeURIComponent(channelId)}`);
+      if (r2.ok){
+        const j2 = await r2.json();
+        const badges = j2?.items?.[0]?.badges || [];
+        return badges.includes("Verified") || badges.includes("Official Artist Channel");
+      }
+    }catch(e){ /* игнор */ }
+
+    return false;
   }
 
-  // SVG-галочка в том же стиле (круг + чек)
+  // SVG-галочка (круг с чек) в стиле YouTube
   const VERIFIED_SVG = `
     <span class="vmark" title="Подтверждено">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -174,7 +185,7 @@
         const meta = await fetchVideoMeta(id);
         const dateStr = meta.publishedAt ? formatMoscow(meta.publishedAt) : '—';
 
-        // проверяем «верифицирован» (неофициально)
+        // проверяем «верифицирован»
         const verified = await isChannelVerified(meta.channelId);
 
         infoRows.innerHTML = `

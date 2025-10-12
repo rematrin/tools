@@ -24,8 +24,14 @@
   .err{color:#b00020;margin-top:8px}
   .muted{opacity:.7;font-size:.9rem}
 
-  .v-wrap{display:inline-flex;align-items:center;gap:6px}
-  .v-badge{width:16px;height:16px;vertical-align:middle;transform:translateY(-1px)}
+  /* Галочка */
+  .v-badge {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-left: 4px;
+    transform: translateY(-1px);
+  }
 </style>
 </head>
 <body>
@@ -44,7 +50,7 @@
       </a>
     </div>
 
-    <!-- Информация о видео (изначально скрыта) -->
+    <!-- Информация о видео -->
     <div id="videoInfo" class="info" hidden>
       <div class="row2" id="infoRows"></div>
       <div id="apiErr" class="err" hidden></div>
@@ -53,21 +59,20 @@
 </div>
 
 <script>
-  // 🔑 ТВОЙ КЛЮЧ YouTube Data API v3
+  // 🔑 ТВОЙ API KEY YouTube Data API v3
   const API_KEY = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
 
   const input = document.getElementById('yturl');
   const out   = document.getElementById('out');
   const img   = document.getElementById('thumb');
   const link  = document.getElementById('thumbLink');
-
   const infoBox   = document.getElementById('videoInfo');
   const infoRows  = document.getElementById('infoRows');
   const apiErrEl  = document.getElementById('apiErr');
 
   const placeholder = "https://placehold.co/800x450?text=Вставьте+ссылку,+чтобы+скачать+превью&font=roboto";
 
-  // сразу показываем плейсхолдер (и делаем некликабельным)
+  // показываем плейсхолдер сразу
   img.src = placeholder;
   out.hidden = false;
   link.removeAttribute("href");
@@ -86,7 +91,6 @@
     }catch{ return null; }
   }
 
-  // «10 октября 2025 в 13:00 по мск»
   function formatMoscow(dtISO){
     const d = new Date(dtISO);
     const optsDate = { year:'numeric', month:'long', day:'numeric' };
@@ -96,7 +100,6 @@
     return `${date} в ${time} по мск`;
   }
 
-  // 1) Метаданные видео (получаем channelId)
   async function fetchVideoMeta(id){
     if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
       throw new Error('Не указан API ключ. Вставьте свой YouTube Data API ключ в переменную API_KEY.');
@@ -118,9 +121,6 @@
     };
   }
 
-  // 2) Проверяем «верифицирован ли канал»
-  // Официальный YouTube Data API НЕ отдаёт признак верификации.
-  // Используем неофициальный публичный endpoint (если недоступен — просто вернём false).
   async function fetchChannelVerified(channelId){
     if (!channelId) return false;
     try{
@@ -135,7 +135,7 @@
     }
   }
 
-  let t; // debounce
+  let t;
   function update(){
     clearTimeout(t);
     t = setTimeout(async ()=>{
@@ -144,7 +144,6 @@
       const id = parseYouTubeId(input.value);
 
       if (!id){
-        // нет ссылки → плейсхолдер и клики выключены
         img.src = placeholder;
         link.removeAttribute("href");
         link.style.pointerEvents = "none";
@@ -153,7 +152,6 @@
         return;
       }
 
-      // превью (включаем клики)
       const max = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
       const hq  = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
       img.src = max;
@@ -162,24 +160,24 @@
       link.style.cursor = "pointer";
       img.onerror = () => { img.onerror=null; img.src = hq; link.href = hq; };
 
-      // инфо о видео + галочка верификации
       try{
         const meta = await fetchVideoMeta(id);
         const verified = await fetchChannelVerified(meta.channelId);
         const dateStr = meta.publishedAt ? formatMoscow(meta.publishedAt) : '—';
 
-        const channelHtml = verified
-          ? `<span class="v-wrap">${escapeHtml(meta.channel)} <img class="v-badge" src="verified.png" alt="verified" title="Верифицированный канал"></span>`
-          : escapeHtml(meta.channel);
+        const channelHtml = escapeHtml(meta.channel);
+        const channelVerify = verified
+          ? `<img class="v-badge" src="verified.png" alt="verified" title="Верифицированный канал">`
+          : '';
 
         infoRows.innerHTML = `
           <div><span class="k"><strong>Название:</strong></span> ${escapeHtml(meta.title)}</div>
-          <div><span class="k"><strong>Канал:</strong></span> ${channelHtml}</div><img src="verified.png" class="v-badge" alt="verified"></div>
+          <div><span class="k"><strong>Канал:</strong></span> ${channelHtml} ${channelVerify}</div>
           <div><span class="k"><strong>Опубликовано:</strong></span> ${dateStr}</div>
         `;
         infoBox.hidden = false;
       }catch(err){
-        infoBox.hidden = false; // показываем коробку с ошибкой
+        infoBox.hidden = false;
         infoRows.innerHTML = '';
         apiErrEl.textContent = (err && err.message) ? err.message : String(err);
         apiErrEl.hidden = false;
@@ -195,7 +193,6 @@
 
   input.addEventListener('input', update);
 
-  // поддержка ?url=... в адресной строке
   (function(){
     const q = new URLSearchParams(location.search).get('url');
     if (q){ input.value = q; update(); }

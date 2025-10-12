@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Скачать YouTube превью</title>
- <link rel="icon" type="image/png" href="yt.png">
+<link rel="icon" type="image/png" href="yt.png">
 <style>
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f6f7fb;color:#0c0c0d}
@@ -23,6 +23,10 @@
   .k{opacity:.8;min-width:140px;display:inline-block}
   .err{color:#b00020;margin-top:8px}
   .muted{opacity:.7;font-size:.9rem}
+
+  /* Галочка верификации */
+  .vmark{display:inline-flex;vertical-align:middle;margin-left:6px;width:16px;height:16px;color:#3ea6ff}
+  .vmark svg{display:block;width:16px;height:16px}
 </style>
 </head>
 <body>
@@ -62,14 +66,14 @@
   const infoRows  = document.getElementById('infoRows');
   const apiErrEl  = document.getElementById('apiErr');
 
- const placeholder = "https://placehold.co/800x450?text=Вставьте+ссылку,+чтобы+скачать+превью&font=roboto";
- 
- // сразу показываем плейсхолдер
- img.src = placeholder;
- out.hidden = false;
- link.removeAttribute("href"); // <== убираем ссылку, пока видео нет
- link.style.pointerEvents = "none"; // <== отключаем клики
- link.style.cursor = "default";     // <== курсор обычный, не “рука”
+  const placeholder = "https://placehold.co/800x450?text=Вставьте+ссылку,+чтобы+скачать+превью&font=roboto";
+
+  // сразу показываем плейсхолдер и блокируем клики
+  img.src = placeholder;
+  out.hidden = false;
+  link.removeAttribute("href");
+  link.style.pointerEvents = "none";
+  link.style.cursor = "default";
 
   function parseYouTubeId(url){
     if (!url) return null;
@@ -93,6 +97,7 @@
     return `${date} в ${time} по мск`;
   }
 
+  // YouTube API: метаданные видео
   async function fetchVideoMeta(id){
     if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
       throw new Error('Не указан API ключ. Вставьте свой YouTube Data API ключ в переменную API_KEY.');
@@ -109,61 +114,89 @@
     return {
       title: s.title || '—',
       channel: s.channelTitle || '—',
+      channelId: s.channelId || null,
       publishedAt: s.publishedAt || null
     };
   }
 
+  // НЕофициальная проверка верификации (через публичный эндпоинт с badge-ами)
+  async function isChannelVerified(channelId){
+    if (!channelId) return false;
+    try{
+      const r = await fetch(`https://yt.lemnoslife.com/channels?part=badges&id=${encodeURIComponent(channelId)}`);
+      if (!r.ok) return false;
+      const j = await r.json();
+      const badges = j?.items?.[0]?.badges || [];
+      // возможные значения: "Verified", "Official Artist Channel"
+      return badges.includes("Verified") || badges.includes("Official Artist Channel");
+    }catch(e){
+      return false;
+    }
+  }
+
+  // SVG-галочка в том же стиле (круг + чек)
+  const VERIFIED_SVG = `
+    <span class="vmark" title="Подтверждено">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-2.2 15.3l-4.2-4.1L7 11.8l2.8 2.7L17 7.4l1.4 1.4-8.6 8.5z"/>
+      </svg>
+    </span>`;
+
   let t; // debounce
- function update(){
-  clearTimeout(t);
-  t = setTimeout(async ()=>{
-    apiErrEl.hidden = true; 
-    apiErrEl.textContent = '';
-    const id = parseYouTubeId(input.value);
 
-    if (!id){
-      // 🟡 Нет ссылки → возвращаем плейсхолдер и отключаем клики
-      img.src = placeholder;
-      link.removeAttribute("href");
-      link.style.pointerEvents = "none";
-      link.style.cursor = "default";
-      infoBox.hidden = true;
-      return;
-    }
+  function update(){
+    clearTimeout(t);
+    t = setTimeout(async ()=>{
+      apiErrEl.hidden = true;
+      apiErrEl.textContent = '';
+      const id = parseYouTubeId(input.value);
 
-    // 🟢 Есть ID → включаем превью и активируем клики
-    const max = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
-    const hq  = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
-    img.src = max;
-    link.href = max;
-    link.style.pointerEvents = "auto";
-    link.style.cursor = "pointer";
-    img.onerror = () => { 
-      img.onerror = null; 
-      img.src = hq; 
-      link.href = hq; 
-    };
+      if (!id){
+        // Нет ссылки → плейсхолдер и отключаем клики
+        img.src = placeholder;
+        link.removeAttribute("href");
+        link.style.pointerEvents = "none";
+        link.style.cursor = "default";
+        infoBox.hidden = true;
+        return;
+      }
 
-    // 🔵 Информация о видео
-    try {
-      const meta = await fetchVideoMeta(id);
-      const dateStr = meta.publishedAt ? formatMoscow(meta.publishedAt) : '—';
-      infoRows.innerHTML = `
-        <div><span class="k"><strong>Название:</strong></span> ${escapeHtml(meta.title)}</div>
-        <div><span class="k"><strong>Канал:</strong></span> ${escapeHtml(meta.channel)}</div>
-        <div><span class="k"><strong>Опубликовано:</strong></span> ${dateStr}</div>
-      `;
-      infoBox.hidden = false;
-    } catch(err) {
-      infoBox.hidden = false; // показываем коробку с ошибкой
-      infoRows.innerHTML = '';
-      apiErrEl.textContent = (err && err.message) ? err.message : String(err);
-      apiErrEl.hidden = false;
-    }
-  }, 250);
-}
+      // Превью (maxres → fallback на hq)
+      const max = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+      const hq  = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+      img.src = max;
+      link.href = max;
+      link.style.pointerEvents = "auto";
+      link.style.cursor = "pointer";
+      img.onerror = () => { img.onerror=null; img.src = hq; link.href = hq; };
 
-  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+      try {
+        const meta = await fetchVideoMeta(id);
+        const dateStr = meta.publishedAt ? formatMoscow(meta.publishedAt) : '—';
+
+        // проверяем «верифицирован» (неофициально)
+        const verified = await isChannelVerified(meta.channelId);
+
+        infoRows.innerHTML = `
+          <div><span class="k"><strong>Название:</strong></span> ${escapeHtml(meta.title)}</div>
+          <div><span class="k"><strong>Канал:</strong></span> ${escapeHtml(meta.channel)}${verified ? VERIFIED_SVG : ''}</div>
+          <div><span class="k"><strong>Опубликовано:</strong></span> ${dateStr}</div>
+        `;
+        infoBox.hidden = false;
+      } catch(err) {
+        infoBox.hidden = false;
+        infoRows.innerHTML = '';
+        apiErrEl.textContent = (err && err.message) ? err.message : String(err);
+        apiErrEl.hidden = false;
+      }
+    }, 250);
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m => (
+      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
+    ));
+  }
 
   input.addEventListener('input', update);
 

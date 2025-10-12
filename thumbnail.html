@@ -125,12 +125,17 @@
     if (!channelId) return false;
     try{
       const url = `https://yt.lemnoslife.com/noKey/channels?part=badges&id=${encodeURIComponent(channelId)}`;
-      const res = await fetch(url, { cache: "no-store" });
+      const res = await fetch(url, { mode: "cors", cache: "no-store" });
       if (!res.ok) return false;
       const data = await res.json();
       const badges = data?.items?.[0]?.badges || [];
-      return badges.includes("VERIFIED");
-    }catch{
+      // Встречаются оба варианта значка:
+      const isVerified = badges.includes("VERIFIED") || badges.includes("OFFICIAL_ARTIST_CHANNEL");
+      // Раскомментируй, чтобы посмотреть, что реально приходит:
+      // console.log('badges for', channelId, badges);
+      return isVerified;
+    }catch(e){
+      // console.error('verify check failed', e);
       return false;
     }
   }
@@ -164,17 +169,18 @@
         const meta = await fetchVideoMeta(id);
         const verified = await fetchChannelVerified(meta.channelId);
         const dateStr = meta.publishedAt ? formatMoscow(meta.publishedAt) : '—';
-
+       
         const channelHtml = escapeHtml(meta.channel);
         const channelVerify = verified
           ? `<img class="v-badge" src="verified.png" alt="verified" title="Верифицированный канал">`
           : '';
-
+        
         infoRows.innerHTML = `
           <div><span class="k"><strong>Название:</strong></span> ${escapeHtml(meta.title)}</div>
           <div><span class="k"><strong>Канал:</strong></span> ${channelHtml} ${channelVerify}</div>
           <div><span class="k"><strong>Опубликовано:</strong></span> ${dateStr}</div>
         `;
+
         infoBox.hidden = false;
       }catch(err){
         infoBox.hidden = false;

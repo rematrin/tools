@@ -17,17 +17,9 @@
       font-size: 0.95rem;
       color: #555;
     }
-    footer a {
-      color: #a7a9ae;
-      text-decoration: none;
-      margin: 0 6px;
-    }
-    footer a:hover {
-      text-decoration: underline;
-    }
-    footer span {
-      color: #aaa;
-    }
+    footer a { color: #a7a9ae; text-decoration: none; margin: 0 6px; }
+    footer a:hover { text-decoration: underline; }
+    footer span { color: #aaa; }
     h1 { font-size: 1.25rem; margin: 0; }
     .muted { opacity: .7; font-size: .9rem; }
     .card { background: #fff; border: 1px solid #e6e9f2; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 0 rgba(0,0,0,.03); }
@@ -76,17 +68,62 @@
     const updatedLbl = document.querySelector('[data-role="updated"]');
     const refreshBtn = document.querySelector('[data-role="refresh"]');
 
+    // ===== форматирование / парсинг =====
+    const NBSP  = "\u00A0";
+    const NNBSP = "\u202F";
+
+    function getCur(code){ return currencies.find(c=>c.code===code) || {precision:2}; }
+
+    // строгое отображение (для "других" полей): всегда 2 знака
     function numberFormat(code, n){
-      const cur = currencies.find(c=>c.code===code) || {precision:2};
-      const fmt = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: cur.precision, maximumFractionDigits: cur.precision });
-      return fmt.format(n);
+      const cur = getCur(code);
+      return Number(n).toLocaleString('ru-RU', {
+        minimumFractionDigits: cur.precision,
+        maximumFractionDigits: cur.precision
+      });
     }
+    // "живое" отображение для активного поля: без обязательных ,00
+    function formatEdit(code, n){
+      const cur = getCur(code);
+      return Number(n).toLocaleString('ru-RU', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: cur.precision
+      });
+    }
+
+    // строка -> число (убираем любые пробелы, меняем запятую на точку)
     function parseNum(str){
       if (typeof str !== 'string') return NaN;
-      str = str.replace(/\s/g,'').replace(',', '.').trim();
+      str = str.replace(new RegExp(`[\\s${NBSP}${NNBSP}]`,'g'),'')
+               .replace(',', '.')
+               .trim();
       if (str === '' || str === '-' || str === '.') return NaN;
       return Number(str);
     }
+
+    // форматировать «на лету» c сохранением каретки (для активного поля)
+    function formatWithCaret(inputEl){
+      const code = inputEl.dataset.code;
+      const raw = inputEl.value;
+      const caret = inputEl.selectionStart ?? raw.length;
+      const left  = raw.slice(0, caret);
+      const digitsLeft = (left.match(/\d/g) || []).length;
+
+      const n = parseNum(raw);
+      if (!isFinite(n)) return; // не трогаем пустые/нечисловые
+
+      inputEl.value = formatEdit(code, n);
+
+      // восстановить каретку по количеству цифр слева
+      let i = 0, seen = 0, s = inputEl.value;
+      while (i < s.length && seen < digitsLeft) {
+        if (/\d/.test(s[i])) seen++;
+        i++;
+      }
+      inputEl.setSelectionRange(i, i);
+    }
+
+    // ===== UI =====
     function renderRows() {
       fxBox.innerHTML = '';
       currencies.forEach(({code, flag}) => {
@@ -105,22 +142,48 @@
         `;
         fxBox.appendChild(row);
       });
-      fxBox.querySelectorAll('input').forEach(inp => inp.addEventListener('input', onInput));
+
+      fxBox.querySelectorAll('input').forEach(inp => {
+        // форматирование при вводе: без навязанного ,00
+        inp.addEventListener('input', (e)=>{
+          formatWithCaret(e.target);
+          onInput(e); // пересчёт остальных
+        });
+
+        // при фокусе переводим число к "живому" виду (вдруг стояло 1,00)
+        inp.addEventListener('focus', (e)=>{
+          const code = e.target.dataset.code;
+          const v = parseNum(e.target.value);
+          if (isFinite(v)) e.target.value = formatEdit(code, v);
+        });
+
+        // при потере фокуса — красивый фиксированный вид
+        inp.addEventListener('blur', (e)=>{
+          const code = e.target.dataset.code;
+          const v = parseNum(e.target.value);
+          if (isFinite(v)) e.target.value = numberFormat(code, v);
+        });
+      });
     }
+
     function onInput(e){
       if (!rates) return;
       const el = e.target, code = el.dataset.code, val = parseNum(el.value);
-      if (!isFinite(val)){ fxBox.querySelectorAll('input').forEach(i=>{ if(i!==el) i.value=''; }); return; }
+      if (!isFinite(val)){
+        fxBox.querySelectorAll('input').forEach(i=>{ if(i!==el) i.value=''; });
+        return;
+      }
       const inBase = val / rates[code];
       currencies.forEach(({code:c}) => {
         if (c===code) return;
         const target = fxBox.querySelector(`input[data-code="${c}"]`);
+        // для "других" полей — фиксированный формат с двумя знаками
         target.value = numberFormat(c, inBase * rates[c]);
       });
     }
-    async function loadRates(force=false){
+
+    async function loadRates(){
       try{
-        const symbols = currencies.map(x=>x.code).join(',');
         const url = `https://open.er-api.com/v6/latest/${base}`;
         const res = await fetch(url);
         const data = await res.json();
@@ -130,13 +193,15 @@
         updatedLbl.textContent = 'Не удалось загрузить курсы (нужен интернет).';
       }
     }
+
     refreshBtn.addEventListener('click', loadRates);
     (async function init(){ renderRows(); await loadRates(); })();
   </script>
+
   <footer>
-  <a href="index">Калькулятор процентов</a>
-  <span>•</span>
-  <a href="fx_converter">Конвертер валют</a>
-</footer>
+    <a href="index">Калькулятор процентов</a>
+    <span>•</span>
+    <a href="fx_converter">Конвертер валют</a>
+  </footer>
 </body>
 </html>

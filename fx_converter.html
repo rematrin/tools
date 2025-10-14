@@ -11,12 +11,7 @@
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #f4f6fb; color: #0b0d12; }
     .wrap { max-width: 560px; margin: 0 auto; padding: 22px 14px 28px; }
     header { display:flex; justify-content: space-between; align-items:center; margin-bottom: 12px; gap:10px; flex-wrap:wrap; }
-    footer {
-      margin-top: 28px;
-      text-align: center;
-      font-size: 0.95rem;
-      color: #555;
-    }
+    footer { margin-top: 28px; text-align: center; font-size: 0.95rem; color: #555; }
     footer a { color: #a7a9ae; text-decoration: none; margin: 0 6px; }
     footer a:hover { text-decoration: underline; }
     footer span { color: #aaa; }
@@ -74,7 +69,6 @@
 
     function getCur(code){ return currencies.find(c=>c.code===code) || {precision:2}; }
 
-    // строгое отображение (для "других" полей): всегда 2 знака
     function numberFormat(code, n){
       const cur = getCur(code);
       return Number(n).toLocaleString('ru-RU', {
@@ -82,7 +76,6 @@
         maximumFractionDigits: cur.precision
       });
     }
-    // "живое" отображение для активного поля: без обязательных ,00
     function formatEdit(code, n){
       const cur = getCur(code);
       return Number(n).toLocaleString('ru-RU', {
@@ -91,7 +84,6 @@
       });
     }
 
-    // строка -> число (убираем любые пробелы, меняем запятую на точку)
     function parseNum(str){
       if (typeof str !== 'string') return NaN;
       str = str.replace(new RegExp(`[\\s${NBSP}${NNBSP}]`,'g'),'')
@@ -101,16 +93,37 @@
       return Number(str);
     }
 
-    // форматировать «на лету» c сохранением каретки (для активного поля)
+    // --- НОВОЕ: позволяем промежуточное состояние "1," / "1." ---
+    function isIncompleteDecimal(raw){
+      return /[.,]$/.test(raw); // заканчивается на разделитель
+    }
+    function groupIntPart(raw){
+      const noSp = raw.replace(new RegExp(`[\\s${NBSP}${NNBSP}]`,'g'),'');
+      const intDigits = noSp.replace(/[.,].*$/,'').replace(/\D/g,'');
+      if (intDigits === '') return '';
+      return Number(intDigits).toLocaleString('ru-RU');
+    }
+
     function formatWithCaret(inputEl){
       const code = inputEl.dataset.code;
-      const raw = inputEl.value;
+      let raw = inputEl.value;
+
+      // если пользователь только что ввёл запятую/точку — группируем целую часть и оставляем запятую
+      if (isIncompleteDecimal(raw)){
+        const grouped = groupIntPart(raw);
+        // приводим разделитель к запятой
+        inputEl.value = grouped + ',';
+        inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+        return; // не пытаемся парсить в число
+      }
+
+      // обычный случай
       const caret = inputEl.selectionStart ?? raw.length;
       const left  = raw.slice(0, caret);
       const digitsLeft = (left.match(/\d/g) || []).length;
 
       const n = parseNum(raw);
-      if (!isFinite(n)) return; // не трогаем пустые/нечисловые
+      if (!isFinite(n)) return;
 
       inputEl.value = formatEdit(code, n);
 
@@ -122,8 +135,8 @@
       }
       inputEl.setSelectionRange(i, i);
     }
+    // -------------------------------------------------------------
 
-    // ===== UI =====
     function renderRows() {
       fxBox.innerHTML = '';
       currencies.forEach(({code, flag}) => {
@@ -144,20 +157,17 @@
       });
 
       fxBox.querySelectorAll('input').forEach(inp => {
-        // форматирование при вводе: без навязанного ,00
         inp.addEventListener('input', (e)=>{
-          formatWithCaret(e.target);
-          onInput(e); // пересчёт остальных
+          formatWithCaret(e.target);  // <<< позволяет ставить , или .
+          onInput(e);                 // перерасчёт остальных
         });
 
-        // при фокусе переводим число к "живому" виду (вдруг стояло 1,00)
         inp.addEventListener('focus', (e)=>{
           const code = e.target.dataset.code;
           const v = parseNum(e.target.value);
           if (isFinite(v)) e.target.value = formatEdit(code, v);
         });
 
-        // при потере фокуса — красивый фиксированный вид
         inp.addEventListener('blur', (e)=>{
           const code = e.target.dataset.code;
           const v = parseNum(e.target.value);
@@ -168,7 +178,12 @@
 
     function onInput(e){
       if (!rates) return;
-      const el = e.target, code = el.dataset.code, val = parseNum(el.value);
+      const el = e.target, code = el.dataset.code;
+
+      // если пользователь ввёл "незавершённое" число (например "1,") — не пересчитываем
+      if (isIncompleteDecimal(el.value)) return;  // <<<
+
+      const val = parseNum(el.value);
       if (!isFinite(val)){
         fxBox.querySelectorAll('input').forEach(i=>{ if(i!==el) i.value=''; });
         return;
@@ -177,7 +192,6 @@
       currencies.forEach(({code:c}) => {
         if (c===code) return;
         const target = fxBox.querySelector(`input[data-code="${c}"]`);
-        // для "других" полей — фиксированный формат с двумя знаками
         target.value = numberFormat(c, inBase * rates[c]);
       });
     }

@@ -63,22 +63,21 @@
     const updatedLbl = document.querySelector('[data-role="updated"]');
     const refreshBtn = document.querySelector('[data-role="refresh"]');
 
-    // ===== форматирование / парсинг =====
-    const NBSP  = "\u00A0";
-    const NNBSP = "\u202F";
-
     function getCur(code){ return currencies.find(c=>c.code===code) || {precision:2}; }
 
+    // форматирование результата (убираем ",00" если не нужно)
     function numberFormat(code, n){
       const cur = getCur(code);
-      return Number(n).toLocaleString('ru-RU', {
-        minimumFractionDigits: cur.precision,
-        maximumFractionDigits: cur.precision
+      const hasFraction = Math.abs(n % 1) > 1e-9;
+      return n.toLocaleString('ru-RU', {
+        minimumFractionDigits: hasFraction ? cur.precision : 0,
+        maximumFractionDigits: hasFraction ? cur.precision : 0
       });
     }
+
     function formatEdit(code, n){
       const cur = getCur(code);
-      return Number(n).toLocaleString('ru-RU', {
+      return n.toLocaleString('ru-RU', {
         minimumFractionDigits: 0,
         maximumFractionDigits: cur.precision
       });
@@ -86,56 +85,55 @@
 
     function parseNum(str){
       if (typeof str !== 'string') return NaN;
-      str = str.replace(new RegExp(`[\\s${NBSP}${NNBSP}]`,'g'),'')
-               .replace(',', '.')
-               .trim();
+      str = str.replace(/[\s\u00A0\u202F]/g,'').replace(',', '.').trim();
       if (str === '' || str === '-' || str === '.') return NaN;
       return Number(str);
     }
 
-    // --- НОВОЕ: позволяем промежуточное состояние "1," / "1." ---
-    function isIncompleteDecimal(raw){
-      return /[.,]$/.test(raw); // заканчивается на разделитель
-    }
-    function groupIntPart(raw){
-      const noSp = raw.replace(new RegExp(`[\\s${NBSP}${NNBSP}]`,'g'),'');
-      const intDigits = noSp.replace(/[.,].*$/,'').replace(/\D/g,'');
-      if (intDigits === '') return '';
-      return Number(intDigits).toLocaleString('ru-RU');
-    }
-
+    // исправленная функция с requestAnimationFrame (фикс курсора)
     function formatWithCaret(inputEl){
       const code = inputEl.dataset.code;
       let raw = inputEl.value;
 
-      // если пользователь только что ввёл запятую/точку — группируем целую часть и оставляем запятую
-      if (isIncompleteDecimal(raw)){
-        const grouped = groupIntPart(raw);
-        // приводим разделитель к запятой
+      // если заканчивается на запятую — группируем целую часть и ждём следующую цифру
+      if (/[.,]$/.test(raw)){
+        const noSp = raw.replace(/[\s\u00A0\u202F]/g,'');
+        const intDigits = noSp.replace(/[.,].*$/,'').replace(/\D/g,'');
+        const grouped = intDigits ? Number(intDigits).toLocaleString('ru-RU') : '';
         inputEl.value = grouped + ',';
-        inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
-        return; // не пытаемся парсить в число
+        requestAnimationFrame(() => {
+          const p = inputEl.value.length;
+          inputEl.setSelectionRange(p, p);
+        });
+        return;
       }
 
-      // обычный случай
       const caret = inputEl.selectionStart ?? raw.length;
-      const left  = raw.slice(0, caret);
-      const digitsLeft = (left.match(/\d/g) || []).length;
+      const digitsLeft = (raw.slice(0, caret).match(/\d/g) || []).length;
 
-      const n = parseNum(raw);
-      if (!isFinite(n)) return;
-
-      inputEl.value = formatEdit(code, n);
-
-      // восстановить каретку по количеству цифр слева
-      let i = 0, seen = 0, s = inputEl.value;
-      while (i < s.length && seen < digitsLeft) {
-        if (/\d/.test(s[i])) seen++;
-        i++;
+      // мягко группируем целую часть + дробную как есть
+      raw = raw.replace(/[^\d.,]/g,'');
+      const firstSep = raw.search(/[.,]/);
+      if (firstSep !== -1){
+        const before = raw.slice(0, firstSep).replace(/[^\d]/g,'');
+        let after = raw.slice(firstSep+1).replace(/[^\d]/g,'');
+        after = after.slice(0, getCur(code).precision);
+        inputEl.value = (before ? Number(before).toLocaleString('ru-RU') : '') + (after !== '' ? ','+after : '');
+      } else {
+        const digits = raw.replace(/[^\d]/g,'');
+        inputEl.value = digits ? Number(digits).toLocaleString('ru-RU') : '';
       }
-      inputEl.setSelectionRange(i, i);
+
+      // восстанавливаем позицию курсора
+      requestAnimationFrame(() => {
+        let i = 0, seen = 0, s = inputEl.value;
+        while (i < s.length && seen < digitsLeft) {
+          if (/\d/.test(s[i])) seen++;
+          i++;
+        }
+        inputEl.setSelectionRange(i, i);
+      });
     }
-    // -------------------------------------------------------------
 
     function renderRows() {
       fxBox.innerHTML = '';
@@ -158,8 +156,8 @@
 
       fxBox.querySelectorAll('input').forEach(inp => {
         inp.addEventListener('input', (e)=>{
-          formatWithCaret(e.target);  // <<< позволяет ставить , или .
-          onInput(e);                 // перерасчёт остальных
+          formatWithCaret(e.target);
+          onInput(e);
         });
 
         inp.addEventListener('focus', (e)=>{
@@ -180,19 +178,20 @@
       if (!rates) return;
       const el = e.target, code = el.dataset.code;
 
-      // если пользователь ввёл "незавершённое" число (например "1,") — не пересчитываем
-      if (isIncompleteDecimal(el.value)) return;  // <<<
+      if (/[.,]$/.test(el.value)) return; // ждём дробную часть
 
       const val = parseNum(el.value);
       if (!isFinite(val)){
         fxBox.querySelectorAll('input').forEach(i=>{ if(i!==el) i.value=''; });
         return;
       }
+
       const inBase = val / rates[code];
       currencies.forEach(({code:c}) => {
         if (c===code) return;
         const target = fxBox.querySelector(`input[data-code="${c}"]`);
-        target.value = numberFormat(c, inBase * rates[c]);
+        const res = inBase * rates[c];
+        target.value = numberFormat(c, res);
       });
     }
 

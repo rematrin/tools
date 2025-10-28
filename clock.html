@@ -490,19 +490,17 @@ input, select, textarea {
   document.addEventListener('click', (e) => {
     if (!popup.contains(e.target) && e.target !== shareBtn) popup.style.display = 'none';
   });
+
+<div id="footer"></div>
+<script>
+fetch('footer.html')
+  .then(r => r.text())
+  .then(html => document.getElementById('footer').innerHTML = html);
 </script>
 
-<footer class="wrap">
-  <a href="index">Калькулятор процентов</a>
-  <span>•</span>
-  <a href="fx_converter">Конвертер валют</a>
-  <span>•</span>
-  <a href="clock">Мировые часы</a>
-  <span>•</span>
-  <a href="thumbnail">Скачать превью</a>
-</footer>
 </body>
 </html>
+
 
 
 

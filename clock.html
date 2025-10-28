@@ -1,168 +1,475 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Мировые часы</title>
-  <link rel="icon" type="image/png" href="clock.png">
-  <style>
-    * { box-sizing: border-box; }
-    body { 
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; 
-      margin: 0; 
-      background: #f4f6fb; 
-      color: #0b0d12; 
-    }
-    .wrap { 
-      max-width: 500px; 
-      margin: 0 auto; 
-      padding: 22px 14px 28px; 
-    }
-    h1 { font-size: 1.25rem; margin: 0 0 12px 0; }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мировые часы</title>
+<link rel="icon" type="image/png" href="clock.png">
+<style>
+  *{box-sizing:border-box}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f4f6fb;color:#0b0d12}
+  .wrap{max-width:500px;margin:0 auto;padding:22px 14px 28px}
+  h1{font-size:1.25rem;margin:0 0 12px}
+  .card{display:flex;flex-direction:column;gap:4px}
+  .row{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e6e9f2;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.03);padding:10px 12px}
+  .code{display:flex;align-items:center;gap:8px;font-weight:700}
+  .flag{border-radius:4px;width:24px;height:18px;vertical-align:middle}
+  .time{font-size:1.3rem;font-variant-numeric:tabular-nums;display:flex;align-items:flex-end;gap:4px}
+  .seconds{font-size:.8rem;color:#999;position:relative;bottom:2px}
 
-    .card { 
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
+  .controls{display:flex;gap:8px;margin-top:12px;align-items:flex-start}
+  .searchbox{position:relative;flex:1}
+  input[type="text"]{width:100%;padding:8px 10px;border:1px solid #cfd5e1;border-radius:8px;background:#fff;font-size:.95rem}
+  button{padding:8px 12px;border:1px solid #cfd5e1;background:#fff;border-radius:8px;cursor:pointer;font-size:.95rem}
+  button:hover{background:#f0f2f7}
 
-    .row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #fff;
-      border: 1px solid #e6e9f2;
-      border-radius: 12px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-      padding: 10px 12px;
-    }
+  /* выпадающее меню */
+  .suggest{position:absolute;left:0;right:0;top:calc(100% + 6px);background:#fff;border:1px solid #e6e9f2;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.06);overflow:hidden;z-index:10;display:none;max-height:300px;overflow-y:auto}
+  .suggest.visible{display:block}
+  .opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #f1f3f8;cursor:pointer}
+  .opt:last-child{border-bottom:0}
+  .opt:hover{background:#f6f8fd}
+  .opt .country{font-size:.85rem;opacity:.7}
+  .opt .spacer{margin-left:auto;font-size:.8rem;opacity:.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:45%}
 
-    .code { 
-      display:flex; 
-      align-items:center; 
-      gap:8px; 
-      font-weight:700; 
-    }
+  footer{margin-top:28px;text-align:center;font-size:.95rem;color:#555}
+  footer a{color:#a7a9ae;text-decoration:none;margin:0 6px}
+  footer a:hover{text-decoration:underline}
+  footer span{color:#aaa}
 
-    .flag { 
-      border-radius:4px; 
-      width:24px; 
-      height:18px; 
-      vertical-align:middle; 
-    }
-
-    .time { 
-      font-size:1.3rem; 
-      font-variant-numeric:tabular-nums; 
-      display:flex; 
-      align-items:flex-end;
-      gap:4px;
-    }
-
-    .seconds { 
-      font-size:0.8rem; 
-      color:#999;
-      position: relative;
-      bottom: 2px;
-    }
-
-    footer { 
-      margin-top: 28px; 
-      text-align: center; 
-      font-size: 0.95rem; 
-      color: #555; 
-    }
-
-    footer a { 
-      color: #a7a9ae; 
-      text-decoration: none; 
-      margin: 0 6px; 
-    }
-
-    footer a:hover { text-decoration: underline; }
-    footer span { color: #aaa; }
-  </style>
+  @keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Мировые часы</h1>
+<div class="wrap">
+  <h1>Мировые часы</h1>
+  <div class="card" id="clocks"></div>
 
-    <div class="card" id="clocks"></div>
+  <div class="controls">
+    <div class="searchbox">
+      <input id="search" type="text" placeholder="Добавить город или страну..." autocomplete="off" autocorrect="off" spellcheck="false">
+      <div id="suggest" class="suggest" role="listbox" aria-label="Подсказки"></div>
+    </div>
+    <button id="shareBtn">Поделиться часами</button>
   </div>
+   <div id="sharePopup" style="
+    position: absolute;
+    display: none;
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+    width: 190px;
+    animation: fadeIn 0.2s ease;
+    color: #222;
+  ">
+    <button id="copyLink" style="display:flex;align-items:center;gap:8px;padding:8px;border:none;background:#f5f5f5;border-radius:8px;cursor:pointer;color:#222;">
+      <img src="https://cdn-icons-png.flaticon.com/512/7640/7640062.png" width="18" height="18" alt="">
+      Ссылка
+    </button>
 
-  <script>
-    // ✅ уникальный ID на основе часового пояса (решает конфликт us/us)
-    const toId = (tz) => 't-' + tz.replace(/\//g, '-');
+    <a id="tgShare" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:8px;border-radius:8px;background:#e3f2fd;color:#222;">
+      <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" width="18" height="18" alt="">
+      Telegram
+    </a>
 
-    const cities = [
-      {name:'Прага', flag:'cz', tz:'Europe/Prague'},
-      {name:'Киев', flag:'ua', tz:'Europe/Kiev'},
-      {name:'Москва', flag:'ru', tz:'Europe/Moscow'},
-      {name:'Лондон', flag:'gb', tz:'Europe/London'},
-      {name:'Нью-Йорк', flag:'us', tz:'America/New_York'},
-      {name:'Лос-Анджелес', flag:'us', tz:'America/Los_Angeles'},
-      {name:'Токио', flag:'jp', tz:'Asia/Tokyo'},
-      {name:'Сидней', flag:'au', tz:'Australia/Sydney'}
-    ];
+    <a id="waShare" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:8px;border-radius:8px;background:#e8f5e9;color:#222;">
+      <img src="https://cdn-icons-png.flaticon.com/512/2111/2111728.png" width="18" height="18" alt="">
+      WhatsApp
+    </a>
 
-    const box = document.getElementById('clocks');
+    <a id="fbShare" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:8px;border-radius:8px;background:#e3f2fd;color:#222;">
+      <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" width="18" height="18" alt="">
+      Facebook
+    </a>
+  </div>
+</div>
 
-    function render() {
-      box.innerHTML = '';
-      for (const {name, flag, tz} of cities) {
-        const id = toId(tz);
-        const row = document.createElement('div');
-        row.className = 'row';
-        row.innerHTML = `
-          <div class="code">
-            <img class="flag" src="https://flagcdn.com/w40/${flag}.png" alt="">
-            <span>${name}</span>
-          </div>
-          <div class="time" id="${id}">
-            --:-- <span class="seconds">--</span>
-          </div>
-        `;
-        box.appendChild(row);
+<script>
+  // ===== helpers =====
+  const toId = tz => 't-' + tz.replace(/\//g,'-');
+  const NEUTRAL_SVG = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="18"><rect width="24" height="18" rx="3" ry="3" fill="#e9edf5"/></svg>');
+  const flagURL = code => code === 'xx' ? `data:image/svg+xml;utf8,${NEUTRAL_SVG}` : `https://flagcdn.com/w40/${code}.png`;
+
+  function setTimeFor(id, tz, dateObj=new Date()){
+    const el = document.getElementById(id);
+    if (!el) return;
+    try{
+      const parts = new Intl.DateTimeFormat('ru-RU',{ timeZone: tz, hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false }).formatToParts(dateObj);
+      const h = parts.find(p=>p.type==='hour')?.value??'--';
+      const m = parts.find(p=>p.type==='minute')?.value??'--';
+      const s = parts.find(p=>p.type==='second')?.value??'--';
+      el.innerHTML = `${h}:${m} <span class="seconds">${s}</span>`;
+    }catch{
+      el.innerHTML = `--:-- <span class="seconds">--</span>`;
+    }
+  }
+  function tick(cities){
+    const now = new Date();
+    for (const {tz} of cities) setTimeFor(toId(tz), tz, now);
+  }
+
+  // ===== оффлайн база: столицы мира + крупные города США/Европы/СНГ =====
+  // Формат: {name:'Город', country:'Страна', tz:'Area/City', flag:'iso2'}
+  const CITIES_DB = [
+    // --- Европа (столицы + крупные) ---
+    {name:'Прага', country:'Чехия', tz:'Europe/Prague', flag:'cz'},
+    {name:'Варшава', country:'Польша', tz:'Europe/Warsaw', flag:'pl'},
+    {name:'Берлин', country:'Германия', tz:'Europe/Berlin', flag:'de'},
+    {name:'Гамбург', country:'Германия', tz:'Europe/Berlin', flag:'de'},
+    {name:'Мюнхен', country:'Германия', tz:'Europe/Berlin', flag:'de'},
+    {name:'Париж', country:'Франция', tz:'Europe/Paris', flag:'fr'},
+    {name:'Лион', country:'Франция', tz:'Europe/Paris', flag:'fr'},
+    {name:'Марсель', country:'Франция', tz:'Europe/Paris', flag:'fr'},
+    {name:'Рим', country:'Италия', tz:'Europe/Rome', flag:'it'},
+    {name:'Милан', country:'Италия', tz:'Europe/Rome', flag:'it'},
+    {name:'Неаполь', country:'Италия', tz:'Europe/Rome', flag:'it'},
+    {name:'Мадрид', country:'Испания', tz:'Europe/Madrid', flag:'es'},
+    {name:'Барселона', country:'Испания', tz:'Europe/Madrid', flag:'es'},
+    {name:'Валенсия', country:'Испания', tz:'Europe/Madrid', flag:'es'},
+    {name:'Лиссабон', country:'Португалия', tz:'Europe/Lisbon', flag:'pt'},
+    {name:'Лондон', country:'Великобритания', tz:'Europe/London', flag:'gb'},
+    {name:'Манчестер', country:'Великобритания', tz:'Europe/London', flag:'gb'},
+    {name:'Бирмингем', country:'Великобритания', tz:'Europe/London', flag:'gb'},
+    {name:'Дублин', country:'Ирландия', tz:'Europe/Dublin', flag:'ie'},
+    {name:'Амстердам', country:'Нидерланды', tz:'Europe/Amsterdam', flag:'nl'},
+    {name:'Роттердам', country:'Нидерланды', tz:'Europe/Amsterdam', flag:'nl'},
+    {name:'Брюссель', country:'Бельгия', tz:'Europe/Brussels', flag:'be'},
+    {name:'Антверпен', country:'Бельгия', tz:'Europe/Brussels', flag:'be'},
+    {name:'Вена', country:'Австрия', tz:'Europe/Vienna', flag:'at'},
+    {name:'Будапешт', country:'Венгрия', tz:'Europe/Budapest', flag:'hu'},
+    {name:'Братислава', country:'Словакия', tz:'Europe/Bratislava', flag:'sk'},
+    {name:'Любляна', country:'Словения', tz:'Europe/Ljubljana', flag:'si'},
+    {name:'Загреб', country:'Хорватия', tz:'Europe/Zagreb', flag:'hr'},
+    {name:'Сараево', country:'Босния и Герцеговина', tz:'Europe/Sarajevo', flag:'ba'},
+    {name:'Подгорица', country:'Черногория', tz:'Europe/Podgorica', flag:'me'},
+    {name:'Белград', country:'Сербия', tz:'Europe/Belgrade', flag:'rs'},
+    {name:'Скопье', country:'Северная Македония', tz:'Europe/Skopje', flag:'mk'},
+    {name:'Тирана', country:'Албания', tz:'Europe/Tirane', flag:'al'},
+    {name:'Афины', country:'Греция', tz:'Europe/Athens', flag:'gr'},
+    {name:'София', country:'Болгария', tz:'Europe/Sofia', flag:'bg'},
+    {name:'Бухарест', country:'Румыния', tz:'Europe/Bucharest', flag:'ro'},
+    {name:'Кишинёв', country:'Молдова', tz:'Europe/Chisinau', flag:'md'},
+    {name:'Киев', country:'Украина', tz:'Europe/Kiev', flag:'ua'},
+    {name:'Львов', country:'Украина', tz:'Europe/Kiev', flag:'ua'},
+    {name:'Харьков', country:'Украина', tz:'Europe/Kiev', flag:'ua'},
+    {name:'Одесса', country:'Украина', tz:'Europe/Kiev', flag:'ua'},
+    {name:'Минск', country:'Беларусь', tz:'Europe/Minsk', flag:'by'},
+    {name:'Вильнюс', country:'Литва', tz:'Europe/Vilnius', flag:'lt'},
+    {name:'Рига', country:'Латвия', tz:'Europe/Riga', flag:'lv'},
+    {name:'Таллин', country:'Эстония', tz:'Europe/Tallinn', flag:'ee'},
+    {name:'Осло', country:'Норвегия', tz:'Europe/Oslo', flag:'no'},
+    {name:'Стокгольм', country:'Швеция', tz:'Europe/Stockholm', flag:'se'},
+    {name:'Хельсинки', country:'Финляндия', tz:'Europe/Helsinki', flag:'fi'},
+    {name:'Копенгаген', country:'Дания', tz:'Europe/Copenhagen', flag:'dk'},
+    {name:'Рейкьявик', country:'Исландия', tz:'Atlantic/Reykjavik', flag:'is'},
+    {name:'Берн', country:'Швейцария', tz:'Europe/Zurich', flag:'ch'},
+    {name:'Монако', country:'Монако', tz:'Europe/Monaco', flag:'mc'},
+    {name:'Сан-Марино', country:'Сан-Марино', tz:'Europe/Rome', flag:'sm'},
+    {name:'Андорра-ла-Велья', country:'Андорра', tz:'Europe/Andorra', flag:'ad'},
+    {name:'Ватикан', country:'Ватикан', tz:'Europe/Rome', flag:'va'},
+    {name:'Никосия', country:'Кипр', tz:'Asia/Nicosia', flag:'cy'},
+    {name:'Валлетта', country:'Мальта', tz:'Europe/Malta', flag:'mt'},
+
+    // --- РОССИЯ / СНГ ---
+    {name:'Москва', country:'Россия', tz:'Europe/Moscow', flag:'ru'},
+    {name:'Санкт-Петербург', country:'Россия', tz:'Europe/Moscow', flag:'ru'},
+    {name:'Казань', country:'Россия', tz:'Europe/Moscow', flag:'ru'},
+    {name:'Самара', country:'Россия', tz:'Europe/Samara', flag:'ru'},
+    {name:'Екатеринбург', country:'Россия', tz:'Asia/Yekaterinburg', flag:'ru'},
+    {name:'Челябинск', country:'Россия', tz:'Asia/Yekaterinburg', flag:'ru'},
+    {name:'Омск', country:'Россия', tz:'Asia/Omsk', flag:'ru'},
+    {name:'Новосибирск', country:'Россия', tz:'Asia/Novosibirsk', flag:'ru'},
+    {name:'Красноярск', country:'Россия', tz:'Asia/Krasnoyarsk', flag:'ru'},
+    {name:'Новокузнецк', country:'Россия', tz:'Asia/Novokuznetsk', flag:'ru'},
+    {name:'Иркутск', country:'Россия', tz:'Asia/Irkutsk', flag:'ru'},
+    {name:'Улан-Удэ', country:'Россия', tz:'Asia/Irkutsk', flag:'ru'},
+    {name:'Хабаровск', country:'Россия', tz:'Asia/Vladivostok', flag:'ru'},
+    {name:'Владивосток', country:'Россия', tz:'Asia/Vladivostok', flag:'ru'},
+    {name:'Якутск', country:'Россия', tz:'Asia/Yakutsk', flag:'ru'},
+    {name:'Калининград', country:'Россия', tz:'Europe/Kaliningrad', flag:'ru'},
+    {name:'Пермь', country:'Россия', tz:'Asia/Yekaterinburg', flag:'ru'},
+    {name:'Уфа', country:'Россия', tz:'Asia/Yekaterinburg', flag:'ru'},
+    {name:'Томск', country:'Россия', tz:'Asia/Tomsk', flag:'ru'},
+    {name:'Воронеж', country:'Россия', tz:'Europe/Moscow', flag:'ru'},
+    {name:'Нижний Новгород', country:'Россия', tz:'Europe/Moscow', flag:'ru'},
+    {name:'Ростов-на-Дону', country:'Россия', tz:'Europe/Moscow', flag:'ru'},
+
+    {name:'Минск', country:'Беларусь', tz:'Europe/Minsk', flag:'by'},
+    {name:'Ереван', country:'Армения', tz:'Asia/Yerevan', flag:'am'},
+    {name:'Баку', country:'Азербайджан', tz:'Asia/Baku', flag:'az'},
+    {name:'Тбилиси', country:'Грузия', tz:'Asia/Tbilisi', flag:'ge'},
+    {name:'Астана', country:'Казахстан', tz:'Asia/Almaty', flag:'kz'},
+    {name:'Алматы', country:'Казахстан', tz:'Asia/Almaty', flag:'kz'},
+    {name:'Шымкент', country:'Казахстан', tz:'Asia/Almaty', flag:'kz'},
+    {name:'Бишкек', country:'Киргизия', tz:'Asia/Bishkek', flag:'kg'},
+    {name:'Ташкент', country:'Узбекистан', tz:'Asia/Tashkent', flag:'uz'},
+    {name:'Самарканд', country:'Узбекистан', tz:'Asia/Samarkand', flag:'uz'},
+    {name:'Душанбе', country:'Таджикистан', tz:'Asia/Dushanbe', flag:'tj'},
+    {name:'Ашхабад', country:'Туркменистан', tz:'Asia/Ashgabat', flag:'tm'},
+
+    // --- США ---
+    {name:'Вашингтон', country:'США', tz:'America/New_York', flag:'us'},
+    {name:'Нью-Йорк', country:'США', tz:'America/New_York', flag:'us'},
+    {name:'Бостон', country:'США', tz:'America/New_York', flag:'us'},
+    {name:'Майами', country:'США', tz:'America/New_York', flag:'us'},
+    {name:'Филадельфия', country:'США', tz:'America/New_York', flag:'us'},
+    {name:'Атланта', country:'США', tz:'America/New_York', flag:'us'},
+    {name:'Чикаго', country:'США', tz:'America/Chicago', flag:'us'},
+    {name:'Хьюстон', country:'США', tz:'America/Chicago', flag:'us'},
+    {name:'Даллас', country:'США', tz:'America/Chicago', flag:'us'},
+    {name:'Остин', country:'США', tz:'America/Chicago', flag:'us'},
+    {name:'Миннеаполис', country:'США', tz:'America/Chicago', flag:'us'},
+    {name:'Детройт', country:'США', tz:'America/Detroit', flag:'us'},
+    {name:'Индианаполис', country:'США', tz:'America/Indiana/Indianapolis', flag:'us'},
+    {name:'Кливленд', country:'США', tz:'America/New_York', flag:'us'},
+    {name:'Сан-Антонио', country:'США', tz:'America/Chicago', flag:'us'},
+    {name:'Денвер', country:'США', tz:'America/Denver', flag:'us'},
+    {name:'Финикс', country:'США', tz:'America/Phoenix', flag:'us'},
+    {name:'Сиэтл', country:'США', tz:'America/Los_Angeles', flag:'us'},
+    {name:'Портленд', country:'США', tz:'America/Los_Angeles', flag:'us'},
+    {name:'Сан-Франциско', country:'США', tz:'America/Los_Angeles', flag:'us'},
+    {name:'Сан-Диего', country:'США', tz:'America/Los_Angeles', flag:'us'},
+    {name:'Лос-Анджелес', country:'США', tz:'America/Los_Angeles', flag:'us'},
+    {name:'Лас-Вегас', country:'США', tz:'America/Los_Angeles', flag:'us'},
+    {name:'Орландо', country:'США', tz:'America/New_York', flag:'us'},
+    {name:'Гонолулу', country:'США', tz:'Pacific/Honolulu', flag:'us'},
+
+    // --- КАНАДА / МЕКСИКА / ЮЖНАЯ АМЕРИКА ---
+    {name:'Оттава', country:'Канада', tz:'America/Toronto', flag:'ca'},
+    {name:'Торонто', country:'Канада', tz:'America/Toronto', flag:'ca'},
+    {name:'Монреаль', country:'Канада', tz:'America/Toronto', flag:'ca'},
+    {name:'Ванкувер', country:'Канада', tz:'America/Vancouver', flag:'ca'},
+    {name:'Мехико', country:'Мексика', tz:'America/Mexico_City', flag:'mx'},
+    {name:'Гвадалахара', country:'Мексика', tz:'America/Mexico_City', flag:'mx'},
+    {name:'Монтеррей', country:'Мексика', tz:'America/Monterrey', flag:'mx'},
+    {name:'Богота', country:'Колумбия', tz:'America/Bogota', flag:'co'},
+    {name:'Лима', country:'Перу', tz:'America/Lima', flag:'pe'},
+    {name:'Сантьяго', country:'Чили', tz:'America/Santiago', flag:'cl'},
+    {name:'Буэнос-Айрес', country:'Аргентина', tz:'America/Argentina/Buenos_Aires', flag:'ar'},
+    {name:'Бразилиа', country:'Бразилия', tz:'America/Sao_Paulo', flag:'br'},
+    {name:'Сан-Паулу', country:'Бразилия', tz:'America/Sao_Paulo', flag:'br'},
+    {name:'Рио-де-Жанейро', country:'Бразилия', tz:'America/Sao_Paulo', flag:'br'},
+
+    // --- АЗИЯ ---
+    {name:'Токио', country:'Япония', tz:'Asia/Tokyo', flag:'jp'},
+    {name:'Осака', country:'Япония', tz:'Asia/Tokyo', flag:'jp'},
+    {name:'Сеул', country:'Южная Корея', tz:'Asia/Seoul', flag:'kr'},
+    {name:'Пекин', country:'Китай', tz:'Asia/Shanghai', flag:'cn'},
+    {name:'Шанхай', country:'Китай', tz:'Asia/Shanghai', flag:'cn'},
+    {name:'Гонконг', country:'Гонконг', tz:'Asia/Hong_Kong', flag:'hk'},
+    {name:'Сингапур', country:'Сингапур', tz:'Asia/Singapore', flag:'sg'},
+    {name:'Бангкок', country:'Таиланд', tz:'Asia/Bangkok', flag:'th'},
+    {name:'Дели', country:'Индия', tz:'Asia/Kolkata', flag:'in'},
+    {name:'Мумбаи', country:'Индия', tz:'Asia/Kolkata', flag:'in'},
+    {name:'Катманду', country:'Непал', tz:'Asia/Kathmandu', flag:'np'},
+    {name:'Джакарта', country:'Индонезия', tz:'Asia/Jakarta', flag:'id'},
+    {name:'Бали (Денпасар)', country:'Индонезия', tz:'Asia/Makassar', flag:'id'},
+    {name:'Куала-Лумпур', country:'Малайзия', tz:'Asia/Kuala_Lumpur', flag:'my'},
+    {name:'Манила', country:'Филиппины', tz:'Asia/Manila', flag:'ph'},
+    {name:'Тайбэй', country:'Тайвань', tz:'Asia/Taipei', flag:'tw'},
+    {name:'Ханой', country:'Вьетнам', tz:'Asia/Ho_Chi_Minh', flag:'vn'},
+    {name:'Улан-Батор', country:'Монголия', tz:'Asia/Ulaanbaatar', flag:'mn'},
+    {name:'Коломбо', country:'Шри-Ланка', tz:'Asia/Colombo', flag:'lk'},
+
+    // --- БЛИЖНИЙ ВОСТОК ---
+    {name:'Стамбул', country:'Турция', tz:'Europe/Istanbul', flag:'tr'},
+    {name:'Анкара', country:'Турция', tz:'Europe/Istanbul', flag:'tr'},
+    {name:'Тегеран', country:'Иран', tz:'Asia/Tehran', flag:'ir'},
+    {name:'Багдад', country:'Ирак', tz:'Asia/Baghdad', flag:'iq'},
+    {name:'Дамаск', country:'Сирия', tz:'Asia/Damascus', flag:'sy'},
+    {name:'Бейрут', country:'Ливан', tz:'Asia/Beirut', flag:'lb'},
+    {name:'Иерусалим', country:'Израиль', tz:'Asia/Jerusalem', flag:'il'},
+    {name:'Амман', country:'Иордания', tz:'Asia/Amman', flag:'jo'},
+    {name:'Эр-Рияд', country:'Саудовская Аравия', tz:'Asia/Riyadh', flag:'sa'},
+    {name:'Доха', country:'Катар', tz:'Asia/Qatar', flag:'qa'},
+    {name:'Кувейт', country:'Кувейт', tz:'Asia/Kuwait', flag:'kw'},
+    {name:'Манама', country:'Бахрейн', tz:'Asia/Bahrain', flag:'bh'},
+    {name:'Мускат', country:'Оман', tz:'Asia/Muscat', flag:'om'},
+    {name:'Абу-Даби', country:'ОАЭ', tz:'Asia/Dubai', flag:'ae'},
+    {name:'Дубай', country:'ОАЭ', tz:'Asia/Dubai', flag:'ae'},
+    {name:'Доха', country:'Катар', tz:'Asia/Qatar', flag:'qa'},
+
+    // --- АФРИКА ---
+    {name:'Каир', country:'Египет', tz:'Africa/Cairo', flag:'eg'},
+    {name:'Аддис-Абеба', country:'Эфиопия', tz:'Africa/Addis_Ababa', flag:'et'},
+    {name:'Найроби', country:'Кения', tz:'Africa/Nairobi', flag:'ke'},
+    {name:'Йоханнесбург', country:'ЮАР', tz:'Africa/Johannesburg', flag:'za'},
+    {name:'Кейптаун', country:'ЮАР', tz:'Africa/Johannesburg', flag:'za'},
+    {name:'Киншаса', country:'ДР Конго', tz:'Africa/Kinshasa', flag:'cd'},
+    {name:'Лагос', country:'Нигерия', tz:'Africa/Lagos', flag:'ng'},
+    {name:'Рабат', country:'Марокко', tz:'Africa/Casablanca', flag:'ma'},
+    {name:'Тунис', country:'Тунис', tz:'Africa/Tunis', flag:'tn'},
+    {name:'Алжир', country:'Алжир', tz:'Africa/Algiers', flag:'dz'},
+    {name:'Аккра', country:'Гана', tz:'Africa/Accra', flag:'gh'},
+    {name:'Абуджа', country:'Нигерия', tz:'Africa/Lagos', flag:'ng'},
+
+    // --- ОКЕАНИЯ ---
+    {name:'Сидней', country:'Австралия', tz:'Australia/Sydney', flag:'au'},
+    {name:'Мельбурн', country:'Австралия', tz:'Australia/Melbourne', flag:'au'},
+    {name:'Брисбен', country:'Австралия', tz:'Australia/Brisbane', flag:'au'},
+    {name:'Перт', country:'Австралия', tz:'Australia/Perth', flag:'au'},
+    {name:'Канберра', country:'Австралия', tz:'Australia/Sydney', flag:'au'},
+    {name:'Дарвин', country:'Австралия', tz:'Australia/Darwin', flag:'au'},
+    {name:'Окленд', country:'Новая Зеландия', tz:'Pacific/Auckland', flag:'nz'},
+    {name:'Веллингтон', country:'Новая Зеландия', tz:'Pacific/Auckland', flag:'nz'},
+    {name:'Фиджи', country:'Фиджи', tz:'Pacific/Fiji', flag:'fj'},
+    {name:'Порт-Морсби', country:'Папуа — Новая Гвинея', tz:'Pacific/Port_Moresby', flag:'pg'}
+  ];
+  // Примечание: база включает все ключевые столицы/города; при желании расширим ещё.
+
+  // ===== состояние из URL =====
+  const params = new URLSearchParams(location.search);
+  let cities = params.get('tz')
+    ? params.get('tz').split(',').map(s=>{
+        const [name,tz,flag] = decodeURIComponent(s).split('|');
+        return {name,tz,flag:flag||'xx'};
+      })
+    : [
+        {name:'Прага',        tz:'Europe/Prague',        flag:'cz'},
+        {name:'Киев',         tz:'Europe/Kiev',          flag:'ua'},
+        {name:'Москва',       tz:'Europe/Moscow',        flag:'ru'},
+        {name:'Лондон',       tz:'Europe/London',        flag:'gb'},
+        {name:'Нью-Йорк',     tz:'America/New_York',     flag:'us'},
+        {name:'Лос-Анджелес', tz:'America/Los_Angeles',  flag:'us'},
+        {name:'Токио',        tz:'Asia/Tokyo',           flag:'jp'},
+        {name:'Сидней',       tz:'Australia/Sydney',     flag:'au'}
+      ];
+
+  const box = document.getElementById('clocks');
+  const input = document.getElementById('search');
+  const sugg = document.getElementById('suggest');
+
+  // ===== UI рендер =====
+  function render(){
+    box.innerHTML = '';
+    const now = new Date();
+    for (const {name,tz,flag} of cities){
+      const id = toId(tz);
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `
+        <div class="code">
+          <img class="flag" src="${flagURL(flag)}">
+          <span>${name}</span>
+        </div>
+        <div class="time" id="${id}"></div>
+      `;
+      box.appendChild(row);
+      setTimeFor(id, tz, now); // без мигания
+    }
+  }
+
+  function buildQS(){
+    const parts = cities.map(c=>encodeURIComponent(`${c.name}|${c.tz}|${c.flag}`));
+    return `?tz=${parts.join(',')}`;
+  }
+  function updateURL(){
+    history.replaceState(null,'', location.pathname + buildQS());
+  }
+
+  // ===== поиск (кастомные подсказки) =====
+  function norm(s){ return s.toLowerCase(); }
+  function filterDB(q){
+    if (!q || q.trim().length < 2) return [];
+    const needle = norm(q.trim());
+    const out = [];
+    for (const it of CITIES_DB){
+      if (norm(it.name).includes(needle) || norm(it.country).includes(needle)){
+        out.push(it);
+        if (out.length>=6) break;
       }
     }
-
-    function updateTimes() {
-      const now = new Date();
-      cities.forEach(({tz}) => {
-        const el = document.getElementById(toId(tz));
-        if (!el) return;
-
-        try {
-          const parts = new Intl.DateTimeFormat('ru-RU', {
-            timeZone: tz,
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-          }).formatToParts(now);
-
-          const h = parts.find(p => p.type === 'hour')?.value || '--';
-          const m = parts.find(p => p.type === 'minute')?.value || '--';
-          const s = parts.find(p => p.type === 'second')?.value || '--';
-
-          el.innerHTML = `${h}:${m} <span class="seconds">${s}</span>`;
-        } catch {
-          el.innerHTML = `--:-- <span class="seconds">--</span>`;
-        }
+    return out;
+  }
+  function renderSuggest(items){
+    if (!items.length){ sugg.classList.remove('visible'); sugg.innerHTML=''; return; }
+    sugg.innerHTML = '';
+    for (const it of items){
+      const el = document.createElement('div');
+      el.className = 'opt';
+      el.setAttribute('role','option');
+      el.innerHTML = `
+        <img class="flag" src="${flagURL(it.flag)}">
+        <div>
+          <div>${it.name}</div>
+          <div class="country">${it.country}</div>
+        </div>
+        <div class="spacer">${it.tz.replace(/_/g,' ')}</div>
+      `;
+      el.addEventListener('click', ()=>{
+        addCity(it);
+        hideSuggest();
+        input.value = '';
       });
+      sugg.appendChild(el);
     }
+    sugg.classList.add('visible');
+  }
+  function hideSuggest(){ sugg.classList.remove('visible'); }
 
+  input.addEventListener('input', ()=> renderSuggest(filterDB(input.value)));
+  input.addEventListener('focus', ()=> renderSuggest(filterDB(input.value)));
+  document.addEventListener('click', (e)=>{ if (!sugg.contains(e.target) && e.target!==input) hideSuggest(); });
+
+  // ===== действия =====
+  function addCity(sel){
+    if (cities.some(c=>c.tz === sel.tz)) return;
+    cities.push({name: sel.name, tz: sel.tz, flag: sel.flag || 'xx'});
+    updateURL();
     render();
-    updateTimes();
-    setInterval(updateTimes, 1000);
-  </script>
+  };
 
-  <footer>
-    <a href="index">Калькулятор процентов</a>
-    <span>•</span>
-    <a href="fx_converter">Конвертер валют</a>
-    <span>•</span>
-    <a href="clock">Мировые часы</a>
-  </footer>
+  // ===== init =====
+  render();
+  tick(cities);
+  setInterval(()=>tick(cities), 1000);
+
+  const shareBtn = document.getElementById('shareBtn');
+  const popup = document.getElementById('sharePopup');
+  const copyLink = document.getElementById('copyLink');
+  const tg = document.getElementById('tgShare');
+  const wa = document.getElementById('waShare');
+  const fb = document.getElementById('fbShare');
+
+  shareBtn.addEventListener('click', () => {
+    const url = window.location.href;
+    tg.href = `https://t.me/share/url?url=${encodeURIComponent(url)}`;
+    wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(url)}`;
+    fb.href = `https://www.facebook.com/share_channel/?type=reshare&link=${encodeURIComponent(url)}&app_id=87741124305&source_surface=external_reshare&display=popup`;
+
+    const rect = shareBtn.getBoundingClientRect();
+    popup.style.left = rect.left + 'px';
+    popup.style.top = rect.bottom + 8 + 'px';
+    popup.style.display = popup.style.display === 'flex' ? 'none' : 'flex';
+  });
+
+  copyLink.addEventListener('click', () => {
+    navigator.clipboard.writeText(window.location.href);
+    copyLink.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/1442/1442912.png" width="18" height="18" alt="">Скопировано!`;
+    setTimeout(() => {
+      copyLink.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/7640/7640062.png" width="18" height="18" alt=""> Ссылка`;
+    }, 2000);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!popup.contains(e.target) && e.target !== shareBtn) popup.style.display = 'none';
+  });
+</script>
+
+<footer class="wrap">
+  <a href="index">Калькулятор процентов</a>
+  <span>•</span>
+  <a href="fx_converter">Конвертер валют</a>
+  <span>•</span>
+  <a href="clock">Мировые часы</a>
+</footer>
 </body>
 </html>

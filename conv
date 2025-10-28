@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Конвертер валют</title>
+  <link rel="icon" type="image/png" href="exchange.png">
+  <link rel="apple-touch-icon" href="exchange2.png">
+  <style>
+    /* ---- базовая сетка как у «часов» ---- */
+    * { box-sizing: border-box; }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:0; background:#f4f6fb; color:#0b0d12; }
+    .wrap { max-width: 500px; margin: 0 auto; padding: 22px 14px 28px; }
+
+    header { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+    h1 { font-size:1.25rem; margin:0; }
+    .clean { border:1px solid #cfd5e1; background:#fff; border-radius:10px; padding:7px 12px; cursor:pointer; }
+    .clean:active { transform: translateY(1px); }
+
+    .statusbar { display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-bottom:10px; }
+    .muted { opacity:.7; font-size:.9rem; }
+    .btn { border:1px solid #cfd5e1; background:#fff; border-radius:10px; padding:7px 12px; cursor:pointer; }
+    .btn:active { transform: translateY(1px); }
+
+    /* список карточек как у «часов»: отдельные плавающие блоки с небольшим gap */
+    .list { display:flex; flex-direction:column; gap:6px; }
+    .row {
+      display:flex; align-items:center; justify-content:space-between;
+      background:#fff; border:1px solid #e6e9f2; border-radius:12px;
+      box-shadow:0 1px 2px rgba(0,0,0,.03); padding:10px 12px;
+    }
+
+    .left { display:flex; align-items:center; gap:8px; font-weight:700; }
+    .flag { width:24px; height:18px; border-radius:4px; vertical-align:middle; }
+    .code { font-weight:700; }             /* оставляем «жирность» как в оригинале конвертера */
+    .name { font-weight:600; opacity:.8; } /* русское имя чуть спокойнее */
+
+    .amount { margin-left:auto; }
+    .amount input {
+      width: 200px; max-width:50vw; text-align:right;
+      font-size:1.15rem; padding:10px 12px;
+      border:1px solid #cfd5e1; border-radius:10px; background:#fff;
+    }
+    .amount input:focus { outline:none; border-color:#7aa2ff; box-shadow:0 0 0 3px rgba(122,162,255,.16); }
+
+    /* блок управления снизу (поиск + поделиться) */
+    .controls { display:flex; gap:10px; margin-top:12px; align-items:flex-start; }
+    .searchbox { position:relative; flex:1; }
+    #search {
+      width:100%; padding:10px 12px; border:1px solid #cfd5e1; border-radius:12px; background:#fff;
+      font-size:1rem;
+    }
+    #shareBtn { padding:10px 12px; border:1px solid #cfd5e1; background:#fff; border-radius:12px; cursor:pointer; }
+    #shareBtn:active { transform: translateY(1px); }
+
+    /* Кастомные подсказки (как у «часов») */
+    .suggest {
+      position:absolute; top:100%; left:0; right:0; z-index:50; margin-top:8px;
+      background:#fff; border:1px solid #e7eaf2; border-radius:12px; box-shadow:0 10px 20px rgba(0,0,0,.1);
+      display:none; overflow:hidden;
+    }
+    .sitem { display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; border-top:1px solid #f1f3f7; }
+    .sitem:first-child { border-top:0; }
+    .sitem:hover { background:#f7f9ff; }
+    .sright { margin-left:auto; opacity:.65; font-size:.9rem; }
+
+    /* Контекстное меню «Поделиться» */
+    .popup {
+      position:absolute; display:none; z-index:200; width:220px;
+      background:#fff; border:1px solid #e6e9f2; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,.15); padding:12px;
+    }
+    .p-title { display:flex; align-items:center; gap:10px; font-weight:800; background:#f7f7f7; padding:10px; border-radius:8px; margin-bottom:10px; }
+    .plink { display:flex; align-items:center; gap:10px; text-decoration:none; padding:10px; border-radius:8px; margin-top:8px; }
+    .plink:hover { filter:brightness(.98); }
+    .tg  { background:#e9f3ff; color:#1c6cd5; }
+    .wa  { background:#e8f6ee; color:#137a35; }
+    .fb  { background:#edf2ff; color:#2442b9; }
+    .plink img { width:20px; height:20px; }
+
+    footer { margin-top:28px; text-align:center; font-size:.95rem; color:#555; }
+    footer a { color:#a7a9ae; text-decoration:none; margin:0 6px; }
+    footer a:hover { text-decoration:underline; }
+    footer span { color:#aaa; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Конвертер валют</h1>
+      <button class="clean" id="clearBtn">Очистить все</button>
+    </header>
+
+    <div class="statusbar">
+      <span class="muted" id="updated">Загрузка курсов…</span>
+      <button class="btn" id="refreshBtn">Обновить</button>
+    </div>
+
+    <div class="list" id="fxList"></div>
+
+    <div class="controls">
+      <div class="searchbox">
+        <input id="search" type="text" placeholder="Добавить валюту (например: CZK или Чешская крона)" autocomplete="off" autocorrect="off" spellcheck="false">
+        <div id="suggest" class="suggest" role="listbox" aria-label="Подсказки"></div>
+      </div>
+      <button id="shareBtn">Поделиться курсами</button>
+    </div>
+  </div>
+
+   <div id="sharePopup" style="
+    position: absolute;
+    display: none;
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+    width: 190px;
+    animation: fadeIn 0.2s ease;
+    color: #222;
+  ">
+    <button id="copyLink" style="display:flex;align-items:center;gap:8px;padding:8px;border:none;background:#f5f5f5;border-radius:8px;cursor:pointer;color:#222;">
+      <img src="https://cdn-icons-png.flaticon.com/512/7640/7640062.png" width="18" height="18" alt="">
+      Ссылка
+    </button>
+
+    <a id="tgShare" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:8px;border-radius:8px;background:#e3f2fd;color:#222;">
+      <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" width="18" height="18" alt="">
+      Telegram
+    </a>
+
+    <a id="waShare" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:8px;border-radius:8px;background:#e8f5e9;color:#222;">
+      <img src="https://cdn-icons-png.flaticon.com/512/2111/2111728.png" width="18" height="18" alt="">
+      WhatsApp
+    </a>
+
+    <a id="fbShare" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:8px;border-radius:8px;background:#e3f2fd;color:#222;">
+      <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" width="18" height="18" alt="">
+      Facebook
+    </a>
+  </div>
+
+  <script>
+    // ===== справочник валют (код, русское имя, флаг, точность) =====
+    const ALL = [
+      {code:'CZK', name:'Чешская крона', flag:'cz', p:2},
+      {code:'USD', name:'Доллар США',     flag:'us', p:2},
+      {code:'EUR', name:'Евро',           flag:'eu', p:2},
+      {code:'RUB', name:'Российский рубль',flag:'ru', p:2},
+      {code:'UAH', name:'Украинская гривна',flag:'ua', p:2},
+      {code:'GBP', name:'Фунт стерлингов', flag:'gb', p:2},
+      {code:'BYN', name:'Белорусский рубль',flag:'by', p:2},
+      {code:'PLN', name:'Польский злотый', flag:'pl', p:2},
+      {code:'TRY', name:'Турецкая лира',   flag:'tr', p:2},
+      {code:'KZT', name:'Казахстанский тенге',flag:'kz', p:2},
+      {code:'AMD', name:'Армянский драм',  flag:'am', p:0},
+      {code:'CNY', name:'Китайский юань',  flag:'cn', p:2},
+      {code:'JPY', name:'Японская йена',   flag:'jp', p:0},
+      {code:'KRW', name:'Южнокорейская вона',flag:'kr', p:0},
+      {code:'CHF', name:'Швейцарский франк',flag:'ch', p:2},
+      {code:'CAD', name:'Канадский доллар', flag:'ca', p:2},
+      {code:'AUD', name:'Австралийский доллар',flag:'au', p:2},
+      {code:'NZD', name:'Новозеландский доллар',flag:'nz', p:2},
+      {code:'NOK', name:'Норвежская крона',flag:'no', p:2},
+      {code:'SEK', name:'Шведская крона',  flag:'se', p:2},
+      {code:'DKK', name:'Датская крона',   flag:'dk', p:2},
+      {code:'HUF', name:'Венгерский форинт',flag:'hu', p:0},
+      {code:'RON', name:'Румынский лей',   flag:'ro', p:2},
+      {code:'BGN', name:'Болгарский лев',  flag:'bg', p:2},
+      {code:'GEL', name:'Грузинский лари', flag:'ge', p:2},
+      {code:'KGS', name:'Киргизский сом',  flag:'kg', p:2},
+      {code:'AED', name:'Дирхам ОАЭ',      flag:'ae', p:2},
+      {code:'ILS', name:'Новый израильский шекель',flag:'il', p:2},
+      {code:'INR', name:'Индийская рупия', flag:'in', p:2},
+      {code:'IDR', name:'Индонезийская рупия',flag:'id', p:0},
+      {code:'THB', name:'Тайский бат',     flag:'th', p:2},
+      {code:'VND', name:'Вьетнамский донг',flag:'vn', p:0},
+      {code:'BRL', name:'Бразильский реал',flag:'br', p:2},
+      {code:'MXN', name:'Мексиканское песо',flag:'mx', p:2},
+      {code:'ZAR', name:'Южноафриканский рэнд',flag:'za', p:2},
+      {code:'SGD', name:'Сингапурский доллар',flag:'sg', p:2},
+      {code:'HKD', name:'Гонконгский доллар',flag:'hk', p:2},
+      {code:'TWD', name:'Новый тайваньский доллар',flag:'tw', p:2},
+      {code:'SAR', name:'Саудовский риял', flag:'sa', p:2},
+      {code:'QAR', name:'Катарский риал',  flag:'qa', p:2},
+      {code:'KWD', name:'Кувейтский динар',flag:'kw', p:3},
+      {code:'OMR', name:'Оманский риал',   flag:'om', p:3},
+      {code:'EGP', name:'Египетский фунт', flag:'eg', p:2}
+    ];
+
+    // ===== helpers =====
+    const $ = sel => document.querySelector(sel);
+    const fxList = $('#fxList');
+    const updatedLbl = $('#updated');
+    const refreshBtn = $('#refreshBtn');
+    const clearBtn = $('#clearBtn');
+    const search = $('#search');
+    const suggest = $('#suggest');
+    const shareBtn = $('#shareBtn');
+    const sharePopup = $('#sharePopup');
+    const tgShare = $('#tgShare'), waShare = $('#waShare'), fbShare = $('#fbShare');
+
+    // состояние -> из URL ?fx=CODE,CODE
+    const params = new URLSearchParams(location.search);
+    let chosen = params.get('fx')
+      ? params.get('fx').split(',').map(c=>c.trim().toUpperCase()).filter(Boolean)
+      : ['CZK','USD','EUR','RUB','UAH','GBP'];
+
+    // курсы (база — USD)
+    let rates = null;
+    const BASE = 'USD';
+
+    function buildQS(){
+      const url = new URL(location.href);
+      if (chosen.length) url.searchParams.set('fx', chosen.join(','));
+      else url.searchParams.delete('fx');
+      history.replaceState(null,'',url);
+      return url;
+    }
+
+    function fmt(n, p){
+      const hasFraction = Math.abs(n % 1) > 1e-9;
+      return n.toLocaleString('ru-RU', {
+        minimumFractionDigits: hasFraction ? p : 0,
+        maximumFractionDigits: hasFraction ? p : 0
+      });
+    }
+    function parseNum(str){
+      if (typeof str!=='string') return NaN;
+      str = str.replace(/[\s\u00A0\u202F]/g,'').replace(',', '.').trim();
+      if (str==='' || str==='-' || str==='.') return NaN;
+      return Number(str);
+    }
+
+    function rowTpl(code){
+      const meta = ALL.find(x=>x.code===code);
+      const flag = meta?.flag || 'xx';
+      const name = meta?.name || code;
+      return `
+        <div class="row" data-code="${code}">
+          <div class="left">
+            <img class="flag" src="https://flagcdn.com/w40/${flag}.png" alt="${code}">
+            <span class="code">${code}</span>
+            <span class="name">${name}</span>
+          </div>
+          <div class="amount">
+            <input type="text" inputmode="decimal" aria-label="Сумма в ${code}">
+          </div>
+        </div>`;
+    }
+
+    function render(){
+      fxList.innerHTML = chosen.map(rowTpl).join('');
+      // навесим обработчики ввода
+      fxList.querySelectorAll('.row input').forEach(inp=>{
+        inp.addEventListener('input', onInput);
+        inp.addEventListener('focus', e=>{
+          const code = e.target.closest('.row').dataset.code;
+          const v = parseNum(e.target.value);
+          const p = (ALL.find(x=>x.code===code)||{}).p ?? 2;
+          if (isFinite(v)) e.target.value = v.toLocaleString('ru-RU',{maximumFractionDigits:p});
+        });
+        inp.addEventListener('blur', e=>{
+          const code = e.target.closest('.row').dataset.code;
+          const v = parseNum(e.target.value);
+          const p = (ALL.find(x=>x.code===code)||{}).p ?? 2;
+          if (isFinite(v)) e.target.value = fmt(v, p);
+        });
+      });
+    }
+
+    function onInput(e){
+      if (!rates) return;
+      const row = e.target.closest('.row');
+      const code = row.dataset.code;
+      const val = parseNum(e.target.value);
+
+      if (/[.,]$/.test(e.target.value)) return; // ждём дробную часть
+
+      if (!isFinite(val)){
+        fxList.querySelectorAll('.row input').forEach(inp=>{
+          if (inp!==e.target) inp.value = '';
+        });
+        return;
+      }
+      const inBase = val / (rates[code] ?? 1);
+      chosen.forEach(c=>{
+        if (c===code) return;
+        const meta = ALL.find(x=>x.code===c);
+        const p = meta?.p ?? 2;
+        const inp = fxList.querySelector(`.row[data-code="${c}"] input`);
+        if (!inp) return;
+        const res = inBase * (rates[c] ?? 1);
+        inp.value = fmt(res, p);
+      });
+    }
+
+    async function loadRates(){
+      try{
+        const url = `https://open.er-api.com/v6/latest/${BASE}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        rates = data.rates || null;
+        if (rates) rates[BASE] = 1;
+        updatedLbl.textContent = 'Обновлено: ' + new Date().toLocaleString('ru-RU');
+      }catch(e){
+        updatedLbl.textContent = 'Не удалось загрузить курсы (нужен интернет).';
+      }
+    }
+
+    function addCurrency(sel){
+      const code = sel?.code?.toUpperCase();
+      if (!code) return;
+      if (chosen.includes(code)) return;
+      chosen.push(code);
+      buildQS();
+      render();
+      // сразу показываем актуальные значения — проставим «1» в этой строке
+      const inp = fxList.querySelector(`.row[data-code="${code}"] input`);
+      if (inp){ inp.value = '1'; onInput({target:inp}); }
+    }
+
+    // ===== поиск/подсказки (как у часов) =====
+    function filterList(q){
+      if (!q) return [];
+      q = q.trim().toLowerCase();
+      const left = ALL.filter(x=>!chosen.includes(x.code));
+      // ищем по коду и русскому названию
+      return left.filter(x =>
+        x.code.toLowerCase().includes(q) ||
+        x.name.toLowerCase().includes(q)
+      ).slice(0,8);
+    }
+    function closeSuggest(){ suggest.style.display='none'; suggest.innerHTML=''; }
+    function openSuggest(items){
+      if (!items.length){ closeSuggest(); return; }
+      suggest.innerHTML = items.map(x=>`
+        <div class="sitem" data-code="${x.code}">
+          <img class="flag" src="https://flagcdn.com/w40/${x.flag}.png" alt="${x.code}">
+          <div>
+            <div style="font-weight:700">${x.code}</div>
+            <div style="opacity:.75">${x.name}</div>
+          </div>
+          <div class="sright">добавить</div>
+        </div>
+      `).join('');
+      suggest.style.display = 'block';
+      suggest.querySelectorAll('.sitem').forEach(it=>{
+        it.addEventListener('click', ()=>{
+          addCurrency({code: it.dataset.code});
+          closeSuggest(); search.value='';
+          search.focus();
+        });
+      });
+    }
+
+    search.addEventListener('input', ()=>{
+      const items = filterList(search.value);
+      if (search.value.trim()===''){ closeSuggest(); return; }
+      openSuggest(items);
+    });
+    search.addEventListener('focus', ()=>{
+      const items = filterList(search.value);
+      if (search.value.trim()===''){ closeSuggest(); return; }
+      openSuggest(items);
+    });
+    document.addEventListener('click', (e)=>{
+      if (!e.target.closest('.searchbox')) closeSuggest();
+    });
+
+    // ===== Поделиться (контекстное меню как у часов) =====
+    function currentURL(){ return buildQS().toString(); }
+    shareBtn.addEventListener('click', (e)=>{
+      const url = currentURL();
+      const rect = shareBtn.getBoundingClientRect();
+      sharePopup.style.left = (rect.left + window.scrollX) + 'px';
+      sharePopup.style.top  = (rect.bottom + 8 + window.scrollY) + 'px';
+      sharePopup.style.display = 'block';
+
+      // линки
+      const enc = encodeURIComponent(url);
+      tgShare.href = `https://t.me/share/url?url=${enc}`;
+      waShare.href = `https://wa.me/?text=${enc}`;
+      // рабочая форма для FB (popup share)
+      fbShare.href = `https://www.facebook.com/share_channel/?type=reshare&link=${enc}&app_id=87741124305&source_surface=external_reshare&display=popup`;
+    });
+    document.addEventListener('click', (e)=>{
+      if (!e.target.closest('#shareBtn') && !e.target.closest('#sharePopup')){
+        sharePopup.style.display='none';
+      }
+    });
+
+    // ===== очистка =====
+    clearBtn.addEventListener('click', ()=>{
+      chosen = [];
+      buildQS();
+      render();
+    });
+
+    // ===== обновление курсов =====
+    refreshBtn.addEventListener('click', async ()=>{
+      await loadRates();
+      // если что-то введено в любой строке — «подпересчитаем» от первой непустой
+      const any = Array.from(fxList.querySelectorAll('.row input')).find(i=>i.value.trim()!=='');
+      if (any) onInput({target:any});
+    });
+
+    // ===== init =====
+    (async function init(){
+      render();
+      await loadRates();
+      // сразу показать актуальный курс: поставим «1» в первой строке
+      const firstCode = chosen[0];
+      const firstInput = fxList.querySelector(`.row[data-code="${firstCode}"] input`);
+      if (firstInput){ firstInput.value = '1'; onInput({target:firstInput}); }
+      buildQS();
+    })();
+  </script>
+
+  <footer>
+    <a href="index">Калькулятор процентов</a>
+    <span>•</span>
+    <a href="fx_converter">Конвертер валют</a>
+    <span>•</span>
+    <a href="clock">Мировые часы</a>
+  </footer>
+</body>
+</html>

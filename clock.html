@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Мировые часы</title>
+  <link rel="icon" type="image/png" href="clock.png">
+  <style>
+    * { box-sizing: border-box; }
+    body { 
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; 
+      margin: 0; 
+      background: #f4f6fb; 
+      color: #0b0d12; 
+    }
+    .wrap { 
+      max-width: 500px; 
+      margin: 0 auto; 
+      padding: 22px 14px 28px; 
+    }
+    h1 { font-size: 1.25rem; margin: 0 0 12px 0; }
+
+    .card { 
+      display: flex;
+      flex-direction: column;
+      gap: 4px; /* уменьшенный отступ */
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+      border: 1px solid #e6e9f2;
+      border-radius: 12px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      padding: 10px 12px;
+    }
+
+    .code { 
+      display:flex; 
+      align-items:center; 
+      gap:8px; 
+      font-weight:700; 
+    }
+
+    .flag { 
+      border-radius:4px; 
+      width:24px; 
+      height:18px; 
+      vertical-align:middle; 
+    }
+
+    .time { 
+      font-size:1.3rem; 
+      font-variant-numeric:tabular-nums; 
+      display:flex; 
+      align-items:flex-end;
+      gap:4px;
+    }
+
+    .seconds { 
+      font-size:0.8rem; 
+      color:#999;
+      position: relative;
+      bottom: 2px;
+    }
+
+    footer { 
+      margin-top: 28px; 
+      text-align: center; 
+      font-size: 0.95rem; 
+      color: #555; 
+    }
+
+    footer a { 
+      color: #a7a9ae; 
+      text-decoration: none; 
+      margin: 0 6px; 
+    }
+
+    footer a:hover { text-decoration: underline; }
+    footer span { color: #aaa; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Мировые часы</h1>
+
+    <div class="card" id="clocks"></div>
+  </div>
+
+  <script>
+    const cities = [
+      {name:'Прага', flag:'cz', tz:'Europe/Prague'},
+      {name:'Киев', flag:'ua', tz:'Europe/Kiev'},
+      {name:'Москва', flag:'ru', tz:'Europe/Moscow'},
+      {name:'Лондон', flag:'gb', tz:'Europe/London'},
+      {name:'Нью-Йорк', flag:'us', tz:'America/New_York'},
+      {name:'Лос-Анджелес', flag:'us', tz:'America/Los_Angeles'},
+      {name:'Токио', flag:'jp', tz:'Asia/Tokyo'},
+      {name:'Сидней', flag:'au', tz:'Australia/Sydney'}
+    ];
+
+    const box = document.getElementById('clocks');
+
+    function render() {
+      box.innerHTML = '';
+      for (const {name, flag} of cities) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `
+          <div class="code">
+            <img class="flag" src="https://flagcdn.com/w40/${flag}.png" alt="">
+            <span>${name}</span>
+          </div>
+          <div class="time" id="t-${flag}">
+            --:-- <span class="seconds">--</span>
+          </div>
+        `;
+        box.appendChild(row);
+      }
+    }
+
+    function updateTimes() {
+      const now = new Date();
+      cities.forEach(({flag, tz}) => {
+        const el = document.getElementById(`t-${flag}`);
+        if (!el) return;
+
+        try {
+          const parts = new Intl.DateTimeFormat('ru-RU', {
+            timeZone: tz,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+          }).formatToParts(now);
+
+          const h = parts.find(p => p.type === 'hour')?.value || '--';
+          const m = parts.find(p => p.type === 'minute')?.value || '--';
+          const s = parts.find(p => p.type === 'second')?.value || '--';
+
+          el.innerHTML = `${h}:${m} <span class="seconds">${s}</span>`;
+        } catch {
+          el.innerHTML = `--:-- <span class="seconds">--</span>`;
+        }
+      });
+    }
+
+    render();
+    updateTimes();
+    setInterval(updateTimes, 1000);
+  </script>
+
+  <footer>
+    <a href="index">Калькулятор процентов</a>
+    <span>•</span>
+    <a href="fx_converter">Конвертер валют</a>
+    <span>•</span>
+    <a href="world_clock">Мировые часы</a>
+  </footer>
+</body>
+</html>

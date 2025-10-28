@@ -213,12 +213,12 @@
     (async function init(){ renderRows(); await loadRates(); })();
   </script>
 
-  <footer>
-    <a href="index">Калькулятор процентов</a>
-    <span>•</span>
-    <a href="fx_converter">Конвертер валют</a>
-    <span>•</span>
-    <a href="clock">Мировые часы</a>
-  </footer>
+  <div id="footer"></div>
+  <script>
+  fetch('footer.html')
+    .then(r => r.text())
+    .then(html => document.getElementById('footer').innerHTML = html);
+  </script>
+  
 </body>
 </html>

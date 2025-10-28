@@ -45,7 +45,18 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Мировые часы</h1>
+  <h1 style="display:flex;align-items:center;justify-content:space-between;">
+    Мировые часы
+    <button id="clearBtn" style="
+      font-size:0.9rem;
+      background:#ffffff;
+      border:1px solid #dcdfe6;
+      border-radius:8px;
+      padding:4px 10px;
+      cursor:pointer;
+      transition:all .2s ease;
+    ">Очистить все</button>
+  </h1>
   <div class="card" id="clocks"></div>
 
   <div class="controls">
@@ -432,6 +443,13 @@
   tick(cities);
   setInterval(()=>tick(cities), 1000);
 
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    cities = [];
+    updateURL(); // если у тебя есть функция, которая обновляет параметры ?tz=
+    render();
+  });
+
+
   const shareBtn = document.getElementById('shareBtn');
   const popup = document.getElementById('sharePopup');
   const copyLink = document.getElementById('copyLink');
@@ -469,7 +487,7 @@
   <span>•</span>
   <a href="fx_converter">Конвертер валют</a>
   <span>•</span>
-  <a href="clock">Мировые часы</a>
+  <a href="world_clock">Мировые часы</a>
 </footer>
 </body>
 </html>

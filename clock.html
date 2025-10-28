@@ -23,7 +23,7 @@
     .card { 
       display: flex;
       flex-direction: column;
-      gap: 4px; /* уменьшенный отступ */
+      gap: 4px;
     }
 
     .row {
@@ -91,6 +91,9 @@
   </div>
 
   <script>
+    // ✅ уникальный ID на основе часового пояса (решает конфликт us/us)
+    const toId = (tz) => 't-' + tz.replace(/\//g, '-');
+
     const cities = [
       {name:'Прага', flag:'cz', tz:'Europe/Prague'},
       {name:'Киев', flag:'ua', tz:'Europe/Kiev'},
@@ -106,7 +109,8 @@
 
     function render() {
       box.innerHTML = '';
-      for (const {name, flag} of cities) {
+      for (const {name, flag, tz} of cities) {
+        const id = toId(tz);
         const row = document.createElement('div');
         row.className = 'row';
         row.innerHTML = `
@@ -114,7 +118,7 @@
             <img class="flag" src="https://flagcdn.com/w40/${flag}.png" alt="">
             <span>${name}</span>
           </div>
-          <div class="time" id="t-${flag}">
+          <div class="time" id="${id}">
             --:-- <span class="seconds">--</span>
           </div>
         `;
@@ -124,8 +128,8 @@
 
     function updateTimes() {
       const now = new Date();
-      cities.forEach(({flag, tz}) => {
-        const el = document.getElementById(`t-${flag}`);
+      cities.forEach(({tz}) => {
+        const el = document.getElementById(toId(tz));
         if (!el) return;
 
         try {
@@ -158,7 +162,7 @@
     <span>•</span>
     <a href="fx_converter">Конвертер валют</a>
     <span>•</span>
-    <a href="world_clock">Мировые часы</a>
+    <a href="clock">Мировые часы</a>
   </footer>
 </body>
 </html>

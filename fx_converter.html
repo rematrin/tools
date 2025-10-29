@@ -28,6 +28,9 @@
   .amount input[type="text"]:focus{outline:none;border-color:#7aa2ff;box-shadow:0 0 0 3px rgba(122,162,255,.16)}
   button{padding:8px 12px;border:1px solid #cfd5e1;background:#fff;border-radius:8px;cursor:pointer;font-size:.95rem}
   button:hover{background:#f0f2f7}
+  button img {
+    pointer-events: none;
+  }
   .status{display:flex;gap:10px;align-items:center;margin-bottom:12px}
   .muted{opacity:.7;font-size:.9rem}
   .status {
@@ -446,7 +449,31 @@ const tg=document.getElementById('tgShare');
 const wa=document.getElementById('waShare');
 const fb=document.getElementById('fbShare');
 
-shareBtn.onclick=()=>{const url=window.location.href;tg.href=`https://t.me/share/url?url=${encodeURIComponent(url)}`;wa.href=`https://api.whatsapp.com/send?text=${encodeURIComponent(url)}`;fb.href=`https://www.facebook.com/share_channel/?type=reshare&link=${encodeURIComponent(url)}&app_id=87741124305&source_surface=external_reshare&display=popup`;const r=shareBtn.getBoundingClientRect();popup.style.left=r.left+'px';popup.style.top=r.bottom+8+'px';popup.style.display=popup.style.display==='flex'?'none':'flex';};
+shareBtn.onclick = () => {
+  const url = window.location.href;
+
+  // ссылки
+  tg.href = `https://t.me/share/url?url=${encodeURIComponent(url)}`;
+  wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(url)}`;
+  fb.href = `https://www.facebook.com/share_channel/?type=reshare&link=${encodeURIComponent(url)}&app_id=87741124305&source_surface=external_reshare&display=popup`;
+
+  // показываем popup
+  popup.style.display = popup.style.display === 'flex' ? 'none' : 'flex';
+
+  // позиционирование
+  const r = shareBtn.getBoundingClientRect();
+  popup.style.left = (r.left + r.width / 2 - popup.offsetWidth / 2) + 'px';
+  popup.style.top = (r.bottom + 8) + 'px';
+
+  // не даём вылезать за экран
+  if (r.left + popup.offsetWidth > window.innerWidth) {
+    popup.style.left = (window.innerWidth - popup.offsetWidth - 8) + 'px';
+  }
+  if (parseFloat(popup.style.left) < 8) {
+    popup.style.left = '8px';
+  }
+};
+
 copyLink.onclick=()=>{navigator.clipboard.writeText(window.location.href);copyLink.innerHTML=`<img src="https://cdn-icons-png.flaticon.com/512/1442/1442912.png" width="18" height="18" alt="">Скопировано!`;setTimeout(()=>copyLink.innerHTML=`<img src="https://cdn-icons-png.flaticon.com/512/7640/7640062.png" width="18" height="18"> Ссылка`,2000);};
 document.addEventListener('click',e=>{if(!popup.contains(e.target)&&e.target!==shareBtn)popup.style.display='none';});
 

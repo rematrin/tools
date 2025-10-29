@@ -1,224 +1,457 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Конвертер валют</title>
-  <link rel="icon" type="image/png" href="exchange.png">
-  <link rel="apple-touch-icon" href="exchange2.png">
-  <style>
-    :root { --pad: 14px; }
-    * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #f4f6fb; color: #0b0d12; }
-    .wrap { max-width: 560px; margin: 0 auto; padding: 22px 14px 28px; }
-    header { display:flex; justify-content: space-between; align-items:center; margin-bottom: 12px; gap:10px; flex-wrap:wrap; }
-    footer { margin-top: 28px; text-align: center; font-size: 0.95rem; color: #555; }
-    footer a { color: #a7a9ae; text-decoration: none; margin: 0 6px; }
-    footer a:hover { text-decoration: underline; }
-    footer span { color: #aaa; }
-    h1 { font-size: 1.25rem; margin: 0; }
-    .muted { opacity: .7; font-size: .9rem; }
-    .card { background: #fff; border: 1px solid #e6e9f2; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 0 rgba(0,0,0,.03); }
-    .row { display:flex; align-items:center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #eef1f6; }
-    .row:last-child { border-bottom: 0; }
-    .code { width: 88px; font-weight: 700; display:flex; align-items:center; gap:8px; }
-    .code .flag { font-size: 18px; }
-    .amount { margin-left: auto; }
-    input[type="text"] { width: 200px; max-width: 50vw; text-align: right; font-size: 1.15rem; padding: 10px 12px; border: 1px solid #cfd5e1; border-radius: 10px; background:#fff; }
-    input[type="text"]:focus { outline: none; border-color: #7aa2ff; box-shadow: 0 0 0 3px rgba(122,162,255,.16); }
-    .status { display:flex; gap:10px; align-items:center; }
-    .btn { border: 1px solid #cfd5e1; background:#fff; border-radius:8px; padding:7px 12px; cursor:pointer; }
-    .btn:active { transform: translateY(1px); }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Конвертер валют</title>
+<link rel="icon" type="image/png" href="exchange.png">
+<link rel="apple-touch-icon" href="exchange2.png">
+<style>
+  @keyframes fadeText {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .muted.animate {
+    animation: fadeText 0.6s ease;
+  }
+
+  *{box-sizing:border-box}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f4f6fb;color:#0b0d12}
+  .wrap{max-width:560px;margin:0 auto;padding:22px 14px 28px}
+  h1{font-size:1.25rem;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
+  .card{display:flex;flex-direction:column;gap:5px}
+  .row{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e6e9f2;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.03);padding:10px 12px}
+  .code{display:flex;align-items:center;gap:8px;font-weight:700}
+  .flag{border-radius:4px;width:24px;height:18px;vertical-align:middle}
+  .amount input[type="text"]{width:200px;max-width:50vw;text-align:right;font-size:1.15rem !important;padding:8px 12px;border:1px solid #cfd5e1;border-radius:10px;background:#fff}
+  .amount input[type="text"]:focus{outline:none;border-color:#7aa2ff;box-shadow:0 0 0 3px rgba(122,162,255,.16)}
+  button{padding:8px 12px;border:1px solid #cfd5e1;background:#fff;border-radius:8px;cursor:pointer;font-size:.95rem}
+  button:hover{background:#f0f2f7}
+  .status{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+  .muted{opacity:.7;font-size:.9rem}
+  .status {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: -4px;
+  margin-bottom: 8px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1px;
+  margin-bottom: 12px;
+}
+
+.topbar h1 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.topbar .muted {
+  color: #777;
+  font-size: 0.9rem;
+}
+
+.topbar button {
+  font-size: 0.9rem;
+  background: #ffffff;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.topbar button:hover {
+  background: #f0f2f7;
+}
+
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.status {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 8px;
+}
+
+.status .muted {
+  color: #777;
+  font-size: 0.9rem;
+}
+
+
+.status .muted {
+  font-size: 0.9rem;
+  color: #555;
+}
+  .center-controls{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:18px}
+  .searchbox{position:relative;width:100%;max-width:360px}
+  input,select,textarea{
+    font-size:16px!important;
+    border:1px solid #cfd5e1;
+    border-radius:8px;
+    padding:8px 10px;
+    background:#fff;
+    width:100%;
+    transition:all .15s ease;
+  }
+  input:focus{
+    border-color:#7aa2ff;
+    box-shadow:0 0 0 3px rgba(122,162,255,.16);
+    outline:none;
+  }
+  .suggest{position:absolute;left:0;right:0;top:calc(100% + 6px);background:#fff;border:1px solid #e6e9f2;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.06);overflow:hidden;z-index:10;display:none;max-height:300px;overflow-y:auto}
+  .suggest.visible{display:block}
+  .opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #f1f3f8;cursor:pointer}
+  .opt:last-child{border-bottom:0}
+  .opt:hover{background:#f6f8fd}
+  .opt .subtitle{font-size:.85rem;opacity:.7}
+
+  #sharePopup{position:absolute;display:none;background:#fff;border:1px solid #ddd;padding:10px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,.15);flex-direction:column;gap:8px;z-index:100;width:190px;animation:fadeIn .2s ease;color:#222}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+ 
+ input, select, textarea {
+ font-size: 16px !important;
+}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>Конвертер валют</h1>
-      <div class="status">
-        <span class="muted" data-role="updated">Загрузка курсов…</span>
-        <button class="btn" data-role="refresh">Обновить</button>
-      </div>
-    </header>
+<div class="wrap">
 
-    <div class="card" id="fx"></div>
+<div class="topbar">
+  <h1>Конвертер валют</h1>
+  <span class="muted" data-role="updated">Курс обновлен: …</span>
+  <button class="btn" data-role="refresh">
+    <img src="https://cdn-icons-png.flaticon.com/128/2546/2546743.png" width="12" height="12" alt="">
+  </button>
+  <button id="shareBtn">
+    <img src="https://cdn-icons-png.flaticon.com/512/1828/1828954.png" width="12" height="12" alt="">
+    
+  </button>
+</div>
+
+
+  <div class="card" id="fx"></div>
+
+  <div class="center-controls" id="mainControls">
+    <button id="editBtn" style="
+      font-size:0.9rem;
+      background:#ffffff;
+      border:1px solid #dcdfe6;
+      border-radius:8px;
+      padding:4px 10px;
+      cursor:pointer;
+      transition:all .2s ease;
+    "><img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" width="10" height="10" alt=""> Редактировать</button>
   </div>
 
-  <script>
-    const currencies = [
-      {code:'CZK', label:'Kč', flag:'cz', precision:2},
-      {code:'RUB', label:'₽',  flag:'ru', precision:2},
-      {code:'UAH', label:'₴',  flag:'ua', precision:2},
-      {code:'USD', label:'$',  flag:'us', precision:2},
-      {code:'EUR', label:'€',  flag:'eu', precision:2},
-      {code:'BYN', label:'BYN',flag:'by', precision:2},
-      {code:'GBP', label:'£',  flag:'gb', precision:2},
-      {code:'PLN', label:'zł', flag:'pl', precision:2},
-      {code:'TRY', label:'TRY',flag:'tr', precision:2},
-      {code:'KZT', label:'₸',  flag:'kz', precision:2},
-      {code:'AMD', label:'֏', flag: 'am', precision:0},
+  <div class="center-controls" id="editControls" style="display:none;">
+    <div class="searchbox">
+      <input id="search" type="text" placeholder="Добавить валюту.." autocomplete="off" autocorrect="off" spellcheck="false">
+      <div id="suggest" class="suggest" role="listbox" aria-label="Подсказки"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button id="clearBtn" style="
+      font-size:0.9rem;
+      background:#ffffff;
+      border:1px solid #dcdfe6;
+      border-radius:8px;
+      padding:4px 10px;
+      cursor:pointer;
+      transition:all .2s ease;
+    "><img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" width="11" height="11" alt=""> Очистить список</button>
+      <button id="saveBtn" style="
+      font-size:0.9rem;
+      background:#ffffff;
+      border:1px solid #dcdfe6;
+      border-radius:8px;
+      padding:4px 10px;
+      cursor:pointer;
+      transition:all .2s ease;
+    "><img src="https://cdn-icons-png.flaticon.com/128/5610/5610944.png" width="11" height="11" alt=""> Сохранить</button>
+    </div>
+  </div>
+
+  <div id="sharePopup">
+    <button id="copyLink" style="display:flex;align-items:center;gap:8px;padding:8px;border:none;background:#f5f5f5;border-radius:8px;cursor:pointer;color:#222;">
+      <img src="https://cdn-icons-png.flaticon.com/512/7640/7640062.png" width="18" height="18" alt=""> Ссылка
+    </button>
+    <a id="tgShare" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:8px;border-radius:8px;background:#e3f2fd;color:#222;">
+      <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" width="18" height="18" alt=""> Telegram
+    </a>
+    <a id="waShare" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:8px;border-radius:8px;background:#e8f5e9;color:#222;">
+      <img src="https://cdn-icons-png.flaticon.com/512/2111/2111728.png" width="18" height="18" alt=""> WhatsApp
+    </a>
+    <a id="fbShare" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:8px;border-radius:8px;background:#e3f2fd;color:#222;">
+      <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" width="18" height="18" alt=""> Facebook
+    </a>
+  </div>
+</div>
+
+<script>
+// === Флаги и параметры ===
+const flagURL = c => c==='xx'?`data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='18'><rect width='24' height='18' rx='3' ry='3' fill='#e9edf5'/></svg>`:`https://flagcdn.com/w40/${c}.png`;
+const params = new URLSearchParams(location.search);
+
+// === База валют ===
+const CURRENCIES_DB = [
+  {code:'AED', name:'дирхам ОАЭ', flag:'ae', precision:2},
+  {code:'AFN', name:'афгани', flag:'af', precision:2},
+  {code:'ALL', name:'албанский лек', flag:'al', precision:2},
+  {code:'AMD', name:'армянский драм', flag:'am', precision:2},
+  {code:'ANG', name:'нидерландский антильский гульден', flag:'nl', precision:2},
+  {code:'AOA', name:'ангольская кванза', flag:'ao', precision:2},
+  {code:'ARS', name:'аргентинское песо', flag:'ar', precision:2},
+  {code:'AUD', name:'австралийский доллар', flag:'au', precision:2},
+  {code:'AWG', name:'арубанский флорин', flag:'aw', precision:2},
+  {code:'AZN', name:'азербайджанский манат', flag:'az', precision:2},
+  {code:'BAM', name:'конвертируемая марка', flag:'ba', precision:2},
+  {code:'BBD', name:'барбадосский доллар', flag:'bb', precision:2},
+  {code:'BDT', name:'бангладешская така', flag:'bd', precision:2},
+  {code:'BGN', name:'болгарский лев', flag:'bg', precision:2},
+  {code:'BHD', name:'бахрейнский динар', flag:'bh', precision:2},
+  {code:'BIF', name:'бурундийский франк', flag:'bi', precision:2},
+  {code:'BMD', name:'бермудский доллар', flag:'bm', precision:2},
+  {code:'BND', name:'брунейский доллар', flag:'bn', precision:2},
+  {code:'BOB', name:'боливиано', flag:'bo', precision:2},
+  {code:'BRL', name:'бразильский реал', flag:'br', precision:2},
+  {code:'BSD', name:'багамский доллар', flag:'bs', precision:2},
+  {code:'BTN', name:'нгултрум Бутана', flag:'bt', precision:2},
+  {code:'BWP', name:'пула Ботсваны', flag:'bw', precision:2},
+  {code:'BYN', name:'белорусский рубль', flag:'by', precision:2},
+  {code:'BZD', name:'белизский доллар', flag:'bz', precision:2},
+  {code:'CAD', name:'канадский доллар', flag:'ca', precision:2},
+  {code:'CDF', name:'конголезский франк', flag:'cd', precision:2},
+  {code:'CHF', name:'швейцарский франк', flag:'ch', precision:2},
+  {code:'CLP', name:'чилийское песо', flag:'cl', precision:2},
+  {code:'CNY', name:'китайский юань', flag:'cn', precision:2},
+  {code:'COP', name:'колумбийское песо', flag:'co', precision:2},
+  {code:'CRC', name:'костариканский колон', flag:'cr', precision:2},
+  {code:'CUP', name:'кубинское песо', flag:'cu', precision:2},
+  {code:'CVE', name:'эскудо Кабо-Верде', flag:'cv', precision:2},
+  {code:'CZK', name:'чешская крона', flag:'cz', precision:2},
+  {code:'DJF', name:'джибутийский франк', flag:'dj', precision:2},
+  {code:'DKK', name:'датская крона', flag:'dk', precision:2},
+  {code:'DOP', name:'доминиканское песо', flag:'do', precision:2},
+  {code:'DZD', name:'алжирский динар', flag:'dz', precision:2},
+  {code:'EGP', name:'египетский фунт', flag:'eg', precision:2},
+  {code:'ERN', name:'эритрейская накфа', flag:'er', precision:2},
+  {code:'ETB', name:'эфиопский быр', flag:'et', precision:2},
+  {code:'EUR', name:'евро', flag:'eu', precision:2},
+  {code:'FJD', name:'доллар Фиджи', flag:'fj', precision:2},
+  {code:'FKP', name:'фунт Фолклендских островов', flag:'fk', precision:2},
+  {code:'FOK', name:'фарерская крона', flag:'fo', precision:2},
+  {code:'GBP', name:'фунт стерлингов', flag:'gb', precision:2},
+  {code:'GEL', name:'грузинский лари', flag:'ge', precision:2},
+  {code:'GGP', name:'фунт Гернси', flag:'gg', precision:2},
+  {code:'GHS', name:'ганский седи', flag:'gh', precision:2},
+  {code:'GIP', name:'гибралтарский фунт', flag:'gi', precision:2},
+  {code:'GMD', name:'даласи Гамбии', flag:'gm', precision:2},
+  {code:'GNF', name:'гвинейский франк', flag:'gn', precision:2},
+  {code:'GTQ', name:'гватемальский кетсаль', flag:'gt', precision:2},
+  {code:'GYD', name:'гайанский доллар', flag:'gy', precision:2},
+  {code:'HKD', name:'гонконгский доллар', flag:'hk', precision:2},
+  {code:'HNL', name:'гондурасская лемпира', flag:'hn', precision:2},
+  {code:'HRK', name:'хорватская куна', flag:'hr', precision:2},
+  {code:'HTG', name:'гаитянский гурд', flag:'ht', precision:2},
+  {code:'HUF', name:'венгерский форинт', flag:'hu', precision:2},
+  {code:'IDR', name:'индонезийская рупия', flag:'id', precision:2},
+  {code:'ILS', name:'новый израильский шекель', flag:'il', precision:2},
+  {code:'IMP', name:'фунт Острова Мэн', flag:'im', precision:2},
+  {code:'INR', name:'индийская рупия', flag:'in', precision:2},
+  {code:'IQD', name:'иракский динар', flag:'iq', precision:2},
+  {code:'IRR', name:'иранский риал', flag:'ir', precision:2},
+  {code:'ISK', name:'исландская крона', flag:'is', precision:2},
+  {code:'JEP', name:'фунт Джерси', flag:'je', precision:2},
+  {code:'JMD', name:'ямайский доллар', flag:'jm', precision:2},
+  {code:'JOD', name:'иорданский динар', flag:'jo', precision:2},
+  {code:'JPY', name:'японская иена', flag:'jp', precision:2},
+  {code:'KES', name:'кенийский шиллинг', flag:'ke', precision:2},
+  {code:'KGS', name:'киргизский сом', flag:'kg', precision:2},
+  {code:'KHR', name:'камбоджийский риель', flag:'kh', precision:2},
+  {code:'KID', name:'доллар Кирибати', flag:'ki', precision:2},
+  {code:'KMF', name:'коморский франк', flag:'km', precision:2},
+  {code:'KRW', name:'южнокорейская вона', flag:'kr', precision:2},
+  {code:'KWD', name:'кувейтский динар', flag:'kw', precision:2},
+  {code:'KYD', name:'доллар Каймановых островов', flag:'ky', precision:2},
+  {code:'KZT', name:'казахстанский тенге', flag:'kz', precision:2},
+  {code:'LAK', name:'лаосский кип', flag:'la', precision:2},
+  {code:'LBP', name:'ливанский фунт', flag:'lb', precision:2},
+  {code:'LKR', name:'шри-ланкийская рупия', flag:'lk', precision:2},
+  {code:'LRD', name:'либерийский доллар', flag:'lr', precision:2},
+  {code:'LSL', name:'лоти Лесото', flag:'ls', precision:2},
+  {code:'LYD', name:'ливийский динар', flag:'ly', precision:2},
+  {code:'MAD', name:'марокканский дирхам', flag:'ma', precision:2},
+  {code:'MDL', name:'молдавский лей', flag:'md', precision:2},
+  {code:'MGA', name:'малагасийский ариари', flag:'mg', precision:2},
+  {code:'MKD', name:'македонский денар', flag:'mk', precision:2},
+  {code:'MMK', name:'мьянманский кьят', flag:'mm', precision:2},
+  {code:'MNT', name:'монгольский тугрик', flag:'mn', precision:2},
+  {code:'MOP', name:'патака Макао', flag:'mo', precision:2},
+  {code:'MRU', name:'угия Мавритании', flag:'mr', precision:2},
+  {code:'MUR', name:'маврикийская рупия', flag:'mu', precision:2},
+  {code:'MVR', name:'мальдивская руфия', flag:'mv', precision:2},
+  {code:'MWK', name:'малавийская квача', flag:'mw', precision:2},
+  {code:'MXN', name:'мексиканское песо', flag:'mx', precision:2},
+  {code:'MYR', name:'малайзийский ринггит', flag:'my', precision:2},
+  {code:'MZN', name:'мозамбикский метикал', flag:'mz', precision:2},
+  {code:'NAD', name:'намибийский доллар', flag:'na', precision:2},
+  {code:'NGN', name:'нигерийская найра', flag:'ng', precision:2},
+  {code:'NIO', name:'никарагуанская кордоба', flag:'ni', precision:2},
+  {code:'NOK', name:'норвежская крона', flag:'no', precision:2},
+  {code:'NPR', name:'непальская рупия', flag:'np', precision:2},
+  {code:'NZD', name:'новозеландский доллар', flag:'nz', precision:2},
+  {code:'OMR', name:'оманский риал', flag:'om', precision:2},
+  {code:'PAB', name:'панамский бальбоа', flag:'pa', precision:2},
+  {code:'PEN', name:'перуанский соль', flag:'pe', precision:2},
+  {code:'PGK', name:'кина Папуа – Новой Гвинеи', flag:'pg', precision:2},
+  {code:'PHP', name:'филиппинское песо', flag:'ph', precision:2},
+  {code:'PKR', name:'пакистанская рупия', flag:'pk', precision:2},
+  {code:'PLN', name:'польский злотый', flag:'pl', precision:2},
+  {code:'PYG', name:'парагвайский гуарани', flag:'py', precision:2},
+  {code:'QAR', name:'катарский риал', flag:'qa', precision:2},
+  {code:'RON', name:'румынский лей', flag:'ro', precision:2},
+  {code:'RSD', name:'сербский динар', flag:'rs', precision:2},
+  {code:'RUB', name:'российский рубль', flag:'ru', precision:2},
+  {code:'RWF', name:'франк Руанды', flag:'rw', precision:2},
+  {code:'SAR', name:'саудовский риал', flag:'sa', precision:2},
+  {code:'SBD', name:'доллар Соломоновых островов', flag:'sb', precision:2},
+  {code:'SCR', name:'сейшельская рупия', flag:'sc', precision:2},
+  {code:'SDG', name:'суданский фунт', flag:'sd', precision:2},
+  {code:'SEK', name:'шведская крона', flag:'se', precision:2},
+  {code:'SGD', name:'сингапурский доллар', flag:'sg', precision:2},
+  {code:'SHP', name:'фунт Святой Елены', flag:'sh', precision:2},
+  {code:'SLE', name:'леоне Сьерра-Леоне', flag:'sl', precision:2},
+  {code:'SOS', name:'сомалийский шиллинг', flag:'so', precision:2},
+  {code:'SRD', name:'суринамский доллар', flag:'sr', precision:2},
+  {code:'SSP', name:'южносуданский фунт', flag:'ss', precision:2},
+  {code:'STN', name:'добра Сан-Томе и Принсипи', flag:'st', precision:2},
+  {code:'SYP', name:'сирийский фунт', flag:'sy', precision:2},
+  {code:'SZL', name:'лилангени Эсватини', flag:'sz', precision:2},
+  {code:'THB', name:'таиландский бат', flag:'th', precision:2},
+  {code:'TJS', name:'таджикский сомони', flag:'tj', precision:2},
+  {code:'TMT', name:'туркменский манат', flag:'tm', precision:2},
+  {code:'TND', name:'тунисский динар', flag:'tn', precision:2},
+  {code:'TOP', name:'паанга Тонга', flag:'to', precision:2},
+  {code:'TRY', name:'турецкая лира', flag:'tr', precision:2},
+  {code:'TTD', name:'доллар Тринидада и Тобаго', flag:'tt', precision:2},
+  {code:'TVD', name:'тувальский доллар', flag:'tv', precision:2},
+  {code:'TZS', name:'танзанийский шиллинг', flag:'tz', precision:2},
+  {code:'UAH', name:'украинская гривна', flag:'ua', precision:2},
+  {code:'UGX', name:'угандийский шиллинг', flag:'ug', precision:2},
+  {code:'USD', name:'доллар США', flag:'us', precision:2},
+  {code:'UYU', name:'уругвайское песо', flag:'uy', precision:2},
+  {code:'UZS', name:'узбекский сум', flag:'uz', precision:2},
+  {code:'VES', name:'венесуэльский боливар', flag:'ve', precision:2},
+  {code:'VND', name:'вьетнамский донг', flag:'vn', precision:2},
+  {code:'VUV', name:'вату Вануату', flag:'vu', precision:2},
+  {code:'WST', name:'самаоанская тала', flag:'ws', precision:2},
+  {code:'XAF', name:'франк КФА BEAC', flag:'cm', precision:2},
+  {code:'XCD', name:'восточно-карибский доллар', flag:'ag', precision:2},
+  {code:'XOF', name:'франк КФА BCEAO', flag:'sn', precision:2},
+  {code:'XPF', name:'франк КФП', flag:'pf', precision:2},
+  {code:'YER', name:'йеменский риал', flag:'ye', precision:2},
+  {code:'ZAR', name:'южноафриканский рэнд', flag:'za', precision:2},
+  {code:'ZMW', name:'замбийская квача', flag:'zm', precision:2},
+  {code:'ZWL', name:'зимбабвийский доллар', flag:'zw', precision:2}
+];
+
+// Восстановление списка из URL (?fx=USD|us,EUR|eu) или дефолт
+let fxList = params.get('fx')
+  ? params.get('fx').split(',').map(s=>{
+      const [code,flag] = decodeURIComponent(s).split('|');
+      return {code, flag: flag || 'xx'};
+    })
+  : [
+      {code:'CZK', flag:'cz',},
+      {code:'RUB', flag:'ru',},
+      {code:'UAH', flag:'ua',},
+      {code:'USD', flag:'us',},
+      {code:'EUR', flag:'eu',},
+      {code:'BYN', flag:'by',},
+      {code:'GBP', flag:'gb',},
+      {code:'PLN', flag:'pl',},
+      {code:'TRY', flag:'tr',},
+      {code:'KZT', flag:'kz',},
     ];
 
-    const base = 'USD';
-    let rates = null;
-    const fxBox = document.getElementById('fx');
-    const updatedLbl = document.querySelector('[data-role="updated"]');
-    const refreshBtn = document.querySelector('[data-role="refresh"]');
+// === Элементы DOM ===
+const fxBox = document.getElementById('fx');
+const inputSearch = document.getElementById('search');
+const sugg = document.getElementById('suggest');
+const mainControls = document.getElementById('mainControls');
+const editControls = document.getElementById('editControls');
+const updatedLbl = document.querySelector('[data-role="updated"]');
+const refreshBtn = document.querySelector('[data-role="refresh"]');
 
-    function getCur(code){ return currencies.find(c=>c.code===code) || {precision:2}; }
+// === Логика конвертера (из fx_converter) ===
+const base = 'USD';
+let rates = null;
+function getCurMeta(code){return CURRENCIES_DB.find(c=>c.code===code)||{precision:2};}
+function numberFormat(code,n){const cur=getCurMeta(code);const hasFraction=Math.abs(n%1)>1e-9;return n.toLocaleString('ru-RU',{minimumFractionDigits:hasFraction?cur.precision:0,maximumFractionDigits:hasFraction?cur.precision:0});}
+function formatEdit(code,n){const cur=getCurMeta(code);return n.toLocaleString('ru-RU',{minimumFractionDigits:0,maximumFractionDigits:cur.precision});}
+function parseNum(str){if(typeof str!== 'string')return NaN;str=str.replace(/[\s\u00A0\u202F]/g,'').replace(',', '.').trim();if(str===''||str==='-'||str==='.')return NaN;return Number(str);} 
+function formatWithCaret(inputEl){const code=inputEl.dataset.code;let raw=inputEl.value;if(/[.,]$/.test(raw)){const noSp=raw.replace(/[\s\u00A0\u202F]/g,'');const intDigits=noSp.replace(/[.,].*$/,'').replace(/\D/g,'');const grouped=intDigits?Number(intDigits).toLocaleString('ru-RU'):'';inputEl.value=grouped+',';requestAnimationFrame(()=>{const p=inputEl.value.length;inputEl.setSelectionRange(p,p);});return;}const caret=inputEl.selectionStart??raw.length;const digitsLeft=(raw.slice(0,caret).match(/\d/g)||[]).length;raw=raw.replace(/[^\d.,]/g,'');const firstSep=raw.search(/[.,]/);if(firstSep!==-1){const before=raw.slice(0,firstSep).replace(/[^\d]/g,'');let after=raw.slice(firstSep+1).replace(/[^\d]/g,'');after=after.slice(0,getCurMeta(code).precision);inputEl.value=(before?Number(before).toLocaleString('ru-RU'):'')+(after!==''?','+after:'');}else{const digits=raw.replace(/[^\d]/g,'');inputEl.value=digits?Number(digits).toLocaleString('ru-RU'):'';}requestAnimationFrame(()=>{let i=0,seen=0,s=inputEl.value;while(i<s.length&&seen<digitsLeft){if(/\d/.test(s[i]))seen++;i++;}inputEl.setSelectionRange(i,i);});}
 
-    // форматирование результата (убираем ",00" если не нужно)
-    function numberFormat(code, n){
-      const cur = getCur(code);
-      const hasFraction = Math.abs(n % 1) > 1e-9;
-      return n.toLocaleString('ru-RU', {
-        minimumFractionDigits: hasFraction ? cur.precision : 0,
-        maximumFractionDigits: hasFraction ? cur.precision : 0
-      });
-    }
+function renderRows(){fxBox.innerHTML='';fxList.forEach(({code,flag})=>{const row=document.createElement('div');row.className='row';row.innerHTML=`<div class="code"><img class="flag" src="${flagURL(flag)}" alt="${code}"><span>${code}</span></div><div class="amount"><input type="text" inputmode="decimal" data-code="${code}" aria-label="Сумма в ${code}"></div>`;fxBox.appendChild(row);});fxBox.querySelectorAll('input').forEach(inp=>{inp.addEventListener('input',e=>{formatWithCaret(e.target);onInput(e);});inp.addEventListener('focus',e=>{const code=e.target.dataset.code;const v=parseNum(e.target.value);if(isFinite(v))e.target.value=formatEdit(code,v);});inp.addEventListener('blur',e=>{const code=e.target.dataset.code;const v=parseNum(e.target.value);if(isFinite(v))e.target.value=numberFormat(code,v);});});}
 
-    function formatEdit(code, n){
-      const cur = getCur(code);
-      return n.toLocaleString('ru-RU', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: cur.precision
-      });
-    }
+function onInput(e){if(!rates)return;const el=e.target,code=el.dataset.code;if(/[.,]$/.test(el.value))return;const val=parseNum(el.value);if(!isFinite(val)){fxBox.querySelectorAll('input').forEach(i=>{if(i!==el)i.value='';});return;}const inBase=val/(rates[code]||1);fxList.forEach(({code:c})=>{if(c===code)return;const target=fxBox.querySelector(`input[data-code="${c}"]`);if(!target)return;const res=inBase*(rates[c]||1);target.value=numberFormat(c,res);});}
 
-    function parseNum(str){
-      if (typeof str !== 'string') return NaN;
-      str = str.replace(/[\s\u00A0\u202F]/g,'').replace(',', '.').trim();
-      if (str === '' || str === '-' || str === '.') return NaN;
-      return Number(str);
-    }
+async function loadRates(){try{const url=`https://open.er-api.com/v6/latest/${base}`;const res=await fetch(url);const data=await res.json();rates=data.rates||{};rates[base]=1;updatedLbl.textContent = 'Курс обновлен: ' + new Date().toLocaleString('ru-RU', {
+  hour: '2-digit',
+  minute: '2-digit',
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric'
+}); updatedLbl.classList.remove('animate');
+void updatedLbl.offsetWidth; // сброс анимации
+updatedLbl.classList.add('animate');
 
-    // исправленная функция с requestAnimationFrame (фикс курсора)
-    function formatWithCaret(inputEl){
-      const code = inputEl.dataset.code;
-      let raw = inputEl.value;
+}catch(e){updatedLbl.textContent='Не удалось загрузить курсы (нужен интернет).';}}
+refreshBtn.addEventListener('click',loadRates);
 
-      // если заканчивается на запятую — группируем целую часть и ждём следующую цифру
-      if (/[.,]$/.test(raw)){
-        const noSp = raw.replace(/[\s\u00A0\u202F]/g,'');
-        const intDigits = noSp.replace(/[.,].*$/,'').replace(/\D/g,'');
-        const grouped = intDigits ? Number(intDigits).toLocaleString('ru-RU') : '';
-        inputEl.value = grouped + ',';
-        requestAnimationFrame(() => {
-          const p = inputEl.value.length;
-          inputEl.setSelectionRange(p, p);
-        });
-        return;
-      }
+// === Редактирование и поиск (как в clock) ===
+function buildQS(){const parts=fxList.map(c=>encodeURIComponent(`${c.code}|${c.flag}`));return `?fx=${parts.join(',')}`;}
+function updateURL(){history.replaceState(null,'',location.pathname+buildQS());}
 
-      const caret = inputEl.selectionStart ?? raw.length;
-      const digitsLeft = (raw.slice(0, caret).match(/\d/g) || []).length;
+document.getElementById('editBtn').onclick=()=>{mainControls.style.display='none';editControls.style.display='flex';};
+document.getElementById('saveBtn').onclick=()=>{editControls.style.display='none';mainControls.style.display='flex';updateURL();};
+document.getElementById('clearBtn').onclick=()=>{fxList=[];renderRows();updateURL();};
 
-      // мягко группируем целую часть + дробную как есть
-      raw = raw.replace(/[^\d.,]/g,'');
-      const firstSep = raw.search(/[.,]/);
-      if (firstSep !== -1){
-        const before = raw.slice(0, firstSep).replace(/[^\d]/g,'');
-        let after = raw.slice(firstSep+1).replace(/[^\d]/g,'');
-        after = after.slice(0, getCur(code).precision);
-        inputEl.value = (before ? Number(before).toLocaleString('ru-RU') : '') + (after !== '' ? ','+after : '');
-      } else {
-        const digits = raw.replace(/[^\d]/g,'');
-        inputEl.value = digits ? Number(digits).toLocaleString('ru-RU') : '';
-      }
+function filterDB(q){q=(q||'').toLowerCase().trim();return CURRENCIES_DB.filter(x=>x.code.toLowerCase().includes(q)||x.name.toLowerCase().includes(q)).slice(0,3);} 
+function renderSuggest(items){sugg.innerHTML='';if(!items.length){sugg.classList.remove('visible');return;}for(const it of items){const el=document.createElement('div');el.className='opt';el.innerHTML=`<img class="flag" src="${flagURL(it.flag)}" alt="${it.code}"><div><div><strong>${it.code}</strong></div><div class='subtitle'>${it.name}</div></div>`;el.onclick=()=>{if(!fxList.some(c=>c.code===it.code)){fxList.push({code:it.code,flag:it.flag});renderRows();updateURL();}inputSearch.value='';hideSuggest();};sugg.appendChild(el);}sugg.classList.add('visible');}
+function hideSuggest(){sugg.classList.remove('visible');}
+inputSearch.oninput=()=>renderSuggest(filterDB(inputSearch.value));
+inputSearch.onfocus=()=>renderSuggest(filterDB(inputSearch.value));
+document.addEventListener('click',e=>{if(!sugg.contains(e.target)&&e.target!==inputSearch)hideSuggest();});
 
-      // восстанавливаем позицию курсора
-      requestAnimationFrame(() => {
-        let i = 0, seen = 0, s = inputEl.value;
-        while (i < s.length && seen < digitsLeft) {
-          if (/\d/.test(s[i])) seen++;
-          i++;
-        }
-        inputEl.setSelectionRange(i, i);
-      });
-    }
+// === Поделиться (как в clock) ===
+const shareBtn=document.getElementById('shareBtn');
+const popup=document.getElementById('sharePopup');
+const copyLink=document.getElementById('copyLink');
+const tg=document.getElementById('tgShare');
+const wa=document.getElementById('waShare');
+const fb=document.getElementById('fbShare');
 
-    function renderRows() {
-      fxBox.innerHTML = '';
-      currencies.forEach(({code, flag}) => {
-        const row = document.createElement('div');
-        row.className = 'row';
-        row.innerHTML = `
-          <div class="code">
-            <img src="https://flagcdn.com/w40/${flag}.png"
-                 width="24" height="18" alt="${code}"
-                 loading="lazy" style="border-radius:4px; margin-right:6px; vertical-align:middle;">
-            <span>${code}</span>
-          </div>
-          <div class="amount">
-            <input type="text" inputmode="decimal" data-code="${code}" aria-label="Сумма в ${code}">
-          </div>
-        `;
-        fxBox.appendChild(row);
-      });
+shareBtn.onclick=()=>{const url=window.location.href;tg.href=`https://t.me/share/url?url=${encodeURIComponent(url)}`;wa.href=`https://api.whatsapp.com/send?text=${encodeURIComponent(url)}`;fb.href=`https://www.facebook.com/share_channel/?type=reshare&link=${encodeURIComponent(url)}&app_id=87741124305&source_surface=external_reshare&display=popup`;const r=shareBtn.getBoundingClientRect();popup.style.left=r.left+'px';popup.style.top=r.bottom+8+'px';popup.style.display=popup.style.display==='flex'?'none':'flex';};
+copyLink.onclick=()=>{navigator.clipboard.writeText(window.location.href);copyLink.innerHTML=`<img src="https://cdn-icons-png.flaticon.com/512/1442/1442912.png" width="18" height="18" alt="">Скопировано!`;setTimeout(()=>copyLink.innerHTML=`<img src="https://cdn-icons-png.flaticon.com/512/7640/7640062.png" width="18" height="18"> Ссылка`,2000);};
+document.addEventListener('click',e=>{if(!popup.contains(e.target)&&e.target!==shareBtn)popup.style.display='none';});
 
-      fxBox.querySelectorAll('input').forEach(inp => {
-        inp.addEventListener('input', (e)=>{
-          formatWithCaret(e.target);
-          onInput(e);
-        });
-
-        inp.addEventListener('focus', (e)=>{
-          const code = e.target.dataset.code;
-          const v = parseNum(e.target.value);
-          if (isFinite(v)) e.target.value = formatEdit(code, v);
-        });
-
-        inp.addEventListener('blur', (e)=>{
-          const code = e.target.dataset.code;
-          const v = parseNum(e.target.value);
-          if (isFinite(v)) e.target.value = numberFormat(code, v);
-        });
-      });
-    }
-
-    function onInput(e){
-      if (!rates) return;
-      const el = e.target, code = el.dataset.code;
-
-      if (/[.,]$/.test(el.value)) return; // ждём дробную часть
-
-      const val = parseNum(el.value);
-      if (!isFinite(val)){
-        fxBox.querySelectorAll('input').forEach(i=>{ if(i!==el) i.value=''; });
-        return;
-      }
-
-      const inBase = val / rates[code];
-      currencies.forEach(({code:c}) => {
-        if (c===code) return;
-        const target = fxBox.querySelector(`input[data-code="${c}"]`);
-        const res = inBase * rates[c];
-        target.value = numberFormat(c, res);
-      });
-    }
-
-    async function loadRates(){
-      try{
-        const url = `https://open.er-api.com/v6/latest/${base}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        rates = data.rates; rates[base] = 1;
-        updatedLbl.textContent = `Обновлено: ${new Date().toLocaleString()}`;
-      }catch(e){
-        updatedLbl.textContent = 'Не удалось загрузить курсы (нужен интернет).';
-      }
-    }
-
-    refreshBtn.addEventListener('click', loadRates);
-    (async function init(){ renderRows(); await loadRates(); })();
-  </script>
-
-  <div id="footer"></div>
-  <script>
-  fetch('footer.html')
-    .then(r => r.text())
-    .then(html => document.getElementById('footer').innerHTML = html);
-  </script>
-  
+// === Init ===
+(async function init(){renderRows();await loadRates();})();
+</script>
 </body>
 </html>

@@ -21,7 +21,40 @@
   .wrap{max-width:560px;margin:0 auto;padding:22px 14px 28px}
   h1{font-size:1.25rem;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
   .card{display:flex;flex-direction:column;gap:5px}
-  .row{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e6e9f2;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.03);padding:10px 12px}
+  .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 1px solid #e6e9f2;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.03);
+  padding: 10px 12px;
+  gap: 10px; /* добавили */
+}
+
+.amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.row .remove-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.6;
+  transition: opacity .15s ease;
+}
+.row .remove-btn:hover {
+  opacity: 1;
+}
+.row .remove-btn img {
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+
   .code{display:flex;align-items:center;gap:8px;font-weight:700}
   .flag{border-radius:4px;width:24px;height:18px;vertical-align:middle}
   .amount input[type="text"]{width:200px;max-width:50vw;text-align:right;font-size:1.15rem !important;padding:8px 12px;border:1px solid #cfd5e1;border-radius:10px;background:#fff}
@@ -414,7 +447,61 @@ function formatEdit(code,n){const cur=getCurMeta(code);return n.toLocaleString('
 function parseNum(str){if(typeof str!== 'string')return NaN;str=str.replace(/[\s\u00A0\u202F]/g,'').replace(',', '.').trim();if(str===''||str==='-'||str==='.')return NaN;return Number(str);} 
 function formatWithCaret(inputEl){const code=inputEl.dataset.code;let raw=inputEl.value;if(/[.,]$/.test(raw)){const noSp=raw.replace(/[\s\u00A0\u202F]/g,'');const intDigits=noSp.replace(/[.,].*$/,'').replace(/\D/g,'');const grouped=intDigits?Number(intDigits).toLocaleString('ru-RU'):'';inputEl.value=grouped+',';requestAnimationFrame(()=>{const p=inputEl.value.length;inputEl.setSelectionRange(p,p);});return;}const caret=inputEl.selectionStart??raw.length;const digitsLeft=(raw.slice(0,caret).match(/\d/g)||[]).length;raw=raw.replace(/[^\d.,]/g,'');const firstSep=raw.search(/[.,]/);if(firstSep!==-1){const before=raw.slice(0,firstSep).replace(/[^\d]/g,'');let after=raw.slice(firstSep+1).replace(/[^\d]/g,'');after=after.slice(0,getCurMeta(code).precision);inputEl.value=(before?Number(before).toLocaleString('ru-RU'):'')+(after!==''?','+after:'');}else{const digits=raw.replace(/[^\d]/g,'');inputEl.value=digits?Number(digits).toLocaleString('ru-RU'):'';}requestAnimationFrame(()=>{let i=0,seen=0,s=inputEl.value;while(i<s.length&&seen<digitsLeft){if(/\d/.test(s[i]))seen++;i++;}inputEl.setSelectionRange(i,i);});}
 
-function renderRows(){fxBox.innerHTML='';fxList.forEach(({code,flag})=>{const row=document.createElement('div');row.className='row';row.innerHTML=`<div class="code"><img class="flag" src="${flagURL(flag)}" alt="${code}"><span>${code}</span></div><div class="amount"><input type="text" inputmode="decimal" data-code="${code}" aria-label="Сумма в ${code}"></div>`;fxBox.appendChild(row);});fxBox.querySelectorAll('input').forEach(inp=>{inp.addEventListener('input',e=>{formatWithCaret(e.target);onInput(e);});inp.addEventListener('focus',e=>{const code=e.target.dataset.code;const v=parseNum(e.target.value);if(isFinite(v))e.target.value=formatEdit(code,v);});inp.addEventListener('blur',e=>{const code=e.target.dataset.code;const v=parseNum(e.target.value);if(isFinite(v))e.target.value=numberFormat(code,v);});});}
+function renderRows() {
+  fxBox.innerHTML = '';
+  fxList.forEach(({ code, flag }, index) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `
+  <div class="code">
+    <img class="flag" src="${flagURL(flag)}" alt="${code}">
+    <span>${code}</span>
+  </div>
+  <div class="amount">
+    <input type="text" inputmode="decimal" data-code="${code}" aria-label="Сумма в ${code}">
+    <button class="remove-btn" title="Удалить" style="display:none;">
+      <img src="https://cdn-icons-png.flaticon.com/512/1828/1828778.png" alt="×">
+    </button>
+  </div>
+`;
+
+    fxBox.appendChild(row);
+  });
+
+  // Привязываем события для инпутов
+  fxBox.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      formatWithCaret(e.target);
+      onInput(e);
+    });
+    inp.addEventListener('focus', e => {
+      const code = e.target.dataset.code;
+      const v = parseNum(e.target.value);
+      if (isFinite(v)) e.target.value = formatEdit(code, v);
+    });
+    inp.addEventListener('blur', e => {
+      const code = e.target.dataset.code;
+      const v = parseNum(e.target.value);
+      if (isFinite(v)) e.target.value = numberFormat(code, v);
+    });
+  });
+
+  // Привязываем событие для удаления
+  fxBox.querySelectorAll('.remove-btn').forEach((btn, i) => {
+    btn.addEventListener('click', () => {
+      fxList.splice(i, 1);
+      renderRows();
+      updateURL();
+    });
+  });
+
+  // Показываем или скрываем крестики в зависимости от режима
+  const showRemove = editControls.style.display !== 'none';
+  fxBox.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.style.display = showRemove ? 'block' : 'none';
+  });
+}
+
 
 function onInput(e){if(!rates)return;const el=e.target,code=el.dataset.code;if(/[.,]$/.test(el.value))return;const val=parseNum(el.value);if(!isFinite(val)){fxBox.querySelectorAll('input').forEach(i=>{if(i!==el)i.value='';});return;}const inBase=val/(rates[code]||1);fxList.forEach(({code:c})=>{if(c===code)return;const target=fxBox.querySelector(`input[data-code="${c}"]`);if(!target)return;const res=inBase*(rates[c]||1);target.value=numberFormat(c,res);});}
 
@@ -435,8 +522,19 @@ refreshBtn.addEventListener('click',loadRates);
 function buildQS(){const parts=fxList.map(c=>encodeURIComponent(`${c.code}|${c.flag}`));return `?fx=${parts.join(',')}`;}
 function updateURL(){history.replaceState(null,'',location.pathname+buildQS());}
 
-document.getElementById('editBtn').onclick=()=>{mainControls.style.display='none';editControls.style.display='flex';};
-document.getElementById('saveBtn').onclick=()=>{editControls.style.display='none';mainControls.style.display='flex';updateURL();};
+document.getElementById('editBtn').onclick = () => {
+  mainControls.style.display = 'none';
+  editControls.style.display = 'flex';
+  fxBox.querySelectorAll('.remove-btn').forEach(btn => btn.style.display = 'block');
+};
+
+document.getElementById('saveBtn').onclick = () => {
+  editControls.style.display = 'none';
+  mainControls.style.display = 'flex';
+  fxBox.querySelectorAll('.remove-btn').forEach(btn => btn.style.display = 'none');
+  updateURL();
+};
+
 document.getElementById('clearBtn').onclick=()=>{fxList=[];renderRows();updateURL();};
 
 function filterDB(q){q=(q||'').toLowerCase().trim();return CURRENCIES_DB.filter(x=>x.code.toLowerCase().includes(q)||x.name.toLowerCase().includes(q)).slice(0,3);} 

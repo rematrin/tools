@@ -200,30 +200,24 @@
   </div>
 
   <div class="center-controls" id="editControls" style="display:none;">
-    <div class="searchbox">
-      <input id="search" type="text" placeholder="Добавить валюту.." autocomplete="off" autocorrect="off" spellcheck="false">
-      <div id="suggest" class="suggest" role="listbox" aria-label="Подсказки"></div>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:center;">
-      <button id="clearBtn" style="
-      font-size:0.9rem;
-      background:#ffffff;
-      border:1px solid #dcdfe6;
-      border-radius:8px;
-      padding:4px 10px;
-      cursor:pointer;
-      transition:all .2s ease;
-    "><img src="https://cdn-icons-png.flaticon.com/128/6861/6861362.png" width="11" height="11" alt=""> Очистить список</button>
-      <button id="saveBtn" style="
-      font-size:0.9rem;
-      background:#ffffff;
-      border:1px solid #dcdfe6;
-      border-radius:8px;
-      padding:4px 10px;
-      cursor:pointer;
-      transition:all .2s ease;
-    "><img src="https://cdn-icons-png.flaticon.com/128/5610/5610944.png" width="11" height="11" alt=""> Сохранить</button>
-    </div>
+    <div class="searchbox" style="display:flex;gap:8px;align-items:center;justify-content:center;width:100%;max-width:360px;">
+  <input id="search" type="text" placeholder="Добавить валюту.." autocomplete="off" autocorrect="off" spellcheck="false" style="flex:1;">
+  <button id="saveBtn" style="
+    font-size:0.9rem;
+    background:#ffffff;
+    border:1px solid #dcdfe6;
+    border-radius:8px;
+    padding:8px 10px;
+    cursor:pointer;
+    transition:all .2s ease;
+  ">
+    <img src="https://cdn-icons-png.flaticon.com/128/5610/5610944.png" width="11" height="11" alt="">
+    Сохранить
+  </button>
+  <div id="suggest" class="suggest" role="listbox" aria-label="Подсказки"></div>
+</div>
+
+
   </div>
 
   <div id="sharePopup">
@@ -534,8 +528,6 @@ document.getElementById('saveBtn').onclick = () => {
   fxBox.querySelectorAll('.remove-btn').forEach(btn => btn.style.display = 'none');
   updateURL();
 };
-
-document.getElementById('clearBtn').onclick=()=>{fxList=[];renderRows();updateURL();};
 
 function filterDB(q){q=(q||'').toLowerCase().trim();return CURRENCIES_DB.filter(x=>x.code.toLowerCase().includes(q)||x.name.toLowerCase().includes(q)).slice(0,3);} 
 function renderSuggest(items){sugg.innerHTML='';if(!items.length){sugg.classList.remove('visible');return;}for(const it of items){const el=document.createElement('div');el.className='opt';el.innerHTML=`<img class="flag" src="${flagURL(it.flag)}" alt="${it.code}"><div><div><strong>${it.code}</strong></div><div class='subtitle'>${it.name}</div></div>`;el.onclick=()=>{if(!fxList.some(c=>c.code===it.code)){fxList.push({code:it.code,flag:it.flag});renderRows();updateURL();}inputSearch.value='';hideSuggest();};sugg.appendChild(el);}sugg.classList.add('visible');}

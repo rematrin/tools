@@ -24,7 +24,22 @@
   .searchbox{position:relative;width:100%;max-width:360px}
   input[type="text"]{width:100%;padding:8px 10px;border:1px solid #cfd5e1;border-radius:8px;background:#fff;font-size:.95rem}
 
-  .suggest{position:absolute;left:0;right:0;top:calc(100% + 6px);background:#fff;border:1px solid #e6e9f2;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.06);overflow:hidden;z-index:10;display:none;max-height:300px;overflow-y:auto}
+  .suggest {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 6px); /* открывается вверх, строго над полем */
+    width: calc(100% - 100px); /* чтобы не перекрывала кнопку */
+    background: #fff;
+    border: 1px solid #e6e9f2;
+    border-radius: 12px;
+    box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    z-index: 10;
+    display: none;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
   .suggest.visible{display:block}
   .opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #f1f3f8;cursor:pointer}
   .opt:last-child{border-bottom:0}

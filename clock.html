@@ -18,7 +18,7 @@
   .time{font-size:1.3rem;font-variant-numeric:tabular-nums;display:flex;align-items:flex-end;gap:4px}
   .seconds{font-size:.8rem;color:#999;position:relative;bottom:2px}
   button{padding:8px 12px;border:1px solid #cfd5e1;background:#fff;border-radius:8px;cursor:pointer;font-size:.95rem}
-  button:hover{background:#f0f2f7}
+  button:hover{opacity: 1}
 
   .center-controls{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:18px}
   .searchbox{position:relative;width:100%;max-width:360px}
@@ -61,6 +61,28 @@
  input, select, textarea {
  font-size: 16px !important;
 }
+.time {
+  text-align: right;
+  transition: padding-right 0.2s ease;
+}
+
+.edit-mode .time {
+  padding-right: 28px; /* место под крестик только при редактировании */
+}
+
+.delBtn {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: #777;
+  cursor: pointer;
+  opacity: 0.7;
+  display: none;
+}
 </style>
 </head>
 <body>
@@ -94,14 +116,23 @@
   </div>
 
   <div class="center-controls" id="editControls" style="display:none;">
-    <div class="searchbox">
-      <input id="search" type="text" placeholder="Добавить город или страну..." autocomplete="off" autocorrect="off" spellcheck="false">
-      <div id="suggest" class="suggest" role="listbox" aria-label="Подсказки"></div>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:center;">
-      <button id="clearBtn"><img src="https://cdn-icons-png.flaticon.com/128/3405/3405244.png" width="11" height="10" alt=""> Очистить список</button>
-      <button id="saveBtn"><img src="https://cdn-icons-png.flaticon.com/128/2874/2874091.png" width="11" height="10" alt=""> Сохранить</button>
-    </div>
+  <div class="searchbox" style="display:flex;gap:8px;align-items:center;justify-content:center;width:100%;max-width:360px;">
+    <input id="search" type="text" placeholder="Добавить город или страну..." autocomplete="off" autocorrect="off" spellcheck="false" style="flex:1;">
+    <button id="saveBtn" style="
+      font-size:0.9rem;
+      background:#ffffff;
+      border:1px solid #dcdfe6;
+      border-radius:8px;
+      padding:8px 10px;
+      cursor:pointer;
+      transition:all .2s ease;
+    ">
+      <img src="https://cdn-icons-png.flaticon.com/128/5610/5610944.png" width="11" height="10" alt="">
+      Сохранить
+    </button>
+    <div id="suggest" class="suggest" role="listbox" aria-label="Подсказки"></div>
+  </div>
+</div>
   </div>
 
   <div id="sharePopup">
@@ -151,22 +182,45 @@
   const mainControls=document.getElementById('mainControls');
   const editControls=document.getElementById('editControls');
 
-  function render(){
-    box.innerHTML='';
-    const now=new Date();
-    for(const {name,tz,flag} of cities){
-      const id=toId(tz);
-      const row=document.createElement('div');
-      row.className='row';
-      row.innerHTML=`
-        <div class="code">
-          <img class="flag" src="${flagURL(flag)}"><span>${name}</span>
-        </div>
-        <div class="time" id="${id}"></div>`;
+  function render() {
+    box.innerHTML = '';
+    const now = new Date();
+
+    for (const { name, tz, flag } of cities) {
+      const id = toId(tz);
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.style.position = 'relative'; // чтобы крестик позиционировался внутри
+
+      row.innerHTML = `
+  <div class="code" style="display:flex;align-items:center;gap:8px;">
+    <img class="flag" src="${flagURL(flag)}" alt="${name}">
+    <span>${name}</span>
+  </div>
+  <div class="time" id="${id}"></div>
+  <button class="delBtn">✕</button>
+`;
+
+
+      const delBtn = row.querySelector('.delBtn');
+      delBtn.onclick = () => {
+        cities = cities.filter(c => c.tz !== tz);
+        render();
+        updateURL();
+      };
+
       box.appendChild(row);
-      setTime(id,tz,now);
+      setTime(id, tz, now);
     }
+
+    // Показываем крестики только при редактировании
+    const editMode = editControls.style.display === 'flex';
+    document.querySelectorAll('.delBtn').forEach(btn => {
+      btn.style.display = editMode ? 'inline' : 'none';
+    });
   }
+
+
 
   function setTime(id,tz,now=new Date()){
     const el=document.getElementById(id);
@@ -188,19 +242,19 @@
 
   function updateURL(){history.replaceState(null,'',location.pathname+buildQS());}
 
-  document.getElementById('editBtn').onclick=()=>{
-    mainControls.style.display='none';
-    editControls.style.display='flex';
+  document.getElementById('editBtn').onclick = () => {
+    mainControls.style.display = 'none';
+    editControls.style.display = 'flex';
+    document.body.classList.add('edit-mode');
+    render(); // показать крестики
   };
 
-  document.getElementById('saveBtn').onclick=()=>{
-    editControls.style.display='none';
-    mainControls.style.display='flex';
+  document.getElementById('saveBtn').onclick = () => {
+    editControls.style.display = 'none';
+    mainControls.style.display = 'flex';
+    document.body.classList.remove('edit-mode');
+    render(); // скрыть крестики
     updateURL();
-  };
-
-  document.getElementById('clearBtn').onclick=()=>{
-    cities=[];render();updateURL();
   };
 
   const CITIES_DB=[
@@ -482,6 +536,3 @@ fetch('footer.html').then(r=>r.text()).then(html=>document.getElementById('foote
 </script>
 </body>
 </html>
-
-
-

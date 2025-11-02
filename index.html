@@ -19,7 +19,7 @@
 
     .card {
       background: #fff; border: 1px solid #e5e7ef; border-radius: 12px;
-      padding: var(--pad); margin-bottom: 8px;
+      padding: var(--pad); margin-bottom: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
     }
 
@@ -37,18 +37,28 @@
       overflow: visible; position: relative;
     }
 
+    /* БАЗОВЫЕ ИНПУТЫ */
     input[type="text"] {
       padding: 8px 10px; font-size: 1.05rem;
       border: 1px solid #cfd5e1; border-radius: 8px; background: #fff;
       flex-shrink: 0;
-      min-width: 6ch;
     }
     input[type="text"]:focus {
       outline: none; border-color: #7aa2ff; box-shadow: 0 0 0 3px rgba(122,162,255,.16);
     }
 
-    [data-role="date-display"] {
-      width: 16ch !important; text-align: center; cursor: pointer; flex-shrink: 0;
+    /* Компактные числовые поля */
+    .num { width: 11ch; }            /* короткие числа/проценты */
+    .num.long { width: 14ch; }       /* чутка длиннее для “больших” чисел */
+    .date-input { width: 16ch; text-align: center; cursor: pointer; }
+
+    /* Поле с суффиксом (например, %) */
+    .with-suffix { position: relative; }
+    .with-suffix input { padding-right: 28px; }
+    .with-suffix::after {
+      content: attr(data-suffix);
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      color: #666; font-size: .95rem; pointer-events: none;
     }
 
     .eq { font-weight: 700; }
@@ -78,21 +88,19 @@
 
     .select {
       position: relative; border: 1px solid #cfd5e1; border-radius: 8px;
-      background: #fff; padding: 8px 10px; font-size: 1.05rem; cursor: pointer; user-select: none; min-width: 9ch;
-      flex-shrink: 0;
+      background: #fff; padding: 8px 32px 8px 10px; font-size: 1.05rem; cursor: pointer; user-select: none;
+      min-width: 9ch; flex-shrink: 0;
     }
     .select::after {
       content: "▾"; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
       font-size: .9rem; color: #777;
     }
     .options {
-      list-style: none; padding: 4px 0; margin: 4px 0 0;
+      list-style: none; padding: 4px 0; margin: 0;
       background: #fff; border: 1px solid #cfd5e1; border-radius: 8px;
       position: absolute; z-index: 10; width: 100%;
       box-shadow: 0 2px 6px rgba(0,0,0,.1);
-      bottom: 100%;
-      top: auto;
-      margin: 0 0 4px 0;
+      bottom: 110%;
     }
     .options[hidden] { display: none; }
     .options li { padding: 6px 10px; cursor: pointer; }
@@ -162,6 +170,9 @@
       .toggle { justify-content: center; }
       .select { width: 100%; }
       .result { text-align: center; }
+      /* на мобиле компактные поля тоже идут строкой, но остаются короткими */
+      .num, .num.long { width: 100%; }
+      .with-suffix::after { right: 12px; }
     }
   </style>
 </head>
@@ -169,54 +180,69 @@
   <div class="wrap">
     <h1>Процентные калькуляторы</h1>
 
+    <!-- A: Сколько процентов одно число от другого -->
     <div class="card" id="calcA">
       <div class="card-title">Сколько процентов одно число от другого</div>
       <div class="hint">💡 Пример: <code>15</code> это <code>15%</code> от <code>100</code></div>
       <div class="row">
-        <input type="text" data-role="x"> <span class="text">это сколько % от</span>
-        <input type="text" data-role="y"> <span class="eq">=</span> <span class="result" data-role="out">-</span>
+        <input class="num long" type="text" inputmode="decimal" data-role="x">
+        <span class="text">это сколько % от</span>
+        <input class="num long" type="text" inputmode="decimal" data-role="y">
+        <span class="eq">=</span>
+        <span class="result" data-role="out">-</span>
       </div>
     </div>
 
+    <!-- B: Вычисление процента от числа -->
     <div class="card" id="calcB">
       <div class="card-title">Вычисление процента от числа</div>
       <div class="hint">💡 Пример: <code>20%</code> от <code>150</code> это <code>30</code></div>
       <div class="row">
-        <input type="text" data-role="n"> <span class="text">% от</span>
-        <input type="text" data-role="m"> <span class="eq">=</span> <span class="result" data-role="out">-</span>
+        <div class="with-suffix" data-suffix="%">
+          <input class="num" type="text" inputmode="decimal" data-role="n" aria-label="Процент">
+        </div>
+        <span class="text">% от</span>
+        <input class="num long" type="text" inputmode="decimal" data-role="m" aria-label="Число">
+        <span class="eq">=</span>
+        <span class="result" data-role="out">-</span>
       </div>
     </div>
 
+    <!-- C: Плюс/минус процент -->
     <div class="card" id="calcC">
       <div class="card-title">Плюс или минус процент</div>
       <div class="hint">💡 Пример: <code>200 + 10%</code> = <code>220</code></div>
       <div class="row">
-        <input type="text" data-role="x">
-        <div class="toggle">
-          <label class="opt"><input type="radio" name="opC" value="+" checked>+</label>
-          <label class="opt"><input type="radio" name="opC" value="-">−</label>
+        <input class="num long" type="text" inputmode="decimal" data-role="x" aria-label="Число">
+        <div class="toggle" role="radiogroup" aria-label="Операция">
+          <label class="opt" title="Плюс"><input type="radio" name="opC" value="+" checked>+</label>
+          <label class="opt" title="Минус"><input type="radio" name="opC" value="−">−</label>
         </div>
-        <input type="text" data-role="y"> <span class="text">%</span>
-        <span class="eq">=</span> <span class="result" data-role="out">-</span>
+        <div class="with-suffix" data-suffix="%">
+          <input class="num" type="text" inputmode="decimal" data-role="y" aria-label="Процент">
+        </div>
+        <span class="eq">=</span>
+        <span class="result" data-role="out">-</span>
       </div>
     </div>
 
+    <!-- D: Календарь -->
     <div class="card" id="calcD">
       <div class="card-title">Калькулятор даты</div>
       <div class="hint">💡 Пример: <code>01.11.2025 + 2 месяца</code> = <code>01.01.2026</code></div>
       <div class="row">
         <div class="date-picker" data-role="date-picker">
-          <input type="text" readonly data-role="date-display">
+          <input class="date-input" type="text" readonly data-role="date-display">
           <div class="calendar" hidden></div>
         </div>
-        <div class="toggle">
+        <div class="toggle" role="radiogroup" aria-label="Операция даты">
           <label class="opt"><input type="radio" name="opD" value="+" checked>+</label>
           <label class="opt"><input type="radio" name="opD" value="-">−</label>
         </div>
-        <input type="text" inputmode="numeric" data-role="amount">
-        <div class="select" data-role="select">
+        <input class="num" type="text" inputmode="decimal" data-role="amount" aria-label="Величина">
+        <div class="select" data-role="select" aria-haspopup="listbox" aria-expanded="false">
           <span class="selected">дней</span>
-          <ul class="options" hidden>
+          <ul class="options" hidden role="listbox">
             <li data-value="years">лет</li>
             <li data-value="months">месяцев</li>
             <li data-value="weeks">недель</li>
@@ -229,87 +255,168 @@
   </div>
 
   <script>
-  const parseNum=v=>{if(typeof v!=='string')return NaN;v=v.replace(',', '.').trim();return v?+v:NaN;};
-  const fmtNum=n=>!isFinite(n)?'-':(Math.round(n*100)/100).toString();
+  // Парсер и форматтер чисел
+  const parseNum = v => {
+    if (typeof v !== 'string') return NaN;
+    v = v.replace(',', '.').trim();
+    return v ? +v : NaN;
+  };
+  const fmtNum = n => !isFinite(n) ? '-' : (Math.round(n * 100) / 100).toString();
 
-  // A
-  (()=>{const r=document.getElementById('calcA');const x=r.querySelector('[data-role="x"]'),y=r.querySelector('[data-role="y"]'),o=r.querySelector('[data-role="out"]');
-    const f=()=>{const xv=parseNum(x.value),yv=parseNum(y.value);o.textContent=isFinite(xv)&&isFinite(yv)&&yv!==0?fmtNum((xv/yv)*100)+' %':'-';};
-    x.oninput=y.oninput=f;
+  // === КАЛЬКУЛЯТОР A ===
+  (() => {
+    const r = document.getElementById('calcA');
+    const x = r.querySelector('[data-role="x"]');
+    const y = r.querySelector('[data-role="y"]');
+    const o = r.querySelector('[data-role="out"]');
+    const f = () => {
+      const xv = parseNum(x.value), yv = parseNum(y.value);
+      o.textContent = isFinite(xv) && isFinite(yv) && yv !== 0 ? fmtNum((xv / yv) * 100) + ' %' : '-';
+    };
+    x.oninput = y.oninput = f;
   })();
 
-  // B
-  (()=>{const r=document.getElementById('calcB');const n=r.querySelector('[data-role="n"]'),m=r.querySelector('[data-role="m"]'),o=r.querySelector('[data-role="out"]');
-    const f=()=>{const nv=parseNum(n.value),mv=parseNum(m.value);o.textContent=isFinite(nv)&&isFinite(mv)?fmtNum((nv/100)*mv):'-';};
-    n.oninput=m.oninput=f;
+  // === КАЛЬКУЛЯТОР B ===
+  (() => {
+    const r = document.getElementById('calcB');
+    const n = r.querySelector('[data-role="n"]');
+    const m = r.querySelector('[data-role="m"]');
+    const o = r.querySelector('[data-role="out"]');
+    const f = () => {
+      const nv = parseNum(n.value), mv = parseNum(m.value);
+      o.textContent = isFinite(nv) && isFinite(mv) ? fmtNum((nv / 100) * mv) : '-';
+    };
+    n.oninput = m.oninput = f;
   })();
 
-  // C
-  (()=>{const r=document.getElementById('calcC');const x=r.querySelector('[data-role="x"]'),y=r.querySelector('[data-role="y"]'),o=r.querySelector('[data-role="out"]');const ops=r.querySelectorAll('input[name="opC"]');
-    const f=()=>{const xv=parseNum(x.value),yv=parseNum(y.value);if(!isFinite(xv)||!isFinite(yv))return o.textContent='-';const op=[...ops].find(v=>v.checked)?.value;const res=op==='+'?xv+(xv*yv/100):xv-(xv*yv/100);o.textContent=fmtNum(res);};
-    x.oninput=y.oninput=f;ops.forEach(v=>v.onchange=f);
+  // === КАЛЬКУЛЯТОР C ===
+  (() => {
+    const r = document.getElementById('calcC');
+    const x = r.querySelector('[data-role="x"]');
+    const y = r.querySelector('[data-role="y"]');
+    const o = r.querySelector('[data-role="out"]');
+    const ops = r.querySelectorAll('input[name="opC"]');
+    const f = () => {
+      const xv = parseNum(x.value), yv = parseNum(y.value);
+      if (!isFinite(xv) || !isFinite(yv)) return (o.textContent = '-');
+      const op = [...ops].find(v => v.checked)?.value;
+      const res = op === '+' ? xv + (xv * yv / 100) : xv - (xv * yv / 100);
+      o.textContent = fmtNum(res);
+    };
+    x.oninput = y.oninput = f;
+    ops.forEach(v => v.onchange = f);
   })();
 
-  // D
-  (()=>{const r=document.getElementById('calcD'),o=r.querySelector('[data-role="out"]'),a=r.querySelector('[data-role="amount"]'),ops=r.querySelectorAll('input[name="opD"]');
-    const sel=r.querySelector('[data-role="select"]'),selText=sel.querySelector('.selected'),opts=sel.querySelector('.options');let unit='days';
-    sel.onclick=e=>{if(e.target.tagName==='LI'){unit=e.target.dataset.value;selText.textContent=e.target.textContent;opts.hidden=true;recompute();}else opts.hidden=!opts.hidden;e.stopPropagation();};
-    document.addEventListener('pointerdown',e=>{if(!sel.contains(e.target))opts.hidden=true;});
+  // === КАЛЕНДАРЬ / КАЛЬКУЛЯТОР D ===
+  (() => {
+    const r = document.getElementById('calcD'), o = r.querySelector('[data-role="out"]'),
+          a = r.querySelector('[data-role="amount"]'), ops = r.querySelectorAll('input[name="opD"]');
 
-    const dp=r.querySelector('[data-role="date-picker"]'),display=dp.querySelector('[data-role="date-display"]'),cal=dp.querySelector('.calendar');
-    let base=new Date(),mode='days';display.value=fmt(base);
-    function fmt(d){return`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;}
+    const sel = r.querySelector('[data-role="select"]'),
+          selText = sel.querySelector('.selected'),
+          opts = sel.querySelector('.options');
+    let unit = 'days';
+    sel.onclick = e => {
+      if (e.target.tagName === 'LI') {
+        unit = e.target.dataset.value;
+        selText.textContent = e.target.textContent;
+        opts.hidden = true;
+        sel.setAttribute('aria-expanded', 'false');
+        recompute();
+      } else {
+        opts.hidden = !opts.hidden;
+        sel.setAttribute('aria-expanded', String(!opts.hidden));
+      }
+      e.stopPropagation();
+    };
+    document.addEventListener('pointerdown', e => { if (!sel.contains(e.target)) { opts.hidden = true; sel.setAttribute('aria-expanded','false'); } });
+
+    const dp = r.querySelector('[data-role="date-picker"]'),
+          display = dp.querySelector('[data-role="date-display"]'),
+          cal = dp.querySelector('.calendar');
+    let base = new Date(), mode = 'days';
+    display.value = fmt(base);
+
+    function fmt(d){
+      return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+    }
 
     function render(vd){
-      cal.innerHTML='';
-      const h=document.createElement('div');h.className='cal-header';
-      const mName=vd.toLocaleString('ru-RU',{month:'long'}),yNum=vd.getFullYear();
-      const p=document.createElement('button');p.textContent='‹';
-      const n=document.createElement('button');n.textContent='›';
-      const t=document.createElement('span');t.textContent=`${mName} ${yNum}`;
-      h.append(p,t,n);cal.append(h);
-      p.onclick=e=>{e.stopPropagation();if(mode==='days')vd.setMonth(vd.getMonth()-1);else vd.setFullYear(vd.getFullYear()-12);render(vd);};
-      n.onclick=e=>{e.stopPropagation();if(mode==='days')vd.setMonth(vd.getMonth()+1);else vd.setFullYear(vd.getFullYear()+12);render(vd);};
-      t.onclick=e=>{e.stopPropagation();mode=(mode==='days'?'years':'days');render(vd);};
+      cal.innerHTML = '';
+      const h = document.createElement('div'); h.className = 'cal-header';
+      const mName = vd.toLocaleString('ru-RU',{month:'long'}), yNum = vd.getFullYear();
+      const p = document.createElement('button'); p.textContent = '‹';
+      const n = document.createElement('button'); n.textContent = '›';
+      const t = document.createElement('span'); t.textContent = `${mName} ${yNum}`;
+      h.append(p,t,n); cal.append(h);
 
-      if(mode==='days'){
-        const w=document.createElement('div');w.className='weekday-row';['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(n=>{const d=document.createElement('div');d.textContent=n;w.append(d);});cal.append(w);
-        const g=document.createElement('div');g.className='cal-grid';cal.append(g);
-        const y=vd.getFullYear(),m=vd.getMonth(),first=(new Date(y,m,1).getDay()||7)-1,days=new Date(y,m+1,0).getDate();
-        for(let i=0;i<first;i++)g.append(document.createElement('div'));
-        for(let d=1;d<=days;d++){const cell=document.createElement('div');cell.textContent=d;const curr=new Date(y,m,d);
-          if(curr.toDateString()===new Date().toDateString())cell.classList.add('today');
-          if(curr.toDateString()===base.toDateString())cell.classList.add('selected');
-          cell.onclick=e=>{e.stopPropagation();base=curr;display.value=fmt(base);cal.hidden=true;cal.classList.remove('show');recompute();};
-          g.append(cell);}
-      }else{
-        const start=Math.floor(yNum/12)*12;const g=document.createElement('div');g.className='year-grid';cal.append(g);
-        for(let y=start;y<start+12;y++){const cell=document.createElement('div');cell.textContent=y;
-          if(y===yNum)cell.classList.add('selected');
-          cell.onclick=e=>{e.stopPropagation();vd.setFullYear(y);mode='days';render(vd);};g.append(cell);}
+      p.onclick = e => { e.stopPropagation(); if (mode==='days') vd.setMonth(vd.getMonth()-1); else vd.setFullYear(vd.getFullYear()-12); render(vd); };
+      n.onclick = e => { e.stopPropagation(); if (mode==='days') vd.setMonth(vd.getMonth()+1); else vd.setFullYear(vd.getFullYear()+12); render(vd); };
+      t.onclick = e => { e.stopPropagation(); mode = (mode==='days'?'years':'days'); render(vd); };
+
+      if (mode === 'days') {
+        const w = document.createElement('div'); w.className='weekday-row';
+        ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(nm => { const d=document.createElement('div'); d.textContent=nm; w.append(d);});
+        cal.append(w);
+
+        const g = document.createElement('div'); g.className='cal-grid'; cal.append(g);
+        const y = vd.getFullYear(), m = vd.getMonth(),
+              first = (new Date(y,m,1).getDay()||7)-1, days = new Date(y,m+1,0).getDate();
+        for (let i=0;i<first;i++) g.append(document.createElement('div'));
+        for (let d=1; d<=days; d++){
+          const cell=document.createElement('div'); cell.textContent=d; const curr=new Date(y,m,d);
+          if (curr.toDateString()===new Date().toDateString()) cell.classList.add('today');
+          if (curr.toDateString()===base.toDateString()) cell.classList.add('selected');
+          cell.onclick=e=>{e.stopPropagation(); base=curr; display.value=fmt(base); cal.hidden=true; cal.classList.remove('show'); recompute();};
+          g.append(cell);
+        }
+      } else {
+        const start = Math.floor(yNum/12)*12;
+        const g = document.createElement('div'); g.className='year-grid'; cal.append(g);
+        for (let y=start; y<start+12; y++){
+          const cell=document.createElement('div'); cell.textContent=y;
+          if (y===yNum) cell.classList.add('selected');
+          cell.onclick=e=>{e.stopPropagation(); vd.setFullYear(y); mode='days'; render(vd); };
+          g.append(cell);
+        }
       }
-      const todayBtn=document.createElement('button');todayBtn.className='today-btn';todayBtn.textContent='Сегодня';
-      todayBtn.onclick=e=>{e.stopPropagation();base=new Date();display.value=fmt(base);cal.hidden=true;cal.classList.remove('show');recompute();};
+
+      const todayBtn=document.createElement('button'); todayBtn.className='today-btn'; todayBtn.textContent='Сегодня';
+      todayBtn.onclick=e=>{e.stopPropagation(); base=new Date(); display.value=fmt(base); cal.hidden=true; cal.classList.remove('show'); recompute();};
       cal.append(todayBtn);
     }
 
-    display.onclick=e=>{e.stopPropagation();mode='days';cal.hidden=!cal.hidden;
-      if(!cal.hidden){render(new Date(base));setTimeout(()=>cal.classList.add('show'),10);}else cal.classList.remove('show');};
-    document.addEventListener('pointerdown',e=>{if(!dp.contains(e.target)){cal.hidden=true;cal.classList.remove('show');}});
+    display.onclick = e => {
+      e.stopPropagation();
+      mode='days';
+      cal.hidden = !cal.hidden;
+      if (!cal.hidden) { render(new Date(base)); setTimeout(()=>cal.classList.add('show'), 10); }
+      else cal.classList.remove('show');
+    };
+    document.addEventListener('pointerdown', e => { if (!dp.contains(e.target)) { cal.hidden = true; cal.classList.remove('show'); } });
 
     function recompute(){
-      const v=+a.value;if(!isFinite(v)||v<=0)return o.textContent='-'; // исправлено: не считать если поле пустое
-      const op=[...ops].find(o=>o.checked)?.value||'+';const dir=op==='+'?1:-1;const res=new Date(base);
-      switch(unit){case'days':res.setDate(res.getDate()+dir*v);break;case'weeks':res.setDate(res.getDate()+dir*v*7);break;case'months':res.setMonth(res.getMonth()+dir*v);break;case'years':res.setFullYear(res.getFullYear()+dir*v);break;}
-      o.textContent=fmt(res);
+      const v = +a.value.replace(',', '.');
+      if (!isFinite(v) || v <= 0) return o.textContent='-';
+      const op = [...ops].find(o => o.checked)?.value || '+';
+      const dir = op === '+' ? 1 : -1;
+      const res = new Date(base);
+      switch (unit) {
+        case 'days':   res.setDate(res.getDate() + dir*v); break;
+        case 'weeks':  res.setDate(res.getDate() + dir*v*7); break;
+        case 'months': res.setMonth(res.getMonth() + dir*v); break;
+        case 'years':  res.setFullYear(res.getFullYear() + dir*v); break;
+      }
+      o.textContent = fmt(res);
     }
-    a.oninput=recompute;ops.forEach(o=>o.onchange=recompute);
+    a.oninput = recompute; ops.forEach(o => o.onchange = recompute);
   })();
 
-  // Запрет на буквы во всех текстовых полях
-  document.querySelectorAll('input[type="text"]').forEach(i =>
-    i.addEventListener('input', () => i.value = i.value.replace(/[^0-9.,]/g, ''))
-  );
+  // === ФИЛЬТР: только цифры, точка и запятая во всех текстовых полях ===
+  document.querySelectorAll('input[type="text"]').forEach(i => {
+    if (!i.hasAttribute('readonly')) i.setAttribute('inputmode','decimal'); // цифровая клавиатура
+    i.addEventListener('input', () => { i.value = i.value.replace(/[^0-9.,]/g, ''); });
+  });
   </script>
 </body>
 </html>

@@ -163,17 +163,11 @@
     }
     .calendar .today-btn:hover { background: #dbe5ff; }
 
-    @media (max-width: 480px) {
-      body { padding: 20px 12px; }
-      .row { flex-direction: column; align-items: stretch; font-size: 1rem; }
-      .row > * { width: 100%; }
-      .toggle { justify-content: center; }
-      .select { width: 100%; }
-      .result { text-align: center; }
-      /* на мобиле компактные поля тоже идут строкой, но остаются короткими */
-      .num, .num.long { width: 100%; }
-      .with-suffix::after { right: 12px; }
-    }
+    .text {
+  font-size: 0.9rem; /* можно 0.85rem если хочешь ещё меньше */
+  opacity: 0.85;
+}
+
   </style>
 </head>
 <body>
@@ -201,7 +195,7 @@
         <div class="with-suffix" data-suffix="%">
           <input class="num" type="text" inputmode="decimal" data-role="n" aria-label="Процент">
         </div>
-        <span class="text">% от</span>
+        <span class="text">от</span>
         <input class="num long" type="text" inputmode="decimal" data-role="m" aria-label="Число">
         <span class="eq">=</span>
         <span class="result" data-role="out">-</span>

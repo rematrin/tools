@@ -21,16 +21,13 @@
   transform: scale(0.85);
   transition: transform 105.5s ease-out;
 }
-  footer{margin-top:28px;text-align:center;font-size:.95rem;color:#555}
-  footer a{color:#a7a9ae;text-decoration:none;margin:0 6px}
-  footer a:hover{text-decoration:underline}
-  footer span{color:#aaa}
+
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <div class="topbar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+  <div class="topbar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
     <h1>Конвертер времени</h1>
     <button id="clearBtn" style="
       font-size:0.9rem;
@@ -230,10 +227,6 @@ function render(){
 clearBtn.onclick=()=>fxBox.querySelectorAll('input').forEach(i=>i.value='');
 
 render();
-</script>
-  <div id="footer"></div>
-<script>
-fetch('footer.html').then(r=>r.text()).then(html=>document.getElementById('footer').innerHTML=html);
 </script>
 </body>
 </html>

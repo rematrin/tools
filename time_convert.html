@@ -21,19 +21,15 @@
   transform: scale(0.85);
   transition: transform 105.5s ease-out;
 }
-  footer{margin-top:28px;text-align:center;font-size:.95rem;color:#555}
-  footer a{color:#a7a9ae;text-decoration:none;margin:0 6px}
-  footer a:hover{text-decoration:underline}
-  footer span{color:#aaa}
- @media (max-width: 420px) {
-  .row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .amount input {
-    text-align: left;
-  }
+
+.row:first-child .code {
+  flex-shrink: 1;
+  min-width: 100px; /* 
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
+
 
 </style>
 </head>

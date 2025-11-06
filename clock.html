@@ -112,7 +112,7 @@
       padding:4px 10px;
       cursor:pointer;
       transition:all .2s ease;
-    "><img src="https://cdn-icons-png.flaticon.com/512/1828/1828954.png" width="10" height="10" alt=""> Поделиться списком</button>
+    "><img src="https://cdn-icons-png.flaticon.com/512/1828/1828954.png" width="11" height="11" alt=""> Поделиться списком</button>
   </h1>
 
 
@@ -127,7 +127,7 @@
       padding:4px 10px;
       cursor:pointer;
       transition:all .2s ease;
-    "><img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" width="10" height="10" alt=""> Редактировать список</button>
+    "><img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" width="10" height="10" alt=""> Редактировать</button>
   </div>
 
   <div class="center-controls" id="editControls" style="display:none;">
@@ -523,16 +523,51 @@
   const wa=document.getElementById('waShare');
   const fb=document.getElementById('fbShare');
 
-  shareBtn.onclick=()=>{
-    const url=window.location.href;
-    tg.href=`https://t.me/share/url?url=${encodeURIComponent(url)}`;
-    wa.href=`https://api.whatsapp.com/send?text=${encodeURIComponent(url)}`;
-    fb.href=`https://www.facebook.com/share_channel/?type=reshare&link=${encodeURIComponent(url)}&app_id=87741124305&source_surface=external_reshare&display=popup`;
-    const rect=shareBtn.getBoundingClientRect();
-    popup.style.left=rect.left+'px';
-    popup.style.top=rect.bottom+8+'px';
-    popup.style.display=popup.style.display==='flex'?'none':'flex';
-  };
+  let hideTimeout;
+
+function showSharePopup() {
+  const url = window.location.href;
+  tg.href = `https://t.me/share/url?url=${encodeURIComponent(url)}`;
+  wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(url)}`;
+  fb.href = `https://www.facebook.com/share_channel/?type=reshare&link=${encodeURIComponent(url)}&app_id=87741124305&source_surface=external_reshare&display=popup`;
+
+  const rect = shareBtn.getBoundingClientRect();
+  popup.style.left = rect.left + 'px';
+  popup.style.top = rect.bottom + 8 + 'px';
+  popup.style.display = 'flex';
+  clearTimeout(hideTimeout);
+}
+
+// ПК: открыть при наведении
+shareBtn.addEventListener('mouseenter', showSharePopup);
+
+// Задержка закрытия при уходе
+shareBtn.addEventListener('mouseleave', (e) => {
+  hideTimeout = setTimeout(() => {
+    if (!popup.contains(e.relatedTarget)) popup.style.display = 'none';
+  }, 200);
+});
+
+popup.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+popup.addEventListener('mouseleave', () => {
+  hideTimeout = setTimeout(() => (popup.style.display = 'none'), 200);
+});
+
+// Телефон: открыть / закрыть при клике
+shareBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (popup.style.display === 'flex') {
+    popup.style.display = 'none';
+  } else {
+    showSharePopup();
+  }
+});
+
+// Закрытие по клику вне
+document.addEventListener('click', (e) => {
+  if (!popup.contains(e.target) && e.target !== shareBtn) popup.style.display = 'none';
+});
+
 
   copyLink.onclick=()=>{
     navigator.clipboard.writeText(window.location.href);
@@ -551,3 +586,4 @@ fetch('footer.html').then(r=>r.text()).then(html=>document.getElementById('foote
 </script>
 </body>
 </html>
+

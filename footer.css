@@ -1,26 +1,4 @@
-footer {
-  margin-top: 36px;
-  text-align: center;
-  font-size: 0.95rem;
-  color: #777;
-}
-footer a {
-  color: #7b7f87;
-  text-decoration: none;
-  margin: 0 6px;
-  transition: color 0.2s ease, transform 0.15s ease;
-}
-footer a:hover {
-  color: #1a73e8;
-  transform: translateY(-1px);
-}
-footer span {
-  color: #aaa;
-  margin: 0 4px;
-}
-@media (max-width: 480px) {
-  footer {
-    font-size: 0.85rem;
-    line-height: 1.6;
-  }
-}
+  footer{margin-top:28px;text-align:center;font-size:.95rem;color:#555}
+  footer a{color:#a7a9ae;text-decoration:none;margin:0 6px}
+  footer a:hover{text-decoration:underline}
+  footer span{color:#aaa}

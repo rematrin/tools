@@ -15,22 +15,16 @@
   .icon{width:30px;height:30px;display:inline-block;vertical-align:middle;transition:opacity .2s ease}
   .amount input{width:200px;max-width:50vw;text-align:right;font-size:1.15rem;padding:6px 12px;border:1px solid #cfd5e1;border-radius:10px;background:#fff}
   .amount input:focus{outline:none;border-color:#7aa2ff;box-shadow:0 0 0 3px rgba(122,162,255,.16)}
-  button{padding:6px 12px;border:1px solid #cfd5e1;background:#fff;border-radius:8px;cursor:pointer;font-size:.95rem}
+  button{padding:6px 12px;border:1px solid #cfd5e1;background:#fff;border-radius:8px;cursor:pointer;font-size:.95rem;transition:transform 0.15s ease}
   button:hover{background:#f0f2f7}
-  button:active {
-  transform: scale(0.85);
-  transition: transform 105.5s ease-out;
-}
+  button:active{transform:scale(0.9)}
 
-.row:first-child .code {
-  flex-shrink: 1;
-  min-width: 100px; /* 
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-
+  .row:first-child .code{
+    flex-shrink:1;
+    min-width:100px;
+    overflow:hidden;
+    white-space:nowrap;
+  }
 </style>
 </head>
 <body>
@@ -38,15 +32,7 @@
 
   <div class="topbar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
     <h1>Конвертер времени</h1>
-    <button id="clearBtn" style="
-      font-size:0.9rem;
-      background:#ffffff;
-      border:1px solid #dcdfe6;
-      border-radius:8px;
-      padding:4px 10px;
-      cursor:pointer;
-      transition:all .2s ease;
-      title="Очистить поля">Очистить</button>
+    <button id="clearBtn" title="Очистить поля">Очистить</button>
   </div>
 
   <div class="card" id="fx"></div>
@@ -55,92 +41,40 @@
 
 <script>
 const UNITS = [
-  {
-    code:'MS',
-    name:'Миллисекунды',
-    factor:1,
-    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/diamond-with-a-dot_1f4a0.png',
-    animated:'https://em-content.zobj.net/source/microsoft-teams/400/diamond-with-a-dot_1f4a0.png',
-    precision:0
-  },
-  {
-    code:'S',
-    name:'Секунды',
-    factor:1000,
-    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/stopwatch_23f1-fe0f.png',
-    animated:'https://em-content.zobj.net/source/microsoft-teams/400/stopwatch_23f1-fe0f.png',
-    precision:3
-  },
-  {
-    code:'MIN',
-    name:'Минуты',
-    factor:60000,
-    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/one-oclock_1f550.png',
-    animated:'https://em-content.zobj.net/source/microsoft-teams/400/one-oclock_1f550.png',
-    precision:4
-  },
-  {
-    code:'H',
-    name:'Часы',
-    factor:3600000,
-    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/three-oclock_1f552.png',
-    animated:'https://em-content.zobj.net/source/microsoft-teams/400/three-oclock_1f552.png',
-    precision:5
-  },
-  {
-    code:'D',
-    name:'Дни',
-    factor:86400000,
-    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/sun_2600-fe0f.png',
-    animated:'https://em-content.zobj.net/source/microsoft-teams/400/sun_2600-fe0f.png',
-    precision:6
-  },
-  {
-    code:'WK',
-    name:'Недели',
-    factor:604800000,
-    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/spiral-calendar_1f5d3-fe0f.png',
-    animated:'https://em-content.zobj.net/source/microsoft-teams/400/spiral-calendar_1f5d3-fe0f.png',
-    precision:6
-  },
-  {
-    code:'MO',
-    name:'Месяцы',
-    factor:2592000000,
-    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/crescent-moon_1f319.png',
-    animated:'https://em-content.zobj.net/source/microsoft-teams/400/crescent-moon_1f319.png',
-    precision:7
-  },
-  {
-    code:'YR',
-    name:'Годы',
-    factor:31536000000,
-    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/rocket_1f680.png',
-    animated:'https://em-content.zobj.net/source/microsoft-teams/400/rocket_1f680.png',
-    precision:8
-  }
+  {code:'MS', name:'Миллисекунды', factor:1,
+   static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/diamond-with-a-dot_1f4a0.png',
+   animated:'https://em-content.zobj.net/source/microsoft-teams/400/diamond-with-a-dot_1f4a0.png', precision:0},
+  {code:'S', name:'Секунды', factor:1000,
+   static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/stopwatch_23f1-fe0f.png',
+   animated:'https://em-content.zobj.net/source/microsoft-teams/400/stopwatch_23f1-fe0f.png', precision:3},
+  {code:'MIN', name:'Минуты', factor:60000,
+   static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/one-oclock_1f550.png',
+   animated:'https://em-content.zobj.net/source/microsoft-teams/400/one-oclock_1f550.png', precision:4},
+  {code:'H', name:'Часы', factor:3600000,
+   static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/three-oclock_1f552.png',
+   animated:'https://em-content.zobj.net/source/microsoft-teams/400/three-oclock_1f552.png', precision:5},
+  {code:'D', name:'Дни', factor:86400000,
+   static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/sun_2600-fe0f.png',
+   animated:'https://em-content.zobj.net/source/microsoft-teams/400/sun_2600-fe0f.png', precision:6},
+  {code:'WK', name:'Недели', factor:604800000,
+   static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/spiral-calendar_1f5d3-fe0f.png',
+   animated:'https://em-content.zobj.net/source/microsoft-teams/400/spiral-calendar_1f5d3-fe0f.png', precision:6},
+  {code:'MO', name:'Месяцы', factor:2592000000,
+   static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/crescent-moon_1f319.png',
+   animated:'https://em-content.zobj.net/source/microsoft-teams/400/crescent-moon_1f319.png', precision:7},
+  {code:'YR', name:'Годы', factor:31536000000,
+   static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/rocket_1f680.png',
+   animated:'https://em-content.zobj.net/source/microsoft-teams/400/rocket_1f680.png', precision:8}
 ];
 
-const fxBox = document.getElementById('fx');
-const clearBtn = document.getElementById('clearBtn');
+const fxBox=document.getElementById('fx');
+const clearBtn=document.getElementById('clearBtn');
 
-// === форматирование ===
-function parseNum(str){
-  if(typeof str!=='string')return NaN;
-  str=str.replace(/[\s\u00A0\u202F]/g,'').replace(',', '.').trim();
-  if(str===''||str==='-'||str==='.')return NaN;
-  return Number(str);
-}
-function formatNum(code,n){
-  const u=UNITS.find(x=>x.code===code);
-  const hasFraction=Math.abs(n%1)>1e-12;
-  const max=hasFraction?u.precision:0;
-  return n.toLocaleString('ru-RU',{minimumFractionDigits:0,maximumFractionDigits:max});
-}
+function parseNum(str){if(typeof str!=='string')return NaN;str=str.replace(/[\s\u00A0\u202F]/g,'').replace(',','.').trim();if(str===''||str==='-'||str==='.')return NaN;return Number(str);}
+function formatNum(code,n){const u=UNITS.find(x=>x.code===code);const hasFraction=Math.abs(n%1)>1e-12;const max=hasFraction?u.precision:0;return n.toLocaleString('ru-RU',{minimumFractionDigits:0,maximumFractionDigits:max});}
 function toMs(code,val){return val*UNITS.find(u=>u.code===code).factor;}
 function fromMs(code,ms){return ms/UNITS.find(u=>u.code===code).factor;}
 
-// === форматирование при вводе (с разделением тысяч) ===
 function formatWithCaret(inputEl){
   let raw=inputEl.value;
   if(/[.,]$/.test(raw)){
@@ -148,10 +82,7 @@ function formatWithCaret(inputEl){
     const intDigits=noSp.replace(/[.,].*$/,'').replace(/\D/g,'');
     const grouped=intDigits?Number(intDigits).toLocaleString('ru-RU'):'';
     inputEl.value=grouped+',';
-    requestAnimationFrame(()=>{
-      const p=inputEl.value.length;
-      inputEl.setSelectionRange(p,p);
-    });
+    requestAnimationFrame(()=>{const p=inputEl.value.length;inputEl.setSelectionRange(p,p);});
     return;
   }
   const caret=inputEl.selectionStart??raw.length;
@@ -173,29 +104,21 @@ function formatWithCaret(inputEl){
   });
 }
 
-// === анимация иконок ===
-const ANIM_DURATION = 3000; // длительность (мс)
-let animTimeout = null;
-let animActive = false;
-
+const ANIM_DURATION=3000;
+let animTimeout=null,animActive=false;
 function triggerIconsAnimation(){
-  if(animActive) return; // не перезапускать, если уже идёт
-  animActive = true;
-
+  if(animActive)return;
+  animActive=true;
   document.querySelectorAll('.icon').forEach(img=>{
     const altSrc=img.dataset.animated;
-    if(altSrc) img.src=altSrc;
+    if(altSrc)img.src=altSrc;
   });
-
   animTimeout=setTimeout(()=>{
-    document.querySelectorAll('.icon').forEach(img=>{
-      img.src=img.dataset.static;
-    });
+    document.querySelectorAll('.icon').forEach(img=>img.src=img.dataset.static);
     animActive=false;
   },ANIM_DURATION);
 }
 
-// === рендер ===
 function render(){
   fxBox.innerHTML='';
   UNITS.forEach(u=>{
@@ -204,25 +127,20 @@ function render(){
     row.innerHTML=`
       <div class="code">
         <img class="icon" src="${u.static}" data-static="${u.static}" data-animated="${u.animated}" alt="">
-        ${u.name}
+        <span>${u.name}</span>
       </div>
-      <div class="amount">
-        <input type="text" inputmode="decimal" data-code="${u.code}" placeholder="">
-      </div>`;
+      <div class="amount"><input type="text" inputmode="decimal" data-code="${u.code}" placeholder=""></div>`;
     fxBox.appendChild(row);
   });
 
   fxBox.querySelectorAll('input').forEach(inp=>{
-    inp.addEventListener('input', e=>{
+    inp.addEventListener('input',e=>{
       formatWithCaret(e.target);
-      triggerIconsAnimation(); // запуск анимации
-      if(/[.,]$/.test(e.target.value)) return;
+      triggerIconsAnimation();
+      if(/[.,]$/.test(e.target.value))return;
       const code=e.target.dataset.code;
       const val=parseNum(e.target.value);
-      if(!isFinite(val)){
-        fxBox.querySelectorAll('input').forEach(i=>{if(i!==e.target)i.value='';});
-        return;
-      }
+      if(!isFinite(val)){fxBox.querySelectorAll('input').forEach(i=>{if(i!==e.target)i.value='';});return;}
       const inMs=toMs(code,val);
       UNITS.forEach(u=>{
         if(u.code===code)return;
@@ -234,6 +152,19 @@ function render(){
 }
 
 clearBtn.onclick=()=>fxBox.querySelectorAll('input').forEach(i=>i.value='');
+
+// --- сокращение "Миллисекунды → Мс" ---
+function toggleMsLabel(){
+  const msLabel=document.querySelector('.row:first-child .code span');
+  const msRow=document.querySelector('.row:first-child');
+  const msInput=msRow?.querySelector('.amount input');
+  if(msLabel&&msRow&&msInput){
+    const fits=msLabel.offsetWidth+msInput.offsetWidth+73<msRow.offsetWidth;
+    msLabel.textContent=fits?'Миллисекунды':'Мс.';
+  }
+}
+window.addEventListener('resize',toggleMsLabel);
+window.addEventListener('load',toggleMsLabel);
 
 render();
 </script>

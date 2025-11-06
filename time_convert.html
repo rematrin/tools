@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Конвертер времени</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f4f6fb;color:#0b0d12}
+  .wrap{max-width:490px;margin:0 auto;padding:22px 14px 28px}
+  h1{font-size:1.25rem;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
+  .card{display:flex;flex-direction:column;gap:5px}
+  .row{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e6e9f2;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.03);padding:10px 12px;gap:10px}
+  .code{display:flex;align-items:center;gap:8px;font-weight:600}
+  .icon{width:30px;height:30px;display:inline-block;vertical-align:middle;transition:opacity .2s ease}
+  .amount input{width:200px;max-width:50vw;text-align:right;font-size:1.15rem;padding:6px 12px;border:1px solid #cfd5e1;border-radius:10px;background:#fff}
+  .amount input:focus{outline:none;border-color:#7aa2ff;box-shadow:0 0 0 3px rgba(122,162,255,.16)}
+  button{padding:6px 12px;border:1px solid #cfd5e1;background:#fff;border-radius:8px;cursor:pointer;font-size:.95rem}
+  button:hover{background:#f0f2f7}
+  button:active {
+  transform: scale(0.85);
+  transition: transform 105.5s ease-out;
+}
+  footer{margin-top:28px;text-align:center;font-size:.95rem;color:#555}
+  footer a{color:#a7a9ae;text-decoration:none;margin:0 6px}
+  footer a:hover{text-decoration:underline}
+  footer span{color:#aaa}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h1>Конвертер времени</h1>
+    <button id="clearBtn" style="
+      font-size:0.9rem;
+      background:#ffffff;
+      border:1px solid #dcdfe6;
+      border-radius:8px;
+      padding:4px 10px;
+      cursor:pointer;
+      transition:all .2s ease;
+      title="Очистить поля">Очистить</button>
+  </div>
+
+  <div class="card" id="fx"></div>
+
+</div>
+
+<script>
+const UNITS = [
+  {
+    code:'MS',
+    name:'Миллисекунды',
+    factor:1,
+    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/diamond-with-a-dot_1f4a0.png',
+    animated:'https://em-content.zobj.net/source/microsoft-teams/400/diamond-with-a-dot_1f4a0.png',
+    precision:0
+  },
+  {
+    code:'S',
+    name:'Секунды',
+    factor:1000,
+    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/stopwatch_23f1-fe0f.png',
+    animated:'https://em-content.zobj.net/source/microsoft-teams/400/stopwatch_23f1-fe0f.png',
+    precision:3
+  },
+  {
+    code:'MIN',
+    name:'Минуты',
+    factor:60000,
+    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/one-oclock_1f550.png',
+    animated:'https://em-content.zobj.net/source/microsoft-teams/400/one-oclock_1f550.png',
+    precision:4
+  },
+  {
+    code:'H',
+    name:'Часы',
+    factor:3600000,
+    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/three-oclock_1f552.png',
+    animated:'https://em-content.zobj.net/source/microsoft-teams/400/three-oclock_1f552.png',
+    precision:5
+  },
+  {
+    code:'D',
+    name:'Дни',
+    factor:86400000,
+    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/sun_2600-fe0f.png',
+    animated:'https://em-content.zobj.net/source/microsoft-teams/400/sun_2600-fe0f.png',
+    precision:6
+  },
+  {
+    code:'WK',
+    name:'Недели',
+    factor:604800000,
+    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/spiral-calendar_1f5d3-fe0f.png',
+    animated:'https://em-content.zobj.net/source/microsoft-teams/400/spiral-calendar_1f5d3-fe0f.png',
+    precision:6
+  },
+  {
+    code:'MO',
+    name:'Месяцы',
+    factor:2592000000,
+    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/crescent-moon_1f319.png',
+    animated:'https://em-content.zobj.net/source/microsoft-teams/400/crescent-moon_1f319.png',
+    precision:7
+  },
+  {
+    code:'YR',
+    name:'Годы',
+    factor:31536000000,
+    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/rocket_1f680.png',
+    animated:'https://em-content.zobj.net/source/microsoft-teams/400/rocket_1f680.png',
+    precision:8
+  }
+];
+
+const fxBox = document.getElementById('fx');
+const clearBtn = document.getElementById('clearBtn');
+
+// === форматирование ===
+function parseNum(str){
+  if(typeof str!=='string')return NaN;
+  str=str.replace(/[\s\u00A0\u202F]/g,'').replace(',', '.').trim();
+  if(str===''||str==='-'||str==='.')return NaN;
+  return Number(str);
+}
+function formatNum(code,n){
+  const u=UNITS.find(x=>x.code===code);
+  const hasFraction=Math.abs(n%1)>1e-12;
+  const max=hasFraction?u.precision:0;
+  return n.toLocaleString('ru-RU',{minimumFractionDigits:0,maximumFractionDigits:max});
+}
+function toMs(code,val){return val*UNITS.find(u=>u.code===code).factor;}
+function fromMs(code,ms){return ms/UNITS.find(u=>u.code===code).factor;}
+
+// === форматирование при вводе (с разделением тысяч) ===
+function formatWithCaret(inputEl){
+  let raw=inputEl.value;
+  if(/[.,]$/.test(raw)){
+    const noSp=raw.replace(/[\s\u00A0\u202F]/g,'');
+    const intDigits=noSp.replace(/[.,].*$/,'').replace(/\D/g,'');
+    const grouped=intDigits?Number(intDigits).toLocaleString('ru-RU'):'';
+    inputEl.value=grouped+',';
+    requestAnimationFrame(()=>{
+      const p=inputEl.value.length;
+      inputEl.setSelectionRange(p,p);
+    });
+    return;
+  }
+  const caret=inputEl.selectionStart??raw.length;
+  const digitsLeft=(raw.slice(0,caret).match(/\d/g)||[]).length;
+  raw=raw.replace(/[^\d.,]/g,'');
+  const firstSep=raw.search(/[.,]/);
+  if(firstSep!==-1){
+    const before=raw.slice(0,firstSep).replace(/[^\d]/g,'');
+    let after=raw.slice(firstSep+1).replace(/[^\d]/g,'');
+    inputEl.value=(before?Number(before).toLocaleString('ru-RU'):'')+(after!==''?','+after:'');
+  }else{
+    const digits=raw.replace(/[^\d]/g,'');
+    inputEl.value=digits?Number(digits).toLocaleString('ru-RU'):'';
+  }
+  requestAnimationFrame(()=>{
+    let i=0,seen=0,s=inputEl.value;
+    while(i<s.length&&seen<digitsLeft){if(/\d/.test(s[i]))seen++;i++;}
+    inputEl.setSelectionRange(i,i);
+  });
+}
+
+// === анимация иконок ===
+const ANIM_DURATION = 6000; // длительность (мс)
+let animTimeout = null;
+let animActive = false;
+
+function triggerIconsAnimation(){
+  if(animActive) return; // не перезапускать, если уже идёт
+  animActive = true;
+
+  document.querySelectorAll('.icon').forEach(img=>{
+    const altSrc=img.dataset.animated;
+    if(altSrc) img.src=altSrc;
+  });
+
+  animTimeout=setTimeout(()=>{
+    document.querySelectorAll('.icon').forEach(img=>{
+      img.src=img.dataset.static;
+    });
+    animActive=false;
+  },ANIM_DURATION);
+}
+
+// === рендер ===
+function render(){
+  fxBox.innerHTML='';
+  UNITS.forEach(u=>{
+    const row=document.createElement('div');
+    row.className='row';
+    row.innerHTML=`
+      <div class="code">
+        <img class="icon" src="${u.static}" data-static="${u.static}" data-animated="${u.animated}" alt="">
+        ${u.name}
+      </div>
+      <div class="amount">
+        <input type="text" inputmode="decimal" data-code="${u.code}" placeholder="">
+      </div>`;
+    fxBox.appendChild(row);
+  });
+
+  fxBox.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      formatWithCaret(e.target);
+      triggerIconsAnimation(); // запуск анимации
+      if(/[.,]$/.test(e.target.value)) return;
+      const code=e.target.dataset.code;
+      const val=parseNum(e.target.value);
+      if(!isFinite(val)){
+        fxBox.querySelectorAll('input').forEach(i=>{if(i!==e.target)i.value='';});
+        return;
+      }
+      const inMs=toMs(code,val);
+      UNITS.forEach(u=>{
+        if(u.code===code)return;
+        const el=fxBox.querySelector(`input[data-code="${u.code}"]`);
+        el.value=formatNum(u.code,fromMs(u.code,inMs));
+      });
+    });
+  });
+}
+
+clearBtn.onclick=()=>fxBox.querySelectorAll('input').forEach(i=>i.value='');
+
+render();
+</script>
+  <div id="footer"></div>
+<script>
+fetch('footer.html').then(r=>r.text()).then(html=>document.getElementById('footer').innerHTML=html);
+</script>
+</body>
+</html>

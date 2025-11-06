@@ -74,11 +74,6 @@
   margin-top: -4px;
   margin-bottom: 8px;
 }
-
-  footer{margin-top:28px;text-align:center;font-size:.95rem;color:#555}
-  footer a{color:#a7a9ae;text-decoration:none;margin:0 6px}
-  footer a:hover{text-decoration:underline}
-  footer span{color:#aaa}
   
 .topbar {
   display: flex;
@@ -591,9 +586,12 @@ document.addEventListener('click',e=>{if(!popup.contains(e.target)&&e.target!==s
 // === Init ===
 (async function init(){renderRows();await loadRates();})();
 </script>
+<link rel="stylesheet" href="footer.css">
 <div id="footer"></div>
 <script>
-fetch('footer.html').then(r=>r.text()).then(html=>document.getElementById('footer').innerHTML=html);
+fetch('footer.html')
+  .then(r => r.text())
+  .then(html => document.getElementById('footer').innerHTML = html);
 </script>
 </body>
 </html>

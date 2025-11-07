@@ -41,7 +41,7 @@
 
 <script>
 const UNITS = [
-  {code:'MS', name:'Миллисекунды', factor:1,
+  {code:'MS', name:'М.Секунды', factor:1,
    static:'https://em-content.zobj.net/source/microsoft-3D-fluent/433/diamond-with-a-dot_1f4a0.png',
    animated:'https://em-content.zobj.net/source/microsoft-teams/400/diamond-with-a-dot_1f4a0.png', precision:0},
   {code:'S', name:'Секунды', factor:1000,
@@ -153,22 +153,9 @@ function render(){
 
 clearBtn.onclick=()=>fxBox.querySelectorAll('input').forEach(i=>i.value='');
 
-// --- сокращение "Миллисекунды → Мс" ---
-function toggleMsLabel(){
-  const msLabel=document.querySelector('.row:first-child .code span');
-  const msRow=document.querySelector('.row:first-child');
-  const msInput=msRow?.querySelector('.amount input');
-  if(msLabel&&msRow&&msInput){
-    const fits=msLabel.offsetWidth+msInput.offsetWidth+73<msRow.offsetWidth;
-    msLabel.textContent=fits?'Миллисекунды':'Мс.';
-  }
-}
-window.addEventListener('resize',toggleMsLabel);
-window.addEventListener('load',toggleMsLabel);
-
 render();
 </script>
-<link rel="stylesheet" href="footer.css">
+  <link rel="stylesheet" href="footer.css">
 <div id="footer"></div>
 <script>
 fetch('footer.html')

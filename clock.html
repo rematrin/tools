@@ -523,16 +523,38 @@ let isTouch = false; // определим, телефон это или нет
 
 window.addEventListener('touchstart', () => (isTouch = true), { once: true });
 
-function showSharePopup() {
-  const url = window.location.href;
-  tg.href = `https://t.me/share/url?url=${encodeURIComponent(url)}`;
-  wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(url)}`;
-  fb.href = `https://www.facebook.com/share_channel/?type=reshare&link=${encodeURIComponent(url)}&app_id=87741124305&source_surface=external_reshare&display=popup`;
+async function showSharePopup() {
+  let longUrl = window.location.href;
+  let shortUrl = longUrl;
 
+  // ——— попробуем создать короткий URL через is.gd ———
+  try {
+    const r = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`);
+    const data = await r.json();
+    if (data.shorturl) shortUrl = data.shorturl;
+  } catch (e) {
+    console.warn("Ошибка сокращения ссылки, используем длинную");
+  }
+
+  // ——— обновляем кнопки ———
+  tg.href = `https://t.me/share/url?url=${encodeURIComponent(shortUrl)}`;
+  wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shortUrl)}`;
+  fb.href = `https://www.facebook.com/share_channel/?type=reshare&link=${encodeURIComponent(shortUrl)}&app_id=87741124305&source_surface=external_reshare&display=popup`;
+
+  // ——— обработка копирования ———
+  copyLink.onclick = () => {
+    navigator.clipboard.writeText(shortUrl);
+    copyLink.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/1442/1442912.png" width="18" height="18" alt="">Скопировано!`;
+    setTimeout(() => {
+      copyLink.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/7640/7640062.png" width="18" height="18"> Ссылка`;
+    }, 2000);
+  };
+
+  // ——— позиционирование попапа ———
   const rect = shareBtn.getBoundingClientRect();
-  popup.style.left = rect.left + 'px';
-  popup.style.top = rect.bottom + 8 + 'px';
-  popup.style.display = 'flex';
+  popup.style.left = rect.left + "px";
+  popup.style.top = rect.bottom + 8 + "px";
+  popup.style.display = "flex";
   clearTimeout(hideTimeout);
 }
 
@@ -599,8 +621,3 @@ fetch('footer.html')
 
 </body>
 </html>
-
-
-
-
-

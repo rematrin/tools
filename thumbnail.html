@@ -2,13 +2,38 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Скачать YouTube превью</title>
- <link rel="icon" type="image/x-icon" href="play.ico">
- <link rel="icon" type="image/png" sizes="32x32" href="yt.png">
- <link rel="icon" type="image/png" sizes="192x192" href="yt.png">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
 
- <link rel="apple-touch-icon" sizes="180x180" href="yt2.png">
+<title>Скачать YouTube превью</title>
+<meta name="description" content="Бесплатный инструмент для скачивания превью (обложек) из YouTube видео в высоком качестве (HD, 4K).">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="YouTube Thumbnail Downloader">
+<meta property="og:title" content="Скачать YouTube превью">
+<meta property="og:description" content="Скачать обложку видео в максимальном качестве.">
+
+<meta property="og:url" content="https://rematrin.github.io/tools/thumbnail/">
+
+<meta property="og:image" content="https://rematrin.github.io/tools/yt2.png?v=3">
+
+<link rel="canonical" href="https://rematrin.github.io/tools/thumbnail/">
+
+<link rel="apple-touch-icon" sizes="180x180" href="https://rematrin.github.io/tools/yt2.png?v=3">
+<link rel="icon" type="image/png" sizes="32x32" href="https://rematrin.github.io/tools/yt.png?v=3">
+<link rel="icon" type="image/png" sizes="192x192" href="https://rematrin.github.io/tools/yt.png?v=3">
+<link rel="shortcut icon" href="https://rematrin.github.io/tools/play.ico?v=3">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Скачать YouTube превью",
+  "url": "https://rematrin.github.io/tools/thumbnail/",
+  "image": "https://rematrin.github.io/tools/yt2.png?v=3"
+}
+</script>
+
 <style>
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f6f7fb;color:#0c0c0d}
@@ -20,8 +45,6 @@
   .preview{margin-top:16px;display:flex;justify-content:center}
   .preview a{display:block;width:100%;max-width:860px}
   .preview img{width:100%;height:auto;border-radius:12px;border:1px solid #e6e9f2;background:#eef2ff}
-
-  /* Информация о видео */
   .info{margin-top:14px;background:#fbfcff;border:1px solid #e6ecff;border-radius:10px;padding:12px}
   .info .row2{display:grid;gap:6px}
   .k{opacity:.8;min-width:140px;display:inline-block}
@@ -38,14 +61,12 @@
       <input id="yturl" type="url" placeholder="Вставьте ссылку на YouTube видео..." autocomplete="off">
     </div>
 
-    <!-- Превью -->
     <div class="preview" id="out" hidden>
       <a id="thumbLink" target="_blank" rel="noopener">
         <img id="thumb" alt="Превью YouTube">
       </a>
     </div>
 
-    <!-- Информация о видео (изначально скрыта) -->
     <div id="videoInfo" class="info" hidden>
       <div class="row2" id="infoRows"></div>
       <div id="apiErr" class="err" hidden></div>
@@ -54,26 +75,23 @@
 </div>
 
 <script>
-  // 🔑 ВСТАВЬТЕ СВОЙ API KEY (YouTube Data API v3)
+  // 🔑 Твой API Key
   const API_KEY = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
 
   const input = document.getElementById('yturl');
   const out   = document.getElementById('out');
   const img   = document.getElementById('thumb');
   const link  = document.getElementById('thumbLink');
-
   const infoBox   = document.getElementById('videoInfo');
   const infoRows  = document.getElementById('infoRows');
   const apiErrEl  = document.getElementById('apiErr');
-
- const placeholder = "https://placehold.co/800x450?text=Вставьте+ссылку,+чтобы+скачать+превью&font=roboto";
+  const placeholder = "https://placehold.co/800x450?text=Вставьте+ссылку,+чтобы+скачать+превью&font=roboto";
  
- // сразу показываем плейсхолдер
- img.src = placeholder;
- out.hidden = false;
- link.removeAttribute("href"); // <== убираем ссылку, пока видео нет
- link.style.pointerEvents = "none"; // <== отключаем клики
- link.style.cursor = "default";     // <== курсор обычный, не “рука”
+  img.src = placeholder;
+  out.hidden = false;
+  link.removeAttribute("href");
+  link.style.pointerEvents = "none";
+  link.style.cursor = "default";
 
   function parseYouTubeId(url){
     if (!url) return null;
@@ -87,7 +105,6 @@
     }catch{ return null; }
   }
 
-  // формат «10 октября 2025 в 13:00 по мск»
   function formatMoscow(dtISO){
     const d = new Date(dtISO);
     const optsDate = { year:'numeric', month:'long', day:'numeric' };
@@ -99,7 +116,7 @@
 
   async function fetchVideoMeta(id){
     if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
-      throw new Error('Не указан API ключ. Вставьте свой YouTube Data API ключ в переменную API_KEY.');
+      throw new Error('Не указан API ключ.');
     }
     const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${API_KEY}`;
     const res = await fetch(url);
@@ -117,72 +134,61 @@
     };
   }
 
-  let t; // debounce
- function update(){
-  clearTimeout(t);
-  t = setTimeout(async ()=>{
-    apiErrEl.hidden = true; 
-    apiErrEl.textContent = '';
-    const id = parseYouTubeId(input.value);
+  let t;
+  function update(){
+    clearTimeout(t);
+    t = setTimeout(async ()=>{
+      apiErrEl.hidden = true; 
+      apiErrEl.textContent = '';
+      const id = parseYouTubeId(input.value);
 
-    if (!id){
-      // 🟡 Нет ссылки → возвращаем плейсхолдер и отключаем клики
-      img.src = placeholder;
-      link.removeAttribute("href");
-      link.style.pointerEvents = "none";
-      link.style.cursor = "default";
-      infoBox.hidden = true;
-      return;
-    }
+      if (!id){
+        img.src = placeholder;
+        link.removeAttribute("href");
+        link.style.pointerEvents = "none";
+        link.style.cursor = "default";
+        infoBox.hidden = true;
+        return;
+      }
 
-    // 🟢 Есть ID → включаем превью и активируем клики
-    const max = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
-    const hq  = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
-    img.src = max;
-    link.href = max;
-    link.style.pointerEvents = "auto";
-    link.style.cursor = "pointer";
-    img.onerror = () => { 
-      img.onerror = null; 
-      img.src = hq; 
-      link.href = hq; 
-    };
+      const max = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+      const hq  = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+      img.src = max;
+      link.href = max;
+      link.style.pointerEvents = "auto";
+      link.style.cursor = "pointer";
+      img.onerror = () => { 
+        img.onerror = null; 
+        img.src = hq; 
+        link.href = hq; 
+      };
 
-    // 🔵 Информация о видео
-    try {
-      const meta = await fetchVideoMeta(id);
-      const dateStr = meta.publishedAt ? formatMoscow(meta.publishedAt) : '—';
-      infoRows.innerHTML = `
-        <div><span class="k"><strong>Название:</strong></span> ${escapeHtml(meta.title)}</div>
-        <div><span class="k"><strong>Канал:</strong></span> ${escapeHtml(meta.channel)}</div>
-        <div><span class="k"><strong>Опубликовано:</strong></span> ${dateStr}</div>
-      `;
-      infoBox.hidden = false;
-    } catch(err) {
-      infoBox.hidden = false; // показываем коробку с ошибкой
-      infoRows.innerHTML = '';
-      apiErrEl.textContent = (err && err.message) ? err.message : String(err);
-      apiErrEl.hidden = false;
-    }
-  }, 250);
-}
+      try {
+        const meta = await fetchVideoMeta(id);
+        const dateStr = meta.publishedAt ? formatMoscow(meta.publishedAt) : '—';
+        infoRows.innerHTML = `
+          <div><span class="k"><strong>Название:</strong></span> ${escapeHtml(meta.title)}</div>
+          <div><span class="k"><strong>Канал:</strong></span> ${escapeHtml(meta.channel)}</div>
+          <div><span class="k"><strong>Опубликовано:</strong></span> ${dateStr}</div>
+        `;
+        infoBox.hidden = false;
+      } catch(err) {
+        infoBox.hidden = false;
+        infoRows.innerHTML = '';
+        apiErrEl.textContent = (err && err.message) ? err.message : String(err);
+        apiErrEl.hidden = false;
+      }
+    }, 250);
+  }
 
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
   input.addEventListener('input', update);
 
-  // поддержка ?url=... в адресной строке
   (function(){
     const q = new URLSearchParams(location.search).get('url');
     if (q){ input.value = q; update(); }
   })();
-</script>
-<link rel="stylesheet" href="footer.css">
-<div id="footer"></div>
-<script>
-fetch('footer.html')
-  .then(r => r.text())
-  .then(html => document.getElementById('footer').innerHTML = html);
 </script>
 </body>
 </html>

@@ -2,11 +2,29 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
 <title>Скачать YouTube превью</title>
- <link rel="icon" type="image/x-icon" href="play.ico">
- <link rel="icon" type="image/png" href="yt.png">
- <link rel="apple-touch-icon" href="yt2.png">
+<meta name="description" content="Бесплатный инструмент для скачивания превью (обложек) из YouTube видео в высоком качестве.">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="YouTube Thumbnail Downloader">
+<meta property="og:title" content="Скачать YouTube превью">
+<meta property="og:description" content="Скачать обложку видео в максимальном качестве.">
+<meta property="og:url" content="https://rematrin.github.io/tools/thumbnail/">
+<meta property="og:image" content="https://rematrin.github.io/tools/yt2.png?v=6">
+
+<link rel="canonical" href="https://rematrin.github.io/tools/thumbnail/">
+
+<link rel="manifest" href="site.webmanifest">
+
+<link rel="apple-touch-icon" sizes="180x180" href="https://rematrin.github.io/tools/yt2.png?v=6">
+
+<link rel="icon" type="image/png" sizes="32x32" href="https://rematrin.github.io/tools/yt.png?v=6">
+<link rel="icon" type="image/png" sizes="192x192" href="https://rematrin.github.io/tools/yt.png?v=6">
+<link rel="icon" type="image/x-icon" href="https://rematrin.github.io/tools/play.ico?v=6">
+
 <style>
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f6f7fb;color:#0c0c0d}
@@ -36,14 +54,12 @@
       <input id="yturl" type="url" placeholder="Вставьте ссылку на YouTube видео..." autocomplete="off">
     </div>
 
-    <!-- Превью -->
     <div class="preview" id="out" hidden>
       <a id="thumbLink" target="_blank" rel="noopener">
         <img id="thumb" alt="Превью YouTube">
       </a>
     </div>
 
-    <!-- Информация о видео (изначально скрыта) -->
     <div id="videoInfo" class="info" hidden>
       <div class="row2" id="infoRows"></div>
       <div id="apiErr" class="err" hidden></div>

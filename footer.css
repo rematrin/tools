@@ -2,7 +2,9 @@
 .footer-wrapper {
     margin-top: 40px;
     display: flex;
-    flex-direction: column;
+    /* ГЛАВНОЕ ИЗМЕНЕНИЕ: column-reverse меняет порядок отображения.
+       Визуально меню будет СВЕРХУ, а кнопка СНИЗУ. */
+    flex-direction: column-reverse;
     align-items: center;
     padding-bottom: 30px;
     width: 100%;
@@ -30,7 +32,7 @@
     background: var(--bg, #f4f6fb);
 }
 
-/* Иконка в главной кнопке */
+/* Иконка меню в кнопке */
 .btn-main-icon {
     opacity: 0.8;
 }
@@ -40,6 +42,8 @@
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 0.6;
     margin-left: 4px;
+    /* По умолчанию стрелка смотрит ВВЕРХ, показывая, что меню выедет туда */
+    transform: rotate(180deg);
 }
 
 /* Выезжающая панель */
@@ -52,11 +56,14 @@
     max-width: 700px;
     padding: 0 10px;
 }
+
 /* Состояние открыто */
 .footer-drawer.open {
     max-height: 600px;
     opacity: 1;
-    margin-top: 15px;
+    /* Отступ СНИЗУ, чтобы отодвинуть меню от кнопки */
+    margin-bottom: 15px;
+    margin-top: 0;
 }
 
 /* Сетка ссылок */
@@ -102,7 +109,7 @@
     color: var(--accent, #7aa2ff);
 }
 
-/* Состояние, когда меню открыто - поворачиваем стрелку */
+/* Когда меню открыто, стрелка поворачивается ВНИЗ */
 .footer-toggle-btn.active .arrow-icon {
-    transform: rotate(180deg);
+    transform: rotate(0deg);
 }

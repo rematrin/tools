@@ -9,12 +9,10 @@
         },
         {
             "src": "https://rematrin.github.io/tools/yt2.png",
-            "sizes": "256x256",
+            "sizes": "512x512",
             "type": "image/png"
         }
     ],
-    "theme_color": "#ffffff",
-    "background_color": "#ffffff",
     "display": "standalone",
     "start_url": "https://rematrin.github.io/tools/thumbnail/"
 }

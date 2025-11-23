@@ -36,7 +36,7 @@ body.dark {
     --tooltip-bg: #e6e9f2;
     --tooltip-text: #0f1115;
     
-    /* Донат в темной теме чуть приглушаем или оставляем ярким */
+    /* Донат в темной теме */
     --donate-bg: #ffd500;
     --donate-text: #000000;
 }
@@ -67,18 +67,42 @@ body {
     flex-direction: column;
 }
 
-/* === ШАПКА === */
-.topbar {
+/* === ЗАГОЛОВОК СЕРВИСОВ (ШАПКА) === */
+.section-header {
     display: flex;
-    justify-content: flex-end;
     align-items: center;
-    margin-bottom: 40px;
+    justify-content: center; /* Заголовок по центру */
+    position: relative;      /* Важно для позиционирования кнопки */
+    margin-bottom: 30px;
+    height: 40px;            /* Фиксируем высоту, чтобы элементы встали ровно */
 }
 
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    opacity: 0.9;
+    /* Иконка и текст рядом */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-icon {
+    color: var(--text);
+    opacity: 0.8;
+}
+
+/* Кнопка темы СПРАВА */
 .theme-btn {
+    position: absolute; /* Вынимаем из потока */
+    right: 0;           /* Прижимаем вправо */
+    top: 50%;           /* Центрируем по вертикали */
+    transform: translateY(-50%);
+    
     background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 10px;
     padding: 8px;
     cursor: pointer;
     transition: all .2s ease;
@@ -86,30 +110,8 @@ body {
     align-items: center;
     justify-content: center;
 }
-.theme-btn:hover { background: var(--hover-bg); }
-.theme-btn img { width: 20px; height: 20px; display: block; }
-
-
-/* === ЗАГОЛОВОК СЕРВИСОВ === */
-.section-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 25px;
-    opacity: 0.9;
-}
-
-.section-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 0;
-}
-
-.section-icon {
-    color: var(--text);
-    opacity: 0.8;
-}
+.theme-btn:hover { background: var(--hover-bg); transform: translateY(-50%) scale(1.05); }
+.theme-btn img { width: 14px; height: 14px; display: block; }
 
 
 /* === СЕТКА КАРТОЧЕК === */
@@ -172,16 +174,17 @@ body {
 .tool-card:nth-child(5) { animation-delay: 0.25s; }
 .tool-card:nth-child(6) { animation-delay: 0.3s; }
 
+
 /* === МИНИ ФУТЕР (ДОНАТ) === */
 .main-footer {
     margin-top: auto; /* Прибиваем к низу */
     padding-top: 60px;
-    padding-bottom: 20px;
+    padding-bottom: 30px;
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 15px;
 }
 
 .footer-desc {
@@ -193,23 +196,23 @@ body {
 .donate-btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    background: var(--donate-bg); /* Желтый или акцентный */
+    gap: 10px;
+    background: var(--donate-bg);
     color: var(--donate-text);
-    padding: 10px 20px;
+    padding: 12px 24px;
     border-radius: 30px;
     text-decoration: none;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 1rem;
     transition: transform 0.2s, box-shadow 0.2s;
     box-shadow: 0 4px 15px rgba(255, 220, 0, 0.15);
 }
 
 .donate-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 220, 0, 0.3);
+    box-shadow: 0 8px 25px rgba(255, 220, 0, 0.3);
 }
-/* Убираем желтую тень в темной теме, делаем более нейтральной */
+
 body.dark .donate-btn {
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
@@ -246,16 +249,17 @@ body.dark .donate-btn:hover {
 <div id="customTooltip"></div>
 
 <div class="wrap">
-    
-    <div class="topbar">
+
+    <div class="section-header">
+        
+        <div class="section-title">
+            <svg class="section-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            <span>Все сервисы</span>
+        </div>
+        
         <button class="theme-btn" id="themeToggle" data-tip="Сменить тему">
             <img class="icon" src="https://cdn-icons-png.flaticon.com/128/4489/4489231.png" alt="Theme">
         </button>
-    </div>
-
-    <div class="section-header">
-        <svg class="section-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-        <h1 class="section-title">Все сервисы</h1>
     </div>
 
     <div class="services-grid">
@@ -293,12 +297,11 @@ body.dark .donate-btn:hover {
     </div>
 
     <div class="main-footer">
-        
         <a href="https://t.me/tribute/app?startapp=dAvG" target="_blank" class="donate-btn">
             <span>Угостить автора кофе</span>
             <span>☕</span>
         </a>
-      <p class="footer-desc">Поддержите автора, угостив чашкой кофе.</p>
+        <p class="footer-desc">Поддержите автора, угостив чашкой кофе</p>
     </div>
 
 </div>
@@ -324,7 +327,6 @@ document.getElementById('themeToggle').onclick = () => {
 // ==== 2. TOOLTIPS (ПОДСКАЗКИ) ====
 const tooltipEl = document.getElementById('customTooltip');
 
-// Логика отображения
 function showTooltip(el) {
     const text = el.getAttribute('data-tip');
     if (!text) return;
@@ -333,11 +335,11 @@ function showTooltip(el) {
     tooltipEl.textContent = text;
     tooltipEl.classList.add('visible');
 
-    // Позиция: центрируем снизу
+    // Центрируем сверху элемента
     let top = rect.bottom + 8;
     let left = rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
 
-    // Не вылезать за край экрана
+    // Ограничения экрана
     if (left < 10) left = 10;
     if (left + tooltipEl.offsetWidth > window.innerWidth) {
         left = window.innerWidth - tooltipEl.offsetWidth - 10;
@@ -347,7 +349,6 @@ function showTooltip(el) {
     tooltipEl.style.left = `${left}px`;
 }
 
-// Навешиваем обработчики на все элементы с data-tip
 document.querySelectorAll('[data-tip]').forEach(el => {
     el.addEventListener('mouseenter', () => showTooltip(el));
     el.addEventListener('mouseleave', () => tooltipEl.classList.remove('visible'));

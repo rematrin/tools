@@ -2,8 +2,7 @@
 .footer-wrapper {
     margin-top: 40px;
     display: flex;
-    /* ГЛАВНОЕ ИЗМЕНЕНИЕ: column-reverse меняет порядок отображения.
-       Визуально меню будет СВЕРХУ, а кнопка СНИЗУ. */
+    /* Меню СВЕРХУ, кнопка СНИЗУ */
     flex-direction: column-reverse;
     align-items: center;
     padding-bottom: 30px;
@@ -42,8 +41,7 @@
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 0.6;
     margin-left: 4px;
-    /* По умолчанию стрелка смотрит ВВЕРХ, показывая, что меню выедет туда */
-    transform: rotate(180deg);
+    /* УБРАЛИ ПОВОРОТ: Теперь по умолчанию смотрит ВНИЗ */
 }
 
 /* Выезжающая панель */
@@ -61,7 +59,6 @@
 .footer-drawer.open {
     max-height: 600px;
     opacity: 1;
-    /* Отступ СНИЗУ, чтобы отодвинуть меню от кнопки */
     margin-bottom: 15px;
     margin-top: 0;
 }
@@ -109,7 +106,7 @@
     color: var(--accent, #7aa2ff);
 }
 
-/* Когда меню открыто, стрелка поворачивается ВНИЗ */
+/* ИЗМЕНИЛИ: При открытии стрелка поворачивается ВВЕРХ (на 180 градусов) */
 .footer-toggle-btn.active .arrow-icon {
-    transform: rotate(0deg);
+    transform: rotate(180deg);
 }

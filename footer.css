@@ -12,16 +12,17 @@
 /* Кнопка-переключатель */
 .footer-toggle-btn {
     background: var(--card-bg, #fff);
-    border: 1px solid var(--border, #e6e9f2);
+    border: 1px solid var(--border, #dcdfe6);
     color: var(--text, #333);
-    padding: 10px 20px;
-    border-radius: 30px;
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    gap: 8px;
+    
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 0.95rem;
     font-weight: 500;
     display: flex;
     align-items: center;
-    gap: 10px;
     transition: all 0.2s ease;
     box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     margin-bottom: 0;

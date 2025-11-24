@@ -145,6 +145,11 @@ textarea:focus {
     pointer-events: none;
 }
 
+/* СКРЫВАЕМ КНОПКИ ПО УМОЛЧАНИЮ */
+#clearBtn, #copyBtn {
+    display: none;
+}
+
 /* Панель кнопок */
 .controls-grid {
     display: grid;
@@ -229,7 +234,7 @@ body.dark .btn-action.active { color: #fff !important; }
                 <span class="label">Исходный текст:</span>
                 <div class="area-wrapper">
                     <textarea id="inputArea" placeholder="Начните печатать здесь..."></textarea>
-                    <button class="overlay-btn" onclick="clearText()" data-tip="Очистить поле">
+                    <button class="overlay-btn" id="clearBtn" onclick="clearText()" data-tip="Очистить поле">
                         <img class="icon" src="https://cdn-icons-png.flaticon.com/512/1828/1828778.png" alt="x">
                     </button>
                 </div>
@@ -263,42 +268,58 @@ const inputArea = document.getElementById('inputArea');
 const outputArea = document.getElementById('outputArea');
 const buttons = document.querySelectorAll('.btn-action');
 const copyBtn = document.getElementById('copyBtn');
+const clearBtn = document.getElementById('clearBtn');
 
 // Состояние
 let currentMode = 'upper';
-// Теперь по умолчанию TRUE (начинать с Заглавной: ПрИмЕр)
 let alternateStartUpper = true; 
 
 window.onload = () => {
     setMode('upper');
+    updateButtonsState(); // Проверка при загрузке
 };
+
+// Функция управления видимостью кнопок
+function updateButtonsState() {
+    // Если есть текст в поле ввода -> показать крестик
+    if (inputArea.value.trim().length > 0) {
+        clearBtn.style.display = 'flex';
+    } else {
+        clearBtn.style.display = 'none';
+    }
+
+    // Если есть текст в поле вывода -> показать копирование
+    if (outputArea.value.trim().length > 0) {
+        copyBtn.style.display = 'flex';
+    } else {
+        copyBtn.style.display = 'none';
+    }
+}
 
 inputArea.addEventListener('input', () => {
     applyConversion();
+    updateButtonsState();
 });
 
 function setMode(mode) {
     if (mode === 'alternate' && currentMode === 'alternate') {
-        // Если уже в этом режиме - инвертируем
         alternateStartUpper = !alternateStartUpper;
     } else {
-        // Если переключаемся с другого режима, сбрасываем на True (ПрИмЕр)
         if (mode !== 'alternate') alternateStartUpper = true;
     }
 
     currentMode = mode;
     
-    // Подсветка кнопок
     buttons.forEach(btn => btn.classList.remove('active'));
     const activeBtn = document.querySelector(`.btn-action[data-mode="${mode}"]`);
     if (activeBtn) activeBtn.classList.add('active');
 
-    // Меняем текст кнопки для наглядности
     if (mode === 'alternate' && activeBtn) {
         activeBtn.textContent = alternateStartUpper ? 'ЧeРeДoВаНиЕ' : 'чЕрЕдОвАнИе'; 
     }
 
     applyConversion();
+    updateButtonsState();
 }
 
 function applyConversion() {
@@ -327,10 +348,8 @@ function applyConversion() {
             result = text.split('').map((c, i) => {
                 const isEven = i % 2 === 0;
                 if (alternateStartUpper) {
-                    // Start Upper: Even -> Upper
                     return isEven ? c.toUpperCase() : c.toLowerCase();
                 } else {
-                    // Start Lower: Even -> Lower
                     return isEven ? c.toLowerCase() : c.toUpperCase();
                 }
             }).join('');
@@ -347,6 +366,7 @@ function clearText() {
     inputArea.value = '';
     outputArea.value = '';
     inputArea.focus();
+    updateButtonsState(); // Скрываем кнопки сразу
 }
 
 function copyText() {

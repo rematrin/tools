@@ -7,78 +7,188 @@
 <link rel="icon" type="image/png" href="exchange.png">
 <link rel="apple-touch-icon" href="exchange2.png">
 <style>
+  /* === ЦВЕТОВЫЕ ПЕРЕМЕННЫЕ === */
+  :root {
+    --bg: #f4f6fb;
+    --text: #0b0d12;
+    --card-bg: #ffffff;
+    --border: #e6e9f2;
+    --input-bg: transparent;
+    --btn-hover: #f0f2f7;
+    --accent: #7aa2ff;
+    
+    /* Цвета подсказки */
+    --tooltip-bg: #2a2c33;
+    --tooltip-text: #ffffff;
+  }
+
+  body.dark {
+    --bg: #0f1115;
+    --text: #f3f3f3;
+    --card-bg: #1a1d22;
+    --border: #292c33;
+    --input-bg: transparent;
+    --btn-hover: #252830;
+    --accent: #5b8af0;
+    
+    --tooltip-bg: #e6e9f2;
+    --tooltip-text: #0f1115;
+  }
+
+  /* Инвертируем иконку темы в темном режиме */
+  body.dark .theme-icon {
+    filter: invert(1) brightness(1.3);
+  }
+
   *{box-sizing:border-box}
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f4f6fb;color:#0b0d12}
-  .wrap{max-width:490px;margin:0 auto;padding:22px 14px 28px}
   
-  h1{font-size:1.25rem;margin:0;display:flex;justify-content:space-between;align-items:center}
+  body {
+    font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  .wrap {max-width:490px; margin:0 auto; padding:22px 14px 28px}
+  
+  h1 {font-size:1.25rem; margin:0;}
   
   .topbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    /* Вернул оригинальный отступ до карточек */
-    margin-bottom: 12px; 
+    margin-bottom: 12px;
+  }
+
+  .topbar-controls {
+    display: flex;
+    gap: 8px;
   }
   
-  .card{display:flex;flex-direction:column;gap:5px}
+  .card {display:flex; flex-direction:column; gap:5px}
   
-  .row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    background:#fff;
-    border:1px solid #e6e9f2;
-    border-radius:12px;
-    box-shadow:0 1px 2px rgba(0,0,0,.03);
-    padding:10px 12px;
-    gap:10px;
-    transition: border-color 0.2s;
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.03);
+    padding: 10px 12px;
+    gap: 10px;
+    transition: border-color 0.2s, background 0.3s;
   }
+  
   .row:focus-within {
-    border-color: #7aa2ff;
+    border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(122,162,255,.1);
   }
 
-  .code{display:flex;align-items:center;gap:8px;font-weight:600; font-size: 0.95rem; width: 140px;}
-  .icon{width:30px;height:30px;display:inline-block;vertical-align:middle;object-fit: contain;}
+  .code {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600; 
+    font-size: 0.95rem; 
+    width: 140px;
+    color: var(--text);
+  }
+  
+  .icon {
+    width: 30px; 
+    height: 30px; 
+    display: inline-block; 
+    vertical-align: middle; 
+    object-fit: contain;
+  }
   
   .amount { flex-grow: 1; }
-  .amount input{
-    width:100%;
-    text-align:right;
-    font-size:1.15rem;
-    padding:6px 0;
-    border:none;
-    background:transparent;
+  
+  .amount input {
+    width: 100%;
+    text-align: right;
+    font-size: 1.15rem;
+    padding: 6px 0;
+    border: none;
+    background: var(--input-bg);
     font-family: inherit;
-    color: #0b0d12;
+    color: var(--text);
   }
-  .amount input:focus{outline:none;}
-  .amount input::placeholder { color: #ccc; }
+  
+  .amount input:focus { outline: none; }
+  .amount input::placeholder { color: #888; }
 
-  /* Стиль кнопки Очистить (оригинальный) */
-  button#clearBtn{
-    padding:6px 12px;
-    border:1px solid #cfd5e1;
-    background:#fff;
-    border-radius:8px;
-    cursor:pointer;
-    font-size:.95rem;
-    transition:transform 0.15s ease;
-    color: inherit;
+  /* КНОПКИ */
+  button {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
   }
-  button#clearBtn:hover{background:#f0f2f7;}
-  button#clearBtn:active{transform:scale(0.9);}
+  button:hover { background: var(--btn-hover); }
+  button:active { transform: scale(0.95); }
+
+  /* Кнопка Очистить */
+  button#clearBtn {
+    padding: 6px 12px;
+    font-size: 0.95rem;
+  }
+
+  /* Кнопка Темы */
+  button#themeToggle {
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  button#themeToggle img {
+    width: 16px; 
+    height: 16px;
+    display: block;
+  }
+
+  /* === TOOLTIP (ПОДСКАЗКА) === */
+  #customTooltip {
+    position: fixed;
+    background: var(--tooltip-bg);
+    color: var(--tooltip-text);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  #customTooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
 
 </style>
 </head>
 <body>
+
+<div id="customTooltip"></div>
+
 <div class="wrap">
 
   <div class="topbar">
     <h1>Конвертер времени</h1>
-    <button id="clearBtn" title="Очистить поля">Очистить</button>
+    <div class="topbar-controls">
+        <button id="clearBtn" title="Очистить поля">Очистить</button>
+        <button id="themeToggle" data-tip="Сменить тему">
+            <img class="theme-icon" src="https://cdn-icons-png.flaticon.com/128/4489/4489231.png" alt="Theme">
+        </button>
+    </div>
   </div>
 
   <div class="card" id="fx"></div>
@@ -110,11 +220,9 @@ const UNITS = [
 const container = document.getElementById('fx');
 const clearBtn = document.getElementById('clearBtn');
 
-// === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
-
+// === ФУНКЦИИ ===
 function parseRaw(str) {
     if(!str) return 0;
-    // Убираем пробелы, меняем запятую на точку для JS
     return parseFloat(str.replace(/\s/g, '').replace(',', '.')) || 0;
 }
 
@@ -127,55 +235,40 @@ function formatPretty(num, maxDecimals) {
     });
 }
 
-// Умное форматирование ВВОДА (сохраняет позицию курсора)
 function formatInputLive(input) {
     let raw = input.value;
-    // Если поле пустое, ничего не делаем
     if (!raw) return;
 
-    // 1. Запоминаем где был курсор (считаем "полезные" символы слева от него)
-    // Полезные - это цифры и запятая/точка
     const cursor = input.selectionStart;
     let meaningfulCharsBeforeCursor = 0;
     for (let i = 0; i < cursor; i++) {
         if (/[\d.,]/.test(raw[i])) meaningfulCharsBeforeCursor++;
     }
 
-    // 2. Чистим и форматируем строку
-    // Разделяем на целую и дробную часть, чтобы не ломать ввод запятой
-    let clean = raw.replace(/\s/g, '').replace('.', ','); // Убираем пробелы, точки в запятые
+    let clean = raw.replace(/\s/g, '').replace('.', ','); 
     
-    // Если есть запятая
     let parts = clean.split(',');
     let integerPart = parts[0];
-    let decimalPart = parts.length > 1 ? parts.slice(1).join('') : null; // slice(1).join - защита от двойных запятых
+    let decimalPart = parts.length > 1 ? parts.slice(1).join('') : null;
 
-    // Форматируем целую часть
     let formattedInt = '';
     if (integerPart !== '') {
-        // Если это не просто минус, форматируем
         if (!isNaN(parseInt(integerPart))) {
              formattedInt = parseInt(integerPart).toLocaleString('ru-RU');
         } else {
-             formattedInt = integerPart; // Например "-"
+             formattedInt = integerPart;
         }
     }
 
-    // Собираем обратно
     let newVal = formattedInt;
     if (decimalPart !== null) {
         newVal += ',' + decimalPart;
     } else if (clean.includes(',')) {
-        // Если пользователь только что нажал запятую
         newVal += ',';
     }
 
-    // 3. Ставим новое значение только если оно изменилось (чтобы не дергать)
     if (input.value !== newVal) {
         input.value = newVal;
-
-        // 4. Восстанавливаем курсор
-        // Идем по новой строке и ищем позицию, где количество "полезных" символов совпадет
         let newCursor = 0;
         let count = 0;
         for (let i = 0; i < newVal.length; i++) {
@@ -189,8 +282,6 @@ function formatInputLive(input) {
     }
 }
 
-
-// Анимация иконок
 let animTimeout = null;
 function triggerIconsAnimation() {
     document.querySelectorAll('.icon').forEach(img => {
@@ -231,45 +322,79 @@ function setupEvents() {
             const el = e.target;
             const code = el.dataset.code;
             
-            // 1. Анимация
             triggerIconsAnimation();
-
-            // 2. Живое форматирование текущего поля (добавляем пробелы)
             formatInputLive(el);
             
             const rawVal = el.value;
-
-            // Если поле очистили
             if (rawVal.trim() === '') {
                 inputs.forEach(i => { if(i !== el) i.value = ''; });
                 return;
             }
 
-            // 3. Конвертация
             const val = parseRaw(rawVal);
             const unitData = UNITS.find(u => u.code === code);
             const baseMs = val * unitData.factor;
 
             inputs.forEach(otherInput => {
                 if (otherInput === el) return;
-                
                 const otherCode = otherInput.dataset.code;
                 const otherUnit = UNITS.find(u => u.code === otherCode);
                 const convertedVal = baseMs / otherUnit.factor;
-                
-                // Ставим отформатированное значение
                 otherInput.value = formatPretty(convertedVal, otherUnit.precision);
             });
         });
-        
-        // При фокусе можно выделить всё для удобства (опционально)
-        // input.addEventListener('focus', function() { this.select(); });
     });
 }
 
 clearBtn.onclick = () => {
     container.querySelectorAll('input').forEach(i => i.value = '');
 };
+
+// === ТЕМНАЯ ТЕМА ===
+const savedTheme = localStorage.getItem('theme');
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+function applyTheme(theme) {
+    if (theme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+}
+
+if (savedTheme) applyTheme(savedTheme);
+else applyTheme(prefersDark.matches ? 'dark' : 'light');
+
+document.getElementById('themeToggle').onclick = () => {
+    const isDark = document.body.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+};
+
+// ==== TOOLTIPS (ПОДСКАЗКИ) ====
+const tooltipEl = document.getElementById('customTooltip');
+
+function showTooltip(el) {
+    const text = el.getAttribute('data-tip');
+    if (!text) return;
+
+    const rect = el.getBoundingClientRect();
+    tooltipEl.textContent = text;
+    tooltipEl.classList.add('visible');
+
+    let top = rect.bottom + 8;
+    let left = rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
+
+    if (left < 10) left = 10;
+    if (left + tooltipEl.offsetWidth > window.innerWidth) {
+        left = window.innerWidth - tooltipEl.offsetWidth - 10;
+    }
+
+    tooltipEl.style.top = `${top}px`;
+    tooltipEl.style.left = `${left}px`;
+}
+
+document.querySelectorAll('[data-tip]').forEach(el => {
+    el.addEventListener('mouseenter', () => showTooltip(el));
+    el.addEventListener('mouseleave', () => tooltipEl.classList.remove('visible'));
+    el.addEventListener('click', () => tooltipEl.classList.remove('visible'));
+});
 
 render();
 </script>

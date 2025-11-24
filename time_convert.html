@@ -90,7 +90,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-weight: 600; 
+    font-weight: 620; 
     font-size: 0.95rem; 
     width: 140px;
     color: var(--text);
@@ -108,12 +108,12 @@
   
   .amount input {
     width: 100%;
+    max-width:50vw;
     text-align: right;
-    font-size: 1.15rem;
+    font-size: 1.15rem; !important;
     padding: 6px 0;
     border: none;
     background: var(--input-bg);
-    font-family: inherit;
     color: var(--text);
   }
   
@@ -398,14 +398,12 @@ document.querySelectorAll('[data-tip]').forEach(el => {
 
 render();
 </script>
-
-<link rel="stylesheet" href="footer.css">
+  <link rel="stylesheet" href="footer.css">
 <div id="footer"></div>
 <script>
 fetch('footer.html')
   .then(r => r.text())
   .then(html => document.getElementById('footer').innerHTML = html);
 </script>
-
 </body>
 </html>

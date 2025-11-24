@@ -10,16 +10,18 @@
   *{box-sizing:border-box}
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f4f6fb;color:#0b0d12}
   .wrap{max-width:490px;margin:0 auto;padding:22px 14px 28px}
-  h1{font-size:1.25rem;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
+  
+  h1{font-size:1.25rem;margin:0;display:flex;justify-content:space-between;align-items:center}
   
   .topbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    /* Вернул оригинальный отступ до карточек */
+    margin-bottom: 12px; 
   }
   
-  .card{display:flex;flex-direction:column;gap:8px}
+  .card{display:flex;flex-direction:column;gap:5px}
   
   .row{
     display:flex;
@@ -38,14 +40,14 @@
     box-shadow: 0 0 0 3px rgba(122,162,255,.1);
   }
 
-  .code{display:flex;align-items:center;gap:10px;font-weight:600; font-size: 0.95rem; width: 140px;}
-  .icon{width:28px;height:28px;display:inline-block;vertical-align:middle;object-fit: contain;}
+  .code{display:flex;align-items:center;gap:8px;font-weight:600; font-size: 0.95rem; width: 140px;}
+  .icon{width:30px;height:30px;display:inline-block;vertical-align:middle;object-fit: contain;}
   
   .amount { flex-grow: 1; }
   .amount input{
     width:100%;
     text-align:right;
-    font-size:1.1rem;
+    font-size:1.15rem;
     padding:6px 0;
     border:none;
     background:transparent;
@@ -55,18 +57,19 @@
   .amount input:focus{outline:none;}
   .amount input::placeholder { color: #ccc; }
 
+  /* Стиль кнопки Очистить (оригинальный) */
   button#clearBtn{
     padding:6px 12px;
     border:1px solid #cfd5e1;
     background:#fff;
     border-radius:8px;
     cursor:pointer;
-    font-size:.9rem;
-    transition: all 0.2s ease;
-    color: #555;
+    font-size:.95rem;
+    transition:transform 0.15s ease;
+    color: inherit;
   }
-  button#clearBtn:hover{background:#f0f2f7; color: #000;}
-  button#clearBtn:active{transform:scale(0.95);}
+  button#clearBtn:hover{background:#f0f2f7;}
+  button#clearBtn:active{transform:scale(0.9);}
 
 </style>
 </head>
@@ -75,7 +78,7 @@
 
   <div class="topbar">
     <h1>Конвертер времени</h1>
-    <button id="clearBtn" title="Очистить все поля">Очистить</button>
+    <button id="clearBtn" title="Очистить поля">Очистить</button>
   </div>
 
   <div class="card" id="fx"></div>
@@ -83,10 +86,7 @@
 </div>
 
 <script>
-// === КОНСТАНТЫ И НАСТРОЙКИ ===
-// Базовая единица - миллисекунда (ms)
-// Факторы рассчитаны математически точно, чтобы 1 год = 12 месяцев.
-// Год берем как средний грегорианский: 365.2425 дней.
+// === КОНСТАНТЫ ===
 const BASE_YEAR_DAYS = 365.2425;
 const MS_IN_SEC = 1000;
 const MS_IN_MIN = 60 * MS_IN_SEC;
@@ -94,49 +94,17 @@ const MS_IN_HOUR = 60 * MS_IN_MIN;
 const MS_IN_DAY = 24 * MS_IN_HOUR;
 const MS_IN_WEEK = 7 * MS_IN_DAY;
 const MS_IN_YEAR = BASE_YEAR_DAYS * MS_IN_DAY;
-const MS_IN_MONTH = MS_IN_YEAR / 12; // Средний месяц
+const MS_IN_MONTH = MS_IN_YEAR / 12;
 
 const UNITS = [
-  {
-    code: 'MS', name: 'М.Секунды', factor: 1, precision: 0,
-    static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/diamond-with-a-dot_1f4a0.png',
-    animated: 'https://em-content.zobj.net/source/microsoft-teams/400/diamond-with-a-dot_1f4a0.png'
-  },
-  {
-    code: 'S', name: 'Секунды', factor: MS_IN_SEC, precision: 3,
-    static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/stopwatch_23f1-fe0f.png',
-    animated: 'https://em-content.zobj.net/source/microsoft-teams/400/stopwatch_23f1-fe0f.png'
-  },
-  {
-    code: 'MIN', name: 'Минуты', factor: MS_IN_MIN, precision: 4,
-    static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/one-oclock_1f550.png',
-    animated: 'https://em-content.zobj.net/source/microsoft-teams/400/one-oclock_1f550.png'
-  },
-  {
-    code: 'H', name: 'Часы', factor: MS_IN_HOUR, precision: 5,
-    static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/three-oclock_1f552.png',
-    animated: 'https://em-content.zobj.net/source/microsoft-teams/400/three-oclock_1f552.png'
-  },
-  {
-    code: 'D', name: 'Дни', factor: MS_IN_DAY, precision: 6,
-    static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/sun_2600-fe0f.png',
-    animated: 'https://em-content.zobj.net/source/microsoft-teams/400/sun_2600-fe0f.png'
-  },
-  {
-    code: 'WK', name: 'Недели', factor: MS_IN_WEEK, precision: 6,
-    static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/spiral-calendar_1f5d3-fe0f.png',
-    animated: 'https://em-content.zobj.net/source/microsoft-teams/400/spiral-calendar_1f5d3-fe0f.png'
-  },
-  {
-    code: 'MO', name: 'Месяцы', factor: MS_IN_MONTH, precision: 7,
-    static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/crescent-moon_1f319.png',
-    animated: 'https://em-content.zobj.net/source/microsoft-teams/400/crescent-moon_1f319.png'
-  },
-  {
-    code: 'YR', name: 'Годы', factor: MS_IN_YEAR, precision: 8,
-    static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/rocket_1f680.png',
-    animated: 'https://em-content.zobj.net/source/microsoft-teams/400/rocket_1f680.png'
-  }
+  { code: 'MS', name: 'М.Секунды', factor: 1, precision: 0, static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/diamond-with-a-dot_1f4a0.png', animated: 'https://em-content.zobj.net/source/microsoft-teams/400/diamond-with-a-dot_1f4a0.png' },
+  { code: 'S', name: 'Секунды', factor: MS_IN_SEC, precision: 3, static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/stopwatch_23f1-fe0f.png', animated: 'https://em-content.zobj.net/source/microsoft-teams/400/stopwatch_23f1-fe0f.png' },
+  { code: 'MIN', name: 'Минуты', factor: MS_IN_MIN, precision: 4, static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/one-oclock_1f550.png', animated: 'https://em-content.zobj.net/source/microsoft-teams/400/one-oclock_1f550.png' },
+  { code: 'H', name: 'Часы', factor: MS_IN_HOUR, precision: 5, static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/three-oclock_1f552.png', animated: 'https://em-content.zobj.net/source/microsoft-teams/400/three-oclock_1f552.png' },
+  { code: 'D', name: 'Дни', factor: MS_IN_DAY, precision: 6, static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/sun_2600-fe0f.png', animated: 'https://em-content.zobj.net/source/microsoft-teams/400/sun_2600-fe0f.png' },
+  { code: 'WK', name: 'Недели', factor: MS_IN_WEEK, precision: 6, static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/spiral-calendar_1f5d3-fe0f.png', animated: 'https://em-content.zobj.net/source/microsoft-teams/400/spiral-calendar_1f5d3-fe0f.png' },
+  { code: 'MO', name: 'Месяцы', factor: MS_IN_MONTH, precision: 7, static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/crescent-moon_1f319.png', animated: 'https://em-content.zobj.net/source/microsoft-teams/400/crescent-moon_1f319.png' },
+  { code: 'YR', name: 'Годы', factor: MS_IN_YEAR, precision: 8, static: 'https://em-content.zobj.net/source/microsoft-3D-fluent/433/rocket_1f680.png', animated: 'https://em-content.zobj.net/source/microsoft-teams/400/rocket_1f680.png' }
 ];
 
 const container = document.getElementById('fx');
@@ -144,72 +112,83 @@ const clearBtn = document.getElementById('clearBtn');
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
-// Парсинг строки в число (убирает пробелы, меняет запятую на точку)
-function parseLocaleNumber(stringNumber) {
-    if (!stringNumber) return 0;
-    const cleaned = stringNumber.replace(/\s/g, '').replace(',', '.');
-    const num = parseFloat(cleaned);
-    return isNaN(num) ? 0 : num;
+function parseRaw(str) {
+    if(!str) return 0;
+    // Убираем пробелы, меняем запятую на точку для JS
+    return parseFloat(str.replace(/\s/g, '').replace(',', '.')) || 0;
 }
 
-// Форматирование числа с разделителями (RU локаль)
-// maxDecimals - максимальное кол-во знаков после запятой
-function formatLocaleNumber(num, maxDecimals = 6) {
+function formatPretty(num, maxDecimals) {
     if (num === 0) return '';
-    // Если число слишком маленькое (научная нотация), показываем как есть или 0
-    if (Math.abs(num) < 1e-9) return '0';
-    
+    if (Math.abs(num) < 1e-10) return '0';
     return num.toLocaleString('ru-RU', {
         maximumFractionDigits: maxDecimals,
         minimumFractionDigits: 0
     });
 }
 
-// Функция для сохранения и восстановления позиции курсора
-function updateInputWithFormatting(input, rawValue) {
-    // 1. Запоминаем позицию курсора относительно цифр
-    const cursorPosition = input.selectionStart;
-    const originalLength = input.value.length;
-    const digitsBeforeCursor = input.value.slice(0, cursorPosition).replace(/[^\d]/g, '').length;
-    const isComma = input.value[cursorPosition - 1] === ',' || input.value[cursorPosition - 1] === '.';
+// Умное форматирование ВВОДА (сохраняет позицию курсора)
+function formatInputLive(input) {
+    let raw = input.value;
+    // Если поле пустое, ничего не делаем
+    if (!raw) return;
 
-    // 2. Форматируем значение (только если это не "пустой" ввод типа "0," или просто запятая)
-    // Разрешаем ввод запятой в конце
-    let formattedValue;
-    
-    // Проверка на ввод десятичной части
-    if (rawValue.endsWith(',') || rawValue.endsWith('.')) {
-       // Если пользователь вводит запятую, не переформатируем жестко, просто отображаем
-       formattedValue = rawValue.replace('.', ',');
-    } else {
-       const num = parseLocaleNumber(rawValue);
-       if (num === 0 && rawValue.trim() !== '' && rawValue.indexOf('0') === -1) {
-           formattedValue = rawValue; // Если ввели мусор
-       } else {
-           // Форматируем, но если есть дробная часть "0.00", надо дать возможность её писать
-           if (rawValue.includes(',') || rawValue.includes('.')) {
-               const parts = rawValue.replace(',', '.').split('.');
-               const intPart = parseFloat(parts[0] || 0).toLocaleString('ru-RU');
-               const decimalPart = parts[1];
-               formattedValue = `${intPart},${decimalPart}`;
-           } else {
-               formattedValue = num.toLocaleString('ru-RU');
-           }
-       }
+    // 1. Запоминаем где был курсор (считаем "полезные" символы слева от него)
+    // Полезные - это цифры и запятая/точка
+    const cursor = input.selectionStart;
+    let meaningfulCharsBeforeCursor = 0;
+    for (let i = 0; i < cursor; i++) {
+        if (/[\d.,]/.test(raw[i])) meaningfulCharsBeforeCursor++;
     }
 
-    input.value = formattedValue;
-
-    // 3. Восстанавливаем курсор
-    // Это сложная логика, упростим: ставим курсор туда, где он был бы логически
-    // Если мы добавили пробел разделитель, курсор должен сместиться
-    const newLength = input.value.length;
-    let newCursorPos = cursorPosition + (newLength - originalLength);
+    // 2. Чистим и форматируем строку
+    // Разделяем на целую и дробную часть, чтобы не ломать ввод запятой
+    let clean = raw.replace(/\s/g, '').replace('.', ','); // Убираем пробелы, точки в запятые
     
-    // Защита от вылета
-    if (newCursorPos < 0) newCursorPos = 0;
-    input.setSelectionRange(newCursorPos, newCursorPos);
+    // Если есть запятая
+    let parts = clean.split(',');
+    let integerPart = parts[0];
+    let decimalPart = parts.length > 1 ? parts.slice(1).join('') : null; // slice(1).join - защита от двойных запятых
+
+    // Форматируем целую часть
+    let formattedInt = '';
+    if (integerPart !== '') {
+        // Если это не просто минус, форматируем
+        if (!isNaN(parseInt(integerPart))) {
+             formattedInt = parseInt(integerPart).toLocaleString('ru-RU');
+        } else {
+             formattedInt = integerPart; // Например "-"
+        }
+    }
+
+    // Собираем обратно
+    let newVal = formattedInt;
+    if (decimalPart !== null) {
+        newVal += ',' + decimalPart;
+    } else if (clean.includes(',')) {
+        // Если пользователь только что нажал запятую
+        newVal += ',';
+    }
+
+    // 3. Ставим новое значение только если оно изменилось (чтобы не дергать)
+    if (input.value !== newVal) {
+        input.value = newVal;
+
+        // 4. Восстанавливаем курсор
+        // Идем по новой строке и ищем позицию, где количество "полезных" символов совпадет
+        let newCursor = 0;
+        let count = 0;
+        for (let i = 0; i < newVal.length; i++) {
+            if (count === meaningfulCharsBeforeCursor) break;
+            if (/[\d.,]/.test(newVal[i])) {
+                count++;
+            }
+            newCursor++;
+        }
+        input.setSelectionRange(newCursor, newCursor);
+    }
 }
+
 
 // Анимация иконок
 let animTimeout = null;
@@ -241,7 +220,6 @@ function render() {
         `;
         container.appendChild(row);
     });
-
     setupEvents();
 }
 
@@ -252,71 +230,48 @@ function setupEvents() {
         input.addEventListener('input', (e) => {
             const el = e.target;
             const code = el.dataset.code;
-            const rawVal = el.value;
-
+            
             // 1. Анимация
             triggerIconsAnimation();
 
-            // 2. Локальное форматирование текущего поля (чтобы появились пробелы 1 000)
-            // Но делаем это аккуратно, только если валидное число
-            if (/^[\d\s.,]*$/.test(rawVal)) {
-               // Простая логика форматирования для UX:
-               // Если ввели символ, не являющийся цифрой или запятой в конце, ничего не делаем
-               // Здесь используем упрощенный подход: даем пользователю писать, форматируем при blur или аккуратно
-               // Чтобы не ломать курсор, в этой версии просто обновляем остальные поля
-            }
-
-            // 3. Конвертация
-            const val = parseLocaleNumber(rawVal);
+            // 2. Живое форматирование текущего поля (добавляем пробелы)
+            formatInputLive(el);
             
+            const rawVal = el.value;
+
             // Если поле очистили
             if (rawVal.trim() === '') {
                 inputs.forEach(i => { if(i !== el) i.value = ''; });
                 return;
             }
 
-            // Пересчитываем в миллисекунды (база)
+            // 3. Конвертация
+            const val = parseRaw(rawVal);
             const unitData = UNITS.find(u => u.code === code);
             const baseMs = val * unitData.factor;
 
-            // Обновляем все остальные поля
             inputs.forEach(otherInput => {
-                if (otherInput === el) return; // Не трогаем текущее поле пока пишем
+                if (otherInput === el) return;
                 
                 const otherCode = otherInput.dataset.code;
                 const otherUnit = UNITS.find(u => u.code === otherCode);
                 const convertedVal = baseMs / otherUnit.factor;
                 
-                otherInput.value = formatLocaleNumber(convertedVal, otherUnit.precision);
+                // Ставим отформатированное значение
+                otherInput.value = formatPretty(convertedVal, otherUnit.precision);
             });
         });
-
-        // Форматирование "красиво" при потере фокуса текущего поля
-        input.addEventListener('blur', (e) => {
-            const val = parseLocaleNumber(e.target.value);
-            if (val !== 0) {
-                 e.target.value = val.toLocaleString('ru-RU', {maximumFractionDigits: 10});
-            }
-        });
         
-        // При фокусе убираем пробелы, чтобы удобнее было править (опционально)
-        input.addEventListener('focus', (e) => {
-            const val = parseLocaleNumber(e.target.value);
-            if (val !== 0) {
-                e.target.value = val.toString().replace('.', ',');
-            }
-        });
+        // При фокусе можно выделить всё для удобства (опционально)
+        // input.addEventListener('focus', function() { this.select(); });
     });
 }
 
-// Очистка
 clearBtn.onclick = () => {
     container.querySelectorAll('input').forEach(i => i.value = '');
 };
 
-// Запуск
 render();
-
 </script>
 
 <link rel="stylesheet" href="footer.css">

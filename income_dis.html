@@ -784,6 +784,14 @@ document.querySelectorAll('[data-tip]').forEach(el => {
 
 init();
 </script>
+  
+<link rel="stylesheet" href="footer.css">
+<div id="footer"></div>
+<script>
+fetch('footer.html')
+  .then(r => r.text())
+  .then(html => document.getElementById('footer').innerHTML = html);
+</script>
 
 </body>
 </html>

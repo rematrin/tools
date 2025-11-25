@@ -255,7 +255,7 @@
         <button id="themeToggle" data-tip="Сменить тему">
             <img class="theme-icon" src="https://cdn-icons-png.flaticon.com/128/4489/4489231.png" alt="Theme">
         </button>
-        <button id="shareBtn" data-tip="Поделиться">
+        <button id="shareBtn" data-tip="Поделиться категориями">
             <img class="icon" src="https://cdn-icons-png.flaticon.com/512/1828/1828954.png" alt="Share">
         </button>
     </div>
@@ -359,12 +359,14 @@ function init() {
     calculate();
 }
 
+// ИЗМЕНЕНИЕ 2: Убрано сохранение 'amount' в URL
 function updateURL() {
-    const rawAmount = parseRaw(totalInput.value);
+    // const rawAmount = parseRaw(totalInput.value); // Больше не нужно для ссылки
     const catsStr = categories.map(c => `${c.name}:${c.percent}`).join('|');
     
     const newParams = new URLSearchParams();
-    if (rawAmount > 0) newParams.set('amount', rawAmount);
+    // ЭТА СТРОКА УДАЛЕНА: if (rawAmount > 0) newParams.set('amount', rawAmount);
+    
     newParams.set('cats', encodeURIComponent(catsStr));
     
     history.replaceState(null, '', location.pathname + '?' + newParams.toString());
@@ -557,8 +559,6 @@ function renderEditMode() {
         pInput.addEventListener('input', function() {
             let v = parseFloat(this.value);
             if (v < 0) this.value = 0;
-            // Убрал ограничение ввода > 100 в самом поле, если вы хотите вводить больше в одной категории
-            // if (v > 100) this.value = 100; 
         });
         
         editView.appendChild(div);
@@ -593,7 +593,6 @@ function saveCurrentEditState() {
         const name = row.querySelector('.edit-input-name').value;
         let percent = Number(row.querySelector('.edit-input-percent').value);
         if (percent < 0) percent = 0;
-        // if (percent > 100) percent = 100; // Тоже можно убрать, если нужно >100 в одной категории
         newCats.push({ name, percent });
     });
     categories = newCats;
@@ -609,9 +608,6 @@ editBtn.onclick = () => {
 };
 
 saveBtn.onclick = () => {
-    // Сохраняем состояние, но не в переменную categories, 
-    // чтобы проверить на ошибки прямо в DOM элементах
-    
     let hasError = false;
     const rows = editView.querySelectorAll('.edit-row');
     
@@ -630,18 +626,9 @@ saveBtn.onclick = () => {
         }
     });
     
-    if (hasError) return; // Не сохраняем, если есть ошибки
+    if (hasError) return;
 
-    // Если ошибок нет, сохраняем в массив
     saveCurrentEditState();
-
-    /* --- УДАЛЕН БЛОК ПРОВЕРКИ НА > 100% ---
-    const totalPercent = categories.reduce((sum, c) => sum + c.percent, 0);
-    if (totalPercent > 100) {
-        alert(`Ошибка! Сумма процентов (${parseFloat(totalPercent.toFixed(1))}%) превышает 100%.`);
-        return; 
-    }
-    */
     
     renderViewMode();
     calculate();

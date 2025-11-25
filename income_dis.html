@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Распределитель дохода</title>
+<link rel="icon" type="image/png" href="exchange.png">
+<link rel="apple-touch-icon" href="exchange2.png">
+<style>
+  /* === ЦВЕТОВЫЕ ПЕРЕМЕННЫЕ === */
+  :root {
+    --bg: #f4f6fb;
+    --text: #0b0d12;
+    --card-bg: #ffffff;
+    --border: #e6e9f2;
+    --input-bg: transparent;
+    --btn-hover: #f0f2f7;
+    --accent: #7aa2ff;
+    
+    /* Статусные цвета */
+    --danger: #ff6b6b;
+    --success: #2ecc71;
+    --gray: #a0a0a0;
+    
+    /* Цвет символа % в инпуте */
+    --input-symbol: #888; 
+
+    /* Цвета категорий */
+    --c1: #ff8787; --c2: #f1c40f; --c3: #4bcffa; --c4: #da8eff; 
+    --c5: #2ecc71; --c6: #ffbe76; --c7: #48dbfb; --c8: #ff7979;
+    
+    --tooltip-bg: #2a2c33;
+    --tooltip-text: #ffffff;
+  }
+
+  body.dark {
+    --bg: #0f1115;
+    --text: #f3f3f3;
+    --card-bg: #1a1d22;
+    --border: #292c33;
+    --input-bg: transparent;
+    --btn-hover: #252830;
+    --accent: #5b8af0;
+    
+    --gray: #6b6b6b;
+    --input-symbol: #666; 
+    
+    --tooltip-bg: #e6e9f2;
+    --tooltip-text: #0f1115;
+  }
+
+  /* Инверсия иконок в темной теме */
+  body.dark img.icon, 
+  body.dark .theme-icon { 
+      filter: invert(1) brightness(1.3); 
+  }
+  /* Исключение для иконки сохранить */
+  body.dark #saveBtn img.icon {
+      filter: none !important;
+  }
+  
+  /* Темная тема для шаринга */
+  body.dark #copyLink { background: #1b1c21 !important; color: var(--text) !important; border-color: var(--border) !important; }
+  body.dark #tgShare { background: #1e2a38 !important; color: var(--text) !important; border-color: var(--border) !important; }
+  body.dark #waShare { background: #1f2e22 !important; color: var(--text) !important; border-color: var(--border) !important; }
+  body.dark #fbShare { background: #1e2940 !important; color: var(--text) !important; border-color: var(--border) !important; }
+
+  *{box-sizing:border-box}
+  
+  body {
+    font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  .wrap {max-width:490px; margin:0 auto; padding:22px 14px 28px}
+  
+  h1 {font-size:1.25rem; margin:0;}
+  
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+  }
+  .topbar-controls { display: flex; gap: 8px; }
+  
+  .card {display:flex; flex-direction:column; gap:8px; background: var(--bg);}
+  
+  /* СТРОКИ */
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.03);
+    padding: 10px 12px; gap: 10px;
+    transition: border-color 0.2s, background 0.3s;
+  }
+  .row:focus-within {
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(122,162,255,.1);
+  }
+
+  .label-group {
+    display: flex; align-items: center; gap: 10px; flex-grow: 1; overflow: hidden; 
+  }
+  .category-name {
+    font-weight: 600; font-size: 0.95rem; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .percent-badge {
+    font-size: 0.75rem; font-weight: 700; padding: 2px 6px;
+    border-radius: 6px; color: #fff; opacity: 0.9;
+    min-width: 36px; text-align: center; flex-shrink: 0;
+  }
+
+  .amount { flex-shrink: 0; width: 160px; display: flex; align-items: center; }
+  .amount input {
+    width: 100%; text-align: right; font-size: 1.15rem; padding: 6px 0;
+    border: none; background: var(--input-bg); font-family: inherit;
+    color: var(--text); font-weight: 500; transition: color 0.2s ease;
+  }
+  .amount input:focus { outline: none; }
+  .amount input::placeholder { color: #ccc; }
+  
+  /* ГЛАВНОЕ ПОЛЕ */
+  .row.main-input { border-color: var(--accent); margin-bottom: 10px; }
+  .row.main-input input { font-weight: 700; color: var(--accent); }
+
+  /* СТИЛЬ ОСТАТКА */
+  #val_rest { font-weight: 700; }
+  #row_rest { transition: border-color 0.3s ease; }
+
+  /* КНОПКИ */
+  button {
+    background: var(--card-bg); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; cursor: pointer; transition: all 0.2s ease;
+  }
+  button:hover { background: var(--btn-hover); }
+  button:active { transform: scale(0.95); }
+
+  button#clearBtn { padding: 6px 12px; font-size: 0.95rem; }
+  button#themeToggle, button#shareBtn {
+    padding: 6px 10px; display: flex; align-items: center; justify-content: center;
+  }
+  button img { width: 16px; height: 16px; display: block; pointer-events: none; }
+
+  /* РЕДАКТИРОВАНИЕ */
+  .center-controls {
+    display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 18px;
+  }
+  #editBtn, #saveBtn {
+      font-size: 0.9rem; border-radius: 8px; padding: 6px 12px;
+      cursor: pointer; background: var(--card-bg); border: 1px solid var(--border);
+      color: var(--text); display: flex; align-items: center; gap: 8px;
+  }
+  #editBtn img, #saveBtn img { width: 12px; height: 12px; }
+  
+  /* ЗАГОЛОВКИ РЕДАКТИРОВАНИЯ (СДЕЛАНЫ ЦВЕТОМ ТЕКСТА, А НЕ СЕРЫМ) */
+  .edit-header {
+      display: flex; gap: 8px; padding: 0 4px; margin-bottom: 6px;
+      font-size: 0.85rem; color: var(--text); font-weight: 600; /* Изменено на var(--text) */
+  }
+  
+  /* СТРОКА РЕДАКТИРОВАНИЯ */
+  .edit-row { 
+      display: flex; gap: 8px; align-items: flex-start; /* Чтобы ошибка не ломала верстку */
+      margin-bottom: 5px; /* Чуть больше отступ снизу для ошибки */
+  }
+  
+  /* ОБЕРТКА ДЛЯ НАЗВАНИЯ + ОШИБКИ */
+  .name-wrapper {
+      flex: 2; display: flex; flex-direction: column; gap: 4px;
+  }
+  .edit-input-name {
+      width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px;
+      background: var(--card-bg); color: var(--text); font-size: 16px;
+      transition: border-color 0.2s;
+  }
+  
+  /* СТИЛИ ОШИБКИ */
+  .input-error { border-color: var(--danger) !important; }
+  .error-text {
+      color: var(--danger); font-size: 0.75rem; display: none; padding-left: 2px;
+  }
+  
+  /* СТИЛЬ ДЛЯ ПРОЦЕНТОВ (С УВЕЛИЧЕННЫМ ОТСТУПОМ) */
+  .percent-wrapper {
+      flex: 1; position: relative; display: flex; align-items: center;
+  }
+  .edit-input-percent {
+      width: 100%; border: 1px solid var(--border); border-radius: 8px; 
+      padding: 10px 32px 10px 10px; /* Увеличил отступ справа (было 24px) */
+      background: var(--card-bg); color: var(--text); text-align: right; font-size: 16px;
+      -moz-appearance: textfield;
+  }
+  .edit-input-percent::-webkit-outer-spin-button,
+  .edit-input-percent::-webkit-inner-spin-button {
+      -webkit-appearance: none; margin: 0;
+  }
+  .percent-symbol {
+      position: absolute; right: 12px; color: var(--input-symbol); 
+      pointer-events: none; font-size: 0.9rem; font-weight: 500;
+  }
+
+  /* Кнопка удаления центрируется вертикально относительно инпутов */
+  .del-btn-wrap {
+      height: 40px; display: flex; align-items: center; /* Высота инпута примерно 40px */
+  }
+  .del-btn { background: transparent; border: none; padding: 4px; opacity: 0.6; cursor: pointer; }
+  .del-btn:hover { background: transparent; opacity: 1; }
+  .del-btn img { width: 14px; height: 14px; }
+  
+  .add-btn-container { display: flex; justify-content: center; width: 100%; }
+  .add-btn {
+      width: 100%; max-width: 220px; padding: 10px 14px; border: 1px solid var(--border); 
+      background: var(--card-bg); border-radius: 8px; color: var(--text); margin-bottom: 10px;
+      font-size: 16px; text-align: left; opacity: 0.7; display: flex; align-items: center; gap: 8px;
+  }
+  .add-btn:hover { opacity: 1; background: var(--input-bg); }
+
+  /* POPUP */
+  #sharePopup {
+    position: absolute; display: none; background: var(--card-bg); border: 1px solid var(--border); padding: 10px;
+    border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); flex-direction: column; gap: 8px; z-index: 100; width: 190px;
+    animation: fadeIn .2s ease; color: var(--text);
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  .share-item {
+    display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; text-decoration: none;
+    color: var(--text); font-size: 0.9rem; cursor: pointer; transition: background 0.2s; background: transparent; border: none; width: 100%; text-align: left;
+  }
+  #copyLink { background: #f5f5f5; color: var(--text); }
+  #tgShare { background: #e3f2fd; color: var(--text); }
+  #waShare { background: #e8f5e9; color: var(--text); }
+  #fbShare { background: #e3f2fd; color: var(--text); }
+
+  /* TOOLTIP */
+  #customTooltip {
+    position: fixed; background: var(--tooltip-bg); color: var(--tooltip-text); padding: 6px 12px; border-radius: 6px;
+    font-size: 0.8rem; pointer-events: none; opacity: 0; transform: translateY(5px); transition: opacity 0.2s, transform 0.2s;
+    z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); white-space: nowrap; font-weight: 500;
+  }
+  #customTooltip.visible { opacity: 1; transform: translateY(0); }
+
+</style>
+</head>
+<body>
+
+<div id="customTooltip"></div>
+
+<div class="wrap">
+
+  <div class="topbar">
+    <h1>Распределитель</h1>
+    <div class="topbar-controls">
+        <button id="clearBtn" data-tip="Очистить">Очистить</button>
+        <button id="themeToggle" data-tip="Сменить тему">
+            <img class="theme-icon" src="https://cdn-icons-png.flaticon.com/128/4489/4489231.png" alt="Theme">
+        </button>
+        <button id="shareBtn" data-tip="Поделиться">
+            <img class="icon" src="https://cdn-icons-png.flaticon.com/512/1828/1828954.png" alt="Share">
+        </button>
+    </div>
+  </div>
+
+  <div id="viewContainer">
+      <div class="row main-input">
+          <div class="label-group">
+              <span class="category-name">Доход</span>
+          </div>
+          <div class="amount">
+              <input type="text" id="totalIncome" inputmode="decimal" placeholder="0" autocomplete="off" autofocus>
+          </div>
+      </div>
+
+      <div class="card" id="resultsView">
+      </div>
+  </div>
+
+  <div class="card" id="editView" style="display:none; margin-top:10px;">
+  </div>
+
+  <div class="center-controls">
+      <button id="editBtn">
+          <img class="icon" src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" alt=""> 
+          Настроить категории
+      </button>
+      
+      <button id="saveBtn" style="display:none;">
+          <img class="icon" src="https://cdn-icons-png.flaticon.com/128/5610/5610944.png" alt=""> 
+          Сохранить
+      </button>
+  </div>
+
+  <div id="sharePopup">
+    <button id="copyLink" class="share-item">
+      <img class="icon" src="https://cdn-icons-png.flaticon.com/512/7640/7640062.png" width="18" height="18" alt=""> 
+      Ссылка
+    </button>
+    <a id="tgShare" target="_blank" class="share-item">
+      <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" width="18" height="18" alt=""> 
+      Telegram
+    </a>
+    <a id="waShare" target="_blank" class="share-item">
+      <img src="https://cdn-icons-png.flaticon.com/512/2111/2111728.png" width="18" height="18" alt=""> 
+      WhatsApp
+    </a>
+    <a id="fbShare" target="_blank" class="share-item">
+      <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" width="18" height="18" alt=""> 
+      Facebook
+    </a>
+  </div>
+
+</div>
+
+<script>
+const PALETTE = [
+    'var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 
+    'var(--c5)', 'var(--c6)', 'var(--c7)', 'var(--c8)'
+];
+
+const DEFAULT_CATEGORIES = [
+    { name: 'Налоги',     percent: 15 },
+    { name: 'НЗ',         percent: 10 },
+    { name: 'Инвестиции', percent: 10 },
+    { name: 'Мечты',      percent: 5 }
+];
+
+let categories = [];
+
+// === ЭЛЕМЕНТЫ ===
+const totalInput = document.getElementById('totalIncome');
+const viewContainer = document.getElementById('viewContainer');
+const resultsView = document.getElementById('resultsView');
+const editView = document.getElementById('editView');
+const editBtn = document.getElementById('editBtn');
+const saveBtn = document.getElementById('saveBtn');
+const clearBtn = document.getElementById('clearBtn');
+
+// === INIT ===
+const params = new URLSearchParams(location.search);
+
+function init() {
+    if (params.get('amount')) {
+        totalInput.value = formatInputString(params.get('amount'));
+    }
+
+    const catsParam = params.get('cats');
+    if (catsParam) {
+        try {
+            categories = decodeURIComponent(catsParam).split('|').map(item => {
+                const [name, p] = item.split(':');
+                return { name: name, percent: Number(p) };
+            });
+        } catch (e) { categories = [...DEFAULT_CATEGORIES]; }
+    } else {
+        categories = [...DEFAULT_CATEGORIES];
+    }
+
+    renderViewMode();
+    calculate();
+}
+
+function updateURL() {
+    const rawAmount = parseRaw(totalInput.value);
+    const catsStr = categories.map(c => `${c.name}:${c.percent}`).join('|');
+    
+    const newParams = new URLSearchParams();
+    if (rawAmount > 0) newParams.set('amount', rawAmount);
+    newParams.set('cats', encodeURIComponent(catsStr));
+    
+    history.replaceState(null, '', location.pathname + '?' + newParams.toString());
+}
+
+// === РЕНДЕРИНГ (ПРОСМОТР) ===
+function renderViewMode() {
+    resultsView.innerHTML = '';
+    
+    categories.forEach((cat, index) => {
+        const color = PALETTE[index % PALETTE.length];
+        createResultRow(index, cat.name, cat.percent, color);
+    });
+
+    createResultRow('rest', 'Остаток', 0, 'var(--gray)', true); 
+    updateRestStyle();
+}
+
+function createResultRow(id, name, percent, color, isReadonly = false) {
+    const percentDisplay = parseFloat(percent.toFixed(1)); 
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    if(id === 'rest') row.id = 'row_rest';
+    
+    row.innerHTML = `
+        <div class="label-group">
+            <span class="category-name">${name}</span>
+            <span class="percent-badge" id="badge_${id}" style="background:${color}">${percentDisplay}%</span>
+        </div>
+        <div class="amount">
+            <input type="text" id="val_${id}" inputmode="decimal" placeholder="0" autocomplete="off" ${isReadonly ? 'readonly' : ''}>
+        </div>
+    `;
+    
+    if (!isReadonly) {
+        const input = row.querySelector('input');
+        input.addEventListener('keydown', validateInputKey);
+        input.addEventListener('input', (e) => {
+            formatInputLive(e.target);
+            const total = parseRaw(totalInput.value);
+            
+            if (total <= 0) {
+                e.target.value = ''; 
+                return;
+            }
+
+            const currentVal = parseRaw(e.target.value);
+            const newPercent = (currentVal / total) * 100;
+            categories[id].percent = newPercent;
+            
+            const badge = document.getElementById(`badge_${id}`);
+            if (badge) badge.innerText = parseFloat(newPercent.toFixed(1)) + '%';
+            
+            recalculateRestOnly(total);
+            updateURL();
+        });
+    }
+    resultsView.appendChild(row);
+}
+
+// === ВАЛИДАЦИЯ ===
+function validateInputKey(e) {
+    const allowed = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Delete', 'Tab', 'Enter', 'a', 'c', 'v', 'x']; 
+    if (allowed.includes(e.key) || e.ctrlKey || e.metaKey) return;
+    if (!/[\d.,]/.test(e.key)) {
+        e.preventDefault();
+    }
+}
+
+// === ЛОГИКА РАСЧЕТА ===
+function calculate() {
+    const rawVal = totalInput.value;
+    
+    if (rawVal.trim() === '') {
+        categories.forEach((_, i) => {
+            const el = document.getElementById(`val_${i}`);
+            if(el) el.value = '';
+        });
+        const restEl = document.getElementById('val_rest');
+        if(restEl) restEl.value = '';
+        updateRestStyle();
+        return;
+    }
+
+    const total = parseRaw(rawVal);
+    
+    let runningTotal = 0;
+    categories.forEach((cat, i) => {
+        const amount = total * (cat.percent / 100);
+        runningTotal += amount;
+        const el = document.getElementById(`val_${i}`);
+        if(el) el.value = formatPretty(amount);
+    });
+
+    const rest = total - runningTotal;
+    const restEl = document.getElementById('val_rest');
+    if(restEl) restEl.value = formatPretty(rest);
+    
+    updateRestStyle();
+    updateURL();
+}
+
+function recalculateRestOnly(total) {
+    let runningTotal = 0;
+    categories.forEach(cat => {
+        runningTotal += total * (cat.percent / 100);
+    });
+    
+    const rest = total - runningTotal;
+    const restEl = document.getElementById('val_rest');
+    if(restEl) restEl.value = formatPretty(rest);
+    
+    updateRestStyle();
+}
+
+// === СТИЛЬ ОСТАТКА ===
+function updateRestStyle() {
+    const usedPercent = categories.reduce((sum, c) => sum + c.percent, 0);
+    const restPercent = 100 - usedPercent;
+    
+    const roundedRest = parseFloat(restPercent.toFixed(1));
+
+    let color;
+    if (roundedRest === 0) {
+        color = 'var(--gray)';
+    } else if (roundedRest > 0) {
+        color = 'var(--success)'; 
+    } else {
+        color = 'var(--danger)';
+    }
+    
+    const restBadge = document.getElementById('badge_rest');
+    if (restBadge) {
+        restBadge.innerText = roundedRest + '%';
+        restBadge.style.background = color;
+    }
+    
+    const restInput = document.getElementById('val_rest');
+    if (restInput) restInput.style.color = color;
+    
+    const restRow = document.getElementById('row_rest');
+    if (restRow) restRow.style.borderColor = color;
+}
+
+// === РЕНДЕРИНГ (РЕДАКТИРОВАНИЕ) ===
+function renderEditMode() {
+    editView.innerHTML = '';
+    
+    // ЗАГОЛОВКИ
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'edit-header';
+    headerDiv.innerHTML = `
+        <span style="flex:2">Название категории</span>
+        <span style="flex:1; padding-right:10px; text-align:right">Процент</span>
+        <span style="width:22px"></span> 
+    `;
+    editView.appendChild(headerDiv);
+
+    categories.forEach((cat, index) => {
+        const div = document.createElement('div');
+        div.className = 'edit-row';
+        div.innerHTML = `
+            <div class="name-wrapper">
+                <input type="text" class="edit-input-name" value="${cat.name}" placeholder="Название" autocomplete="off">
+                <span class="error-text">Поле не должно быть пустым</span>
+            </div>
+            <div class="percent-wrapper">
+                <input type="number" class="edit-input-percent" value="${parseFloat(cat.percent.toFixed(1))}" placeholder="0" autocomplete="off">
+                <span class="percent-symbol">%</span>
+            </div>
+            <div class="del-btn-wrap">
+                <button class="del-btn" onclick="removeCategory(${index})">
+                    <img class="icon" src="https://cdn-icons-png.flaticon.com/512/1828/1828778.png" alt="x">
+                </button>
+            </div>
+        `;
+        
+        // Слушатель для снятия ошибки при вводе
+        const nInput = div.querySelector('.edit-input-name');
+        const errText = div.querySelector('.error-text');
+        nInput.addEventListener('input', () => {
+             nInput.classList.remove('input-error');
+             errText.style.display = 'none';
+        });
+
+        // Слушатели для процентов
+        const pInput = div.querySelector('.edit-input-percent');
+        pInput.addEventListener('keydown', (e) => { if (e.key === '-' || e.key === '+') e.preventDefault(); });
+        pInput.addEventListener('input', function() {
+            let v = parseFloat(this.value);
+            if (v < 0) this.value = 0;
+            if (v > 100) this.value = 100;
+        });
+        
+        editView.appendChild(div);
+    });
+
+    const addContainer = document.createElement('div');
+    addContainer.className = 'add-btn-container';
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-btn';
+    addBtn.textContent = 'Добавить категорию...';
+    addBtn.onclick = addCategory;
+    addContainer.appendChild(addBtn);
+    editView.appendChild(addContainer);
+}
+
+function addCategory() {
+    saveCurrentEditState(); 
+    categories.push({ name: '', percent: 0 });
+    renderEditMode();
+}
+
+function removeCategory(index) {
+    saveCurrentEditState();
+    categories.splice(index, 1);
+    renderEditMode();
+}
+
+function saveCurrentEditState() {
+    const rows = editView.querySelectorAll('.edit-row');
+    const newCats = [];
+    rows.forEach(row => {
+        const name = row.querySelector('.edit-input-name').value;
+        let percent = Number(row.querySelector('.edit-input-percent').value);
+        if (percent < 0) percent = 0;
+        if (percent > 100) percent = 100;
+        newCats.push({ name, percent });
+    });
+    categories = newCats;
+}
+
+// === УПРАВЛЕНИЕ РЕЖИМАМИ ===
+editBtn.onclick = () => {
+    renderEditMode();
+    viewContainer.style.display = 'none';
+    editView.style.display = 'flex';
+    editBtn.style.display = 'none';
+    saveBtn.style.display = 'flex';
+};
+
+saveBtn.onclick = () => {
+    // Сохраняем состояние, но не в переменную categories, 
+    // чтобы проверить на ошибки прямо в DOM элементах
+    
+    let hasError = false;
+    const rows = editView.querySelectorAll('.edit-row');
+    
+    // Проверка валидации (пустые поля)
+    rows.forEach(row => {
+        const nameInput = row.querySelector('.edit-input-name');
+        const errText = row.querySelector('.error-text');
+        
+        if (nameInput.value.trim() === '') {
+            nameInput.classList.add('input-error');
+            errText.style.display = 'block';
+            hasError = true;
+        } else {
+            nameInput.classList.remove('input-error');
+            errText.style.display = 'none';
+        }
+    });
+    
+    if (hasError) return; // Не сохраняем, если есть ошибки
+
+    // Если ошибок нет, сохраняем в массив
+    saveCurrentEditState();
+
+    const totalPercent = categories.reduce((sum, c) => sum + c.percent, 0);
+    if (totalPercent > 100) {
+        alert(`Ошибка! Сумма процентов (${parseFloat(totalPercent.toFixed(1))}%) превышает 100%.`);
+        return; 
+    }
+    
+    renderViewMode();
+    calculate();
+    editView.style.display = 'none';
+    viewContainer.style.display = 'block';
+    saveBtn.style.display = 'none';
+    editBtn.style.display = 'flex';
+    updateURL();
+};
+
+// === ЧИСЛОВЫЕ ФУНКЦИИ ===
+function parseRaw(str) {
+    if(!str) return 0;
+    return parseFloat(str.replace(/\s/g, '').replace(',', '.')) || 0;
+}
+function formatPretty(num) {
+    if (num === 0) return ''; 
+    return num.toLocaleString('ru-RU', { maximumFractionDigits: 2, minimumFractionDigits: 0 });
+}
+function formatInputString(str) {
+    const num = parseRaw(str);
+    if (num === 0) return '';
+    return num.toLocaleString('ru-RU');
+}
+function formatInputLive(input) {
+    let raw = input.value;
+    if (!raw) return;
+    const cursor = input.selectionStart;
+    let meaningfulCharsBeforeCursor = 0;
+    for (let i = 0; i < cursor; i++) if (/[\d.,]/.test(raw[i])) meaningfulCharsBeforeCursor++;
+    let clean = raw.replace(/\s/g, '').replace('.', ','); 
+    let parts = clean.split(',');
+    let integerPart = parts[0];
+    let decimalPart = parts.length > 1 ? parts.slice(1).join('') : null;
+    let formattedInt = '';
+    if (integerPart !== '') {
+        if (!isNaN(parseInt(integerPart))) formattedInt = parseInt(integerPart).toLocaleString('ru-RU');
+        else formattedInt = integerPart;
+    }
+    let newVal = formattedInt;
+    if (decimalPart !== null) newVal += ',' + decimalPart;
+    else if (clean.includes(',')) newVal += ',';
+    if (input.value !== newVal) {
+        input.value = newVal;
+        let newCursor = 0;
+        let count = 0;
+        for (let i = 0; i < newVal.length; i++) {
+            if (count === meaningfulCharsBeforeCursor) break;
+            if (/[\d.,]/.test(newVal[i])) count++;
+            newCursor++;
+        }
+        input.setSelectionRange(newCursor, newCursor);
+    }
+}
+
+totalInput.addEventListener('keydown', validateInputKey);
+totalInput.addEventListener('input', (e) => {
+    formatInputLive(e.target);
+    calculate();
+});
+
+clearBtn.onclick = () => {
+    totalInput.value = '';
+    calculate();
+    totalInput.focus();
+};
+
+// === ПОДЕЛИТЬСЯ ===
+const shareBtn = document.getElementById('shareBtn');
+const popup = document.getElementById('sharePopup');
+const copyLink = document.getElementById('copyLink');
+const tg = document.getElementById('tgShare');
+const wa = document.getElementById('waShare');
+const fb = document.getElementById('fbShare');
+
+async function shorten(url) {
+  try {
+    const r = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`);
+    const data = await r.json();
+    return data.shorturl || url;
+  } catch (e) { return url; }
+}
+
+async function showSharePopup() {
+  let longUrl = window.location.href;
+  let shortUrl = await shorten(longUrl);
+  tg.href = `https://t.me/share/url?url=${encodeURIComponent(shortUrl)}`;
+  wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shortUrl)}`;
+  fb.href = `https://www.facebook.com/share_channel/?type=reshare&link=${encodeURIComponent(shortUrl)}&app_id=87741124305&source_surface=external_reshare&display=popup`;
+  copyLink.onclick = () => {
+    navigator.clipboard.writeText(shortUrl);
+    const originalHTML = copyLink.innerHTML;
+    copyLink.innerHTML = `<span style="margin:0 auto">Скопировано!</span>`;
+    setTimeout(() => copyLink.innerHTML = originalHTML, 2000);
+  };
+  popup.style.display = 'flex';
+  const r = shareBtn.getBoundingClientRect();
+  popup.style.left = (r.left + r.width/2 - popup.offsetWidth/2) + 'px';
+  popup.style.top = (r.bottom + 8) + 'px';
+  if (r.left + popup.offsetWidth > window.innerWidth) popup.style.left = (window.innerWidth - popup.offsetWidth - 8) + 'px';
+}
+shareBtn.onclick = (e) => {
+  e.stopPropagation();
+  if (popup.style.display === 'flex') popup.style.display = 'none';
+  else showSharePopup();
+};
+document.addEventListener('click', e => {
+  if (!popup.contains(e.target) && e.target !== shareBtn) popup.style.display = 'none';
+});
+
+// === THEME & TOOLTIPS ===
+const savedTheme = localStorage.getItem('theme');
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+function applyTheme(theme) {
+  if (theme === 'dark') document.body.classList.add('dark');
+  else document.body.classList.remove('dark');
+}
+if (savedTheme) applyTheme(savedTheme);
+else applyTheme(prefersDark.matches ? 'dark' : 'light');
+document.getElementById('themeToggle').onclick = () => {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+};
+const tooltipEl = document.getElementById('customTooltip');
+function showTooltip(el) {
+  const text = el.getAttribute('data-tip');
+  if (!text) return;
+  const rect = el.getBoundingClientRect();
+  tooltipEl.textContent = text;
+  tooltipEl.classList.add('visible');
+  let top = rect.bottom + 8;
+  let left = rect.left + (rect.width/2) - (tooltipEl.offsetWidth/2);
+  if (left < 10) left = 10;
+  if (left + tooltipEl.offsetWidth > window.innerWidth) left = window.innerWidth - tooltipEl.offsetWidth - 10;
+  tooltipEl.style.top = `${top}px`;
+  tooltipEl.style.left = `${left}px`;
+}
+document.querySelectorAll('[data-tip]').forEach(el => {
+  el.addEventListener('mouseenter', () => showTooltip(el));
+  el.addEventListener('mouseleave', () => tooltipEl.classList.remove('visible'));
+  el.addEventListener('click', () => tooltipEl.classList.remove('visible'));
+});
+
+init();
+</script>
+
+</body>
+</html>

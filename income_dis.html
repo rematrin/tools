@@ -18,16 +18,15 @@
     --accent: #7aa2ff;
     
     /* Статусные цвета */
-    --danger: #ff6b6b;
-    --success: #2ecc71;
+    --danger: #ff5757;
+    --success: #20c767;
     --gray: #a0a0a0;
     
     /* Цвет символа % в инпуте */
     --input-symbol: #888; 
 
     /* Цвета категорий */
-    --c1: #ff8787; --c2: #f1c40f; --c3: #4bcffa; --c4: #da8eff; 
-    --c5: #2ecc71; --c6: #ffbe76; --c7: #48dbfb; --c8: #ff7979;
+    --c1: #5475eb;
     
     --tooltip-bg: #2a2c33;
     --tooltip-text: #ffffff;
@@ -84,14 +83,14 @@
   }
   .topbar-controls { display: flex; gap: 8px; }
   
-  .card {display:flex; flex-direction:column; gap:8px; background: var(--bg);}
-  
+  .card {display:flex; flex-direction:column; gap:4px; background: var(--bg);}
+ 
   /* СТРОКИ */
   .row {
     display: flex; align-items: center; justify-content: space-between;
     background: var(--card-bg); border: 1px solid var(--border);
     border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.03);
-    padding: 10px 12px; gap: 10px;
+    padding: 9px 12px; gap: 10px;
     transition: border-color 0.2s, background 0.3s;
   }
   .row:focus-within {
@@ -121,12 +120,16 @@
   .amount input::placeholder { color: #ccc; }
   
   /* ГЛАВНОЕ ПОЛЕ */
-  .row.main-input { border-color: var(--accent); margin-bottom: 10px; }
-  .row.main-input input { font-weight: 700; color: var(--accent); }
+  .row.main-input { margin-bottom: 0px; }
+  .row.main-input input { font-weight: 650; color: var(--accent); }
 
   /* СТИЛЬ ОСТАТКА */
-  #val_rest { font-weight: 700; }
-  #row_rest { transition: border-color 0.3s ease; }
+  #val_rest { font-weight: 650; }
+  
+  #row_rest { 
+      transition: border-color 0.3s ease; 
+      margin-top: 0px;
+  }
 
   /* КНОПКИ */
   button {
@@ -153,16 +156,16 @@
   }
   #editBtn img, #saveBtn img { width: 12px; height: 12px; }
   
-  /* ЗАГОЛОВКИ РЕДАКТИРОВАНИЯ (СДЕЛАНЫ ЦВЕТОМ ТЕКСТА, А НЕ СЕРЫМ) */
+  /* ЗАГОЛОВКИ РЕДАКТИРОВАНИЯ */
   .edit-header {
       display: flex; gap: 8px; padding: 0 4px; margin-bottom: 6px;
-      font-size: 0.85rem; color: var(--text); font-weight: 600; /* Изменено на var(--text) */
+      font-size: 0.85rem; color: var(--text); font-weight: 600;
   }
   
   /* СТРОКА РЕДАКТИРОВАНИЯ */
   .edit-row { 
-      display: flex; gap: 8px; align-items: flex-start; /* Чтобы ошибка не ломала верстку */
-      margin-bottom: 5px; /* Чуть больше отступ снизу для ошибки */
+      display: flex; gap: 8px; align-items: flex-start;
+      margin-bottom: 5px;
   }
   
   /* ОБЕРТКА ДЛЯ НАЗВАНИЯ + ОШИБКИ */
@@ -181,13 +184,13 @@
       color: var(--danger); font-size: 0.75rem; display: none; padding-left: 2px;
   }
   
-  /* СТИЛЬ ДЛЯ ПРОЦЕНТОВ (С УВЕЛИЧЕННЫМ ОТСТУПОМ) */
+  /* СТИЛЬ ДЛЯ ПРОЦЕНТОВ */
   .percent-wrapper {
       flex: 1; position: relative; display: flex; align-items: center;
   }
   .edit-input-percent {
       width: 100%; border: 1px solid var(--border); border-radius: 8px; 
-      padding: 10px 32px 10px 10px; /* Увеличил отступ справа (было 24px) */
+      padding: 10px 32px 10px 10px;
       background: var(--card-bg); color: var(--text); text-align: right; font-size: 16px;
       -moz-appearance: textfield;
   }
@@ -200,21 +203,58 @@
       pointer-events: none; font-size: 0.9rem; font-weight: 500;
   }
 
-  /* Кнопка удаления центрируется вертикально относительно инпутов */
   .del-btn-wrap {
-      height: 40px; display: flex; align-items: center; /* Высота инпута примерно 40px */
+      height: 40px; display: flex; align-items: center;
   }
   .del-btn { background: transparent; border: none; padding: 4px; opacity: 0.6; cursor: pointer; }
   .del-btn:hover { background: transparent; opacity: 1; }
   .del-btn img { width: 14px; height: 14px; }
   
   .add-btn-container { display: flex; justify-content: center; width: 100%; }
+
+  /* === ОБНОВЛЕННЫЕ СТИЛИ КНОПКИ ДОБАВИТЬ === */
   .add-btn {
-      width: 100%; max-width: 220px; padding: 10px 14px; border: 1px solid var(--border); 
-      background: var(--card-bg); border-radius: 8px; color: var(--text); margin-bottom: 10px;
-      font-size: 16px; text-align: left; opacity: 0.7; display: flex; align-items: center; gap: 8px;
+      width: 100%; 
+      padding: 12px; 
+      background: #ffffff; 
+      border-radius: 12px; 
+      color: var(--accent); /* Синий текст */
+      margin-bottom: 10px;
+      font-size: 15px; 
+      font-weight: 600;
+      opacity: 1; 
+      display: flex; align-items: center; justify-content: center; /* Центрирование */
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
   }
-  .add-btn:hover { opacity: 1; background: var(--input-bg); }
+  /* Иконка внутри кнопки наследует цвет текста */
+  .add-btn svg {
+      width: 16px; height: 16px; fill: currentColor;
+  }
+  
+  .add-btn:hover { 
+      border-color: var(--accent);
+      background: #f0f2f7; /* Легкий фон при наведении */
+  }
+  .add-btn:active {
+      transform: scale(0.98);
+  }
+
+  .divider {
+      height: 1px;
+      margin: 10px auto;
+      width: 95%;
+      border: none;
+      /* МАГИЯ ЗДЕСЬ: Радиальный градиент в центре.
+         Он берет цвет текста (var(--text)) в центре и делает его прозрачным к краям.
+         ellipse at center - создает "сплюснутый" овал, что дает эффект сужения.
+      */
+      background: radial-gradient(ellipse at center, var(--text) 0%, transparent 70%);
+
+      opacity: 0.15;
+  }
+  /* ========================================= */
 
   /* POPUP */
   #sharePopup {
@@ -270,6 +310,8 @@
               <input type="text" id="totalIncome" inputmode="decimal" placeholder="0" autocomplete="off" autofocus>
           </div>
       </div>
+      
+      <div class="divider"></div>
 
       <div class="card" id="resultsView">
       </div>
@@ -313,14 +355,15 @@
 
 <script>
 const PALETTE = [
-    'var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 
-    'var(--c5)', 'var(--c6)', 'var(--c7)', 'var(--c8)'
+    'var(--c1)'
 ];
 
 const DEFAULT_CATEGORIES = [
     { name: 'Налоги',     percent: 15 },
     { name: 'Резерв', percent: 10 },
-    { name: 'Инвестиции',      percent: 5 }
+    { name: 'Инвестиции',      percent: 12 },
+  { name: 'Аренда',      percent: 20 },
+  { name: 'Мечты',      percent: 5 },
 ];
 
 let categories = [];
@@ -358,16 +401,10 @@ function init() {
     calculate();
 }
 
-// ИЗМЕНЕНИЕ 2: Убрано сохранение 'amount' в URL
 function updateURL() {
-    // const rawAmount = parseRaw(totalInput.value); // Больше не нужно для ссылки
     const catsStr = categories.map(c => `${c.name}:${c.percent}`).join('|');
-    
     const newParams = new URLSearchParams();
-    // ЭТА СТРОКА УДАЛЕНА: if (rawAmount > 0) newParams.set('amount', rawAmount);
-    
     newParams.set('cats', encodeURIComponent(catsStr));
-    
     history.replaceState(null, '', location.pathname + '?' + newParams.toString());
 }
 
@@ -375,11 +412,20 @@ function updateURL() {
 function renderViewMode() {
     resultsView.innerHTML = '';
     
+    // Отрисовка категорий
     categories.forEach((cat, index) => {
         const color = PALETTE[index % PALETTE.length];
         createResultRow(index, cat.name, cat.percent, color);
     });
 
+    // ДОБАВЛЕНИЕ РАЗДЕЛИТЕЛЯ МЕЖДУ КАТЕГОРИЯМИ И ОСТАТКОМ
+    if (categories.length > 0) {
+        const div = document.createElement('div');
+        div.className = 'divider';
+        resultsView.appendChild(div);
+    }
+
+    // Отрисовка остатка
     createResultRow('rest', 'Остаток', 0, 'var(--gray)', true); 
     updateRestStyle();
 }
@@ -506,9 +552,6 @@ function updateRestStyle() {
     
     const restInput = document.getElementById('val_rest');
     if (restInput) restInput.style.color = color;
-    
-    const restRow = document.getElementById('row_rest');
-    if (restRow) restRow.style.borderColor = color;
 }
 
 // === РЕНДЕРИНГ (РЕДАКТИРОВАНИЕ) ===
@@ -544,7 +587,6 @@ function renderEditMode() {
             </div>
         `;
         
-        // Слушатель для снятия ошибки при вводе
         const nInput = div.querySelector('.edit-input-name');
         const errText = div.querySelector('.error-text');
         nInput.addEventListener('input', () => {
@@ -552,7 +594,6 @@ function renderEditMode() {
              errText.style.display = 'none';
         });
 
-        // Слушатели для процентов
         const pInput = div.querySelector('.edit-input-percent');
         pInput.addEventListener('keydown', (e) => { if (e.key === '-' || e.key === '+') e.preventDefault(); });
         pInput.addEventListener('input', function() {
@@ -567,7 +608,11 @@ function renderEditMode() {
     addContainer.className = 'add-btn-container';
     const addBtn = document.createElement('button');
     addBtn.className = 'add-btn';
-    addBtn.textContent = 'Добавить категорию...';
+    // Добавляем SVG иконку плюса
+    addBtn.innerHTML = `
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        Добавить категорию
+    `;
     addBtn.onclick = addCategory;
     addContainer.appendChild(addBtn);
     editView.appendChild(addContainer);
@@ -610,7 +655,6 @@ saveBtn.onclick = () => {
     let hasError = false;
     const rows = editView.querySelectorAll('.edit-row');
     
-    // Проверка валидации (пустые поля)
     rows.forEach(row => {
         const nameInput = row.querySelector('.edit-input-name');
         const errText = row.querySelector('.error-text');
@@ -773,14 +817,12 @@ document.querySelectorAll('[data-tip]').forEach(el => {
 
 init();
 </script>
-  
-<link rel="stylesheet" href="footer.css">
+  <link rel="stylesheet" href="footer.css">
 <div id="footer"></div>
 <script>
 fetch('footer.html')
   .then(r => r.text())
   .then(html => document.getElementById('footer').innerHTML = html);
 </script>
-
 </body>
 </html>

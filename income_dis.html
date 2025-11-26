@@ -212,11 +212,14 @@
   
   .add-btn-container { display: flex; justify-content: center; width: 100%; }
 
-  /* === ОБНОВЛЕННЫЕ СТИЛИ КНОПКИ ДОБАВИТЬ === */
+/* === ОБНОВЛЕННЫЕ СТИЛИ КНОПКИ ДОБАВИТЬ === */
   .add-btn {
       width: 100%; 
       padding: 12px; 
-      background: #ffffff; 
+      /* ИСПРАВЛЕНИЕ: используем переменную фона, а не белый цвет */
+      background: var(--card-bg); 
+      /* ИСПРАВЛЕНИЕ: добавляем переменную границы */
+      border: 1px solid var(--border); 
       border-radius: 12px; 
       color: var(--accent); /* Синий текст */
       margin-bottom: 10px;
@@ -235,7 +238,8 @@
   
   .add-btn:hover { 
       border-color: var(--accent);
-      background: #f0f2f7; /* Легкий фон при наведении */
+      /* ИСПРАВЛЕНИЕ: используем переменную для ховера */
+      background: var(--btn-hover); 
   }
   .add-btn:active {
       transform: scale(0.98);

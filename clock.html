@@ -7,146 +7,276 @@
 <link rel="icon" type="image/png" href="clock.png">
 <link rel="apple-touch-icon" href="clock2.png">
 <style>
+  /* === ЦВЕТОВЫЕ ПЕРЕМЕННЫЕ === */
+  :root {
+    --bg: #f4f6fb;
+    --text: #0b0d12;
+    --card-bg: #ffffff;
+    --border: #e6e9f2;
+    --input-bg: #ffffff;
+    --btn-hover: #f0f2f7;
+    --accent: #7aa2ff;
+    
+    --tooltip-bg: #2a2c33;
+    --tooltip-text: #ffffff;
+    
+    --gray: #999;
+    /* --danger больше не нужен для крестиков, но оставим на всякий случай */
+    --danger: #ff5757; 
+  }
+
+  body.dark {
+    --bg: #0f1115;
+    --text: #f3f3f3;
+    --card-bg: #1a1d22;
+    --border: #292c33;
+    --input-bg: #1a1d22;
+    --btn-hover: #252830;
+    --accent: #5b8af0;
+    
+    --tooltip-bg: #e6e9f2;
+    --tooltip-text: #0f1115;
+    
+    --gray: #6b6b6b;
+  }
+
+  /* --- ИСПРАВЛЕНИЕ ИКОНОК В ТЕМНОЙ ТЕМЕ --- */
+  /* Инвертируем только черно-белые PNG иконки. SVG и цветные не трогаем. */
+  body.dark .theme-icon,
+  body.dark #shareBtn img,
+  body.dark #copyLink img {
+      filter: invert(1) brightness(1.3);
+  }
+  
+  /* Темная тема для шаринга */
+  body.dark #sharePopup { background: var(--card-bg); border-color: var(--border); color: var(--text); }
+  /* Цвет фона кнопок в темной теме */
+  body.dark #copyLink { background: var(--btn-hover) !important; color: var(--text) !important; }
+  body.dark #tgShare { background: rgba(42, 171, 238, 0.2) !important; color: var(--text) !important; }
+  body.dark #waShare { background: rgba(37, 211, 102, 0.2) !important; color: var(--text) !important; }
+  body.dark #fbShare { background: rgba(24, 119, 242, 0.2) !important; color: var(--text) !important; }
+
   *{box-sizing:border-box}
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f4f6fb;color:#0b0d12}
-  .wrap{max-width:500px;margin:0 auto;padding:22px 14px 28px}
-  h1{font-size:1.25rem;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
-  .card{display:flex;flex-direction:column;gap:4px}
-  .row{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e6e9f2;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.03);padding:10px 12px}
-  .code{display:flex;align-items:center;gap:8px;font-weight:700}
-  .flag{border-radius:4px;width:24px;height:18px;vertical-align:middle}
-  .time{font-size:1.3rem;font-variant-numeric:tabular-nums;display:flex;align-items:flex-end;gap:4px}
-  .seconds{font-size:.8rem;color:#999;position:relative;bottom:2px}
-  button{padding:8px 12px;border:1px solid #cfd5e1;background:#fff;border-radius:8px;cursor:pointer;font-size:.95rem}
-  button:hover{opacity: 1}
+  
+  body {
+    font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.3s ease, color 0.3s ease;
+  }
 
-  .center-controls{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:18px}
-  .searchbox{position:relative;width:100%;max-width:360px}
-  input[type="text"]{width:100%;padding:8px 10px;border:1px solid #cfd5e1;border-radius:8px;background:#fff;font-size:.95rem}
+  .wrap {max-width:500px; margin:0 auto; padding:22px 14px 28px}
+  
+  /* ШАПКА */
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+  }
+  h1 { font-size:1.25rem; margin:0; }
+  
+  .topbar-controls { display: flex; gap: 8px; align-items: center; }
 
+  /* КНОПКИ В ШАПКЕ */
+  button.header-btn {
+    background: var(--card-bg); 
+    border: 1px solid var(--border); 
+    border-radius: 8px; 
+    color: var(--text);
+    cursor: pointer; 
+    transition: all 0.2s ease;
+    display: flex; align-items: center; justify-content: center;
+  } 
+  button.header-btn:hover { background: var(--btn-hover); }
+
+  #themeToggle { padding: 6px 10px;}
+  #themeToggle img { width: 11px; height: 11px; display: block; pointer-events: none; }
+
+  #shareBtn {
+      font-size: 0.9rem;
+      padding: 4px 10px; 
+      gap: 6px;
+  }
+  #shareBtn img { width: 11px; height: 11px; display: block; }
+
+  /* КАРТОЧКИ ГОРОДОВ */
+  .card {display:flex; flex-direction:column; gap:4px}
+  
+  .row {
+      display:flex; align-items:center; justify-content:space-between;
+      background: var(--card-bg); 
+      border: 1px solid var(--border); 
+      border-radius: 12px; 
+      box-shadow: 0 1px 2px rgba(0,0,0,.03); 
+      padding: 10px 12px;
+      transition: background 0.3s, border-color 0.3s;
+      position: relative;
+  }
+  
+  .code {display:flex; align-items:center; gap:8px; font-weight:700; color: var(--text);}
+  .flag {border-radius:4px; width:24px; height:18px; vertical-align:middle}
+  
+  .time {
+      font-size:1.3rem; 
+      font-variant-numeric:tabular-nums; 
+      display:flex; align-items:flex-end; gap:4px;
+      text-align: right;
+      transition: padding-right 0.2s ease;
+      color: var(--text);
+  }
+  .seconds {font-size:.8rem; color: var(--gray); position:relative; bottom:2px}
+  
+  .edit-mode .time { padding-right: 28px; }
+
+  /* --- ИСПРАВЛЕНИЕ КРЕСТИКА УДАЛЕНИЯ --- */
+  .delBtn {
+    position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; 
+    font-size: 1.1rem; 
+    color: var(--gray); /* Изначально серый */
+    cursor: pointer; opacity: 0.7; display: none;
+    z-index: 5;
+    transition: color 0.2s, opacity 0.2s;
+  }
+  /* При наведении просто становится ярче (цветом текста) */
+  .delBtn:hover { opacity: 1; color: var(--text); }
+  
+  body.edit-mode .delBtn { display: block; }
+
+  /* НИЖНИЕ КНОПКИ (Action Styles) */
+  .center-controls {
+      display:flex; justify-content:center; width: 100%; margin-top:18px;
+  }
+
+  .action-btn {
+      padding: 10px; 
+      background: var(--card-bg); 
+      border: 1px solid var(--border); 
+      border-radius: 12px; 
+      color: var(--accent);
+      font-size: 15px; 
+      font-weight: 600;
+      display: flex; align-items: center; justify-content: center; 
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      width: 100%;
+  }
+  .action-btn:hover { border-color: var(--accent); background: var(--btn-hover); }
+  /* SVG наследует цвет текста кнопки (акцентный) */
+  .action-btn svg { width: 18px; height: 18px; fill: currentColor; }
+  
+  #editBtn { width: 50%; min-width: 200px; }
+
+  /* ГРУППА РЕДАКТИРОВАНИЯ */
+  .edit-group {
+      display: flex; gap: 10px; width: 100%;
+      align-items: stretch;
+  }
+  
+  .input-wrapper {
+      flex-grow: 1; 
+      position: relative;
+  }
+  
+  input[type="text"] {
+      width: 100%; height: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--input-bg);
+      font-size: 16px;
+      color: var(--text);
+      transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { outline: none; border-color: var(--accent); }
+
+  #saveBtn {
+      width: auto; 
+      padding-left: 15px;
+      padding-right: 15px;
+      white-space: nowrap;
+      flex-shrink: 0; 
+  }
+
+  /* ПОДСКАЗКИ ПОИСКА */
   .suggest {
-    position: absolute;
-    left: 0;
-    bottom: calc(100% + 6px); /* открывается вверх, строго над полем */
-    width: calc(100% - 100px); /* чтобы не перекрывала кнопку */
-    background: #fff;
-    border: 1px solid #e6e9f2;
+    position: absolute; left: 0; bottom: calc(100% + 6px);
+    width: 100%; 
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 12px;
     box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.12);
-    overflow: hidden;
-    z-index: 10;
-    display: none;
-    max-height: 300px;
-    overflow-y: auto;
+    overflow: hidden; z-index: 10;
+    display: none; max-height: 300px; overflow-y: auto;
   }
+  .suggest.visible { display:block; }
+  
+  .opt { display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid var(--border); cursor:pointer; color: var(--text); }
+  .opt:last-child { border-bottom:0; }
+  .opt:hover { background: var(--btn-hover); }
+  .opt .country { font-size:.85rem; opacity:.7; }
 
-  .suggest.visible{display:block}
-  .opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #f1f3f8;cursor:pointer}
-  .opt:last-child{border-bottom:0}
-  .opt:hover{background:#f6f8fd}
-  .opt .country{font-size:.85rem;opacity:.7}
-  .opt .spacer{margin-left:auto;font-size:.8rem;opacity:.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:45%}
-
-  #sharePopup{
-    position:absolute;
-    display:none;
-    background:#fff;
-    border:1px solid #ddd;
-    padding:10px;
-    border-radius:12px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.15);
-    flex-direction:column;
-    gap:8px;
-    z-index:100;
-    width:190px;
-    animation:fadeIn .2s ease;
-    color:#222;
+  /* SHARE POPUP */
+  #sharePopup {
+    position:absolute; display:none; background:#fff; border:1px solid #ddd;
+    padding:10px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.15);
+    flex-direction:column; gap:8px; z-index:100; width:190px;
+    animation:fadeIn .2s ease; color:#222;
   }
+  @keyframes fadeIn{ from{opacity:0;transform:translateY(-4px);} to{opacity:1;transform:translateY(0);} }
 
-  @keyframes fadeIn{
-    from{opacity:0;transform:translateY(-4px);}
-    to{opacity:1;transform:translateY(0);}
+  /* TOOLTIP */
+  #customTooltip {
+    position: fixed; background: var(--tooltip-bg); color: var(--tooltip-text); padding: 6px 12px; border-radius: 6px;
+    font-size: 0.8rem; pointer-events: none; opacity: 0; transform: translateY(5px); transition: opacity 0.2s, transform 0.2s;
+    z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); white-space: nowrap; font-weight: 500;
   }
+  #customTooltip.visible { opacity: 1; transform: translateY(0); }
 
- input, select, textarea {
- font-size: 16px !important;
-}
-.time {
-  text-align: right;
-  transition: padding-right 0.2s ease;
-}
-
-.edit-mode .time {
-  padding-right: 28px; /* место под крестик только при редактировании */
-}
-
-.delBtn {
-  position: absolute;
-  right: 5px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  font-size: 1.1rem;
-  color: #777;
-  cursor: pointer;
-  opacity: 0.7;
-  display: none;
-}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>
-    Мировые часы
-    <button id="shareBtn" style="
-      font-size:0.9rem;
-      background:#ffffff;
-      border:1px solid #dcdfe6;
-      border-radius:8px;
-      padding:4px 10px;
-      cursor:pointer;
-      transition:all .2s ease;
-    "><img src="https://cdn-icons-png.flaticon.com/512/1828/1828954.png" width="11" height="11" alt=""> Поделиться списком</button>
-  </h1>
 
+<div id="customTooltip"></div>
+
+<div class="wrap">
+  <div class="topbar">
+      <h1>Мировые часы</h1>
+      <div class="topbar-controls">
+          <button id="themeToggle" class="header-btn" data-tip="Сменить тему">
+              <img class="theme-icon" src="https://cdn-icons-png.flaticon.com/128/4489/4489231.png" alt="Theme">
+          </button>
+          <button id="shareBtn" class="header-btn" data-tip="Поделиться списком">
+              <img src="https://cdn-icons-png.flaticon.com/512/1828/1828954.png" alt="">
+              Поделиться
+          </button>
+      </div>
+  </div>
 
   <div class="card" id="clocks"></div>
 
   <div class="center-controls" id="mainControls">
-    <button id="editBtn" style="
-      font-size:0.9rem;
-      background:#ffffff;
-      border:1px solid #dcdfe6;
-      border-radius:8px;
-      padding:4px 10px;
-      cursor:pointer;
-      transition:all .2s ease;
-    "><img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" width="10" height="10" alt=""> Редактировать</button>
+    <button id="editBtn" class="action-btn">
+        <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        Редактировать
+    </button>
   </div>
 
   <div class="center-controls" id="editControls" style="display:none;">
-  <div class="searchbox" style="display:flex;gap:8px;align-items:center;justify-content:center;width:100%;max-width:360px;">
-    <input id="search" type="text" placeholder="Добавить город или страну..." autocomplete="off" autocorrect="off" spellcheck="false" style="flex:1;">
-    <button id="saveBtn" style="
-      font-size:0.9rem;
-      background:#ffffff;
-      border:1px solid #dcdfe6;
-      border-radius:8px;
-      padding:8px 10px;
-      cursor:pointer;
-      transition:all .2s ease;
-    ">
-      <img src="https://cdn-icons-png.flaticon.com/128/5610/5610944.png" width="11" height="10" alt="">
-      Сохранить
-    </button>
-    <div id="suggest" class="suggest" role="listbox" aria-label="Подсказки"></div>
-  </div>
-</div>
+      <div class="edit-group">
+          <div class="input-wrapper">
+             <input id="search" type="text" placeholder="Добавить город или страну..." autocomplete="off" autocorrect="off" spellcheck="false">
+             <div id="suggest" class="suggest" role="listbox"></div>
+          </div>
+          <button id="saveBtn" class="action-btn">
+              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Сохранить
+          </button>
+      </div>
   </div>
 
   <div id="sharePopup">
-    <button id="copyLink" style="display:flex;align-items:center;gap:8px;padding:8px;border:none;background:#f5f5f5;border-radius:8px;cursor:pointer;color:#222;">
+    <button id="copyLink" style="display:flex;align-items:center;gap:8px;padding:8px;border:none;background:#f5f5f5;border-radius:8px;cursor:pointer;color:#222;width:100%">
       <img src="https://cdn-icons-png.flaticon.com/512/7640/7640062.png" width="18" height="18" alt="">
       Ссылка
     </button>
@@ -200,17 +330,15 @@
       const id = toId(tz);
       const row = document.createElement('div');
       row.className = 'row';
-      row.style.position = 'relative'; // чтобы крестик позиционировался внутри
 
       row.innerHTML = `
-  <div class="code" style="display:flex;align-items:center;gap:8px;">
-    <img class="flag" src="${flagURL(flag)}" alt="${name}">
-    <span>${name}</span>
-  </div>
-  <div class="time" id="${id}"></div>
-  <button class="delBtn">✕</button>
-`;
-
+        <div class="code">
+          <img class="flag" src="${flagURL(flag)}" alt="${name}">
+          <span>${name}</span>
+        </div>
+        <div class="time" id="${id}"></div>
+        <button class="delBtn" data-tip="Удалить">✕</button>
+      `;
 
       const delBtn = row.querySelector('.delBtn');
       delBtn.onclick = () => {
@@ -222,22 +350,14 @@
       box.appendChild(row);
       setTime(id, tz, now);
     }
-
-    // Показываем крестики только при редактировании
-    const editMode = editControls.style.display === 'flex';
-    document.querySelectorAll('.delBtn').forEach(btn => {
-      btn.style.display = editMode ? 'inline' : 'none';
-    });
   }
-
-
 
   function setTime(id,tz,now=new Date()){
     const el=document.getElementById(id);
     try{
       const p=new Intl.DateTimeFormat('ru-RU',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(now);
       el.innerHTML=`${p.find(x=>x.type==='hour').value}:${p.find(x=>x.type==='minute').value} <span class='seconds'>${p.find(x=>x.type==='second').value}</span>`;
-    }catch{el.innerHTML='--:-- <span class="seconds">--</span>';}
+    }catch{if(el)el.innerHTML='--:-- <span class="seconds">--</span>';}
   }
 
   function tick(){
@@ -254,230 +374,91 @@
 
   document.getElementById('editBtn').onclick = () => {
     mainControls.style.display = 'none';
-    editControls.style.display = 'flex';
+    editControls.style.display = 'block'; 
     document.body.classList.add('edit-mode');
-    render(); // показать крестики
   };
 
   document.getElementById('saveBtn').onclick = () => {
     editControls.style.display = 'none';
     mainControls.style.display = 'flex';
     document.body.classList.remove('edit-mode');
-    render(); // скрыть крестики
     updateURL();
   };
 
   const CITIES_DB=[
-    // --- Европа (столицы + крупные) ---
+    // --- Европа ---
     {name:'Прага', country:'Чехия', tz:'Europe/Prague', flag:'cz'},
     {name:'Варшава', country:'Польша', tz:'Europe/Warsaw', flag:'pl'},
     {name:'Берлин', country:'Германия', tz:'Europe/Berlin', flag:'de'},
     {name:'Гамбург', country:'Германия', tz:'Europe/Berlin', flag:'de'},
     {name:'Мюнхен', country:'Германия', tz:'Europe/Berlin', flag:'de'},
     {name:'Париж', country:'Франция', tz:'Europe/Paris', flag:'fr'},
-    {name:'Лион', country:'Франция', tz:'Europe/Paris', flag:'fr'},
-    {name:'Марсель', country:'Франция', tz:'Europe/Paris', flag:'fr'},
     {name:'Рим', country:'Италия', tz:'Europe/Rome', flag:'it'},
     {name:'Милан', country:'Италия', tz:'Europe/Rome', flag:'it'},
-    {name:'Неаполь', country:'Италия', tz:'Europe/Rome', flag:'it'},
     {name:'Мадрид', country:'Испания', tz:'Europe/Madrid', flag:'es'},
     {name:'Барселона', country:'Испания', tz:'Europe/Madrid', flag:'es'},
-    {name:'Валенсия', country:'Испания', tz:'Europe/Madrid', flag:'es'},
     {name:'Лиссабон', country:'Португалия', tz:'Europe/Lisbon', flag:'pt'},
     {name:'Лондон', country:'Великобритания', tz:'Europe/London', flag:'gb'},
-    {name:'Манчестер', country:'Великобритания', tz:'Europe/London', flag:'gb'},
-    {name:'Бирмингем', country:'Великобритания', tz:'Europe/London', flag:'gb'},
     {name:'Дублин', country:'Ирландия', tz:'Europe/Dublin', flag:'ie'},
     {name:'Амстердам', country:'Нидерланды', tz:'Europe/Amsterdam', flag:'nl'},
-    {name:'Роттердам', country:'Нидерланды', tz:'Europe/Amsterdam', flag:'nl'},
     {name:'Брюссель', country:'Бельгия', tz:'Europe/Brussels', flag:'be'},
-    {name:'Антверпен', country:'Бельгия', tz:'Europe/Brussels', flag:'be'},
     {name:'Вена', country:'Австрия', tz:'Europe/Vienna', flag:'at'},
     {name:'Будапешт', country:'Венгрия', tz:'Europe/Budapest', flag:'hu'},
-    {name:'Братислава', country:'Словакия', tz:'Europe/Bratislava', flag:'sk'},
-    {name:'Любляна', country:'Словения', tz:'Europe/Ljubljana', flag:'si'},
-    {name:'Загреб', country:'Хорватия', tz:'Europe/Zagreb', flag:'hr'},
-    {name:'Сараево', country:'Босния и Герцеговина', tz:'Europe/Sarajevo', flag:'ba'},
-    {name:'Подгорица', country:'Черногория', tz:'Europe/Podgorica', flag:'me'},
-    {name:'Белград', country:'Сербия', tz:'Europe/Belgrade', flag:'rs'},
-    {name:'Скопье', country:'Северная Македония', tz:'Europe/Skopje', flag:'mk'},
-    {name:'Тирана', country:'Албания', tz:'Europe/Tirane', flag:'al'},
     {name:'Афины', country:'Греция', tz:'Europe/Athens', flag:'gr'},
-    {name:'София', country:'Болгария', tz:'Europe/Sofia', flag:'bg'},
-    {name:'Бухарест', country:'Румыния', tz:'Europe/Bucharest', flag:'ro'},
-    {name:'Кишинёв', country:'Молдова', tz:'Europe/Chisinau', flag:'md'},
     {name:'Киев', country:'Украина', tz:'Europe/Kiev', flag:'ua'},
     {name:'Львов', country:'Украина', tz:'Europe/Kiev', flag:'ua'},
-    {name:'Виноградов', country:'Украина', tz:'Europe/Kiev', flag:'ua'},
-    {name:'Ужгород', country:'Украина', tz:'Europe/Kiev', flag:'ua'},
-    {name:'Харьков', country:'Украина', tz:'Europe/Kiev', flag:'ua'},
     {name:'Одесса', country:'Украина', tz:'Europe/Kiev', flag:'ua'},
     {name:'Минск', country:'Беларусь', tz:'Europe/Minsk', flag:'by'},
-    {name:'Вильнюс', country:'Литва', tz:'Europe/Vilnius', flag:'lt'},
-    {name:'Рига', country:'Латвия', tz:'Europe/Riga', flag:'lv'},
-    {name:'Таллин', country:'Эстония', tz:'Europe/Tallinn', flag:'ee'},
     {name:'Осло', country:'Норвегия', tz:'Europe/Oslo', flag:'no'},
     {name:'Стокгольм', country:'Швеция', tz:'Europe/Stockholm', flag:'se'},
     {name:'Хельсинки', country:'Финляндия', tz:'Europe/Helsinki', flag:'fi'},
     {name:'Копенгаген', country:'Дания', tz:'Europe/Copenhagen', flag:'dk'},
     {name:'Рейкьявик', country:'Исландия', tz:'Atlantic/Reykjavik', flag:'is'},
-    {name:'Берн', country:'Швейцария', tz:'Europe/Zurich', flag:'ch'},
-    {name:'Монако', country:'Монако', tz:'Europe/Monaco', flag:'mc'},
-    {name:'Сан-Марино', country:'Сан-Марино', tz:'Europe/Rome', flag:'sm'},
-    {name:'Андорра-ла-Велья', country:'Андорра', tz:'Europe/Andorra', flag:'ad'},
-    {name:'Ватикан', country:'Ватикан', tz:'Europe/Rome', flag:'va'},
-    {name:'Никосия', country:'Кипр', tz:'Asia/Nicosia', flag:'cy'},
-    {name:'Валлетта', country:'Мальта', tz:'Europe/Malta', flag:'mt'},
+    {name:'Цюрих', country:'Швейцария', tz:'Europe/Zurich', flag:'ch'},
 
     // --- РОССИЯ / СНГ ---
     {name:'Москва', country:'Россия', tz:'Europe/Moscow', flag:'ru'},
     {name:'Санкт-Петербург', country:'Россия', tz:'Europe/Moscow', flag:'ru'},
-    {name:'Казань', country:'Россия', tz:'Europe/Moscow', flag:'ru'},
-    {name:'Самара', country:'Россия', tz:'Europe/Samara', flag:'ru'},
-    {name:'Екатеринбург', country:'Россия', tz:'Asia/Yekaterinburg', flag:'ru'},
-    {name:'Челябинск', country:'Россия', tz:'Asia/Yekaterinburg', flag:'ru'},
-    {name:'Омск', country:'Россия', tz:'Asia/Omsk', flag:'ru'},
     {name:'Новосибирск', country:'Россия', tz:'Asia/Novosibirsk', flag:'ru'},
-    {name:'Красноярск', country:'Россия', tz:'Asia/Krasnoyarsk', flag:'ru'},
-    {name:'Новокузнецк', country:'Россия', tz:'Asia/Novokuznetsk', flag:'ru'},
-    {name:'Иркутск', country:'Россия', tz:'Asia/Irkutsk', flag:'ru'},
-    {name:'Улан-Удэ', country:'Россия', tz:'Asia/Irkutsk', flag:'ru'},
-    {name:'Хабаровск', country:'Россия', tz:'Asia/Vladivostok', flag:'ru'},
+    {name:'Екатеринбург', country:'Россия', tz:'Asia/Yekaterinburg', flag:'ru'},
+    {name:'Казань', country:'Россия', tz:'Europe/Moscow', flag:'ru'},
     {name:'Владивосток', country:'Россия', tz:'Asia/Vladivostok', flag:'ru'},
-    {name:'Якутск', country:'Россия', tz:'Asia/Yakutsk', flag:'ru'},
     {name:'Калининград', country:'Россия', tz:'Europe/Kaliningrad', flag:'ru'},
-    {name:'Пермь', country:'Россия', tz:'Asia/Yekaterinburg', flag:'ru'},
-    {name:'Уфа', country:'Россия', tz:'Asia/Yekaterinburg', flag:'ru'},
-    {name:'Томск', country:'Россия', tz:'Asia/Tomsk', flag:'ru'},
-    {name:'Воронеж', country:'Россия', tz:'Europe/Moscow', flag:'ru'},
-    {name:'Нижний Новгород', country:'Россия', tz:'Europe/Moscow', flag:'ru'},
-    {name:'Ростов-на-Дону', country:'Россия', tz:'Europe/Moscow', flag:'ru'},
-
     {name:'Ереван', country:'Армения', tz:'Asia/Yerevan', flag:'am'},
     {name:'Баку', country:'Азербайджан', tz:'Asia/Baku', flag:'az'},
     {name:'Тбилиси', country:'Грузия', tz:'Asia/Tbilisi', flag:'ge'},
     {name:'Астана', country:'Казахстан', tz:'Asia/Almaty', flag:'kz'},
     {name:'Алматы', country:'Казахстан', tz:'Asia/Almaty', flag:'kz'},
-    {name:'Шымкент', country:'Казахстан', tz:'Asia/Almaty', flag:'kz'},
-    {name:'Бишкек', country:'Киргизия', tz:'Asia/Bishkek', flag:'kg'},
     {name:'Ташкент', country:'Узбекистан', tz:'Asia/Tashkent', flag:'uz'},
-    {name:'Самарканд', country:'Узбекистан', tz:'Asia/Samarkand', flag:'uz'},
-    {name:'Душанбе', country:'Таджикистан', tz:'Asia/Dushanbe', flag:'tj'},
-    {name:'Ашхабад', country:'Туркменистан', tz:'Asia/Ashgabat', flag:'tm'},
 
-    // --- США ---
-    {name:'Вашингтон', country:'США', tz:'America/New_York', flag:'us'},
+    // --- Америка ---
     {name:'Нью-Йорк', country:'США', tz:'America/New_York', flag:'us'},
-    {name:'Бостон', country:'США', tz:'America/New_York', flag:'us'},
-    {name:'Майами', country:'США', tz:'America/New_York', flag:'us'},
-    {name:'Филадельфия', country:'США', tz:'America/New_York', flag:'us'},
-    {name:'Атланта', country:'США', tz:'America/New_York', flag:'us'},
+    {name:'Вашингтон', country:'США', tz:'America/New_York', flag:'us'},
     {name:'Чикаго', country:'США', tz:'America/Chicago', flag:'us'},
-    {name:'Хьюстон', country:'США', tz:'America/Chicago', flag:'us'},
-    {name:'Даллас', country:'США', tz:'America/Chicago', flag:'us'},
-    {name:'Остин', country:'США', tz:'America/Chicago', flag:'us'},
-    {name:'Миннеаполис', country:'США', tz:'America/Chicago', flag:'us'},
-    {name:'Детройт', country:'США', tz:'America/Detroit', flag:'us'},
-    {name:'Индианаполис', country:'США', tz:'America/Indiana/Indianapolis', flag:'us'},
-    {name:'Кливленд', country:'США', tz:'America/New_York', flag:'us'},
-    {name:'Сан-Антонио', country:'США', tz:'America/Chicago', flag:'us'},
-    {name:'Денвер', country:'США', tz:'America/Denver', flag:'us'},
-    {name:'Финикс', country:'США', tz:'America/Phoenix', flag:'us'},
-    {name:'Сиэтл', country:'США', tz:'America/Los_Angeles', flag:'us'},
-    {name:'Портленд', country:'США', tz:'America/Los_Angeles', flag:'us'},
-    {name:'Сан-Франциско', country:'США', tz:'America/Los_Angeles', flag:'us'},
-    {name:'Сан-Диего', country:'США', tz:'America/Los_Angeles', flag:'us'},
     {name:'Лос-Анджелес', country:'США', tz:'America/Los_Angeles', flag:'us'},
-    {name:'Лас-Вегас', country:'США', tz:'America/Los_Angeles', flag:'us'},
-    {name:'Орландо', country:'США', tz:'America/New_York', flag:'us'},
-    {name:'Гонолулу', country:'США', tz:'Pacific/Honolulu', flag:'us'},
-
-    // --- КАНАДА / МЕКСИКА / ЮЖНАЯ АМЕРИКА ---
-    {name:'Оттава', country:'Канада', tz:'America/Toronto', flag:'ca'},
+    {name:'Сан-Франциско', country:'США', tz:'America/Los_Angeles', flag:'us'},
+    {name:'Майами', country:'США', tz:'America/New_York', flag:'us'},
     {name:'Торонто', country:'Канада', tz:'America/Toronto', flag:'ca'},
-    {name:'Монреаль', country:'Канада', tz:'America/Toronto', flag:'ca'},
     {name:'Ванкувер', country:'Канада', tz:'America/Vancouver', flag:'ca'},
     {name:'Мехико', country:'Мексика', tz:'America/Mexico_City', flag:'mx'},
-    {name:'Гвадалахара', country:'Мексика', tz:'America/Mexico_City', flag:'mx'},
-    {name:'Монтеррей', country:'Мексика', tz:'America/Monterrey', flag:'mx'},
-    {name:'Богота', country:'Колумбия', tz:'America/Bogota', flag:'co'},
-    {name:'Лима', country:'Перу', tz:'America/Lima', flag:'pe'},
-    {name:'Сантьяго', country:'Чили', tz:'America/Santiago', flag:'cl'},
     {name:'Буэнос-Айрес', country:'Аргентина', tz:'America/Argentina/Buenos_Aires', flag:'ar'},
-    {name:'Бразилиа', country:'Бразилия', tz:'America/Sao_Paulo', flag:'br'},
     {name:'Сан-Паулу', country:'Бразилия', tz:'America/Sao_Paulo', flag:'br'},
-    {name:'Рио-де-Жанейро', country:'Бразилия', tz:'America/Sao_Paulo', flag:'br'},
 
-    // --- АЗИЯ ---
+    // --- Азия ---
     {name:'Токио', country:'Япония', tz:'Asia/Tokyo', flag:'jp'},
-    {name:'Осака', country:'Япония', tz:'Asia/Tokyo', flag:'jp'},
     {name:'Сеул', country:'Южная Корея', tz:'Asia/Seoul', flag:'kr'},
     {name:'Пекин', country:'Китай', tz:'Asia/Shanghai', flag:'cn'},
     {name:'Шанхай', country:'Китай', tz:'Asia/Shanghai', flag:'cn'},
     {name:'Гонконг', country:'Гонконг', tz:'Asia/Hong_Kong', flag:'hk'},
     {name:'Сингапур', country:'Сингапур', tz:'Asia/Singapore', flag:'sg'},
     {name:'Бангкок', country:'Таиланд', tz:'Asia/Bangkok', flag:'th'},
-    {name:'Дели', country:'Индия', tz:'Asia/Kolkata', flag:'in'},
-    {name:'Мумбаи', country:'Индия', tz:'Asia/Kolkata', flag:'in'},
-    {name:'Катманду', country:'Непал', tz:'Asia/Kathmandu', flag:'np'},
-    {name:'Джакарта', country:'Индонезия', tz:'Asia/Jakarta', flag:'id'},
-    {name:'Бали (Денпасар)', country:'Индонезия', tz:'Asia/Makassar', flag:'id'},
-    {name:'Куала-Лумпур', country:'Малайзия', tz:'Asia/Kuala_Lumpur', flag:'my'},
-    {name:'Манила', country:'Филиппины', tz:'Asia/Manila', flag:'ph'},
-    {name:'Тайбэй', country:'Тайвань', tz:'Asia/Taipei', flag:'tw'},
-    {name:'Ханой', country:'Вьетнам', tz:'Asia/Ho_Chi_Minh', flag:'vn'},
-    {name:'Улан-Батор', country:'Монголия', tz:'Asia/Ulaanbaatar', flag:'mn'},
-    {name:'Коломбо', country:'Шри-Ланка', tz:'Asia/Colombo', flag:'lk'},
-
-    // --- БЛИЖНИЙ ВОСТОК ---
-    {name:'Стамбул', country:'Турция', tz:'Europe/Istanbul', flag:'tr'},
-    {name:'Анкара', country:'Турция', tz:'Europe/Istanbul', flag:'tr'},
-    {name:'Тегеран', country:'Иран', tz:'Asia/Tehran', flag:'ir'},
-    {name:'Багдад', country:'Ирак', tz:'Asia/Baghdad', flag:'iq'},
-    {name:'Дамаск', country:'Сирия', tz:'Asia/Damascus', flag:'sy'},
-    {name:'Бейрут', country:'Ливан', tz:'Asia/Beirut', flag:'lb'},
-    {name:'Иерусалим', country:'Израиль', tz:'Asia/Jerusalem', flag:'il'},
-    {name:'Амман', country:'Иордания', tz:'Asia/Amman', flag:'jo'},
-    {name:'Эр-Рияд', country:'Саудовская Аравия', tz:'Asia/Riyadh', flag:'sa'},
-    {name:'Доха', country:'Катар', tz:'Asia/Qatar', flag:'qa'},
-    {name:'Кувейт', country:'Кувейт', tz:'Asia/Kuwait', flag:'kw'},
-    {name:'Манама', country:'Бахрейн', tz:'Asia/Bahrain', flag:'bh'},
-    {name:'Мускат', country:'Оман', tz:'Asia/Muscat', flag:'om'},
-    {name:'Абу-Даби', country:'ОАЭ', tz:'Asia/Dubai', flag:'ae'},
     {name:'Дубай', country:'ОАЭ', tz:'Asia/Dubai', flag:'ae'},
-    {name:'Доха', country:'Катар', tz:'Asia/Qatar', flag:'qa'},
-
-    // --- АФРИКА ---
-    {name:'Каир', country:'Египет', tz:'Africa/Cairo', flag:'eg'},
-    {name:'Аддис-Абеба', country:'Эфиопия', tz:'Africa/Addis_Ababa', flag:'et'},
-    {name:'Найроби', country:'Кения', tz:'Africa/Nairobi', flag:'ke'},
-    {name:'Ниамей', country:'Нигер', tz:'Africa/Niamey', flag:'ne'},
-    {name:'Йоханнесбург', country:'ЮАР', tz:'Africa/Johannesburg', flag:'za'},
-    {name:'Кейптаун', country:'ЮАР', tz:'Africa/Johannesburg', flag:'za'},
-    {name:'Киншаса', country:'ДР Конго', tz:'Africa/Kinshasa', flag:'cd'},
-    {name:'Лагос', country:'Нигерия', tz:'Africa/Lagos', flag:'ng'},
-    {name:'Рабат', country:'Марокко', tz:'Africa/Casablanca', flag:'ma'},
-    {name:'Тунис', country:'Тунис', tz:'Africa/Tunis', flag:'tn'},
-    {name:'Алжир', country:'Алжир', tz:'Africa/Algiers', flag:'dz'},
-    {name:'Аккра', country:'Гана', tz:'Africa/Accra', flag:'gh'},
-    {name:'Абуджа', country:'Нигерия', tz:'Africa/Lagos', flag:'ng'},
-    {name:'Фунафути', country:'Тувалу', tz:'Pacific/Funafuti', flag:'tv'},
-    {name:'Науру', country:'Науру', tz:'Pacific/Nauru', flag:'nr'},
-    {name:'Рамалла', country:'Палестина', tz:'Asia/Gaza', flag:'ps'},
-
-
-
-    // --- ОКЕАНИЯ ---
+    {name:'Стамбул', country:'Турция', tz:'Europe/Istanbul', flag:'tr'},
+    {name:'Тель-Авив', country:'Израиль', tz:'Asia/Jerusalem', flag:'il'},
+    
+    // --- Австралия ---
     {name:'Сидней', country:'Австралия', tz:'Australia/Sydney', flag:'au'},
-    {name:'Мельбурн', country:'Австралия', tz:'Australia/Melbourne', flag:'au'},
-    {name:'Брисбен', country:'Австралия', tz:'Australia/Brisbane', flag:'au'},
-    {name:'Перт', country:'Австралия', tz:'Australia/Perth', flag:'au'},
-    {name:'Канберра', country:'Австралия', tz:'Australia/Sydney', flag:'au'},
-    {name:'Дарвин', country:'Австралия', tz:'Australia/Darwin', flag:'au'},
-    {name:'Окленд', country:'Новая Зеландия', tz:'Pacific/Auckland', flag:'nz'},
-    {name:'Веллингтон', country:'Новая Зеландия', tz:'Pacific/Auckland', flag:'nz'},
-    {name:'Фиджи', country:'Фиджи', tz:'Pacific/Fiji', flag:'fj'},
-    {name:'Порт-Морсби', country:'Папуа — Новая Гвинея', tz:'Pacific/Port_Moresby', flag:'pg'}
+    {name:'Мельбурн', country:'Австралия', tz:'Australia/Melbourne', flag:'au'}
   ];
 
   function filterDB(q){
@@ -493,7 +474,7 @@
       el.className='opt';
       el.innerHTML=`<img class="flag" src="${flagURL(it.flag)}"><div><div>${it.name}</div><div class='country'>${it.country}</div></div>`;
       el.onclick=()=>{
-        if(!cities.some(c=>c.tz===it.tz)){ // предотвращаем дубли
+        if(!cities.some(c=>c.tz===it.tz)){
           cities.push(it);
           render();
           updateURL();
@@ -511,106 +492,108 @@
   input.onfocus=()=>renderSuggest(filterDB(input.value));
   document.addEventListener('click',e=>{if(!sugg.contains(e.target)&&e.target!==input)hideSuggest();});
 
+  // --- SHARE LOGIC (ТОЛЬКО КЛИК) ---
   const shareBtn=document.getElementById('shareBtn');
   const popup=document.getElementById('sharePopup');
   const copyLink=document.getElementById('copyLink');
   const tg=document.getElementById('tgShare');
   const wa=document.getElementById('waShare');
   const fb=document.getElementById('fbShare');
+  const tooltipEl = document.getElementById('customTooltip');
 
- let hideTimeout;
-let isTouch = false; // определим, телефон это или нет
+  async function showSharePopup() {
+    tooltipEl.classList.remove('visible'); // Скрыть тултип при открытии
 
-window.addEventListener('touchstart', () => (isTouch = true), { once: true });
+    let longUrl = window.location.href;
+    let shortUrl = longUrl;
+    try {
+      const r = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`);
+      const data = await r.json();
+      if (data.shorturl) shortUrl = data.shorturl;
+    } catch (e) { }
 
-async function showSharePopup() {
-  let longUrl = window.location.href;
-  let shortUrl = longUrl;
+    tg.href = `https://t.me/share/url?url=${encodeURIComponent(shortUrl)}`;
+    wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shortUrl)}`;
+    fb.href = `https://www.facebook.com/share_channel/?type=reshare&link=${encodeURIComponent(shortUrl)}&app_id=87741124305&source_surface=external_reshare&display=popup`;
 
-  // ——— попробуем создать короткий URL через is.gd ———
-  try {
-    const r = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`);
-    const data = await r.json();
-    if (data.shorturl) shortUrl = data.shorturl;
-  } catch (e) {
-    console.warn("Ошибка сокращения ссылки, используем длинную");
+    copyLink.onclick = () => {
+      navigator.clipboard.writeText(shortUrl);
+      copyLink.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/1442/1442912.png" width="18" height="18" alt="">Скопировано!`;
+      setTimeout(() => {
+        copyLink.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/7640/7640062.png" width="18" height="18"> Ссылка`;
+      }, 2000);
+    };
+
+    const rect = shareBtn.getBoundingClientRect();
+    popup.style.left = (rect.left + rect.width/2 - 190/2) + "px"; 
+    if(parseInt(popup.style.left) < 10) popup.style.left = '10px';
+    if(parseInt(popup.style.left) + 190 > window.innerWidth) popup.style.left = (window.innerWidth - 200) + 'px';
+
+    popup.style.top = rect.bottom + 8 + "px";
+    popup.style.display = "flex";
   }
 
-  // ——— обновляем кнопки ———
-  tg.href = `https://t.me/share/url?url=${encodeURIComponent(shortUrl)}`;
-  wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shortUrl)}`;
-  fb.href = `https://www.facebook.com/share_channel/?type=reshare&link=${encodeURIComponent(shortUrl)}&app_id=87741124305&source_surface=external_reshare&display=popup`;
-
-  // ——— обработка копирования ———
-  copyLink.onclick = () => {
-    navigator.clipboard.writeText(shortUrl);
-    copyLink.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/1442/1442912.png" width="18" height="18" alt="">Скопировано!`;
-    setTimeout(() => {
-      copyLink.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/7640/7640062.png" width="18" height="18"> Ссылка`;
-    }, 2000);
-  };
-
-  // ——— позиционирование попапа ———
-  const rect = shareBtn.getBoundingClientRect();
-  popup.style.left = rect.left + "px";
-  popup.style.top = rect.bottom + 8 + "px";
-  popup.style.display = "flex";
-  clearTimeout(hideTimeout);
-}
-
-function hideSharePopup() {
-  hideTimeout = setTimeout(() => (popup.style.display = 'none'), 200);
-}
-
-// ----- ПК (мышь) -----
-shareBtn.addEventListener('mouseenter', () => {
-  if (!isTouch) showSharePopup();
-});
-
-shareBtn.addEventListener('mouseleave', (e) => {
-  if (!isTouch) {
-    hideTimeout = setTimeout(() => {
-      if (!popup.contains(e.relatedTarget)) popup.style.display = 'none';
-    }, 200);
-  }
-});
-
-popup.addEventListener('mouseenter', () => {
-  if (!isTouch) clearTimeout(hideTimeout);
-});
-
-popup.addEventListener('mouseleave', () => {
-  if (!isTouch) hideSharePopup();
-});
-
-// ----- Телефоны (тач) -----
-shareBtn.addEventListener('click', (e) => {
-  if (isTouch) {
+  // ОБРАБОТЧИК КЛИКА ПО КНОПКЕ ПОДЕЛИТЬСЯ (для всех устройств)
+  shareBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     if (popup.style.display === 'flex') {
-      popup.style.display = 'none';
+        popup.style.display = 'none';
     } else {
-      showSharePopup();
+        showSharePopup();
     }
+  });
+
+  // Закрытие при клике вне
+  document.addEventListener('click', (e) => {
+    if (!popup.contains(e.target) && e.target !== shareBtn) popup.style.display = 'none';
+  });
+
+  // --- THEME & TOOLTIPS ---
+  const savedTheme = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+  function applyTheme(theme) {
+    if (theme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
   }
-});
-
-document.addEventListener('click', (e) => {
-  if (!popup.contains(e.target) && e.target !== shareBtn) popup.style.display = 'none';
-});
-
-
-  copyLink.onclick=()=>{
-    navigator.clipboard.writeText(window.location.href);
-    copyLink.innerHTML=`<img src="https://cdn-icons-png.flaticon.com/512/1442/1442912.png" width="18" height="18" alt="">Скопировано!`;
-    setTimeout(()=>copyLink.innerHTML=`<img src="https://cdn-icons-png.flaticon.com/512/7640/7640062.png" width="18" height="18"> Ссылка`,2000);
+  if (savedTheme) applyTheme(savedTheme);
+  else applyTheme(prefersDark.matches ? 'dark' : 'light');
+  document.getElementById('themeToggle').onclick = () => {
+    const isDark = document.body.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
   };
 
-  document.addEventListener('click',e=>{if(!popup.contains(e.target)&&e.target!==shareBtn)popup.style.display='none';});
+  function showTooltip(el) {
+    if (!window.matchMedia('(hover: hover)').matches) return;
+    if (popup.style.display === 'flex') return;
+
+    const text = el.getAttribute('data-tip');
+    if (!text) return;
+    const rect = el.getBoundingClientRect();
+    tooltipEl.textContent = text;
+    tooltipEl.classList.add('visible');
+    let top = rect.bottom + 8;
+    let left = rect.left + (rect.width/2) - (tooltipEl.offsetWidth/2);
+    if (left < 10) left = 10;
+    if (left + tooltipEl.offsetWidth > window.innerWidth) left = window.innerWidth - tooltipEl.offsetWidth - 10;
+    tooltipEl.style.top = `${top}px`;
+    tooltipEl.style.left = `${left}px`;
+  }
+
+  document.body.addEventListener('mouseover', (e) => {
+      const target = e.target.closest('[data-tip]');
+      if (target) showTooltip(target);
+  });
+  document.body.addEventListener('mouseout', (e) => {
+      const target = e.target.closest('[data-tip]');
+      if (target) tooltipEl.classList.remove('visible');
+  });
+  document.body.addEventListener('click', (e) => {
+      const target = e.target.closest('[data-tip]');
+      if (target) tooltipEl.classList.remove('visible');
+  });
 
   render();tick();setInterval(tick,1000);
 </script>
-
 <link rel="stylesheet" href="footer.css">
 <div id="footer"></div>
 <script>
@@ -618,6 +601,5 @@ fetch('footer.html')
   .then(r => r.text())
   .then(html => document.getElementById('footer').innerHTML = html);
 </script>
-
 </body>
 </html>

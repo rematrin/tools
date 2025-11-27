@@ -106,7 +106,9 @@
     min-width: 36px; text-align: center; flex-shrink: 0;
   }
 
-  .amount { flex-shrink: 0; width: 160px; display: flex; align-items: center; }
+  /* ИЗМЕНЕНИЕ: Уменьшил ширину с 160px до 125px */
+  .amount { flex-shrink: 0; width: 125px; display: flex; align-items: center; }
+  
   .amount input {
     width: 100%; text-align: right; font-size: 1.15rem; padding: 6px 0;
     border: none; background: var(--input-bg); font-family: inherit;
@@ -431,13 +433,16 @@ function createResultRow(id, name, percent, color, isReadonly = false) {
     row.className = 'row';
     if(id === 'rest') row.id = 'row_rest';
     
+    // Изначально ставим readonly для категорий, calculate() это исправит если надо
+    const initialReadonly = isReadonly || false; 
+
     row.innerHTML = `
         <div class="label-group">
             <span class="category-name">${name}</span>
             <span class="percent-badge" id="badge_${id}" style="background:${color}">${percentDisplay}%</span>
         </div>
         <div class="amount">
-            <input type="text" id="val_${id}" inputmode="decimal" placeholder="0" autocomplete="off" ${isReadonly ? 'readonly' : ''}>
+            <input type="text" id="val_${id}" inputmode="decimal" placeholder="0" autocomplete="off" ${initialReadonly ? 'readonly' : ''}>
         </div>
     `;
     
@@ -479,26 +484,37 @@ function validateInputKey(e) {
 // === ЛОГИКА РАСЧЕТА ===
 function calculate() {
     const rawVal = totalInput.value;
+    const total = parseRaw(rawVal);
+    const hasIncome = total > 0;
     
+    // ЛОГИКА БЛОКИРОВКИ ПОЛЕЙ (Fix #2)
+    categories.forEach((_, i) => {
+        const el = document.getElementById(`val_${i}`);
+        if(el) {
+            if(hasIncome) {
+                el.removeAttribute('readonly');
+            } else {
+                el.setAttribute('readonly', 'true');
+                el.value = ''; // Очищаем, если дохода нет
+            }
+        }
+    });
+
     if (rawVal.trim() === '') {
-        categories.forEach((_, i) => {
-            const el = document.getElementById(`val_${i}`);
-            if(el) el.value = '';
-        });
         const restEl = document.getElementById('val_rest');
         if(restEl) restEl.value = '';
         updateRestStyle();
         return;
     }
 
-    const total = parseRaw(rawVal);
-    
     let runningTotal = 0;
     categories.forEach((cat, i) => {
         const amount = total * (cat.percent / 100);
         runningTotal += amount;
         const el = document.getElementById(`val_${i}`);
-        if(el) el.value = formatPretty(amount);
+        if(el && document.activeElement !== el) { // Не обновляем, если пользователь там пишет
+             el.value = formatPretty(amount);
+        }
     });
 
     const rest = total - runningTotal;
@@ -782,7 +798,7 @@ document.addEventListener('click', e => {
   if (!popup.contains(e.target) && e.target !== shareBtn) popup.style.display = 'none';
 });
 
-// === THEME & TOOLTIPS ===
+// === THEME & TOOLTIPS (FIX #1: Отключаем тултипы на тач-устройствах) ===
 const savedTheme = localStorage.getItem('theme');
 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
 function applyTheme(theme) {
@@ -798,6 +814,9 @@ document.getElementById('themeToggle').onclick = () => {
 
 const tooltipEl = document.getElementById('customTooltip');
 function showTooltip(el) {
+  // ПРОВЕРКА: Если устройство не поддерживает hover (телефон), не показываем
+  if (!window.matchMedia('(hover: hover)').matches) return;
+
   const text = el.getAttribute('data-tip');
   if (!text) return;
   const rect = el.getBoundingClientRect();

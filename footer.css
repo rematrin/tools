@@ -125,25 +125,3 @@
 .footer-toggle-btn.active .arrow-icon {
     transform: rotate(180deg);
 }
-/* === TOOLTIP ДЛЯ ФУТЕРА === */
-#footer-tooltip {
-    position: fixed;
-    background: var(--tooltip-bg, #2a2c33); /* Цвет фона из переменных */
-    color: var(--tooltip-text, #ffffff);     /* Цвет текста */
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    pointer-events: none; /* Чтобы сквозь него можно было кликнуть */
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.2s, transform 0.2s;
-    z-index: 10000; /* Поверх всего */
-    white-space: nowrap;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-#footer-tooltip.visible {
-    opacity: 1;
-    transform: translateY(0);
-}

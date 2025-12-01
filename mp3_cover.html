@@ -39,9 +39,9 @@
     --gray: #6b6b6b;
   }
 
-  /* Инверсия иконок в темной теме */
-  /* УБРАНО #downloadBtn svg ИЗ ФИЛЬТРА, ЧТОБЫ ОСТАВАЛСЯ СИНИМ */
-  body.dark .theme-icon {
+  /* Инверсия иконок в темной теме (КРОМЕ СИНЕЙ КНОПКИ) */
+  body.dark .theme-icon, 
+  body.dark #closeBtn svg {
       filter: invert(1) brightness(1.3);
   }
 
@@ -90,7 +90,7 @@
     box-shadow: 0 1px 2px rgba(0,0,0,.03);
     display: flex; flex-direction: column; gap: 10px;
     transition: background 0.3s ease, border-color 0.3s ease;
-    position: relative; /* Для позиционирования крестика */
+    position: relative; 
   }
 
   /* Зона загрузки */
@@ -103,18 +103,70 @@
       transition: all 0.2s ease;
       background: var(--input-bg);
       display: flex; flex-direction: column; align-items: center; gap: 10px;
+      position: relative;
   }
+  
+  /* Обычный Hover (когда нет ошибки) */
   .drop-zone:hover, .drop-zone.dragover {
       border-color: var(--accent);
       background: var(--btn-hover);
   }
+  
+  /* СТИЛЬ ОШИБКИ ДЛЯ ЗОНЫ (Красный) */
+  .drop-zone.error {
+      border-color: var(--danger);
+      background: rgba(255, 87, 87, 0.05);
+  }
+  
+  /* === ИСПРАВЛЕНИЕ: Hover при ошибке === */
+  /* При наведении на ошибку оставляем красный цвет, но делаем фон чуть темнее/насыщеннее */
+  .drop-zone.error:hover {
+      border-color: var(--danger);
+      background: rgba(255, 87, 87, 0.1); /* Чуть более заметный красный фон */
+  }
+
+  /* Анимация тряски */
+  @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+  }
+  .shake { animation: shake 0.3s ease-in-out; }
+
+  /* Иконка */
   .drop-zone svg {
       width: 48px; height: 48px; fill: var(--accent); opacity: 0.8;
+      transition: fill 0.2s;
   }
+  
+  /* Иконка красная при ошибке... */
+  .drop-zone.error svg { fill: var(--danger); }
+  
+  /* ...и остается красной при наведении */
+  .drop-zone.error:hover svg { fill: var(--danger); }
+
   .drop-zone span {
       font-size: 0.95rem; color: var(--gray); font-weight: 500;
   }
   .drop-zone input { display: none; }
+
+  /* ТЕКСТ ОШИБКИ */
+  .error-message {
+      color: var(--danger);
+      font-size: 0.9rem;
+      text-align: center;
+      margin-top: 0; 
+      display: none; 
+  }
+  .error-message.visible {
+      display: block; 
+      margin-top: 5px;
+      animation: fadeInErr 0.2s ease forwards;
+  }
+  @keyframes fadeInErr {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+  }
 
   /* Результат */
   .result-container {
@@ -122,7 +174,7 @@
       display: flex; 
       flex-direction: column; 
       align-items: center; 
-      gap: 10px; /* Уменьшен общий гэп */
+      gap: 10px; 
       text-align: center;
       padding-top: 15px;
   }
@@ -140,13 +192,12 @@
   
   .track-info {
       width: 100%;
-      margin-top: 0px; /* Убран отступ сверху */
+      margin-top: 0px; 
   }
-  /* Уменьшен шрифт и отступ снизу */
   .track-title { font-weight: 700; font-size: 1rem; margin-bottom: 2px; color: var(--text); }
   .track-artist { color: var(--gray); font-size: 0.9rem; }
 
-  /* КНОПКА СКАЧАТЬ (Внутри карточки) */
+  /* КНОПКА СКАЧАТЬ */
   #downloadBtn {
       padding: 8px 16px;
       background: var(--card-bg);
@@ -158,7 +209,6 @@
       cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 8px;
       transition: all 0.2s ease;
-      /* Растягиваем по ширине обложки */
       width: 100%;
       max-width: 250px;
   }
@@ -179,15 +229,14 @@
       color: var(--gray);
       padding: 4px;
       line-height: 0;
-      border-radius: 4px; /* Убран круглый радиус */
+      border-radius: 4px; 
       transition: all 0.2s;
       z-index: 2;
   }
   .close-card-btn:hover {
-      background: transparent; /* Убран фон при наведении */
-      color: var(--text); /* Просто меняем цвет на контрастный */
+      background: transparent; 
+      color: var(--text); 
   }
-  /* Увеличен размер иконки крестика */
   .close-card-btn svg { width: 20px; height: 20px; fill: currentColor; }
 
   /* TOOLTIP */
@@ -220,6 +269,7 @@
         <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
         <span>Нажмите или перетащите MP3 сюда</span>
     </label>
+    <div id="errorMsg" class="error-message"></div>
   </div>
 
   <div class="card" id="resultCard" style="display:none;">
@@ -255,16 +305,39 @@ const trackTitle = document.getElementById('trackTitle');
 const trackArtist = document.getElementById('trackArtist');
 const downloadBtn = document.getElementById('downloadBtn');
 const closeBtn = document.getElementById('closeBtn');
+const errorMsg = document.getElementById('errorMsg');
+
 let currentImageUrl = null;
 
+// Функция показа ошибки
+function showError(text) {
+    dropZone.classList.add('error');
+    dropZone.classList.add('shake');
+    errorMsg.textContent = text;
+    errorMsg.classList.add('visible'); 
+    
+    setTimeout(() => {
+        dropZone.classList.remove('shake');
+    }, 300);
+}
+
+// Функция скрытия ошибки
+function hideError() {
+    dropZone.classList.remove('error');
+    errorMsg.classList.remove('visible'); 
+}
+
 // Обработка выбора файла
+fileInput.addEventListener('click', hideError); 
 fileInput.addEventListener('change', (e) => {
+    hideError();
     if (e.target.files.length > 0) processFile(e.target.files[0]);
 });
 
 // Drag & Drop
 dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
+    hideError();
     dropZone.classList.add('dragover');
 });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
@@ -276,31 +349,26 @@ dropZone.addEventListener('drop', (e) => {
 
 function processFile(file) {
     if (!file.type.includes('audio') && !file.name.endsWith('.mp3')) {
-        alert('Пожалуйста, выберите MP3 файл.');
+        showError('Пожалуйста, выберите корректный MP3 файл.');
         return;
     }
 
-    // Скрываем зону загрузки, показываем результат
     uploadCard.style.display = 'none';
     resultCard.style.display = 'flex';
     
-    // Предварительное состояние
     trackTitle.innerText = "Анализ файла...";
     trackArtist.innerText = "";
     coverImg.src = "";
     coverImg.style.display = 'none';
     downloadBtn.style.display = 'none';
 
-    // Библиотека jsmediatags
     window.jsmediatags.read(file, {
         onSuccess: function(tag) {
             const tags = tag.tags;
             
-            // Текст
             trackTitle.innerText = tags.title || file.name;
             trackArtist.innerText = tags.artist || "Неизвестный исполнитель";
 
-            // Картинка
             if (tags.picture) {
                 const { data, format } = tags.picture;
                 let base64String = "";
@@ -331,18 +399,16 @@ function resetUI() {
     if (currentImageUrl) {
         currentImageUrl = null;
     }
-    // Скрываем результат, показываем загрузку
     resultCard.style.display = 'none';
     uploadCard.style.display = 'flex';
     
     fileInput.value = '';
     coverImg.style.padding = "0";
+    hideError();
 }
 
-// Кнопка Очистить (Крестик)
 closeBtn.addEventListener('click', resetUI);
 
-// Кнопка Скачать
 downloadBtn.addEventListener('click', () => {
     if (!currentImageUrl) return;
     const link = document.createElement('a');

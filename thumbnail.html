@@ -8,11 +8,6 @@
 <title>Скачать YouTube превью</title>
 <meta name="description" content="Бесплатный инструмент для скачивания превью (обложек) из YouTube видео в высоком качестве.">
 
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="YouTube Thumbnail Downloader">
-<meta property="og:title" content="Скачать YouTube превью">
-<meta property="og:description" content="Скачать обложку видео в максимальном качестве.">
-
 <style>
   /* === БАЗОВЫЕ СТИЛИ === */
   :root {
@@ -25,7 +20,7 @@
 
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg-color);color:#0c0c0d}
-  .wrap{max-width:860px;margin:0 auto;padding:22px 14px 40px}
+  .wrap{max-width:850px;margin:0 auto;padding:22px 14px 40px}
   h1{margin:0 0 14px;font-size:1.4rem;text-align:center}
   
   /* --- Стили переключателя вверху (Tabs) --- */
@@ -148,7 +143,7 @@
   }
 
   .preview{margin-top:16px;display:flex;justify-content:center}
-  .preview a{display:block;width:100%;max-width:860px}
+  .preview a{display:block;width:100%;max-width:850px}
   .preview img{width:100%;height:auto;border-radius:12px;border:1px solid var(--border-color);background:#eef2ff}
 
   /* Информация о видео */
@@ -163,7 +158,7 @@
     display: flex;
     gap: 10px;
     margin-top: 10px;
-    margin-bottom: 0; /* ИЗМЕНЕНО: Убрали отступ снизу */
+    margin-bottom: 0; 
     flex-wrap: wrap;
   }
   .btn {
@@ -185,13 +180,22 @@
   .btn-dl { background: var(--primary); color: #fff; flex: 2; }
   .btn-dl:hover { background: #5000ca; }
 
+  /* Кнопка "Изменить ссылки" */
+  .btn-edit {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      color: #333;
+      width: 100%;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .btn-edit:hover { background: #f9fafb; border-color: #d1d5db; }
+
   /* === ЗАГОЛОВОК И ПЕРЕКЛЮЧАТЕЛИ ВИДА === */
   .results-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 14px;
-      /* ИЗМЕНЕНО: Отступ сверху теперь здесь, и появится только когда блок виден */
       margin-top: 24px; 
       padding-bottom: 10px;
       border-bottom: 1px solid var(--border-color);
@@ -422,6 +426,11 @@
 
       <div id="batchErr" class="err" hidden style="margin-top:10px;text-align:center;"></div>
       
+      <button id="editBatchBtn" class="btn btn-edit" onclick="editBatchLinks()" hidden>
+         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 20 20"><title>Reload SVG Icon</title><path fill="currentColor" d="M15.65 4.35A8 8 0 1 0 17.4 13h-2.22a6 6 0 1 1-1-7.22L11 9h7V2z"/></svg>
+         Найти ещё
+      </button>
+
       <div id="resultsHeader" class="results-header" hidden>
           <h2 class="results-title">Найденные обложки</h2>
           <div class="view-toggles">
@@ -672,12 +681,20 @@
     else parent.classList.remove('valid');
   }
 
+  // Новая функция: Показать поля ввода, скрыть кнопку редактирования
+  function editBatchLinks() {
+      document.getElementById('batchInputs').hidden = false;
+      document.querySelector('.batch-controls').hidden = false;
+      document.getElementById('editBatchBtn').hidden = true;
+  }
+
   async function processBatch() {
       const container = document.getElementById('batchInputs');
       const inputs = container.querySelectorAll('input');
       const resultsDiv = document.getElementById('batchResults');
       const errDiv = document.getElementById('batchErr');
       const headerDiv = document.getElementById('resultsHeader');
+      const editBtn = document.getElementById('editBatchBtn');
       
       resultsDiv.innerHTML = '';
       errDiv.hidden = true;
@@ -694,6 +711,12 @@
           errDiv.hidden = false;
           return;
       }
+
+      // --- СКРЫВАЕМ ПОЛЯ И ПОКАЗЫВАЕМ КНОПКУ ИЗМЕНИТЬ ---
+      container.hidden = true;
+      document.querySelector('.batch-controls').hidden = true;
+      editBtn.hidden = false;
+      // -------------------------------------------------
 
       const idsString = ids.join(',');
       const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${idsString}&key=${API_KEY}`;
@@ -751,6 +774,8 @@
       } catch(e) {
           errDiv.textContent = 'Ошибка загрузки: ' + e.message;
           errDiv.hidden = false;
+          // Если ошибка, возвращаем поля назад, чтобы пользователь мог исправить
+          editBatchLinks();
       }
   }
 

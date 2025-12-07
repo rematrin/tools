@@ -37,6 +37,9 @@
     gap: 6px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     border: 1px solid var(--border-color);
+    /* Чтобы табы не сжимались меньше контента */
+    max-width: 100%;
+    overflow-x: auto; 
   }
   .tab-btn {
     border: none;
@@ -51,8 +54,10 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    /* ИСПРАВЛЕНИЕ: Запрещаем перенос текста */
+    white-space: nowrap; 
   }
-  .tab-btn svg { width: 18px; height: 18px; opacity: 0.7; }
+  .tab-btn svg { width: 18px; height: 18px; opacity: 0.7; flex-shrink: 0; }
   .tab-btn.active {
     background: var(--primary);
     color: #fff;
@@ -173,6 +178,8 @@
     cursor: pointer;
     font-weight: 500;
     transition: 0.2s;
+    /* ИСПРАВЛЕНИЕ: Запрещаем перенос текста */
+    white-space: nowrap;
   }
   .btn-add { background: #f0f2f5; color: #333; flex: 1; }
   .btn-add:hover { background: #e4e6eb; }
@@ -187,6 +194,7 @@
       color: #333;
       width: 100%;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      white-space: nowrap; /* И тут тоже */
   }
   .btn-edit:hover { background: #f9fafb; border-color: #d1d5db; }
 
@@ -338,6 +346,25 @@
     
     /* На мобилках галерея превращается в 1 колонку, как список */
     .batch-list.gallery-view { grid-template-columns: 1fr; } 
+  }
+
+  /* --- ИСПРАВЛЕНИЕ ДЛЯ МОБИЛЬНЫХ КНОПОК И ТАБОВ --- */
+  @media (max-width: 480px) {
+      /* Уменьшаем отступы у табов, чтобы влезали в ряд */
+      .tab-btn {
+          padding: 10px 12px;
+          font-size: 0.85rem;
+      }
+      
+      /* Кнопки действий делаем друг под другом, чтобы текст точно влез */
+      .batch-controls {
+          flex-direction: column;
+      }
+      .btn {
+          width: 100%;
+          flex: auto; /* Сбрасываем flex пропорции */
+          font-size: 0.95rem;
+      }
   }
 
   [hidden] { display: none !important; }
@@ -781,7 +808,7 @@
 
 </script>
 
-<link rel="stylesheet" href="footer.css">
+  <link rel="stylesheet" href="footer.css">
 <div id="footer"></div>
 <script>
 fetch('footer.html')

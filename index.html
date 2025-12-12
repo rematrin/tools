@@ -167,15 +167,7 @@ body {
 }
 @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
 
-/* Добавил задержки для новых элементов, чтобы анимация работала корректно */
-.tool-card:nth-child(1) { animation-delay: 0.05s; }
-.tool-card:nth-child(2) { animation-delay: 0.1s; }
-.tool-card:nth-child(3) { animation-delay: 0.15s; }
-.tool-card:nth-child(4) { animation-delay: 0.2s; }
-.tool-card:nth-child(5) { animation-delay: 0.25s; }
-.tool-card:nth-child(6) { animation-delay: 0.3s; }
-.tool-card:nth-child(7) { animation-delay: 0.35s; }
-.tool-card:nth-child(8) { animation-delay: 0.40s; }
+/* ВАЖНО: Я удалил жесткие nth-child задержки отсюда. Теперь они добавляются через JS автоматически */
 
 
 /* === МИНИ ФУТЕР (ДОНАТ) === */
@@ -312,6 +304,14 @@ body.dark .donate-btn:hover {
             Скачать обложку из MP3
         </a>
 
+        <a href="music" class="tool-card fade-in">
+            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+            </svg>
+            Lofi Плеер
+        </a>
+
     </div>
 
     <div class="main-footer">
@@ -325,6 +325,14 @@ body.dark .donate-btn:hover {
 </div>
 
 <script>
+// ==== 0. АВТОМАТИЧЕСКАЯ АНИМАЦИЯ (НОВОЕ) ====
+// Теперь вам не нужно править CSS при добавлении новых ссылок.
+// Скрипт сам найдет все карточки и выставит задержку появления лесенкой.
+document.querySelectorAll('.tool-card').forEach((el, index) => {
+    el.style.animationDelay = `${index * 0.05}s`; // Шаг задержки 0.05 сек
+});
+
+
 // ==== 1. ТЁМНАЯ ТЕМА ====
 const savedTheme = localStorage.getItem('theme');
 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');

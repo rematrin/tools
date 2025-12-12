@@ -117,19 +117,23 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 }
 
 /* === РЕЖИМЫ ОТОБРАЖЕНИЯ === */
-
-/* Режим 2: Обложка */
 .mode-cover #youtube-iframe-wrap { opacity: 0; pointer-events: none; }
 .mode-cover #cover-image { display: block; }
-
-/* Режим 3: Аудио (Скрываем контейнер) */
-.mode-audio #visual-container {
-    height: 0; margin-bottom: 0; opacity: 0;
-}
+.mode-audio #visual-container { height: 0; margin-bottom: 0; opacity: 0; }
 
 /* Инфо о треке */
 #current-track-info { font-size: 1.1rem; font-weight: 600; color: var(--primary); min-height: 24px; margin-bottom: 4px; }
-#current-channel-info { font-size: 0.9rem; color: #555; margin-bottom: 12px; min-height: 18px; }
+
+/* Контейнер для Автора и Счетчика (в одну строку) */
+#meta-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+#current-channel-info { font-size: 0.9rem; color: #555; }
 
 /* --- Основные кнопки (Круглые) --- */
 #controls { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
@@ -144,13 +148,12 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 
 .nav-btn:hover { background: var(--primary-dark); transform: scale(1.05); }
 
-/* СТИЛИ ДЛЯ ОТКЛЮЧЕННЫХ КНОПОК */
 .nav-btn:disabled { 
     background: var(--disabled-color);
     opacity: 0.4;
     box-shadow: none;
     transform: none;
-    pointer-events: none; /* Полностью отключает клики и смену курсора */
+    pointer-events: none; 
 }
 
 .nav-btn svg { width: 22px; height: 22px; }
@@ -182,6 +185,75 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 .mode-btn.active { background: #fff; color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .mode-btn svg { width: 16px; height: 16px; }
 
+
+/* ================================================= */
+/* === МИНИ-СЧЕТЧИК (Compact Listener Widget) === */
+/* ================================================= */
+.listener-widget-compact {
+    display: inline-flex;
+    align-items: center;
+    background: #f0f2f5; /* Светло-серая подложка */
+    padding: 4px 10px;
+    border-radius: 12px; /* Скругленная таблетка */
+    gap: 6px;
+    color: #444;
+    font-size: 0.85rem; /* Мелкий шрифт под стать автору */
+    vertical-align: middle;
+}
+
+.icon-headphones {
+    width: 14px;
+    height: 14px;
+    fill: #777;
+}
+
+.live-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #ff3b30;
+    border-radius: 50%;
+    margin-right: 2px;
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.counter-wrapper {
+    display: flex;
+    font-weight: 700;
+    line-height: 1; 
+    height: 1em;      
+    overflow: hidden; 
+}
+
+.digit-col {
+    position: relative;
+    width: 0.65em; 
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.digit-col.spacer { width: 0.25em; }
+
+.digit-track {
+    display: flex;
+    flex-direction: column;
+    will-change: transform;
+    transform: translateY(0);
+}
+
+.digit-val {
+    height: 1em; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+
 /* Адаптив */
 @media (max-width: 768px) {
     #player-container { flex-direction: column; }
@@ -207,7 +279,18 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
             <div id="main-player-area">
                  
                 <div id="current-track-info">Загрузка...</div>
-                <div id="current-channel-info"></div>
+                
+                <div id="meta-info-row">
+                    <div id="current-channel-info"></div>
+                    
+                    <div class="listener-widget-compact" id="listener-widget" style="display:none;">
+                        <div class="live-dot"></div>
+                        <div class="counter-wrapper" id="counter-wrapper"></div>
+                        <svg class="icon-headphones" viewBox="0 0 24 24">
+                            <path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/>
+                        </svg>
+                    </div>
+                    </div>
 
                 <div id="visual-container">
                     <div id="youtube-iframe-wrap">
@@ -237,12 +320,12 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
                     <button id="prevBtn" class="nav-btn" onclick="prevVideo()" disabled>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                     </button>
-                     
+                      
                     <button id="playPauseBtn" class="nav-btn" onclick="togglePlayPause()">
                         <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                         <svg id="pauseIcon" style="display:none;" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                     </button>
-                     
+                      
                     <button id="nextBtn" class="nav-btn" onclick="nextVideo()" disabled>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
@@ -254,17 +337,18 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 </div>
 
 <script>
+    // У каждой станции свой диапазон. Если не задан, берется дефолт (1000-5000)
     const VIDEO_DATA = [
-        { id: 'jfKfPfyJRdk', title: 'Lofi Hip Hop Radio 📚', channel: 'Lofi Girl' }, 
-        { id: 'h_a3tqywv3I', title: 'Christmas lofi music🎄', channel: 'Lofi Girl' },
-        { id: '4xDzrJKXOOY', title: 'Synthwave radio 🌌', channel: 'Lofi Girl' },
-        { id: 'Na0w3Mz46GA', title: 'Asian lofi radio ⛩️', channel: 'Lofi Girl' },
+        { id: 'jfKfPfyJRdk', title: 'Lofi Hip Hop Radio 📚', channel: 'Lofi Girl', minList: 15000, maxList: 25000 }, 
+        { id: 'h_a3tqywv3I', title: 'Christmas lofi music🎄', channel: 'Lofi Girl', minList: 4500, maxList: 12000 },
+        { id: '4xDzrJKXOOY', title: 'Synthwave radio 🌌', channel: 'Lofi Girl', minList: 2000, maxList: 5000 },
+        { id: 'Na0w3Mz46GA', title: 'Asian lofi radio ⛩️', channel: 'Lofi Girl', minList: 800, maxList: 1900 },
     ];
-     
+      
     let player;
     let currentTrackIndex = 0;
     let currentMode = 'video';
-     
+      
     function init() {
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
@@ -293,6 +377,9 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
     }
 
     function onYouTubeIframeAPIReady() {
+        // Сразу грузим счетчик для первого видео
+        loadVideoCounter(currentTrackIndex);
+
         player = new YT.Player('youtube-player-placeholder', {
             videoId: VIDEO_DATA[currentTrackIndex].id,
             playerVars: { autoplay: 1, controls: 1, playsinline: 1, rel: 0 },
@@ -318,9 +405,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
             const data = player.getVideoData();
             if (data && data.title) {
                 document.getElementById('current-track-info').textContent = data.title;
-                document.getElementById('current-channel-info').textContent = 'Автор: ' + data.author;
-                
-                // Просто обновляем название на актуальное, без значков
+                document.getElementById('current-channel-info').textContent = data.author; // Убрал "Автор: " для компактности
                 document.title = data.title;
             }
         }
@@ -342,11 +427,14 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
         });
         updateButtons();
         updateTrackInfo(); 
+        
+        // --- ЗАПУСК СЧЕТЧИКА ---
+        loadVideoCounter(index);
     }
 
     function nextVideo() { loadVideo(currentTrackIndex + 1); }
     function prevVideo() { loadVideo(currentTrackIndex - 1); }
-     
+      
     function togglePlayPause() {
         if(!player) return;
         const state = player.getPlayerState();
@@ -364,8 +452,6 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
         document.getElementById('current-track-info').textContent = vid.title;
         document.getElementById('current-channel-info').textContent = vid.channel;
         document.getElementById('cover-image').src = `https://i.ytimg.com/vi/${vid.id}/maxresdefault.jpg`;
-        
-        // Устанавливаем название вкладки без лишних символов
         document.title = vid.title; 
     }
 
@@ -378,6 +464,186 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 
         document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById('btn-' + mode).classList.add('active');
+    }
+
+    // ==========================================
+    // === ЛОГИКА СЧЕТЧИКА (Compact Logic) ===
+    // ==========================================
+    
+    const CounterManager = {
+        wrapper: document.getElementById('counter-wrapper'),
+        currentViewers: 0,
+        timer: null,
+        config: {},
+        currentKey: '',
+
+        // Остановить старый таймер перед запуском нового
+        stop: function() {
+            if (this.timer) {
+                clearTimeout(this.timer);
+                this.timer = null;
+            }
+        },
+
+        init: function(videoId, baseMin, baseMax) {
+            this.stop(); // Сбрасываем предыдущий
+            
+            document.getElementById('listener-widget').style.display = 'inline-flex';
+
+            // Уникальный ключ для сохранения
+            this.currentKey = `listeners_v4_compact_${videoId}`; 
+            
+            this.config = {
+                baseMin: baseMin,
+                baseMax: baseMax,
+                changeMin: 1,
+                changeMax: 5, // Меньше скачки, так как счетчик маленький
+                delayMin: 4000,
+                delayMax: 10000,
+                storageTTL: 180000 
+            };
+
+            const rawData = localStorage.getItem(this.currentKey);
+            const limits = this.getDynamicLimits();
+            let restored = false;
+
+            if (rawData) {
+                try {
+                    const parsedData = JSON.parse(rawData);
+                    const now = Date.now();
+                    // Если данные моложе 3 минут, берем их
+                    if (now - parsedData.timestamp < this.config.storageTTL) {
+                        this.currentViewers = parsedData.value;
+                        restored = true;
+                    } 
+                } catch (e) {}
+            }
+
+            // Если данных нет или они протухли — генерируем
+            if (!restored) {
+                this.currentViewers = Math.floor(Math.random() * (limits.max - limits.min + 1)) + limits.min;
+                // ВАЖНО: Сразу сохраняем, чтобы при быстром переключении не терялось
+                this.save();
+            }
+
+            this.renderStructure(this.format(this.currentViewers));
+            this.scheduleNextUpdate();
+        },
+
+        // Сохранение в память
+        save: function() {
+            localStorage.setItem(this.currentKey, JSON.stringify({
+                value: this.currentViewers,
+                timestamp: Date.now()
+            }));
+        },
+
+        getDynamicLimits: function() {
+            // Простая кривая активности по часам
+            const hour = new Date().getHours(); 
+            // Пик вечером, спад утром
+            let coef = 1.0;
+            if (hour >= 0 && hour < 6) coef = 0.2;
+            else if (hour >= 6 && hour < 12) coef = 0.6;
+            else if (hour >= 12 && hour < 18) coef = 0.9;
+            else coef = 1.0;
+
+            return {
+                min: Math.floor(this.config.baseMin * coef),
+                max: Math.floor(this.config.baseMax * coef)
+            };
+        },
+
+        format: function(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+        },
+
+        renderStructure: function(strValue) {
+            this.wrapper.innerHTML = '';
+            strValue.split('').forEach(char => {
+                const col = document.createElement('div');
+                col.className = 'digit-col' + (char === ' ' ? ' spacer' : '');
+                const track = document.createElement('div');
+                track.className = 'digit-track';
+                track.innerHTML = `<div class="digit-val">${char}</div>`;
+                col.appendChild(track);
+                this.wrapper.appendChild(col);
+            });
+        },
+
+        updateCounter: function() {
+            const limits = this.getDynamicLimits();
+            let isGrowth;
+            
+            // Логика направления
+            if (this.currentViewers < limits.min) isGrowth = Math.random() > 0.2; 
+            else if (this.currentViewers > limits.max) isGrowth = Math.random() > 0.8; 
+            else isGrowth = Math.random() > 0.5; // 50/50
+
+            const change = Math.floor(Math.random() * (this.config.changeMax - this.config.changeMin + 1)) + this.config.changeMin;
+            let nextViewers = isGrowth ? this.currentViewers + change : this.currentViewers - change;
+
+            if (nextViewers < 50) nextViewers = 50;
+
+            if (nextViewers !== this.currentViewers) {
+                this.updateDisplay(nextViewers);
+                this.currentViewers = nextViewers;
+                this.save(); // Сохраняем каждое изменение
+            }
+            this.scheduleNextUpdate();
+        },
+
+        scheduleNextUpdate: function() {
+            const delay = Math.floor(Math.random() * (this.config.delayMax - this.config.delayMin + 1)) + this.config.delayMin;
+            this.timer = setTimeout(() => this.updateCounter(), delay);
+        },
+
+        updateDisplay: function(newVal) {
+            const oldStr = this.format(this.currentViewers);
+            const newStr = this.format(newVal);
+
+            if (oldStr.length !== newStr.length) {
+                this.renderStructure(newStr);
+                return;
+            }
+
+            const cols = this.wrapper.children;
+            for (let i = 0; i < newStr.length; i++) {
+                if (oldStr[i] !== newStr[i]) {
+                    this.animateTrack(cols[i].querySelector('.digit-track'), oldStr[i], newStr[i], newVal > this.currentViewers);
+                }
+            }
+        },
+
+        animateTrack: function(track, oldChar, newChar, isUp) {
+            if (isUp) {
+                track.innerHTML = `<div class="digit-val">${oldChar}</div><div class="digit-val">${newChar}</div>`;
+                track.style.transition = 'none';
+                track.style.transform = 'translateY(0)';
+            } else {
+                track.innerHTML = `<div class="digit-val">${newChar}</div><div class="digit-val">${oldChar}</div>`;
+                track.style.transition = 'none';
+                track.style.transform = 'translateY(-50%)'; 
+            }
+
+            void track.offsetWidth; 
+
+            track.style.transition = 'transform 0.5s cubic-bezier(0.4, 0.0, 0.2, 1)'; 
+            track.style.transform = isUp ? 'translateY(-50%)' : 'translateY(0)';
+
+            setTimeout(() => {
+                track.style.transition = 'none';
+                track.innerHTML = `<div class="digit-val">${newChar}</div>`;
+                track.style.transform = 'translateY(0)';
+            }, 500);
+        }
+    };
+
+    function loadVideoCounter(index) {
+        const vid = VIDEO_DATA[index];
+        const min = vid.minList || 1000;
+        const max = vid.maxList || 5000;
+        CounterManager.init(vid.id, min, max);
     }
 
     init();

@@ -132,7 +132,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
     gap: 10px;
     margin-bottom: 12px;
     flex-wrap: wrap;
-    min-height: 24px; /* Чтобы не прыгало по высоте */
+    min-height: 24px;
 }
 #current-channel-info { font-size: 0.9rem; color: #555; }
 
@@ -193,21 +193,13 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 .listener-widget-compact {
     display: inline-flex;
     align-items: center;
-    background: #f0f2f5; /* Светло-серая подложка */
+    background: #f0f2f5; 
     padding: 4px 10px;
-    border-radius: 12px; /* Скругленная таблетка */
+    border-radius: 12px; 
     gap: 6px;
     color: #444;
-    font-size: 0.85rem; /* Мелкий шрифт под стать автору */
+    font-size: 0.85rem; 
     vertical-align: middle;
-    
-    /* Анимация появления */
-    opacity: 0; 
-    transition: opacity 0.5s ease-in-out;
-}
-/* Класс для плавного показа */
-.widget-visible {
-    opacity: 1 !important;
 }
 
 .icon-headphones {
@@ -299,7 +291,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
                             <path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/>
                         </svg>
                     </div>
-                    </div>
+                </div>
 
                 <div id="visual-container">
                     <div id="youtube-iframe-wrap">
@@ -434,7 +426,6 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
         updateButtons();
         updateTrackInfo(); 
         
-        // --- ЗАПУСК СЧЕТЧИКА (С ЗАДЕРЖКОЙ ВНУТРИ) ---
         loadVideoCounter(index);
     }
 
@@ -473,75 +464,103 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
     }
 
     // ==========================================
-    // === ЛОГИКА СЧЕТЧИКА (Delay & Fade) ===
+    // === ЛОГИКА СЧЕТЧИКА ("Барабан" / Odometer) ===
     // ==========================================
     
     const CounterManager = {
         wrapper: document.getElementById('counter-wrapper'),
         currentViewers: 0,
         timer: null,
-        displayTimer: null, // Таймер для отложенного показа
+        cleanupTimer: null,
         config: {},
         currentKey: '',
 
         stop: function() {
             if (this.timer) clearTimeout(this.timer);
-            if (this.displayTimer) clearTimeout(this.displayTimer);
+            if (this.cleanupTimer) clearTimeout(this.cleanupTimer);
         },
 
         init: function(videoId, baseMin, baseMax) {
             this.stop(); 
-            
-            // 1. Сначала скрываем счетчик, чтобы не было видно старых цифр
-            const widget = document.getElementById('listener-widget');
-            widget.classList.remove('widget-visible'); // Убираем класс видимости
-            widget.style.display = 'none'; // Физически скрываем
+            document.getElementById('listener-widget').style.display = 'inline-flex';
 
-            this.currentKey = `listeners_v4_compact_${videoId}`; 
+            this.currentKey = `listeners_v5_drum_${videoId}`; 
             
             this.config = {
                 baseMin: baseMin,
                 baseMax: baseMax,
                 changeMin: 1,
                 changeMax: 5, 
-                delayMin: 4000,
-                delayMax: 10000,
+                delayMin: 5000,
+                delayMax: 20000,
                 storageTTL: 180000 
             };
 
+            // 1. Получаем целевое число
+            let targetViewers = 0;
+            let restored = false;
             const rawData = localStorage.getItem(this.currentKey);
             const limits = this.getDynamicLimits();
-            let restored = false;
 
             if (rawData) {
                 try {
                     const parsedData = JSON.parse(rawData);
                     const now = Date.now();
                     if (now - parsedData.timestamp < this.config.storageTTL) {
-                        this.currentViewers = parsedData.value;
+                        targetViewers = parsedData.value;
                         restored = true;
                     } 
                 } catch (e) {}
             }
 
             if (!restored) {
-                this.currentViewers = Math.floor(Math.random() * (limits.max - limits.min + 1)) + limits.min;
-                this.save();
+                targetViewers = Math.floor(Math.random() * (limits.max - limits.min + 1)) + limits.min;
             }
 
-            // Рендерим цифры (пока скрыто)
-            this.renderStructure(this.format(this.currentViewers));
+            // Устанавливаем текущее значение сразу как целевое (в памяти),
+            // но визуально мы будем крутить барабан
+            this.currentViewers = targetViewers;
+            this.save();
 
-            // 2. ЗАДЕРЖКА ПОКАЗА (1200 мс) - чтобы сначала загрузился автор/трек
-            this.displayTimer = setTimeout(() => {
-                widget.style.display = 'inline-flex'; // Сначала вернем в поток
-                // Небольшой хак с таймаутом, чтобы CSS transition сработал
+            // 2. Рендерим структуру целевого числа (например "15 000")
+            const finalStr = this.format(targetViewers);
+            this.renderStructure(finalStr);
+
+            // 3. МАГИЯ БАРАБАНА (Slot Machine Effect)
+            // Мы принудительно подменяем содержимое на 0 и анимируем к цифре.
+            // Это делается вручную один раз, чтобы избежать конфликтов.
+            const cols = this.wrapper.children;
+            const stagger = 60; // Задержка между колонками (мс)
+
+            Array.from(cols).forEach((col, i) => {
+                if(col.classList.contains('spacer')) return; // Пропускаем пробелы
+
+                const track = col.querySelector('.digit-track');
+                const targetDigit = track.querySelector('.digit-val').innerText;
+
+                // Подменяем HTML: Внизу 0, вверху Цель (мы едем снизу вверх или наоборот)
+                // Структура для анимации: <div>0</div><div>X</div>
+                // Стартовая позиция: translate(0) -> видим 0
+                // Конечная позиция: translate(-50%) -> видим X
+                track.innerHTML = `<div class="digit-val">0</div><div class="digit-val">${targetDigit}</div>`;
+                track.style.transition = 'none';
+                track.style.transform = 'translateY(0)'; // Показываем 0
+
+                // Запуск анимации через миг
                 setTimeout(() => {
-                    widget.classList.add('widget-visible'); // Плавно показываем
-                }, 50);
-                
-                this.scheduleNextUpdate();
-            }, 1200);
+                    // Используем cubic-bezier для эффекта тяжелого барабана
+                    track.style.transition = 'transform 1.2s cubic-bezier(0.15, 0.9, 0.3, 1)';
+                    track.style.transform = 'translateY(-50%)'; // Крутим к числу
+                }, 50 + (i * stagger));
+            });
+
+            // 4. Очистка после анимации (через 2 секунды)
+            // Мы полностью перерисовываем структуру "начисто", чтобы убрать вспомогательные нули
+            // и вернуть систему в обычный режим работы.
+            this.cleanupTimer = setTimeout(() => {
+                this.renderStructure(finalStr); // Сброс DOM в чистое состояние
+                this.scheduleNextUpdate(); // Запуск обычного цикла
+            }, 2000);
         },
 
         save: function() {
@@ -626,6 +645,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
         },
 
         animateTrack: function(track, oldChar, newChar, isUp) {
+            // Стандартная анимация для обычных обновлений
             if (isUp) {
                 track.innerHTML = `<div class="digit-val">${oldChar}</div><div class="digit-val">${newChar}</div>`;
                 track.style.transition = 'none';

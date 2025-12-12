@@ -3,9 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-
-<title>Lofi Музыка | YouTube Плеер</title>
+<title>Lofi Плеер</title>
 <style>
 /* === БАЗОВЫЕ СТИЛИ === */
 :root {
@@ -14,7 +12,8 @@
     --bg-color: #f6f7fb;
     --border-color: #e6e9f2;
     --card-bg: #fff;
-    --playlist-active-bg: #eef2ff;
+    --active-bg: #eef2ff;
+    --disabled-color: #d1d5db;
 }
 
 *{box-sizing:border-box}
@@ -27,186 +26,165 @@ body{
 .wrap{
     max-width:850px;
     margin:0 auto;
-    padding:16px 14px 28px; 
+    padding:16px 14px 40px; 
 }
 h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 
-/* --- Карточка плеера --- */
+/* --- Карточка --- */
 .card{
     background:var(--card-bg);
     border:1px solid var(--border-color);
     border-radius:12px;
-    padding:14px; 
+    padding:16px; 
     box-shadow:0 1px 0 rgba(0,0,0,.03);
-    min-height: 380px;
+    min-height: 400px;
 }
 
 #player-container {
     display: flex;
-    gap: 16px;
+    gap: 20px;
 }
 
-/* --- Плейлист (слева) --- */
+/* --- Левая колонка (Плейлист) --- */
 #playlist-sidebar {
     width: 40%;
     flex-shrink: 0;
-    max-height: calc(100vh - 60px); 
+    max-height: calc(100vh - 80px); 
     overflow-y: auto;
 }
-
-#playlist-sidebar h2 {
-    font-size: 1.0rem;
-    font-weight: 600;
-    margin: 0 0 8px;
-    padding: 4px 0;
-}
+#playlist-sidebar h2 { font-size: 1rem; margin: 0 0 10px; }
 
 .playlist-item {
-    display: flex;
-    gap: 8px;
-    padding: 8px;
-    margin-bottom: 6px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: 1px solid transparent;
-    background: #fafbff;
+    display: flex; gap: 10px; padding: 10px; margin-bottom: 6px;
+    border-radius: 8px; cursor: pointer; transition: 0.2s;
+    background: #fafbff; border: 1px solid transparent;
 }
-
 .playlist-item:hover { background: #f0f2f5; }
-
-.playlist-item.active {
-    background: var(--playlist-active-bg);
-    border-color: var(--primary);
-}
+.playlist-item.active { background: var(--active-bg); border-color: var(--primary); }
 
 .playlist-thumb {
-    width: 60px;
-    height: 33px;
-    flex-shrink: 0;
-    border-radius: 4px;
-    overflow: hidden;
-    border: 1px solid var(--border-color);
+    width: 60px; height: 34px; flex-shrink: 0;
+    border-radius: 4px; overflow: hidden; border: 1px solid #eee;
 }
-.playlist-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.playlist-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
 .playlist-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .playlist-title {
-    font-size: 0.85rem;
-    font-weight: 500;
-    line-height: 1.3;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    font-size: 0.85rem; font-weight: 500; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.playlist-channel { font-size: 0.7rem; color: #666; margin-top: 2px; }
+.playlist-channel { font-size: 0.75rem; color: #666; margin-top: 2px; }
 
-
-/* --- Область плеера (справа) --- */
+/* --- Правая колонка (Плеер) --- */
 #main-player-area {
-    width: 60%;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    text-align: center;
+    width: 60%; flex-grow: 1;
+    display: flex; flex-direction: column;
+    align-items: center; text-align: center;
 }
 
-#youtube-player-wrap {
+/* Контейнер плеера (Обертка) */
+#visual-container {
     width: 100%;
     max-width: 480px;
     aspect-ratio: 16 / 9;
     margin-bottom: 14px;
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    transition: all 0.3s ease-in-out;
-    background: #000; /* Чтобы не было белого фона при загрузке */
-}
-#youtube-player-wrap iframe { width: 100%; height: 100%; border: none; }
-
-/* Режим "Только звук" */
-#player-card.audio-only #youtube-player-wrap {
-    width: 1px; height: 1px; margin-bottom: 0; opacity: 0; pointer-events: none;
-}
-#player-card.audio-only #current-track-info { margin-top: 10px; }
-
-/* Тексты информации */
-#current-track-info {
-    font-size: 1.05rem;
-    font-weight: 600;
-    margin-bottom: 3px;
-    color: var(--primary);
-    min-height: 25px;
-}
-#current-channel-info {
-    font-size: 0.9rem;
-    color: #555;
-    margin-bottom: 10px;
-    min-height: 18px;
+    position: relative;
+    background: #000;
+    transition: all 0.3s ease;
 }
 
-/* --- Кнопки управления (Play/Arrows) --- */
-#controls {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-top: 5px;
+/* YouTube Iframe */
+#youtube-iframe-wrap {
+    width: 100%; height: 100%;
+    position: absolute; top: 0; left: 0;
+    z-index: 10;
 }
+#youtube-iframe-wrap iframe { width: 100%; height: 100%; border: none; }
+
+/* Картинка-заглушка (Режим Обложка) */
+#cover-image {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    position: absolute; top: 0; left: 0;
+    z-index: 20; /* Выше видео */
+    display: none; /* Скрыто по умолчанию */
+    pointer-events: none; 
+}
+
+/* === РЕЖИМЫ ОТОБРАЖЕНИЯ === */
+
+/* Режим 2: Обложка */
+.mode-cover #youtube-iframe-wrap { opacity: 0; pointer-events: none; }
+.mode-cover #cover-image { display: block; }
+
+/* Режим 3: Аудио (Скрываем контейнер) */
+.mode-audio #visual-container {
+    height: 0; margin-bottom: 0; opacity: 0;
+}
+
+/* Инфо о треке */
+#current-track-info { font-size: 1.1rem; font-weight: 600; color: var(--primary); min-height: 24px; margin-bottom: 4px; }
+#current-channel-info { font-size: 0.9rem; color: #555; margin-bottom: 12px; min-height: 18px; }
+
+/* --- Основные кнопки (Круглые) --- */
+#controls { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
+
 .nav-btn {
     display: flex; align-items: center; justify-content: center;
-    width: 42px; height: 42px;
-    border-radius: 50%;
-    border: none;
-    background: var(--primary);
-    color: #fff;
-    cursor: pointer;
-    transition: 0.2s;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    width: 44px; height: 44px;
+    border-radius: 50%; border: none; background: var(--primary); color: #fff;
+    cursor: pointer; transition: 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
-#playPauseBtn { width: 52px; height: 52px; font-size: 1.2rem; }
+#playPauseBtn { width: 56px; height: 56px; }
+
 .nav-btn:hover { background: var(--primary-dark); transform: scale(1.05); }
-.nav-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-.nav-btn svg { width: 20px; height: 20px; }
-#playPauseBtn svg { width: 26px; height: 26px; }
 
-/* --- Дополнительные кнопки (В РЯД) --- */
-#extra-controls {
-    display: flex;
-    flex-direction: row; /* ВЕРНУЛ В РЯД */
-    gap: 10px;
-    margin-top: 15px;
-    width: 100%;
-    justify-content: center;
-    flex-wrap: wrap; /* Чтобы на совсем маленьких экранах не ломалось */
+/* СТИЛИ ДЛЯ ОТКЛЮЧЕННЫХ КНОПОК */
+.nav-btn:disabled { 
+    background: var(--disabled-color);
+    opacity: 0.4;
+    box-shadow: none;
+    transform: none;
+    pointer-events: none; /* Полностью отключает клики и смену курсора */
 }
 
-.ctrl-btn {
-    padding: 8px 16px;
-    border-radius: 20px;
-    border: 1px solid var(--border-color);
+.nav-btn svg { width: 22px; height: 22px; }
+#playPauseBtn svg { width: 28px; height: 28px; }
+
+/* --- Переключатель режимов (3 кнопки) --- */
+.mode-switcher {
+    display: flex;
     background: #f0f2f5;
-    color: #333;
+    padding: 4px;
+    border-radius: 12px;
+    gap: 4px;
+    width: 100%;
+}
+.mode-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 8px;
+    border-radius: 8px;
     font-size: 0.85rem;
     font-weight: 500;
+    color: #555;
     cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
     transition: 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
 }
-.ctrl-btn:hover { background: #e4e6eb; }
-.ctrl-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-.ctrl-btn svg { width: 16px; height: 16px; }
+.mode-btn:hover { background: rgba(0,0,0,0.05); }
+.mode-btn.active { background: #fff; color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.mode-btn svg { width: 16px; height: 16px; }
 
-/* --- Адаптивность --- */
-@media (max-width: 700px) {
+/* Адаптив */
+@media (max-width: 768px) {
     #player-container { flex-direction: column; }
-    #playlist-sidebar { width: 100%; max-height: 200px; padding-right: 0; margin-bottom: 15px; border-bottom: 1px solid #eee; }
+    #playlist-sidebar { width: 100%; max-height: 200px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
     #main-player-area { width: 100%; order: -1; }
-    .ctrl-btn span { display: inline; } /* Показываем текст кнопок */
+    .mode-btn span { display: none; }
 }
 </style>
 </head>
@@ -228,9 +206,29 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
                 <div id="current-track-info">Загрузка...</div>
                 <div id="current-channel-info"></div>
 
-                <div id="youtube-player-wrap">
-                    <div id="youtube-player-placeholder"></div>
+                <div id="visual-container">
+                    <div id="youtube-iframe-wrap">
+                        <div id="youtube-player-placeholder"></div>
+                    </div>
+                    <img id="cover-image" src="" alt="Cover">
                 </div>
+
+                <div class="mode-switcher">
+                    <button class="mode-btn active" onclick="setMode('video')" id="btn-video">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                        <span>Видео</span>
+                    </button>
+                    <button class="mode-btn" onclick="setMode('cover')" id="btn-cover">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        <span>Картинка</span>
+                    </button>
+                    <button class="mode-btn" onclick="setMode('audio')" id="btn-audio">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                        <span>Аудио</span>
+                    </button>
+                </div>
+
+                <div style="margin-bottom: 15px;"></div>
 
                 <div id="controls">
                     <button id="prevBtn" class="nav-btn" onclick="prevVideo()" disabled>
@@ -246,38 +244,24 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
                 </div>
-                
-                <div id="extra-controls">
-                    <button id="pipBtn" class="ctrl-btn" onclick="togglePictureInPicture()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3H3v8h8z"/><path d="M15 17h6v-8h-6z"/><path d="M18 15v2"/><path d="M17 14v3"/><path d="M18 15h1"/><path d="M17 15h3"/></svg>
-                        <span>PiP</span>
-                    </button>
-                    
-                    <button id="hideVideoBtn" class="ctrl-btn" onclick="toggleVideoVisibility()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.05 3.05l21.9 21.9"/><path d="M10.585 10.585a2 2 0 1 0 2.83 2.83"/><path d="M5.07 12c.7-4.74 4.5-8 8.93-8a9.45 9.45 0 0 1 3.53.58l-1.6 1.6a6.83 6.83 0 0 0-5.74-2.18c-3.1 0-5.4 2.14-6.8 5.42a15.42 15.42 0 0 0 1.93 4.14"/><path d="M22 12c-1.39 3.28-3.7 5.42-6.8 5.42a6.85 6.85 0 0 1-5.74-2.18l-1.6 1.6c1.39 1.15 3.1 1.76 4.6 1.76 4.43 0 8.23-3.26 8.93-8z"/></svg>
-                        <span>Скрыть видео</span>
-                    </button>
-                </div>
-                
+
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // --- ДАННЫЕ (Заголовки здесь для списка, но плеер обновит их на настоящие при игре) ---
     const VIDEO_DATA = [
-        { id: 'jfKfPfyJRdk', title: 'Lofi Girl - Lofi Hip Hop Radio', channel: 'Lofi Girl' }, 
-        { id: 'h_a3tqywv3I', title: 'Synthwave Radio: 80s Retro', channel: 'Ambient Rhythms' },
-        { id: '4xDzrJKXOOY', title: 'Jazz Hip Hop Radio', channel: 'Chill Space' },
-        { id: 'Na0w3Mz46GA', title: 'Rainy Lofi Beats', channel: 'Rainy Day Lofi' },
+        { id: 'jfKfPfyJRdk', title: 'Lofi Hip Hop Radio 📚', channel: 'Lofi Girl' }, 
+        { id: 'h_a3tqywv3I', title: 'Christmas lofi music🎄', channel: 'Lofi Girl' },
+        { id: '4xDzrJKXOOY', title: 'Synthwave radio 🌌', channel: 'Lofi Girl' },
+        { id: 'Na0w3Mz46GA', title: 'Asian lofi radio ⛩️', channel: 'Lofi Girl' },
     ];
     
     let player;
     let currentTrackIndex = 0;
-    let isVideoHidden = false;
+    let currentMode = 'video';
     
-    // --- Инициализация ---
     function init() {
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
@@ -286,14 +270,12 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
         renderPlaylist();
     }
 
-    // --- Отрисовка плейлиста ---
     function renderPlaylist() {
         const list = document.getElementById('playlist-list');
         list.innerHTML = '';
         VIDEO_DATA.forEach((video, index) => {
             const isActive = index === currentTrackIndex ? ' active' : '';
             const thumb = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`;
-            
             list.innerHTML += `
                 <div class="playlist-item${isActive}" onclick="loadVideo(${index})">
                     <div class="playlist-thumb"><img src="${thumb}"></div>
@@ -307,7 +289,6 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
         updateButtons();
     }
 
-    // --- Логика плеера ---
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('youtube-player-placeholder', {
             videoId: VIDEO_DATA[currentTrackIndex].id,
@@ -315,7 +296,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
             events: {
                 'onReady': onPlayerReady,
                 'onStateChange': onPlayerStateChange,
-                'onError': onError
+                'onError': () => nextVideo()
             }
         });
     }
@@ -326,13 +307,11 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
     }
 
     function onPlayerStateChange(event) {
-        // Обновляем иконку Play/Pause
         const isPlaying = event.data === YT.PlayerState.PLAYING;
         document.getElementById('playIcon').style.display = isPlaying ? 'none' : 'block';
         document.getElementById('pauseIcon').style.display = isPlaying ? 'block' : 'none';
-
-        // === ВАЖНО: Берем настоящее название из плеера, когда видео играет ===
-        if (isPlaying) {
+        
+        if (isPlaying && player.getVideoData) {
             const data = player.getVideoData();
             if (data && data.title) {
                 document.getElementById('current-track-info').textContent = data.title;
@@ -341,38 +320,21 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
         }
     }
 
-    function onError() {
-        document.getElementById('current-track-info').textContent = "Видео недоступно";
-        nextVideo(); // Пробуем следующее
-    }
-
-    // --- Управление ---
     function loadVideo(index) {
         if (index < 0 || index >= VIDEO_DATA.length) return;
         currentTrackIndex = index;
         
-        // Запоминаем, было ли скрыто видео
-        const card = document.getElementById('player-card');
-        const wasHidden = card.classList.contains('audio-only');
-
         if(player && player.loadVideoById) {
             player.loadVideoById(VIDEO_DATA[index].id);
         }
         
-        // Обновляем список (активный класс)
+        const coverUrl = `https://i.ytimg.com/vi/${VIDEO_DATA[index].id}/maxresdefault.jpg`;
+        document.getElementById('cover-image').src = coverUrl;
+
         document.querySelectorAll('.playlist-item').forEach((el, i) => {
             el.classList.toggle('active', i === index);
         });
         updateButtons();
-        
-        // Восстанавливаем скрытие видео, если было включено
-        if(wasHidden) {
-            setTimeout(() => {
-                if(!card.classList.contains('audio-only')) {
-                    toggleVideoVisibility(); // Принудительно скрываем снова
-                }
-            }, 500);
-        }
     }
 
     function nextVideo() { loadVideo(currentTrackIndex + 1); }
@@ -391,46 +353,23 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
     }
 
     function updateTrackInfo() {
-        // Сначала берем из нашего списка (быстро), потом onStateChange обновит на реальное
         const vid = VIDEO_DATA[currentTrackIndex];
         document.getElementById('current-track-info').textContent = vid.title;
         document.getElementById('current-channel-info').textContent = vid.channel;
+        document.getElementById('cover-image').src = `https://i.ytimg.com/vi/${vid.id}/maxresdefault.jpg`;
     }
 
-    // --- ФИКС ДЛЯ PiP ---
-    function togglePictureInPicture() {
-        if (!player) return alert("Плеер еще не загрузился");
+    function setMode(mode) {
+        currentMode = mode;
+        const card = document.getElementById('main-player-area');
         
-        // Самый надежный способ получить iframe - через метод API
-        const iframe = player.getIframe(); 
-        
-        if (!iframe) return alert("Ошибка: элемент видео не найден");
+        card.classList.remove('mode-video', 'mode-audio', 'mode-cover');
+        card.classList.add('mode-' + mode);
 
-        if (document.pictureInPictureElement) {
-            document.exitPictureInPicture();
-        } else if (document.pictureInPictureEnabled) {
-            // Запрашиваем PiP
-            iframe.requestPictureInPicture().catch(err => {
-                console.error(err);
-                alert("Не удалось включить PiP. Видео должно проигрываться.");
-            });
-        } else {
-            alert("Ваш браузер не поддерживает эту функцию.");
-        }
+        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('btn-' + mode).classList.add('active');
     }
 
-    function toggleVideoVisibility() {
-        const card = document.getElementById('player-card');
-        const btn = document.getElementById('hideVideoBtn');
-        const span = btn.querySelector('span');
-        
-        card.classList.toggle('audio-only');
-        const isHidden = card.classList.contains('audio-only');
-        
-        btn.classList.toggle('active', isHidden);
-        span.textContent = isHidden ? "Показать видео" : "Скрыть видео";
-    }
- 
     init();
 </script>
 </body>

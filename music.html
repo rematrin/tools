@@ -320,11 +320,9 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
                 document.getElementById('current-track-info').textContent = data.title;
                 document.getElementById('current-channel-info').textContent = 'Автор: ' + data.author;
                 
-                // ОБНОВЛЕНИЕ ЗАГОЛОВКА ВКЛАДКИ (когда играет)
-                document.title = "▶️ " + data.title;
+                // Просто обновляем название на актуальное, без значков
+                document.title = data.title;
             }
-        } else if (event.data === YT.PlayerState.PAUSED) {
-            document.title = "⏸️ " + document.title.replace("▶️ ", "");
         }
     }
 
@@ -343,7 +341,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
             el.classList.toggle('active', i === index);
         });
         updateButtons();
-        updateTrackInfo(); // Обновляем инфо и заголовок сразу при клике
+        updateTrackInfo(); 
     }
 
     function nextVideo() { loadVideo(currentTrackIndex + 1); }
@@ -367,7 +365,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
         document.getElementById('current-channel-info').textContent = vid.channel;
         document.getElementById('cover-image').src = `https://i.ytimg.com/vi/${vid.id}/maxresdefault.jpg`;
         
-        // ОБНОВЛЕНИЕ ЗАГОЛОВКА ВКЛАДКИ
+        // Устанавливаем название вкладки без лишних символов
         document.title = vid.title; 
     }
 
@@ -383,6 +381,13 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
     }
 
     init();
+</script>
+<link rel="stylesheet" href="footer.css">
+<div id="footer"></div>
+<script>
+fetch('footer.html')
+  .then(r => r.text())
+  .then(html => document.getElementById('footer').innerHTML = html);
 </script>
 </body>
 </html>

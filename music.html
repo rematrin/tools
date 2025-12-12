@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Lofi Плеер</title>
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎧</text></svg>">
+
 <style>
 /* === БАЗОВЫЕ СТИЛИ === */
 :root {
@@ -195,14 +198,14 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 
     <div class="card" id="player-card">
         <div id="player-container">
-            
+             
             <div id="playlist-sidebar">
                 <h2>Список станций</h2>
                 <div id="playlist-list"></div>
             </div>
 
             <div id="main-player-area">
-                
+                 
                 <div id="current-track-info">Загрузка...</div>
                 <div id="current-channel-info"></div>
 
@@ -234,12 +237,12 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
                     <button id="prevBtn" class="nav-btn" onclick="prevVideo()" disabled>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                     </button>
-                    
+                     
                     <button id="playPauseBtn" class="nav-btn" onclick="togglePlayPause()">
                         <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                         <svg id="pauseIcon" style="display:none;" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                     </button>
-                    
+                     
                     <button id="nextBtn" class="nav-btn" onclick="nextVideo()" disabled>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
@@ -257,11 +260,11 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
         { id: '4xDzrJKXOOY', title: 'Synthwave radio 🌌', channel: 'Lofi Girl' },
         { id: 'Na0w3Mz46GA', title: 'Asian lofi radio ⛩️', channel: 'Lofi Girl' },
     ];
-    
+     
     let player;
     let currentTrackIndex = 0;
     let currentMode = 'video';
-    
+     
     function init() {
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
@@ -316,7 +319,12 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
             if (data && data.title) {
                 document.getElementById('current-track-info').textContent = data.title;
                 document.getElementById('current-channel-info').textContent = 'Автор: ' + data.author;
+                
+                // ОБНОВЛЕНИЕ ЗАГОЛОВКА ВКЛАДКИ (когда играет)
+                document.title = "▶️ " + data.title;
             }
+        } else if (event.data === YT.PlayerState.PAUSED) {
+            document.title = "⏸️ " + document.title.replace("▶️ ", "");
         }
     }
 
@@ -335,11 +343,12 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
             el.classList.toggle('active', i === index);
         });
         updateButtons();
+        updateTrackInfo(); // Обновляем инфо и заголовок сразу при клике
     }
 
     function nextVideo() { loadVideo(currentTrackIndex + 1); }
     function prevVideo() { loadVideo(currentTrackIndex - 1); }
-    
+     
     function togglePlayPause() {
         if(!player) return;
         const state = player.getPlayerState();
@@ -357,6 +366,9 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
         document.getElementById('current-track-info').textContent = vid.title;
         document.getElementById('current-channel-info').textContent = vid.channel;
         document.getElementById('cover-image').src = `https://i.ytimg.com/vi/${vid.id}/maxresdefault.jpg`;
+        
+        // ОБНОВЛЕНИЕ ЗАГОЛОВКА ВКЛАДКИ
+        document.title = vid.title; 
     }
 
     function setMode(mode) {

@@ -132,6 +132,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
     gap: 10px;
     margin-bottom: 12px;
     flex-wrap: wrap;
+    min-height: 24px; /* Чтобы не прыгало по высоте */
 }
 #current-channel-info { font-size: 0.9rem; color: #555; }
 
@@ -199,6 +200,14 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
     color: #444;
     font-size: 0.85rem; /* Мелкий шрифт под стать автору */
     vertical-align: middle;
+    
+    /* Анимация появления */
+    opacity: 0; 
+    transition: opacity 0.5s ease-in-out;
+}
+/* Класс для плавного показа */
+.widget-visible {
+    opacity: 1 !important;
 }
 
 .icon-headphones {
@@ -337,7 +346,6 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 </div>
 
 <script>
-    // У каждой станции свой диапазон. Если не задан, берется дефолт (1000-5000)
     const VIDEO_DATA = [
         { id: 'jfKfPfyJRdk', title: 'Lofi Hip Hop Radio 📚', channel: 'Lofi Girl', minList: 15000, maxList: 25000 }, 
         { id: 'h_a3tqywv3I', title: 'Christmas lofi music🎄', channel: 'Lofi Girl', minList: 4500, maxList: 12000 },
@@ -377,9 +385,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
     }
 
     function onYouTubeIframeAPIReady() {
-        // Сразу грузим счетчик для первого видео
         loadVideoCounter(currentTrackIndex);
-
         player = new YT.Player('youtube-player-placeholder', {
             videoId: VIDEO_DATA[currentTrackIndex].id,
             playerVars: { autoplay: 1, controls: 1, playsinline: 1, rel: 0 },
@@ -405,7 +411,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
             const data = player.getVideoData();
             if (data && data.title) {
                 document.getElementById('current-track-info').textContent = data.title;
-                document.getElementById('current-channel-info').textContent = data.author; // Убрал "Автор: " для компактности
+                document.getElementById('current-channel-info').textContent = data.author; 
                 document.title = data.title;
             }
         }
@@ -428,7 +434,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
         updateButtons();
         updateTrackInfo(); 
         
-        // --- ЗАПУСК СЧЕТЧИКА ---
+        // --- ЗАПУСК СЧЕТЧИКА (С ЗАДЕРЖКОЙ ВНУТРИ) ---
         loadVideoCounter(index);
     }
 
@@ -467,37 +473,37 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
     }
 
     // ==========================================
-    // === ЛОГИКА СЧЕТЧИКА (Compact Logic) ===
+    // === ЛОГИКА СЧЕТЧИКА (Delay & Fade) ===
     // ==========================================
     
     const CounterManager = {
         wrapper: document.getElementById('counter-wrapper'),
         currentViewers: 0,
         timer: null,
+        displayTimer: null, // Таймер для отложенного показа
         config: {},
         currentKey: '',
 
-        // Остановить старый таймер перед запуском нового
         stop: function() {
-            if (this.timer) {
-                clearTimeout(this.timer);
-                this.timer = null;
-            }
+            if (this.timer) clearTimeout(this.timer);
+            if (this.displayTimer) clearTimeout(this.displayTimer);
         },
 
         init: function(videoId, baseMin, baseMax) {
-            this.stop(); // Сбрасываем предыдущий
+            this.stop(); 
             
-            document.getElementById('listener-widget').style.display = 'inline-flex';
+            // 1. Сначала скрываем счетчик, чтобы не было видно старых цифр
+            const widget = document.getElementById('listener-widget');
+            widget.classList.remove('widget-visible'); // Убираем класс видимости
+            widget.style.display = 'none'; // Физически скрываем
 
-            // Уникальный ключ для сохранения
             this.currentKey = `listeners_v4_compact_${videoId}`; 
             
             this.config = {
                 baseMin: baseMin,
                 baseMax: baseMax,
                 changeMin: 1,
-                changeMax: 5, // Меньше скачки, так как счетчик маленький
+                changeMax: 5, 
                 delayMin: 4000,
                 delayMax: 10000,
                 storageTTL: 180000 
@@ -511,7 +517,6 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
                 try {
                     const parsedData = JSON.parse(rawData);
                     const now = Date.now();
-                    // Если данные моложе 3 минут, берем их
                     if (now - parsedData.timestamp < this.config.storageTTL) {
                         this.currentViewers = parsedData.value;
                         restored = true;
@@ -519,18 +524,26 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
                 } catch (e) {}
             }
 
-            // Если данных нет или они протухли — генерируем
             if (!restored) {
                 this.currentViewers = Math.floor(Math.random() * (limits.max - limits.min + 1)) + limits.min;
-                // ВАЖНО: Сразу сохраняем, чтобы при быстром переключении не терялось
                 this.save();
             }
 
+            // Рендерим цифры (пока скрыто)
             this.renderStructure(this.format(this.currentViewers));
-            this.scheduleNextUpdate();
+
+            // 2. ЗАДЕРЖКА ПОКАЗА (1200 мс) - чтобы сначала загрузился автор/трек
+            this.displayTimer = setTimeout(() => {
+                widget.style.display = 'inline-flex'; // Сначала вернем в поток
+                // Небольшой хак с таймаутом, чтобы CSS transition сработал
+                setTimeout(() => {
+                    widget.classList.add('widget-visible'); // Плавно показываем
+                }, 50);
+                
+                this.scheduleNextUpdate();
+            }, 1200);
         },
 
-        // Сохранение в память
         save: function() {
             localStorage.setItem(this.currentKey, JSON.stringify({
                 value: this.currentViewers,
@@ -539,9 +552,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
         },
 
         getDynamicLimits: function() {
-            // Простая кривая активности по часам
             const hour = new Date().getHours(); 
-            // Пик вечером, спад утром
             let coef = 1.0;
             if (hour >= 0 && hour < 6) coef = 0.2;
             else if (hour >= 6 && hour < 12) coef = 0.6;
@@ -575,10 +586,9 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
             const limits = this.getDynamicLimits();
             let isGrowth;
             
-            // Логика направления
             if (this.currentViewers < limits.min) isGrowth = Math.random() > 0.2; 
             else if (this.currentViewers > limits.max) isGrowth = Math.random() > 0.8; 
-            else isGrowth = Math.random() > 0.5; // 50/50
+            else isGrowth = Math.random() > 0.5;
 
             const change = Math.floor(Math.random() * (this.config.changeMax - this.config.changeMin + 1)) + this.config.changeMin;
             let nextViewers = isGrowth ? this.currentViewers + change : this.currentViewers - change;
@@ -588,7 +598,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
             if (nextViewers !== this.currentViewers) {
                 this.updateDisplay(nextViewers);
                 this.currentViewers = nextViewers;
-                this.save(); // Сохраняем каждое изменение
+                this.save();
             }
             this.scheduleNextUpdate();
         },

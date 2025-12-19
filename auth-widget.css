@@ -75,3 +75,19 @@
 .auth-modal.mode-login .view-login { display: block; }
 .auth-modal.mode-register .view-register { display: block; }
 .auth-modal.mode-profile .view-profile { display: block; }
+
+/* Кнопка Google */
+.google-btn {
+    background: #fff;
+    color: #333;
+    border: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.google-btn:hover {
+    background: #f5f5f5;
+    border-color: #ccc;
+}

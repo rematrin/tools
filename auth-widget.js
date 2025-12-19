@@ -1,8 +1,20 @@
 // auth-widget.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// --- 1. НАСТРОЙКИ (ВСТАВЬТЕ СВОИ ДАННЫЕ) ---
+// 1. Добавляем GoogleAuthProvider и signInWithPopup в импорты
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { 
+    getAuth, 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    signOut, 
+    onAuthStateChanged, 
+    updateProfile,
+    GoogleAuthProvider, // <--- НОВОЕ
+    signInWithPopup     // <--- НОВОЕ
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+// --- ВАШ КОНФИГ ---
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyDBNCQo3rYgmDZkZrGKT-g2t0LlpsfH1Pg",
   authDomain: "tools-c98fd.firebaseapp.com",
@@ -13,7 +25,7 @@ const firebaseConfig = {
   measurementId: "G-X3Z1KH8760"
 };
 
-// --- 2. HTML ШАБЛОН МОДАЛКИ ---
+// --- HTML ШАБЛОН (ДОБАВИЛИ КНОПКУ GOOGLE) ---
 const modalHTML = `
 <div class="auth-overlay" id="authOverlay">
     <div class="auth-modal mode-login" id="authModal">
@@ -21,6 +33,14 @@ const modalHTML = `
         
         <div class="view-login">
             <h2 class="auth-title">Вход</h2>
+            
+            <button class="auth-btn google-btn" id="btnGoogleLogin">
+                <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill-rule="evenodd" fill-opacity="1" fill="#4285f4" stroke="none"></path><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.715H.957v2.332A8.997 8.997 0 0 0 9 18z" fill-rule="evenodd" fill-opacity="1" fill="#34a853" stroke="none"></path><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill-rule="evenodd" fill-opacity="1" fill="#fbbc05" stroke="none"></path><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill-rule="evenodd" fill-opacity="1" fill="#ea4335" stroke="none"></path></svg>
+                Войти через Google
+            </button>
+            
+            <div style="margin: 15px 0; color: #ccc;">— или —</div>
+
             <input type="email" id="loginEmail" class="auth-input" placeholder="Email">
             <input type="password" id="loginPass" class="auth-input" placeholder="Пароль">
             <button class="auth-btn" id="btnLogin">Войти</button>
@@ -38,6 +58,8 @@ const modalHTML = `
 
         <div class="view-profile">
             <h2 class="auth-title">Профиль</h2>
+            <img id="profileAvatar" src="" style="width: 60px; height: 60px; border-radius: 50%; margin-bottom: 10px; display:none;">
+            
             <div style="margin-bottom:20px; font-size: 1.1rem;">
                 Привет, <b id="profileName">User</b>!
             </div>
@@ -48,29 +70,24 @@ const modalHTML = `
 </div>
 `;
 
-// Кнопка, которая появится на сайте
 const triggerBtnHTML = `
 <button id="auth-trigger-btn" title="Профиль">
     <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
 </button>
 `;
 
-// --- 3. ИНИЦИАЛИЗАЦИЯ ---
 function initAuthWidget() {
-    // Вставляем HTML в страницу
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     document.body.insertAdjacentHTML('beforeend', triggerBtnHTML);
 
-    // Запускаем Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const provider = new GoogleAuthProvider(); // Создаем провайдера Google
 
-    // --- DOM ЭЛЕМЕНТЫ ---
     const overlay = document.getElementById('authOverlay');
     const modal = document.getElementById('authModal');
     const triggerBtn = document.getElementById('auth-trigger-btn');
     
-    // --- ОТКРЫТИЕ / ЗАКРЫТИЕ ---
     const openModal = () => overlay.classList.add('open');
     const closeModal = () => overlay.classList.remove('open');
 
@@ -78,7 +95,6 @@ function initAuthWidget() {
     document.getElementById('authClose').addEventListener('click', closeModal);
     overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
 
-    // --- ПЕРЕКЛЮЧЕНИЕ ВХОД / РЕГИСТРАЦИЯ ---
     document.getElementById('toRegister').onclick = () => {
         modal.classList.remove('mode-login');
         modal.classList.add('mode-register');
@@ -88,55 +104,64 @@ function initAuthWidget() {
         modal.classList.add('mode-login');
     };
 
-    // --- ЛОГИКА: РЕГИСТРАЦИЯ ---
+    // --- ЛОГИКА GOOGLE ВХОДА ---
+    document.getElementById('btnGoogleLogin').addEventListener('click', async () => {
+        try {
+            await signInWithPopup(auth, provider);
+            // Окно закроется само благодаря onAuthStateChanged
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка Google входа: " + error.message);
+        }
+    });
+
+    // Обычная регистрация
     document.getElementById('btnRegister').addEventListener('click', async () => {
         const email = document.getElementById('regEmail').value;
         const pass = document.getElementById('regPass').value;
         const name = document.getElementById('regName').value;
-
         try {
             const userCred = await createUserWithEmailAndPassword(auth, email, pass);
-            // Сохраняем имя пользователя в профиль Firebase
             await updateProfile(userCred.user, { displayName: name });
-            alert("Успешно!");
         } catch (e) {
             alert("Ошибка: " + e.message);
         }
     });
 
-    // --- ЛОГИКА: ВХОД ---
+    // Обычный вход
     document.getElementById('btnLogin').addEventListener('click', async () => {
         const email = document.getElementById('loginEmail').value;
         const pass = document.getElementById('loginPass').value;
         try {
             await signInWithEmailAndPassword(auth, email, pass);
-            // Окно закроется само благодаря onAuthStateChanged
         } catch (e) {
-            alert("Ошибка входа: " + e.message);
+            alert("Ошибка: " + e.message);
         }
     });
 
-    // --- ЛОГИКА: ВЫХОД ---
-    document.getElementById('btnLogout').addEventListener('click', () => {
-        signOut(auth);
-    });
+    document.getElementById('btnLogout').addEventListener('click', () => signOut(auth));
 
-    // --- СЛУШАТЕЛЬ СОСТОЯНИЯ (ГЛАВНОЕ) ---
+    // СЛУШАТЕЛЬ
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            // Если вошел
             modal.classList.remove('mode-login', 'mode-register');
             modal.classList.add('mode-profile');
             
-            // Обновляем данные в окне
             document.getElementById('profileName').textContent = user.displayName || "Друг";
             document.getElementById('profileEmail').textContent = user.email;
             
-            // Меняем иконку кнопки на активную (можно добавить цвет)
+            // Если у пользователя есть аватарка (от Google), показываем её
+            const avatar = document.getElementById('profileAvatar');
+            if (user.photoURL) {
+                avatar.src = user.photoURL;
+                avatar.style.display = "inline-block";
+            } else {
+                avatar.style.display = "none";
+            }
+
             triggerBtn.style.borderColor = "var(--primary)";
-            closeModal(); // Закрыть окно после успешного входа
+            closeModal(); 
         } else {
-            // Если вышел
             modal.classList.remove('mode-profile', 'mode-register');
             modal.classList.add('mode-login');
             triggerBtn.style.borderColor = "var(--border-color)";
@@ -144,5 +169,4 @@ function initAuthWidget() {
     });
 }
 
-// Запускаем сразу при загрузке
 initAuthWidget();

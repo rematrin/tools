@@ -687,6 +687,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 
     init();
 </script>
+    
 <link rel="stylesheet" href="footer.css">
 <div id="footer"></div>
 <script>
@@ -694,5 +695,8 @@ fetch('footer.html')
   .then(r => r.text())
   .then(html => document.getElementById('footer').innerHTML = html);
 </script>
+
+<link rel="stylesheet" href="auth-widget.css">
+<script type="module" src="auth-widget.js"></script>
 </body>
 </html>

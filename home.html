@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Продуктивность</title>
+    <style>
+        /* Сброс стилей */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            overflow-x: hidden;
+            background-color: #000;
+        }
+
+        /* Глобальные обои (размытые) */
+        .global-wallpaper-blurred {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            /* Абстрактные обои iOS */
+            background-image: url('https://images.unsplash.com/photo-1621619856624-42fd193a0661?q=80&w=2560&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            filter: blur(40px); 
+            transform: scale(1.1); 
+        }
+
+        /* Темная подложка папки */
+        .folder-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: rgba(20, 20, 20, 0.45); /* Чуть темнее для контраста */
+        }
+
+        .iphone-screen {
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+            padding-bottom: 40px;
+        }
+
+        /* Заголовок */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            /* Начальное состояние: полностью прозрачный */
+            background: rgba(255, 255, 255, 0); 
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
+            
+            /* Отступы как на скриншоте */
+            padding: 50px 20px 10px 20px; 
+            width: 100%;
+            transition: all 0.2s ease-in-out;
+            /* Чтобы мышки не выделяли текст */
+            user-select: none;
+        }
+
+        h1 {
+            font-size: 34px; /* Размер как в оригинале */
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            margin: 0;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Сетка иконок */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            row-gap: 20px; /* Уменьшили расстояние между рядами */
+            column-gap: 8px; /* Чуть плотнее по горизонтали */
+            padding: 10px 12px; /* Уменьшили верхний отступ сетки */
+            margin-top: 5px; /* Иконки ближе к заголовку */
+        }
+
+        /* Карточка приложения */
+        .app-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: white;
+            position: relative;
+            cursor: pointer;
+        }
+
+        /* Эффект нажатия */
+        .app-item:active .icon-container {
+            filter: brightness(0.6);
+            transform: scale(0.92);
+        }
+
+        /* Контейнер иконки */
+        .icon-container {
+            width: 62px;
+            height: 62px;
+            background-color: white;
+            border-radius: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Тень иконки */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            margin-bottom: 6px; /* Расстояние от иконки до текста */
+            transition: transform 0.1s, filter 0.1s;
+            overflow: hidden;
+            will-change: transform; /* Оптимизация анимации */
+        }
+
+        .icon-container img {
+            width: 44px; /* Чуть крупнее логотипы */
+            height: 44px;
+            object-fit: contain;
+        }
+
+        /* Текст под иконкой */
+        .app-name {
+            font-size: 11px;
+            font-weight: 400;
+            text-align: center;
+            color: white;
+            letter-spacing: 0.01em;
+            max-width: 68px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            opacity: 0.95;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="global-wallpaper-blurred"></div>
+    <div class="folder-backdrop"></div>
+
+    <div class="iphone-screen">
+        <header id="header">
+            <h1>Продуктивность</h1>
+        </header>
+
+        <div class="app-grid">
+            <a href="https://google.com" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=google.com&sz=128" alt="Google">
+                </div>
+                <span class="app-name">Google</span>
+            </a>
+
+            <a href="https://chat.openai.com" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=openai.com&sz=128" alt="ChatGPT">
+                </div>
+                <span class="app-name">ChatGPT</span>
+            </a>
+
+            <a href="https://youtube.com" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=youtube.com&sz=128" alt="YouTube">
+                </div>
+                <span class="app-name">YouTube</span>
+            </a>
+
+            <a href="https://web.telegram.org" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=telegram.org&sz=128" alt="Telegram">
+                </div>
+                <span class="app-name">Telegram</span>
+            </a>
+
+            <a href="https://gmail.com" class="app-item">
+                <div class="icon-container">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Gmail">
+                </div>
+                <span class="app-name">Gmail</span>
+            </a>
+
+            <a href="https://notion.so" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=notion.so&sz=128" alt="Notion">
+                </div>
+                <span class="app-name">Notion</span>
+            </a>
+
+            <a href="https://github.com" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=github.com&sz=128" alt="GitHub">
+                </div>
+                <span class="app-name">GitHub</span>
+            </a>
+
+            <a href="https://figma.com" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=figma.com&sz=128" alt="Figma">
+                </div>
+                <span class="app-name">Figma</span>
+            </a>
+
+            <a href="https://trello.com" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=trello.com&sz=128" alt="Trello">
+                </div>
+                <span class="app-name">Trello</span>
+            </a>
+
+            <a href="https://slack.com" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=slack.com&sz=128" alt="Slack">
+                </div>
+                <span class="app-name">Slack</span>
+            </a>
+
+            <a href="https://zoom.us" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=zoom.us&sz=128" alt="Zoom">
+                </div>
+                <span class="app-name">Zoom</span>
+            </a>
+
+            <a href="https://drive.google.com" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=drive.google.com&sz=128" alt="Диск">
+                </div>
+                <span class="app-name">Диск</span>
+            </a>
+            
+            <a href="https://spotify.com" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=spotify.com&sz=128" alt="Spotify">
+                </div>
+                <span class="app-name">Spotify</span>
+            </a>
+             <a href="https://amazon.com" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=amazon.com&sz=128" alt="Amazon">
+                </div>
+                <span class="app-name">Amazon</span>
+            </a>
+             <a href="https://apple.com" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=apple.com&sz=128" alt="Apple">
+                </div>
+                <span class="app-name">Apple</span>
+            </a>
+            <a href="https://twitter.com" class="app-item">
+                <div class="icon-container">
+                    <img src="https://www.google.com/s2/favicons?domain=twitter.com&sz=128" alt="X">
+                </div>
+                <span class="app-name">X</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // ЛОГИКА ЭФФЕКТА СТЕКЛА
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('header');
+            
+            // Если начали скроллить хотя бы немного
+            if (window.scrollY > 5) {
+                // ВАЖНО: RGBA цвет очень прозрачный (0.25), а не сплошной
+                // saturate(180%) делает цвета под стеклом сочными, как в iOS
+                header.style.background = "rgba(40, 40, 40, 0.25)";
+                header.style.backdropFilter = "blur(25px) saturate(180%)";
+                header.style.webkitBackdropFilter = "blur(25px) saturate(180%)";
+                
+                // Тонкая линия внизу при скролле
+                header.style.borderBottom = "0.5px solid rgba(255,255,255,0.15)";
+            } else {
+                // В самом верху - полная прозрачность
+                header.style.background = "rgba(0, 0, 0, 0)";
+                header.style.backdropFilter = "blur(0px)";
+                header.style.webkitBackdropFilter = "blur(0px)";
+                header.style.borderBottom = "none";
+            }
+        });
+    </script>
+</body>
+</html>

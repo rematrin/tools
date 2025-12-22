@@ -18,7 +18,8 @@
             color: white;
             min-height: 100vh;
             display: flex;
-            justify-content: center;
+            /* justify-content здесь оставляем, но основной фикс ниже в .iphone-screen */
+            justify-content: center; 
             overflow-x: hidden;
             background-color: #000;
         }
@@ -53,6 +54,9 @@
             max-width: 450px;
             position: relative;
             padding-bottom: 40px;
+            /* --- ФИКС ЦЕНТРИРОВАНИЯ --- */
+            margin-left: auto;
+            margin-right: auto;
         }
 
         header {
@@ -66,6 +70,10 @@
             width: 100%;
             transition: all 0.2s ease-in-out;
             user-select: none;
+            /* --- ФИКС ЗАГОЛОВКА --- */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         h1 {
@@ -74,6 +82,7 @@
             letter-spacing: 0.3px;
             margin: 0;
             text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            text-align: center;
         }
 
         .app-grid {
@@ -329,10 +338,6 @@
 
         // --- ЛОГИКА РЕЖИМА РЕДАКТИРОВАНИЯ ---
         const appGrid = document.getElementById('appGrid');
-        
-        // ВАЖНО: Мы перенесли создание крестиков в функцию, чтобы
-        // можно было легко переинициализировать их, если добавлять иконки динамически.
-        // Сейчас просто запускаем один раз при загрузке.
         
         const appItems = document.querySelectorAll('.app-item');
 

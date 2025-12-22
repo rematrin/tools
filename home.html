@@ -18,7 +18,6 @@
             color: white;
             min-height: 100vh;
             display: flex;
-            /* justify-content здесь оставляем, но основной фикс ниже в .iphone-screen */
             justify-content: center; 
             overflow-x: hidden;
             background-color: #000;
@@ -54,7 +53,7 @@
             max-width: 450px;
             position: relative;
             padding-bottom: 40px;
-            /* --- ФИКС ЦЕНТРИРОВАНИЯ --- */
+            /* Фикс центрирования блока */
             margin-left: auto;
             margin-right: auto;
         }
@@ -66,14 +65,12 @@
             background: rgba(255, 255, 255, 0); 
             backdrop-filter: blur(0px);
             -webkit-backdrop-filter: blur(0px);
+            /* Отступы задают положение заголовка слева */
             padding: 50px 20px 10px 20px; 
             width: 100%;
             transition: all 0.2s ease-in-out;
             user-select: none;
-            /* --- ФИКС ЗАГОЛОВКА --- */
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            /* Убрали flex и центрирование */
         }
 
         h1 {
@@ -82,7 +79,7 @@
             letter-spacing: 0.3px;
             margin: 0;
             text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            text-align: center;
+            /* Убрали text-align: center, теперь по умолчанию слева */
         }
 
         .app-grid {

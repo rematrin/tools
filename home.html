@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Продуктивность</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
-        /* Сброс стилей */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -18,12 +18,13 @@
             color: white;
             min-height: 100vh;
             display: flex;
-            justify-content: center; 
+            justify-content: center;
             overflow-x: hidden;
             background-color: #000;
+            overscroll-behavior-y: none;
+            user-select: none; 
         }
 
-        /* Глобальные обои (размытые) */
         .global-wallpaper-blurred {
             position: fixed;
             top: 0;
@@ -34,8 +35,8 @@
             background-image: url('https://images.unsplash.com/photo-1621619856624-42fd193a0661?q=80&w=2560&auto=format&fit=crop');
             background-size: cover;
             background-position: center;
-            filter: blur(40px); 
-            transform: scale(1.1); 
+            filter: blur(40px);
+            transform: scale(1.1);
         }
 
         .folder-backdrop {
@@ -53,24 +54,17 @@
             max-width: 450px;
             position: relative;
             padding-bottom: 40px;
-            /* Фикс центрирования блока */
-            margin-left: auto;
-            margin-right: auto;
+            margin: 0 auto;
         }
 
         header {
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(255, 255, 255, 0); 
-            backdrop-filter: blur(0px);
-            -webkit-backdrop-filter: blur(0px);
-            /* Отступы задают положение заголовка слева */
-            padding: 50px 20px 10px 20px; 
+            background: rgba(255, 255, 255, 0);
+            padding: 50px 20px 10px 20px;
             width: 100%;
             transition: all 0.2s ease-in-out;
-            user-select: none;
-            /* Убрали flex и центрирование */
         }
 
         h1 {
@@ -79,7 +73,6 @@
             letter-spacing: 0.3px;
             margin: 0;
             text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            /* Убрали text-align: center, теперь по умолчанию слева */
         }
 
         .app-grid {
@@ -89,6 +82,7 @@
             column-gap: 8px;
             padding: 10px 12px;
             margin-top: 5px;
+            position: relative;
         }
 
         .app-item {
@@ -96,36 +90,33 @@
             flex-direction: column;
             align-items: center;
             position: relative;
-            cursor: default; 
+            height: 90px; 
+            width: 100%;
+            touch-action: none;
         }
 
         .icon-container {
             width: 62px;
             height: 62px;
             background-color: white;
-            position: relative; 
-            border-radius: 14px; 
+            position: relative;
+            border-radius: 14px;
             display: flex;
             justify-content: center;
             align-items: center;
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
             margin-bottom: 6px;
-            cursor: pointer; 
+            cursor: pointer; /* Стандартный курсор в обычном режиме */
             text-decoration: none;
-            
-            /* Анимация увеличения */
-            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s;
-            will-change: transform;
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.2s;
+            z-index: 1;
         }
 
-        /* Эффект нажатия (Active) */
         .app-grid:not(.edit-mode) .icon-container:active {
             filter: brightness(0.6);
             transform: scale(0.92);
-            transition: transform 0.1s, filter 0.1s;
         }
-
-        /* Эффект наведения (Hover) - увеличение на 1.05 */
+        
         .app-grid:not(.edit-mode) .icon-container:hover {
             transform: scale(1.05);
         }
@@ -134,8 +125,8 @@
             width: 44px;
             height: 44px;
             object-fit: contain;
-            border-radius: 10px; 
-            pointer-events: none; 
+            border-radius: 10px;
+            pointer-events: none;
         }
 
         .app-name {
@@ -150,36 +141,34 @@
             text-overflow: ellipsis;
             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
             opacity: 0.95;
-            user-select: none; 
-            pointer-events: none; 
+            pointer-events: none;
         }
 
-        /* --- СТИЛИ ДЛЯ РЕЖИМА РЕДАКТИРОВАНИЯ --- */
+        /* --- РЕЖИМ РЕДАКТИРОВАНИЯ --- */
 
         .delete-btn {
             position: absolute;
-            top: -9px;
-            left: -9px;
-            width: 22px;
-            height: 22px;
-            background: rgba(50, 50, 50, 0.9); 
+            top: -10px;
+            left: -10px;
+            width: 24px;
+            height: 24px;
+            background: rgba(50, 50, 50, 0.95);
             border-radius: 50%;
             z-index: 10;
             display: none; 
             justify-content: center;
             align-items: center;
-            border: 1px solid rgba(255,255,255,0.2); 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
             cursor: pointer;
         }
 
         .delete-btn::before {
             content: '×';
-            color: white; 
-            font-size: 17px;
-            font-weight: 400;
+            color: white;
+            font-size: 18px;
             line-height: 1;
-            padding-bottom: 1px;
+            padding-bottom: 2px;
         }
 
         @keyframes wiggle {
@@ -189,17 +178,58 @@
             100% { transform: rotate(0deg); }
         }
 
-        .app-grid.edit-mode .app-item {
-            animation: wiggle 0.25s infinite linear;
-        }
-        
         .app-grid.edit-mode .icon-container {
-            pointer-events: none;
+            animation: wiggle 0.28s infinite linear;
+            /* ИЗМЕНЕНИЕ: Курсор-ладошка (open hand) при наведении в режиме редактирования */
+            cursor: grab; 
+            cursor: -webkit-grab;
         }
         
+        /* ИЗМЕНЕНИЕ: Курсор-кулак (closed hand) при нажатии */
+        .app-grid.edit-mode .icon-container:active {
+            cursor: grabbing;
+            cursor: -webkit-grabbing;
+        }
+
         .app-grid.edit-mode .delete-btn {
             display: flex;
-            pointer-events: auto;
+        }
+
+        /* --- STYLES FOR DRAGGING --- */
+        
+        /* Класс для элемента, который летит за мышкой */
+        .sortable-drag .icon-container {
+            animation: none !important; 
+            transform: scale(1.15) !important;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            z-index: 999;
+            
+            /* ИЗМЕНЕНИЕ: Курсор "держать" во время полета */
+            cursor: grabbing !important;
+            cursor: -webkit-grabbing !important;
+        }
+
+        /* Класс для всей карточки, которая летит */
+        .sortable-drag {
+            /* ИЗМЕНЕНИЕ: Принудительная 100% непрозрачность */
+            opacity: 1 !important; 
+        }
+        
+        .sortable-drag .delete-btn {
+            opacity: 0;
+        }
+
+        /* Класс для "призрака" (пустого места) */
+        .sortable-ghost .icon-container {
+            opacity: 0;
+        }
+        .sortable-ghost .app-name {
+            opacity: 0;
+        }
+        
+        .sortable-ghost {
+            border-radius: 14px;
+            background: rgba(255,255,255,0.05); 
         }
 
     </style>
@@ -215,109 +245,27 @@
         </header>
 
         <div class="app-grid" id="appGrid">
-            <div class="app-item">
-                <a href="https://google.com" class="icon-container">
-                    <img src="https://www.google.com/s2/favicons?domain=google.com&sz=128" alt="Google">
-                </a>
-                <span class="app-name">Google</span>
-            </div>
-
-            <div class="app-item">
-                <a href="https://chat.openai.com" class="icon-container">
-                    <img src="https://www.google.com/s2/favicons?domain=openai.com&sz=128" alt="ChatGPT">
-                </a>
-                <span class="app-name">ChatGPT</span>
-            </div>
-
-            <div class="app-item">
-                <a href="https://github.com" class="icon-container">
-                    <img src="https://www.google.com/s2/favicons?domain=github.com&sz=128" alt="GitHub">
-                </a>
-                <span class="app-name">GitHub</span>
-            </div>
-            
-            <div class="app-item">
-                <a href="https://telegram.org" class="icon-container">
-                    <img src="https://www.google.com/s2/favicons?domain=telegram.org&sz=128" alt="Telegram">
-                </a>
-                <span class="app-name">Telegram</span>
-            </div>
-
-            <div class="app-item">
-                <a href="https://youtube.com" class="icon-container">
-                    <img src="https://www.google.com/s2/favicons?domain=youtube.com&sz=128" alt="YouTube">
-                </a>
-                <span class="app-name">YouTube</span>
-            </div>
-
-            <div class="app-item">
-                <a href="https://notion.so" class="icon-container">
-                    <img src="https://www.google.com/s2/favicons?domain=notion.so&sz=128" alt="Notion">
-                </a>
-                <span class="app-name">Notion</span>
-            </div>
-
-            <div class="app-item">
-                <a href="https://instagram.com" class="icon-container">
-                    <img src="https://www.google.com/s2/favicons?domain=instagram.com&sz=128" alt="Instagram">
-                </a>
-                <span class="app-name">Instagram</span>
-            </div>
-
-            <div class="app-item">
-                <a href="https://figma.com" class="icon-container">
-                    <img src="https://www.google.com/s2/favicons?domain=figma.com&sz=128" alt="Figma">
-                </a>
-                <span class="app-name">Figma</span>
-            </div>
-
-            <div class="app-item">
-                <a href="https://netflix.com" class="icon-container">
-                    <img src="https://www.google.com/s2/favicons?domain=netflix.com&sz=128" alt="Netflix">
-                </a>
-                <span class="app-name">Netflix</span>
-            </div>
-
-            <div class="app-item">
-                <a href="https://spotify.com" class="icon-container">
-                    <img src="https://www.google.com/s2/favicons?domain=spotify.com&sz=128" alt="Spotify">
-                </a>
-                <span class="app-name">Spotify</span>
-            </div>
-
-            <div class="app-item">
-                <a href="https://twitter.com" class="icon-container">
-                    <img src="https://www.google.com/s2/favicons?domain=twitter.com&sz=128" alt="X">
-                </a>
-                <span class="app-name">X</span>
-            </div>
-
-            <div class="app-item">
-                <a href="https://amazon.com" class="icon-container">
-                    <img src="https://www.google.com/s2/favicons?domain=amazon.com&sz=128" alt="Amazon">
-                </a>
-                <span class="app-name">Amazon</span>
-            </div>
-
-            <div class="app-item">
-                <a href="https://discord.com" class="icon-container">
-                    <img src="https://www.google.com/s2/favicons?domain=discord.com&sz=128" alt="Discord">
-                </a>
-                <span class="app-name">Discord</span>
-            </div>
-
-             <div class="app-item">
-                <a href="https://reddit.com" class="icon-container">
-                    <img src="https://www.google.com/s2/favicons?domain=reddit.com&sz=128" alt="Reddit">
-                </a>
-                <span class="app-name">Reddit</span>
-            </div>
-
+            <div class="app-item"><a href="https://google.com" class="icon-container"><img src="https://www.google.com/s2/favicons?domain=google.com&sz=128" alt="G"></a><span class="app-name">Google</span></div>
+            <div class="app-item"><a href="https://chat.openai.com" class="icon-container"><img src="https://www.google.com/s2/favicons?domain=openai.com&sz=128" alt="GPT"></a><span class="app-name">ChatGPT</span></div>
+            <div class="app-item"><a href="https://github.com" class="icon-container"><img src="https://www.google.com/s2/favicons?domain=github.com&sz=128" alt="GH"></a><span class="app-name">GitHub</span></div>
+            <div class="app-item"><a href="https://telegram.org" class="icon-container"><img src="https://www.google.com/s2/favicons?domain=telegram.org&sz=128" alt="TG"></a><span class="app-name">Telegram</span></div>
+            <div class="app-item"><a href="https://youtube.com" class="icon-container"><img src="https://www.google.com/s2/favicons?domain=youtube.com&sz=128" alt="YT"></a><span class="app-name">YouTube</span></div>
+            <div class="app-item"><a href="https://notion.so" class="icon-container"><img src="https://www.google.com/s2/favicons?domain=notion.so&sz=128" alt="Notion"></a><span class="app-name">Notion</span></div>
+            <div class="app-item"><a href="https://instagram.com" class="icon-container"><img src="https://www.google.com/s2/favicons?domain=instagram.com&sz=128" alt="Insta"></a><span class="app-name">Instagram</span></div>
+            <div class="app-item"><a href="https://figma.com" class="icon-container"><img src="https://www.google.com/s2/favicons?domain=figma.com&sz=128" alt="Figma"></a><span class="app-name">Figma</span></div>
+            <div class="app-item"><a href="https://netflix.com" class="icon-container"><img src="https://www.google.com/s2/favicons?domain=netflix.com&sz=128" alt="Netflix"></a><span class="app-name">Netflix</span></div>
+            <div class="app-item"><a href="https://spotify.com" class="icon-container"><img src="https://www.google.com/s2/favicons?domain=spotify.com&sz=128" alt="Spotify"></a><span class="app-name">Spotify</span></div>
+            <div class="app-item"><a href="https://twitter.com" class="icon-container"><img src="https://www.google.com/s2/favicons?domain=twitter.com&sz=128" alt="X"></a><span class="app-name">X</span></div>
+            <div class="app-item"><a href="https://amazon.com" class="icon-container"><img src="https://www.google.com/s2/favicons?domain=amazon.com&sz=128" alt="Amazon"></a><span class="app-name">Amazon</span></div>
+            <div class="app-item"><a href="https://discord.com" class="icon-container"><img src="https://www.google.com/s2/favicons?domain=discord.com&sz=128" alt="Discord"></a><span class="app-name">Discord</span></div>
+            <div class="app-item"><a href="https://reddit.com" class="icon-container"><img src="https://www.google.com/s2/favicons?domain=reddit.com&sz=128" alt="Reddit"></a><span class="app-name">Reddit</span></div>
         </div>
     </div>
 
-    <script>
-        // --- ЛОГИКА ЭФФЕКТА СТЕКЛА ---
+    <script type="module">
+        import autoAnimate from 'https://cdn.jsdelivr.net/npm/@formkit/auto-animate/index.min.js';
+
+        // --- СТЕКЛО ---
         window.addEventListener('scroll', () => {
             const header = document.getElementById('header');
             if (window.scrollY > 5) {
@@ -333,45 +281,100 @@
             }
         });
 
-        // --- ЛОГИКА РЕЖИМА РЕДАКТИРОВАНИЯ ---
         const appGrid = document.getElementById('appGrid');
-        
+
+        // 1. Инициализируем AutoAnimate
+        const animationController = autoAnimate(appGrid, {
+            duration: 250,
+            easing: 'ease-in-out'
+        });
+
+        // 2. Инициализируем Sortable JS
+        let sortable = Sortable.create(appGrid, {
+            animation: 300,           
+            delay: 200,               
+            delayOnTouchOnly: true,   
+            disabled: true,           
+            ghostClass: 'sortable-ghost', 
+            dragClass: 'sortable-drag',   
+            easing: "cubic-bezier(0.25, 1, 0.5, 1)", 
+            
+            swapThreshold: 0.5,     
+            invertSwap: true,        
+            direction: 'horizontal', 
+
+            // --- ВАЖНОЕ ИЗМЕНЕНИЕ ---
+            // forceFallback: true отключает нативный HTML5 Drag&Drop.
+            // Это позволяет сделать перетаскиваемую иконку 100% непрозрачной.
+            forceFallback: true,
+            fallbackClass: "sortable-drag", 
+            fallbackOnBody: true, // Чтобы иконка не обрезалась границами
+
+            onStart: function () {
+                animationController.disable(); 
+                document.body.style.cursor = 'grabbing'; // Глобальный курсор
+                if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(10);
+            },
+            
+            onEnd: function () {
+                animationController.enable();
+                document.body.style.cursor = ''; // Сброс курсора
+            }
+        });
+
+        // --- ЛОГИКА ---
         const appItems = document.querySelectorAll('.app-item');
 
         appItems.forEach(item => {
             const iconContainer = item.querySelector('.icon-container');
+            const link = item.querySelector('a');
+            
             const deleteBtn = document.createElement('div');
             deleteBtn.className = 'delete-btn';
-            
             iconContainer.appendChild(deleteBtn);
 
-            // Обработчик ПКМ (долгий тап)
             item.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 enableEditMode();
             });
-
-            // Обработчик удаления
+            
             deleteBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                item.remove(); 
+                item.remove();
             });
+
+            if(link) {
+                link.addEventListener('click', (e) => {
+                    if (appGrid.classList.contains('edit-mode')) {
+                        e.preventDefault();
+                    }
+                });
+            }
         });
 
-        function enableEditMode() {
+        window.enableEditMode = function() {
             appGrid.classList.add('edit-mode');
+            sortable.option("disabled", false);
         }
 
-        function disableEditMode() {
+        window.disableEditMode = function() {
             appGrid.classList.remove('edit-mode');
+            sortable.option("disabled", true);
         }
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.app-item')) {
-                disableEditMode();
+                window.disableEditMode();
             }
         });
+        
+        document.addEventListener('touchmove', function(e) {
+            if (appGrid.classList.contains('edit-mode')) {
+                // fix scroll
+            }
+        }, { passive: false });
     </script>
+   
 </body>
 </html>

@@ -694,13 +694,13 @@
 
         function renderAddTab() {
             sidebarContent.innerHTML = `
-                <h2 class="section-title">Новый сайт</h2>
-                <p class="section-desc">Добавьте иконку на главный экран.</p>
+                <h2 class="section-title">Добавить сайт</h2>
+                <p class="section-desc">Введите ссылку, чтобы добавить иконку на главный экран.</p>
                 <div class="form-container">
-                    <div class="form-group"><label class="form-label">URL</label><input type="text" id="inputUrl" class="form-input" placeholder="https://example.com" autocomplete="off"></div>
-                    <div class="form-group"><label class="form-label">Имя</label><input type="text" id="inputName" class="form-input" placeholder="Название сайта" autocomplete="off"></div>
-                    <div class="form-group"><label class="form-label">Иконка (опц.)</label><input type="text" id="inputIcon" class="form-input" placeholder="https://..." autocomplete="off"></div>
-                    <button class="primary-btn" id="btnAddDone">Далее</button>
+                    <div class="form-group"><label class="form-label">URL</label><input type="text" id="inputUrl" class="form-input" placeholder="Введите URL" autocomplete="off"></div>
+                    <div class="form-group"><label class="form-label">Имя веб-сайта</label><input type="text" id="inputName" class="form-input" placeholder="Укажите название сайта" autocomplete="off"></div>
+                    <div class="form-group"><label class="form-label">Ссылка на иконку (необязательно)</label><input type="text" id="inputIcon" class="form-input" placeholder="https://.." autocomplete="off"></div>
+                    <button class="primary-btn" id="btnAddDone">Готово</button>
                 </div>`;
             document.getElementById('btnAddDone').addEventListener('click', handleAddWebsite);
         }

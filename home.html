@@ -314,14 +314,15 @@
             flex-direction: column;
             align-items: flex-start;
             color: #000;
+            width: 100%; /* FIX: Чтобы контент занимал всю ширину */
         }
 
-        /* --- СТИЛИ ФОРМЫ ДОБАВЛЕНИЯ --- */
-        .add-form-container {
+        /* --- СТИЛИ ФОРМЫ (Общие для Добавить и Auth) --- */
+        .form-container {
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 16px; /* Отступы между полями */
             padding-top: 10px;
         }
 
@@ -358,7 +359,8 @@
             color: #C7C7CC;
         }
 
-        .add-btn {
+        /* Кнопки */
+        .primary-btn {
             background: #007AFF;
             color: white;
             border: none;
@@ -368,13 +370,66 @@
             font-weight: 600;
             cursor: pointer;
             margin-top: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             transition: background 0.2s, transform 0.1s;
         }
-
-        .add-btn:active {
+        
+        .primary-btn:active {
             background: #0056b3;
             transform: scale(0.98);
         }
+
+        .google-btn {
+            background: #FFFFFF;
+            color: #3C4043;
+            border: 1px solid #E5E5EA;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 0px;
+            transition: background 0.2s;
+        }
+        
+        .google-btn:active {
+            background: #F5F5F7;
+        }
+
+        .text-link {
+            color: #007AFF;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 15px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: #8E8E93;
+            font-size: 13px;
+            margin: 10px 0;
+            width: 100%;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #E5E5EA;
+        }
+        .divider::before { margin-right: 10px; }
+        .divider::after { margin-left: 10px; }
+
 
         .section-title {
             font-size: 22px;
@@ -579,94 +634,36 @@
         });
 
         const appGrid = document.getElementById('appGrid');
-
-        // Инициализируем AutoAnimate и Sortable
         const animationController = autoAnimate(appGrid, { duration: 250, easing: 'ease-in-out' });
 
         let sortable = Sortable.create(appGrid, {
-            animation: 300,            
-            delay: 200,                
-            delayOnTouchOnly: true,    
-            disabled: true,            
-            ghostClass: 'sortable-ghost', 
-            dragClass: 'sortable-drag',    
-            easing: "cubic-bezier(0.25, 1, 0.5, 1)", 
-            swapThreshold: 0.5,      
-            invertSwap: true,        
-            direction: 'horizontal', 
-            forceFallback: true,
-            fallbackClass: "sortable-drag", 
-            fallbackOnBody: true,
-            onStart: function () {
-                animationController.disable(); 
-                document.body.style.cursor = 'grabbing'; 
-                if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(10);
-            },
-            onEnd: function () {
-                animationController.enable();
-                document.body.style.cursor = ''; 
-            }
+            animation: 300, delay: 200, delayOnTouchOnly: true, disabled: true, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', easing: "cubic-bezier(0.25, 1, 0.5, 1)", swapThreshold: 0.5, invertSwap: true, direction: 'horizontal', forceFallback: true, fallbackClass: "sortable-drag", fallbackOnBody: true,
+            onStart: function () { animationController.disable(); document.body.style.cursor = 'grabbing'; if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(10); },
+            onEnd: function () { animationController.enable(); document.body.style.cursor = ''; }
         });
 
-        // --- УПРАВЛЕНИЕ ПРИЛОЖЕНИЯМИ ---
         function initAppItems() {
             const appItems = document.querySelectorAll('.app-item');
             appItems.forEach(item => {
                 const iconContainer = item.querySelector('.icon-container');
                 const link = item.querySelector('a');
-                
                 const existingBtn = iconContainer.querySelector('.delete-btn');
                 if (existingBtn) existingBtn.remove();
-
                 const deleteBtn = document.createElement('div');
                 deleteBtn.className = 'delete-btn';
                 iconContainer.appendChild(deleteBtn);
-
-                item.oncontextmenu = (e) => {
-                    e.preventDefault();
-                    enableEditMode();
-                };
-                
-                deleteBtn.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    item.remove();
-                };
-
-                if(link) {
-                    link.onclick = (e) => {
-                        if (appGrid.classList.contains('edit-mode')) {
-                            e.preventDefault();
-                        }
-                    };
-                }
+                item.oncontextmenu = (e) => { e.preventDefault(); enableEditMode(); };
+                deleteBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); item.remove(); };
+                if(link) { link.onclick = (e) => { if (appGrid.classList.contains('edit-mode')) { e.preventDefault(); } }; }
             });
         }
-        
         initAppItems();
 
-        window.enableEditMode = function() {
-            appGrid.classList.add('edit-mode');
-            sortable.option("disabled", false);
-        }
+        window.enableEditMode = function() { appGrid.classList.add('edit-mode'); sortable.option("disabled", false); }
+        window.disableEditMode = function() { appGrid.classList.remove('edit-mode'); sortable.option("disabled", true); }
+        document.addEventListener('click', (e) => { if (!e.target.closest('.app-item') && !e.target.closest('.delete-btn') && !e.target.closest('.menu-btn') && !e.target.closest('.sidebar') && !e.target.closest('.add-btn')) { window.disableEditMode(); } });
 
-        window.disableEditMode = function() {
-            appGrid.classList.remove('edit-mode');
-            sortable.option("disabled", true);
-        }
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.app-item') && !e.target.closest('.delete-btn') && !e.target.closest('.menu-btn') && !e.target.closest('.sidebar') && !e.target.closest('.add-btn')) {
-                window.disableEditMode();
-            }
-        });
-        
-        document.addEventListener('touchmove', function(e) {
-            if (appGrid.classList.contains('edit-mode')) {}
-        }, { passive: false });
-
-
-        // --- ЛОГИКА МЕНЮ (SIDEBAR) ---
+        // --- ЛОГИКА МЕНЮ ---
         const menuBtn = document.getElementById('menuBtn');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -679,9 +676,7 @@
             sidebar.classList.add('active');
             sidebarOverlay.classList.add('active');
             document.body.style.overflow = 'hidden'; 
-            if (!tabSettings.classList.contains('active')) {
-                renderAddTab();
-            }
+            if (!tabSettings.classList.contains('active')) { renderAddTab(); }
         }
 
         function closeMenu() {
@@ -694,45 +689,19 @@
         closeMenuBtn.addEventListener('click', closeMenu);
         sidebarOverlay.addEventListener('click', closeMenu);
 
-        // --- Вкладки ---
-        tabAdd.addEventListener('click', () => {
-            tabAdd.classList.add('active');
-            tabSettings.classList.remove('active');
-            renderAddTab();
-        });
+        tabAdd.addEventListener('click', () => { tabAdd.classList.add('active'); tabSettings.classList.remove('active'); renderAddTab(); });
+        tabSettings.addEventListener('click', () => { tabSettings.classList.add('active'); tabAdd.classList.remove('active'); renderSettingsTab(); });
 
-        tabSettings.addEventListener('click', () => {
-            tabSettings.classList.add('active');
-            tabAdd.classList.remove('active');
-            renderSettingsTab();
-        });
-
-        // --- Рендер Формы Добавления ---
         function renderAddTab() {
             sidebarContent.innerHTML = `
                 <h2 class="section-title">Новый сайт</h2>
-                <p class="section-desc">Введите ссылку, чтобы добавить иконку на главный экран.</p>
-                
-                <div class="add-form-container">
-                    <div class="form-group">
-                        <label class="form-label">URL</label>
-                        <input type="text" id="inputUrl" class="form-input" placeholder="https://example.com" autocomplete="off">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Имя веб-сайта</label>
-                        <input type="text" id="inputName" class="form-input" placeholder="Укажите название" autocomplete="off">
-                    </div>
-
-                     <div class="form-group">
-                        <label class="form-label">Ссылка на иконку (опционально)</label>
-                        <input type="text" id="inputIcon" class="form-input" placeholder="https://..." autocomplete="off">
-                    </div>
-
-                    <button class="add-btn" id="btnAddDone">Далее</button>
-                </div>
-            `;
-
+                <p class="section-desc">Добавьте иконку на главный экран.</p>
+                <div class="form-container">
+                    <div class="form-group"><label class="form-label">URL</label><input type="text" id="inputUrl" class="form-input" placeholder="https://example.com" autocomplete="off"></div>
+                    <div class="form-group"><label class="form-label">Имя</label><input type="text" id="inputName" class="form-input" placeholder="Название сайта" autocomplete="off"></div>
+                    <div class="form-group"><label class="form-label">Иконка (опц.)</label><input type="text" id="inputIcon" class="form-input" placeholder="https://..." autocomplete="off"></div>
+                    <button class="primary-btn" id="btnAddDone">Далее</button>
+                </div>`;
             document.getElementById('btnAddDone').addEventListener('click', handleAddWebsite);
         }
 
@@ -740,79 +709,38 @@
             const urlInput = document.getElementById('inputUrl');
             const nameInput = document.getElementById('inputName');
             const iconInput = document.getElementById('inputIcon');
-
             let url = urlInput.value.trim();
             let name = nameInput.value.trim();
             let iconUrl = iconInput.value.trim();
-
-            if (!url) {
-                urlInput.style.borderColor = 'red';
-                return;
-            }
-            if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                url = 'https://' + url;
-            }
-            
-            if (!name) {
-                try {
-                    const urlObj = new URL(url);
-                    name = urlObj.hostname.replace('www.', '');
-                } catch (e) {
-                    name = 'Сайт';
-                }
-            }
-
-            if (!iconUrl) {
-                let domain = '';
-                try {
-                    const urlObj = new URL(url);
-                    domain = urlObj.hostname;
-                } catch(e) {
-                    domain = url;
-                }
-                iconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-            }
-
-            const newItemHTML = `
-                <div class="app-item">
-                    <a href="${url}" class="icon-container">
-                        <img src="${iconUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/62?text=?'">
-                    </a>
-                    <span class="app-name">${name}</span>
-                </div>
-            `;
-            
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = newItemHTML;
-            const newElement = tempDiv.firstElementChild;
-            
-            appGrid.appendChild(newElement);
+            if (!url) { urlInput.style.borderColor = 'red'; return; }
+            if (!url.startsWith('http')) { url = 'https://' + url; }
+            if (!name) { try { const urlObj = new URL(url); name = urlObj.hostname.replace('www.', ''); } catch (e) { name = 'Сайт'; } }
+            if (!iconUrl) { let domain = ''; try { const urlObj = new URL(url); domain = urlObj.hostname; } catch(e) { domain = url; } iconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`; }
+            const newItemHTML = `<div class="app-item"><a href="${url}" class="icon-container"><img src="${iconUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/62?text=?'"></a><span class="app-name">${name}</span></div>`;
+            const tempDiv = document.createElement('div'); tempDiv.innerHTML = newItemHTML;
+            appGrid.appendChild(tempDiv.firstElementChild);
             initAppItems();
-
-            urlInput.value = '';
-            nameInput.value = '';
-            iconInput.value = '';
-            closeMenu();
+            urlInput.value = ''; nameInput.value = ''; iconInput.value = ''; closeMenu();
         }
 
-        // --- Рендер вкладки НАСТРОЙКИ (ПРОФИЛЬ) ---
+        // --- ИНТЕГРИРОВАННЫЙ АВТОРИЗАЦИОННЫЙ ЦЕНТР ---
+        
+        // Локальное состояние для переключения Вход <-> Регистрация
+        let authMode = 'login'; // 'login' или 'register'
+
         function renderSettingsTab() {
             const content = document.getElementById('sidebarContent');
-            
-            // 1. Сначала показываем заглушку или лоадер
-            content.innerHTML = `
-                <div style="padding: 20px; text-align: center; color: #8E8E93;">
-                    Загрузка профиля...
-                </div>
-            `;
+            content.innerHTML = `<div style="padding: 20px; text-align: center; color: #8E8E93;">Загрузка...</div>`;
 
-            // Функция отрисовки профиля
+            // Рисуем Профиль (когда вошли)
             const drawProfile = (user) => {
-                const photoURL = user?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop';
-                const displayName = user?.displayName || 'Гость';
-                const email = user?.email || 'Вы не авторизованы';
+                const photoURL = user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop';
+                const displayName = user.displayName || 'Пользователь';
+                const email = user.email || '';
 
                 content.innerHTML = `
+                    <h2 class="section-title">Аккаунт</h2>
+                    <p class="section-desc">Вы успешно авторизованы.</p>
                     <div class="profile-card">
                         <img src="${photoURL}" class="profile-avatar" alt="Avatar">
                         <div class="profile-info">
@@ -820,56 +748,119 @@
                             <div class="profile-email">${email}</div>
                         </div>
                     </div>
+                    <button id="logoutBtn" class="primary-btn" style="background: #FF3B30; color: white;">Выйти</button>
+                `;
+                document.getElementById('logoutBtn').addEventListener('click', () => {
+                    if (window.authApi) window.authApi.logout();
+                });
+            };
+
+            // Рисуем форму Входа
+            const drawLogin = () => {
+                content.innerHTML = `
+                    <h2 class="section-title">Вход</h2>
+                    <p class="section-desc">Войдите, чтобы синхронизировать данные.</p>
                     
-                    ${!user ? `
-                        <div style="padding: 0 10px;">
-                            <button id="loginBtn" class="add-btn" style="background: #34C759;">Войти</button>
+                    <div class="form-container">
+                        <div class="form-group">
+                            <input type="email" id="authEmail" class="form-input" placeholder="Email">
                         </div>
-                    ` : `
-                         <div style="padding: 0 10px;">
-                            <button id="logoutBtn" class="add-btn" style="background: #FF3B30; margin-top: 10px;">Выйти</button>
+                        <div class="form-group">
+                            <input type="password" id="authPass" class="form-input" placeholder="Пароль">
                         </div>
-                    `}
+                        
+                        <button id="doLoginBtn" class="primary-btn">Войти</button>
+                        
+                        <div class="divider">или</div>
+                        
+                        <button id="doGoogleBtn" class="google-btn">
+                             <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill-rule="evenodd" fill-opacity="1" fill="#4285f4" stroke="none"></path><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.715H.957v2.332A8.997 8.997 0 0 0 9 18z" fill-rule="evenodd" fill-opacity="1" fill="#34a853" stroke="none"></path><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill-rule="evenodd" fill-opacity="1" fill="#fbbc05" stroke="none"></path><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill-rule="evenodd" fill-opacity="1" fill="#ea4335" stroke="none"></path></svg>
+                             Google
+                        </button>
+
+                        <div class="text-link" id="goRegister">Нет аккаунта? Зарегистрироваться</div>
+                    </div>
+                `;
+                
+                // Обработчики
+                document.getElementById('doLoginBtn').onclick = () => {
+                    const e = document.getElementById('authEmail').value;
+                    const p = document.getElementById('authPass').value;
+                    if(window.authApi) window.authApi.login(e, p);
+                };
+                document.getElementById('doGoogleBtn').onclick = () => {
+                     if(window.authApi) window.authApi.google();
+                };
+                document.getElementById('goRegister').onclick = () => {
+                    authMode = 'register';
+                    renderAuth(); // Перерисовка
+                };
+            };
+
+            // Рисуем форму Регистрации
+            const drawRegister = () => {
+                content.innerHTML = `
+                    <h2 class="section-title">Регистрация</h2>
+                    <p class="section-desc">Создайте аккаунт для сохранения настроек.</p>
+                    
+                    <div class="form-container">
+                        <div class="form-group">
+                            <input type="text" id="regName" class="form-input" placeholder="Ваше имя">
+                        </div>
+                        <div class="form-group">
+                            <input type="email" id="regEmail" class="form-input" placeholder="Email">
+                        </div>
+                        <div class="form-group">
+                            <input type="password" id="regPass" class="form-input" placeholder="Пароль (мин. 6 символов)">
+                        </div>
+                        
+                        <button id="doRegisterBtn" class="primary-btn">Создать аккаунт</button>
+                        
+                        <div class="text-link" id="goLogin">Уже есть аккаунт? Войти</div>
+                    </div>
                 `;
 
-                const loginBtn = document.getElementById('loginBtn');
-                const logoutBtn = document.getElementById('logoutBtn');
+                 document.getElementById('doRegisterBtn').onclick = () => {
+                    const n = document.getElementById('regName').value;
+                    const e = document.getElementById('regEmail').value;
+                    const p = document.getElementById('regPass').value;
+                    if(window.authApi) window.authApi.register(e, p, n);
+                };
+                document.getElementById('goLogin').onclick = () => {
+                    authMode = 'login';
+                    renderAuth();
+                };
+            };
 
-                if (loginBtn) {
-                    loginBtn.addEventListener('click', () => {
-                        if (window.authWidget && window.authWidget.openLogin) {
-                            window.authWidget.openLogin();
-                        } else {
-                            alert('Виджет авторизации еще не загрузился');
-                        }
-                    });
+            // Главная функция роутинга внутри вкладки
+            const renderAuth = () => {
+                const auth = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
+                if (!auth) {
+                    content.innerHTML = '<div style="padding:20px; text-align:center">Ошибка: Firebase не подключен</div>';
+                    return;
                 }
 
-                if (logoutBtn && window.auth) {
-                    logoutBtn.addEventListener('click', () => {
-                        window.auth.signOut().then(() => {
-                            closeMenu(); 
-                        });
-                    });
+                // Проверяем текущего пользователя
+                if (auth.currentUser) {
+                    drawProfile(auth.currentUser);
+                } else {
+                    if (authMode === 'login') drawLogin();
+                    else drawRegister();
                 }
             };
 
-            // 2. Пытаемся найти auth объект
+            // Инициализация
             const auth = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
-
             if (auth) {
-                // ВАЖНО: Слушаем изменения статуса
+                // Слушаем изменения (вошел/вышел) и перерисовываем
                 auth.onAuthStateChanged((user) => {
-                    drawProfile(user);
+                    renderAuth();
                 });
             } else {
-                console.warn('Firebase Auth не найден. Проверьте auth-widget.js');
-                drawProfile(null);
+                renderAuth(); // Попытка отрисовки (покажет ошибку или загрузку)
             }
         }
-
     </script>
-<link rel="stylesheet" href="auth-widget.css">
 <script type="module" src="auth-widget.js"></script>
 </body>
 </html>

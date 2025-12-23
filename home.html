@@ -679,7 +679,6 @@
             sidebar.classList.add('active');
             sidebarOverlay.classList.add('active');
             document.body.style.overflow = 'hidden'; 
-            // Открываем добавление по умолчанию
             if (!tabSettings.classList.contains('active')) {
                 renderAddTab();
             }
@@ -798,31 +797,75 @@
 
         // --- Рендер вкладки НАСТРОЙКИ (ПРОФИЛЬ) ---
         function renderSettingsTab() {
-            // Попытка получить пользователя из Firebase, если подключен
-            let user = null;
-            // Проверка стандартного Firebase объекта
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-                user = firebase.auth().currentUser;
-            } 
-            // Проверка для модульной версии, если auth был экспортирован глобально
-            else if (window.auth && window.auth.currentUser) {
-                user = window.auth.currentUser;
-            }
-
-            // Данные для отображения (или реальные, или заглушка как на фото)
-            const photoURL = user?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop';
-            const displayName = user?.displayName || 'username';
-            const email = user?.email || 'Синхронизация отключена';
-
-            sidebarContent.innerHTML = `
-                <div class="profile-card">
-                    <img src="${photoURL}" class="profile-avatar" alt="Avatar">
-                    <div class="profile-info">
-                        <div class="profile-name">${displayName}</div>
-                        <div class="profile-email">${email}</div>
-                    </div>
+            const content = document.getElementById('sidebarContent');
+            
+            // 1. Сначала показываем заглушку или лоадер
+            content.innerHTML = `
+                <div style="padding: 20px; text-align: center; color: #8E8E93;">
+                    Загрузка профиля...
                 </div>
             `;
+
+            // Функция отрисовки профиля
+            const drawProfile = (user) => {
+                const photoURL = user?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop';
+                const displayName = user?.displayName || 'Гость';
+                const email = user?.email || 'Вы не авторизованы';
+
+                content.innerHTML = `
+                    <div class="profile-card">
+                        <img src="${photoURL}" class="profile-avatar" alt="Avatar">
+                        <div class="profile-info">
+                            <div class="profile-name">${displayName}</div>
+                            <div class="profile-email">${email}</div>
+                        </div>
+                    </div>
+                    
+                    ${!user ? `
+                        <div style="padding: 0 10px;">
+                            <button id="loginBtn" class="add-btn" style="background: #34C759;">Войти</button>
+                        </div>
+                    ` : `
+                         <div style="padding: 0 10px;">
+                            <button id="logoutBtn" class="add-btn" style="background: #FF3B30; margin-top: 10px;">Выйти</button>
+                        </div>
+                    `}
+                `;
+
+                const loginBtn = document.getElementById('loginBtn');
+                const logoutBtn = document.getElementById('logoutBtn');
+
+                if (loginBtn) {
+                    loginBtn.addEventListener('click', () => {
+                        if (window.authWidget && window.authWidget.openLogin) {
+                            window.authWidget.openLogin();
+                        } else {
+                            alert('Виджет авторизации еще не загрузился');
+                        }
+                    });
+                }
+
+                if (logoutBtn && window.auth) {
+                    logoutBtn.addEventListener('click', () => {
+                        window.auth.signOut().then(() => {
+                            closeMenu(); 
+                        });
+                    });
+                }
+            };
+
+            // 2. Пытаемся найти auth объект
+            const auth = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
+
+            if (auth) {
+                // ВАЖНО: Слушаем изменения статуса
+                auth.onAuthStateChanged((user) => {
+                    drawProfile(user);
+                });
+            } else {
+                console.warn('Firebase Auth не найден. Проверьте auth-widget.js');
+                drawProfile(null);
+            }
         }
 
     </script>

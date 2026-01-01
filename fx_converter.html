@@ -6,366 +6,221 @@
 <title>Конвертер валют</title>
 <link rel="icon" type="image/png" href="exchange.png">
 <link rel="apple-touch-icon" href="exchange2.png">
+
+<link rel="stylesheet" href="theme.css">
+
 <style>
-  :root {
-  --bg: #f4f6fb; 
-  --text: #0b0d12;
-  --card-bg: #ffffff;
-  --border: #e6e9f2;
-  --input-bg: transparent; /* Сделали фон прозрачным */
-  --accent: #7aa2ff;
-  
-  /* Цвета подсказки */
-  --tooltip-bg: #2a2c33;
-  --tooltip-text: #ffffff;
+/* === ЛОКАЛЬНЫЕ СТИЛИ (Специфика конвертера) === */
+
+/* Переопределяем некоторые переменные или добавляем свои */
+:root {
+  --input-bg: transparent; /* Уникально для этого файла */
 }
 
 body.dark {
-  --bg: #0f1115;
-  --text: #f3f3f3;
-  --card-bg: #1a1d22;
-  --border: #292c33;
-  --input-bg: transparent; /* И тут прозрачный */
-  --accent: #5b8af0;
-  
-  --tooltip-bg: #e6e9f2;
-  --tooltip-text: #0f1115;
+  --input-bg: transparent;
 }
 
+/* Специфичные стили кнопок в темной теме (если хотим оставить как было) */
 body.dark button {
     background: #141519;
     border-color: #2a2c34;
     color: #e6e6e6;
 }
-
 body.dark button:hover {
     background: #1b1c21;
 }
 
-  .share-item {
+.share-item {
   background: var(--card-bg) !important;
   color: var(--text) !important;
   border: 1px solid var(--border) !important;
 }
   
-  input[type="text"],
-input,
-textarea,
-select {
+input[type="text"], input, textarea, select {
+    color: var(--text) !important;
+}
+input:focus {
     color: var(--text) !important;
 }
 
-  input:focus {
-    color: var(--text) !important;
-}
+/* Цвета кнопок шаринга (Светлая тема) */
+#copyLink { background: #f5f5f5; color: var(--text); }
+#tgShare { background: #e3f2fd; color: var(--text); }
+#waShare { background: #e8f5e9; color: var(--text); }
+#fbShare { background: #e3f2fd; color: var(--text); }
 
-  /* Светлая тема — твои оригинальные цвета */
-#copyLink {
-    background: #f5f5f5;
-    color: var(--text);
-}
+/* Цвета кнопок шаринга (Тёмная тема) */
+body.dark #copyLink { background: #1b1c21 !important; color: var(--text) !important; border-color: var(--border) !important; }
+body.dark #tgShare { background: #1e2a38 !important; color: var(--text) !important; border-color: var(--border) !important; }
+body.dark #waShare { background: #1f2e22 !important; color: var(--text) !important; border-color: var(--border) !important; }
+body.dark #fbShare { background: #1e2940 !important; color: var(--text) !important; border-color: var(--border) !important; }
 
-#tgShare {
-    background: #e3f2fd;
-    color: var(--text);
-}
-
-#waShare {
-    background: #e8f5e9;
-    color: var(--text);
-}
-
-#fbShare {
-    background: #e3f2fd;
-    color: var(--text);
-}
-
-/* --- ТЁМНАЯ ТЕМА --- */
-body.dark #copyLink {
-    background: #1b1c21 !important;
-    color: var(--text) !important;
-    border-color: var(--border) !important;
-}
-
-body.dark #tgShare {
-    background: #1e2a38 !important;
-    color: var(--text) !important;
-    border-color: var(--border) !important;
-}
-
-body.dark #waShare {
-    background: #1f2e22 !important;
-    color: var(--text) !important;
-    border-color: var(--border) !important;
-}
-
-body.dark #fbShare {
-    background: #1e2940 !important;
-    color: var(--text) !important;
-    border-color: var(--border) !important;
-}
-
-  /* --- Белые системные иконки в тёмной теме --- */
-
-body.dark img.icon {
-    filter: invert(1) brightness(1.3);
-}
-  
-  @keyframes fadeText {
+/* Анимация обновления */
+@keyframes fadeText {
     from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }
-  }
-
-  .muted.animate {
-    animation: fadeText 0.6s ease;
-  }
-
-  *{box-sizing:border-box}
-  body{
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  margin:0;
-  background: var(--bg);
-  color: var(--text);
 }
-  .wrap{max-width:520px;margin:0 auto;padding:22px 14px 28px}
-  
-  /* ИЗМЕНЕНИЕ: Шапка теперь flex контейнер для заголовка */
-  .header-container {
+.muted.animate { animation: fadeText 0.6s ease; }
+
+.wrap { max-width: 520px; margin: 0 auto; padding: 22px 14px 28px; }
+
+/* Шапка инструмента */
+.header-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 5px; /* Отступ как был */
-  }
-  
-  h1{font-size:1.25rem;margin:0;}
+    margin-bottom: 5px;
+}
 
-  /* ИЗМЕНЕНИЕ: Группа кнопок справа */
-  .topbar-row {
+h1 { font-size: 1.25rem; margin: 0; color: var(--text); }
+
+/* Панель кнопок */
+.topbar-row {
     display: flex;
-    justify-content: flex-end; /* Прижали вправо */
+    justify-content: flex-end;
     align-items: center;
     gap: 10px;
     margin-bottom: 10px;
-  }
+}
   
-  /* Дата обновления слева от кнопок */
-  .topbar-row .muted {
-      margin-right: auto; /* Занимает все свободное место слева */
-      color: var(--text);
-      opacity: .55;
+.topbar-row .muted {
+      margin-right: auto;
+      color: var(--text-secondary);
+      opacity: .8;
       font-size: 0.9rem;
-  }
+}
 
-  .topbar-row button {
+.topbar-row button {
     font-size: 0.9rem;
-    background: #ffffff;
-    border: 1px solid #dcdfe6;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 4px 10px;
     cursor: pointer;
     transition: all .2s ease;
-    /* Фикс высоты, чтобы кнопки были одинаковыми */
     height: 27px; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .topbar-row button:hover { background: #f0f2f7; }
+    display: flex; align-items: center; justify-content: center;
+}
+.topbar-row button:hover { background: var(--hover-bg); }
 
-
-  .card{display:flex;flex-direction:column;gap:5px}
-  .card { background: var(--bg); }
+.card { display: flex; flex-direction: column; gap: 5px; background: var(--bg); }
   
-  .row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.row {
+  display: flex; align-items: center; justify-content: space-between;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(0,0,0,.03);
   padding: 10px 12px;
   gap: 10px; 
-  /* ИЗМЕНЕНИЕ: Плавная смена цвета рамки */
   transition: border-color 0.2s ease;
 }
 
-/* ИЗМЕНЕНИЕ: Подсветка всей строки при фокусе */
 .row:focus-within {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(122,162,255,.16);
 }
 
-.amount {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.amount { display: flex; align-items: center; gap: 8px; }
+
 .row .remove-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  opacity: 0.6;
-  transition: opacity .15s ease;
+  background: none; border: none; cursor: pointer; padding: 4px;
+  opacity: 0.6; transition: opacity .15s ease;
 }
-.row .remove-btn:hover {
-  opacity: 1;
-}
-.row .remove-btn img {
-  width: 14px;
-  height: 14px;
-  pointer-events: none;
-}
+.row .remove-btn:hover { opacity: 1; }
+.row .remove-btn img { width: 14px; height: 14px; pointer-events: none; }
 
-  .code{display:flex;align-items:center;gap:8px;font-weight:700}
-  .flag{border-radius:4px;width:24px;height:18px;vertical-align:middle}
+.code { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--text); }
+.flag { border-radius: 4px; width: 24px; height: 18px; vertical-align: middle; }
   
-  /* ИЗМЕНЕНИЕ: Убрал border и background у инпута */
-  .amount input[type="text"]{
-      width:200px;
-      max-width:50vw;
-      text-align:right;
-      font-size:1.15rem !important;
-      padding:6px 0; /* Убрал боковые паддинги, так как рамки нет */
-      border: none;  /* Убрал рамку */
+.amount input[type="text"] {
+      width: 200px; max-width: 50vw;
+      text-align: right;
+      font-size: 1.15rem !important;
+      padding: 6px 0;
+      border: none;
       border-radius: 0;
-      background: transparent; /* Прозрачный фон */
-  }
+      background: transparent;
+}
   
-  /* ИЗМЕНЕНИЕ: Убрал фокус с самого инпута (теперь он на row) */
-  .amount input[type="text"]:focus{
-      outline:none;
-      border-color: transparent;
-      box-shadow: none;
-  }
+.amount input[type="text"]:focus {
+      outline: none; border-color: transparent; box-shadow: none;
+}
   
-  button{padding:4px 10px;border:1px solid var(--border);background:var(--card-bg);border-radius:8px;cursor:pointer;font-size:.95rem}
-  button{
-  border:1px solid var(--border);
-  color: var(--text);
+button { 
+  padding: 4px 10px; border: 1px solid var(--border); 
+  background: var(--card-bg); border-radius: 8px; 
+  cursor: pointer; font-size: .95rem; color: var(--text);
 }
 
-  button:hover{background:#f0f2f7}
-  button img {
-    pointer-events: none;
-  }
-  .status{display:flex;gap:10px;align-items:center;margin-bottom:12px}
-  .muted{opacity:.7;font-size:.9rem}
-  .status {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 10px;
-  margin-top: -4px;
-  margin-bottom: 8px;
-}
+button:hover { background: var(--hover-bg); }
+button img { pointer-events: none; }
 
-.header {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 8px;
-}
-
-.status {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  gap: 8px;
-}
-
-.status .muted {
-  color: #777;
-  font-size: 0.9rem;
-}
-
-.status .muted {
-  font-size: 0.9rem;
-  color: #555;
-}
-  .center-controls{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:18px}
-  .searchbox{position:relative;width:100%;max-width:360px}
+.center-controls { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 18px; }
+.searchbox { position: relative; width: 100%; max-width: 360px; }
   
-  /* Тут стили для поиска, их не трогаем, пусть остаются как были */
-  input,select,textarea{
-    font-size:16px!important;
-    /* border:1px solid var(--border); Вернем это только для поиска */
-    /* border-radius:8px; */
-    /* padding:8px 10px; */
-    /* background: var(--input-bg); */
-    width:100%;
-    transition:all .15s ease;
-  }
+input, select, textarea {
+    font-size: 16px!important;
+    width: 100%;
+    transition: all .15s ease;
+}
   
-  /* Специфично для поиска вернем рамки */
-  #search {
-      border:1px solid var(--border);
-      border-radius:8px;
-      padding:8px 10px;
-      background: var(--card-bg); /* Тут фон нужен */
-  }
-  #search:focus{
+#search {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: var(--card-bg);
+      color: var(--text);
+}
+#search:focus {
     border-color: var(--accent);
-    box-shadow:0 0 0 3px rgba(122,162,255,.16);
-    outline:none;
-  }
+    box-shadow: 0 0 0 3px rgba(122,162,255,.16);
+    outline: none;
+}
   
-  .suggest {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: calc(100% + 6px); /* подсказки открываются вверх */
-    width: calc(100% - 100px); /* чтобы не перекрывала кнопку */
+.suggest {
+    position: absolute; left: 0; right: 0; bottom: calc(100% + 6px);
+    width: calc(100% - 100px);
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
-    box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.12); /* тень вниз */
-    overflow: hidden;
-    z-index: 10;
-    display: none;
-    max-height: 300px;
-    overflow-y: auto;
-  }
-
-  .suggest.visible{display:block}
-  .opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer}
-  .opt:last-child{border-bottom:0}
-  .opt:hover{background: var(--input-bg)}
-  .opt .subtitle{font-size:.85rem;opacity:.7}
-
-  #sharePopup{position:absolute;display:none;background: var(--card-bg);border: 1px solid var(--border);padding:10px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,.15);flex-direction:column;gap:8px;z-index:100;width:190px;animation:fadeIn .2s ease;color: var(--text);}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
- 
- input, select, textarea {
- font-size: 16px !important;
+    box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.12);
+    overflow: hidden; z-index: 10;
+    display: none; max-height: 300px; overflow-y: auto;
 }
+.suggest.visible { display: block; }
 
-/* === TOOLTIP (ПОДСКАЗКА) === */
+.opt { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--border); cursor: pointer; color: var(--text); }
+.opt:last-child { border-bottom: 0; }
+.opt:hover { background: var(--hover-bg); }
+.opt .subtitle { font-size: .85rem; opacity: .7; }
+
+#sharePopup {
+    position: absolute; display: none; 
+    background: var(--card-bg); border: 1px solid var(--border);
+    padding: 10px; border-radius: 12px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,.15);
+    flex-direction: column; gap: 8px; z-index: 100; width: 190px;
+    animation: fadeIn .2s ease; color: var(--text);
+}
+@keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+ 
+/* === TOOLTIP (Используем переменные из theme.css) === */
 #customTooltip {
   position: fixed;
   background: var(--tooltip-bg);
   color: var(--tooltip-text);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  pointer-events: none;
-  opacity: 0;
-  transform: translateY(5px);
+  padding: 6px 12px; border-radius: 6px; font-size: 0.8rem;
+  pointer-events: none; opacity: 0; transform: translateY(5px);
   transition: opacity 0.2s, transform 0.2s;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  white-space: nowrap;
-  font-weight: 500;
+  z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  white-space: nowrap; font-weight: 500;
 }
-#customTooltip.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
+#customTooltip.visible { opacity: 1; transform: translateY(0); }
 
 </style>
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -376,7 +231,11 @@ body.dark img.icon {
 </head>
 <body>
 
+<script src="theme-loader.js"></script>
+
 <div id="customTooltip"></div>
+
+<div id="header-container"></div>
 
 <div class="wrap">
 
@@ -390,9 +249,7 @@ body.dark img.icon {
   <button class="btn" data-role="refresh" data-tip="Обновить курс">
     <img class="icon" src="https://cdn-icons-png.flaticon.com/128/2546/2546743.png" width="12" height="12" alt="">
   </button>
-  <button id="themeToggle" data-tip="Сменить тему">
-    <img class="icon" src="https://cdn-icons-png.flaticon.com/128/4489/4489231.png" width="12" height="12" alt="">
-  </button>
+  
   <button id="shareBtn" data-tip="Поделиться">
     <img class="icon" src="https://cdn-icons-png.flaticon.com/512/1828/1828954.png" width="12" height="12" alt="">
   </button>
@@ -813,32 +670,6 @@ document.addEventListener('click', e => {
     popup.style.display = 'none';
 });
 
-// ==== ТЁМНАЯ ТЕМА ====
-const savedTheme = localStorage.getItem('theme');
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-
-function applyTheme(theme) {
-  if (theme === 'dark') document.body.classList.add('dark');
-  else document.body.classList.remove('dark');
-}
-
-if (savedTheme) {
-  applyTheme(savedTheme);
-} else {
-  applyTheme(prefersDark.matches ? 'dark' : 'light');
-}
-
-prefersDark.addEventListener('change', e => {
-  if (!localStorage.getItem('theme')) {
-    applyTheme(e.matches ? 'dark' : 'light');
-  }
-});
-
-document.getElementById('themeToggle').onclick = () => {
-  const isDark = document.body.classList.toggle('dark');
-  localStorage.setItem('theme', isDark ? 'dark' : 'light');
-};
-
 // ==== TOOLTIPS (ПОДСКАЗКИ) ====
 const tooltipEl = document.getElementById('customTooltip');
 
@@ -878,5 +709,9 @@ fetch('footer.html')
   .then(r => r.text())
   .then(html => document.getElementById('footer').innerHTML = html);
 </script>
+
+<link rel="stylesheet" href="auth-widget.css">
+<script type="module" src="auth-widget.js"></script>
+<script type="module" src="header.js"></script>
 </body>
 </html>

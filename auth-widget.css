@@ -1,0 +1,126 @@
+/* auth-widget.css */
+
+/* Оверлей */
+.auth-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 2000; display: none; background: transparent;
+}
+.auth-overlay.open { display: block; }
+
+/* МЕНЮ (ОКНО) */
+.auth-modal {
+    position: fixed; /* Фиксируем относительно окна */
+    width: 280px; /* Чуть уже (было 300) для компактности */
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border, #e6e9f2);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    padding: 0;
+    overflow: hidden;
+    transform-origin: top right;
+    display: none;
+    color: var(--text, #000);
+    z-index: 2001;
+}
+
+.auth-overlay.open .auth-modal {
+    display: block;
+    animation: menuSlideIn 0.2s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+@keyframes menuSlideIn {
+    from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Крестик */
+.auth-close {
+    position: absolute; top: 10px; right: 10px;
+    background: none; border: none; font-size: 24px; cursor: pointer; 
+    color: var(--text); opacity: 0.5; z-index: 10;
+}
+.auth-modal.mode-profile .auth-close { display: none; } 
+
+/* === VK STYLE (КОМПАКТНЫЙ + СЕРЫЕ ИКОНКИ) === */
+.vk-user-card {
+    padding: 16px; /* Было 20px */
+    text-align: center;
+    border-bottom: 1px solid var(--border, #eee);
+}
+.vk-avatar-large {
+    width: 56px; height: 56px; /* Было 64px */
+    border-radius: 50%; object-fit: cover;
+    margin-bottom: 8px; border: 1px solid var(--border);
+}
+.vk-user-name { font-size: 16px; font-weight: 600; margin-bottom: 2px; color: var(--text); }
+.vk-user-sub { font-size: 12px; color: var(--text); opacity: 0.5; margin-bottom: 12px; }
+
+.vk-manage-btn {
+    display: block; width: 100%; padding: 6px 0; /* Компактнее */
+    background: var(--bg); color: var(--text); border: none;
+    border-radius: 8px; font-weight: 500; font-size: 13px; cursor: pointer;
+    transition: background 0.2s;
+}
+.vk-manage-btn:hover { background: var(--hover-bg, #f5f5f5); }
+.vk-manage-text { display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+.vk-menu-list { padding: 6px; } /* Было 8px */
+
+.vk-menu-item {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 8px 10px; /* Было 10px 12px */
+    border: none; background: none; text-align: left;
+    cursor: pointer; border-radius: 8px; 
+    color: var(--text); /* Текст цвета темы */
+    font-size: 14px; text-decoration: none; transition: background 0.2s;
+}
+.vk-menu-item:hover { background-color: var(--hover-bg, #f2f3f5); }
+
+/* Иконки серые, как на главной */
+.vk-menu-icon { 
+    width: 20px; height: 20px; 
+    color: var(--text); /* Цвет текста */
+    opacity: 0.5;       /* Делаем серым через прозрачность */
+    flex-shrink: 0; 
+    transition: opacity 0.2s, color 0.2s;
+}
+
+/* При наведении иконка становится ярче */
+.vk-menu-item:hover .vk-menu-icon {
+    opacity: 1;
+}
+
+.vk-menu-text { flex-grow: 1; }
+
+/* Красный выход (чуть приглушил, чтобы не выбивался) */
+.item-logout { color: #ff3347; }
+.item-logout .vk-menu-icon { color: #ff3347; opacity: 0.8; }
+.item-logout:hover { background-color: rgba(255, 51, 71, 0.08); }
+
+
+/* ЭКРАНЫ ВХОДА/РЕГИСТРАЦИИ */
+.view-login, .view-register { padding: 20px; text-align: center; }
+.auth-title { margin: 0 0 16px; font-size: 1.3rem; color: var(--text); }
+.auth-input {
+    width: 100%; padding: 10px; margin-bottom: 10px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg); color: var(--text); font-size: 0.95rem;
+}
+.auth-btn {
+    width: 100%; padding: 10px; background: #2688eb; color: #fff;
+    border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+    font-size: 0.95rem; margin-top: 8px;
+}
+.auth-btn:hover { background: #1c6bba; }
+.google-btn {
+    background: var(--card-bg); color: var(--text); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.google-btn:hover { background: var(--hover-bg); }
+.auth-switch { margin-top: 12px; font-size: 0.85rem; color: var(--text); opacity: 0.6; cursor: pointer; }
+
+/* Видимость блоков */
+.view-login, .view-register, .view-profile { display: none; }
+.auth-modal.mode-login .view-login { display: block; }
+.auth-modal.mode-register .view-register { display: block; }
+.auth-modal.mode-profile .view-profile { display: block; }

@@ -1,0 +1,127 @@
+/* Обертка всего футера */
+.footer-wrapper {
+    margin-top: 40px;
+    display: flex;
+    /* Меню СВЕРХУ, кнопки СНИЗУ */
+    flex-direction: column-reverse;
+    align-items: center;
+    padding-bottom: 30px;
+    width: 100%;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Контейнер для кнопок (чтобы стояли в ряд) */
+.footer-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Расстояние между кнопками */
+    z-index: 2;
+}
+
+/* ОБЩИЙ СТИЛЬ ДЛЯ ОБЕИХ КНОПОК */
+.footer-toggle-btn,
+.footer-home-btn {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border, #dcdfe6);
+    color: var(--text, #333);
+    
+    /* Размер кнопок */
+    padding: 4px 10px; 
+    font-size: 0.85rem;
+    gap: 8px;
+    
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    margin-bottom: 0;
+    text-decoration: none; /* Убираем подчеркивание для ссылки */
+}
+
+.footer-toggle-btn:hover,
+.footer-home-btn:hover {
+    background: var(--bg, #f4f6fb);
+    transform: translateY(-1px);
+}
+
+/* Иконки внутри кнопок */
+.btn-main-icon, .btn-home-icon {
+    opacity: 0.8;
+}
+
+/* Иконка стрелочки */
+.arrow-icon {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.6;
+    margin-left: 4px;
+    transform: rotate(0deg); /* По умолчанию вниз */
+}
+
+/* Выезжающая панель */
+.footer-drawer {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+    max-width: 700px;
+    padding: 0 10px;
+}
+
+/* Состояние открыто */
+.footer-drawer.open {
+    max-height: 600px;
+    opacity: 1;
+    margin-bottom: 15px; /* Отступ снизу, так как меню над кнопками */
+    margin-top: 0;
+}
+
+/* Сетка ссылок */
+.footer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 10px;
+    padding: 5px;
+}
+
+/* Стиль самой ссылки (Чип) */
+.tool-chip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border, #e6e9f2);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--text, #333);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+.tool-chip:hover {
+    background: var(--bg, #f4f6fb);
+    border-color: var(--accent, #7aa2ff);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* Иконки внутри ссылок */
+.tool-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--text);
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+.tool-chip:hover .tool-icon {
+    opacity: 1;
+    color: var(--accent, #7aa2ff);
+}
+
+/* При открытии стрелка поворачивается ВВЕРХ */
+.footer-toggle-btn.active .arrow-icon {
+    transform: rotate(180deg);
+}

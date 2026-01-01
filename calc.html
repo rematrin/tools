@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Процентные и календарный калькуляторы</title>
+  <link rel="icon" type="image/png" href="percentage.png">
+  <style>
+    :root { --gap: 10px; --pad: 16px; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0; padding: 28px 18px;
+      line-height: 1.45;
+      background: #f6f7fb; color: #0c0c0d;
+    }
+    .wrap { max-width: 630px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; margin: 0 0 10px; text-align: center; }
+
+    .card {
+      background: #fff; border: 1px solid #e5e7ef; border-radius: 12px;
+      padding: var(--pad); margin-bottom: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .card-title {
+      font-size: 0.9rem;
+      font-weight: 300;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .row {
+      display: flex; flex-wrap: wrap;
+      align-items: center; gap: var(--gap);
+      font-size: 1.1rem; white-space: nowrap;
+      overflow: visible; position: relative;
+    }
+
+    /* БАЗОВЫЕ ИНПУТЫ */
+    input[type="text"] {
+      padding: 8px 10px; font-size: 1.05rem;
+      border: 1px solid #cfd5e1; border-radius: 8px; background: #fff;
+      flex-shrink: 0;
+    }
+    input[type="text"]:focus {
+      outline: none; border-color: #7aa2ff; box-shadow: 0 0 0 3px rgba(122,162,255,.16);
+    }
+  input[type="time"]{
+    width:90px;
+    font-size:1.1rem;
+    text-align:center;
+    border:1px solid #cfd5e1;
+    border-radius:8px;
+    padding:6px 8px;
+    background:#fff;
+    font-family:inherit;
+  }
+  input[type="time"]:focus{
+    outline:none;
+    border-color:#7aa2ff;
+    box-shadow:0 0 0 3px rgba(122,162,255,.16);
+  }
+     /* убираем иконку часов и стрелки у input[type=time] */
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+  }
+
+  input[type="time"]::-webkit-inner-spin-button,
+  input[type="time"]::-webkit-clear-button {
+    display: none;
+    -webkit-appearance: none;
+  }
+
+  input[type="time"] {
+    -moz-appearance: textfield; /* для Firefox */
+  }
+
+    /* Компактные числовые поля */
+    .num { width: 11ch; }            /* короткие числа/проценты */
+    .num.long { width: 14ch; }       /* чутка длиннее для “больших” чисел */
+    .date-input { width: 16ch; text-align: center; cursor: pointer; }
+
+    footer{margin-top:28px;text-align:center;font-size:.95rem;color:#555}
+    footer a{color:#a7a9ae;text-decoration:none;margin:0 6px}
+    footer a:hover{text-decoration:underline}
+    footer span{color:#aaa}
+    
+    /* Поле с суффиксом (например, %) */
+    .with-suffix { position: relative; }
+    .with-suffix input { padding-right: 28px; }
+    .with-suffix::after {
+      content: attr(data-suffix);
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      color: #666; font-size: .95rem; pointer-events: none;
+    }
+
+    .eq { font-weight: 650; }
+    .result {
+      min-width: 10ch; font-weight: 700; text-align: left;
+      padding: 6px 10px; border-radius: 8px;
+      background: #f1f4ff; border: 1px solid #dbe5ff;
+      flex-grow: 1;
+    }
+    .text { opacity: .9; }
+    .hint { margin-top: 10px; font-size: .92rem; color: #505866; margin-bottom: 10px; }
+    code { background: #eef2ff; padding: 2px 6px; border-radius: 6px; }
+
+    .toggle {
+      display: inline-flex; gap: 6px; padding: 4px; border-radius: 7px;
+      background: #eef2ff; border: 1px solid #dbe5ff;
+      flex-shrink: 0;
+      align-items: center; /* добавлено */
+    }
+    .toggle input { display: none; }
+    .opt {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border-radius: 10px; cursor: pointer;
+      border: 1px solid #cfd5e1; background: #fff; font-weight: 700;
+      user-select: none; font-size: 0.9rem;;
+    }
+    .opt:has(input:checked) { border-color: #7aa2ff; box-shadow: 0 0 0 3px rgba(122,162,255,.16); }
+
+    .select {
+      position: relative; border: 1px solid #cfd5e1; border-radius: 8px;
+      background: #fff; padding: 8px 32px 8px 10px; font-size: 1.05rem; cursor: pointer; user-select: none;
+      min-width: 9ch; flex-shrink: 0;
+    }
+    .select::after {
+      content: "▾"; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      font-size: .9rem; color: #777;
+    }
+    .options {
+      list-style: none; padding: 4px 0; margin: 0;
+      background: #fff; border: 1px solid #cfd5e1; border-radius: 8px;
+      position: absolute; z-index: 10; width: 100%;
+      box-shadow: 0 2px 6px rgba(0,0,0,.1);
+      bottom: 110%;
+    }
+    .options[hidden] { display: none; }
+    .options li { padding: 6px 10px; cursor: pointer; }
+    .options li:hover { background: #eef2ff; }
+
+    /* === КАЛЕНДАРЬ === */
+    .calendar {
+      position: absolute;
+      bottom: 110%;
+      left: 0;
+      background: #fff;
+      border: 1px solid #cfd5e1;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.08);
+      padding: 10px;
+      z-index: 30;
+      min-width: 280px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.2s ease;
+    }
+    .calendar.show { opacity: 1; transform: translateY(0); }
+    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .cal-header span {
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: capitalize;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+    .cal-header span:hover { background: #eef2ff; }
+    .cal-header button {
+      border: none; background: #eef2ff; color: #333;
+      border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 1.1rem;
+    }
+    .cal-header button:hover { background: #dbe5ff; }
+
+    .weekday-row {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      text-align: center; font-size: 0.85rem; color: #777; margin: 6px 0;
+    }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-grid div {
+      text-align: center; padding: 8px 0; border-radius: 8px; font-size: 0.95rem; cursor: pointer;
+    }
+    .cal-grid div:hover { background: #eef2ff; }
+    .cal-grid .today { border: 1px solid #7aa2ff; background: #f1f4ff; }
+    .cal-grid .selected { background: #7aa2ff; color: #fff; }
+
+    .year-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 4px; }
+    .year-grid div { padding: 8px 0; text-align: center; border-radius: 8px; cursor: pointer; }
+    .year-grid div:hover { background: #eef2ff; }
+    .year-grid .selected { background: #7aa2ff; color: #fff; }
+
+    .calendar .today-btn {
+      margin-top: 8px; width: 100%; background: #eef2ff;
+      border: 1px solid #dbe5ff; border-radius: 8px; padding: 6px 0;
+      font-size: 0.9rem; cursor: pointer;
+    }
+    .calendar .today-btn:hover { background: #dbe5ff; }
+
+    .text {
+  font-size: 0.9rem; /* можно 0.85rem если хочешь ещё меньше */
+  opacity: 0.85;
+}
+
+  </style>
+      <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-384FKZ1NQP');
+</script>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Процентные калькуляторы</h1>
+
+    <!-- A: Сколько процентов одно число от другого -->
+    <div class="card" id="calcA">
+      <div class="card-title">Сколько процентов одно число от другого</div>
+      <div class="hint">💡 Пример: <code>15</code> это <code>15%</code> от <code>100</code></div>
+      <div class="row">
+        <input class="num long" type="text" inputmode="decimal" data-role="x">
+        <span class="text">это сколько % от</span>
+        <input class="num long" type="text" inputmode="decimal" data-role="y">
+        <span class="eq">=</span>
+        <span class="result" data-role="out">-</span>
+      </div>
+    </div>
+
+    <!-- B: Вычисление процента от числа -->
+    <div class="card" id="calcB">
+      <div class="card-title">Вычисление процента от числа</div>
+      <div class="hint">💡 Пример: <code>20%</code> от <code>150</code> это <code>30</code></div>
+      <div class="row">
+        <div class="with-suffix" data-suffix="%">
+          <input class="num" type="text" inputmode="decimal" data-role="n" aria-label="Процент">
+        </div>
+        <span class="text">от</span>
+        <input class="num long" type="text" inputmode="decimal" data-role="m" aria-label="Число">
+        <span class="eq">=</span>
+        <span class="result" data-role="out">-</span>
+      </div>
+    </div>
+
+    <!-- C: Плюс/минус процент -->
+    <div class="card" id="calcC">
+      <div class="card-title">Плюс или минус процент</div>
+      <div class="hint">💡 Пример: <code>200 + 10%</code> = <code>220</code></div>
+      <div class="row">
+        <input class="num long" type="text" inputmode="decimal" data-role="x" aria-label="Число">
+        <div class="toggle" role="radiogroup" aria-label="Операция">
+          <label class="opt" title="Плюс"><input type="radio" name="opC" value="+" checked>➕</label>
+          <label class="opt" title="Минус"><input type="radio" name="opC" value="−">➖</label>
+        </div>
+        <div class="with-suffix" data-suffix="%">
+          <input class="num" type="text" inputmode="decimal" data-role="y" aria-label="Процент">
+        </div>
+        <span class="eq">=</span>
+        <span class="result" data-role="out">-</span>
+      </div>
+    </div>
+
+    <!-- D: Календарь -->
+    <div class="card" id="calcD">
+      <div class="card-title">Калькулятор даты</div>
+      <div class="hint">💡 Пример: <code>01.11.2025 + 2 месяца</code> = <code>01.01.2026</code></div>
+      <div class="row">
+        <div class="date-picker" data-role="date-picker">
+          <input class="date-input" type="text" readonly data-role="date-display">
+          <div class="calendar" hidden></div>
+        </div>
+        <div class="toggle" role="radiogroup" aria-label="Операция даты">
+          <label class="opt"><input type="radio" name="opD" value="+" checked>➕</label>
+          <label class="opt"><input type="radio" name="opD" value="-">➖</label>
+        </div>
+        <input class="num" type="text" inputmode="decimal" data-role="amount" aria-label="Величина">
+        <div class="select" data-role="select" aria-haspopup="listbox" aria-expanded="false">
+          <span class="selected">дней</span>
+          <ul class="options" hidden role="listbox">
+            <li data-value="years">лет</li>
+            <li data-value="months">месяцев</li>
+            <li data-value="weeks">недель</li>
+            <li data-value="days">дней</li>
+          </ul>
+        </div>
+        <span class="eq">=</span><span class="result" data-role="out">-</span>
+      </div>
+    </div>
+    <div class="card">
+    <div class="card-title">Калькулятор времени</div>
+      <div class="hint">💡 Пример: <code>12:00 + 05:00</code> = <code>17:00</code></div>
+    <div class="row">
+      <input type="time" id="time1" value="00:00">
+      <div class="toggle">
+        <label class="opt"><input type="radio" name="op" value="+" checked><span>➕</span></label>
+        <label class="opt"><input type="radio" name="op" value="-"><span>➖</span></label>
+      </div>
+      <input type="time" id="time2" value="00:00">
+      <span class="result" id="out">-</span>
+    </div>
+  </div>
+
+  <script>
+  // Парсер и форматтер чисел
+  const parseNum = v => {
+  if (typeof v !== 'string') return NaN;
+  // убираем пробелы, заменяем запятую на точку
+  v = v.replace(/\s+/g, '').replace(',', '.').trim();
+  return v ? +v : NaN;
+};
+
+  const fmtNum = n => {
+  if (!isFinite(n)) return '-';
+  // округляем до двух знаков
+  const parts = (Math.round(n * 100) / 100).toString().split('.');
+  // добавляем пробелы в целой части
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return parts.join('.');
+};
+
+  // === КАЛЬКУЛЯТОР A ===
+  (() => {
+    const r = document.getElementById('calcA');
+    const x = r.querySelector('[data-role="x"]');
+    const y = r.querySelector('[data-role="y"]');
+    const o = r.querySelector('[data-role="out"]');
+    const f = () => {
+      const xv = parseNum(x.value), yv = parseNum(y.value);
+      o.textContent = isFinite(xv) && isFinite(yv) && yv !== 0 ? fmtNum((xv / yv) * 100) + ' %' : '-';
+    };
+    x.oninput = y.oninput = f;
+  })();
+
+  // === КАЛЬКУЛЯТОР B ===
+  (() => {
+    const r = document.getElementById('calcB');
+    const n = r.querySelector('[data-role="n"]');
+    const m = r.querySelector('[data-role="m"]');
+    const o = r.querySelector('[data-role="out"]');
+    const f = () => {
+      const nv = parseNum(n.value), mv = parseNum(m.value);
+      o.textContent = isFinite(nv) && isFinite(mv) ? fmtNum((nv / 100) * mv) : '-';
+    };
+    n.oninput = m.oninput = f;
+  })();
+
+  // === КАЛЬКУЛЯТОР C ===
+  (() => {
+    const r = document.getElementById('calcC');
+    const x = r.querySelector('[data-role="x"]');
+    const y = r.querySelector('[data-role="y"]');
+    const o = r.querySelector('[data-role="out"]');
+    const ops = r.querySelectorAll('input[name="opC"]');
+    const f = () => {
+      const xv = parseNum(x.value), yv = parseNum(y.value);
+      if (!isFinite(xv) || !isFinite(yv)) return (o.textContent = '-');
+      const op = [...ops].find(v => v.checked)?.value;
+      const res = op === '+' ? xv + (xv * yv / 100) : xv - (xv * yv / 100);
+      o.textContent = fmtNum(res);
+    };
+    x.oninput = y.oninput = f;
+    ops.forEach(v => v.onchange = f);
+  })();
+
+  // === КАЛЕНДАРЬ / КАЛЬКУЛЯТОР D ===
+  (() => {
+    const r = document.getElementById('calcD'), o = r.querySelector('[data-role="out"]'),
+          a = r.querySelector('[data-role="amount"]'), ops = r.querySelectorAll('input[name="opD"]');
+
+    const sel = r.querySelector('[data-role="select"]'),
+          selText = sel.querySelector('.selected'),
+          opts = sel.querySelector('.options');
+    let unit = 'days';
+    sel.onclick = e => {
+      if (e.target.tagName === 'LI') {
+        unit = e.target.dataset.value;
+        selText.textContent = e.target.textContent;
+        opts.hidden = true;
+        sel.setAttribute('aria-expanded', 'false');
+        recompute();
+      } else {
+        opts.hidden = !opts.hidden;
+        sel.setAttribute('aria-expanded', String(!opts.hidden));
+      }
+      e.stopPropagation();
+    };
+    document.addEventListener('pointerdown', e => { if (!sel.contains(e.target)) { opts.hidden = true; sel.setAttribute('aria-expanded','false'); } });
+
+    const dp = r.querySelector('[data-role="date-picker"]'),
+          display = dp.querySelector('[data-role="date-display"]'),
+          cal = dp.querySelector('.calendar');
+    let base = new Date(), mode = 'days';
+    display.value = fmt(base);
+
+    function fmt(d){
+      return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+    }
+
+    function render(vd){
+      cal.innerHTML = '';
+      const h = document.createElement('div'); h.className = 'cal-header';
+      const mName = vd.toLocaleString('ru-RU',{month:'long'}), yNum = vd.getFullYear();
+      const p = document.createElement('button'); p.textContent = '‹';
+      const n = document.createElement('button'); n.textContent = '›';
+      const t = document.createElement('span'); t.textContent = `${mName} ${yNum}`;
+      h.append(p,t,n); cal.append(h);
+
+      p.onclick = e => { e.stopPropagation(); if (mode==='days') vd.setMonth(vd.getMonth()-1); else vd.setFullYear(vd.getFullYear()-12); render(vd); };
+      n.onclick = e => { e.stopPropagation(); if (mode==='days') vd.setMonth(vd.getMonth()+1); else vd.setFullYear(vd.getFullYear()+12); render(vd); };
+      t.onclick = e => { e.stopPropagation(); mode = (mode==='days'?'years':'days'); render(vd); };
+
+      if (mode === 'days') {
+        const w = document.createElement('div'); w.className='weekday-row';
+        ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(nm => { const d=document.createElement('div'); d.textContent=nm; w.append(d);});
+        cal.append(w);
+
+        const g = document.createElement('div'); g.className='cal-grid'; cal.append(g);
+        const y = vd.getFullYear(), m = vd.getMonth(),
+              first = (new Date(y,m,1).getDay()||7)-1, days = new Date(y,m+1,0).getDate();
+        for (let i=0;i<first;i++) g.append(document.createElement('div'));
+        for (let d=1; d<=days; d++){
+          const cell=document.createElement('div'); cell.textContent=d; const curr=new Date(y,m,d);
+          if (curr.toDateString()===new Date().toDateString()) cell.classList.add('today');
+          if (curr.toDateString()===base.toDateString()) cell.classList.add('selected');
+          cell.onclick=e=>{e.stopPropagation(); base=curr; display.value=fmt(base); cal.hidden=true; cal.classList.remove('show'); recompute();};
+          g.append(cell);
+        }
+      } else {
+        const start = Math.floor(yNum/12)*12;
+        const g = document.createElement('div'); g.className='year-grid'; cal.append(g);
+        for (let y=start; y<start+12; y++){
+          const cell=document.createElement('div'); cell.textContent=y;
+          if (y===yNum) cell.classList.add('selected');
+          cell.onclick=e=>{e.stopPropagation(); vd.setFullYear(y); mode='days'; render(vd); };
+          g.append(cell);
+        }
+      }
+
+      const todayBtn=document.createElement('button'); todayBtn.className='today-btn'; todayBtn.textContent='Сегодня';
+      todayBtn.onclick=e=>{e.stopPropagation(); base=new Date(); display.value=fmt(base); cal.hidden=true; cal.classList.remove('show'); recompute();};
+      cal.append(todayBtn);
+    }
+
+    display.onclick = e => {
+      e.stopPropagation();
+      mode='days';
+      cal.hidden = !cal.hidden;
+      if (!cal.hidden) { render(new Date(base)); setTimeout(()=>cal.classList.add('show'), 10); }
+      else cal.classList.remove('show');
+    };
+    document.addEventListener('pointerdown', e => { if (!dp.contains(e.target)) { cal.hidden = true; cal.classList.remove('show'); } });
+
+    function recompute(){
+      const v = +a.value.replace(',', '.');
+      if (!isFinite(v) || v <= 0) return o.textContent='-';
+      const op = [...ops].find(o => o.checked)?.value || '+';
+      const dir = op === '+' ? 1 : -1;
+      const res = new Date(base);
+      switch (unit) {
+        case 'days':   res.setDate(res.getDate() + dir*v); break;
+        case 'weeks':  res.setDate(res.getDate() + dir*v*7); break;
+        case 'months': res.setMonth(res.getMonth() + dir*v); break;
+        case 'years':  res.setFullYear(res.getFullYear() + dir*v); break;
+      }
+      o.textContent = fmt(res);
+    }
+    a.oninput = recompute; ops.forEach(o => o.onchange = recompute);
+  })();
+
+  // === ФИЛЬТР: только цифры, точка и запятая во всех текстовых полях ===
+  document.querySelectorAll('input[type="text"]').forEach(i => {
+    if (!i.hasAttribute('readonly')) i.setAttribute('inputmode','decimal'); // цифровая клавиатура
+    i.addEventListener('input', () => { i.value = i.value.replace(/[^0-9.,]/g, ''); });
+  });
+    
+// === Авторазделение тысяч при вводе (без прыжков курсора, с поддержкой точки/запятой) ===
+document.querySelectorAll('input[type="text"]').forEach(i => {
+  if (!i.hasAttribute('readonly')) {
+    i.setAttribute('inputmode', 'decimal');
+
+    i.addEventListener('input', e => {
+      const oldValue = i.getAttribute('data-old') || '';
+      const oldPos = i.selectionStart || 0;
+
+      // очищаем ввод от всего, кроме цифр, точки и запятой
+      let clean = i.value.replace(/[^0-9.,]/g, '');
+      clean = clean.replace(',', '.');
+
+      // разбиваем на части
+      let [intPart, decPart] = clean.split('.');
+
+      // форматируем только целую часть
+      const formattedInt = intPart ? intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : '';
+      const formatted = decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
+
+      // вычисляем разницу длины до и после
+      const diff = formatted.length - i.value.length;
+
+      // обновляем поле
+      i.value = formatted;
+      i.setAttribute('data-old', formatted);
+
+      // аккуратно возвращаем курсор
+      let newPos = oldPos + diff;
+      if (newPos < 0) newPos = 0;
+      if (newPos > i.value.length) newPos = i.value.length;
+      i.setSelectionRange(newPos, newPos);
+    });
+
+    // сохраняем начальное значение при фокусе
+    i.addEventListener('focus', () => i.setAttribute('data-old', i.value));
+  }
+});
+const t1=document.getElementById('time1');
+const t2=document.getElementById('time2');
+const out=document.getElementById('out');
+const ops=document.querySelectorAll('input[name="op"]');
+
+function parseTime(v){
+  if(!v)return null;
+  const[h,m]=v.split(':').map(Number);
+  return h*60+m;
+}
+function fmtTime(mins){
+  let day=0;
+  if(mins>=1440){mins-=1440;day++;}
+  if(mins<0){mins+=1440;day--;}
+  const h=String(Math.floor(mins/60)).padStart(2,'0');
+  const m=String(mins%60).padStart(2,'0');
+  return `${h}:${m}${day!==0?` <span class='small'>(${day>0?'+':'−'}${Math.abs(day)})</span>`:''}`;
+}
+function recompute(){
+  const op=[...ops].find(x=>x.checked).value;
+  const a=parseTime(t1.value);
+  const b=parseTime(t2.value);
+  if(a==null||b==null)return out.textContent='-';
+  const res=op==='+'?a+b:a-b;
+  out.innerHTML=fmtTime(res);
+}
+[t1,t2].forEach(i=>i.addEventListener('input',recompute));
+ops.forEach(o=>o.onchange=recompute);
+  </script>
+    <link rel="stylesheet" href="footer.css">
+<div id="footer"></div>
+<script>
+fetch('footer.html')
+  .then(r => r.text())
+  .then(html => document.getElementById('footer').innerHTML = html);
+</script>
+</body>
+</html>

@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Конвертер регистров</title>
+<link rel="icon" type="image/png" href="exchange.png"> 
+<link rel="apple-touch-icon" href="exchange2.png">
+<style>
+/* === БАЗОВЫЕ СТИЛИ === */
+:root {
+    --bg: #f4f6fb; 
+    --text: #0b0d12;
+    --card-bg: #ffffff;
+    --border: #e6e9f2;
+    --input-bg: #ffffff;
+    --accent: #7aa2ff;
+    --icon-hover: #f0f2f7;
+    
+    /* Цвета подсказки (Tooltip) */
+    --tooltip-bg: #2a2c33;
+    --tooltip-text: #ffffff;
+}
+body.dark {
+    --bg: #0f1115;
+    --text: #f3f3f3;
+    --card-bg: #1a1d22;
+    --border: #292c33;
+    --input-bg: #1e2127;
+    --accent: #5b8af0;
+    --icon-hover: #2c2e36;
+
+    /* Цвета подсказки в темной теме */
+    --tooltip-bg: #e6e9f2;
+    --tooltip-text: #0f1115;
+}
+/* Инверсия иконок в темной теме */
+body.dark img.icon { filter: invert(1) brightness(1.3); }
+
+*{box-sizing:border-box}
+body{
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.3s ease, color 0.3s ease;
+}
+.wrap { max-width: 800px; margin: 0 auto; padding: 22px 14px 28px; }
+
+/* Шапка */
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.topbar h1 { font-size: 1.25rem; margin: 0; }
+.topbar-controls { display: flex; gap: 10px; }
+.topbar button {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: all .2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.topbar button:hover { background: var(--icon-hover); }
+
+/* === СЕТКА КОНВЕРТЕРА === */
+.converter-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+@media (min-width: 600px) {
+    .text-areas { display: flex; gap: 15px; }
+    .text-box { flex: 1; }
+}
+
+.text-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+.label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0.8;
+    margin-left: 4px;
+}
+
+.area-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+textarea {
+    width: 100%;
+    min-height: 250px;
+    font-size: 16px !important;
+    font-family: inherit;
+    padding: 12px 40px 12px 12px; 
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--input-bg);
+    color: var(--text);
+    resize: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    line-height: 1.5;
+    display: block;
+}
+textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(122,162,255,.16);
+}
+
+/* Стили плавающих иконок */
+.overlay-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.overlay-btn:hover {
+    opacity: 1;
+    background: var(--icon-hover);
+}
+.overlay-btn img {
+    width: 15px; 
+    height: 15px;
+    pointer-events: none;
+}
+
+/* СКРЫВАЕМ КНОПКИ ПО УМОЛЧАНИЮ */
+#clearBtn, #copyBtn {
+    display: none;
+}
+
+/* Панель кнопок */
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+}
+@media (min-width: 500px) {
+    .controls-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.btn-action {
+    padding: 12px 10px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 0 1px 2px rgba(0,0,0,.03);
+}
+.btn-action:hover {
+    background: var(--bg);
+    transform: translateY(-1px);
+}
+.btn-action.active {
+    background: var(--accent);
+    color: #fff !important;
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(122,162,255,.3);
+}
+body.dark .btn-action.active { color: #fff !important; }
+
+/* === КАСТОМНАЯ ПОДСКАЗКА (Tooltip) === */
+#customTooltip {
+    position: fixed;
+    background: var(--tooltip-bg);
+    color: var(--tooltip-text);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    white-space: nowrap;
+    font-weight: 500;
+}
+#customTooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+</style>
+        <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-384FKZ1NQP');
+</script>
+</head>
+<body>
+
+<div id="customTooltip"></div>
+
+<div class="wrap">
+    <div class="topbar">
+        <h1>Конвертер регистров</h1>
+        <div class="topbar-controls">
+            <button id="themeToggle" data-tip="Сменить тему">
+                <img class="icon" src="https://cdn-icons-png.flaticon.com/128/4489/4489231.png" width="16" height="16" alt="">
+            </button>
+        </div>
+    </div>
+
+    <div class="converter-container">
+        
+        <div class="text-areas">
+            <div class="text-box">
+                <span class="label">Исходный текст:</span>
+                <div class="area-wrapper">
+                    <textarea id="inputArea" placeholder="Начните печатать здесь..."></textarea>
+                    <button class="overlay-btn" id="clearBtn" onclick="clearText()" data-tip="Очистить поле">
+                        <img class="icon" src="https://cdn-icons-png.flaticon.com/512/1828/1828778.png" alt="x">
+                    </button>
+                </div>
+            </div>
+            
+            <div class="text-box">
+                <span class="label">Результат:</span>
+                <div class="area-wrapper">
+                    <textarea id="outputArea" placeholder="Результат появится мгновенно" readonly></textarea>
+                    <button class="overlay-btn" id="copyBtn" onclick="copyText()" data-tip="Копировать">
+                        <img class="icon" src="https://cdn-icons-png.flaticon.com/512/1621/1621635.png" alt="copy">
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-grid">
+            <button class="btn-action" data-mode="upper" onclick="setMode('upper')">ВЕРХНИЙ РЕГИСТР</button>
+            <button class="btn-action" data-mode="lower" onclick="setMode('lower')">нижний регистр</button>
+            <button class="btn-action" data-mode="sentence" onclick="setMode('sentence')">Формат предложений</button>
+            <button class="btn-action" data-mode="capitalize" onclick="setMode('capitalize')">Заглавные Буквы</button>
+            <button class="btn-action" data-mode="alternate" onclick="setMode('alternate')">ЧeРeДoВаНиЕ</button>
+            <button class="btn-action" data-mode="random" onclick="setMode('random')">СлУчАйНыЙ</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* === ЛОГИКА КОНВЕРТЕРА === */
+const inputArea = document.getElementById('inputArea');
+const outputArea = document.getElementById('outputArea');
+const buttons = document.querySelectorAll('.btn-action');
+const copyBtn = document.getElementById('copyBtn');
+const clearBtn = document.getElementById('clearBtn');
+
+// Состояние
+let currentMode = 'upper';
+let alternateStartUpper = true; 
+
+window.onload = () => {
+    setMode('upper');
+    updateButtonsState(); // Проверка при загрузке
+};
+
+// Функция управления видимостью кнопок
+function updateButtonsState() {
+    // Если есть текст в поле ввода -> показать крестик
+    if (inputArea.value.trim().length > 0) {
+        clearBtn.style.display = 'flex';
+    } else {
+        clearBtn.style.display = 'none';
+    }
+
+    // Если есть текст в поле вывода -> показать копирование
+    if (outputArea.value.trim().length > 0) {
+        copyBtn.style.display = 'flex';
+    } else {
+        copyBtn.style.display = 'none';
+    }
+}
+
+inputArea.addEventListener('input', () => {
+    applyConversion();
+    updateButtonsState();
+});
+
+function setMode(mode) {
+    if (mode === 'alternate' && currentMode === 'alternate') {
+        alternateStartUpper = !alternateStartUpper;
+    } else {
+        if (mode !== 'alternate') alternateStartUpper = true;
+    }
+
+    currentMode = mode;
+    
+    buttons.forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.querySelector(`.btn-action[data-mode="${mode}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    if (mode === 'alternate' && activeBtn) {
+        activeBtn.textContent = alternateStartUpper ? 'ЧeРeДoВаНиЕ' : 'чЕрЕдОвАнИе'; 
+    }
+
+    applyConversion();
+    updateButtonsState();
+}
+
+function applyConversion() {
+    const text = inputArea.value;
+    let result = '';
+
+    if (!text) {
+        outputArea.value = '';
+        return;
+    }
+
+    switch(currentMode) {
+        case 'upper':
+            result = text.toUpperCase();
+            break;
+        case 'lower':
+            result = text.toLowerCase();
+            break;
+        case 'sentence':
+            result = text.toLowerCase().replace(/(^|[.!?]\s+)([a-zа-яё])/g, (match, sep, char) => sep + char.toUpperCase());
+            break;
+        case 'capitalize':
+            result = text.toLowerCase().replace(/(^|\s)([a-zа-яё])/g, (match) => match.toUpperCase());
+            break;
+        case 'alternate':
+            result = text.split('').map((c, i) => {
+                const isEven = i % 2 === 0;
+                if (alternateStartUpper) {
+                    return isEven ? c.toUpperCase() : c.toLowerCase();
+                } else {
+                    return isEven ? c.toLowerCase() : c.toUpperCase();
+                }
+            }).join('');
+            break;
+        case 'random':
+            result = text.split('').map(c => Math.random() > 0.5 ? c.toUpperCase() : c.toLowerCase()).join('');
+            break;
+    }
+
+    outputArea.value = result;
+}
+
+function clearText() {
+    inputArea.value = '';
+    outputArea.value = '';
+    inputArea.focus();
+    updateButtonsState(); // Скрываем кнопки сразу
+}
+
+function copyText() {
+    if (!outputArea.value) return;
+    outputArea.select();
+    outputArea.setSelectionRange(0, 99999);
+    
+    navigator.clipboard.writeText(outputArea.value).then(() => {
+        const originalHTML = copyBtn.innerHTML;
+        copyBtn.innerHTML = `<img class="icon" src="https://cdn-icons-png.flaticon.com/512/5610/5610944.png" style="width:15px;height:15px">`;
+        showTooltipAtElement(copyBtn, "Скопировано!");
+        setTimeout(() => {
+            copyBtn.innerHTML = originalHTML;
+        }, 1500);
+    });
+}
+
+/* === TOOLTIPS === */
+const tooltipEl = document.getElementById('customTooltip');
+
+function showTooltipAtElement(element, text) {
+    const rect = element.getBoundingClientRect();
+    tooltipEl.textContent = text;
+    tooltipEl.classList.add('visible');
+    const top = rect.bottom + 8; 
+    const left = rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
+    tooltipEl.style.top = `${top}px`;
+    tooltipEl.style.left = `${left}px`;
+    setTimeout(() => tooltipEl.classList.remove('visible'), 1500);
+}
+
+document.querySelectorAll('[data-tip]').forEach(el => {
+    el.addEventListener('mouseenter', (e) => {
+        const text = el.getAttribute('data-tip');
+        if (!text) return;
+        const rect = el.getBoundingClientRect();
+        tooltipEl.textContent = text;
+        tooltipEl.classList.add('visible');
+        let top = rect.bottom + 8;
+        let left = rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
+        if (left < 10) left = 10;
+        if (left + tooltipEl.offsetWidth > window.innerWidth) {
+            left = window.innerWidth - tooltipEl.offsetWidth - 10;
+        }
+        tooltipEl.style.top = `${top}px`;
+        tooltipEl.style.left = `${left}px`;
+    });
+    el.addEventListener('mouseleave', () => tooltipEl.classList.remove('visible'));
+    el.addEventListener('click', () => tooltipEl.classList.remove('visible'));
+});
+
+/* === THEME === */
+const savedTheme = localStorage.getItem('theme');
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+function applyTheme(theme) {
+    if (theme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+}
+
+if (savedTheme) applyTheme(savedTheme);
+else applyTheme(prefersDark.matches ? 'dark' : 'light');
+
+prefersDark.addEventListener('change', e => {
+    if (!localStorage.getItem('theme')) applyTheme(e.matches ? 'dark' : 'light');
+});
+
+document.getElementById('themeToggle').onclick = () => {
+    const isDark = document.body.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+};
+</script>
+
+<link rel="stylesheet" href="footer.css">
+<div id="footer"></div>
+<script>
+fetch('footer.html')
+.then(r => r.text())
+.then(html => { if(html) document.getElementById('footer').innerHTML = html; })
+.catch(() => {});
+</script>
+
+</body>
+</html>

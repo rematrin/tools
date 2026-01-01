@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+<title>Скачать YouTube превью</title>
+<meta name="description" content="Бесплатный инструмент для скачивания превью (обложек) из YouTube видео в высоком качестве.">
+
+<style>
+  /* === БАЗОВЫЕ СТИЛИ === */
+  :root {
+      --tooltip-bg: #2a2c33;
+      --tooltip-text: #ffffff;
+      --primary: #6200ee;
+      --bg-color: #f6f7fb;
+      --border-color: #e6e9f2;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg-color);color:#0c0c0d}
+  .wrap{max-width:850px;margin:0 auto;padding:22px 14px 40px}
+  h1{margin:0 0 14px;font-size:1.4rem;text-align:center}
+  
+  /* --- Стили переключателя вверху (Tabs) --- */
+  .tabs-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .tabs {
+    background: #fff;
+    padding: 6px;
+    border-radius: 12px;
+    display: inline-flex;
+    gap: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
+    /* Чтобы табы не сжимались меньше контента */
+    max-width: 100%;
+    overflow-x: auto; 
+  }
+  .tab-btn {
+    border: none;
+    background: transparent;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #5f6368;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    /* ИСПРАВЛЕНИЕ: Запрещаем перенос текста */
+    white-space: nowrap; 
+  }
+  .tab-btn svg { width: 18px; height: 18px; opacity: 0.7; flex-shrink: 0; }
+  .tab-btn.active {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(98, 0, 238, 0.2);
+  }
+  .tab-btn.active svg { opacity: 1; }
+  .tab-btn:hover:not(.active) { background: #f0f2f5; }
+
+  /* --- Основная карточка --- */
+  .card{background:#fff;border:1px solid var(--border-color);border-radius:12px;padding:16px;box-shadow:0 1px 0 rgba(0,0,0,.03)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center}
+  
+  /* --- Поля ввода --- */
+  input[type="url"]{
+      width: 100%; 
+      padding:12px 14px;
+      padding-right: 40px;
+      font-size:1rem;
+      border-radius: 10px; 
+      transition: border-color 0.2s;
+      border: 1px solid #cfd5e1; 
+  }
+  
+  input[type="url"]:focus { 
+      outline: none; 
+      border-color: #000; 
+      border-width: 2px;
+      padding: 11px 13px;
+      box-shadow: none;
+  }
+  
+  input[type="url"]::placeholder { color: #888; opacity: 1; }
+
+  .input-wrapper { position: relative; width: 100%; }
+
+  /* Строка в режиме Batch */
+  .batch-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      width: 100%;
+  }
+  .batch-row .input-wrapper { flex: 1; }
+
+  /* Зеленая галочка */
+  .check-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px; 
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .check-icon svg { width: 100%; height: 100%; }
+  .input-wrapper.valid .check-icon,
+  .single-input-wrap.valid .check-icon { opacity: 1; }
+
+  /* Кнопка удаления (крестик) */
+  .btn-remove {
+      background: #f0f2f5;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      width: 42px;
+      height: 42px;
+      flex-shrink: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #5f6368;
+      transition: all 0.2s ease;
+  }
+  .btn-remove:hover { background: #e4e6eb; color: #202124; }
+  .btn-remove svg { width: 20px; height: 20px; }
+
+  /* Одиночный режим - обертка */
+  .single-input-wrap {
+      position: relative;
+      width: 100%;
+      flex: 1 1 560px;
+  }
+
+  .preview{margin-top:16px;display:flex;justify-content:center}
+  .preview a{display:block;width:100%;max-width:850px}
+  .preview img{width:100%;height:auto;border-radius:12px;border:1px solid var(--border-color);background:#eef2ff}
+
+  /* Информация о видео */
+  .info{margin-top:14px;background:#fbfcff;border:1px solid #e6ecff;border-radius:10px;padding:12px}
+  .info .row2{display:grid;gap:6px}
+  .k{opacity:.8;min-width:140px;display:inline-block}
+  .err{color:#b00020;margin-top:8px}
+  .muted{opacity:.7;font-size:.9rem}
+
+  /* --- Стили для Batch Mode Controls --- */
+  .batch-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    margin-bottom: 0; 
+    flex-wrap: wrap;
+  }
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.2s;
+    /* ИСПРАВЛЕНИЕ: Запрещаем перенос текста */
+    white-space: nowrap;
+  }
+  .btn-add { background: #f0f2f5; color: #333; flex: 1; }
+  .btn-add:hover { background: #e4e6eb; }
+  
+  .btn-dl { background: var(--primary); color: #fff; flex: 2; }
+  .btn-dl:hover { background: #5000ca; }
+
+  /* Кнопка "Изменить ссылки" */
+  .btn-edit {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      color: #333;
+      width: 100%;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      white-space: nowrap; /* И тут тоже */
+  }
+  .btn-edit:hover { background: #f9fafb; border-color: #d1d5db; }
+
+  /* === ЗАГОЛОВОК И ПЕРЕКЛЮЧАТЕЛИ ВИДА === */
+  .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      margin-top: 24px; 
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+  }
+  .results-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0;
+      color: #202124;
+  }
+  .view-toggles {
+      display: flex;
+      background: #f0f2f5;
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+  }
+  .view-btn {
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #5f6368;
+      transition: all 0.2s;
+  }
+  .view-btn:hover { color: #000; }
+  .view-btn.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+  .view-btn svg { width: 18px; height: 18px; }
+
+  /* === СПИСОК РЕЗУЛЬТАТОВ (Batch) === */
+  .batch-list { 
+      display: grid; 
+      gap: 16px; 
+      grid-template-columns: 1fr; /* По умолчанию список (1 колонка) */
+  }
+  .batch-list:empty { margin-top: 0; }
+
+  .batch-item {
+    display: flex;
+    gap: 16px;
+    background: #fbfcff;
+    border: 1px solid #e6ecff;
+    border-radius: 10px;
+    padding: 10px;
+    align-items: flex-start;
+    transition: all 0.3s ease;
+  }
+  
+  .batch-thumb-wrap {
+    position: relative;
+    width: 220px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    aspect-ratio: 16 / 9;
+  }
+  .batch-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  
+  .batch-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .batch-thumb-wrap:hover .batch-overlay { opacity: 1; }
+  .dl-icon-btn {
+    background: #fff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+
+  .batch-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 120px; 
+  }
+  .batch-title { font-weight: 600; font-size: 1.1rem; margin-bottom: 6px; line-height: 1.3; }
+  .batch-meta { font-size: 0.9rem; color: #555; line-height: 1.6; }
+
+  /* === РЕЖИМ ГАЛЕРЕИ (GRID VIEW) === */
+  .batch-list.gallery-view {
+      grid-template-columns: repeat(3, 1fr); /* 3 в ряд */
+  }
+  
+  .batch-list.gallery-view .batch-item {
+      flex-direction: column; /* Элементы друг под другом */
+      gap: 10px;
+      height: 100%; /* Одинаковая высота */
+  }
+
+  .batch-list.gallery-view .batch-thumb-wrap {
+      width: 100%; /* Картинка на всю ширину карточки */
+  }
+
+  .batch-list.gallery-view .batch-info {
+      min-height: auto;
+      justify-content: flex-start;
+  }
+  
+  .batch-list.gallery-view .batch-title {
+      font-size: 1rem;
+      /* Обрезание текста в 2 строки */
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+  }
+
+  /* Адаптивность для сетки */
+  @media (max-width: 800px) {
+      .batch-list.gallery-view { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Адаптивность общая (мобильные) */
+  @media (max-width: 600px) {
+    .batch-item { flex-direction: column; }
+    .batch-thumb-wrap { width: 100%; }
+    .batch-info { min-height: auto; }
+    
+    /* На мобилках галерея превращается в 1 колонку, как список */
+    .batch-list.gallery-view { grid-template-columns: 1fr; } 
+  }
+
+  /* --- ИСПРАВЛЕНИЕ ДЛЯ МОБИЛЬНЫХ КНОПОК И ТАБОВ --- */
+  @media (max-width: 480px) {
+      /* Уменьшаем отступы у табов, чтобы влезали в ряд */
+      .tab-btn {
+          padding: 10px 12px;
+          font-size: 0.85rem;
+      }
+      
+      /* Кнопки действий делаем друг под другом, чтобы текст точно влез */
+      .batch-controls {
+          flex-direction: column;
+      }
+      .btn {
+          width: 100%;
+          flex: auto; /* Сбрасываем flex пропорции */
+          font-size: 0.95rem;
+      }
+  }
+
+  [hidden] { display: none !important; }
+
+  /* === КАСТОМНАЯ ПОДСКАЗКА (Tooltip) === */
+  #customTooltip {
+    position: fixed;
+    background: var(--tooltip-bg);
+    color: var(--tooltip-text);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  #customTooltip.visible { opacity: 1; transform: translateY(0); }
+  @media (hover: none) { #customTooltip { display: none !important; } }
+</style>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-384FKZ1NQP');
+</script>
+</head>
+<body>
+
+<div id="customTooltip"></div>
+
+<div class="wrap">
+  <h1>Скачать YouTube превью</h1>
+
+  <div class="tabs-container">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchMode('single')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="currentColor" d="M19 15V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h13c1.1 0 2-.9 2-2M8 14V6l6 4z"/></svg>
+        Одно видео
+      </button>
+      <button class="tab-btn" onclick="switchMode('batch')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M4 8H2v12a2 2 0 0 0 2 2h12v-2H4z" fill="currentColor"/><path d="M20 2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-9 12V6l7 4z" fill="currentColor"/></svg>
+        Несколько видео
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    
+    <div id="singleMode">
+      <div class="row">
+        <div class="single-input-wrap" id="singleInputWrap">
+            <input id="yturl" type="url" placeholder="Вставьте ссылку на YouTube видео..." autocomplete="off">
+            <div class="check-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="12" fill="#4CAF50"/>
+                    <path d="M17.3 8.3L9.5 16.1L6.7 13.3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+        </div>
+      </div>
+
+      <div class="preview" id="out" hidden>
+        <a id="thumbLink" target="_blank" rel="noopener">
+          <img id="thumb" alt="Превью YouTube">
+        </a>
+      </div>
+
+      <div id="videoInfo" class="info" hidden>
+        <div class="row2" id="infoRows"></div>
+        <div id="apiErr" class="err" hidden></div>
+      </div>
+    </div>
+
+    <div id="batchMode" hidden>
+      <div id="batchInputs"></div>
+
+      <div class="batch-controls">
+        <button class="btn btn-add" onclick="addBatchInput()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Добавить видео
+        </button>
+        <button class="btn btn-dl" onclick="processBatch()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Скачать все
+        </button>
+      </div>
+
+      <div id="batchErr" class="err" hidden style="margin-top:10px;text-align:center;"></div>
+      
+      <button id="editBatchBtn" class="btn btn-edit" onclick="editBatchLinks()" hidden>
+         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 20 20"><title>Reload SVG Icon</title><path fill="currentColor" d="M15.65 4.35A8 8 0 1 0 17.4 13h-2.22a6 6 0 1 1-1-7.22L11 9h7V2z"/></svg>
+         Найти ещё
+      </button>
+
+      <div id="resultsHeader" class="results-header" hidden>
+          <h2 class="results-title">Найденные обложки</h2>
+          <div class="view-toggles">
+              <button class="view-btn active" id="btnGallery" onclick="setView('gallery')" data-tip="Галерея">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z"></path></svg>
+              </button>
+              <button class="view-btn" id="btnList" onclick="setView('list')" data-tip="Список">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"></path></svg>
+              </button>
+          </div>
+      </div>
+
+      <div id="batchResults" class="batch-list gallery-view"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // 🔑 ВСТАВЬТЕ СВОЙ API KEY (YouTube Data API v3)
+  const API_KEY = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
+
+  /* ================= TOOLTIPS ================= */
+  const tooltipEl = document.getElementById('customTooltip');
+  function initTooltips() {
+      const elements = document.querySelectorAll('[data-tip]');
+      elements.forEach(el => {
+          const newEl = el.cloneNode(true);
+          el.parentNode.replaceChild(newEl, el);
+          newEl.addEventListener('mouseenter', showTip);
+          newEl.addEventListener('mouseleave', hideTip);
+          newEl.addEventListener('click', hideTip);
+      });
+  }
+  function attachTooltip(el) {
+      el.addEventListener('mouseenter', showTip);
+      el.addEventListener('mouseleave', hideTip);
+      el.addEventListener('click', hideTip);
+  }
+  function showTip(e) {
+      const el = e.currentTarget;
+      const text = el.getAttribute('data-tip');
+      if (!text) return;
+      const rect = el.getBoundingClientRect();
+      tooltipEl.textContent = text;
+      tooltipEl.classList.add('visible');
+      let top = rect.bottom + 8;
+      let left = rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
+      if (left < 10) left = 10;
+      if (left + tooltipEl.offsetWidth > window.innerWidth) {
+          left = window.innerWidth - tooltipEl.offsetWidth - 10;
+      }
+      tooltipEl.style.top = `${top}px`;
+      tooltipEl.style.left = `${left}px`;
+  }
+  function hideTip() { tooltipEl.classList.remove('visible'); }
+  
+  // Инициализация при загрузке
+  initTooltips();
+
+  /* ================= GLOBALS & UTILS ================= */
+  function parseYouTubeId(url){
+    if (!url) return null;
+    try{
+      const u = new URL(url.trim());
+      if (u.hostname.endsWith('youtu.be')) return u.pathname.split('/')[1] || null;
+      if (u.searchParams.get('v')) return u.searchParams.get('v');
+      if (u.pathname.startsWith('/shorts/')) return u.pathname.split('/')[2] || null;
+      if (u.pathname.startsWith('/embed/'))  return u.pathname.split('/')[2] || null;
+      return null;
+    }catch{ return null; }
+  }
+
+  function formatMoscow(dtISO){
+    const d = new Date(dtISO);
+    const optsDate = { year:'numeric', month:'long', day:'numeric' };
+    const optsTime = { hour:'2-digit', minute:'2-digit' };
+    const date = d.toLocaleDateString('ru-RU', {...optsDate, timeZone:'Europe/Moscow'});
+    const time = d.toLocaleTimeString('ru-RU', {...optsTime, timeZone:'Europe/Moscow'});
+    return `${date} в ${time} по мск`;
+  }
+  
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  /* ================= LOGIC: TABS ================= */
+  function switchMode(mode) {
+    const btns = document.querySelectorAll('.tab-btn');
+    const single = document.getElementById('singleMode');
+    const batch = document.getElementById('batchMode');
+
+    if(mode === 'single') {
+        btns[0].classList.add('active');
+        btns[1].classList.remove('active');
+        single.hidden = false;
+        batch.hidden = true;
+    } else {
+        btns[0].classList.remove('active');
+        btns[1].classList.add('active');
+        single.hidden = true;
+        batch.hidden = false;
+        const container = document.getElementById('batchInputs');
+        if(container.children.length === 0) {
+            addBatchInput();
+            addBatchInput();
+        }
+    }
+  }
+
+  /* ================= LOGIC: VIEW SWITCHER (LIST/GALLERY) ================= */
+  function setView(viewType) {
+      const listContainer = document.getElementById('batchResults');
+      const btnList = document.getElementById('btnList');
+      const btnGallery = document.getElementById('btnGallery');
+
+      if (viewType === 'gallery') {
+          listContainer.classList.add('gallery-view');
+          btnGallery.classList.add('active');
+          btnList.classList.remove('active');
+      } else {
+          listContainer.classList.remove('gallery-view');
+          btnList.classList.add('active');
+          btnGallery.classList.remove('active');
+      }
+  }
+
+  /* ================= LOGIC: SINGLE MODE ================= */
+  const input = document.getElementById('yturl');
+  const inputWrap = document.getElementById('singleInputWrap');
+  const out    = document.getElementById('out');
+  const img    = document.getElementById('thumb');
+  const link   = document.getElementById('thumbLink');
+  const infoBox    = document.getElementById('videoInfo');
+  const infoRows   = document.getElementById('infoRows');
+  const apiErrEl   = document.getElementById('apiErr');
+  const placeholder = "https://placehold.co/800x450?text=Вставьте+ссылку,+чтобы+скачать+превью&font=roboto";
+
+  img.src = placeholder;
+  out.hidden = false;
+  link.removeAttribute("href");
+  link.style.pointerEvents = "none";
+  link.style.cursor = "default";
+
+  async function fetchVideoMeta(id){
+    if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') throw new Error('Не указан API ключ.');
+    const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`API Error`);
+    const data = await res.json();
+    if (!data.items || !data.items.length) throw new Error('Видео не найдено');
+    return data.items[0];
+  }
+
+  let t;
+  function updateSingle(){
+    clearTimeout(t);
+    t = setTimeout(async ()=>{
+      apiErrEl.hidden = true; 
+      apiErrEl.textContent = '';
+      const id = parseYouTubeId(input.value);
+
+      if (!id){
+        inputWrap.classList.remove('valid'); 
+        img.src = placeholder;
+        link.removeAttribute("href");
+        link.style.pointerEvents = "none";
+        link.style.cursor = "default";
+        infoBox.hidden = true;
+        return;
+      }
+
+      inputWrap.classList.add('valid'); 
+
+      const max = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+      const hq  = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+      img.src = max;
+      link.href = max;
+      link.style.pointerEvents = "auto";
+      link.style.cursor = "pointer";
+      img.onerror = () => { 
+        img.onerror = null; 
+        img.src = hq; 
+        link.href = hq; 
+      };
+
+      try {
+        const item = await fetchVideoMeta(id);
+        const s = item.snippet;
+        const dateStr = s.publishedAt ? formatMoscow(s.publishedAt) : '—';
+        infoRows.innerHTML = `
+          <div><span class="k"><strong>Название:</strong></span> ${escapeHtml(s.title)}</div>
+          <div><span class="k"><strong>Канал:</strong></span> ${escapeHtml(s.channelTitle)}</div>
+          <div><span class="k"><strong>Опубликовано:</strong></span> ${dateStr}</div>
+        `;
+        infoBox.hidden = false;
+      } catch(err) {
+        infoBox.hidden = false;
+        infoRows.innerHTML = '';
+        apiErrEl.textContent = err.message || String(err);
+        apiErrEl.hidden = false;
+      }
+    }, 250);
+  }
+
+  input.addEventListener('input', updateSingle);
+  (function(){
+    const q = new URLSearchParams(location.search).get('url');
+    if (q){ input.value = q; updateSingle(); }
+  })();
+
+
+  /* ================= LOGIC: BATCH MODE ================= */
+  function addBatchInput() {
+      const container = document.getElementById('batchInputs');
+      const row = document.createElement('div');
+      row.className = 'batch-row';
+      
+      row.innerHTML = `
+        <div class="input-wrapper">
+            <input type="url" placeholder="Вставьте ссылку на видео..." oninput="checkBatchInput(this)">
+            <div class="check-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="12" fill="#4CAF50"/>
+                    <path d="M17.3 8.3L9.5 16.1L6.7 13.3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+        </div>
+        <button class="btn-remove" onclick="removeInput(this)" data-tip="Удалить">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+      `;
+      container.appendChild(row);
+      attachTooltip(row.querySelector('.btn-remove'));
+  }
+
+  function removeInput(btn) {
+      const row = btn.parentElement; 
+      row.remove();
+      hideTip();
+  }
+
+  function checkBatchInput(el) {
+    const parent = el.parentElement; 
+    const id = parseYouTubeId(el.value);
+    if(id) parent.classList.add('valid');
+    else parent.classList.remove('valid');
+  }
+
+  // Новая функция: Показать поля ввода, скрыть кнопку редактирования
+  function editBatchLinks() {
+      document.getElementById('batchInputs').hidden = false;
+      document.querySelector('.batch-controls').hidden = false;
+      document.getElementById('editBatchBtn').hidden = true;
+  }
+
+  async function processBatch() {
+      const container = document.getElementById('batchInputs');
+      const inputs = container.querySelectorAll('input');
+      const resultsDiv = document.getElementById('batchResults');
+      const errDiv = document.getElementById('batchErr');
+      const headerDiv = document.getElementById('resultsHeader');
+      const editBtn = document.getElementById('editBatchBtn');
+      
+      resultsDiv.innerHTML = '';
+      errDiv.hidden = true;
+      headerDiv.hidden = true; 
+
+      let ids = [];
+      inputs.forEach(inp => {
+          const id = parseYouTubeId(inp.value);
+          if(id) ids.push(id);
+      });
+
+      if(ids.length === 0) {
+          errDiv.textContent = 'Вставьте хотя бы одну корректную ссылку.';
+          errDiv.hidden = false;
+          return;
+      }
+
+      // --- СКРЫВАЕМ ПОЛЯ И ПОКАЗЫВАЕМ КНОПКУ ИЗМЕНИТЬ ---
+      container.hidden = true;
+      document.querySelector('.batch-controls').hidden = true;
+      editBtn.hidden = false;
+      // -------------------------------------------------
+
+      const idsString = ids.join(',');
+      const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${idsString}&key=${API_KEY}`;
+
+      try {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error('Ошибка API');
+          const data = await res.json();
+          
+          if (!data.items) throw new Error('Нет данных');
+
+          const itemMap = {};
+          data.items.forEach(item => { itemMap[item.id] = item; });
+          
+          // Показываем заголовок результатов
+          headerDiv.hidden = false;
+
+          ids.forEach(id => {
+              const item = itemMap[id];
+              const max = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+              const hq = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+
+              let title = "Видео недоступно или скрыто";
+              let channel = "—";
+              let dateStr = "—";
+
+              if(item && item.snippet) {
+                  title = item.snippet.title;
+                  channel = item.snippet.channelTitle;
+                  dateStr = item.snippet.publishedAt ? formatMoscow(item.snippet.publishedAt) : '—';
+              }
+
+              const html = `
+                <div class="batch-item">
+                    <div class="batch-thumb-wrap">
+                        <img src="${max}" onerror="this.src='${hq}'" alt="Thumb">
+                        <a href="${max}" target="_blank" class="batch-overlay">
+                            <div class="dl-icon-btn">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6200ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="batch-info">
+                        <div class="batch-title">${escapeHtml(title)}</div>
+                        <div class="batch-meta">
+                            <div>Канал: ${escapeHtml(channel)}</div>
+                            <div>${dateStr}</div>
+                        </div>
+                    </div>
+                </div>
+              `;
+              resultsDiv.insertAdjacentHTML('beforeend', html);
+          });
+
+      } catch(e) {
+          errDiv.textContent = 'Ошибка загрузки: ' + e.message;
+          errDiv.hidden = false;
+          // Если ошибка, возвращаем поля назад, чтобы пользователь мог исправить
+          editBatchLinks();
+      }
+  }
+
+</script>
+
+  <link rel="stylesheet" href="footer.css">
+<div id="footer"></div>
+<script>
+fetch('footer.html')
+.then(r => r.text())
+.then(html => { if(html) document.getElementById('footer').innerHTML = html; })
+.catch(() => {});
+</script>
+  
+</body>
+</html>

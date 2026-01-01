@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Продуктивность</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            overflow-x: hidden;
+            background-color: #000;
+            overscroll-behavior-y: none;
+            user-select: none; 
+        }
+
+        /* --- ОБОИ --- */
+        .global-wallpaper-blurred {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background-image: url('https://images.unsplash.com/photo-1621619856624-42fd193a0661?q=80&w=2560&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            filter: blur(40px);
+            transform: scale(1.1);
+        }
+
+        .folder-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: rgba(20, 20, 20, 0.45);
+        }
+
+        .iphone-screen {
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+            padding-bottom: 40px;
+            margin: 0 auto;
+        }
+
+        /* --- HEADER & MENU BTN --- */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0);
+            padding: 50px 20px 10px 20px;
+            width: 100%;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            margin: 0;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .menu-btn {
+            position: absolute;
+            right: 25px;
+            top: 58px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-end;
+            cursor: pointer;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            padding: 8px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .menu-btn:active {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .menu-btn span {
+            display: block;
+            height: 2px;
+            background-color: white;
+            border-radius: 2px;
+            width: 100%;
+        }
+        .menu-btn span:nth-child(2) {
+            width: 100%; 
+        }
+
+        /* --- APP GRID STYLES --- */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            row-gap: 20px;
+            column-gap: 8px;
+            padding: 10px 12px;
+            margin-top: 5px;
+            position: relative;
+        }
+
+        .app-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            height: 90px; 
+            width: 100%;
+            touch-action: none;
+        }
+
+        .icon-container {
+            width: 62px;
+            height: 62px;
+            background-color: white;
+            position: relative;
+            border-radius: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            margin-bottom: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            z-index: 1;
+            flex-shrink: 0; 
+            will-change: transform, filter;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform: translate3d(0, 0, 0);
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.2s;
+            overflow: hidden; 
+        }
+
+        .app-grid:not(.edit-mode) .icon-container:active {
+            filter: brightness(0.6);
+            transform: scale(0.92) translate3d(0, 0, 0);
+        }
+        
+        .app-grid:not(.edit-mode) .icon-container:hover {
+            transform: scale(1.05) translate3d(0, 0, 0);
+        }
+
+        .icon-container img {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+            pointer-events: none;
+            display: block;
+        }
+
+        .app-name {
+            font-size: 11px;
+            font-weight: 400;
+            text-align: center;
+            color: white;
+            letter-spacing: 0.01em;
+            max-width: 68px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            opacity: 0.95;
+            pointer-events: none;
+        }
+
+        /* --- SIDEBAR (БОКОВОЕ МЕНЮ) --- */
+        
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            backdrop-filter: blur(2px);
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 85%;
+            max-width: 360px;
+            height: 100%;
+            background: #F2F2F7;
+            z-index: 1001;
+            transform: translateX(100%);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: -5px 0 25px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            color: #000;
+        }
+
+        .sidebar.active {
+            transform: translateX(0);
+        }
+
+        .sidebar-header {
+            background: #fff;
+            padding: 15px 15px 10px 15px;
+            border-bottom: 1px solid #E5E5EA;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-top-row {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .close-menu-btn {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 300;
+            color: #8E8E93;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+        }
+
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 20px;
+            cursor: pointer;
+            color: #8E8E93;
+            transition: color 0.2s;
+            position: relative;
+            width: 50%;
+        }
+
+        .tab-item.active {
+            color: #000;
+            font-weight: 500;
+        }
+
+        .tab-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -11px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #000;
+        }
+
+        .tab-icon {
+            font-size: 20px;
+            line-height: 1;
+        }
+        
+        .tab-label {
+            font-size: 13px;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            color: #000;
+            width: 100%; 
+        }
+
+        /* --- СТИЛИ ФОРМЫ (Оптимизированные) --- */
+        .form-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-top: 10px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            color: #8E8E93;
+            font-weight: 500;
+            margin-left: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input {
+            width: 100%;
+            background: #FFFFFF;
+            border: 1px solid #E5E5EA;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 15px;
+            color: #000;
+            transition: border-color 0.2s;
+            -webkit-appearance: none;
+        }
+
+        .form-input:focus {
+            border-color: #007AFF;
+        }
+
+        .form-input::placeholder {
+            color: #C7C7CC;
+        }
+
+        /* Загрузка файлов */
+        .file-upload-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-upload-btn {
+            background: #F2F2F7;
+            border: 1px solid #D1D1D6;
+            color: #007AFF;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .file-preview {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            object-fit: contain;
+            background: #fff;
+            border: 1px solid #E5E5EA;
+            display: none;
+        }
+
+        /* Кнопки */
+        .primary-btn {
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.2s, transform 0.1s;
+        }
+        
+        .primary-btn:active {
+            background: #0056b3;
+            transform: scale(0.98);
+        }
+
+        .google-btn {
+            background: #FFFFFF;
+            color: #3C4043;
+            border: 1px solid #E5E5EA;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 0px;
+            transition: background 0.2s;
+        }
+        
+        .google-btn:active {
+            background: #F5F5F7;
+        }
+
+        .text-link {
+            color: #007AFF;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 10px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: #8E8E93;
+            font-size: 12px;
+            margin: 8px 0;
+            width: 100%;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #E5E5EA;
+        }
+        .divider::before { margin-right: 10px; }
+        .divider::after { margin-left: 10px; }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #000;
+        }
+        
+        .section-desc {
+            font-size: 13px;
+            color: #8E8E93;
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+
+        /* --- НОВЫЙ ДИЗАЙН ПРОФИЛЯ --- */
+        .profile-card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            position: relative;
+        }
+
+        .profile-title-in-card {
+            font-size: 20px;
+            font-weight: 700;
+            color: #000;
+            margin: 0;
+        }
+
+        .profile-content-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+        }
+
+        /* Обертка для аватара и значка Google */
+        .avatar-wrapper {
+            position: relative;
+            width: 55px;
+            height: 55px;
+            flex-shrink: 0;
+        }
+
+        .profile-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #E5E5EA;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .google-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px;
+            z-index: 2;
+        }
+
+        .profile-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 1;
+            overflow: hidden;
+            gap: 2px;
+        }
+
+        .profile-name {
+            font-size: 17px;
+            font-weight: 600;
+            color: #000;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .profile-email {
+            font-size: 13px;
+            color: #8E8E93;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 8px; /* Отступ до кнопки */
+        }
+
+        /* Кнопка выхода */
+        .logout-btn-styled {
+            background: #FFFFFF;
+            border: 1px solid #E5E5EA;
+            color: #000;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            align-self: flex-start;
+            transition: background 0.2s;
+        }
+
+        .logout-btn-styled:active {
+            background: #F2F2F7;
+        }
+
+        .logout-icon-small {
+            width: 14px;
+            height: 14px;
+            opacity: 0.7;
+        }
+
+        /* --- РЕЖИМ РЕДАКТИРОВАНИЯ --- */
+        .delete-btn {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            width: 24px;
+            height: 24px;
+            background: rgba(50, 50, 50, 0.95);
+            border-radius: 50%;
+            z-index: 10;
+            display: none; 
+            justify-content: center;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            cursor: pointer;
+        }
+
+        .delete-btn::before {
+            content: '×';
+            color: white;
+            font-size: 18px;
+            line-height: 1;
+            padding-bottom: 2px;
+        }
+
+        @keyframes wiggle {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-2.5deg); }
+            75% { transform: rotate(2.5deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        .app-grid.edit-mode .icon-container {
+            animation: wiggle 0.28s infinite linear;
+            cursor: grab; 
+            cursor: -webkit-grab;
+            overflow: visible; 
+        }
+        
+        .app-grid.edit-mode .icon-container:active {
+            cursor: grabbing;
+            cursor: -webkit-grabbing;
+        }
+
+        .app-grid.edit-mode .delete-btn {
+            display: flex;
+        }
+
+        /* --- DRAGGING STYLES --- */
+        .sortable-drag .icon-container {
+            animation: none !important; 
+            transform: scale(1.15) !important;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            z-index: 999;
+            cursor: grabbing !important;
+            cursor: -webkit-grabbing !important;
+        }
+
+        .sortable-drag {
+            opacity: 1 !important; 
+        }
+        
+        .sortable-drag .delete-btn {
+            opacity: 0;
+        }
+
+        .sortable-ghost .icon-container {
+            opacity: 0;
+        }
+        .sortable-ghost .app-name {
+            opacity: 0;
+        }
+        
+        .sortable-ghost {
+            border-radius: 14px;
+            background: rgba(255,255,255,0.05); 
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="global-wallpaper-blurred"></div>
+    <div class="folder-backdrop"></div>
+
+    <div class="iphone-screen">
+        <header id="header">
+            <h1>Продуктивность</h1>
+            <div class="menu-btn" id="menuBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </header>
+
+        <div class="app-grid" id="appGrid">
+            </div>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-top-row">
+                <div class="close-menu-btn" id="closeMenuBtn">×</div>
+            </div>
+            <div class="sidebar-tabs">
+                <div class="tab-item active" id="tabAdd">
+                    <span class="tab-icon">+</span>
+                    <span class="tab-label">Добавить</span>
+                </div>
+                <div class="tab-item" id="tabSettings">
+                    <span class="tab-icon">⚙️</span>
+                    <span class="tab-label">Настройки</span>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-content" id="sidebarContent">
+            </div>
+    </aside>
+
+    <script type="module">
+        import autoAnimate from 'https://cdn.jsdelivr.net/npm/@formkit/auto-animate/index.min.js';
+
+        // --- КОНФИГУРАЦИЯ ---
+        const STORAGE_KEY = 'my_apps_cache_v1';
+        const DEFAULT_APPS = [
+            { name: 'Google', url: 'https://google.com', icon: 'https://www.google.com/s2/favicons?domain=google.com&sz=128' },
+            { name: 'ChatGPT', url: 'https://chat.openai.com', icon: 'https://www.google.com/s2/favicons?domain=openai.com&sz=128' },
+            { name: 'GitHub', url: 'https://github.com', icon: 'https://www.google.com/s2/favicons?domain=github.com&sz=128' },
+            { name: 'Telegram', url: 'https://telegram.org', icon: 'https://www.google.com/s2/favicons?domain=telegram.org&sz=128' },
+            { name: 'YouTube', url: 'https://youtube.com', icon: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128' },
+            { name: 'Notion', url: 'https://notion.so', icon: 'https://www.google.com/s2/favicons?domain=notion.so&sz=128' }
+        ];
+
+        // --- УТИЛИТА: СЖАТИЕ ИЗОБРАЖЕНИЯ ---
+        function resizeImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > 128 || height > 128) {
+                            if (width > height) {
+                                height *= 128 / width;
+                                width = 128;
+                            } else {
+                                width *= 128 / height;
+                                height = 128;
+                            }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/png'));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // --- ФУНКЦИИ СИНХРОНИЗАЦИИ ---
+        function getAppsFromDOM() {
+            const items = document.querySelectorAll('.app-item');
+            const appsData = [];
+            items.forEach(item => {
+                const link = item.querySelector('a');
+                const img = item.querySelector('img');
+                const nameSpan = item.querySelector('.app-name');
+                if (link && img && nameSpan) {
+                    appsData.push({
+                        url: link.getAttribute('href'),
+                        icon: img.getAttribute('src'),
+                        name: nameSpan.innerText
+                    });
+                }
+            });
+            return appsData;
+        }
+
+        function renderAppsToDOM(appsArray, silent = false) {
+            const grid = document.getElementById('appGrid');
+            if (silent && animationController) {
+                animationController.disable();
+            }
+            grid.innerHTML = ''; 
+            appsArray.forEach(app => {
+                const newItemHTML = `
+                    <div class="app-item">
+                        <a href="${app.url}" class="icon-container">
+                            <img src="${app.icon}" alt="${app.name}" onerror="this.src='https://via.placeholder.com/62?text=?'">
+                        </a>
+                        <span class="app-name">${app.name}</span>
+                    </div>`;
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = newItemHTML;
+                grid.appendChild(tempDiv.firstElementChild);
+            });
+            initAppItems();
+            if (silent && animationController) {
+                setTimeout(() => { animationController.enable(); }, 100); 
+            }
+        }
+
+        function saveCurrentState() {
+            const currentApps = getAppsFromDOM();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(currentApps));
+            if (window.dbApi && window.auth && window.auth.currentUser) {
+                window.dbApi.saveApps(currentApps);
+            }
+        }
+
+        // --- ЗАПУСК ИЗ КЕША ---
+        const cachedData = localStorage.getItem(STORAGE_KEY);
+        if (cachedData) {
+            try {
+                const parsed = JSON.parse(cachedData);
+                renderAppsToDOM(parsed); 
+            } catch(e) { renderAppsToDOM(DEFAULT_APPS); }
+        } else { renderAppsToDOM(DEFAULT_APPS); }
+
+        // --- UI & EVENTS ---
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('header');
+            if (window.scrollY > 5) {
+                header.style.background = "rgba(40, 40, 40, 0.25)";
+                header.style.backdropFilter = "blur(25px) saturate(180%)";
+                header.style.webkitBackdropFilter = "blur(25px) saturate(180%)";
+                header.style.borderBottom = "0.5px solid rgba(255,255,255,0.15)";
+            } else {
+                header.style.background = "rgba(0, 0, 0, 0)";
+                header.style.backdropFilter = "blur(0px)";
+                header.style.webkitBackdropFilter = "blur(0px)";
+                header.style.borderBottom = "none";
+            }
+        });
+
+        const appGrid = document.getElementById('appGrid');
+        const animationController = autoAnimate(appGrid, { duration: 250, easing: 'ease-in-out' });
+
+        let sortable = Sortable.create(appGrid, {
+            animation: 300, delay: 200, delayOnTouchOnly: true, disabled: true, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', easing: "cubic-bezier(0.25, 1, 0.5, 1)", swapThreshold: 0.5, invertSwap: true, direction: 'horizontal', forceFallback: true, fallbackClass: "sortable-drag", fallbackOnBody: true,
+            onStart: function () { animationController.disable(); document.body.style.cursor = 'grabbing'; if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(10); },
+            onEnd: function () { animationController.enable(); document.body.style.cursor = ''; saveCurrentState(); }
+        });
+
+        function initAppItems() {
+            const appItems = document.querySelectorAll('.app-item');
+            appItems.forEach(item => {
+                const iconContainer = item.querySelector('.icon-container');
+                const link = item.querySelector('a');
+                const existingBtn = iconContainer.querySelector('.delete-btn');
+                if (existingBtn) existingBtn.remove();
+                const deleteBtn = document.createElement('div');
+                deleteBtn.className = 'delete-btn';
+                iconContainer.appendChild(deleteBtn);
+                item.oncontextmenu = (e) => { e.preventDefault(); enableEditMode(); };
+                deleteBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); item.remove(); saveCurrentState(); };
+                if(link) { link.onclick = (e) => { if (appGrid.classList.contains('edit-mode')) { e.preventDefault(); } }; }
+            });
+        }
+        
+        window.enableEditMode = function() { appGrid.classList.add('edit-mode'); sortable.option("disabled", false); }
+        window.disableEditMode = function() { appGrid.classList.remove('edit-mode'); sortable.option("disabled", true); }
+        document.addEventListener('click', (e) => { if (!e.target.closest('.app-item') && !e.target.closest('.delete-btn') && !e.target.closest('.menu-btn') && !e.target.closest('.sidebar') && !e.target.closest('.add-btn')) { window.disableEditMode(); } });
+
+        // --- MENU LOGIC ---
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const closeMenuBtn = document.getElementById('closeMenuBtn');
+        const tabAdd = document.getElementById('tabAdd');
+        const tabSettings = document.getElementById('tabSettings');
+        const sidebarContent = document.getElementById('sidebarContent');
+
+        function openMenu() {
+            sidebar.classList.add('active'); sidebarOverlay.classList.add('active'); document.body.style.overflow = 'hidden'; 
+            if (!tabSettings.classList.contains('active')) { renderAddTab(); }
+        }
+        function closeMenu() {
+            sidebar.classList.remove('active'); sidebarOverlay.classList.remove('active'); document.body.style.overflow = ''; 
+        }
+
+        menuBtn.addEventListener('click', openMenu);
+        closeMenuBtn.addEventListener('click', closeMenu);
+        sidebarOverlay.addEventListener('click', closeMenu);
+        tabAdd.addEventListener('click', () => { tabAdd.classList.add('active'); tabSettings.classList.remove('active'); renderAddTab(); });
+        tabSettings.addEventListener('click', () => { tabSettings.classList.add('active'); tabAdd.classList.remove('active'); renderSettingsTab(); });
+
+        // --- RENDER TABS ---
+        function renderAddTab() {
+            sidebarContent.innerHTML = `
+                <h2 class="section-title">Добавить сайт</h2>
+                <p class="section-desc">Введите ссылку, чтобы добавить иконку на главный экран.</p>
+                <div class="form-container">
+                    <div class="form-group">
+                        <label class="form-label">Адрес сайта</label>
+                        <input type="text" id="inputUrl" class="form-input" placeholder="Введите URL" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Название</label>
+                        <input type="text" id="inputName" class="form-input" placeholder="Укажите название сайта" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Иконка</label>
+                        <div class="file-upload-wrapper">
+                            <label class="file-upload-btn">
+                                Выбрать файл
+                                <input type="file" id="inputFile" accept="image/*" style="display: none;">
+                            </label>
+                            <img id="previewImg" class="file-preview">
+                            <input type="text" id="inputIcon" class="form-input" placeholder="или URL.." autocomplete="off">
+                        </div>
+                    </div>
+                    <button class="primary-btn" id="btnAddDone">Готово</button>
+                </div>`;
+            
+            const fileInput = document.getElementById('inputFile');
+            const previewImg = document.getElementById('previewImg');
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => { previewImg.src = e.target.result; previewImg.style.display = 'block'; }
+                    reader.readAsDataURL(file);
+                }
+            });
+            document.getElementById('btnAddDone').addEventListener('click', handleAddWebsite);
+        }
+
+        async function handleAddWebsite() {
+            const urlInput = document.getElementById('inputUrl');
+            const nameInput = document.getElementById('inputName');
+            const iconInput = document.getElementById('inputIcon');
+            const fileInput = document.getElementById('inputFile');
+            let url = urlInput.value.trim();
+            let name = nameInput.value.trim();
+            let iconUrl = iconInput.value.trim();
+            
+            if (!url) { urlInput.style.borderColor = 'red'; return; }
+            if (!url.startsWith('http')) { url = 'https://' + url; }
+            if (!name) { try { const urlObj = new URL(url); name = urlObj.hostname.replace('www.', ''); } catch (e) { name = 'Сайт'; } }
+
+            if (fileInput.files && fileInput.files[0]) {
+                const btn = document.getElementById('btnAddDone'); btn.innerText = 'Обработка...';
+                try { iconUrl = await resizeImage(fileInput.files[0]); } catch (e) { alert("Ошибка обработки"); return; }
+            } else if (!iconUrl) {
+                let domain = ''; try { const urlObj = new URL(url); domain = urlObj.hostname; } catch(e) { domain = url; } 
+                iconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`; 
+            }
+            
+            const newItemHTML = `<div class="app-item"><a href="${url}" class="icon-container"><img src="${iconUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/62?text=?'"></a><span class="app-name">${name}</span></div>`;
+            const tempDiv = document.createElement('div'); tempDiv.innerHTML = newItemHTML;
+            appGrid.appendChild(tempDiv.firstElementChild);
+            initAppItems(); saveCurrentState(); closeMenu();
+        }
+
+        let authMode = 'login'; 
+
+        function renderSettingsTab() {
+            const content = document.getElementById('sidebarContent');
+            content.innerHTML = `<div style="padding: 20px; text-align: center; color: #8E8E93;">Загрузка...</div>`;
+
+            const drawProfile = (user) => {
+                const photoURL = user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop';
+                const displayName = user.displayName || 'Пользователь';
+                const email = user.email || '';
+                
+                // Проверяем провайдера (Google)
+                const isGoogleAuth = user.providerData.some(provider => provider.providerId === 'google.com');
+                const googleBadgeHTML = isGoogleAuth 
+                    ? `<div class="google-badge"><img src="https://www.google.com/s2/favicons?domain=google.com" style="width: 100%; height: 100%; display: block;"></div>` : '';
+
+                content.innerHTML = `
+                    <div class="profile-card">
+                        <h2 class="profile-title-in-card">Аккаунт</h2>
+                        <div class="profile-content-row">
+                            <div class="avatar-wrapper">
+                                <img src="${photoURL}" class="profile-avatar" alt="Avatar">
+                                ${googleBadgeHTML}
+                            </div>
+                            <div class="profile-info">
+                                <div class="profile-name">${displayName}</div>
+                                <div class="profile-email">${email}</div>
+                                <button class="logout-btn-styled" id="logoutBtn">
+                                    <svg class="logout-icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                        <polyline points="16 17 21 12 16 7"></polyline>
+                                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                                    </svg>
+                                    Выйти
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('logoutBtn').addEventListener('click', () => { if (window.authApi) window.authApi.logout(); });
+            };
+
+            const drawLogin = () => {
+                content.innerHTML = `
+                    <h2 class="section-title">Вход</h2>
+                    <p class="section-desc">Войдите для синхронизации.</p>
+                    <div class="form-container">
+                        <div class="form-group"><input type="email" id="authEmail" class="form-input" placeholder="Email"></div>
+                        <div class="form-group"><input type="password" id="authPass" class="form-input" placeholder="Пароль"></div>
+                        <button id="doLoginBtn" class="primary-btn">Войти</button>
+                        <div class="divider">или</div>
+                        <button id="doGoogleBtn" class="google-btn">
+                             <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill-rule="evenodd" fill-opacity="1" fill="#4285f4" stroke="none"></path><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.715H.957v2.332A8.997 8.997 0 0 0 9 18z" fill-rule="evenodd" fill-opacity="1" fill="#34a853" stroke="none"></path><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill-rule="evenodd" fill-opacity="1" fill="#fbbc05" stroke="none"></path><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill-rule="evenodd" fill-opacity="1" fill="#ea4335" stroke="none"></path></svg>
+                             Google
+                        </button>
+                        <div class="text-link" id="goRegister">Нет аккаунта? Зарегистрироваться</div>
+                    </div>`;
+                document.getElementById('doLoginBtn').onclick = () => { const e = document.getElementById('authEmail').value; const p = document.getElementById('authPass').value; if(window.authApi) window.authApi.login(e, p); };
+                document.getElementById('doGoogleBtn').onclick = () => { if(window.authApi) window.authApi.google(); };
+                document.getElementById('goRegister').onclick = () => { authMode = 'register'; renderAuth(); };
+            };
+
+            const drawRegister = () => {
+                content.innerHTML = `
+                    <h2 class="section-title">Регистрация</h2>
+                    <p class="section-desc">Создайте аккаунт для сохранения настроек.</p>
+                    <div class="form-container">
+                        <div class="form-group"><input type="text" id="regName" class="form-input" placeholder="Ваше имя"></div>
+                        <div class="form-group"><input type="email" id="regEmail" class="form-input" placeholder="Email"></div>
+                        <div class="form-group"><input type="password" id="regPass" class="form-input" placeholder="Пароль"></div>
+                        <button id="doRegisterBtn" class="primary-btn">Создать аккаунт</button>
+                        <div class="text-link" id="goLogin">Уже есть аккаунт? Войти</div>
+                    </div>`;
+                 document.getElementById('doRegisterBtn').onclick = () => { const n = document.getElementById('regName').value; const e = document.getElementById('regEmail').value; const p = document.getElementById('regPass').value; if(window.authApi) window.authApi.register(e, p, n); };
+                document.getElementById('goLogin').onclick = () => { authMode = 'login'; renderAuth(); };
+            };
+
+            const renderAuth = () => {
+                const auth = window.auth;
+                if (!auth) { content.innerHTML = '<div style="padding:20px; text-align:center">Ошибка: Firebase не подключен</div>'; return; }
+                if (auth.currentUser) { drawProfile(auth.currentUser); } else { if (authMode === 'login') drawLogin(); else drawRegister(); }
+            };
+
+            const auth = window.auth;
+            if (auth) { renderAuth(); } else { setTimeout(renderAuth, 500); }
+        }
+
+        // --- AUTH & SYNC ---
+        const waitForAuth = setInterval(() => {
+            if (window.auth) {
+                clearInterval(waitForAuth);
+                window.auth.onAuthStateChanged(async (user) => {
+                    if (tabSettings.classList.contains('active')) { renderSettingsTab(); }
+                    if (user) {
+                        console.log("User logged in:", user.uid);
+                        if (window.dbApi) {
+                            const cloudApps = await window.dbApi.loadApps();
+                            if (cloudApps && cloudApps.length > 0) {
+                                const currentLocal = localStorage.getItem(STORAGE_KEY);
+                                if (JSON.stringify(cloudApps) !== currentLocal) {
+                                    renderAppsToDOM(cloudApps, true); 
+                                    localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudApps));
+                                }
+                            } else { saveCurrentState(); }
+                        }
+                    } else {
+                        console.log("User logged out");
+                        renderAppsToDOM(DEFAULT_APPS);
+                        localStorage.removeItem(STORAGE_KEY);
+                    }
+                });
+            }
+        }, 100);
+
+    </script>
+<script type="module" src="sidebar.js"></script>
+</body>
+</html>

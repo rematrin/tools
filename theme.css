@@ -1,0 +1,65 @@
+/* theme.css - Глобальные стили */
+
+:root {
+    /* === СВЕТЛАЯ ТЕМА (По умолчанию) === */
+    --bg: #f6f7fb;           /* Фон страницы */
+    --text: #0b0d12;         /* Основной текст */
+    --text-secondary: #555;  /* Вторичный текст */
+    
+    --card-bg: #ffffff;      /* Фон карточек и ХЕДЕРА */
+    --border: #e6e9f2;       /* Рамки */
+    
+    --accent: #6200ee;       /* Акцентный цвет (бывший primary) */
+    --accent-hover: #5000ca; /* Акцент при наведении */
+    
+    --hover-bg: #f4f6fb;     /* Цвет при наведении в меню/хедерах */
+    --active-bg: #eef2ff;    /* Активный элемент списка */
+    
+    --disabled: #d1d5db;     /* Отключенные кнопки */
+    
+    /* Цвета подсказки */
+    --tooltip-bg: #2a2c33;
+    --tooltip-text: #ffffff;
+}
+
+/* === ТЕМНАЯ ТЕМА === */
+body.dark {
+    --bg: #0f1115;
+    --text: #f3f3f3;
+    --text-secondary: #a0a0a0;
+    
+    --card-bg: #1a1d22;
+    --border: #292c33;
+    
+    --accent: #7aa2ff;       /* Чуть светлее для темной темы */
+    --accent-hover: #5b8af0;
+    
+    --hover-bg: #23262b;
+    --active-bg: #252830;
+    
+    --disabled: #4a4d55;
+    
+    --tooltip-bg: #e6e9f2;
+    --tooltip-text: #0f1115;
+}
+
+/* Общие настройки для всего сайта */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-top: 60px; /* Отступ под хедер */
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Системные иконки в темной теме инвертируются */
+body.dark img.icon { filter: invert(1) brightness(1.3); }
+
+/* Скроллбар (опционально) */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }

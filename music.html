@@ -4,42 +4,34 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Lofi Плеер</title>
-
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎧</text></svg>">
 
+<link rel="stylesheet" href="theme.css">
+
 <style>
-/* === БАЗОВЫЕ СТИЛИ === */
-:root {
-    --primary: #6200ee;
-    --primary-dark: #5000ca;
-    --bg-color: #f6f7fb;
-    --border-color: #e6e9f2;
-    --card-bg: #fff;
-    --active-bg: #eef2ff;
-    --disabled-color: #d1d5db;
+/* === СТИЛИ КОНКРЕТНО ЭТОЙ СТРАНИЦЫ === */
+/* Переменные цветов берутся из theme.css (var(--bg), var(--accent) и т.д.) */
+
+.wrap {
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 16px 14px 40px; 
 }
 
-*{box-sizing:border-box}
-body{
-    margin:0;
-    font-family:system-ui,-apple-system,sans-serif;
-    background:var(--bg-color);
-    color:#0c0c0d;
+h1 {
+    margin: 0 0 20px;
+    font-size: 1.4rem;
+    text-align: center;
+    color: var(--text); /* Используем переменную темы */
 }
-.wrap{
-    max-width:850px;
-    margin:0 auto;
-    padding:16px 14px 40px; 
-}
-h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 
 /* --- Карточка --- */
-.card{
-    background:var(--card-bg);
-    border:1px solid var(--border-color);
-    border-radius:12px;
-    padding:16px; 
-    box-shadow:0 1px 0 rgba(0,0,0,.03);
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px; 
+    box-shadow: 0 1px 0 rgba(0,0,0,.03);
     min-height: 400px;
 }
 
@@ -52,22 +44,30 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 #playlist-sidebar {
     width: 40%;
     flex-shrink: 0;
-    max-height: calc(100vh - 80px); 
+    max-height: calc(100vh - 120px); 
     overflow-y: auto;
 }
-#playlist-sidebar h2 { font-size: 1rem; margin: 0 0 10px; }
+#playlist-sidebar h2 { 
+    font-size: 1rem; margin: 0 0 10px; color: var(--text); 
+}
 
 .playlist-item {
     display: flex; gap: 10px; padding: 10px; margin-bottom: 6px;
     border-radius: 8px; cursor: pointer; transition: 0.2s;
-    background: #fafbff; border: 1px solid transparent;
+    background: var(--bg); /* Фон элементов списка */
+    border: 1px solid transparent;
 }
-.playlist-item:hover { background: #f0f2f5; }
-.playlist-item.active { background: var(--active-bg); border-color: var(--primary); }
+.playlist-item:hover { 
+    background: var(--hover-bg); 
+}
+.playlist-item.active { 
+    background: var(--active-bg); 
+    border-color: var(--accent); 
+}
 
 .playlist-thumb {
     width: 60px; height: 34px; flex-shrink: 0;
-    border-radius: 4px; overflow: hidden; border: 1px solid #eee;
+    border-radius: 4px; overflow: hidden; border: 1px solid var(--border);
 }
 .playlist-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -75,8 +75,11 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 .playlist-title {
     font-size: 0.85rem; font-weight: 500; line-height: 1.3;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    color: var(--text);
 }
-.playlist-channel { font-size: 0.75rem; color: #666; margin-top: 2px; }
+.playlist-channel { 
+    font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; 
+}
 
 /* --- Правая колонка (Плеер) --- */
 #main-player-area {
@@ -85,7 +88,7 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
     align-items: center; text-align: center;
 }
 
-/* Контейнер плеера (Обертка) */
+/* Контейнер плеера */
 #visual-container {
     width: 100%;
     max-width: 480px;
@@ -98,7 +101,6 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
     transition: all 0.3s ease;
 }
 
-/* YouTube Iframe */
 #youtube-iframe-wrap {
     width: 100%; height: 100%;
     position: absolute; top: 0; left: 0;
@@ -106,64 +108,59 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 }
 #youtube-iframe-wrap iframe { width: 100%; height: 100%; border: none; }
 
-/* Картинка-заглушка (Режим Обложка) */
 #cover-image {
     width: 100%; height: 100%;
     object-fit: cover;
     position: absolute; top: 0; left: 0;
-    z-index: 20; /* Выше видео */
-    display: none; /* Скрыто по умолчанию */
+    z-index: 20; 
+    display: none; 
     pointer-events: none; 
 }
 
-/* === РЕЖИМЫ ОТОБРАЖЕНИЯ === */
+/* Режимы */
 .mode-cover #youtube-iframe-wrap { opacity: 0; pointer-events: none; }
 .mode-cover #cover-image { display: block; }
 .mode-audio #visual-container { height: 0; margin-bottom: 0; opacity: 0; }
 
 /* Инфо о треке */
-#current-track-info { font-size: 1.1rem; font-weight: 600; color: var(--primary); min-height: 24px; margin-bottom: 4px; }
-
-/* Контейнер для Автора и Счетчика (в одну строку) */
-#meta-info-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-    min-height: 24px;
+#current-track-info { 
+    font-size: 1.1rem; font-weight: 600; 
+    color: var(--accent); 
+    min-height: 24px; margin-bottom: 4px; 
 }
-#current-channel-info { font-size: 0.9rem; color: #555; }
 
-/* --- Основные кнопки (Круглые) --- */
+#meta-info-row {
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px; margin-bottom: 12px; flex-wrap: wrap; min-height: 24px;
+}
+#current-channel-info { font-size: 0.9rem; color: var(--text-secondary); }
+
+/* --- Кнопки управления --- */
 #controls { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
 
 .nav-btn {
     display: flex; align-items: center; justify-content: center;
     width: 44px; height: 44px;
-    border-radius: 50%; border: none; background: var(--primary); color: #fff;
+    border-radius: 50%; border: none; 
+    background: var(--accent); color: #fff;
     cursor: pointer; transition: 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 #playPauseBtn { width: 56px; height: 56px; }
 
-.nav-btn:hover { background: var(--primary-dark); transform: scale(1.05); }
+.nav-btn:hover { background: var(--accent-hover); transform: scale(1.05); }
 
 .nav-btn:disabled { 
-    background: var(--disabled-color);
-    opacity: 0.4;
-    box-shadow: none;
-    transform: none;
-    pointer-events: none; 
+    background: var(--disabled);
+    opacity: 0.4; pointer-events: none; box-shadow: none; transform: none;
 }
 
 .nav-btn svg { width: 22px; height: 22px; }
 #playPauseBtn svg { width: 28px; height: 28px; }
 
-/* --- Переключатель режимов (3 кнопки) --- */
+/* --- Переключатель режимов --- */
 .mode-switcher {
     display: flex;
-    background: #f0f2f5;
+    background: var(--bg); /* Фон переключателя */
     padding: 4px;
     border-radius: 12px;
     gap: 4px;
@@ -177,94 +174,47 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
     border-radius: 8px;
     font-size: 0.85rem;
     font-weight: 500;
-    color: #555;
+    color: var(--text-secondary);
     cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 6px;
     transition: 0.2s;
 }
-.mode-btn:hover { background: rgba(0,0,0,0.05); }
-.mode-btn.active { background: #fff; color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.mode-btn:hover { background: var(--hover-bg); }
+.mode-btn.active { 
+    background: var(--card-bg); 
+    color: var(--accent); 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+}
 .mode-btn svg { width: 16px; height: 16px; }
 
 
-/* ================================================= */
-/* === МИНИ-СЧЕТЧИК (Compact Listener Widget) === */
-/* ================================================= */
+/* === МИНИ-СЧЕТЧИК === */
 .listener-widget-compact {
-    display: inline-flex;
-    align-items: center;
-    background: #f0f2f5; 
+    display: inline-flex; align-items: center;
+    background: var(--bg); 
     padding: 4px 10px;
-    border-radius: 12px; 
-    gap: 6px;
-    color: #444;
-    font-size: 0.85rem; 
-    vertical-align: middle;
+    border-radius: 12px; gap: 6px;
+    color: var(--text);
+    font-size: 0.85rem; vertical-align: middle;
 }
-
-.icon-headphones {
-    width: 14px;
-    height: 14px;
-    fill: #777;
-}
-
-.live-dot {
-    width: 6px;
-    height: 6px;
-    background-color: #ff3b30;
-    border-radius: 50%;
-    margin-right: 2px;
-    animation: pulse 2s infinite ease-in-out;
-}
-
-.counter-wrapper {
-    display: flex;
-    font-weight: 700;
-    line-height: 1; 
-    height: 1em;      
-    overflow: hidden; 
-}
-
-.digit-col {
-    position: relative;
-    width: 0.65em; 
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-}
-
+.icon-headphones { width: 14px; height: 14px; fill: var(--text-secondary); }
+.live-dot { width: 6px; height: 6px; background-color: #ff3b30; border-radius: 50%; margin-right: 2px; animation: pulse 2s infinite ease-in-out; }
+.counter-wrapper { display: flex; font-weight: 700; line-height: 1; height: 1em; overflow: hidden; }
+.digit-col { position: relative; width: 0.65em; text-align: center; font-variant-numeric: tabular-nums; }
 .digit-col.spacer { width: 0.25em; }
-
-.digit-track {
-    display: flex;
-    flex-direction: column;
-    will-change: transform;
-    transform: translateY(0);
-}
-
-.digit-val {
-    height: 1em; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-@keyframes pulse {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
-}
-
+.digit-track { display: flex; flex-direction: column; will-change: transform; transform: translateY(0); }
+.digit-val { height: 1em; display: flex; align-items: center; justify-content: center; }
+@keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
 
 /* Адаптив */
 @media (max-width: 768px) {
     #player-container { flex-direction: column; }
-    #playlist-sidebar { width: 100%; max-height: 200px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    #playlist-sidebar { width: 100%; max-height: 200px; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
     #main-player-area { width: 100%; order: -1; }
     .mode-btn span { display: none; }
 }
 </style>
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -274,6 +224,10 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
 </script>
 </head>
 <body>
+
+<script src="theme-loader.js"></script>
+
+<div id="header-container"></div>
 
 <div class="wrap">
     <h1>🎧 Lofi Плеер</h1>
@@ -505,7 +459,6 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
                 storageTTL: 180000 
             };
 
-            // 1. Получаем целевое число
             let targetViewers = 0;
             let restored = false;
             const rawData = localStorage.getItem(this.currentKey);
@@ -526,49 +479,34 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
                 targetViewers = Math.floor(Math.random() * (limits.max - limits.min + 1)) + limits.min;
             }
 
-            // Устанавливаем текущее значение сразу как целевое (в памяти),
-            // но визуально мы будем крутить барабан
             this.currentViewers = targetViewers;
             this.save();
 
-            // 2. Рендерим структуру целевого числа (например "15 000")
             const finalStr = this.format(targetViewers);
             this.renderStructure(finalStr);
 
-            // 3. МАГИЯ БАРАБАНА (Slot Machine Effect)
-            // Мы принудительно подменяем содержимое на 0 и анимируем к цифре.
-            // Это делается вручную один раз, чтобы избежать конфликтов.
             const cols = this.wrapper.children;
-            const stagger = 60; // Задержка между колонками (мс)
+            const stagger = 60; 
 
             Array.from(cols).forEach((col, i) => {
-                if(col.classList.contains('spacer')) return; // Пропускаем пробелы
+                if(col.classList.contains('spacer')) return; 
 
                 const track = col.querySelector('.digit-track');
                 const targetDigit = track.querySelector('.digit-val').innerText;
 
-                // Подменяем HTML: Внизу 0, вверху Цель (мы едем снизу вверх или наоборот)
-                // Структура для анимации: <div>0</div><div>X</div>
-                // Стартовая позиция: translate(0) -> видим 0
-                // Конечная позиция: translate(-50%) -> видим X
                 track.innerHTML = `<div class="digit-val">0</div><div class="digit-val">${targetDigit}</div>`;
                 track.style.transition = 'none';
-                track.style.transform = 'translateY(0)'; // Показываем 0
+                track.style.transform = 'translateY(0)'; 
 
-                // Запуск анимации через миг
                 setTimeout(() => {
-                    // Используем cubic-bezier для эффекта тяжелого барабана
                     track.style.transition = 'transform 1.2s cubic-bezier(0.15, 0.9, 0.3, 1)';
-                    track.style.transform = 'translateY(-50%)'; // Крутим к числу
+                    track.style.transform = 'translateY(-50%)'; 
                 }, 50 + (i * stagger));
             });
 
-            // 4. Очистка после анимации (через 2 секунды)
-            // Мы полностью перерисовываем структуру "начисто", чтобы убрать вспомогательные нули
-            // и вернуть систему в обычный режим работы.
             this.cleanupTimer = setTimeout(() => {
-                this.renderStructure(finalStr); // Сброс DOM в чистое состояние
-                this.scheduleNextUpdate(); // Запуск обычного цикла
+                this.renderStructure(finalStr); 
+                this.scheduleNextUpdate(); 
             }, 2000);
         },
 
@@ -654,7 +592,6 @@ h1{margin:0 0 20px;font-size:1.4rem;text-align:center;color:#202124;}
         },
 
         animateTrack: function(track, oldChar, newChar, isUp) {
-            // Стандартная анимация для обычных обновлений
             if (isUp) {
                 track.innerHTML = `<div class="digit-val">${oldChar}</div><div class="digit-val">${newChar}</div>`;
                 track.style.transition = 'none';
@@ -698,5 +635,6 @@ fetch('footer.html')
 
 <link rel="stylesheet" href="auth-widget.css">
 <script type="module" src="auth-widget.js"></script>
+<script type="module" src="header.js"></script>
 </body>
 </html>

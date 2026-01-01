@@ -50,7 +50,7 @@ body {
     font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     margin: 0;
     background: var(--bg);
-    padding-top: 60px; /* Отступ сверху, чтобы контент не уезжал под шапку */
+    padding-top: 60px;
     color: var(--text);
     transition: background 0.3s ease, color 0.3s ease;
     min-height: 100vh;
@@ -72,10 +72,10 @@ body {
 .section-header {
     display: flex;
     align-items: center;
-    justify-content: center; /* Заголовок по центру */
-    position: relative;      /* Важно для позиционирования кнопки */
+    justify-content: center;
+    position: relative;
     margin-bottom: 30px;
-    height: 40px;            /* Фиксируем высоту, чтобы элементы встали ровно */
+    height: 40px;
 }
 
 .section-title {
@@ -83,7 +83,6 @@ body {
     font-weight: 600;
     margin: 0;
     opacity: 0.9;
-    /* Иконка и текст рядом */
     display: flex;
     align-items: center;
     gap: 10px;
@@ -94,26 +93,7 @@ body {
     opacity: 0.8;
 }
 
-/* Кнопка темы СПРАВА */
-.theme-btn {
-    position: absolute; /* Вынимаем из потока */
-    right: 0;           /* Прижимаем вправо */
-    top: 50%;           /* Центрируем по вертикали */
-    transform: translateY(-50%);
-    
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 8px;
-    cursor: pointer;
-    transition: all .2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.theme-btn:hover { background: var(--hover-bg); transform: translateY(-50%) scale(1.05); }
-.theme-btn img { width: 14px; height: 14px; display: block; }
-
+/* Кнопка темы УДАЛЕНА отсюда */
 
 /* === СЕТКА КАРТОЧЕК === */
 .services-grid {
@@ -160,7 +140,6 @@ body {
     transform: scale(1.1);
 }
 
-/* Анимация появления */
 .fade-in {
     animation: fadeIn 0.5s ease forwards;
     opacity: 0;
@@ -168,12 +147,9 @@ body {
 }
 @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
 
-/* ВАЖНО: Я удалил жесткие nth-child задержки отсюда. Теперь они добавляются через JS автоматически */
-
-
 /* === МИНИ ФУТЕР (ДОНАТ) === */
 .main-footer {
-    margin-top: auto; /* Прибиваем к низу */
+    margin-top: auto;
     padding-top: 60px;
     padding-bottom: 30px;
     text-align: center;
@@ -237,10 +213,8 @@ body.dark .donate-btn:hover {
     opacity: 1;
     transform: translateY(0);
 }
-
 </style>
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -256,50 +230,45 @@ body.dark .donate-btn:hover {
 <div class="wrap">
 
     <div class="section-header">
-        
         <div class="section-title">
             <svg class="section-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
             <span>Все сервисы</span>
         </div>
-        
-        <button class="theme-btn" id="themeToggle" data-tip="Сменить тему">
-            <img class="icon" src="https://cdn-icons-png.flaticon.com/128/4489/4489231.png" alt="Theme">
-        </button>
-    </div>
+        </div>
 
     <div class="services-grid">
         
-        <a href="calc" class="tool-card fade-in">
+        <a href="calc.html" class="tool-card fade-in">
             <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
             Калькулятор процентов
         </a>
 
-        <a href="fx_converter" class="tool-card fade-in">
+        <a href="fx_converter.html" class="tool-card fade-in">
             <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             Конвертер валют
         </a>
 
-        <a href="clock" class="tool-card fade-in">
+        <a href="clock.html" class="tool-card fade-in">
             <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             Мировые часы
         </a>
 
-        <a href="thumbnail" class="tool-card fade-in">
+        <a href="thumbnail.html" class="tool-card fade-in">
             <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             Скачать YouTube превью
         </a>
 
-        <a href="time_convert" class="tool-card fade-in">
+        <a href="time_convert.html" class="tool-card fade-in">
             <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>
             Конвертер времени
         </a>
 
-        <a href="case_converter" class="tool-card fade-in">
+        <a href="case_converter.html" class="tool-card fade-in">
             <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
             Конвертер регистров
         </a>
 
-        <a href="income_dis" class="tool-card fade-in">
+        <a href="income_dis.html" class="tool-card fade-in">
             <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
                 <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
@@ -307,14 +276,14 @@ body.dark .donate-btn:hover {
             Распределитель дохода
         </a>
 
-        <a href="mp3_cover" class="tool-card fade-in">
+        <a href="mp3_cover.html" class="tool-card fade-in">
             <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle>
             </svg>
             Скачать обложку из MP3
         </a>
 
-        <a href="music" class="tool-card fade-in">
+        <a href="music.html" class="tool-card fade-in">
             <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
                 <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
@@ -322,11 +291,18 @@ body.dark .donate-btn:hover {
             Lofi Плеер
         </a>
 
-        <a href="home" class="tool-card fade-in">
+        <a href="home.html" class="tool-card fade-in">
             <svg class="tool-icon" viewBox="0 0 24 24" fill="currentColor" stroke="none">
             <path d="M10.875 3.375H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969V4.969h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688V4.969h4.688v4.688zM10.875 12.75H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969v-4.688h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688v-4.688h4.688v4.688z"/>
         </svg>
             Home (beta)
+        </a>
+
+        <a href="crossfade.html" class="tool-card fade-in">
+            <svg class="tool-icon" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+            <path d="M10.875 3.375H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969V4.969h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688V4.969h4.688v4.688zM10.875 12.75H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969v-4.688h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688v-4.688h4.688v4.688z"/>
+        </svg>
+            Crossfade
         </a>
 
     </div>
@@ -342,56 +318,81 @@ body.dark .donate-btn:hover {
 </div>
 
 <script>
-// ==== 0. АВТОМАТИЧЕСКАЯ АНИМАЦИЯ (НОВОЕ) ====
-// Теперь вам не нужно править CSS при добавлении новых ссылок.
-// Скрипт сам найдет все карточки и выставит задержку появления лесенкой.
+// ==== 0. АНИМАЦИЯ ====
 document.querySelectorAll('.tool-card').forEach((el, index) => {
-    el.style.animationDelay = `${index * 0.05}s`; // Шаг задержки 0.05 сек
+    el.style.animationDelay = `${index * 0.05}s`;
 });
 
+// ==== 1. УЛУЧШЕННАЯ СИСТЕМА ТЕМ (3 РЕЖИМА) ====
+const themeModes = ['system', 'light', 'dark']; // Возможные режимы
+let currentThemeMode = localStorage.getItem('themeMode') || 'system';
 
-// ==== 1. ТЁМНАЯ ТЕМА ====
-const savedTheme = localStorage.getItem('theme');
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-
-function applyTheme(theme) {
-    if (theme === 'dark') document.body.classList.add('dark');
-    else document.body.classList.remove('dark');
+// Функция применения темы
+function applyTheme(mode) {
+    if (mode === 'dark') {
+        document.body.classList.add('dark');
+    } else if (mode === 'light') {
+        document.body.classList.remove('dark');
+    } else {
+        // System: Смотрим настройки системы
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (systemDark) document.body.classList.add('dark');
+        else document.body.classList.remove('dark');
+    }
+    // Сохраняем выбор
+    localStorage.setItem('themeMode', mode);
+    currentThemeMode = mode;
+    
+    // Если меню открыто, просим его обновить текст (вызываем событие или глобальную функцию)
+    if (window.updateAuthMenuThemeText) window.updateAuthMenuThemeText(getThemeLabel(mode));
 }
 
-if (savedTheme) applyTheme(savedTheme);
-else applyTheme(prefersDark.matches ? 'dark' : 'light');
+// Получить красивое название режима
+function getThemeLabel(mode) {
+    if (mode === 'system') return 'Системная';
+    if (mode === 'light') return 'Светлая';
+    if (mode === 'dark') return 'Темная';
+    return mode;
+}
 
-document.getElementById('themeToggle').onclick = () => {
-    const isDark = document.body.classList.toggle('dark');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+// Глобальная функция для переключения (циклического)
+window.cycleTheme = () => {
+    const currentIndex = themeModes.indexOf(currentThemeMode);
+    const nextIndex = (currentIndex + 1) % themeModes.length;
+    const nextMode = themeModes[nextIndex];
+    applyTheme(nextMode);
 };
 
-// ==== 2. TOOLTIPS (ПОДСКАЗКИ) ====
-const tooltipEl = document.getElementById('customTooltip');
+// Глобальная функция, чтобы виджет мог узнать текущее название
+window.getCurrentThemeLabel = () => getThemeLabel(currentThemeMode);
 
+// Слушаем изменения системы (если выбран режим system)
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (currentThemeMode === 'system') {
+        if (e.matches) document.body.classList.add('dark');
+        else document.body.classList.remove('dark');
+    }
+});
+
+// Запуск при старте
+applyTheme(currentThemeMode);
+
+
+// ==== 2. TOOLTIPS ====
+const tooltipEl = document.getElementById('customTooltip');
 function showTooltip(el) {
     const text = el.getAttribute('data-tip');
     if (!text) return;
-
     const rect = el.getBoundingClientRect();
     tooltipEl.textContent = text;
     tooltipEl.classList.add('visible');
-
-    // Центрируем сверху элемента
     let top = rect.bottom + 8;
     let left = rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
-
-    // Ограничения экрана
     if (left < 10) left = 10;
-    if (left + tooltipEl.offsetWidth > window.innerWidth) {
-        left = window.innerWidth - tooltipEl.offsetWidth - 10;
-    }
-
+    if (left + tooltipEl.offsetWidth > window.innerWidth) left = window.innerWidth - tooltipEl.offsetWidth - 10;
     tooltipEl.style.top = `${top}px`;
     tooltipEl.style.left = `${left}px`;
 }
-
 document.querySelectorAll('[data-tip]').forEach(el => {
     el.addEventListener('mouseenter', () => showTooltip(el));
     el.addEventListener('mouseleave', () => tooltipEl.classList.remove('visible'));

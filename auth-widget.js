@@ -22,7 +22,6 @@ const firebaseConfig = {
   measurementId: "G-X3Z1KH8760"
 };
 
-/* Убрана кнопка "Помощь" из HTML */
 const modalHTML = `
 <div class="auth-overlay" id="authOverlay">
     <div class="auth-modal mode-login" id="authModal">
@@ -58,14 +57,13 @@ const modalHTML = `
                 <button class="vk-manage-btn">
                     <div class="vk-manage-text">
                         <span>Управление аккаунтом</span>
-                        <span style="background: #0077FF; color: white; padding: 0 4px; border-radius: 4px; font-size: 10px; font-weight: bold; line-height: 14px;">ID</span>
                     </div>
                 </button>
             </div>
             <div class="vk-menu-list">
                 <button class="vk-menu-item" id="menuThemeToggle">
                     <svg class="vk-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                    <span class="vk-menu-text">Тема: <span id="themeLabel">Светлая</span></span>
+                    <span class="vk-menu-text">Тема: <span id="themeLabel">...</span></span>
                 </button>
                 <button class="vk-menu-item item-logout" id="btnLogout">
                     <svg class="vk-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
@@ -87,12 +85,11 @@ function initAuthWidget() {
     const overlay = document.getElementById('authOverlay');
     const modal = document.getElementById('authModal');
     
-    // === ЛОГИКА ПОЗИЦИОНИРОВАНИЯ ===
+    // === ПОЗИЦИОНИРОВАНИЕ ===
     const recalcPosition = () => {
         const triggerBtn = document.getElementById('profile-container');
         if (triggerBtn && overlay.classList.contains('open')) {
             const rect = triggerBtn.getBoundingClientRect();
-            // Позиционируем
             modal.style.top = (rect.bottom + 8) + 'px';
             const rightPos = window.innerWidth - rect.right;
             modal.style.right = rightPos + 'px';
@@ -102,7 +99,6 @@ function initAuthWidget() {
 
     const closeModal = () => {
         overlay.classList.remove('open');
-        // Убираем слушатель ресайза при закрытии (оптимизация)
         window.removeEventListener('resize', recalcPosition);
     };
 
@@ -112,19 +108,17 @@ function initAuthWidget() {
             return;
         }
         overlay.classList.add('open');
-        
-        // Считаем позицию сразу
         recalcPosition();
-        // И вешаем слушатель на изменение размера/зума
         window.addEventListener('resize', recalcPosition);
+        
+        // Обновляем текст темы при открытии
+        updateThemeText(); 
     };
 
     document.getElementById('authClose').addEventListener('click', closeModal);
-    overlay.addEventListener('click', (e) => { 
-        if(e.target === overlay) closeModal(); 
-    });
+    overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
 
-    // Логика переключения
+    // Экраны
     document.getElementById('toRegister').onclick = () => {
         modal.classList.remove('mode-login'); modal.classList.add('mode-register');
     };
@@ -132,7 +126,7 @@ function initAuthWidget() {
         modal.classList.remove('mode-register'); modal.classList.add('mode-login');
     };
 
-    // Авторизация
+    // Firebase действия
     document.getElementById('btnGoogleLogin').addEventListener('click', async () => {
         try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); }
     });
@@ -158,19 +152,28 @@ function initAuthWidget() {
         closeModal();
     });
 
-    // Смена темы
+    // === ЛОГИКА ТЕМЫ (НОВАЯ) ===
     const themeBtn = document.getElementById('menuThemeToggle');
     const themeLabel = document.getElementById('themeLabel');
-    const updateThemeText = () => {
-        themeLabel.textContent = document.body.classList.contains('dark') ? "Темная" : "Светлая";
-    };
-    updateThemeText();
+    
+    // Функция обновления текста (берет данные из window.getCurrentThemeLabel)
+    function updateThemeText(forcedLabel) {
+        if (forcedLabel) {
+            themeLabel.textContent = forcedLabel;
+        } else if (window.getCurrentThemeLabel) {
+            themeLabel.textContent = window.getCurrentThemeLabel();
+        }
+    }
+    
+    // Делаем функцию доступной глобально, чтобы index.html мог её вызвать при смене темы
+    window.updateAuthMenuThemeText = updateThemeText;
 
+    // При клике - вызываем глобальный переключатель из index.html
     themeBtn.addEventListener('click', () => {
-        const mainThemeBtn = document.getElementById('themeToggle');
-        if (mainThemeBtn) mainThemeBtn.click();
-        else document.body.classList.toggle('dark');
-        updateThemeText();
+        if (window.cycleTheme) {
+            window.cycleTheme();
+            // Текст обновится автоматически, так как в index.html вызывается updateAuthMenuThemeText
+        }
     });
 
     // Слушатель статуса

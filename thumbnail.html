@@ -8,389 +8,257 @@
 <title>Скачать YouTube превью</title>
 <meta name="description" content="Бесплатный инструмент для скачивания превью (обложек) из YouTube видео в высоком качестве.">
 
+<link rel="stylesheet" href="theme.css">
+
 <style>
-  /* === БАЗОВЫЕ СТИЛИ === */
+  /* === ЛОКАЛЬНЫЕ СТИЛИ === */
+  /* Используем переменные из theme.css */
+  
   :root {
-      --tooltip-bg: #2a2c33;
-      --tooltip-text: #ffffff;
-      --primary: #6200ee;
-      --bg-color: #f6f7fb;
-      --border-color: #e6e9f2;
+      /* Специфичные переменные можно оставить или переопределить */
   }
 
-  *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg-color);color:#0c0c0d}
-  .wrap{max-width:850px;margin:0 auto;padding:22px 14px 40px}
-  h1{margin:0 0 14px;font-size:1.4rem;text-align:center}
+  .wrap { max-width: 850px; margin: 0 auto; padding: 22px 14px 40px; }
   
-  /* --- Стили переключателя вверху (Tabs) --- */
+  h1 { margin: 0 0 14px; font-size: 1.4rem; text-align: center; color: var(--text); }
+  
+  /* --- Tabs --- */
   .tabs-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
+    display: flex; justify-content: center; margin-bottom: 20px;
   }
   .tabs {
-    background: #fff;
+    background: var(--card-bg);
     padding: 6px;
     border-radius: 12px;
     display: inline-flex;
     gap: 6px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    border: 1px solid var(--border-color);
-    /* Чтобы табы не сжимались меньше контента */
-    max-width: 100%;
-    overflow-x: auto; 
+    border: 1px solid var(--border);
+    max-width: 100%; overflow-x: auto; 
   }
   .tab-btn {
-    border: none;
-    background: transparent;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    color: #5f6368;
+    border: none; background: transparent;
+    padding: 10px 20px; border-radius: 10px;
+    font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    color: var(--text-secondary);
     transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    /* ИСПРАВЛЕНИЕ: Запрещаем перенос текста */
-    white-space: nowrap; 
+    display: flex; align-items: center; gap: 8px; white-space: nowrap; 
   }
-  .tab-btn svg { width: 18px; height: 18px; opacity: 0.7; flex-shrink: 0; }
+  .tab-btn svg { width: 18px; height: 18px; opacity: 0.7; flex-shrink: 0; fill: currentColor; }
+  
   .tab-btn.active {
-    background: var(--primary);
+    background: var(--accent);
     color: #fff;
-    box-shadow: 0 2px 4px rgba(98, 0, 238, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
   .tab-btn.active svg { opacity: 1; }
-  .tab-btn:hover:not(.active) { background: #f0f2f5; }
+  .tab-btn:hover:not(.active) { background: var(--hover-bg); }
 
-  /* --- Основная карточка --- */
-  .card{background:#fff;border:1px solid var(--border-color);border-radius:12px;padding:16px;box-shadow:0 1px 0 rgba(0,0,0,.03)}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center}
+  /* --- Карточка --- */
+  .card { 
+      background: var(--card-bg); 
+      border: 1px solid var(--border); 
+      border-radius: 12px; 
+      padding: 16px; 
+      box-shadow: 0 1px 2px rgba(0,0,0,.03); 
+  }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center; }
   
   /* --- Поля ввода --- */
-  input[type="url"]{
+  input[type="url"] {
       width: 100%; 
-      padding:12px 14px;
+      padding: 12px 14px;
       padding-right: 40px;
-      font-size:1rem;
+      font-size: 1rem;
       border-radius: 10px; 
       transition: border-color 0.2s;
-      border: 1px solid #cfd5e1; 
+      border: 1px solid var(--border); 
+      background: var(--bg);
+      color: var(--text);
   }
   
   input[type="url"]:focus { 
       outline: none; 
-      border-color: #000; 
+      border-color: var(--accent); 
       border-width: 2px;
-      padding: 11px 13px;
+      padding: 11px 13px; /* Компенсация ширины рамки */
       box-shadow: none;
   }
   
-  input[type="url"]::placeholder { color: #888; opacity: 1; }
+  input[type="url"]::placeholder { color: var(--text-secondary); opacity: 0.7; }
 
   .input-wrapper { position: relative; width: 100%; }
 
-  /* Строка в режиме Batch */
+  /* Batch row */
   .batch-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
-      width: 100%;
+      display: flex; align-items: center; gap: 10px; margin-bottom: 12px; width: 100%;
   }
   .batch-row .input-wrapper { flex: 1; }
 
-  /* Зеленая галочка */
+  /* Галочка */
   .check-icon {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 18px; 
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s;
-    pointer-events: none;
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s; pointer-events: none;
   }
   .check-icon svg { width: 100%; height: 100%; }
   .input-wrapper.valid .check-icon,
   .single-input-wrap.valid .check-icon { opacity: 1; }
 
-  /* Кнопка удаления (крестик) */
+  /* Кнопка удаления */
   .btn-remove {
-      background: #f0f2f5;
+      background: var(--bg);
       border: 1px solid transparent;
       border-radius: 8px;
-      width: 42px;
-      height: 42px;
-      flex-shrink: 0;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #5f6368;
-      transition: all 0.2s ease;
+      width: 42px; height: 42px; flex-shrink: 0;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--text-secondary); transition: all 0.2s ease;
   }
-  .btn-remove:hover { background: #e4e6eb; color: #202124; }
+  .btn-remove:hover { background: var(--hover-bg); color: var(--text); }
   .btn-remove svg { width: 20px; height: 20px; }
 
-  /* Одиночный режим - обертка */
-  .single-input-wrap {
-      position: relative;
-      width: 100%;
-      flex: 1 1 560px;
+  .single-input-wrap { position: relative; width: 100%; flex: 1 1 560px; }
+
+  .preview { margin-top: 16px; display: flex; justify-content: center; }
+  .preview a { display: block; width: 100%; max-width: 850px; }
+  .preview img { 
+      width: 100%; height: auto; border-radius: 12px; 
+      border: 1px solid var(--border); background: var(--bg); 
   }
 
-  .preview{margin-top:16px;display:flex;justify-content:center}
-  .preview a{display:block;width:100%;max-width:850px}
-  .preview img{width:100%;height:auto;border-radius:12px;border:1px solid var(--border-color);background:#eef2ff}
+  /* Info block */
+  .info { 
+      margin-top: 14px; 
+      background: var(--bg); 
+      border: 1px solid var(--border); 
+      border-radius: 10px; padding: 12px; 
+      color: var(--text);
+  }
+  .info .row2 { display: grid; gap: 6px; }
+  .k { opacity: .8; min-width: 140px; display: inline-block; color: var(--text-secondary); }
+  .err { color: #b00020; margin-top: 8px; }
+  .muted { opacity: .7; font-size: .9rem; color: var(--text-secondary); }
 
-  /* Информация о видео */
-  .info{margin-top:14px;background:#fbfcff;border:1px solid #e6ecff;border-radius:10px;padding:12px}
-  .info .row2{display:grid;gap:6px}
-  .k{opacity:.8;min-width:140px;display:inline-block}
-  .err{color:#b00020;margin-top:8px}
-  .muted{opacity:.7;font-size:.9rem}
-
-  /* --- Стили для Batch Mode Controls --- */
+  /* Controls */
   .batch-controls {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-    margin-bottom: 0; 
-    flex-wrap: wrap;
+    display: flex; gap: 10px; margin-top: 10px; margin-bottom: 0; flex-wrap: wrap;
   }
   .btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 20px;
-    border-radius: 10px;
-    border: none;
-    font-size: 1rem;
-    cursor: pointer;
-    font-weight: 500;
-    transition: 0.2s;
-    /* ИСПРАВЛЕНИЕ: Запрещаем перенос текста */
-    white-space: nowrap;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 20px; border-radius: 10px; border: none;
+    font-size: 1rem; cursor: pointer; font-weight: 500; transition: 0.2s; white-space: nowrap;
   }
-  .btn-add { background: #f0f2f5; color: #333; flex: 1; }
-  .btn-add:hover { background: #e4e6eb; }
+  .btn-add { background: var(--bg); color: var(--text); flex: 1; border: 1px solid var(--border); }
+  .btn-add:hover { background: var(--hover-bg); }
   
-  .btn-dl { background: var(--primary); color: #fff; flex: 2; }
-  .btn-dl:hover { background: #5000ca; }
+  .btn-dl { background: var(--accent); color: #fff; flex: 2; }
+  .btn-dl:hover { background: var(--accent-hover); }
 
-  /* Кнопка "Изменить ссылки" */
   .btn-edit {
-      background: #fff;
-      border: 1px solid var(--border-color);
-      color: #333;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
       width: 100%;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-      white-space: nowrap; /* И тут тоже */
+      white-space: nowrap; 
   }
-  .btn-edit:hover { background: #f9fafb; border-color: #d1d5db; }
+  .btn-edit:hover { background: var(--hover-bg); }
 
-  /* === ЗАГОЛОВОК И ПЕРЕКЛЮЧАТЕЛИ ВИДА === */
+  /* Results Header */
   .results-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-      margin-top: 24px; 
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border-color);
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px; margin-top: 24px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
   }
   .results-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin: 0;
-      color: #202124;
+      font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text);
   }
   .view-toggles {
-      display: flex;
-      background: #f0f2f5;
-      border-radius: 8px;
-      padding: 3px;
-      gap: 2px;
+      display: flex; background: var(--bg); border-radius: 8px; padding: 3px; gap: 2px;
   }
   .view-btn {
-      border: none;
-      background: transparent;
-      border-radius: 6px;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      color: #5f6368;
-      transition: all 0.2s;
+      border: none; background: transparent; border-radius: 6px;
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text-secondary); transition: all 0.2s;
   }
-  .view-btn:hover { color: #000; }
+  .view-btn:hover { color: var(--text); }
   .view-btn.active {
-      background: #fff;
-      color: var(--primary);
+      background: var(--card-bg);
+      color: var(--accent);
       box-shadow: 0 1px 2px rgba(0,0,0,0.1);
   }
   .view-btn svg { width: 18px; height: 18px; }
 
-  /* === СПИСОК РЕЗУЛЬТАТОВ (Batch) === */
-  .batch-list { 
-      display: grid; 
-      gap: 16px; 
-      grid-template-columns: 1fr; /* По умолчанию список (1 колонка) */
-  }
-  .batch-list:empty { margin-top: 0; }
-
+  /* Batch List */
+  .batch-list { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  
   .batch-item {
-    display: flex;
-    gap: 16px;
-    background: #fbfcff;
-    border: 1px solid #e6ecff;
-    border-radius: 10px;
-    padding: 10px;
-    align-items: flex-start;
-    transition: all 0.3s ease;
+    display: flex; gap: 16px; 
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px;
+    align-items: flex-start; transition: all 0.3s ease;
   }
   
   .batch-thumb-wrap {
-    position: relative;
-    width: 220px;
-    flex-shrink: 0;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid var(--border-color);
-    aspect-ratio: 16 / 9;
+    position: relative; width: 220px; flex-shrink: 0;
+    border-radius: 8px; overflow: hidden;
+    border: 1px solid var(--border); aspect-ratio: 16 / 9;
   }
   .batch-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
   
   .batch-overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s;
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s;
   }
   .batch-thumb-wrap:hover .batch-overlay { opacity: 1; }
   .dl-icon-btn {
-    background: #fff;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: #fff; border-radius: 50%; width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   }
 
-  .batch-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: 120px; 
-  }
-  .batch-title { font-weight: 600; font-size: 1.1rem; margin-bottom: 6px; line-height: 1.3; }
-  .batch-meta { font-size: 0.9rem; color: #555; line-height: 1.6; }
+  .batch-info { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 120px; }
+  .batch-title { font-weight: 600; font-size: 1.1rem; margin-bottom: 6px; line-height: 1.3; color: var(--text); }
+  .batch-meta { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
 
-  /* === РЕЖИМ ГАЛЕРЕИ (GRID VIEW) === */
-  .batch-list.gallery-view {
-      grid-template-columns: repeat(3, 1fr); /* 3 в ряд */
-  }
-  
-  .batch-list.gallery-view .batch-item {
-      flex-direction: column; /* Элементы друг под другом */
-      gap: 10px;
-      height: 100%; /* Одинаковая высота */
-  }
-
-  .batch-list.gallery-view .batch-thumb-wrap {
-      width: 100%; /* Картинка на всю ширину карточки */
-  }
-
-  .batch-list.gallery-view .batch-info {
-      min-height: auto;
-      justify-content: flex-start;
-  }
-  
+  /* Gallery View */
+  .batch-list.gallery-view { grid-template-columns: repeat(3, 1fr); }
+  .batch-list.gallery-view .batch-item { flex-direction: column; gap: 10px; height: 100%; }
+  .batch-list.gallery-view .batch-thumb-wrap { width: 100%; }
+  .batch-list.gallery-view .batch-info { min-height: auto; justify-content: flex-start; }
   .batch-list.gallery-view .batch-title {
-      font-size: 1rem;
-      /* Обрезание текста в 2 строки */
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      font-size: 1rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
 
-  /* Адаптивность для сетки */
-  @media (max-width: 800px) {
-      .batch-list.gallery-view { grid-template-columns: repeat(2, 1fr); }
-  }
-
-  /* Адаптивность общая (мобильные) */
+  @media (max-width: 800px) { .batch-list.gallery-view { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 600px) {
     .batch-item { flex-direction: column; }
     .batch-thumb-wrap { width: 100%; }
     .batch-info { min-height: auto; }
-    
-    /* На мобилках галерея превращается в 1 колонку, как список */
     .batch-list.gallery-view { grid-template-columns: 1fr; } 
   }
-
-  /* --- ИСПРАВЛЕНИЕ ДЛЯ МОБИЛЬНЫХ КНОПОК И ТАБОВ --- */
   @media (max-width: 480px) {
-      /* Уменьшаем отступы у табов, чтобы влезали в ряд */
-      .tab-btn {
-          padding: 10px 12px;
-          font-size: 0.85rem;
-      }
-      
-      /* Кнопки действий делаем друг под другом, чтобы текст точно влез */
-      .batch-controls {
-          flex-direction: column;
-      }
-      .btn {
-          width: 100%;
-          flex: auto; /* Сбрасываем flex пропорции */
-          font-size: 0.95rem;
-      }
+      .tab-btn { padding: 10px 12px; font-size: 0.85rem; }
+      .batch-controls { flex-direction: column; }
+      .btn { width: 100%; flex: auto; font-size: 0.95rem; }
   }
 
   [hidden] { display: none !important; }
 
-  /* === КАСТОМНАЯ ПОДСКАЗКА (Tooltip) === */
+  /* Tooltip (Глобальные стили в theme.css) */
   #customTooltip {
-    position: fixed;
-    background: var(--tooltip-bg);
-    color: var(--tooltip-text);
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    pointer-events: none;
-    opacity: 0;
-    transform: translateY(5px);
+    position: fixed; background: var(--tooltip-bg); color: var(--tooltip-text);
+    padding: 6px 12px; border-radius: 6px; font-size: 0.8rem;
+    pointer-events: none; opacity: 0; transform: translateY(5px);
     transition: opacity 0.2s, transform 0.2s;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    white-space: nowrap;
-    font-weight: 500;
+    z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); white-space: nowrap; font-weight: 500;
   }
   #customTooltip.visible { opacity: 1; transform: translateY(0); }
   @media (hover: none) { #customTooltip { display: none !important; } }
 </style>
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -401,6 +269,10 @@
 </head>
 <body>
 
+<script src="theme-loader.js"></script>
+
+<div id="header-container"></div>
+
 <div id="customTooltip"></div>
 
 <div class="wrap">
@@ -409,7 +281,7 @@
   <div class="tabs-container">
     <div class="tabs">
       <button class="tab-btn active" onclick="switchMode('single')">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="currentColor" d="M19 15V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h13c1.1 0 2-.9 2-2M8 14V6l6 4z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path d="M19 15V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h13c1.1 0 2-.9 2-2M8 14V6l6 4z"/></svg>
         Одно видео
       </button>
       <button class="tab-btn" onclick="switchMode('batch')">
@@ -494,11 +366,10 @@
   function initTooltips() {
       const elements = document.querySelectorAll('[data-tip]');
       elements.forEach(el => {
+          // Удаляем старые слушатели, клонируя элемент
           const newEl = el.cloneNode(true);
           el.parentNode.replaceChild(newEl, el);
-          newEl.addEventListener('mouseenter', showTip);
-          newEl.addEventListener('mouseleave', hideTip);
-          newEl.addEventListener('click', hideTip);
+          attachTooltip(newEl);
       });
   }
   function attachTooltip(el) {
@@ -524,7 +395,6 @@
   }
   function hideTip() { tooltipEl.classList.remove('visible'); }
   
-  // Инициализация при загрузке
   initTooltips();
 
   /* ================= GLOBALS & UTILS ================= */
@@ -575,7 +445,7 @@
     }
   }
 
-  /* ================= LOGIC: VIEW SWITCHER (LIST/GALLERY) ================= */
+  /* ================= LOGIC: VIEW SWITCHER ================= */
   function setView(viewType) {
       const listContainer = document.getElementById('batchResults');
       const btnList = document.getElementById('btnList');
@@ -717,7 +587,6 @@
     else parent.classList.remove('valid');
   }
 
-  // Новая функция: Показать поля ввода, скрыть кнопку редактирования
   function editBatchLinks() {
       document.getElementById('batchInputs').hidden = false;
       document.querySelector('.batch-controls').hidden = false;
@@ -748,11 +617,9 @@
           return;
       }
 
-      // --- СКРЫВАЕМ ПОЛЯ И ПОКАЗЫВАЕМ КНОПКУ ИЗМЕНИТЬ ---
       container.hidden = true;
       document.querySelector('.batch-controls').hidden = true;
       editBtn.hidden = false;
-      // -------------------------------------------------
 
       const idsString = ids.join(',');
       const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${idsString}&key=${API_KEY}`;
@@ -767,7 +634,6 @@
           const itemMap = {};
           data.items.forEach(item => { itemMap[item.id] = item; });
           
-          // Показываем заголовок результатов
           headerDiv.hidden = false;
 
           ids.forEach(id => {
@@ -810,14 +676,13 @@
       } catch(e) {
           errDiv.textContent = 'Ошибка загрузки: ' + e.message;
           errDiv.hidden = false;
-          // Если ошибка, возвращаем поля назад, чтобы пользователь мог исправить
           editBatchLinks();
       }
   }
 
 </script>
 
-  <link rel="stylesheet" href="footer.css">
+<link rel="stylesheet" href="footer.css">
 <div id="footer"></div>
 <script>
 fetch('footer.html')
@@ -825,6 +690,10 @@ fetch('footer.html')
 .then(html => { if(html) document.getElementById('footer').innerHTML = html; })
 .catch(() => {});
 </script>
+
+<link rel="stylesheet" href="auth-widget.css">
+<script type="module" src="auth-widget.js"></script>
+<script type="module" src="header.js"></script>
   
 </body>
 </html>

@@ -6,45 +6,30 @@
 <title>Конвертер регистров</title>
 <link rel="icon" type="image/png" href="exchange.png"> 
 <link rel="apple-touch-icon" href="exchange2.png">
-<style>
-/* === БАЗОВЫЕ СТИЛИ === */
-:root {
-    --bg: #f4f6fb; 
-    --text: #0b0d12;
-    --card-bg: #ffffff;
-    --border: #e6e9f2;
-    --input-bg: #ffffff;
-    --accent: #7aa2ff;
-    --icon-hover: #f0f2f7;
-    
-    /* Цвета подсказки (Tooltip) */
-    --tooltip-bg: #2a2c33;
-    --tooltip-text: #ffffff;
-}
-body.dark {
-    --bg: #0f1115;
-    --text: #f3f3f3;
-    --card-bg: #1a1d22;
-    --border: #292c33;
-    --input-bg: #1e2127;
-    --accent: #5b8af0;
-    --icon-hover: #2c2e36;
 
-    /* Цвета подсказки в темной теме */
-    --tooltip-bg: #e6e9f2;
-    --tooltip-text: #0f1115;
+<link rel="stylesheet" href="theme.css">
+
+<style>
+/* === ЛОКАЛЬНЫЕ СТИЛИ И ЦВЕТА === */
+
+/* Переопределяем глобальный фиолетовый на локальный синий */
+:root {
+    --accent: #7aa2ff;       /* Синий цвет */
+    --accent-hover: #6690ea; /* Цвет активной кнопки */
+    
+    --input-bg: #ffffff;
+    --icon-hover: #f0f2f7;
 }
+
+body.dark {
+    --accent: #5b8af0;       /* Синий для темной темы */
+    --input-bg: #1e2127; 
+    --icon-hover: #2c2e36;
+}
+
 /* Инверсия иконок в темной теме */
 body.dark img.icon { filter: invert(1) brightness(1.3); }
 
-*{box-sizing:border-box}
-body{
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    transition: background 0.3s ease, color 0.3s ease;
-}
 .wrap { max-width: 800px; margin: 0 auto; padding: 22px 14px 28px; }
 
 /* Шапка */
@@ -54,8 +39,9 @@ body{
     align-items: center;
     margin-bottom: 15px;
 }
-.topbar h1 { font-size: 1.25rem; margin: 0; }
+.topbar h1 { font-size: 1.25rem; margin: 0; color: var(--text); }
 .topbar-controls { display: flex; gap: 10px; }
+
 .topbar button {
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -63,17 +49,13 @@ body{
     padding: 6px 10px;
     cursor: pointer;
     transition: all .2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
 }
 .topbar button:hover { background: var(--icon-hover); }
 
 /* === СЕТКА КОНВЕРТЕРА === */
 .converter-container {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+    display: flex; flex-direction: column; gap: 15px;
 }
 @media (min-width: 600px) {
     .text-areas { display: flex; gap: 15px; }
@@ -81,28 +63,19 @@ body{
 }
 
 .text-box {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    width: 100%;
+    display: flex; flex-direction: column; gap: 6px; width: 100%;
 }
 .label {
-    font-size: 0.9rem;
-    font-weight: 600;
-    opacity: 0.8;
-    margin-left: 4px;
+    font-size: 0.9rem; font-weight: 600; opacity: 0.8; margin-left: 4px; color: var(--text);
 }
 
 .area-wrapper {
-    position: relative;
-    width: 100%;
+    position: relative; width: 100%;
 }
 
 textarea {
-    width: 100%;
-    min-height: 250px;
-    font-size: 16px !important;
-    font-family: inherit;
+    width: 100%; min-height: 250px;
+    font-size: 16px !important; font-family: inherit;
     padding: 12px 40px 12px 12px; 
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -110,52 +83,33 @@ textarea {
     color: var(--text);
     resize: none;
     transition: border-color 0.2s, box-shadow 0.2s;
-    line-height: 1.5;
-    display: block;
+    line-height: 1.5; display: block;
 }
 textarea:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(122,162,255,.16);
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(122,162,255,.16); /* Синяя тень */
 }
 
 /* Стили плавающих иконок */
 .overlay-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: transparent;
-    border: none;
-    border-radius: 6px;
-    padding: 6px;
-    cursor: pointer;
-    opacity: 0.5;
+    position: absolute; top: 8px; right: 8px;
+    background: transparent; border: none;
+    border-radius: 6px; padding: 6px;
+    cursor: pointer; opacity: 0.5;
     transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
 }
 .overlay-btn:hover {
-    opacity: 1;
-    background: var(--icon-hover);
+    opacity: 1; background: var(--icon-hover);
 }
-.overlay-btn img {
-    width: 15px; 
-    height: 15px;
-    pointer-events: none;
-}
+.overlay-btn img { width: 15px; height: 15px; pointer-events: none; }
 
 /* СКРЫВАЕМ КНОПКИ ПО УМОЛЧАНИЮ */
-#clearBtn, #copyBtn {
-    display: none;
-}
+#clearBtn, #copyBtn { display: none; }
 
 /* Панель кнопок */
 .controls-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-top: 10px;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;
 }
 @media (min-width: 500px) {
     .controls-grid { grid-template-columns: repeat(3, 1fr); }
@@ -167,53 +121,37 @@ textarea:focus {
     background: var(--card-bg);
     border-radius: 10px;
     cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
+    font-size: 0.9rem; font-weight: 500;
     color: var(--text);
     transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     text-align: center;
     box-shadow: 0 1px 2px rgba(0,0,0,.03);
 }
 .btn-action:hover {
-    background: var(--bg);
+    background: var(--icon-hover);
     transform: translateY(-1px);
 }
 .btn-action.active {
-    background: var(--accent);
+    background: var(--accent); /* Синий */
     color: #fff !important;
     border-color: var(--accent);
     box-shadow: 0 4px 12px rgba(122,162,255,.3);
 }
 body.dark .btn-action.active { color: #fff !important; }
 
-/* === КАСТОМНАЯ ПОДСКАЗКА (Tooltip) === */
+/* Tooltip */
 #customTooltip {
-    position: fixed;
-    background: var(--tooltip-bg);
-    color: var(--tooltip-text);
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    pointer-events: none;
-    opacity: 0;
-    transform: translateY(5px);
+    position: fixed; background: var(--tooltip-bg); color: var(--tooltip-text);
+    padding: 6px 12px; border-radius: 6px; font-size: 0.8rem;
+    pointer-events: none; opacity: 0; transform: translateY(5px);
     transition: opacity 0.2s, transform 0.2s;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    white-space: nowrap;
-    font-weight: 500;
+    z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); white-space: nowrap; font-weight: 500;
 }
-#customTooltip.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
+#customTooltip.visible { opacity: 1; transform: translateY(0); }
 
 </style>
-        <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -224,16 +162,17 @@ body.dark .btn-action.active { color: #fff !important; }
 </head>
 <body>
 
+<script src="theme-loader.js"></script>
+
+<div id="header-container"></div>
+
 <div id="customTooltip"></div>
 
 <div class="wrap">
     <div class="topbar">
         <h1>Конвертер регистров</h1>
         <div class="topbar-controls">
-            <button id="themeToggle" data-tip="Сменить тему">
-                <img class="icon" src="https://cdn-icons-png.flaticon.com/128/4489/4489231.png" width="16" height="16" alt="">
-            </button>
-        </div>
+            </div>
     </div>
 
     <div class="converter-container">
@@ -290,14 +229,12 @@ window.onload = () => {
 
 // Функция управления видимостью кнопок
 function updateButtonsState() {
-    // Если есть текст в поле ввода -> показать крестик
     if (inputArea.value.trim().length > 0) {
         clearBtn.style.display = 'flex';
     } else {
         clearBtn.style.display = 'none';
     }
 
-    // Если есть текст в поле вывода -> показать копирование
     if (outputArea.value.trim().length > 0) {
         copyBtn.style.display = 'flex';
     } else {
@@ -375,7 +312,7 @@ function clearText() {
     inputArea.value = '';
     outputArea.value = '';
     inputArea.focus();
-    updateButtonsState(); // Скрываем кнопки сразу
+    updateButtonsState();
 }
 
 function copyText() {
@@ -427,26 +364,6 @@ document.querySelectorAll('[data-tip]').forEach(el => {
     el.addEventListener('click', () => tooltipEl.classList.remove('visible'));
 });
 
-/* === THEME === */
-const savedTheme = localStorage.getItem('theme');
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-
-function applyTheme(theme) {
-    if (theme === 'dark') document.body.classList.add('dark');
-    else document.body.classList.remove('dark');
-}
-
-if (savedTheme) applyTheme(savedTheme);
-else applyTheme(prefersDark.matches ? 'dark' : 'light');
-
-prefersDark.addEventListener('change', e => {
-    if (!localStorage.getItem('theme')) applyTheme(e.matches ? 'dark' : 'light');
-});
-
-document.getElementById('themeToggle').onclick = () => {
-    const isDark = document.body.classList.toggle('dark');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-};
 </script>
 
 <link rel="stylesheet" href="footer.css">
@@ -457,6 +374,10 @@ fetch('footer.html')
 .then(html => { if(html) document.getElementById('footer').innerHTML = html; })
 .catch(() => {});
 </script>
+
+<link rel="stylesheet" href="auth-widget.css">
+<script type="module" src="auth-widget.js"></script>
+<script type="module" src="header.js"></script>
 
 </body>
 </html>

@@ -6,16 +6,18 @@
 <title>Распределитель дохода</title>
 <link rel="icon" type="image/png" href="exchange.png">
 <link rel="apple-touch-icon" href="exchange2.png">
+
+<link rel="stylesheet" href="theme.css">
+
 <style>
-  /* === ЦВЕТОВЫЕ ПЕРЕМЕННЫЕ === */
+  /* === ЛОКАЛЬНЫЕ СТИЛИ (Специфика распределителя) === */
+  
+  /* Возвращаем родные синие цвета */
   :root {
-    --bg: #f4f6fb;
-    --text: #0b0d12;
-    --card-bg: #ffffff;
-    --border: #e6e9f2;
+    --accent: #7aa2ff;       /* Синий акцент */
+    
     --input-bg: transparent;
-    --btn-hover: #f0f2f7;
-    --accent: #7aa2ff;
+    --btn-hover: var(--hover-bg);
     
     /* Статусные цвета */
     --danger: #ff5757;
@@ -25,27 +27,16 @@
     /* Цвет символа % в инпуте */
     --input-symbol: #888; 
 
-    /* Цвета категорий */
+    /* Цвет категории (синий) */
     --c1: #5475eb;
-    
-    --tooltip-bg: #2a2c33;
-    --tooltip-text: #ffffff;
   }
 
   body.dark {
-    --bg: #0f1115;
-    --text: #f3f3f3;
-    --card-bg: #1a1d22;
-    --border: #292c33;
-    --input-bg: transparent;
-    --btn-hover: #252830;
-    --accent: #5b8af0;
+    --accent: #5b8af0; /* Синий для темной темы */
     
+    --input-bg: transparent;
     --gray: #6b6b6b;
     --input-symbol: #666; 
-    
-    --tooltip-bg: #e6e9f2;
-    --tooltip-text: #0f1115;
   }
 
   /* Инверсия иконок в темной теме */
@@ -60,26 +51,17 @@
   body.dark #waShare { background: #1f2e22 !important; color: var(--text) !important; border-color: var(--border) !important; }
   body.dark #fbShare { background: #1e2940 !important; color: var(--text) !important; border-color: var(--border) !important; }
 
-  *{box-sizing:border-box}
+  .wrap { max-width: 490px; margin: 0 auto; padding: 22px 14px 28px; }
   
-  body {
-    font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    transition: background 0.3s ease, color 0.3s ease;
-  }
-
-  .wrap {max-width:490px; margin:0 auto; padding:22px 14px 28px}
-  
-  h1 {font-size:1.25rem; margin:0;}
-  
+  /* ШАПКА */
   .topbar {
     display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
   }
+  h1 { font-size:1.25rem; margin:0; color: var(--text); }
+  
   .topbar-controls { display: flex; gap: 8px; }
   
-  .card {display:flex; flex-direction:column; gap:4px; background: var(--bg);}
+  .card { display:flex; flex-direction:column; gap:4px; background: var(--bg); }
  
   /* СТРОКИ */
   .row {
@@ -106,7 +88,6 @@
     min-width: 36px; text-align: center; flex-shrink: 0;
   }
 
-  /* ИЗМЕНЕНИЕ: Уменьшил ширину с 160px до 125px */
   .amount { flex-shrink: 0; width: 125px; display: flex; align-items: center; }
   
   .amount input {
@@ -115,7 +96,7 @@
     color: var(--text); font-weight: 500; transition: color 0.2s ease;
   }
   .amount input:focus { outline: none; }
-  .amount input::placeholder { color: #ccc; }
+  .amount input::placeholder { color: var(--text-secondary); opacity: 0.5; }
   
   /* ГЛАВНОЕ ПОЛЕ */
   .row.main-input { margin-bottom: 0px; }
@@ -129,15 +110,15 @@
       margin-top: 0px;
   }
 
-  /* КНОПКИ (общие стили для переключателей темы и шаринга) */
+  /* КНОПКИ */
   button {
     background: var(--card-bg); border: 1px solid var(--border); color: var(--text);
     border-radius: 8px; cursor: pointer; transition: all 0.2s ease;
   }
-  button:hover { background: var(--btn-hover); }
+  button:hover { background: var(--hover-bg); }
   button:active { transform: scale(0.95); }
 
-  button#themeToggle, button#shareBtn {
+  button#shareBtn {
     padding: 6px 10px; display: flex; align-items: center; justify-content: center;
   }
   button img { width: 16px; height: 16px; display: block; pointer-events: none; }
@@ -145,24 +126,21 @@
   /* РЕДАКТИРОВАНИЕ */
   .center-controls {
     display: flex; 
-    justify-content: center; /* Центрируем содержимое */
+    justify-content: center; 
     width: 100%;
     margin-top: 18px;
   }
   
-  /* ЗАГОЛОВКИ РЕДАКТИРОВАНИЯ */
   .edit-header {
       display: flex; gap: 8px; padding: 0 4px; margin-bottom: 6px;
       font-size: 0.85rem; color: var(--text); font-weight: 600;
   }
   
-  /* СТРОКА РЕДАКТИРОВАНИЯ */
   .edit-row { 
       display: flex; gap: 8px; align-items: flex-start;
       margin-bottom: 5px;
   }
   
-  /* ОБЕРТКА ДЛЯ НАЗВАНИЯ + ОШИБКИ */
   .name-wrapper {
       flex: 2; display: flex; flex-direction: column; gap: 4px;
   }
@@ -172,13 +150,11 @@
       transition: border-color 0.2s;
   }
   
-  /* СТИЛИ ОШИБКИ */
   .input-error { border-color: var(--danger) !important; }
   .error-text {
       color: var(--danger); font-size: 0.75rem; display: none; padding-left: 2px;
   }
   
-  /* СТИЛЬ ДЛЯ ПРОЦЕНТОВ */
   .percent-wrapper {
       flex: 1; position: relative; display: flex; align-items: center;
   }
@@ -204,22 +180,17 @@
   .del-btn:hover { background: transparent; opacity: 1; }
   .del-btn img { width: 14px; height: 14px; }
   
-  /* === ДЕЙСТВИЯ (КНОПКИ В РЯД) === */
+  /* ДЕЙСТВИЯ */
   .actions-row {
-      display: flex;
-      width: 100%;
-      gap: 10px;
-      margin-top: 5px;
-      margin-bottom: 10px;
+      display: flex; width: 100%; gap: 10px; margin-top: 5px; margin-bottom: 10px;
   }
 
-  /* ОБЩИЙ СТИЛЬ ДЛЯ КНОПОК ДЕЙСТВИЯ (Add, Save, Edit) */
   .action-btn {
       padding: 10px; 
       background: var(--card-bg); 
       border: 1px solid var(--border); 
       border-radius: 12px; 
-      color: var(--accent); /* Синий текст */
+      color: var(--accent); /* Синий */
       font-size: 15px; 
       font-weight: 600;
       display: flex; align-items: center; justify-content: center; 
@@ -229,36 +200,20 @@
   }
   .action-btn:hover { 
       border-color: var(--accent);
-      background: var(--btn-hover); 
+      background: var(--hover-bg); 
   }
-  .action-btn:active {
-      transform: scale(0.98);
-  }
-  /* Иконка внутри кнопки наследует цвет текста */
-  .action-btn svg {
-      width: 18px; height: 18px; fill: currentColor;
-  }
+  .action-btn:active { transform: scale(0.98); }
+  .action-btn svg { width: 18px; height: 18px; fill: currentColor; }
 
-  /* Специфика для кнопок в ряд (Добавить / Сохранить) */
-  .actions-row .action-btn {
-      flex: 1; 
-  }
+  .actions-row .action-btn { flex: 1; }
 
-  /* Специфика для кнопки Настроек */
-  #editBtn {
-      width: 50%; /* Занимает 50% ширины */
-      min-width: 200px; /* Но не меньше 200px на мобилках */
-  }
+  #editBtn { width: 50%; min-width: 200px; }
 
   .divider {
-      height: 1px;
-      margin: 10px auto;
-      width: 95%;
-      border: none;
+      height: 1px; margin: 10px auto; width: 95%; border: none;
       background: radial-gradient(ellipse at center, var(--text) 0%, transparent 70%);
       opacity: 0.15;
   }
-  /* ========================================= */
 
   /* POPUP */
   #sharePopup {
@@ -276,7 +231,7 @@
   #waShare { background: #e8f5e9; color: var(--text); }
   #fbShare { background: #e3f2fd; color: var(--text); }
 
-  /* TOOLTIP */
+  /* Tooltip (Глобальные стили в theme.css, но id нужен) */
   #customTooltip {
     position: fixed; background: var(--tooltip-bg); color: var(--tooltip-text); padding: 6px 12px; border-radius: 6px;
     font-size: 0.8rem; pointer-events: none; opacity: 0; transform: translateY(5px); transition: opacity 0.2s, transform 0.2s;
@@ -285,8 +240,7 @@
   #customTooltip.visible { opacity: 1; transform: translateY(0); }
 
 </style>
-      <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -297,6 +251,10 @@
 </head>
 <body>
 
+<script src="theme-loader.js"></script>
+
+<div id="header-container"></div>
+
 <div id="customTooltip"></div>
 
 <div class="wrap">
@@ -304,9 +262,6 @@
   <div class="topbar">
     <h1>Распределитель</h1>
     <div class="topbar-controls">
-        <button id="themeToggle" data-tip="Сменить тему">
-            <img class="theme-icon" src="https://cdn-icons-png.flaticon.com/128/4489/4489231.png" alt="Theme">
-        </button>
         <button id="shareBtn" data-tip="Поделиться категориями">
             <img class="icon" src="https://cdn-icons-png.flaticon.com/512/1828/1828954.png" alt="Share">
         </button>
@@ -369,8 +324,8 @@ const DEFAULT_CATEGORIES = [
     { name: '🏦 Налоги',     percent: 15 },
     { name: '💰 Резерв', percent: 10 },
     { name: '📈 Инвестиции',      percent: 12 },
-  { name: '🏠 Аренда',      percent: 20 },
-  { name: '💭 Мечты',      percent: 5 },
+    { name: '🏠 Аренда',      percent: 20 },
+    { name: '💭 Мечты',      percent: 5 },
 ];
 
 let categories = [];
@@ -808,19 +763,6 @@ document.addEventListener('click', e => {
 });
 
 // === THEME & TOOLTIPS (FIX #1: Отключаем тултипы на тач-устройствах) ===
-const savedTheme = localStorage.getItem('theme');
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-function applyTheme(theme) {
-  if (theme === 'dark') document.body.classList.add('dark');
-  else document.body.classList.remove('dark');
-}
-if (savedTheme) applyTheme(savedTheme);
-else applyTheme(prefersDark.matches ? 'dark' : 'light');
-document.getElementById('themeToggle').onclick = () => {
-  const isDark = document.body.classList.toggle('dark');
-  localStorage.setItem('theme', isDark ? 'dark' : 'light');
-};
-
 const tooltipEl = document.getElementById('customTooltip');
 function showTooltip(el) {
   // ПРОВЕРКА: Если устройство не поддерживает hover (телефон), не показываем
@@ -854,12 +796,16 @@ document.body.addEventListener('click', (e) => {
 
 init();
 </script>
-    <link rel="stylesheet" href="footer.css">
+<link rel="stylesheet" href="footer.css">
 <div id="footer"></div>
 <script>
 fetch('footer.html')
   .then(r => r.text())
   .then(html => document.getElementById('footer').innerHTML = html);
 </script>
+
+<link rel="stylesheet" href="auth-widget.css">
+<script type="module" src="auth-widget.js"></script>
+<script type="module" src="header.js"></script>
 </body>
 </html>

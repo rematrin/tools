@@ -85,28 +85,54 @@ function initAuthWidget() {
     const overlay = document.getElementById('authOverlay');
     const modal = document.getElementById('authModal');
     
+    // === НОВОЕ: Переменная для хранения активной кнопки (Профиль или Главная) ===
+    let activeTrigger = null;
+
     // === ПОЗИЦИОНИРОВАНИЕ ===
     const recalcPosition = () => {
-        const triggerBtn = document.getElementById('profile-container');
+        // Берем сохраненную кнопку или (на всякий случай) профиль по умолчанию
+        const triggerBtn = activeTrigger || document.getElementById('profile-container');
+        
         if (triggerBtn && overlay.classList.contains('open')) {
             const rect = triggerBtn.getBoundingClientRect();
+            
+            // По вертикали всегда под кнопкой
             modal.style.top = (rect.bottom + 8) + 'px';
-            const rightPos = window.innerWidth - rect.right;
-            modal.style.right = rightPos + 'px';
-            modal.style.left = 'auto';
+
+            // Проверяем, где кнопка находится относительно центра экрана
+            const centerX = window.innerWidth / 2;
+
+            if (rect.left < centerX) {
+                // Кнопка слева (например, Главная) -> прижимаем меню к левому краю
+                modal.style.left = rect.left + 'px';
+                modal.style.right = 'auto';
+                modal.style.transformOrigin = 'top left'; // Анимация открытия слева
+            } else {
+                // Кнопка справа (например, Профиль) -> прижимаем меню к правому краю
+                const rightPos = window.innerWidth - rect.right;
+                modal.style.right = rightPos + 'px';
+                modal.style.left = 'auto';
+                modal.style.transformOrigin = 'top right'; // Анимация открытия справа
+            }
         }
     };
 
     const closeModal = () => {
         overlay.classList.remove('open');
         window.removeEventListener('resize', recalcPosition);
+        activeTrigger = null; // Сбрасываем триггер
     };
 
-    window.openAuthModal = () => {
+    // Принимаем triggerElement (кнопку, на которую нажали)
+    window.openAuthModal = (triggerElement) => {
         if (overlay.classList.contains('open')) {
             closeModal();
             return;
         }
+        
+        // Запоминаем кнопку
+        activeTrigger = triggerElement;
+
         overlay.classList.add('open');
         recalcPosition();
         window.addEventListener('resize', recalcPosition);
@@ -152,11 +178,10 @@ function initAuthWidget() {
         closeModal();
     });
 
-    // === ЛОГИКА ТЕМЫ (НОВАЯ) ===
+    // === ЛОГИКА ТЕМЫ ===
     const themeBtn = document.getElementById('menuThemeToggle');
     const themeLabel = document.getElementById('themeLabel');
     
-    // Функция обновления текста (берет данные из window.getCurrentThemeLabel)
     function updateThemeText(forcedLabel) {
         if (forcedLabel) {
             themeLabel.textContent = forcedLabel;
@@ -165,14 +190,11 @@ function initAuthWidget() {
         }
     }
     
-    // Делаем функцию доступной глобально, чтобы index.html мог её вызвать при смене темы
     window.updateAuthMenuThemeText = updateThemeText;
 
-    // При клике - вызываем глобальный переключатель из index.html
     themeBtn.addEventListener('click', () => {
         if (window.cycleTheme) {
             window.cycleTheme();
-            // Текст обновится автоматически, так как в index.html вызывается updateAuthMenuThemeText
         }
     });
 

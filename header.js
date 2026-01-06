@@ -8,10 +8,7 @@ function updateHeaderData(user) {
     if (!nameEl || !avatarEl) return; 
 
     if (user) {
-        // 1. Имя пользователя
         nameEl.innerText = user.displayName || "Пользователь"; 
-        
-        // 2. Аватарка
         if (user.photoURL) {
             avatarEl.src = user.photoURL;
         } else {
@@ -19,33 +16,42 @@ function updateHeaderData(user) {
             avatarEl.src = `https://via.placeholder.com/32/CCCCCC/FFFFFF?text=${letter}`;
         }
         avatarEl.style.display = "block";
-
     } else {
-        // Если пользователь НЕ вошел
         nameEl.innerText = "Войти";
         avatarEl.style.display = "none";
     }
 }
 
-// Загрузка шапки
 fetch('header.html')
   .then(response => response.text())
   .then(data => {
     document.getElementById('header-container').innerHTML = data;
 
-    // === НОВОЕ: Навешиваем клик на профиль для открытия модалки ===
+    // === 1. Клик на Профиль (ОСТАВЛЯЕМ AuthModal) ===
     const profileBtn = document.getElementById('profile-container');
     if (profileBtn) {
-        profileBtn.addEventListener('click', () => {
+        profileBtn.addEventListener('click', function() {
             if (typeof window.openAuthModal === 'function') {
-                window.openAuthModal();
+                window.openAuthModal(this); 
             } else {
                 console.warn("Auth widget еще не загрузился");
             }
         });
     }
 
-    // Слушаем Firebase
+    // === 2. Клик на Главную (МЕНЯЕМ НА NavModal) ===
+    const homeBtn = document.getElementById('home-menu-btn');
+    if (homeBtn) {
+        homeBtn.addEventListener('click', function() {
+            // Теперь вызываем функцию из nav-widget.js
+            if (typeof window.openNavModal === 'function') {
+                window.openNavModal(this);
+            } else {
+                console.warn("Nav widget еще не загрузился");
+            }
+        });
+    }
+
     const auth = getAuth();
     onAuthStateChanged(auth, (user) => {
         updateHeaderData(user);

@@ -1,5 +1,5 @@
 <style>
-    /* Стили шапки остаются прежними */
+    /* Стили шапки */
     .vk-header {
         background-color: var(--card-bg);
         border-bottom: 1px solid var(--border);
@@ -15,9 +15,16 @@
         margin: 0 auto;
         height: 100%;
         display: flex;
-        justify-content: space-between;
+        justify-content: space-between; /* Распределяет группы по краям */
         align-items: center;
         padding: 0 20px;
+    }
+
+    /* --- НОВЫЙ КЛАСС: Группировка левых кнопок --- */
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Расстояние между кнопкой Главная и Меню */
     }
 
     .home-btn {
@@ -31,6 +38,7 @@
         border-radius: 10px;
         transition: background 0.2s ease, color 0.2s ease;
         cursor: pointer;
+        text-decoration: none; /* Убираем подчеркивание, т.к. теперь это ссылка */
     }
 
     .home-btn:hover {
@@ -38,14 +46,10 @@
         color: var(--accent);
     }
 
-    /* Иконка теперь берется из index.html (сетка) */
+    /* Иконка */
     .home-icon-svg {
-        width: 20px;
-        height: 20px;
-        stroke: currentColor;
-        stroke-width: 2;
-        fill: none;
-        /* Убираем лишние отступы если есть */
+        width: 20px; height: 20px;
+        stroke: currentColor; stroke-width: 2; fill: none;
         display: block; 
     }
 
@@ -59,16 +63,25 @@
     .user-avatar { width: 32px; height: 32px; border-radius: 50%; background-color: var(--border); object-fit: cover; }
 
     @media (max-width: 768px) { .user-name { display: none; } }
+    
 </style>
 
 <header class="vk-header">
     <div class="vk-header-content">
         
-        <div id="home-menu-btn" class="home-btn">    
-            <span>Все сервисы</span>
-            <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style="opacity: 0.5; stroke: currentColor;">
-                <path d="M1 1.5L6 6.5L11 1.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+        <div class="header-left">
+            
+            <a href="index.html" class="home-btn">
+                <span>🏠 Главная</span>
+            </a>
+
+            <div id="home-menu-btn" class="home-btn">    
+                <span>💻 Все сервисы</span>
+                <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style="opacity: 0.5; stroke: currentColor;">
+                    <path d="M1 1.5L6 6.5L11 1.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+
         </div>
         
         <div class="vk-profile" id="profile-container">

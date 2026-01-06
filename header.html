@@ -15,51 +15,62 @@
         margin: 0 auto;
         height: 100%;
         display: flex;
-        justify-content: space-between; /* Распределяет группы по краям */
+        justify-content: space-between; /* Левая часть - влево, правая - вправо */
         align-items: center;
         padding: 0 20px;
     }
 
-    /* --- НОВЫЙ КЛАСС: Группировка левых кнопок --- */
+    /* ЛЕВАЯ ЧАСТЬ */
     .header-left {
         display: flex;
         align-items: center;
-        gap: 10px; /* Расстояние между кнопкой Главная и Меню */
+        gap: 10px;
     }
 
-    .home-btn {
+    /* ПРАВАЯ ЧАСТЬ (Исправлено) */
+    .header-right {
         display: flex;
         align-items: center;
-        gap: 8px;
-        color: var(--text);
-        font-weight: 600;
-        font-size: 15px;
-        padding: 6px 12px;
-        border-radius: 10px;
-        transition: background 0.2s ease, color 0.2s ease;
-        cursor: pointer;
-        text-decoration: none; /* Убираем подчеркивание, т.к. теперь это ссылка */
+        gap: 12px; /* Отступ между луной и профилем */
+        height: 100%;
     }
 
-    .home-btn:hover {
+    /* Кнопки навигации */
+    .home-btn {
+        display: flex; align-items: center; gap: 8px;
+        color: var(--text); font-weight: 600; font-size: 15px;
+        padding: 6px 12px; border-radius: 10px;
+        transition: background 0.2s ease, color 0.2s ease;
+        cursor: pointer; text-decoration: none;
+    }
+    .home-btn:hover { background-color: var(--hover-bg); color: var(--accent); }
+
+    /* Кнопка темы */
+    .theme-icon-btn {
+        display: flex; align-items: center; justify-content: center;
+        width: 32px; height: 32px; /* Чуть меньше, чтобы точно влезла */
+        border-radius: 50%;
+        color: var(--text);
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease;
+        background: transparent; /* На всякий случай прозрачный фон */
+        border: none;
+        padding: 0;
+    }
+    .theme-icon-btn:hover {
         background-color: var(--hover-bg);
         color: var(--accent);
     }
-
-    /* Иконка */
-    .home-icon-svg {
-        width: 20px; height: 20px;
-        stroke: currentColor; stroke-width: 2; fill: none;
-        display: block; 
-    }
-
+    
+    /* Профиль */
     .vk-profile {
         display: flex; align-items: center; cursor: pointer; gap: 10px;
         padding: 4px 8px; border-radius: 10px; transition: background 0.2s ease;
+        height: 36px; /* Фиксируем высоту профиля */
     }
     .vk-profile:hover { background-color: var(--hover-bg); }
 
-    .user-name { font-weight: 600; font-size: 14px; color: var(--text); display: block; }
+    .user-name { font-weight: 600; font-size: 14px; color: var(--text); display: block; white-space: nowrap; }
     .user-avatar { width: 32px; height: 32px; border-radius: 50%; background-color: var(--border); object-fit: cover; }
 
     @media (max-width: 768px) { .user-name { display: none; } }
@@ -70,26 +81,28 @@
     <div class="vk-header-content">
         
         <div class="header-left">
-            
-            <a href="index.html" class="home-btn">
-                <span>🏠 Главная</span>
-            </a>
-
             <div id="home-menu-btn" class="home-btn">    
-                <span>💻 Все сервисы</span>
+                <span>Все сервисы</span>
                 <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style="opacity: 0.5; stroke: currentColor;">
                     <path d="M1 1.5L6 6.5L11 1.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
-
         </div>
         
-        <div class="vk-profile" id="profile-container">
-            <span class="user-name" id="user-name"></span>
-            <img src="" alt="" class="user-avatar" id="user-avatar" style="display:none"> 
-            <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style="opacity: 0.5; stroke: var(--text);">
-                <path d="M1 1.5L6 6.5L11 1.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+        <div class="header-right">
+            
+            <button id="header-theme-btn" class="theme-icon-btn" title="Переключить тему">
+                
+            </button>
+
+            <div class="vk-profile" id="profile-container">
+                <span class="user-name" id="user-name"></span>
+                <img src="" alt="" class="user-avatar" id="user-avatar" style="display:none"> 
+                <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style="opacity: 0.5; stroke: var(--text);">
+                    <path d="M1 1.5L6 6.5L11 1.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+
         </div>
 
     </div>

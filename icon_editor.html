@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактор иконок</title>
+    <style>
+        :root {
+            --primary-blue: #4285f4;
+            --gray-light: #f1f3f4;
+            --gray-text: #5f6368;
+            --border-radius: 8px;
+            --modal-shadow: 0 4px 24px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #e8eaed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* --- Modal Container --- */
+        .modal {
+            background: white;
+            width: 800px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--modal-shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- Header --- */
+        .header {
+            padding: 20px;
+            text-align: center;
+            font-size: 22px;
+            color: #202124;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            cursor: pointer;
+            color: #9aa0a6;
+            font-size: 24px;
+        }
+
+        /* --- Body Layout --- */
+        .editor-body {
+            display: flex;
+            padding: 0 40px 20px 40px;
+            gap: 40px;
+        }
+
+        /* --- Left Column (Canvas) --- */
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .canvas-wrapper {
+            width: 350px;
+            height: 350px;
+            position: relative;
+            background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), 
+                              linear-gradient(-45deg, #ccc 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #ccc 75%), 
+                              linear-gradient(-45deg, transparent 75%, #ccc 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px; 
+            border: 1px solid #ddd;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Grid Overlay (Dotted lines) */
+        .grid-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+        }
+        .grid-row {
+            flex: 1;
+            display: flex;
+            border-bottom: 1px dashed rgba(255,255,255,0.5);
+        }
+        .grid-row:last-child { border-bottom: none; }
+        .grid-col {
+            flex: 1;
+            border-right: 1px dashed rgba(255,255,255,0.5);
+        }
+        .grid-col:last-child { border-right: none; }
+        
+        /* Upload Button Overlay if no image */
+        .upload-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.05);
+            cursor: pointer;
+            color: var(--gray-text);
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        .upload-overlay:hover { background: rgba(0,0,0,0.1); }
+
+        /* Tools Bar */
+        .tools-bar {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            color: #9aa0a6;
+            align-items: center;
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 5px; /* Чуть плотнее кнопки */
+            align-items: center;
+        }
+
+        .tool-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            color: #9aa0a6;
+            transition: color 0.2s, background 0.2s;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tool-btn:hover { color: var(--gray-text); background: #f1f3f4; }
+
+        /* --- Right Column (Settings) --- */
+        .right-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            padding-top: 10px;
+        }
+
+        h4 {
+            margin: 0 0 10px 0;
+            font-weight: 400;
+            color: #202124;
+            font-size: 16px;
+        }
+
+        /* Preview */
+        .preview-box {
+            width: 100px;
+            height: 100px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #eee;
+            background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%);
+            background-size: 10px 10px;
+            user-select: none; /* Запрет выделения */
+        }
+        
+        .preview-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            pointer-events: none; /* Полный запрет событий мыши для картинки */
+            user-select: none;
+            -webkit-user-drag: none; /* Запрет перетаскивания в Webkit */
+        }
+
+        /* Colors */
+        .color-palette {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .swatch {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.1s;
+        }
+        .swatch:hover { transform: scale(1.1); }
+        .swatch.active { border-color: var(--primary-blue); box-shadow: 0 0 0 2px white inset; }
+
+        .swatch-transparent {
+            background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%);
+            background-size: 8px 8px;
+            background-color: white;
+        }
+
+        .swatch-rainbow {
+            background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+            position: relative;
+        }
+        
+        /* Hidden input for color picker */
+        #customColorPicker {
+            opacity: 0;
+            position: absolute;
+            left: 0; top: 0; width: 100%; height: 100%;
+            cursor: pointer;
+        }
+
+        /* --- Footer --- */
+        .footer {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 500;
+            border: none;
+        }
+
+        .btn-cancel { background: #f1f3f4; color: #202124; }
+        .btn-cancel:hover { background: #e8eaed; }
+
+        .btn-reset { background: #f1f3f4; color: #202124; }
+        .btn-reset:hover { background: #e8eaed; }
+
+        .btn-ok { background: #5f6368; color: white; }
+        .btn-ok:hover { background: #4a4d50; }
+
+    </style>
+</head>
+<body>
+
+<div class="modal">
+    <div class="header">
+        Настроить значок
+        <div class="close-btn">&times;</div>
+    </div>
+
+    <div class="editor-body">
+        <div class="left-col">
+            <div class="canvas-wrapper">
+                <canvas id="mainCanvas" width="512" height="512"></canvas>
+                
+                <div class="grid-overlay">
+                    <div class="grid-row"><div class="grid-col"></div><div class="grid-col"></div><div class="grid-col"></div></div>
+                    <div class="grid-row"><div class="grid-col"></div><div class="grid-col"></div><div class="grid-col"></div></div>
+                    <div class="grid-row"><div class="grid-col"></div><div class="grid-col"></div><div class="grid-col"></div></div>
+                </div>
+
+                <label class="upload-overlay" id="uploadOverlay" for="fileInput">
+                    Нажмите, чтобы загрузить фото
+                </label>
+                <input type="file" id="fileInput" accept="image/*" style="display: none;">
+            </div>
+
+            <div class="tools-bar">
+                <div class="tool-group">
+                    <button class="tool-btn" onclick="rotate(-90)" title="Повернуть влево">↺</button>
+                    <button class="tool-btn" onclick="rotate(90)" title="Повернуть вправо">↻</button>
+                </div>
+
+                <div class="tool-group">
+                    <button class="tool-btn" onclick="move(-10, 0)" title="Влево">←</button>
+                    <button class="tool-btn" onclick="move(0, -10)" title="Вверх">↑</button>
+                    <button class="tool-btn" onclick="move(0, 10)" title="Вниз">↓</button>
+                    <button class="tool-btn" onclick="move(10, 0)" title="Вправо">→</button>
+                </div>
+
+                <div class="tool-group">
+                    <button class="tool-btn" onclick="zoom(-0.1)" title="Уменьшить">－</button>
+                    <button class="tool-btn" onclick="zoom(0.1)" title="Увеличить">＋</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-col">
+            <div>
+                <h4>Предварительный просмотр</h4>
+                <div class="preview-box">
+                    <img id="previewImg" src="" alt="" draggable="false">
+                </div>
+            </div>
+
+            <div>
+                <h4>Цвет фона</h4>
+                <div class="color-palette" id="colorPalette">
+                    
+                    <div class="swatch active" style="background-color: #ffffff; border: 1px solid #e0e0e0;" data-color="#ffffff"></div>
+                    
+                    <div class="swatch" style="background-color: #000000;" data-color="#000000"></div>
+                    
+                    <div class="swatch swatch-transparent" data-color="transparent" title="Прозрачный"></div>
+                    
+                    <div class="swatch swatch-rainbow" title="Выбрать цвет">
+                        <input type="color" id="customColorPicker">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <button class="btn btn-cancel" onclick="location.reload()">Отмена</button>
+        <button class="btn btn-reset" onclick="resetEditor()">Сбросить</button>
+        <button class="btn btn-ok" onclick="saveImage()">ОК</button>
+    </div>
+</div>
+
+<script>
+    // --- State Variables ---
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const previewImg = document.getElementById('previewImg');
+    const uploadOverlay = document.getElementById('uploadOverlay');
+    
+    let uploadedImage = null;
+    let state = {
+        scale: 1,
+        rotation: 0, 
+        bgColor: '#ffffff', // Белый по умолчанию
+        offsetX: 0, // Смещение по X
+        offsetY: 0  // Смещение по Y
+    };
+
+    // --- Initialization ---
+    draw();
+
+    // --- Event Listeners ---
+    
+    // File Upload
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                uploadedImage = new Image();
+                uploadedImage.onload = function() {
+                    // АВТО-МАСШТАБ
+                    let scaleX = canvas.width / uploadedImage.width;
+                    let scaleY = canvas.height / uploadedImage.height;
+                    state.scale = Math.min(scaleX, scaleY);
+                    
+                    // Сброс позиции
+                    state.rotation = 0;
+                    state.offsetX = 0;
+                    state.offsetY = 0;
+                    
+                    uploadOverlay.style.display = 'none';
+                    draw();
+                }
+                uploadedImage.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Color Selection
+    document.querySelectorAll('.swatch').forEach(swatch => {
+        if(swatch.classList.contains('swatch-rainbow')) return;
+        swatch.addEventListener('click', function() {
+            document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+            this.classList.add('active');
+            state.bgColor = this.dataset.color;
+            draw();
+        });
+    });
+
+    // Custom Color Picker
+    document.getElementById('customColorPicker').addEventListener('input', function(e) {
+        state.bgColor = e.target.value;
+        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+        e.target.parentElement.classList.add('active');
+        draw();
+    });
+
+    // --- Core Functions ---
+
+    function move(x, y) {
+        // Добавляем смещение. 
+        // Логика простая: +X - вправо, +Y - вниз.
+        state.offsetX += x;
+        state.offsetY += y;
+        draw();
+    }
+
+    function zoom(delta) {
+        state.scale += delta;
+        if (state.scale < 0.01) state.scale = 0.01;
+        draw();
+    }
+
+    function rotate(deg) {
+        state.rotation += deg;
+        draw();
+    }
+
+    function resetEditor() {
+        state.rotation = 0;
+        state.offsetX = 0;
+        state.offsetY = 0;
+        
+        if (uploadedImage) {
+             let scaleX = canvas.width / uploadedImage.width;
+             let scaleY = canvas.height / uploadedImage.height;
+             state.scale = Math.min(scaleX, scaleY);
+        } else {
+             state.scale = 1;
+        }
+
+        state.bgColor = '#ffffff';
+        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+        document.querySelector('[data-color="#ffffff"]').classList.add('active');
+
+        draw();
+    }
+
+    function draw() {
+        // 1. Очистка
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 2. Фон
+        if (state.bgColor !== 'transparent') {
+            ctx.fillStyle = state.bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // 3. Отрисовка Изображения
+        if (uploadedImage) {
+            ctx.save();
+            
+            // Сначала перемещаем начало координат в центр канваса + смещение пользователя
+            // Это гарантирует, что кнопки стрелок двигают картинку "визуально" правильно (вверх это вверх)
+            ctx.translate((canvas.width / 2) + state.offsetX, (canvas.height / 2) + state.offsetY);
+            
+            // Затем вращаем
+            ctx.rotate(state.rotation * Math.PI / 180);
+            
+            // Затем масштабируем
+            ctx.scale(state.scale, state.scale);
+            
+            // Рисуем картинку так, чтобы её центр совпадал с текущей точкой (0,0)
+            ctx.drawImage(
+                uploadedImage, 
+                (-uploadedImage.width / 2), 
+                (-uploadedImage.height / 2)
+            );
+
+            ctx.restore();
+        }
+
+        // 4. Обновление превью
+        updatePreview();
+    }
+
+    function updatePreview() {
+        const dataUrl = canvas.toDataURL('image/png');
+        previewImg.src = dataUrl;
+    }
+
+    function saveImage() {
+        if (!uploadedImage && state.bgColor === 'transparent') {
+            alert("Пустой холст!");
+            return;
+        }
+        const link = document.createElement('a');
+        link.download = 'icon.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+</script>
+
+</body>
+</html>

@@ -171,12 +171,12 @@
         }
 
         .icon-container img {
-            width: 100%;       /* Было 44px -> стало 100% ширины родителя */
-            height: 100%;      /* Было 44px -> стало 100% высоты родителя */
-            object-fit: cover; /* Было contain -> cover заполняет весь блок без пробелов */
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             pointer-events: none;
             display: block;
-            border-radius: 14px; /* Добавляем скругление самой картинке, чтобы углы совпадали */
+            border-radius: 14px;
         }
 
         .app-name {
@@ -221,7 +221,8 @@
             right: 0;
             width: 85%;
             max-width: 360px;
-            height: 100%;
+            height: 100dvh; /* Используем dvh для правильной высоты на мобильных */
+            max-height: 100vh;
             background: #F2F2F7;
             z-index: 1001;
             transform: translateX(100%);
@@ -302,24 +303,33 @@
         .tab-icon {
             font-size: 20px;
             line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .tab-label {
             font-size: 13px;
         }
 
+        /* ИСПРАВЛЕНИЕ СКРОЛЛИНГА */
         .sidebar-content {
             flex: 1;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
             padding: 20px;
+            padding-bottom: 50px; /* Отступ снизу для комфортного скролла */
             display: flex;
             flex-direction: column;
             align-items: flex-start;
             color: #000;
-            width: 100%; 
+            width: 100%;
+            min-height: 0; /* Важно для flex контейнеров */
+            overscroll-behavior: contain; /* Чтобы скролл не передавался body */
+            touch-action: pan-y;
         }
 
-        /* --- СТИЛИ ФОРМЫ (Оптимизированные) --- */
+        /* --- СТИЛИ ФОРМЫ --- */
         .form-container {
             width: 100%;
             display: flex;
@@ -332,15 +342,6 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
-        }
-
-        .form-label {
-            font-size: 12px;
-            color: #8E8E93;
-            font-weight: 500;
-            margin-left: 2px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .form-input {
@@ -359,40 +360,6 @@
             border-color: #007AFF;
         }
 
-        .form-input::placeholder {
-            color: #C7C7CC;
-        }
-
-        /* Загрузка файлов */
-        .file-upload-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .file-upload-btn {
-            background: #F2F2F7;
-            border: 1px solid #D1D1D6;
-            color: #007AFF;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            text-align: center;
-        }
-
-        .file-preview {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            object-fit: contain;
-            background: #fff;
-            border: 1px solid #E5E5EA;
-            display: none;
-        }
-
-        /* Кнопки */
         .primary-btn {
             background: #007AFF;
             color: white;
@@ -407,7 +374,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: background 0.2s, transform 0.1s;
         }
         
         .primary-btn:active {
@@ -429,8 +395,6 @@
             justify-content: center;
             align-items: center;
             gap: 10px;
-            margin-top: 0px;
-            transition: background 0.2s;
         }
         
         .google-btn:active {
@@ -477,7 +441,7 @@
             line-height: 1.3;
         }
 
-        /* --- НОВЫЙ ДИЗАЙН ПРОФИЛЯ --- */
+        /* --- ПРОФИЛЬ --- */
         .profile-card {
             background: #FFFFFF;
             border-radius: 16px;
@@ -505,7 +469,6 @@
             width: 100%;
         }
 
-        /* Обертка для аватара и значка Google */
         .avatar-wrapper {
             position: relative;
             width: 55px;
@@ -562,10 +525,9 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-bottom: 8px; /* Отступ до кнопки */
+            margin-bottom: 8px;
         }
 
-        /* Кнопка выхода */
         .logout-btn-styled {
             background: #FFFFFF;
             border: 1px solid #E5E5EA;
@@ -579,11 +541,6 @@
             align-items: center;
             gap: 6px;
             align-self: flex-start;
-            transition: background 0.2s;
-        }
-
-        .logout-btn-styled:active {
-            background: #F2F2F7;
         }
 
         .logout-icon-small {
@@ -592,7 +549,180 @@
             opacity: 0.7;
         }
 
-        /* --- РЕЖИМ РЕДАКТИРОВАНИЯ --- */
+        /* --- СТИЛИ ДЛЯ СПИСКА (МИНИМАЛИЗМ) --- */
+        .sidebar-dummy-btn {
+            background: #E5E5EA;
+            color: #8E8E93;
+            border: 1px dashed #C7C7CC;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 15px;
+            font-weight: 500;
+            width: 100%;
+            margin-bottom: 25px;
+            cursor: not-allowed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0; /* Не сжиматься при скролле */
+        }
+
+        .sidebar-app-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            width: 100%;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            flex-shrink: 0; /* Чтобы список не сжимался */
+        }
+
+        .sidebar-app-row {
+            display: flex;
+            align-items: flex-start; /* Выравнивание по верху для полей ввода */
+            padding: 12px 15px;
+            border-bottom: 1px solid #E5E5EA;
+            gap: 12px;
+            transition: background 0.2s;
+            min-height: 60px; /* Минимальная высота */
+        }
+
+        .sidebar-app-row:last-child {
+            border-bottom: none;
+        }
+
+        .sidebar-app-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #f2f2f2;
+            border: 1px solid rgba(0,0,0,0.05);
+            flex-shrink: 0;
+            margin-top: 2px; /* Чуть подровнять если поле ввода высокое */
+        }
+
+        .sidebar-app-info {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            min-height: 36px;
+        }
+
+        .sidebar-app-name {
+            font-size: 16px;
+            color: #000;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Обертка для редактирования названия и URL */
+        .sidebar-edit-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            padding: 2px 0;
+        }
+
+        .sidebar-edit-input {
+            width: 100%;
+            font-size: 15px;
+            padding: 6px 8px;
+            border: 1px solid #007AFF;
+            border-radius: 6px;
+            outline: none;
+            background: #F2F2F7;
+        }
+
+        .sidebar-edit-input.url {
+            font-size: 15px;
+            border-color: #E5E5EA;
+        }
+        .sidebar-edit-input.url:focus {
+            border-color: #007AFF;
+        }
+
+        .row-actions {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            height: 36px; /* Фикс высота чтобы кнопки не прыгали */
+        }
+
+        /* МИНИМАЛИСТИЧНЫЕ КНОПКИ ДЕЙСТВИЙ */
+        .action-btn {
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: transparent;
+            color: #8E8E93;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            color: #000;
+            background: rgba(0, 0, 0, 0.05);
+        }
+           
+        .action-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2px;
+        }
+
+        /* Режим подтверждения удаления */
+        .delete-confirm-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .confirm-text {
+            font-size: 13px;
+            color: #FF3B30;
+            font-weight: 500;
+            margin-right: 2px;
+        }
+
+        .confirm-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s;
+        }
+
+        .confirm-yes {
+            background: #FF3B30;
+            color: white;
+        }
+        .confirm-yes:hover { opacity: 0.9; }
+
+        .confirm-no {
+            background: #E5E5EA;
+            color: #000;
+        }
+        .confirm-no:hover { background: #d1d1d6; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* --- РЕЖИМ РЕДАКТИРОВАНИЯ (GRID) --- */
         .delete-btn {
             position: absolute;
             top: -8px;
@@ -700,8 +830,15 @@
             </div>
             <div class="sidebar-tabs">
                 <div class="tab-item active" id="tabAdd">
-                    <span class="tab-icon">+</span>
-                    <span class="tab-label">Добавить</span>
+                    <span class="tab-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                    </span>
+                    <span class="tab-label">Приложения</span>
                 </div>
                 <div class="tab-item" id="tabSettings">
                     <span class="tab-icon">⚙️</span>
@@ -886,73 +1023,163 @@
         tabAdd.addEventListener('click', () => { tabAdd.classList.add('active'); tabSettings.classList.remove('active'); renderAddTab(); });
         tabSettings.addEventListener('click', () => { tabSettings.classList.add('active'); tabAdd.classList.remove('active'); renderSettingsTab(); });
 
-        // --- RENDER TABS ---
+        // --- ЛОГИКА ВКЛАДКИ "ПРИЛОЖЕНИЯ" ---
+
         function renderAddTab() {
-            sidebarContent.innerHTML = `
-                <h2 class="section-title">Добавить сайт</h2>
-                <p class="section-desc">Введите ссылку, чтобы добавить иконку на главный экран.</p>
-                <div class="form-container">
-                    <div class="form-group">
-                        <label class="form-label">Адрес сайта</label>
-                        <input type="text" id="inputUrl" class="form-input" placeholder="Введите URL" autocomplete="off">
+            const content = document.getElementById('sidebarContent');
+            content.innerHTML = `
+                <h2 class="section-title">Приложения</h2>
+                <p class="section-desc">Управление списком ваших сайтов.</p>
+                
+                <button class="sidebar-dummy-btn" onclick="alert('Функция добавления временно недоступна')">
+                    <span>+</span> Добавить сайт
+                </button>
+
+                <h3 class="section-title" style="font-size: 17px; margin-bottom: 10px;">Мои сайты</h3>
+                
+                <div id="sidebarAppsList" class="sidebar-app-list">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Название</label>
-                        <input type="text" id="inputName" class="form-input" placeholder="Укажите название сайта" autocomplete="off">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Иконка</label>
-                        <div class="file-upload-wrapper">
-                            <label class="file-upload-btn">
-                                Выбрать файл
-                                <input type="file" id="inputFile" accept="image/*" style="display: none;">
-                            </label>
-                            <img id="previewImg" class="file-preview">
-                            <input type="text" id="inputIcon" class="form-input" placeholder="или URL.." autocomplete="off">
-                        </div>
-                    </div>
-                    <button class="primary-btn" id="btnAddDone">Готово</button>
-                </div>`;
+            `;
             
-            const fileInput = document.getElementById('inputFile');
-            const previewImg = document.getElementById('previewImg');
-            fileInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => { previewImg.src = e.target.result; previewImg.style.display = 'block'; }
-                    reader.readAsDataURL(file);
-                }
-            });
-            document.getElementById('btnAddDone').addEventListener('click', handleAddWebsite);
+            if(window.renderSidebarAppsList) window.renderSidebarAppsList();
         }
 
-        async function handleAddWebsite() {
-            const urlInput = document.getElementById('inputUrl');
-            const nameInput = document.getElementById('inputName');
-            const iconInput = document.getElementById('inputIcon');
-            const fileInput = document.getElementById('inputFile');
-            let url = urlInput.value.trim();
-            let name = nameInput.value.trim();
-            let iconUrl = iconInput.value.trim();
-            
-            if (!url) { urlInput.style.borderColor = 'red'; return; }
-            if (!url.startsWith('http')) { url = 'https://' + url; }
-            if (!name) { try { const urlObj = new URL(url); name = urlObj.hostname.replace('www.', ''); } catch (e) { name = 'Сайт'; } }
+        window.renderSidebarAppsList = function() {
+            const listContainer = document.getElementById('sidebarAppsList');
+            if (!listContainer) return;
 
-            if (fileInput.files && fileInput.files[0]) {
-                const btn = document.getElementById('btnAddDone'); btn.innerText = 'Обработка...';
-                try { iconUrl = await resizeImage(fileInput.files[0]); } catch (e) { alert("Ошибка обработки"); return; }
-            } else if (!iconUrl) {
-                let domain = ''; try { const urlObj = new URL(url); domain = urlObj.hostname; } catch(e) { domain = url; } 
-                iconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`; 
+            const currentApps = getAppsFromDOM();
+
+            if (currentApps.length === 0) {
+                listContainer.innerHTML = '<div style="padding:20px; text-align:center; color:#8E8E93;">Список пуст</div>';
+                return;
             }
-            
-            const newItemHTML = `<div class="app-item"><a href="${url}" class="icon-container"><img src="${iconUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/62?text=?'"></a><span class="app-name">${name}</span></div>`;
-            const tempDiv = document.createElement('div'); tempDiv.innerHTML = newItemHTML;
-            appGrid.appendChild(tempDiv.firstElementChild);
-            initAppItems(); saveCurrentState(); closeMenu();
+
+            listContainer.innerHTML = '';
+
+            currentApps.forEach((app, index) => {
+                const row = document.createElement('div');
+                row.className = 'sidebar-app-row';
+                
+                row.innerHTML = `
+                    <img src="${app.icon}" class="sidebar-app-icon" onerror="this.src='https://via.placeholder.com/36?text=?'">
+                    
+                    <div class="sidebar-app-info" id="info-${index}">
+                        <span class="sidebar-app-name">${app.name}</span>
+                    </div>
+
+                    <div class="row-actions" id="actions-${index}">
+                        <button class="action-btn" onclick="startEditApp(${index})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                        <button class="action-btn" onclick="askDeleteApp(${index})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                listContainer.appendChild(row);
+            });
         }
+
+        // Логика редактирования
+        window.startEditApp = function(index) {
+            window.renderSidebarAppsList(); // Сброс
+
+            const apps = getAppsFromDOM();
+            const app = apps[index];
+            const rows = document.querySelectorAll('.sidebar-app-row');
+            if (!rows[index]) return;
+            
+            const row = rows[index];
+            const infoDiv = row.querySelector(`#info-${index}`);
+            const actionsDiv = row.querySelector(`#actions-${index}`);
+            
+            // Заменяем имя на два инпута: Имя и URL
+            infoDiv.innerHTML = `
+                <div class="sidebar-edit-wrapper">
+                    <input type="text" id="edit-name-${index}" class="sidebar-edit-input" value="${app.name}" placeholder="Название" autocomplete="off">
+                    <input type="text" id="edit-url-${index}" class="sidebar-edit-input url" value="${app.url}" placeholder="https://..." autocomplete="off">
+                </div>
+            `;
+            
+            setTimeout(() => {
+                const input = document.getElementById(`edit-name-${index}`);
+                if(input) {
+                    input.focus();
+                    // Сохранение по Enter (если фокус на имени)
+                    input.onkeydown = (e) => { if(e.key === 'Enter') saveEditApp(index); };
+                }
+                const inputUrl = document.getElementById(`edit-url-${index}`);
+                if(inputUrl) {
+                     inputUrl.onkeydown = (e) => { if(e.key === 'Enter') saveEditApp(index); };
+                }
+            }, 50);
+
+            actionsDiv.innerHTML = `
+                <button class="action-btn" onclick="renderSidebarAppsList()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 14 4 9l5-5"/>
+                        <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+                    </svg>
+                </button>
+                <button class="action-btn" onclick="saveEditApp(${index})">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </button>
+            `;
+        };
+
+        window.saveEditApp = function(index) {
+            const nameInput = document.getElementById(`edit-name-${index}`);
+            const urlInput = document.getElementById(`edit-url-${index}`);
+            
+            const newName = nameInput.value.trim();
+            let newUrl = urlInput.value.trim();
+
+            if (newName && newUrl) {
+                if (!newUrl.startsWith('http')) { newUrl = 'https://' + newUrl; }
+
+                const apps = getAppsFromDOM();
+                apps[index].name = newName;
+                apps[index].url = newUrl;
+                
+                renderAppsToDOM(apps);
+                saveCurrentState();
+                renderSidebarAppsList();
+            }
+        };
+
+        // Логика удаления
+        window.askDeleteApp = function(index) {
+            window.renderSidebarAppsList();
+            const rows = document.querySelectorAll('.sidebar-app-row');
+            if (!rows[index]) return;
+            const row = rows[index];
+            const actionsDiv = row.querySelector(`#actions-${index}`);
+            
+            actionsDiv.innerHTML = `
+                <div class="delete-confirm-container">
+                    <span class="confirm-text">Удалить?</span>
+                    <button class="confirm-btn confirm-yes" onclick="confirmDeleteApp(${index})">Да</button>
+                    <button class="confirm-btn confirm-no" onclick="renderSidebarAppsList()">Нет</button>
+                </div>
+            `;
+        };
+
+        window.confirmDeleteApp = function(index) {
+            const apps = getAppsFromDOM();
+            apps.splice(index, 1);
+            renderAppsToDOM(apps);
+            saveCurrentState();
+            renderSidebarAppsList();
+        };
 
         let authMode = 'login'; 
 
@@ -965,7 +1192,6 @@
                 const displayName = user.displayName || 'Пользователь';
                 const email = user.email || '';
                 
-                // Проверяем провайдера (Google)
                 const isGoogleAuth = user.providerData.some(provider => provider.providerId === 'google.com');
                 const googleBadgeHTML = isGoogleAuth 
                     ? `<div class="google-badge"><img src="https://www.google.com/s2/favicons?domain=google.com" style="width: 100%; height: 100%; display: block;"></div>` : '';

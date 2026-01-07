@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Продуктивность</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-
     <style>
         * {
             box-sizing: border-box;
@@ -144,7 +141,7 @@
         .icon-container {
             width: 62px;
             height: 62px;
-            background-color: white; /* Если картинка прозрачная, фон останется белым */
+            background-color: transparent;
             position: relative;
             border-radius: 14px;
             display: flex;
@@ -173,14 +170,13 @@
             transform: scale(1.05) translate3d(0, 0, 0);
         }
 
-        /* --- ИСПРАВЛЕНИЕ ЗДЕСЬ: РАСТЯГИВАЕМ КАРТИНКУ НА ВЕСЬ БЛОК --- */
         .icon-container img {
-            width: 100%;       /* Занимает всю ширину */
-            height: 100%;      /* Занимает всю высоту */
-            object-fit: cover; /* Обрезает лишнее, заполняя блок */
+            width: 100%;       /* Было 44px -> стало 100% ширины родителя */
+            height: 100%;      /* Было 44px -> стало 100% высоты родителя */
+            object-fit: cover; /* Было contain -> cover заполняет весь блок без пробелов */
             pointer-events: none;
             display: block;
-            border-radius: 14px;
+            border-radius: 14px; /* Добавляем скругление самой картинке, чтобы углы совпадали */
         }
 
         .app-name {
@@ -675,219 +671,6 @@
             background: rgba(255,255,255,0.05); 
         }
 
-        /* --- CROPPER MODAL STYLES (РЕДАКТОР ЗНАЧКОВ) --- */
-        .crop-modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 5000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(5px);
-            padding: 20px;
-        }
-
-        .crop-modal-content {
-            background: #fff;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 700px;
-            max-height: 90vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-            color: #333;
-        }
-
-        .crop-header {
-            padding: 15px;
-            text-align: center;
-            font-size: 18px;
-            font-weight: 600;
-            border-bottom: 1px solid #eee;
-            position: relative;
-        }
-        
-        .crop-close-icon {
-            position: absolute;
-            right: 15px;
-            top: 15px;
-            cursor: pointer;
-            color: #999;
-            font-size: 22px;
-            line-height: 1;
-        }
-
-        .crop-body {
-            display: flex;
-            flex: 1;
-            min-height: 300px;
-            overflow: hidden;
-        }
-
-        .crop-area-wrapper {
-            flex: 2;
-            background: #333;
-            position: relative;
-            min-height: 300px;
-        }
-        
-        .crop-image-element {
-            display: block;
-            max-width: 100%;
-        }
-
-        .crop-sidebar {
-            flex: 1;
-            padding: 20px;
-            background: #f9f9f9;
-            border-left: 1px solid #eee;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            min-width: 220px;
-        }
-
-        .preview-container {
-            width: 100px;
-            height: 100px;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 1px solid #ddd;
-            margin: 0 auto;
-            background: white; /* Default preview bg */
-        }
-        
-        .preview-label {
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 8px;
-        }
-
-        .color-picker-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .color-swatch {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: transform 0.1s;
-        }
-        
-        .color-swatch:hover {
-            transform: scale(1.1);
-        }
-        
-        .color-swatch.active {
-            border-color: #555;
-            transform: scale(1.1);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        
-        .color-swatch.transparent {
-            background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%);
-            background-size: 10px 10px;
-            background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
-            background-color: white;
-        }
-
-        .control-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-        }
-        
-        .tool-btn {
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            color: #555;
-            font-size: 16px;
-        }
-        
-        .tool-btn:active {
-            background: #eee;
-        }
-
-        .crop-footer {
-            padding: 15px;
-            border-top: 1px solid #eee;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            background: #fff;
-        }
-        
-        .btn-cancel {
-            padding: 8px 16px;
-            border-radius: 6px;
-            background: #f2f2f7;
-            border: none;
-            color: #333;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        
-        .btn-reset {
-             padding: 8px 16px;
-            border-radius: 6px;
-            background: #f2f2f7;
-            border: none;
-            color: #333;
-            font-weight: 500;
-            cursor: pointer;
-            margin-right: auto;
-        }
-
-        .btn-ok {
-            padding: 8px 24px;
-            border-radius: 6px;
-            background: #555;
-            color: white;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        
-        .btn-ok:active {
-            background: #333;
-        }
-
-        /* Mobile adaptation for Modal */
-        @media (max-width: 600px) {
-            .crop-body {
-                flex-direction: column;
-                height: auto;
-                overflow-y: auto;
-            }
-            .crop-area-wrapper {
-                height: 300px;
-                min-height: 300px;
-                flex: none;
-            }
-            .crop-sidebar {
-                border-left: none;
-                border-top: 1px solid #eee;
-                flex: none;
-            }
-        }
-
     </style>
 </head>
 <body>
@@ -930,57 +713,6 @@
             </div>
     </aside>
 
-    <div class="crop-modal-overlay" id="cropModal">
-        <div class="crop-modal-content">
-            <div class="crop-header">
-                Настроить значок
-                <div class="crop-close-icon" id="cropCloseIcon">×</div>
-            </div>
-            <div class="crop-body">
-                <div class="crop-area-wrapper">
-                    <img id="imageToCrop" src="" alt="Crop" style="max-width: 100%;">
-                </div>
-                <div class="crop-sidebar">
-                    <div>
-                        <div class="preview-label">Предварительный просмотр</div>
-                        <div class="preview-container" id="cropPreview"></div>
-                    </div>
-                    
-                    <div>
-                        <div class="preview-label">Цвет фона</div>
-                        <div class="color-picker-grid" id="colorPicker">
-                            <div class="color-swatch" style="background: #FF3B30;" data-color="#FF3B30"></div>
-                            <div class="color-swatch" style="background: #FF9500;" data-color="#FF9500"></div>
-                            <div class="color-swatch" style="background: #FFCC00;" data-color="#FFCC00"></div>
-                            <div class="color-swatch" style="background: #4CD964;" data-color="#4CD964"></div>
-                            <div class="color-swatch" style="background: #5AC8FA;" data-color="#5AC8FA"></div>
-                            <div class="color-swatch" style="background: #007AFF;" data-color="#007AFF"></div>
-                            <div class="color-swatch" style="background: #5856D6;" data-color="#5856D6"></div>
-                            <div class="color-swatch transparent active" data-color="transparent" title="Прозрачный"></div>
-                            <div class="color-swatch" style="background: #fff; border: 1px solid #eee;" data-color="#ffffff"></div>
-                            <div class="color-swatch" style="background: linear-gradient(135deg, #ff00cc, #333399);" data-color="gradient1"></div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="preview-label">Инструменты</div>
-                        <div class="control-row">
-                            <div class="tool-btn" id="btnRotateLeft" title="Повернуть влево">↺</div>
-                            <div class="tool-btn" id="btnRotateRight" title="Повернуть вправо">↻</div>
-                            <div class="tool-btn" id="btnZoomOut" title="Отдалить">−</div>
-                            <div class="tool-btn" id="btnZoomIn" title="Приблизить">+</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="crop-footer">
-                <button class="btn-reset" id="btnResetCrop">Сбросить</button>
-                <button class="btn-cancel" id="btnCancelCrop">Отмена</button>
-                <button class="btn-ok" id="btnOkCrop">ОК</button>
-            </div>
-        </div>
-    </div>
-
     <script type="module">
         import autoAnimate from 'https://cdn.jsdelivr.net/npm/@formkit/auto-animate/index.min.js';
 
@@ -995,12 +727,7 @@
             { name: 'Notion', url: 'https://notion.so', icon: 'https://www.google.com/s2/favicons?domain=notion.so&sz=128' }
         ];
 
-        // --- CROPPER VARIABLES ---
-        let cropper = null;
-        let finalCroppedImage = null; // Stores result dataURL
-        let selectedBackgroundColor = 'transparent';
-
-        // --- УТИЛИТА: СЖАТИЕ ИЗОБРАЖЕНИЯ (Fallback) ---
+        // --- УТИЛИТА: СЖАТИЕ ИЗОБРАЖЕНИЯ ---
         function resizeImage(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -1159,139 +886,6 @@
         tabAdd.addEventListener('click', () => { tabAdd.classList.add('active'); tabSettings.classList.remove('active'); renderAddTab(); });
         tabSettings.addEventListener('click', () => { tabSettings.classList.add('active'); tabAdd.classList.remove('active'); renderSettingsTab(); });
 
-        // --- CROPPER MODAL LOGIC ---
-        const cropModal = document.getElementById('cropModal');
-        const imageToCrop = document.getElementById('imageToCrop');
-        const cropCloseIcon = document.getElementById('cropCloseIcon');
-        const btnCancelCrop = document.getElementById('btnCancelCrop');
-        const btnResetCrop = document.getElementById('btnResetCrop');
-        const btnOkCrop = document.getElementById('btnOkCrop');
-        
-        // Toolbar controls
-        document.getElementById('btnRotateLeft').onclick = () => { if(cropper) cropper.rotate(-90); };
-        document.getElementById('btnRotateRight').onclick = () => { if(cropper) cropper.rotate(90); };
-        document.getElementById('btnZoomIn').onclick = () => { if(cropper) cropper.zoom(0.1); };
-        document.getElementById('btnZoomOut').onclick = () => { if(cropper) cropper.zoom(-0.1); };
-
-        function initColorPicker() {
-            const swatches = document.querySelectorAll('.color-swatch');
-            const previewContainer = document.getElementById('cropPreview');
-            
-            swatches.forEach(swatch => {
-                swatch.onclick = () => {
-                    swatches.forEach(s => s.classList.remove('active'));
-                    swatch.classList.add('active');
-                    selectedBackgroundColor = swatch.getAttribute('data-color');
-                    
-                    // Update preview background immediately
-                    if (selectedBackgroundColor === 'transparent') {
-                          previewContainer.style.background = 'white'; // or check pattern
-                          previewContainer.style.backgroundImage = 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)';
-                          previewContainer.style.backgroundSize = '10px 10px';
-                    } else if (selectedBackgroundColor === 'gradient1') {
-                          previewContainer.style.background = 'linear-gradient(135deg, #ff00cc, #333399)';
-                    } else {
-                          previewContainer.style.background = selectedBackgroundColor;
-                          previewContainer.style.backgroundImage = 'none';
-                    }
-                };
-            });
-        }
-
-        function openCropper(imageUrl) {
-            cropModal.style.display = 'flex';
-            imageToCrop.src = imageUrl;
-            
-            // Reset color
-            selectedBackgroundColor = 'transparent';
-            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-            document.querySelector('.color-swatch[data-color="transparent"]').classList.add('active');
-            document.getElementById('cropPreview').style.background = '';
-
-            if (cropper) { cropper.destroy(); }
-            
-            // ИСПОЛЬЗУЕМ viewMode: 0 для того, чтобы можно было уменьшить картинку меньше рамки
-            cropper = new Cropper(imageToCrop, {
-                aspectRatio: 1,
-                viewMode: 0, // ВАЖНО: 0 позволяет зумить картинку так, чтобы она не заполняла весь квадрат
-                dragMode: 'move', // Чтобы двигать картинку
-                preview: '#cropPreview',
-                autoCropArea: 0.8,
-                background: false,
-                restore: false,
-                center: true,
-                highlight: false,
-                cropBoxMovable: false, // Фиксируем рамку по центру
-                cropBoxResizable: false,
-                toggleDragModeOnDblclick: false,
-                minContainerWidth: 250,
-                minContainerHeight: 250
-            });
-        }
-
-        function closeCropper() {
-            cropModal.style.display = 'none';
-            if (cropper) {
-                cropper.destroy();
-                cropper = null;
-            }
-            // Reset input so change event fires again if same file selected
-            const fileInput = document.getElementById('inputFile');
-            if(fileInput) fileInput.value = '';
-        }
-
-        cropCloseIcon.onclick = closeCropper;
-        btnCancelCrop.onclick = closeCropper;
-        btnResetCrop.onclick = () => { if(cropper) cropper.reset(); };
-        
-        btnOkCrop.onclick = () => {
-            if (!cropper) return;
-            
-            // 1. Get the cropped canvas (transparent by default)
-            // ВАЖНО: fillColor: 'transparent' чтобы пустое место было прозрачным
-            const canvas = cropper.getCroppedCanvas({ 
-                width: 128, 
-                height: 128,
-                fillColor: 'transparent',
-                imageSmoothingEnabled: true,
-                imageSmoothingQuality: 'high',
-            });
-            
-            // 2. Create a final canvas to composite background + image
-            const finalCanvas = document.createElement('canvas');
-            finalCanvas.width = canvas.width;
-            finalCanvas.height = canvas.height;
-            const ctx = finalCanvas.getContext('2d');
-
-            // 3. Draw background
-            if (selectedBackgroundColor !== 'transparent') {
-                if (selectedBackgroundColor === 'gradient1') {
-                    const gradient = ctx.createLinearGradient(0, 0, finalCanvas.width, finalCanvas.height);
-                    gradient.addColorStop(0, '#ff00cc');
-                    gradient.addColorStop(1, '#333399');
-                    ctx.fillStyle = gradient;
-                } else {
-                    ctx.fillStyle = selectedBackgroundColor;
-                }
-                ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-            }
-
-            // 4. Draw the cropped image on top
-            ctx.drawImage(canvas, 0, 0);
-
-            // 5. Save result
-            finalCroppedImage = finalCanvas.toDataURL('image/png');
-            
-            // 6. Update Preview in Sidebar
-            const previewImg = document.getElementById('previewImg');
-            if (previewImg) {
-                previewImg.src = finalCroppedImage;
-                previewImg.style.display = 'block';
-            }
-
-            closeCropper();
-        };
-
         // --- RENDER TABS ---
         function renderAddTab() {
             sidebarContent.innerHTML = `
@@ -1310,7 +904,7 @@
                         <label class="form-label">Иконка</label>
                         <div class="file-upload-wrapper">
                             <label class="file-upload-btn">
-                                Настроить значок
+                                Выбрать файл
                                 <input type="file" id="inputFile" accept="image/*" style="display: none;">
                             </label>
                             <img id="previewImg" class="file-preview">
@@ -1320,23 +914,16 @@
                     <button class="primary-btn" id="btnAddDone">Готово</button>
                 </div>`;
             
-            finalCroppedImage = null; // Reset previous crop
             const fileInput = document.getElementById('inputFile');
-            
-            // INTERCEPT FILE INPUT TO OPEN CROPPER
+            const previewImg = document.getElementById('previewImg');
             fileInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onload = (e) => { 
-                        // Instead of setting preview directly, open modal
-                        openCropper(e.target.result);
-                        initColorPicker();
-                    }
+                    reader.onload = (e) => { previewImg.src = e.target.result; previewImg.style.display = 'block'; }
                     reader.readAsDataURL(file);
                 }
             });
-
             document.getElementById('btnAddDone').addEventListener('click', handleAddWebsite);
         }
 
@@ -1344,7 +931,7 @@
             const urlInput = document.getElementById('inputUrl');
             const nameInput = document.getElementById('inputName');
             const iconInput = document.getElementById('inputIcon');
-            
+            const fileInput = document.getElementById('inputFile');
             let url = urlInput.value.trim();
             let name = nameInput.value.trim();
             let iconUrl = iconInput.value.trim();
@@ -1353,9 +940,9 @@
             if (!url.startsWith('http')) { url = 'https://' + url; }
             if (!name) { try { const urlObj = new URL(url); name = urlObj.hostname.replace('www.', ''); } catch (e) { name = 'Сайт'; } }
 
-            // Priority: 1. Cropped Image, 2. URL Input, 3. Auto Favicon
-            if (finalCroppedImage) {
-                iconUrl = finalCroppedImage;
+            if (fileInput.files && fileInput.files[0]) {
+                const btn = document.getElementById('btnAddDone'); btn.innerText = 'Обработка...';
+                try { iconUrl = await resizeImage(fileInput.files[0]); } catch (e) { alert("Ошибка обработки"); return; }
             } else if (!iconUrl) {
                 let domain = ''; try { const urlObj = new URL(url); domain = urlObj.hostname; } catch(e) { domain = url; } 
                 iconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`; 
@@ -1482,5 +1069,6 @@
         }, 100);
 
     </script>
+<script type="module" src="sidebar.js"></script>
 </body>
 </html>

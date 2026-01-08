@@ -560,12 +560,18 @@
             font-weight: 500;
             width: 100%;
             margin-bottom: 12px;
-            cursor: not-allowed;
+            cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 8px;
             flex-shrink: 0; /* Не сжиматься при скролле */
+            transition: background 0.2s;
+        }
+        
+        .sidebar-dummy-btn:hover {
+            background: #dcdcde;
+            color: #5f5f63;
         }
 
         .sidebar-app-list {
@@ -857,6 +863,10 @@
 
     <script type="module">
         import autoAnimate from 'https://cdn.jsdelivr.net/npm/@formkit/auto-animate/index.min.js';
+        import { IconEditor } from './icon-editor.js';
+
+        // --- ИНИЦИАЛИЗАЦИЯ РЕДАКТОРА ---
+        const iconEditor = new IconEditor();
 
         // --- КОНФИГУРАЦИЯ ---
         const STORAGE_KEY = 'my_apps_cache_v1';
@@ -868,37 +878,6 @@
             { name: 'YouTube', url: 'https://youtube.com', icon: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128' },
             { name: 'Notion', url: 'https://notion.so', icon: 'https://www.google.com/s2/favicons?domain=notion.so&sz=128' }
         ];
-
-        // --- УТИЛИТА: СЖАТИЕ ИЗОБРАЖЕНИЯ ---
-        function resizeImage(file) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        let width = img.width;
-                        let height = img.height;
-                        if (width > 128 || height > 128) {
-                            if (width > height) {
-                                height *= 128 / width;
-                                width = 128;
-                            } else {
-                                width *= 128 / height;
-                                height = 128;
-                            }
-                        }
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/png'));
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-        }
 
         // --- ФУНКЦИИ СИНХРОНИЗАЦИИ ---
         function getAppsFromDOM() {
@@ -1003,7 +982,7 @@
         
         window.enableEditMode = function() { appGrid.classList.add('edit-mode'); sortable.option("disabled", false); }
         window.disableEditMode = function() { appGrid.classList.remove('edit-mode'); sortable.option("disabled", true); }
-        document.addEventListener('click', (e) => { if (!e.target.closest('.app-item') && !e.target.closest('.delete-btn') && !e.target.closest('.menu-btn') && !e.target.closest('.sidebar') && !e.target.closest('.add-btn')) { window.disableEditMode(); } });
+        document.addEventListener('click', (e) => { if (!e.target.closest('.app-item') && !e.target.closest('.delete-btn') && !e.target.closest('.menu-btn') && !e.target.closest('.sidebar') && !e.target.closest('.add-btn') && !e.target.closest('.editor-overlay')) { window.disableEditMode(); } });
 
         // --- MENU LOGIC ---
         const menuBtn = document.getElementById('menuBtn');
@@ -1033,17 +1012,50 @@
         function renderAddTab() {
             const content = document.getElementById('sidebarContent');
             content.innerHTML = `                
-
                 <h2 class="section-title">Мои сайты</h2>
                 <p class="section-desc">Управление списком ваших сайтов.</p>
                 
-                <button class="sidebar-dummy-btn" onclick=>
+                <button class="sidebar-dummy-btn" id="btnOpenEditor">
                     <span>+</span> Добавить сайт
                 </button>
 
-                <div id="sidebarAppsList" class="sidebar-app-list">
-                    </div>
+                <div id="sidebarAppsList" class="sidebar-app-list"></div>
             `;
+            
+            // Обработчик открытия редактора
+            setTimeout(() => {
+                const btn = document.getElementById('btnOpenEditor');
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        iconEditor.open((data) => {
+                            // "data" содержит { icon, name, url }
+                            
+                            let finalName = data.name || "Новый сайт";
+                            let finalUrl = data.url || "";
+                            
+                            if (finalUrl && !finalUrl.startsWith('http')) {
+                                finalUrl = 'https://' + finalUrl;
+                            }
+
+                            const newApp = {
+                                name: finalName,
+                                url: finalUrl,
+                                icon: data.icon
+                            };
+
+                            const currentApps = getAppsFromDOM();
+                            currentApps.push(newApp);
+                            
+                            renderAppsToDOM(currentApps);
+                            saveCurrentState();
+                            renderSidebarAppsList();
+                            
+                            // ЗАКРЫВАЕМ МЕНЮ ПОСЛЕ ДОБАВЛЕНИЯ
+                            closeMenu(); 
+                        });
+                    });
+                }
+            }, 0);
             
             if(window.renderSidebarAppsList) window.renderSidebarAppsList();
         }
@@ -1093,7 +1105,7 @@
 
         // Логика редактирования
         window.startEditApp = function(index) {
-            window.renderSidebarAppsList(); // Сброс
+            window.renderSidebarAppsList(); // Сброс списка, чтобы закрыть другие открытые редакторы
 
             const apps = getAppsFromDOM();
             const app = apps[index];
@@ -1104,19 +1116,41 @@
             const infoDiv = row.querySelector(`#info-${index}`);
             const actionsDiv = row.querySelector(`#actions-${index}`);
             
-            // Заменяем имя на два инпута: Имя и URL
+            // В infoDiv добавляем инпуты + кнопку редактирования иконки
             infoDiv.innerHTML = `
                 <div class="sidebar-edit-wrapper">
                     <input type="text" id="edit-name-${index}" class="sidebar-edit-input" value="${app.name}" placeholder="Название" autocomplete="off">
                     <input type="text" id="edit-url-${index}" class="sidebar-edit-input url" value="${app.url}" placeholder="https://..." autocomplete="off">
+                    
+                    <button class="edit-icon-btn-small" onclick="openIconEditorForApp(${index})">
+                        Изменить значок
+                    </button>
                 </div>
             `;
+            
+            // Стили для маленькой кнопки (можно вынести в <style>, но здесь проще для вставки)
+            const btnStyle = document.createElement('style');
+            btnStyle.innerHTML = `
+                .edit-icon-btn-small {
+                    margin-top: 4px;
+                    background: #E5E5EA;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 6px 10px;
+                    font-size: 12px;
+                    color: #000;
+                    cursor: pointer;
+                    width: fit-content;
+                }
+                .edit-icon-btn-small:hover { background: #D1D1D6; }
+            `;
+            document.head.appendChild(btnStyle);
+
             
             setTimeout(() => {
                 const input = document.getElementById(`edit-name-${index}`);
                 if(input) {
                     input.focus();
-                    // Сохранение по Enter (если фокус на имени)
                     input.onkeydown = (e) => { if(e.key === 'Enter') saveEditApp(index); };
                 }
                 const inputUrl = document.getElementById(`edit-url-${index}`);
@@ -1138,6 +1172,41 @@
                     </svg>
                 </button>
             `;
+        };
+
+        // НОВАЯ ФУНКЦИЯ: Открывает редактор для конкретного приложения
+        window.openIconEditorForApp = function(index) {
+            const apps = getAppsFromDOM();
+            const currentApp = apps[index];
+
+            // Берем актуальные данные из инпутов (вдруг пользователь уже поменял текст)
+            const nameInput = document.getElementById(`edit-name-${index}`);
+            const urlInput = document.getElementById(`edit-url-${index}`);
+            
+            const appData = {
+                name: nameInput ? nameInput.value : currentApp.name,
+                url: urlInput ? urlInput.value : currentApp.url,
+                icon: currentApp.icon
+            };
+
+            // Открываем редактор, передавая данные
+            iconEditor.open((newData) => {
+                // ОБНОВЛЕНИЕ ПРИЛОЖЕНИЯ
+                apps[index].name = newData.name || appData.name;
+                apps[index].url = newData.url || appData.url;
+                apps[index].icon = newData.icon;
+
+                if (apps[index].url && !apps[index].url.startsWith('http')) {
+                    apps[index].url = 'https://' + apps[index].url;
+                }
+
+                renderAppsToDOM(apps);
+                saveCurrentState();
+                
+                // Перерисовываем список в боковой панели (выход из режима редактирования)
+                renderSidebarAppsList();
+                
+            }, appData); // <-- Передаем текущие данные вторым аргументом
         };
 
         window.saveEditApp = function(index) {

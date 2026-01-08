@@ -89,9 +89,26 @@ export class IconEditor {
                             </div>
                         </div>
 
-                        <button class="btn-upload" id="triggerFileSelect">
-                            Загрузить картинку
-                        </button>
+                        <div class="img-btns-row">
+                            <button class="btn-upload" id="triggerFileSelect">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <span>Загрузить</span>
+                            </button>
+                            
+                            <button class="btn-upload btn-fetch" id="btnFetchFromUrl">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                </svg>
+                                <span>С сайта</span>
+                            </button>
+                        </div>
+                        
                         <input type="file" id="editorFileInput" accept="image/*" style="display: none;">
 
                     </div>
@@ -107,8 +124,8 @@ export class IconEditor {
                             <div class="color-palette">
                                 <div class="swatch active" style="background-color: #ffffff; border: 1px solid #e0e0e0;" data-color="#ffffff"></div>
                                 <div class="swatch" style="background-color: #000000;" data-color="#000000"></div>
-                                <div class="swatch swatch-transparent" data-color="transparent" title="Прозрачный"></div>
-                                <div class="swatch swatch-rainbow" title="Выбрать цвет">
+                                <div class="swatch swatch-transparent" data-color="transparent"></div>
+                                <div class="swatch swatch-rainbow" title=>
                                     <input type="color" id="editorCustomColorPicker">
                                 </div>
                             </div>
@@ -156,7 +173,15 @@ export class IconEditor {
             .tool-btn { background: #f1f3f4; border: none; cursor: pointer; width: 32px; height: 32px; border-radius: 4px; font-size: 18px; display: flex; align-items: center; justify-content: center; color: #5f6368; }
             .tool-btn:hover { background: #e8eaed; color: #202124; }
 
-            /* СТИЛИ НОВОЙ КНОПКИ ЗАГРУЗКИ */
+            /* НОВЫЙ КОНТЕЙНЕР ДЛЯ КНОПОК */
+            .img-btns-row {
+                display: flex;
+                gap: 10px;
+                width: 100%;
+                margin-top: 5px;
+            }
+
+            /* ОБНОВЛЕННЫЕ СТИЛИ КНОПОК */
             .btn-upload {
                 background-color: #4285f4;
                 color: white;
@@ -168,9 +193,18 @@ export class IconEditor {
                 font-weight: 500;
                 cursor: pointer;
                 transition: background 0.2s;
-                margin-top: 5px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px; /* Расстояние между иконкой и текстом */
             }
             .btn-upload:hover { background-color: #3367d6; }
+            
+            /* Стиль для второй кнопки (можно сделать другим цветом, если нужно) */
+            .btn-fetch {
+                background-color: #34A853; /* Зеленый цвет Google */
+            }
+            .btn-fetch:hover { background-color: #2D9147; }
             
             .editor-right-col { display: flex; flex-direction: column; gap: 20px; min-width: 250px; flex: 1; max-width: 300px; }
             h4 { margin: 0 0 10px 0; font-weight: 500; font-size: 14px; color: #5f6368; }
@@ -210,11 +244,53 @@ export class IconEditor {
         // Стандартная обработка выбора файла
         fileInput.addEventListener('change', (e) => this.handleUpload(e));
 
-        // Обработчик нажатия на синюю кнопку - вызывает клик по скрытому input
+        // Кнопка "Загрузить"
         const triggerBtn = document.getElementById('triggerFileSelect');
         if(triggerBtn) {
             triggerBtn.addEventListener('click', () => {
                 fileInput.click();
+            });
+        }
+
+        // НОВАЯ КНОПКА "С сайта"
+        const fetchBtn = document.getElementById('btnFetchFromUrl');
+        if(fetchBtn) {
+            fetchBtn.addEventListener('click', () => {
+                const urlInput = document.getElementById('editorAppUrl');
+                let urlVal = urlInput.value.trim();
+                
+                if(!urlVal) {
+                    alert('Пожалуйста, введите адрес сайта в поле URL');
+                    urlInput.focus();
+                    return;
+                }
+
+                // Убираем https:// для чистоты, если пользователь ввел полный URL
+                urlVal = urlVal.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+                // 1. Формируем ссылку на Google Favicon
+                const googleFaviconUrl = `https://www.google.com/s2/favicons?domain=${urlVal}&sz=512`;
+                
+                // 2. Оборачиваем её в прокси wsrv.nl
+                // Это добавит заголовки CORS, чтобы Canvas не блокировал картинку
+                const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(googleFaviconUrl)}`;
+
+                this.uploadedImage = new Image();
+                this.uploadedImage.crossOrigin = "anonymous"; // Теперь это сработает благодаря прокси
+                
+                this.uploadedImage.onload = () => {
+                    this.resetImageState();
+                    this.draw();
+                };
+                
+                this.uploadedImage.onerror = () => {
+                    alert('Не удалось загрузить иконку. Попробуйте загрузить файл вручную.');
+                    this.uploadedImage = null;
+                    this.draw();
+                };
+                
+                // Добавляем timestamp, чтобы избежать кеширования браузером старых ошибок
+                this.uploadedImage.src = proxyUrl + '&t=' + new Date().getTime();
             });
         }
 

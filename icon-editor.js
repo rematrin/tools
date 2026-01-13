@@ -441,19 +441,31 @@ export class IconEditor {
     }
 
     save() {
-        if (this.onSaveCallback) {
-            const dataUrl = this.canvas.toDataURL('image/png');
-            const name = document.getElementById('editorAppName').value.trim();
-            const url = document.getElementById('editorAppUrl').value.trim();
-            
-            this.onSaveCallback({
-                icon: dataUrl,
-                name: name,
-                url: url
-            });
-        }
-        this.close();
+    if (this.onSaveCallback) {
+        const offscreenCanvas = document.createElement('canvas');
+        const offCtx = offscreenCanvas.getContext('2d');
+        
+        // 256x256 — это очень высокая четкость для иконки
+        offscreenCanvas.width = 256;
+        offscreenCanvas.height = 256;
+
+        // Рисуем с основного холста (512) на уменьшенный (256)
+        offCtx.drawImage(this.canvas, 0, 0, 256, 256);
+
+        // Используем сжатие JPEG 0.9 для фото-иконок или PNG для прозрачности
+        const dataUrl = offscreenCanvas.toDataURL('image/png');
+        
+        const name = document.getElementById('editorAppName').value.trim();
+        const url = document.getElementById('editorAppUrl').value.trim();
+        
+        this.onSaveCallback({
+            icon: dataUrl,
+            name: name,
+            url: url
+        });
     }
+    this.close();
+}
 
     close() {
         if (this.modal) {

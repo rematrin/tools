@@ -61,16 +61,28 @@ const modalHTML = `
                 </button>
             </div>
             <div class="vk-menu-list">
-                <button class="vk-menu-item" id="menuThemeToggle">
-                    <svg class="vk-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                    <span class="vk-menu-text">Тема: <span id="themeLabel">...</span></span>
-                </button>
                 <button class="vk-menu-item item-logout" id="btnLogout">
                     <svg class="vk-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                     <span class="vk-menu-text">Выйти</span>
                 </button>
             </div>
         </div>
+
+        <div class="auth-footer">
+            <span class="auth-footer-label">Тема:</span>
+            <div class="theme-control">
+                <button class="theme-btn" data-theme="light" title="Светлая">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                </button>
+                <button class="theme-btn" data-theme="dark" title="Темная">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+                <button class="theme-btn" data-theme="auto" title="Системная">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                </button>
+            </div>
+        </div>
+
     </div>
 </div>
 `;
@@ -85,34 +97,54 @@ function initAuthWidget() {
     const overlay = document.getElementById('authOverlay');
     const modal = document.getElementById('authModal');
     
-    // === НОВОЕ: Переменная для хранения активной кнопки (Профиль или Главная) ===
     let activeTrigger = null;
+
+    // === ЛОГИКА ОПРЕДЕЛЕНИЯ ТЕМЫ ===
+    const themeBtns = document.querySelectorAll('.theme-btn');
+
+    // Функция: Подсветить активную кнопку
+    const updateThemeUI = (currentTheme) => {
+        themeBtns.forEach(btn => {
+            if (btn.dataset.theme === currentTheme) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    };
+
+    // Функция: Узнать текущую тему
+    const detectCurrentTheme = () => {
+        // Проверяем наличие глобальной функции из theme-loader.js
+        if (typeof window.getThemeMode === 'function') {
+            return window.getThemeMode(); 
+        }
+        
+        // Фолбэк, если лоадер еще не загрузился или произошла ошибка
+        const stored = localStorage.getItem('themeMode');
+        if (stored === 'system') return 'auto';
+        if (stored === 'light' || stored === 'dark') return stored;
+        return 'auto'; 
+    };
 
     // === ПОЗИЦИОНИРОВАНИЕ ===
     const recalcPosition = () => {
-        // Берем сохраненную кнопку или (на всякий случай) профиль по умолчанию
         const triggerBtn = activeTrigger || document.getElementById('profile-container');
         
         if (triggerBtn && overlay.classList.contains('open')) {
             const rect = triggerBtn.getBoundingClientRect();
-            
-            // По вертикали всегда под кнопкой
             modal.style.top = (rect.bottom + 8) + 'px';
 
-            // Проверяем, где кнопка находится относительно центра экрана
             const centerX = window.innerWidth / 2;
-
             if (rect.left < centerX) {
-                // Кнопка слева (например, Главная) -> прижимаем меню к левому краю
                 modal.style.left = rect.left + 'px';
                 modal.style.right = 'auto';
-                modal.style.transformOrigin = 'top left'; // Анимация открытия слева
+                modal.style.transformOrigin = 'top left';
             } else {
-                // Кнопка справа (например, Профиль) -> прижимаем меню к правому краю
                 const rightPos = window.innerWidth - rect.right;
                 modal.style.right = rightPos + 'px';
                 modal.style.left = 'auto';
-                modal.style.transformOrigin = 'top right'; // Анимация открытия справа
+                modal.style.transformOrigin = 'top right';
             }
         }
     };
@@ -120,31 +152,55 @@ function initAuthWidget() {
     const closeModal = () => {
         overlay.classList.remove('open');
         window.removeEventListener('resize', recalcPosition);
-        activeTrigger = null; // Сбрасываем триггер
+        activeTrigger = null;
     };
 
-    // Принимаем triggerElement (кнопку, на которую нажали)
     window.openAuthModal = (triggerElement) => {
         if (overlay.classList.contains('open')) {
             closeModal();
             return;
         }
-        
-        // Запоминаем кнопку
         activeTrigger = triggerElement;
-
         overlay.classList.add('open');
         recalcPosition();
         window.addEventListener('resize', recalcPosition);
         
-        // Обновляем текст темы при открытии
-        updateThemeText(); 
+        // Синхронизируем UI при открытии
+        updateThemeUI(detectCurrentTheme());
     };
+
+    // === ОБРАБОТЧИК КЛИКА ПО ТЕМЕ ===
+    themeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const selectedTheme = btn.dataset.theme; // 'light', 'dark', 'auto'
+            
+            // 1. Сразу меняем UI
+            updateThemeUI(selectedTheme);
+
+            // 2. Безопасно вызываем функцию смены темы
+            if (typeof window.setTheme === 'function') {
+                window.setTheme(selectedTheme);
+            } else {
+                // Если theme-loader.js почему-то не прогрузился
+                console.error("Ошибка: theme-loader.js не инициализирован. Применяю локальный фоллбэк.");
+                
+                // Простой фоллбэк, чтобы хоть как-то работало
+                document.body.classList.remove('dark');
+                if (selectedTheme === 'dark') {
+                    document.body.classList.add('dark');
+                } else if (selectedTheme === 'auto') {
+                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        document.body.classList.add('dark');
+                    }
+                }
+                localStorage.setItem('themeMode', selectedTheme === 'auto' ? 'system' : selectedTheme);
+            }
+        });
+    });
 
     document.getElementById('authClose').addEventListener('click', closeModal);
     overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
 
-    // Экраны
     document.getElementById('toRegister').onclick = () => {
         modal.classList.remove('mode-login'); modal.classList.add('mode-register');
     };
@@ -152,7 +208,6 @@ function initAuthWidget() {
         modal.classList.remove('mode-register'); modal.classList.add('mode-login');
     };
 
-    // Firebase действия
     document.getElementById('btnGoogleLogin').addEventListener('click', async () => {
         try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); }
     });
@@ -178,27 +233,6 @@ function initAuthWidget() {
         closeModal();
     });
 
-    // === ЛОГИКА ТЕМЫ ===
-    const themeBtn = document.getElementById('menuThemeToggle');
-    const themeLabel = document.getElementById('themeLabel');
-    
-    function updateThemeText(forcedLabel) {
-        if (forcedLabel) {
-            themeLabel.textContent = forcedLabel;
-        } else if (window.getCurrentThemeLabel) {
-            themeLabel.textContent = window.getCurrentThemeLabel();
-        }
-    }
-    
-    window.updateAuthMenuThemeText = updateThemeText;
-
-    themeBtn.addEventListener('click', () => {
-        if (window.cycleTheme) {
-            window.cycleTheme();
-        }
-    });
-
-    // Слушатель статуса
     onAuthStateChanged(auth, (user) => {
         if (user) {
             modal.classList.remove('mode-login', 'mode-register');

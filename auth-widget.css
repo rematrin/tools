@@ -9,8 +9,8 @@
 
 /* МЕНЮ (ОКНО) */
 .auth-modal {
-    position: fixed; /* Фиксируем относительно окна */
-    width: 280px; /* Чуть уже (было 300) для компактности */
+    position: fixed;
+    width: 280px;
     background: var(--card-bg, #ffffff);
     border: 1px solid var(--border, #e6e9f2);
     border-radius: 12px;
@@ -41,14 +41,14 @@
 }
 .auth-modal.mode-profile .auth-close { display: none; } 
 
-/* === VK STYLE (КОМПАКТНЫЙ + СЕРЫЕ ИКОНКИ) === */
+/* === VK STYLE === */
 .vk-user-card {
-    padding: 16px; /* Было 20px */
+    padding: 16px;
     text-align: center;
     border-bottom: 1px solid var(--border, #eee);
 }
 .vk-avatar-large {
-    width: 56px; height: 56px; /* Было 64px */
+    width: 56px; height: 56px;
     border-radius: 50%; object-fit: cover;
     margin-bottom: 8px; border: 1px solid var(--border);
 }
@@ -56,7 +56,7 @@
 .vk-user-sub { font-size: 12px; color: var(--text); opacity: 0.5; margin-bottom: 12px; }
 
 .vk-manage-btn {
-    display: block; width: 100%; padding: 6px 0; /* Компактнее */
+    display: block; width: 100%; padding: 6px 0;
     background: var(--bg); color: var(--text); border: none;
     border-radius: 8px; font-weight: 500; font-size: 13px; cursor: pointer;
     transition: background 0.2s;
@@ -64,41 +64,32 @@
 .vk-manage-btn:hover { background: var(--hover-bg, #f5f5f5); }
 .vk-manage-text { display: flex; align-items: center; justify-content: center; gap: 6px; }
 
-.vk-menu-list { padding: 6px; } /* Было 8px */
+.vk-menu-list { padding: 6px; }
 
 .vk-menu-item {
     display: flex; align-items: center; gap: 10px; width: 100%;
-    padding: 8px 10px; /* Было 10px 12px */
+    padding: 8px 10px;
     border: none; background: none; text-align: left;
     cursor: pointer; border-radius: 8px; 
-    color: var(--text); /* Текст цвета темы */
+    color: var(--text);
     font-size: 14px; text-decoration: none; transition: background 0.2s;
 }
 .vk-menu-item:hover { background-color: var(--hover-bg, #f2f3f5); }
 
-/* Иконки серые, как на главной */
 .vk-menu-icon { 
     width: 20px; height: 20px; 
-    color: var(--text); /* Цвет текста */
-    opacity: 0.5;       /* Делаем серым через прозрачность */
-    flex-shrink: 0; 
+    color: var(--text); opacity: 0.5; flex-shrink: 0; 
     transition: opacity 0.2s, color 0.2s;
 }
-
-/* При наведении иконка становится ярче */
-.vk-menu-item:hover .vk-menu-icon {
-    opacity: 1;
-}
-
+.vk-menu-item:hover .vk-menu-icon { opacity: 1; }
 .vk-menu-text { flex-grow: 1; }
 
-/* Красный выход (чуть приглушил, чтобы не выбивался) */
 .item-logout { color: #ff3347; }
 .item-logout .vk-menu-icon { color: #ff3347; opacity: 0.8; }
 .item-logout:hover { background-color: rgba(255, 51, 71, 0.08); }
 
 
-/* ЭКРАНЫ ВХОДА/РЕГИСТРАЦИИ */
+/* ЭКРАНЫ */
 .view-login, .view-register { padding: 20px; text-align: center; }
 .auth-title { margin: 0 0 16px; font-size: 1.3rem; color: var(--text); }
 .auth-input {
@@ -124,3 +115,64 @@
 .auth-modal.mode-login .view-login { display: block; }
 .auth-modal.mode-register .view-register { display: block; }
 .auth-modal.mode-profile .view-profile { display: block; }
+
+/* === ПОДВАЛ (Footer) С ПЕРЕКЛЮЧАТЕЛЕМ ТЕМЫ === */
+.auth-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border, #eee);
+    background: var(--bg, #fff); /* Фон подвала */
+    margin-top: auto; /* На всякий случай, если высота вырастет */
+}
+
+.auth-footer-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    opacity: 0.9;
+}
+
+/* Капсула (подложка) */
+.theme-control {
+    display: flex;
+    background: var(--hover-bg, #f0f2f5);
+    padding: 3px;
+    border-radius: 10px;
+    gap: 2px;
+}
+
+/* Кнопки переключения */
+.theme-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    opacity: 0.5;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.theme-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Активная кнопка */
+.theme-btn.active {
+    background: var(--card-bg, #fff);
+    color: var(--primary, #0077FF); /* Или оставьте var(--text) */
+    opacity: 1;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+}
+
+.theme-btn:hover:not(.active) {
+    opacity: 0.8;
+}

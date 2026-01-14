@@ -4,6 +4,7 @@ export class IconEditor {
         this.canvas = null;
         this.ctx = null;
         this.uploadedImage = null;
+        this.glassImage = null; // Картинка для эффекта
         this.onSaveCallback = null;
         
         this.state = {
@@ -11,7 +12,8 @@ export class IconEditor {
             rotation: 0,
             bgColor: '#ffffff',
             offsetX: 0,
-            offsetY: 0
+            offsetY: 0,
+            glassEffect: false // Состояние эффекта
         };
     }
 
@@ -116,8 +118,17 @@ export class IconEditor {
                     <div class="editor-right-col">
                         <div>
                             <h4>Предварительный просмотр</h4>
-                            <div class="preview-box">
-                                <img id="editorPreviewImg" src="" draggable="false">
+                            <div class="preview-row">
+                                <div class="preview-box">
+                                    <img id="editorPreviewImg" src="" draggable="false">
+                                </div>
+                                <div class="glass-toggle-wrapper">
+                                    <label class="glass-checkbox">
+                                        <input type="checkbox" id="editorGlassEffect">
+                                        <span class="checkmark"></span>
+                                        Эффект стекла
+                                    </label>
+                                </div>
                             </div>
                         </div>
                         <div>
@@ -134,12 +145,12 @@ export class IconEditor {
                         
                         <div class="editor-inputs">
                             <div class="input-group">
-                                <label>Ссылка<span id="urlErrorText" class="error-msg"></span></label>
-                                <input type="text" id="editorAppUrl" placeholder="Введите URL" autocomplete="off">
+                                <label>Адрес (URL) <span id="urlErrorText" class="error-msg"></span></label>
+                                <input type="text" id="editorAppUrl" placeholder="https://..." autocomplete="off">
                             </div>
                             <div class="input-group">
-                                <label>Название</label>
-                                <input type="text" id="editorAppName" placeholder="Ввведите название сайта" autocomplete="off">
+                                <label>Название сайта</label>
+                                <input type="text" id="editorAppName" placeholder="Например: Google" autocomplete="off">
                             </div>
                         </div>
 
@@ -176,22 +187,7 @@ export class IconEditor {
 
             .img-btns-row { display: flex; gap: 10px; width: 100%; margin-top: 5px; }
 
-            .btn-upload {
-                background-color: #4285f4;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 0;
-                width: 100%;
-                font-size: 14px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: background 0.2s;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-            }
+            .btn-upload { background-color: #4285f4; color: white; border: none; border-radius: 6px; padding: 10px 0; width: 100%; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
             .btn-upload:hover { background-color: #3367d6; }
             
             .btn-fetch { background-color: #34A853; }
@@ -199,10 +195,17 @@ export class IconEditor {
             
             .editor-right-col { display: flex; flex-direction: column; gap: 20px; min-width: 250px; flex: 1; max-width: 300px; }
             h4 { margin: 0 0 10px 0; font-weight: 500; font-size: 14px; color: #5f6368; }
-            .preview-box { width: 80px; height: 80px; border-radius: 14px; overflow: hidden; border: 1px solid #eee; background: white; }
-            .preview-box img { width: 100%; height: 100%; object-fit: contain; }
-            .color-palette { display: flex; gap: 8px; flex-wrap: wrap; }
             
+            /* Preview + Checkbox Styles */
+            .preview-row { display: flex; align-items: flex-start; gap: 15px; }
+            .preview-box { width: 80px; height: 80px; border-radius: 21px; overflow: hidden; border: 1px solid #eee; background: white; flex-shrink: 0; }
+            .preview-box img { width: 100%; height: 100%; object-fit: contain; }
+            
+            .glass-toggle-wrapper { display: flex; align-items: center; height: 80px; }
+            .glass-checkbox { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; user-select: none; color: #5f6368; }
+            .glass-checkbox input { cursor: pointer; accent-color: #4285f4; width: 16px; height: 16px; }
+
+            .color-palette { display: flex; gap: 8px; flex-wrap: wrap; }
             .swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.1s; overflow: hidden; position: relative; }
             .swatch:hover { transform: scale(1.1); }
             .swatch.active { border-color: #4285f4; box-shadow: 0 0 0 2px white inset; }
@@ -216,7 +219,6 @@ export class IconEditor {
             .input-group input { padding: 8px 12px; border: 1px solid #dadce0; border-radius: 6px; font-size: 14px; outline: none; transition: border 0.2s; }
             .input-group input:focus { border-color: #4285f4; }
             
-            /* СТИЛИ ОШИБОК */
             .input-group input.input-error { border-color: #ea4335; background-color: #fce8e6; }
             .error-msg { color: #ea4335; font-size: 11px; font-weight: 600; display: none; }
 
@@ -239,6 +241,31 @@ export class IconEditor {
         const fileInput = document.getElementById('editorFileInput');
         fileInput.addEventListener('change', (e) => this.handleUpload(e));
 
+        // --- НОВОЕ СОБЫТИЕ ДЛЯ ГАЛОЧКИ СТЕКЛА ---
+        const glassCheckbox = document.getElementById('editorGlassEffect');
+        if (glassCheckbox) {
+            glassCheckbox.addEventListener('change', (e) => {
+                this.state.glassEffect = e.target.checked;
+                
+                // Если включили, но картинка еще не загружена
+                if (this.state.glassEffect && !this.glassImage) {
+                    this.glassImage = new Image();
+                    this.glassImage.src = 'glass.jpg'; // Путь к файлу в корне
+                    this.glassImage.onload = () => {
+                        this.draw();
+                    };
+                    this.glassImage.onerror = () => {
+                        console.error("Не удалось найти glass.jpg");
+                        // Если картинки нет, выключаем эффект, чтобы не сломать канвас
+                        this.state.glassEffect = false;
+                        e.target.checked = false;
+                    };
+                } else {
+                    this.draw();
+                }
+            });
+        }
+
         const triggerBtn = document.getElementById('triggerFileSelect');
         if(triggerBtn) {
             triggerBtn.addEventListener('click', () => {
@@ -252,13 +279,11 @@ export class IconEditor {
                 const urlInput = document.getElementById('editorAppUrl');
                 const errorMsg = document.getElementById('urlErrorText');
                 
-                // Сброс состояния ошибок
                 urlInput.classList.remove('input-error');
                 if(errorMsg) errorMsg.style.display = 'none';
 
                 let urlVal = urlInput.value.trim();
                 
-                // 1. Валидация пустого ввода
                 if(!urlVal) {
                     urlInput.classList.add('input-error');
                     if(errorMsg) {
@@ -294,7 +319,6 @@ export class IconEditor {
                     fetchBtn.style.opacity = 1;
                 };
                 
-                // 2. Обработка ошибок загрузки (Fallback)
                 this.uploadedImage.onerror = () => {
                     console.log("High-res failed, trying fallback...");
                     const fallbackUrl = `https://www.google.com/s2/favicons?domain=${urlVal}&sz=512`;
@@ -311,33 +335,24 @@ export class IconEditor {
                         fetchBtn.style.opacity = 1;
                     };
                     
-                    // ЕСЛИ ОБА МЕТОДА НЕ СРАБОТАЛИ -> ПОКАЗЫВАЕМ ОШИБКУ В ИНТЕРФЕЙСЕ
                     fallbackImg.onerror = () => {
-                        // Вместо alert подсвечиваем поле
                         urlInput.classList.add('input-error');
                         if(errorMsg) {
                             errorMsg.innerText = 'Иконка не найдена';
                             errorMsg.style.display = 'inline';
                         }
-                        
-                        // Сброс состояния редактора
                         this.uploadedImage = null;
                         this.draw();
-                        
-                        // Сброс кнопки
                         fetchBtn.innerHTML = originalBtnContent;
                         fetchBtn.style.opacity = 1;
                         
-                        // При вводе сбрасываем ошибку
                         urlInput.addEventListener('input', () => {
                              urlInput.classList.remove('input-error');
                              if(errorMsg) errorMsg.style.display = 'none';
                         }, { once: true });
                     };
-                    
                     fallbackImg.src = fallbackProxy;
                 };
-                
                 this.uploadedImage.src = proxyUrl + '&t=' + new Date().getTime();
             });
         }
@@ -442,6 +457,11 @@ export class IconEditor {
         this.state.rotation = 0;
         this.state.offsetX = 0;
         this.state.offsetY = 0;
+        this.state.glassEffect = false; // Сброс эффекта
+
+        // Сброс чекбокса в UI
+        const glassCheckbox = document.getElementById('editorGlassEffect');
+        if(glassCheckbox) glassCheckbox.checked = false;
 
         const swatches = document.querySelectorAll('.swatch');
         if (swatches.length > 0) {
@@ -472,11 +492,13 @@ export class IconEditor {
         if (!this.ctx) return;
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+        // 1. Рисуем фон
         if (this.state.bgColor !== 'transparent') {
             this.ctx.fillStyle = this.state.bgColor;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
 
+        // 2. Рисуем основную картинку
         if (this.uploadedImage) {
             this.ctx.save();
             this.ctx.translate((this.canvas.width / 2) + this.state.offsetX, (this.canvas.height / 2) + this.state.offsetY);
@@ -487,6 +509,16 @@ export class IconEditor {
             this.ctx.imageSmoothingQuality = 'high';
             
             this.ctx.drawImage(this.uploadedImage, -this.uploadedImage.width / 2, -this.uploadedImage.height / 2);
+            this.ctx.restore();
+        }
+
+        // 3. НАЛОЖЕНИЕ ЭФФЕКТА СТЕКЛА (ЕСЛИ ВКЛЮЧЕНО)
+        if (this.state.glassEffect && this.glassImage && this.glassImage.complete) {
+            this.ctx.save();
+            // Режим наложения "Экран" (Screen) - черный исчезает, белый остается
+            this.ctx.globalCompositeOperation = 'screen';
+            // Растягиваем на весь холст
+            this.ctx.drawImage(this.glassImage, 0, 0, this.canvas.width, this.canvas.height);
             this.ctx.restore();
         }
         
@@ -513,6 +545,32 @@ export class IconEditor {
                 offCtx.imageSmoothingEnabled = true;
                 offCtx.imageSmoothingQuality = 'high';
 
+                // Важно: на offscreen canvas нужно повторить всю логику отрисовки
+                // потому что this.canvas имеет размер 512, а мы хотим сохранить 256
+                
+                // 1. Фон
+                if (this.state.bgColor !== 'transparent') {
+                    offCtx.fillStyle = this.state.bgColor;
+                    offCtx.fillRect(0, 0, 256, 256);
+                }
+
+                // 2. Картинка (с учетом масштаба для 256)
+                // Коэффициент уменьшения относительно оригинала (512 -> 256 = 0.5)
+                const ratio = 0.5;
+
+                if (this.uploadedImage) {
+                    offCtx.save();
+                    offCtx.translate((256 / 2) + (this.state.offsetX * ratio), (256 / 2) + (this.state.offsetY * ratio));
+                    offCtx.rotate(this.state.rotation * Math.PI / 180);
+                    offCtx.scale(this.state.scale * ratio, this.state.scale * ratio); // Умножаем на ratio так как сама картинка рисуется в оригинальном размере
+                    // Но постойте, drawImage использует оригинальные размеры. 
+                    // Проще нарисовать большой канвас в маленький:
+                    offCtx.restore();
+                }
+
+                // УПРОЩЕННЫЙ СПОСОБ СОХРАНЕНИЯ: просто ресайзим главный канвас
+                // Это сохранит все слои (фон, картинка, стекло) без дублирования логики
+                offCtx.clearRect(0, 0, 256, 256);
                 offCtx.drawImage(this.canvas, 0, 0, 256, 256);
                 
                 const dataUrl = offscreenCanvas.toDataURL('image/png');

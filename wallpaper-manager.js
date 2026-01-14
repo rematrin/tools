@@ -3,8 +3,8 @@ export class WallpaperManager {
         this.STORAGE_KEY = 'user_wallpaper_settings_v1';
         this.defaultSettings = {
             url: 'https://images.unsplash.com/photo-1621619856624-42fd193a0661?q=80&w=2560&auto=format&fit=crop',
-            blur: 50, // Теперь это ПРОЦЕНТЫ (0-100), по дефолту 50%
-            dim: 45   // Проценты (0-100)
+            blur: 50, // 0-100%
+            dim: 10   // 0-100%
         };
         this.settings = this.loadSettings();
         this.applySettings();
@@ -20,6 +20,7 @@ export class WallpaperManager {
     }
 
     saveToCloud() {
+        // Сохраняем в БД только если пользователь вошел
         if (window.dbApi && window.auth && window.auth.currentUser) {
             window.dbApi.saveWallpaper(this.settings);
         }
@@ -45,12 +46,12 @@ export class WallpaperManager {
             bgElement.style.backgroundImage = `url('${this.settings.url}')`;
             
             // --- КОНВЕРТАЦИЯ % В PX ---
-            const maxBlurPx = 30; // Реальность
+            // Интерфейс: 0-100% -> Реальность: 0-50px
+            const maxBlurPx = 30; 
             const currentBlurPx = (this.settings.blur / 100) * maxBlurPx;
 
             // --- ДИНАМИЧЕСКИЙ ЗУМ ---
-            // Используем реальные пиксели (currentBlurPx) для расчета зума.
-            // При 50px (100%) зум будет примерно 1.17, что достаточно.
+            // Чем больше блюр, тем больше зум, чтобы скрыть черные края.
             const scale = 1.02 + (currentBlurPx * 0.003);
             
             bgElement.style.filter = `blur(${currentBlurPx}px)`;
@@ -73,15 +74,20 @@ export class WallpaperManager {
         if (sliderDim) { sliderDim.value = this.settings.dim; }
         if (sliderBlur) { sliderBlur.value = this.settings.blur; }
         if (dimLabel) { dimLabel.innerText = `${this.settings.dim}%`; }
-        // Теперь пишем %
         if (blurLabel) { blurLabel.innerText = `${this.settings.blur}%`; }
         if (preview) { preview.style.backgroundImage = `url('${this.settings.url}')`; }
     }
 
-    getSettingsHTML() {
+    // showWarning = true добавит красную надпись
+    getSettingsHTML(showWarning = false) {
+        const warningHTML = showWarning 
+            ? `<div style="font-size: 12px; color: #8E8E93; margin-bottom: 12px; margin-top: -6px;">Авторизуйтесь для сохранения обоев</div>` 
+            : '';
+
         return `
-            <div class="profile-card" style="margin-top: 0;">
+            <div class="profile-cardnon" style="margin-top: 0;">
                 <h2 class="profile-title-in-card" style="margin-bottom: 12px;">Обои</h2>
+                ${warningHTML}
                 
                 <div class="wallpaper-preview-container" id="wpPreviewContainer">
                     <div class="wallpaper-preview-bg" style="background-image: url('${this.settings.url}');"></div>
@@ -128,7 +134,6 @@ export class WallpaperManager {
         const updateBlur = (val) => {
             this.settings.blur = val;
             const label = document.getElementById('blurValueLabel');
-            // Обновляем лейбл с процентами
             if(label) label.innerText = `${val}%`;
             this.applySettings();
             this.saveSettings();

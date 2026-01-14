@@ -4,7 +4,6 @@ export class IconEditor {
         this.canvas = null;
         this.ctx = null;
         this.uploadedImage = null;
-        this.glassImage = null; // Картинка для эффекта
         this.onSaveCallback = null;
         
         this.state = {
@@ -12,8 +11,7 @@ export class IconEditor {
             rotation: 0,
             bgColor: '#ffffff',
             offsetX: 0,
-            offsetY: 0,
-            glassEffect: false // Состояние эффекта
+            offsetY: 0
         };
     }
 
@@ -23,9 +21,7 @@ export class IconEditor {
         this.initCanvas();
 
         if (initialData) {
-            // РЕЖИМ РЕДАКТИРОВАНИЯ
             this.resetEditor(false);
-
             const nameInput = document.getElementById('editorAppName');
             const urlInput = document.getElementById('editorAppUrl');
             
@@ -45,9 +41,7 @@ export class IconEditor {
                 };
                 this.uploadedImage.src = initialData.icon;
             }
-
         } else {
-            // РЕЖИМ ДОБАВЛЕНИЯ
             this.resetEditor(true); 
         }
     }
@@ -73,7 +67,7 @@ export class IconEditor {
                                 <div class="grid-row"><div class="grid-col"></div><div class="grid-col"></div><div class="grid-col"></div></div>
                                 <div class="grid-row"><div class="grid-col"></div><div class="grid-col"></div><div class="grid-col"></div></div>
                             </div>
-                            </div>
+                        </div>
 
                         <div class="tools-bar">
                             <div class="tool-group">
@@ -94,41 +88,21 @@ export class IconEditor {
 
                         <div class="img-btns-row">
                             <button class="btn-upload" id="triggerFileSelect">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="17 8 12 3 7 8"></polyline>
-                                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                                 <span>Загрузить</span>
                             </button>
-                            
                             <button class="btn-upload btn-fetch" id="btnFetchFromUrl">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                  <circle cx="12" cy="12" r="10"></circle>
-                                  <path d="M2 12h20"></path>
-                                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                                </svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                                 <span>С сайта</span>
                             </button>
                         </div>
-                        
                         <input type="file" id="editorFileInput" accept="image/*" style="display: none;">
-
                     </div>
                     <div class="editor-right-col">
                         <div>
-                            <h4>Предварительный просмотр</h4>
-                            <div class="preview-row">
-                                <div class="preview-box">
-                                    <img id="editorPreviewImg" src="" draggable="false">
-                                </div>
-                                <div class="glass-toggle-wrapper">
-                                    <label class="glass-checkbox">
-                                        <input type="checkbox" id="editorGlassEffect">
-                                        <span class="checkmark"></span>
-                                        Эффект стекла
-                                    </label>
-                                </div>
+                            <h4>Предпросмотр</h4>
+                            <div class="preview-box">
+                                <img id="editorPreviewImg" src="" draggable="false">
                             </div>
                         </div>
                         <div>
@@ -137,12 +111,11 @@ export class IconEditor {
                                 <div class="swatch active" style="background-color: #ffffff; border: 1px solid #e0e0e0;" data-color="#ffffff"></div>
                                 <div class="swatch" style="background-color: #000000;" data-color="#000000"></div>
                                 <div class="swatch swatch-transparent" data-color="transparent"></div>
-                                <div class="swatch swatch-rainbow" title=>
+                                <div class="swatch swatch-rainbow">
                                     <input type="color" id="editorCustomColorPicker">
                                 </div>
                             </div>
                         </div>
-                        
                         <div class="editor-inputs">
                             <div class="input-group">
                                 <label>Адрес (URL) <span id="urlErrorText" class="error-msg"></span></label>
@@ -153,7 +126,6 @@ export class IconEditor {
                                 <input type="text" id="editorAppName" placeholder="Например: Google" autocomplete="off">
                             </div>
                         </div>
-
                     </div>
                 </div>
                 <div class="editor-footer">
@@ -186,25 +158,17 @@ export class IconEditor {
             .tool-btn:hover { background: #e8eaed; color: #202124; }
 
             .img-btns-row { display: flex; gap: 10px; width: 100%; margin-top: 5px; }
-
             .btn-upload { background-color: #4285f4; color: white; border: none; border-radius: 6px; padding: 10px 0; width: 100%; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
             .btn-upload:hover { background-color: #3367d6; }
-            
             .btn-fetch { background-color: #34A853; }
             .btn-fetch:hover { background-color: #2D9147; }
             
             .editor-right-col { display: flex; flex-direction: column; gap: 20px; min-width: 250px; flex: 1; max-width: 300px; }
             h4 { margin: 0 0 10px 0; font-weight: 500; font-size: 14px; color: #5f6368; }
             
-            /* Preview + Checkbox Styles */
-            .preview-row { display: flex; align-items: flex-start; gap: 15px; }
-            .preview-box { width: 80px; height: 80px; border-radius: 21px; overflow: hidden; border: 1px solid #eee; background: white; flex-shrink: 0; }
+            .preview-box { width: 80px; height: 80px; border-radius: 20px; overflow: hidden; border: 1px solid #eee; background: white; flex-shrink: 0; }
             .preview-box img { width: 100%; height: 100%; object-fit: contain; }
             
-            .glass-toggle-wrapper { display: flex; align-items: center; height: 80px; }
-            .glass-checkbox { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; user-select: none; color: #5f6368; }
-            .glass-checkbox input { cursor: pointer; accent-color: #4285f4; width: 16px; height: 16px; }
-
             .color-palette { display: flex; gap: 8px; flex-wrap: wrap; }
             .swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.1s; overflow: hidden; position: relative; }
             .swatch:hover { transform: scale(1.1); }
@@ -218,7 +182,6 @@ export class IconEditor {
             .input-group label { font-size: 13px; color: #5f6368; font-weight: 500; display: flex; justify-content: space-between; }
             .input-group input { padding: 8px 12px; border: 1px solid #dadce0; border-radius: 6px; font-size: 14px; outline: none; transition: border 0.2s; }
             .input-group input:focus { border-color: #4285f4; }
-            
             .input-group input.input-error { border-color: #ea4335; background-color: #fce8e6; }
             .error-msg { color: #ea4335; font-size: 11px; font-weight: 600; display: none; }
 
@@ -240,68 +203,27 @@ export class IconEditor {
     attachEvents() {
         const fileInput = document.getElementById('editorFileInput');
         fileInput.addEventListener('change', (e) => this.handleUpload(e));
-
-        // --- НОВОЕ СОБЫТИЕ ДЛЯ ГАЛОЧКИ СТЕКЛА ---
-        const glassCheckbox = document.getElementById('editorGlassEffect');
-        if (glassCheckbox) {
-            glassCheckbox.addEventListener('change', (e) => {
-                this.state.glassEffect = e.target.checked;
-                
-                // Если включили, но картинка еще не загружена
-                if (this.state.glassEffect && !this.glassImage) {
-                    this.glassImage = new Image();
-                    this.glassImage.src = 'glass.jpg'; // Путь к файлу в корне
-                    this.glassImage.onload = () => {
-                        this.draw();
-                    };
-                    this.glassImage.onerror = () => {
-                        console.error("Не удалось найти glass.jpg");
-                        // Если картинки нет, выключаем эффект, чтобы не сломать канвас
-                        this.state.glassEffect = false;
-                        e.target.checked = false;
-                    };
-                } else {
-                    this.draw();
-                }
-            });
-        }
-
         const triggerBtn = document.getElementById('triggerFileSelect');
-        if(triggerBtn) {
-            triggerBtn.addEventListener('click', () => {
-                fileInput.click();
-            });
-        }
+        if(triggerBtn) triggerBtn.addEventListener('click', () => fileInput.click());
 
         const fetchBtn = document.getElementById('btnFetchFromUrl');
         if(fetchBtn) {
             fetchBtn.addEventListener('click', () => {
                 const urlInput = document.getElementById('editorAppUrl');
                 const errorMsg = document.getElementById('urlErrorText');
-                
                 urlInput.classList.remove('input-error');
                 if(errorMsg) errorMsg.style.display = 'none';
 
                 let urlVal = urlInput.value.trim();
-                
                 if(!urlVal) {
                     urlInput.classList.add('input-error');
-                    if(errorMsg) {
-                        errorMsg.innerText = 'Введите URL';
-                        errorMsg.style.display = 'inline';
-                    }
+                    if(errorMsg) { errorMsg.innerText = 'Введите URL'; errorMsg.style.display = 'inline'; }
                     urlInput.focus();
-                    
-                    urlInput.addEventListener('input', () => {
-                         urlInput.classList.remove('input-error');
-                         if(errorMsg) errorMsg.style.display = 'none';
-                    }, { once: true });
-                    
+                    urlInput.addEventListener('input', () => { urlInput.classList.remove('input-error'); if(errorMsg) errorMsg.style.display = 'none'; }, { once: true });
                     return;
                 }
 
                 urlVal = urlVal.replace(/^https?:\/\//, '').replace(/\/$/, '');
-
                 const highResFaviconUrl = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${urlVal}&size=256`;
                 const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(highResFaviconUrl)}&w=512&h=512&output=png`;
 
@@ -311,7 +233,6 @@ export class IconEditor {
 
                 this.uploadedImage = new Image();
                 this.uploadedImage.crossOrigin = "anonymous"; 
-                
                 this.uploadedImage.onload = () => {
                     this.resetImageState();
                     this.draw();
@@ -320,13 +241,10 @@ export class IconEditor {
                 };
                 
                 this.uploadedImage.onerror = () => {
-                    console.log("High-res failed, trying fallback...");
                     const fallbackUrl = `https://www.google.com/s2/favicons?domain=${urlVal}&sz=512`;
                     const fallbackProxy = `https://wsrv.nl/?url=${encodeURIComponent(fallbackUrl)}`;
-                    
                     const fallbackImg = new Image();
                     fallbackImg.crossOrigin = "anonymous";
-                    
                     fallbackImg.onload = () => {
                         this.uploadedImage = fallbackImg;
                         this.resetImageState();
@@ -334,22 +252,14 @@ export class IconEditor {
                         fetchBtn.innerHTML = originalBtnContent;
                         fetchBtn.style.opacity = 1;
                     };
-                    
                     fallbackImg.onerror = () => {
                         urlInput.classList.add('input-error');
-                        if(errorMsg) {
-                            errorMsg.innerText = 'Иконка не найдена';
-                            errorMsg.style.display = 'inline';
-                        }
+                        if(errorMsg) { errorMsg.innerText = 'Иконка не найдена'; errorMsg.style.display = 'inline'; }
                         this.uploadedImage = null;
                         this.draw();
                         fetchBtn.innerHTML = originalBtnContent;
                         fetchBtn.style.opacity = 1;
-                        
-                        urlInput.addEventListener('input', () => {
-                             urlInput.classList.remove('input-error');
-                             if(errorMsg) errorMsg.style.display = 'none';
-                        }, { once: true });
+                        urlInput.addEventListener('input', () => { urlInput.classList.remove('input-error'); if(errorMsg) errorMsg.style.display = 'none'; }, { once: true });
                     };
                     fallbackImg.src = fallbackProxy;
                 };
@@ -379,17 +289,9 @@ export class IconEditor {
                 this.draw();
             }
 
-            if (e.target.closest('.editor-close-btn') || e.target.closest('.btn-cancel')) {
-                this.close();
-            }
-            if (e.target.closest('.btn-reset')) {
-                this.resetEditor(false); 
-            }
-            if (e.target.closest('.btn-ok')) {
-                if (!e.target.closest('.btn-ok').disabled) {
-                    this.save();
-                }
-            }
+            if (e.target.closest('.editor-close-btn') || e.target.closest('.btn-cancel')) this.close();
+            if (e.target.closest('.btn-reset')) this.resetEditor(false); 
+            if (e.target.closest('.btn-ok') && !e.target.closest('.btn-ok').disabled) this.save();
         });
 
         document.getElementById('editorCustomColorPicker').addEventListener('input', (e) => {
@@ -413,10 +315,7 @@ export class IconEditor {
             const reader = new FileReader();
             reader.onload = (event) => {
                 this.uploadedImage = new Image();
-                this.uploadedImage.onload = () => {
-                    this.resetImageState(); 
-                    this.draw();
-                };
+                this.uploadedImage.onload = () => { this.resetImageState(); this.draw(); };
                 this.uploadedImage.src = event.target.result;
             };
             reader.readAsDataURL(file);
@@ -424,22 +323,9 @@ export class IconEditor {
         e.target.value = '';
     }
 
-    move(x, y) {
-        this.state.offsetX += x;
-        this.state.offsetY += y;
-        this.draw();
-    }
-
-    zoom(delta) {
-        this.state.scale += delta;
-        if (this.state.scale < 0.01) this.state.scale = 0.01;
-        this.draw();
-    }
-
-    rotate(deg) {
-        this.state.rotation += deg;
-        this.draw();
-    }
+    move(x, y) { this.state.offsetX += x; this.state.offsetY += y; this.draw(); }
+    zoom(delta) { this.state.scale += delta; if (this.state.scale < 0.01) this.state.scale = 0.01; this.draw(); }
+    rotate(deg) { this.state.rotation += deg; this.draw(); }
 
     resetImageState() {
         if (this.uploadedImage) {
@@ -457,71 +343,41 @@ export class IconEditor {
         this.state.rotation = 0;
         this.state.offsetX = 0;
         this.state.offsetY = 0;
-        this.state.glassEffect = false; // Сброс эффекта
-
-        // Сброс чекбокса в UI
-        const glassCheckbox = document.getElementById('editorGlassEffect');
-        if(glassCheckbox) glassCheckbox.checked = false;
-
         const swatches = document.querySelectorAll('.swatch');
         if (swatches.length > 0) {
             swatches.forEach(s => s.classList.remove('active'));
             document.querySelector('[data-color="#ffffff"]').classList.add('active');
         }
-
         if (fullClear) {
             const nameInput = document.getElementById('editorAppName');
             const urlInput = document.getElementById('editorAppUrl');
             if (nameInput) nameInput.value = '';
             if (urlInput) urlInput.value = '';
-
             this.uploadedImage = null;
             this.state.scale = 1;
         } else {
-            if (this.uploadedImage) {
-                this.resetImageState();
-            } else {
-                this.state.scale = 1;
-            }
+            if (this.uploadedImage) this.resetImageState(); else this.state.scale = 1;
         }
-
         this.draw();
     }
 
     draw() {
         if (!this.ctx) return;
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // 1. Рисуем фон
         if (this.state.bgColor !== 'transparent') {
             this.ctx.fillStyle = this.state.bgColor;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
-
-        // 2. Рисуем основную картинку
         if (this.uploadedImage) {
             this.ctx.save();
             this.ctx.translate((this.canvas.width / 2) + this.state.offsetX, (this.canvas.height / 2) + this.state.offsetY);
             this.ctx.rotate(this.state.rotation * Math.PI / 180);
             this.ctx.scale(this.state.scale, this.state.scale);
-            
             this.ctx.imageSmoothingEnabled = true;
             this.ctx.imageSmoothingQuality = 'high';
-            
             this.ctx.drawImage(this.uploadedImage, -this.uploadedImage.width / 2, -this.uploadedImage.height / 2);
             this.ctx.restore();
         }
-
-        // 3. НАЛОЖЕНИЕ ЭФФЕКТА СТЕКЛА (ЕСЛИ ВКЛЮЧЕНО)
-        if (this.state.glassEffect && this.glassImage && this.glassImage.complete) {
-            this.ctx.save();
-            // Режим наложения "Экран" (Screen) - черный исчезает, белый остается
-            this.ctx.globalCompositeOperation = 'screen';
-            // Растягиваем на весь холст
-            this.ctx.drawImage(this.glassImage, 0, 0, this.canvas.width, this.canvas.height);
-            this.ctx.restore();
-        }
-        
         const dataUrl = this.canvas.toDataURL('image/png');
         const preview = document.getElementById('editorPreviewImg');
         if(preview) preview.src = dataUrl;
@@ -531,67 +387,38 @@ export class IconEditor {
         if (this.onSaveCallback) {
             const btnOk = this.modal.querySelector('.btn-ok');
             const originalText = btnOk.innerText;
-            
             btnOk.innerText = 'Загрузка...';
             btnOk.disabled = true;
 
             try {
                 const offscreenCanvas = document.createElement('canvas');
                 const offCtx = offscreenCanvas.getContext('2d');
-                
                 offscreenCanvas.width = 256;
                 offscreenCanvas.height = 256;
-                
                 offCtx.imageSmoothingEnabled = true;
                 offCtx.imageSmoothingQuality = 'high';
 
-                // Важно: на offscreen canvas нужно повторить всю логику отрисовки
-                // потому что this.canvas имеет размер 512, а мы хотим сохранить 256
-                
-                // 1. Фон
+                // Перерисовка на малый холст
                 if (this.state.bgColor !== 'transparent') {
                     offCtx.fillStyle = this.state.bgColor;
                     offCtx.fillRect(0, 0, 256, 256);
                 }
-
-                // 2. Картинка (с учетом масштаба для 256)
-                // Коэффициент уменьшения относительно оригинала (512 -> 256 = 0.5)
-                const ratio = 0.5;
-
-                if (this.uploadedImage) {
-                    offCtx.save();
-                    offCtx.translate((256 / 2) + (this.state.offsetX * ratio), (256 / 2) + (this.state.offsetY * ratio));
-                    offCtx.rotate(this.state.rotation * Math.PI / 180);
-                    offCtx.scale(this.state.scale * ratio, this.state.scale * ratio); // Умножаем на ratio так как сама картинка рисуется в оригинальном размере
-                    // Но постойте, drawImage использует оригинальные размеры. 
-                    // Проще нарисовать большой канвас в маленький:
-                    offCtx.restore();
-                }
-
-                // УПРОЩЕННЫЙ СПОСОБ СОХРАНЕНИЯ: просто ресайзим главный канвас
-                // Это сохранит все слои (фон, картинка, стекло) без дублирования логики
-                offCtx.clearRect(0, 0, 256, 256);
+                
+                // Просто рисуем с большого канваса, так как там уже все слои сведены (без стекла)
                 offCtx.drawImage(this.canvas, 0, 0, 256, 256);
                 
                 const dataUrl = offscreenCanvas.toDataURL('image/png');
-                
                 const hostedUrl = await this.uploadToImgBB(dataUrl);
 
                 const name = document.getElementById('editorAppName').value.trim();
                 const url = document.getElementById('editorAppUrl').value.trim();
                 
-                this.onSaveCallback({
-                    icon: hostedUrl,
-                    name: name,
-                    url: url
-                });
-                
+                this.onSaveCallback({ icon: hostedUrl, name: name, url: url });
                 this.close();
 
             } catch (error) {
                 console.error('Save error:', error);
                 alert('Ошибка загрузки изображения. Проверьте интернет или API ключ.');
-                
                 btnOk.innerText = originalText;
                 btnOk.disabled = false;
             }
@@ -603,28 +430,15 @@ export class IconEditor {
         const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee'; 
         
         const cleanBase64 = base64Image.split(',')[1];
-
         const formData = new FormData();
         formData.append('image', cleanBase64);
-
         const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
             method: 'POST',
             body: formData
         });
-
         const result = await response.json();
-
-        if (result.success) {
-            return result.data.url;
-        } else {
-            throw new Error('ImgBB Upload Failed');
-        }
+        if (result.success) return result.data.url; else throw new Error('ImgBB Upload Failed');
     }
 
-    close() {
-        if (this.modal) {
-            this.modal.remove();
-            this.modal = null;
-        }
-    }
+    close() { if (this.modal) { this.modal.remove(); this.modal = null; } }
 }

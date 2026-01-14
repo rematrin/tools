@@ -30,51 +30,37 @@ const firebaseConfig = {
 // Инициализация
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app); // Инициализация БД
+const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// Глобальные переменные
 window.auth = auth;
 window.db = db;
 
 // API для работы с БД
 window.dbApi = {
     // --- ПРИЛОЖЕНИЯ ---
-    // Сохранить массив приложений
     saveApps: async (appsArray) => {
         const user = auth.currentUser;
-        if (!user) return; // Не сохраняем, если не вошли
+        if (!user) return;
         try {
             await setDoc(doc(db, "users", user.uid), { 
                 apps: appsArray,
                 lastUpdated: new Date()
             }, { merge: true });
-            console.log("Apps saved to cloud");
-        } catch (e) {
-            console.error("Error saving apps:", e);
-        }
+        } catch (e) { console.error("Error saving apps:", e); }
     },
 
-    // Загрузить массив приложений
     loadApps: async () => {
         const user = auth.currentUser;
         if (!user) return null;
         try {
             const docRef = doc(db, "users", user.uid);
             const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                return docSnap.data().apps || [];
-            } else {
-                return null; // Данных нет (новый юзер)
-            }
-        } catch (e) {
-            console.error("Error loading apps:", e);
-            return null;
-        }
+            return docSnap.exists() ? docSnap.data().apps || [] : null;
+        } catch (e) { console.error("Error loading apps:", e); return null; }
     },
 
-    // --- ОБОИ (Wallpaper) ---
-    // Сохранить настройки обоев
+    // --- ОБОИ ---
     saveWallpaper: async (settings) => {
         const user = auth.currentUser;
         if (!user) return;
@@ -83,28 +69,40 @@ window.dbApi = {
                 wallpaper: settings,
                 lastUpdated: new Date()
             }, { merge: true });
-            console.log("Wallpaper settings saved to cloud");
-        } catch (e) {
-            console.error("Error saving wallpaper:", e);
-        }
+        } catch (e) { console.error("Error saving wallpaper:", e); }
     },
 
-    // Загрузить настройки обоев
     loadWallpaper: async () => {
         const user = auth.currentUser;
         if (!user) return null;
         try {
             const docRef = doc(db, "users", user.uid);
             const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                return docSnap.data().wallpaper || null;
-            } else {
-                return null;
-            }
-        } catch (e) {
-            console.error("Error loading wallpaper:", e);
-            return null;
-        }
+            return docSnap.exists() ? docSnap.data().wallpaper || null : null;
+        } catch (e) { console.error("Error loading wallpaper:", e); return null; }
+    },
+
+    // --- НАСТРОЙКИ ИНТЕРФЕЙСА (НОВОЕ) ---
+    saveSettings: async (settingsObj) => {
+        const user = auth.currentUser;
+        if (!user) return;
+        try {
+            await setDoc(doc(db, "users", user.uid), { 
+                uiSettings: settingsObj,
+                lastUpdated: new Date()
+            }, { merge: true });
+            console.log("Settings saved:", settingsObj);
+        } catch (e) { console.error("Error saving settings:", e); }
+    },
+
+    loadSettings: async () => {
+        const user = auth.currentUser;
+        if (!user) return null;
+        try {
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+            return docSnap.exists() ? docSnap.data().uiSettings || null : null;
+        } catch (e) { console.error("Error loading settings:", e); return null; }
     }
 };
 
@@ -130,4 +128,4 @@ window.authApi = {
     }
 };
 
-console.log("Firebase Auth & Firestore Logic Loaded");
+console.log("Firebase Logic Loaded");

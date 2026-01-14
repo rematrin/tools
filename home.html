@@ -194,7 +194,7 @@
             pointer-events: none;
         }
 
-        /* --- SIDEBAR (БОКОВОЕ МЕНЮ) --- */
+        /* --- SIDEBAR (БОКОВОЕ МЕНЮ) - УМЕНЬШЕННЫЙ МАСШТАБ --- */
         
         .sidebar-overlay {
             position: fixed;
@@ -220,8 +220,8 @@
             top: 0;
             right: 0;
             width: 85%;
-            max-width: 360px;
-            height: 100dvh; /* Используем dvh для правильной высоты на мобильных */
+            max-width: 320px; /* Было 360px */
+            height: 100dvh;
             max-height: 100vh;
             background: #F2F2F7;
             z-index: 1001;
@@ -239,7 +239,7 @@
 
         .sidebar-header {
             background: #fff;
-            padding: 15px 15px 10px 15px;
+            padding: 10px 10px 8px 10px; /* Уменьшены отступы */
             border-bottom: 1px solid #E5E5EA;
             display: flex;
             flex-direction: column;
@@ -249,16 +249,16 @@
         .sidebar-top-row {
             display: flex;
             justify-content: flex-start;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         .close-menu-btn {
-            width: 30px;
-            height: 30px;
+            width: 28px; /* Было 30px */
+            height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 24px; /* Было 28px */
             font-weight: 300;
             color: #8E8E93;
             cursor: pointer;
@@ -276,8 +276,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            padding: 8px 20px;
+            gap: 4px; /* Было 6px */
+            padding: 6px 15px; /* Уменьшено */
             cursor: pointer;
             color: #8E8E93;
             transition: color 0.2s;
@@ -293,7 +293,7 @@
         .tab-item.active::after {
             content: '';
             position: absolute;
-            bottom: -11px;
+            bottom: -9px; /* Подкорректировано */
             left: 0;
             width: 100%;
             height: 2px;
@@ -301,56 +301,61 @@
         }
 
         .tab-icon {
-            font-size: 20px;
+            font-size: 18px; /* Было 20px */
             line-height: 1;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
+        .tab-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+        
         .tab-label {
-            font-size: 13px;
+            font-size: 12px; /* Было 13px */
         }
 
         /* ИСПРАВЛЕНИЕ СКРОЛЛИНГА */
         .sidebar-content {
             flex: 1;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
-            padding: 20px;
-            padding-bottom: 50px; /* Отступ снизу для комфортного скролла */
+            -webkit-overflow-scrolling: touch;
+            padding: 16px; /* Было 20px */
+            padding-bottom: 40px;
             display: flex;
             flex-direction: column;
             align-items: flex-start;
             color: #000;
             width: 100%;
-            min-height: 0; /* Важно для flex контейнеров */
-            overscroll-behavior: contain; /* Чтобы скролл не передавался body */
+            min-height: 0;
+            overscroll-behavior: contain;
             touch-action: pan-y;
         }
 
-        /* --- СТИЛИ ФОРМЫ --- */
+        /* --- СТИЛИ ФОРМЫ (КОМПАКТНЕЕ) --- */
         .form-container {
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            padding-top: 10px;
+            gap: 10px; /* Было 12px */
+            padding-top: 8px;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
         }
 
         .form-input {
             width: 100%;
             background: #FFFFFF;
             border: 1px solid #E5E5EA;
-            border-radius: 10px;
-            padding: 10px 12px;
-            font-size: 15px;
+            border-radius: 9px;
+            padding: 8px 10px; /* Уменьшено */
+            font-size: 14px; /* Было 15px */
             color: #000;
             transition: border-color 0.2s;
             -webkit-appearance: none;
@@ -364,12 +369,12 @@
             background: #007AFF;
             color: white;
             border: none;
-            border-radius: 10px;
-            padding: 14px;
-            font-size: 16px;
+            border-radius: 9px;
+            padding: 11px; /* Было 14px */
+            font-size: 15px; /* Было 16px */
             font-weight: 600;
             cursor: pointer;
-            margin-top: 8px;
+            margin-top: 6px;
             width: 100%;
             display: flex;
             justify-content: center;
@@ -385,16 +390,16 @@
             background: #FFFFFF;
             color: #3C4043;
             border: 1px solid #E5E5EA;
-            border-radius: 10px;
-            padding: 12px;
-            font-size: 15px;
+            border-radius: 9px;
+            padding: 10px; /* Было 12px */
+            font-size: 14px; /* Было 15px */
             font-weight: 500;
             cursor: pointer;
             width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         
         .google-btn:active {
@@ -403,9 +408,9 @@
 
         .text-link {
             color: #007AFF;
-            font-size: 13px;
+            font-size: 12px; /* Было 13px */
             text-align: center;
-            margin-top: 10px;
+            margin-top: 8px;
             cursor: pointer;
             width: 100%;
         }
@@ -415,8 +420,8 @@
             align-items: center;
             text-align: center;
             color: #8E8E93;
-            font-size: 12px;
-            margin: 8px 0;
+            font-size: 11px;
+            margin: 6px 0;
             width: 100%;
         }
         .divider::before, .divider::after {
@@ -428,35 +433,35 @@
         .divider::after { margin-left: 10px; }
 
         .section-title {
-            font-size: 20px;
+            font-size: 18px; /* Было 20px */
             font-weight: 700;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             color: #000;
         }
         
         .section-desc {
-            font-size: 13px;
+            font-size: 12px; /* Было 13px */
             color: #8E8E93;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             line-height: 1.3;
         }
 
-        /* --- ПРОФИЛЬ --- */
+        /* --- ПРОФИЛЬ (КОМПАКТНЕЕ) --- */
         .profile-card {
             background: #FFFFFF;
-            border-radius: 16px;
-            padding: 20px;
+            border-radius: 14px;
+            padding: 16px; /* Было 20px */
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.06);
             position: relative;
         }
 
         .profile-title-in-card {
-            font-size: 20px;
+            font-size: 18px; /* Было 20px */
             font-weight: 700;
             color: #000;
             margin: 0;
@@ -465,14 +470,14 @@
         .profile-content-row {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
             width: 100%;
         }
 
         .avatar-wrapper {
             position: relative;
-            width: 55px;
-            height: 55px;
+            width: 48px; /* Было 55px */
+            height: 48px;
             flex-shrink: 0;
         }
 
@@ -489,8 +494,8 @@
             position: absolute;
             bottom: -2px;
             right: -2px;
-            width: 20px;
-            height: 20px;
+            width: 18px; /* Чуть меньше */
+            height: 18px;
             background: white;
             border-radius: 50%;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -511,7 +516,7 @@
         }
 
         .profile-name {
-            font-size: 17px;
+            font-size: 16px; /* Было 17px */
             font-weight: 600;
             color: #000;
             white-space: nowrap;
@@ -520,52 +525,52 @@
         }
 
         .profile-email {
-            font-size: 13px;
+            font-size: 12px; /* Было 13px */
             color: #8E8E93;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .logout-btn-styled {
             background: #FFFFFF;
             border: 1px solid #E5E5EA;
             color: #000;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 13px;
+            padding: 5px 10px; /* Уменьшено */
+            border-radius: 7px;
+            font-size: 12px; /* Было 13px */
             font-weight: 500;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             align-self: flex-start;
         }
 
         .logout-icon-small {
-            width: 14px;
-            height: 14px;
+            width: 13px;
+            height: 13px;
             opacity: 0.7;
         }
 
-        /* --- СТИЛИ ДЛЯ СПИСКА (МИНИМАЛИЗМ) --- */
+        /* --- СТИЛИ ДЛЯ СПИСКА (КОМПАКТНЕЕ) --- */
         .sidebar-dummy-btn {
             background: #4285f4;
             color: #ffffff;
             border: 1px #C7C7CC;
-            border-radius: 12px;
-            padding: 16px;
-            font-size: 15px;
+            border-radius: 10px; /* Было 12px */
+            padding: 12px; /* Было 16px - стало компактнее */
+            font-size: 14px; /* Было 15px */
             font-weight: 500;
             width: 100%;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 8px;
-            flex-shrink: 0; /* Не сжиматься при скролле */
+            gap: 6px;
+            flex-shrink: 0;
             transition: background 0.2s;
         }
         
@@ -580,19 +585,19 @@
             gap: 0;
             width: 100%;
             background: #fff;
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
-            flex-shrink: 0; /* Чтобы список не сжимался */
+            flex-shrink: 0;
         }
 
         .sidebar-app-row {
             display: flex;
-            align-items: flex-start; /* Выравнивание по верху для полей ввода */
-            padding: 12px 15px;
+            align-items: flex-start;
+            padding: 10px 12px; /* Было 12px 15px */
             border-bottom: 1px solid #E5E5EA;
-            gap: 12px;
+            gap: 10px;
             transition: background 0.2s;
-            min-height: 60px; /* Минимальная высота */
+            min-height: 50px; /* Было 60px */
         }
 
         .sidebar-app-row:last-child {
@@ -600,14 +605,14 @@
         }
 
         .sidebar-app-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
+            width: 32px; /* Было 36px */
+            height: 32px;
+            border-radius: 7px;
             object-fit: cover;
             background: #f2f2f2;
             border: 1px solid rgba(0,0,0,0.05);
             flex-shrink: 0;
-            margin-top: 2px; /* Чуть подровнять если поле ввода высокое */
+            margin-top: 2px;
         }
 
         .sidebar-app-info {
@@ -615,11 +620,11 @@
             overflow: hidden;
             display: flex;
             align-items: center;
-            min-height: 36px;
+            min-height: 32px;
         }
 
         .sidebar-app-name {
-            font-size: 16px;
+            font-size: 14px; /* Было 16px */
             color: #000;
             white-space: nowrap;
             overflow: hidden;
@@ -630,23 +635,23 @@
         .sidebar-edit-wrapper {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             width: 100%;
-            padding: 2px 0;
+            padding: 0;
         }
 
         .sidebar-edit-input {
             width: 100%;
-            font-size: 15px;
-            padding: 6px 8px;
+            font-size: 13px; /* Было 15px */
+            padding: 5px 8px; /* Уменьшено */
             border: 1px solid #007AFF;
-            border-radius: 6px;
+            border-radius: 5px;
             outline: none;
             background: #F2F2F7;
         }
 
         .sidebar-edit-input.url {
-            font-size: 15px;
+            font-size: 13px;
             border-color: #E5E5EA;
         }
         .sidebar-edit-input.url:focus {
@@ -657,17 +662,17 @@
             display: flex;
             align-items: center;
             gap: 2px;
-            height: 36px; /* Фикс высота чтобы кнопки не прыгали */
+            height: 32px; 
         }
 
         /* МИНИМАЛИСТИЧНЫЕ КНОПКИ ДЕЙСТВИЙ */
         .action-btn {
-            width: 34px;
-            height: 34px;
+            width: 30px; /* Было 34px */
+            height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
+            border-radius: 7px;
             background: transparent;
             color: #8E8E93;
             cursor: pointer;
@@ -681,8 +686,8 @@
         }
            
         .action-btn svg {
-            width: 20px;
-            height: 20px;
+            width: 18px; /* Было 20px */
+            height: 18px;
             stroke-width: 2px;
         }
 
@@ -690,21 +695,21 @@
         .delete-confirm-container {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             animation: fadeIn 0.2s ease;
         }
 
         .confirm-text {
-            font-size: 13px;
+            font-size: 12px;
             color: #FF3B30;
             font-weight: 500;
             margin-right: 2px;
         }
 
         .confirm-btn {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 13px;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             border: none;
@@ -806,7 +811,156 @@
             border-radius: 14px;
             background: rgba(255,255,255,0.05); 
         }
+        
+        /* --- СТИЛИ ДЛЯ ОБОЕВ И ПОЛЗУНКОВ --- */
+        
+        .wallpaper-preview-container {
+            width: 100%;
+            height: 120px;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 15px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
 
+        .wallpaper-preview-bg {
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.3s;
+        }
+
+        .wp-change-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.1s;
+        }
+        .wp-change-btn:active { transform: scale(0.95); }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .slider-group:last-child { margin-bottom: 0; }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #000;
+            font-weight: 500;
+        }
+        .slider-header span:last-child {
+            color: #8E8E93;
+            font-weight: 400;
+        }
+
+        /* iOS Slider Style */
+        .ios-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #E5E5EA;
+            border-radius: 2px;
+            outline: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .ios-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            border: 0.5px solid rgba(0,0,0,0.04);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        
+        .ios-slider::-webkit-slider-thumb:active {
+            transform: scale(1.1);
+        }
+
+        /* Модальное окно для URL */
+        .wp-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(3px);
+        }
+        .wp-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .wp-modal-card {
+            background: white;
+            width: 85%;
+            max-width: 320px;
+            border-radius: 16px;
+            padding: 20px;
+            transform: scale(0.95);
+            transition: transform 0.2s ease;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .wp-modal-overlay.active .wp-modal-card {
+            transform: scale(1);
+        }
+
+        .wp-modal-card h3 {
+            margin: 0 0 15px 0;
+            font-size: 17px;
+            color: #000;
+            text-align: center;
+        }
+
+        .wp-modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .wp-btn-cancel, .wp-btn-save {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+        .wp-btn-cancel { background: #F2F2F7; color: #000; }
+        .wp-btn-save { background: #34C759; color: white; }
     </style>
 </head>
 <body>
@@ -863,508 +1017,491 @@
 
     <script type="module">
         import autoAnimate from 'https://cdn.jsdelivr.net/npm/@formkit/auto-animate/index.min.js';
-        import { IconEditor } from './icon-editor.js';
+    import { IconEditor } from './icon-editor.js';
+    import { WallpaperManager } from './wallpaper-manager.js';
 
-        // --- ИНИЦИАЛИЗАЦИЯ РЕДАКТОРА ---
-        const iconEditor = new IconEditor();
+    // --- ИНИЦИАЛИЗАЦИЯ ---
+    const iconEditor = new IconEditor();
+    const wallpaperManager = new WallpaperManager();
 
-        // --- КОНФИГУРАЦИЯ ---
-        const STORAGE_KEY = 'my_apps_cache_v1';
-        const DEFAULT_APPS = [
-            { name: 'Google', url: 'https://google.com', icon: 'https://www.google.com/s2/favicons?domain=google.com&sz=128' },
-            { name: 'ChatGPT', url: 'https://chat.openai.com', icon: 'https://www.google.com/s2/favicons?domain=openai.com&sz=128' },
-            { name: 'GitHub', url: 'https://github.com', icon: 'https://www.google.com/s2/favicons?domain=github.com&sz=128' },
-            { name: 'Telegram', url: 'https://telegram.org', icon: 'https://www.google.com/s2/favicons?domain=telegram.org&sz=128' },
-            { name: 'YouTube', url: 'https://youtube.com', icon: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128' },
-            { name: 'Notion', url: 'https://notion.so', icon: 'https://www.google.com/s2/favicons?domain=notion.so&sz=128' }
-        ];
+    // --- КОНФИГУРАЦИЯ ---
+    const STORAGE_KEY = 'my_apps_cache_v1';
+    const DEFAULT_APPS = [
+        { name: 'Google', url: 'https://google.com', icon: 'https://www.google.com/s2/favicons?domain=google.com&sz=128' },
+        { name: 'ChatGPT', url: 'https://chat.openai.com', icon: 'https://www.google.com/s2/favicons?domain=openai.com&sz=128' },
+        { name: 'GitHub', url: 'https://github.com', icon: 'https://www.google.com/s2/favicons?domain=github.com&sz=128' },
+        { name: 'Telegram', url: 'https://telegram.org', icon: 'https://www.google.com/s2/favicons?domain=telegram.org&sz=128' },
+        { name: 'YouTube', url: 'https://youtube.com', icon: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128' },
+        { name: 'Notion', url: 'https://notion.so', icon: 'https://www.google.com/s2/favicons?domain=notion.so&sz=128' }
+    ];
 
-        // --- ФУНКЦИИ СИНХРОНИЗАЦИИ ---
-        function getAppsFromDOM() {
-            const items = document.querySelectorAll('.app-item');
-            const appsData = [];
-            items.forEach(item => {
-                const link = item.querySelector('a');
-                const img = item.querySelector('img');
-                const nameSpan = item.querySelector('.app-name');
-                if (link && img && nameSpan) {
-                    appsData.push({
-                        url: link.getAttribute('href'),
-                        icon: img.getAttribute('src'),
-                        name: nameSpan.innerText
-                    });
-                }
-            });
-            return appsData;
-        }
-
-        function renderAppsToDOM(appsArray, silent = false) {
-            const grid = document.getElementById('appGrid');
-            if (silent && animationController) {
-                animationController.disable();
-            }
-            grid.innerHTML = ''; 
-            appsArray.forEach(app => {
-                const newItemHTML = `
-                    <div class="app-item">
-                        <a href="${app.url}" class="icon-container">
-                            <img src="${app.icon}" alt="${app.name}" onerror="this.src='https://via.placeholder.com/62?text=?'">
-                        </a>
-                        <span class="app-name">${app.name}</span>
-                    </div>`;
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = newItemHTML;
-                grid.appendChild(tempDiv.firstElementChild);
-            });
-            initAppItems();
-            if (silent && animationController) {
-                setTimeout(() => { animationController.enable(); }, 100); 
-            }
-        }
-
-        function saveCurrentState() {
-            const currentApps = getAppsFromDOM();
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(currentApps));
-            if (window.dbApi && window.auth && window.auth.currentUser) {
-                window.dbApi.saveApps(currentApps);
-            }
-        }
-
-        // --- ЗАПУСК ИЗ КЕША ---
-        const cachedData = localStorage.getItem(STORAGE_KEY);
-        if (cachedData) {
-            try {
-                const parsed = JSON.parse(cachedData);
-                renderAppsToDOM(parsed); 
-            } catch(e) { renderAppsToDOM(DEFAULT_APPS); }
-        } else { renderAppsToDOM(DEFAULT_APPS); }
-
-        // --- UI & EVENTS ---
-        window.addEventListener('scroll', () => {
-            const header = document.getElementById('header');
-            if (window.scrollY > 5) {
-                header.style.background = "rgba(40, 40, 40, 0.25)";
-                header.style.backdropFilter = "blur(25px) saturate(180%)";
-                header.style.webkitBackdropFilter = "blur(25px) saturate(180%)";
-                header.style.borderBottom = "0.5px solid rgba(255,255,255,0.15)";
-            } else {
-                header.style.background = "rgba(0, 0, 0, 0)";
-                header.style.backdropFilter = "blur(0px)";
-                header.style.webkitBackdropFilter = "blur(0px)";
-                header.style.borderBottom = "none";
+    // --- ФУНКЦИИ СИНХРОНИЗАЦИИ ---
+    function getAppsFromDOM() {
+        const items = document.querySelectorAll('.app-item');
+        const appsData = [];
+        items.forEach(item => {
+            const link = item.querySelector('a');
+            const img = item.querySelector('img');
+            const nameSpan = item.querySelector('.app-name');
+            if (link && img && nameSpan) {
+                appsData.push({
+                    url: link.getAttribute('href'),
+                    icon: img.getAttribute('src'),
+                    name: nameSpan.innerText
+                });
             }
         });
+        return appsData;
+    }
 
-        const appGrid = document.getElementById('appGrid');
-        const animationController = autoAnimate(appGrid, { duration: 250, easing: 'ease-in-out' });
-
-        let sortable = Sortable.create(appGrid, {
-            animation: 300, delay: 200, delayOnTouchOnly: true, disabled: true, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', easing: "cubic-bezier(0.25, 1, 0.5, 1)", swapThreshold: 0.5, invertSwap: true, direction: 'horizontal', forceFallback: true, fallbackClass: "sortable-drag", fallbackOnBody: true,
-            onStart: function () { animationController.disable(); document.body.style.cursor = 'grabbing'; if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(10); },
-            onEnd: function () { animationController.enable(); document.body.style.cursor = ''; saveCurrentState(); }
-        });
-
-        function initAppItems() {
-            const appItems = document.querySelectorAll('.app-item');
-            appItems.forEach(item => {
-                const iconContainer = item.querySelector('.icon-container');
-                const link = item.querySelector('a');
-                const existingBtn = iconContainer.querySelector('.delete-btn');
-                if (existingBtn) existingBtn.remove();
-                const deleteBtn = document.createElement('div');
-                deleteBtn.className = 'delete-btn';
-                iconContainer.appendChild(deleteBtn);
-                item.oncontextmenu = (e) => { e.preventDefault(); enableEditMode(); };
-                deleteBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); item.remove(); saveCurrentState(); };
-                if(link) { link.onclick = (e) => { if (appGrid.classList.contains('edit-mode')) { e.preventDefault(); } }; }
-            });
+    function renderAppsToDOM(appsArray, silent = false) {
+        const grid = document.getElementById('appGrid');
+        if (silent && animationController) {
+            animationController.disable();
         }
+        grid.innerHTML = ''; 
+        appsArray.forEach(app => {
+            const newItemHTML = `
+                <div class="app-item">
+                    <a href="${app.url}" class="icon-container">
+                        <img src="${app.icon}" alt="${app.name}" onerror="this.src='https://via.placeholder.com/62?text=?'">
+                    </a>
+                    <span class="app-name">${app.name}</span>
+                </div>`;
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = newItemHTML;
+            grid.appendChild(tempDiv.firstElementChild);
+        });
+        initAppItems();
+        if (silent && animationController) {
+            setTimeout(() => { animationController.enable(); }, 100); 
+        }
+    }
+
+    function saveCurrentState() {
+        const currentApps = getAppsFromDOM();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentApps));
+        if (window.dbApi && window.auth && window.auth.currentUser) {
+            window.dbApi.saveApps(currentApps);
+        }
+    }
+
+    // --- ЗАПУСК ИЗ КЕША ---
+    const cachedData = localStorage.getItem(STORAGE_KEY);
+    if (cachedData) {
+        try {
+            const parsed = JSON.parse(cachedData);
+            renderAppsToDOM(parsed); 
+        } catch(e) { renderAppsToDOM(DEFAULT_APPS); }
+    } else { renderAppsToDOM(DEFAULT_APPS); }
+
+    // --- UI & EVENTS ---
+    window.addEventListener('scroll', () => {
+        const header = document.getElementById('header');
+        if (window.scrollY > 5) {
+            header.style.background = "rgba(40, 40, 40, 0.25)";
+            header.style.backdropFilter = "blur(25px) saturate(180%)";
+            header.style.webkitBackdropFilter = "blur(25px) saturate(180%)";
+            header.style.borderBottom = "0.5px solid rgba(255,255,255,0.15)";
+        } else {
+            header.style.background = "rgba(0, 0, 0, 0)";
+            header.style.backdropFilter = "blur(0px)";
+            header.style.webkitBackdropFilter = "blur(0px)";
+            header.style.borderBottom = "none";
+        }
+    });
+
+    const appGrid = document.getElementById('appGrid');
+    const animationController = autoAnimate(appGrid, { duration: 250, easing: 'ease-in-out' });
+
+    let sortable = Sortable.create(appGrid, {
+        animation: 300, delay: 200, delayOnTouchOnly: true, disabled: true, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', easing: "cubic-bezier(0.25, 1, 0.5, 1)", swapThreshold: 0.5, invertSwap: true, direction: 'horizontal', forceFallback: true, fallbackClass: "sortable-drag", fallbackOnBody: true,
+        onStart: function () { animationController.disable(); document.body.style.cursor = 'grabbing'; if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(10); },
+        onEnd: function () { animationController.enable(); document.body.style.cursor = ''; saveCurrentState(); }
+    });
+
+    function initAppItems() {
+        const appItems = document.querySelectorAll('.app-item');
+        appItems.forEach(item => {
+            const iconContainer = item.querySelector('.icon-container');
+            const link = item.querySelector('a');
+            const existingBtn = iconContainer.querySelector('.delete-btn');
+            if (existingBtn) existingBtn.remove();
+            const deleteBtn = document.createElement('div');
+            deleteBtn.className = 'delete-btn';
+            iconContainer.appendChild(deleteBtn);
+            item.oncontextmenu = (e) => { e.preventDefault(); enableEditMode(); };
+            deleteBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); item.remove(); saveCurrentState(); };
+            if(link) { link.onclick = (e) => { if (appGrid.classList.contains('edit-mode')) { e.preventDefault(); } }; }
+        });
+    }
+    
+    window.enableEditMode = function() { appGrid.classList.add('edit-mode'); sortable.option("disabled", false); }
+    window.disableEditMode = function() { appGrid.classList.remove('edit-mode'); sortable.option("disabled", true); }
+    document.addEventListener('click', (e) => { if (!e.target.closest('.app-item') && !e.target.closest('.delete-btn') && !e.target.closest('.menu-btn') && !e.target.closest('.sidebar') && !e.target.closest('.add-btn') && !e.target.closest('.editor-overlay')) { window.disableEditMode(); } });
+
+    // --- MENU LOGIC ---
+    const menuBtn = document.getElementById('menuBtn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const closeMenuBtn = document.getElementById('closeMenuBtn');
+    const tabAdd = document.getElementById('tabAdd');
+    const tabSettings = document.getElementById('tabSettings');
+    const sidebarContent = document.getElementById('sidebarContent');
+
+    function openMenu() {
+        sidebar.classList.add('active'); sidebarOverlay.classList.add('active'); document.body.style.overflow = 'hidden'; 
+        if (!tabSettings.classList.contains('active')) { renderAddTab(); }
+    }
+    function closeMenu() {
+        sidebar.classList.remove('active'); sidebarOverlay.classList.remove('active'); document.body.style.overflow = ''; 
+    }
+
+    menuBtn.addEventListener('click', openMenu);
+    closeMenuBtn.addEventListener('click', closeMenu);
+    sidebarOverlay.addEventListener('click', closeMenu);
+    tabAdd.addEventListener('click', () => { tabAdd.classList.add('active'); tabSettings.classList.remove('active'); renderAddTab(); });
+    tabSettings.addEventListener('click', () => { tabSettings.classList.add('active'); tabAdd.classList.remove('active'); renderSettingsTab(); });
+
+    // --- ЛОГИКА ВКЛАДКИ "ПРИЛОЖЕНИЯ" ---
+
+    function renderAddTab() {
+        const content = document.getElementById('sidebarContent');
+        content.innerHTML = `                
+            <h2 class="section-title">Мои сайты</h2>
+            <p class="section-desc">Управление списком ваших сайтов.</p>
+            
+            <button class="sidebar-dummy-btn" id="btnOpenEditor">
+                <span>+</span> Добавить сайт
+            </button>
+
+            <div id="sidebarAppsList" class="sidebar-app-list"></div>
+        `;
         
-        window.enableEditMode = function() { appGrid.classList.add('edit-mode'); sortable.option("disabled", false); }
-        window.disableEditMode = function() { appGrid.classList.remove('edit-mode'); sortable.option("disabled", true); }
-        document.addEventListener('click', (e) => { if (!e.target.closest('.app-item') && !e.target.closest('.delete-btn') && !e.target.closest('.menu-btn') && !e.target.closest('.sidebar') && !e.target.closest('.add-btn') && !e.target.closest('.editor-overlay')) { window.disableEditMode(); } });
-
-        // --- MENU LOGIC ---
-        const menuBtn = document.getElementById('menuBtn');
-        const sidebar = document.getElementById('sidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-        const closeMenuBtn = document.getElementById('closeMenuBtn');
-        const tabAdd = document.getElementById('tabAdd');
-        const tabSettings = document.getElementById('tabSettings');
-        const sidebarContent = document.getElementById('sidebarContent');
-
-        function openMenu() {
-            sidebar.classList.add('active'); sidebarOverlay.classList.add('active'); document.body.style.overflow = 'hidden'; 
-            if (!tabSettings.classList.contains('active')) { renderAddTab(); }
-        }
-        function closeMenu() {
-            sidebar.classList.remove('active'); sidebarOverlay.classList.remove('active'); document.body.style.overflow = ''; 
-        }
-
-        menuBtn.addEventListener('click', openMenu);
-        closeMenuBtn.addEventListener('click', closeMenu);
-        sidebarOverlay.addEventListener('click', closeMenu);
-        tabAdd.addEventListener('click', () => { tabAdd.classList.add('active'); tabSettings.classList.remove('active'); renderAddTab(); });
-        tabSettings.addEventListener('click', () => { tabSettings.classList.add('active'); tabAdd.classList.remove('active'); renderSettingsTab(); });
-
-        // --- ЛОГИКА ВКЛАДКИ "ПРИЛОЖЕНИЯ" ---
-
-        function renderAddTab() {
-            const content = document.getElementById('sidebarContent');
-            content.innerHTML = `                
-                <h2 class="section-title">Мои сайты</h2>
-                <p class="section-desc">Управление списком ваших сайтов.</p>
-                
-                <button class="sidebar-dummy-btn" id="btnOpenEditor">
-                    <span>+</span> Добавить сайт
-                </button>
-
-                <div id="sidebarAppsList" class="sidebar-app-list"></div>
-            `;
-            
-            // Обработчик открытия редактора
-            setTimeout(() => {
-                const btn = document.getElementById('btnOpenEditor');
-                if (btn) {
-                    btn.addEventListener('click', () => {
-                        iconEditor.open((data) => {
-                            // "data" содержит { icon, name, url }
-                            
-                            let finalName = data.name || "Новый сайт";
-                            let finalUrl = data.url || "";
-                            
-                            if (finalUrl && !finalUrl.startsWith('http')) {
-                                finalUrl = 'https://' + finalUrl;
-                            }
-
-                            const newApp = {
-                                name: finalName,
-                                url: finalUrl,
-                                icon: data.icon
-                            };
-
-                            const currentApps = getAppsFromDOM();
-                            currentApps.push(newApp);
-                            
-                            renderAppsToDOM(currentApps);
-                            saveCurrentState();
-                            renderSidebarAppsList();
-                            
-                            // ЗАКРЫВАЕМ МЕНЮ ПОСЛЕ ДОБАВЛЕНИЯ
-                            closeMenu(); 
-                        });
+        // Обработчик открытия редактора
+        setTimeout(() => {
+            const btn = document.getElementById('btnOpenEditor');
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    iconEditor.open((data) => {
+                        let finalName = data.name || "Новый сайт";
+                        let finalUrl = data.url || "";
+                        if (finalUrl && !finalUrl.startsWith('http')) {
+                            finalUrl = 'https://' + finalUrl;
+                        }
+                        const newApp = {
+                            name: finalName,
+                            url: finalUrl,
+                            icon: data.icon
+                        };
+                        const currentApps = getAppsFromDOM();
+                        currentApps.push(newApp);
+                        renderAppsToDOM(currentApps);
+                        saveCurrentState();
+                        renderSidebarAppsList();
+                        closeMenu(); 
                     });
-                }
-            }, 0);
-            
-            if(window.renderSidebarAppsList) window.renderSidebarAppsList();
-        }
-
-        window.renderSidebarAppsList = function() {
-            const listContainer = document.getElementById('sidebarAppsList');
-            if (!listContainer) return;
-
-            const currentApps = getAppsFromDOM();
-
-            if (currentApps.length === 0) {
-                listContainer.innerHTML = '<div style="padding:20px; text-align:center; color:#8E8E93;">Список пуст</div>';
-                return;
+                });
             }
+        }, 0);
+        
+        if(window.renderSidebarAppsList) window.renderSidebarAppsList();
+    }
 
-            listContainer.innerHTML = '';
+    window.renderSidebarAppsList = function() {
+        const listContainer = document.getElementById('sidebarAppsList');
+        if (!listContainer) return;
+        const currentApps = getAppsFromDOM();
 
-            currentApps.forEach((app, index) => {
-                const row = document.createElement('div');
-                row.className = 'sidebar-app-row';
-                
-                row.innerHTML = `
-                    <img src="${app.icon}" class="sidebar-app-icon" onerror="this.src='https://via.placeholder.com/36?text=?'">
-                    
-                    <div class="sidebar-app-info" id="info-${index}">
-                        <span class="sidebar-app-name">${app.name}</span>
-                    </div>
-
-                    <div class="row-actions" id="actions-${index}">
-                        <button class="action-btn" onclick="startEditApp(${index})">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                            </svg>
-                        </button>
-                        <button class="action-btn" onclick="askDeleteApp(${index})">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        </button>
-                    </div>
-                `;
-                listContainer.appendChild(row);
-            });
+        if (currentApps.length === 0) {
+            listContainer.innerHTML = '<div style="padding:20px; text-align:center; color:#8E8E93;">Список пуст</div>';
+            return;
         }
 
-        // Логика редактирования
-        window.startEditApp = function(index) {
-            window.renderSidebarAppsList(); // Сброс списка, чтобы закрыть другие открытые редакторы
-
-            const apps = getAppsFromDOM();
-            const app = apps[index];
-            const rows = document.querySelectorAll('.sidebar-app-row');
-            if (!rows[index]) return;
-            
-            const row = rows[index];
-            const infoDiv = row.querySelector(`#info-${index}`);
-            const actionsDiv = row.querySelector(`#actions-${index}`);
-            
-            // В infoDiv добавляем инпуты + кнопку редактирования иконки
-            infoDiv.innerHTML = `
-                <div class="sidebar-edit-wrapper">
-                    <input type="text" id="edit-name-${index}" class="sidebar-edit-input" value="${app.name}" placeholder="Название" autocomplete="off">
-                    <input type="text" id="edit-url-${index}" class="sidebar-edit-input url" value="${app.url}" placeholder="https://..." autocomplete="off">
-                    
-                    <button class="edit-icon-btn-small" onclick="openIconEditorForApp(${index})">
-                        Изменить значок
-                    </button>
+        listContainer.innerHTML = '';
+        currentApps.forEach((app, index) => {
+            const row = document.createElement('div');
+            row.className = 'sidebar-app-row';
+            row.innerHTML = `
+                <img src="${app.icon}" class="sidebar-app-icon" onerror="this.src='https://via.placeholder.com/36?text=?'">
+                <div class="sidebar-app-info" id="info-${index}">
+                    <span class="sidebar-app-name">${app.name}</span>
                 </div>
-            `;
-            
-            // Стили для маленькой кнопки (можно вынести в <style>, но здесь проще для вставки)
+                <div class="row-actions" id="actions-${index}">
+                    <button class="action-btn" onclick="startEditApp(${index})">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="action-btn" onclick="askDeleteApp(${index})">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>`;
+            listContainer.appendChild(row);
+        });
+    }
+
+    window.startEditApp = function(index) {
+        window.renderSidebarAppsList();
+        const apps = getAppsFromDOM();
+        const app = apps[index];
+        const rows = document.querySelectorAll('.sidebar-app-row');
+        if (!rows[index]) return;
+        
+        const row = rows[index];
+        const infoDiv = row.querySelector(`#info-${index}`);
+        const actionsDiv = row.querySelector(`#actions-${index}`);
+        
+        infoDiv.innerHTML = `
+            <div class="sidebar-edit-wrapper">
+                <input type="text" id="edit-name-${index}" class="sidebar-edit-input" value="${app.name}" placeholder="Название" autocomplete="off">
+                <input type="text" id="edit-url-${index}" class="sidebar-edit-input url" value="${app.url}" placeholder="https://..." autocomplete="off">
+                <button class="edit-icon-btn-small" onclick="openIconEditorForApp(${index})">Изменить значок</button>
+            </div>
+        `;
+        
+        // Стили кнопки
+        if(!document.getElementById('edit-btn-style')) {
             const btnStyle = document.createElement('style');
+            btnStyle.id = 'edit-btn-style';
             btnStyle.innerHTML = `
-                .edit-icon-btn-small {
-                    margin-top: 4px;
-                    background: #F2F2F7;
-                    border: none;
-                    border-radius: 6px;
-                    padding: 6px 10px;
-                    font-size: 15px;
-                    color: #000;
-                    cursor: pointer;
-                }
+                .edit-icon-btn-small { margin-top: 4px; background: #F2F2F7; border: none; border-radius: 6px; padding: 6px 10px; font-size: 13px; color: #000; cursor: pointer; }
                 .edit-icon-btn-small:hover { background: #D1D1D6; }
             `;
             document.head.appendChild(btnStyle);
+        }
 
-            
-            setTimeout(() => {
-                const input = document.getElementById(`edit-name-${index}`);
-                if(input) {
-                    input.focus();
-                    input.onkeydown = (e) => { if(e.key === 'Enter') saveEditApp(index); };
-                }
-                const inputUrl = document.getElementById(`edit-url-${index}`);
-                if(inputUrl) {
-                     inputUrl.onkeydown = (e) => { if(e.key === 'Enter') saveEditApp(index); };
-                }
-            }, 50);
-
-            actionsDiv.innerHTML = `
-                <button class="action-btn" onclick="renderSidebarAppsList()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 14 4 9l5-5"/>
-                        <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
-                    </svg>
-                </button>
-                <button class="action-btn" onclick="saveEditApp(${index})">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                </button>
-            `;
-        };
-
-        // НОВАЯ ФУНКЦИЯ: Открывает редактор для конкретного приложения
-        window.openIconEditorForApp = function(index) {
-            const apps = getAppsFromDOM();
-            const currentApp = apps[index];
-
-            // Берем актуальные данные из инпутов (вдруг пользователь уже поменял текст)
-            const nameInput = document.getElementById(`edit-name-${index}`);
-            const urlInput = document.getElementById(`edit-url-${index}`);
-            
-            const appData = {
-                name: nameInput ? nameInput.value : currentApp.name,
-                url: urlInput ? urlInput.value : currentApp.url,
-                icon: currentApp.icon
-            };
-
-            // Открываем редактор, передавая данные
-            iconEditor.open((newData) => {
-                // ОБНОВЛЕНИЕ ПРИЛОЖЕНИЯ
-                apps[index].name = newData.name || appData.name;
-                apps[index].url = newData.url || appData.url;
-                apps[index].icon = newData.icon;
-
-                if (apps[index].url && !apps[index].url.startsWith('http')) {
-                    apps[index].url = 'https://' + apps[index].url;
-                }
-
-                renderAppsToDOM(apps);
-                saveCurrentState();
-                
-                // Перерисовываем список в боковой панели (выход из режима редактирования)
-                renderSidebarAppsList();
-                
-            }, appData); // <-- Передаем текущие данные вторым аргументом
-        };
-
-        window.saveEditApp = function(index) {
-            const nameInput = document.getElementById(`edit-name-${index}`);
-            const urlInput = document.getElementById(`edit-url-${index}`);
-            
-            const newName = nameInput.value.trim();
-            let newUrl = urlInput.value.trim();
-
-            if (newName && newUrl) {
-                if (!newUrl.startsWith('http')) { newUrl = 'https://' + newUrl; }
-
-                const apps = getAppsFromDOM();
-                apps[index].name = newName;
-                apps[index].url = newUrl;
-                
-                renderAppsToDOM(apps);
-                saveCurrentState();
-                renderSidebarAppsList();
+        setTimeout(() => {
+            const input = document.getElementById(`edit-name-${index}`);
+            if(input) {
+                input.focus();
+                input.onkeydown = (e) => { if(e.key === 'Enter') saveEditApp(index); };
             }
+            const inputUrl = document.getElementById(`edit-url-${index}`);
+            if(inputUrl) {
+                 inputUrl.onkeydown = (e) => { if(e.key === 'Enter') saveEditApp(index); };
+            }
+        }, 50);
+
+        actionsDiv.innerHTML = `
+            <button class="action-btn" onclick="renderSidebarAppsList()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 14 4 9l5-5"/>
+                    <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+                </svg>
+            </button>
+            <button class="action-btn" onclick="saveEditApp(${index})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </button>
+        `;
+    };
+
+    window.openIconEditorForApp = function(index) {
+        const apps = getAppsFromDOM();
+        const currentApp = apps[index];
+        const nameInput = document.getElementById(`edit-name-${index}`);
+        const urlInput = document.getElementById(`edit-url-${index}`);
+        
+        const appData = {
+            name: nameInput ? nameInput.value : currentApp.name,
+            url: urlInput ? urlInput.value : currentApp.url,
+            icon: currentApp.icon
         };
 
-        // Логика удаления
-        window.askDeleteApp = function(index) {
-            window.renderSidebarAppsList();
-            const rows = document.querySelectorAll('.sidebar-app-row');
-            if (!rows[index]) return;
-            const row = rows[index];
-            const actionsDiv = row.querySelector(`#actions-${index}`);
-            
-            actionsDiv.innerHTML = `
-                <div class="delete-confirm-container">
-                    <span class="confirm-text">Удалить?</span>
-                    <button class="confirm-btn confirm-yes" onclick="confirmDeleteApp(${index})">Да</button>
-                    <button class="confirm-btn confirm-no" onclick="renderSidebarAppsList()">Нет</button>
+        iconEditor.open((newData) => {
+            apps[index].name = newData.name || appData.name;
+            apps[index].url = newData.url || appData.url;
+            apps[index].icon = newData.icon;
+            if (apps[index].url && !apps[index].url.startsWith('http')) {
+                apps[index].url = 'https://' + apps[index].url;
+            }
+            renderAppsToDOM(apps);
+            saveCurrentState();
+            renderSidebarAppsList();
+        }, appData);
+    };
+
+    window.saveEditApp = function(index) {
+        const nameInput = document.getElementById(`edit-name-${index}`);
+        const urlInput = document.getElementById(`edit-url-${index}`);
+        const newName = nameInput.value.trim();
+        let newUrl = urlInput.value.trim();
+        if (newName && newUrl) {
+            if (!newUrl.startsWith('http')) { newUrl = 'https://' + newUrl; }
+            const apps = getAppsFromDOM();
+            apps[index].name = newName;
+            apps[index].url = newUrl;
+            renderAppsToDOM(apps);
+            saveCurrentState();
+            renderSidebarAppsList();
+        }
+    };
+
+    window.askDeleteApp = function(index) {
+        window.renderSidebarAppsList();
+        const rows = document.querySelectorAll('.sidebar-app-row');
+        if (!rows[index]) return;
+        const row = rows[index];
+        const actionsDiv = row.querySelector(`#actions-${index}`);
+        actionsDiv.innerHTML = `
+            <div class="delete-confirm-container">
+                <span class="confirm-text">Удалить?</span>
+                <button class="confirm-btn confirm-yes" onclick="confirmDeleteApp(${index})">Да</button>
+                <button class="confirm-btn confirm-no" onclick="renderSidebarAppsList()">Нет</button>
+            </div>`;
+    };
+
+    window.confirmDeleteApp = function(index) {
+        const apps = getAppsFromDOM();
+        apps.splice(index, 1);
+        renderAppsToDOM(apps);
+        saveCurrentState();
+        renderSidebarAppsList();
+    };
+
+    let authMode = 'login'; 
+
+    // --- ЛОГИКА ВКЛАДКИ "НАСТРОЙКИ" (ОБНОВЛЕННАЯ) ---
+    function renderSettingsTab() {
+        const content = document.getElementById('sidebarContent');
+        const auth = window.auth;
+
+        // Если не загрузилось - заглушка
+        if (!auth) { 
+            content.innerHTML = `<div style="padding: 20px; text-align: center; color: #8E8E93;">Загрузка...</div>`;
+            return;
+        }
+
+        // Генерация HTML профиля (теперь возвращает строку)
+        const getProfileHTML = (user) => {
+            const photoURL = user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop';
+            const displayName = user.displayName || 'Пользователь';
+            const email = user.email || '';
+            const isGoogleAuth = user.providerData.some(provider => provider.providerId === 'google.com');
+            const googleBadgeHTML = isGoogleAuth 
+                ? `<div class="google-badge"><img src="https://www.google.com/s2/favicons?domain=google.com" style="width: 100%; height: 100%; display: block;"></div>` : '';
+
+            return `
+                <div class="profile-card">
+                    <h2 class="profile-title-in-card">Аккаунт</h2>
+                    <div class="profile-content-row">
+                        <div class="avatar-wrapper">
+                            <img src="${photoURL}" class="profile-avatar" alt="Avatar">
+                            ${googleBadgeHTML}
+                        </div>
+                        <div class="profile-info">
+                            <div class="profile-name">${displayName}</div>
+                            <div class="profile-email">${email}</div>
+                            <button class="logout-btn-styled" id="logoutBtn">
+                                <svg class="logout-icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                    <polyline points="16 17 21 12 16 7"></polyline>
+                                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                                </svg>
+                                Выйти
+                            </button>
+                        </div>
+                    </div>
                 </div>
             `;
         };
 
-        window.confirmDeleteApp = function(index) {
-            const apps = getAppsFromDOM();
-            apps.splice(index, 1);
-            renderAppsToDOM(apps);
-            saveCurrentState();
-            renderSidebarAppsList();
+        // Генерация форм входа (рендерят сразу в DOM)
+        const drawLogin = () => {
+            content.innerHTML = `
+                <h2 class="section-title">Вход</h2>
+                <p class="section-desc">Войдите для синхронизации.</p>
+                <div class="form-container">
+                    <div class="form-group"><input type="email" id="authEmail" class="form-input" placeholder="Email"></div>
+                    <div class="form-group"><input type="password" id="authPass" class="form-input" placeholder="Пароль"></div>
+                    <button id="doLoginBtn" class="primary-btn">Войти</button>
+                    <div class="divider">или</div>
+                    <button id="doGoogleBtn" class="google-btn">
+                         <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill-rule="evenodd" fill-opacity="1" fill="#4285f4" stroke="none"></path><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.715H.957v2.332A8.997 8.997 0 0 0 9 18z" fill-rule="evenodd" fill-opacity="1" fill="#34a853" stroke="none"></path><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill-rule="evenodd" fill-opacity="1" fill="#fbbc05" stroke="none"></path><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill-rule="evenodd" fill-opacity="1" fill="#ea4335" stroke="none"></path></svg>
+                         Google
+                    </button>
+                    <div class="text-link" id="goRegister">Нет аккаунта? Зарегистрироваться</div>
+                </div>`;
+            document.getElementById('doLoginBtn').onclick = () => { const e = document.getElementById('authEmail').value; const p = document.getElementById('authPass').value; if(window.authApi) window.authApi.login(e, p); };
+            document.getElementById('doGoogleBtn').onclick = () => { if(window.authApi) window.authApi.google(); };
+            document.getElementById('goRegister').onclick = () => { authMode = 'register'; renderAuth(); };
         };
 
-        let authMode = 'login'; 
+        const drawRegister = () => {
+            content.innerHTML = `
+                <h2 class="section-title">Регистрация</h2>
+                <p class="section-desc">Создайте аккаунт для сохранения настроек.</p>
+                <div class="form-container">
+                    <div class="form-group"><input type="text" id="regName" class="form-input" placeholder="Ваше имя"></div>
+                    <div class="form-group"><input type="email" id="regEmail" class="form-input" placeholder="Email"></div>
+                    <div class="form-group"><input type="password" id="regPass" class="form-input" placeholder="Пароль"></div>
+                    <button id="doRegisterBtn" class="primary-btn">Создать аккаунт</button>
+                    <div class="text-link" id="goLogin">Уже есть аккаунт? Войти</div>
+                </div>`;
+             document.getElementById('doRegisterBtn').onclick = () => { const n = document.getElementById('regName').value; const e = document.getElementById('regEmail').value; const p = document.getElementById('regPass').value; if(window.authApi) window.authApi.register(e, p, n); };
+            document.getElementById('goLogin').onclick = () => { authMode = 'login'; renderAuth(); };
+        };
 
-        function renderSettingsTab() {
-            const content = document.getElementById('sidebarContent');
-            content.innerHTML = `<div style="padding: 20px; text-align: center; color: #8E8E93;">Загрузка...</div>`;
-
-            const drawProfile = (user) => {
-                const photoURL = user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop';
-                const displayName = user.displayName || 'Пользователь';
-                const email = user.email || '';
+        const renderAuth = () => {
+            if (auth.currentUser) { 
+                // Пользователь ВОШЕЛ: Рисуем Профиль + Настройки обоев
+                const profileHTML = getProfileHTML(auth.currentUser);
+                const wallpaperHTML = wallpaperManager.getSettingsHTML();
                 
-                const isGoogleAuth = user.providerData.some(provider => provider.providerId === 'google.com');
-                const googleBadgeHTML = isGoogleAuth 
-                    ? `<div class="google-badge"><img src="https://www.google.com/s2/favicons?domain=google.com" style="width: 100%; height: 100%; display: block;"></div>` : '';
-
-                content.innerHTML = `
-                    <div class="profile-card">
-                        <h2 class="profile-title-in-card">Аккаунт</h2>
-                        <div class="profile-content-row">
-                            <div class="avatar-wrapper">
-                                <img src="${photoURL}" class="profile-avatar" alt="Avatar">
-                                ${googleBadgeHTML}
-                            </div>
-                            <div class="profile-info">
-                                <div class="profile-name">${displayName}</div>
-                                <div class="profile-email">${email}</div>
-                                <button class="logout-btn-styled" id="logoutBtn">
-                                    <svg class="logout-icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                        <polyline points="16 17 21 12 16 7"></polyline>
-                                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                                    </svg>
-                                    Выйти
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                content.innerHTML = profileHTML + wallpaperHTML;
+                
+                // Навешиваем обработчики для профиля
                 document.getElementById('logoutBtn').addEventListener('click', () => { if (window.authApi) window.authApi.logout(); });
-            };
+                
+                // Навешиваем обработчики для обоев
+                wallpaperManager.attachListeners();
 
-            const drawLogin = () => {
-                content.innerHTML = `
-                    <h2 class="section-title">Вход</h2>
-                    <p class="section-desc">Войдите для синхронизации.</p>
-                    <div class="form-container">
-                        <div class="form-group"><input type="email" id="authEmail" class="form-input" placeholder="Email"></div>
-                        <div class="form-group"><input type="password" id="authPass" class="form-input" placeholder="Пароль"></div>
-                        <button id="doLoginBtn" class="primary-btn">Войти</button>
-                        <div class="divider">или</div>
-                        <button id="doGoogleBtn" class="google-btn">
-                             <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill-rule="evenodd" fill-opacity="1" fill="#4285f4" stroke="none"></path><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.715H.957v2.332A8.997 8.997 0 0 0 9 18z" fill-rule="evenodd" fill-opacity="1" fill="#34a853" stroke="none"></path><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill-rule="evenodd" fill-opacity="1" fill="#fbbc05" stroke="none"></path><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill-rule="evenodd" fill-opacity="1" fill="#ea4335" stroke="none"></path></svg>
-                             Google
-                        </button>
-                        <div class="text-link" id="goRegister">Нет аккаунта? Зарегистрироваться</div>
-                    </div>`;
-                document.getElementById('doLoginBtn').onclick = () => { const e = document.getElementById('authEmail').value; const p = document.getElementById('authPass').value; if(window.authApi) window.authApi.login(e, p); };
-                document.getElementById('doGoogleBtn').onclick = () => { if(window.authApi) window.authApi.google(); };
-                document.getElementById('goRegister').onclick = () => { authMode = 'register'; renderAuth(); };
-            };
-
-            const drawRegister = () => {
-                content.innerHTML = `
-                    <h2 class="section-title">Регистрация</h2>
-                    <p class="section-desc">Создайте аккаунт для сохранения настроек.</p>
-                    <div class="form-container">
-                        <div class="form-group"><input type="text" id="regName" class="form-input" placeholder="Ваше имя"></div>
-                        <div class="form-group"><input type="email" id="regEmail" class="form-input" placeholder="Email"></div>
-                        <div class="form-group"><input type="password" id="regPass" class="form-input" placeholder="Пароль"></div>
-                        <button id="doRegisterBtn" class="primary-btn">Создать аккаунт</button>
-                        <div class="text-link" id="goLogin">Уже есть аккаунт? Войти</div>
-                    </div>`;
-                 document.getElementById('doRegisterBtn').onclick = () => { const n = document.getElementById('regName').value; const e = document.getElementById('regEmail').value; const p = document.getElementById('regPass').value; if(window.authApi) window.authApi.register(e, p, n); };
-                document.getElementById('goLogin').onclick = () => { authMode = 'login'; renderAuth(); };
-            };
-
-            const renderAuth = () => {
-                const auth = window.auth;
-                if (!auth) { content.innerHTML = '<div style="padding:20px; text-align:center">Ошибка: Firebase не подключен</div>'; return; }
-                if (auth.currentUser) { drawProfile(auth.currentUser); } else { if (authMode === 'login') drawLogin(); else drawRegister(); }
-            };
-
-            const auth = window.auth;
-            if (auth) { renderAuth(); } else { setTimeout(renderAuth, 500); }
-        }
-
-        // --- AUTH & SYNC ---
-        const waitForAuth = setInterval(() => {
-            if (window.auth) {
-                clearInterval(waitForAuth);
-                window.auth.onAuthStateChanged(async (user) => {
-                    if (tabSettings.classList.contains('active')) { renderSettingsTab(); }
-                    if (user) {
-                        console.log("User logged in:", user.uid);
-                        if (window.dbApi) {
-                            const cloudApps = await window.dbApi.loadApps();
-                            if (cloudApps && cloudApps.length > 0) {
-                                const currentLocal = localStorage.getItem(STORAGE_KEY);
-                                if (JSON.stringify(cloudApps) !== currentLocal) {
-                                    renderAppsToDOM(cloudApps, true); 
-                                    localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudApps));
-                                }
-                            } else { saveCurrentState(); }
-                        }
-                    } else {
-                        console.log("User logged out");
-                        renderAppsToDOM(DEFAULT_APPS);
-                        localStorage.removeItem(STORAGE_KEY);
-                    }
-                });
+            } else { 
+                // Пользователь НЕ вошел: Только формы
+                if (authMode === 'login') drawLogin(); else drawRegister(); 
             }
-        }, 100);
+        };
+
+        renderAuth();
+    }
+
+    // --- AUTH & SYNC ---
+    const waitForAuth = setInterval(() => {
+        if (window.auth) {
+            clearInterval(waitForAuth);
+            window.auth.onAuthStateChanged(async (user) => {
+                if (tabSettings.classList.contains('active')) { renderSettingsTab(); }
+                if (user) {
+                    console.log("User logged in:", user.uid);
+                    
+                    // Загружаем обои из облака при входе
+                    await wallpaperManager.loadFromCloud();
+
+                    if (window.dbApi) {
+                        const cloudApps = await window.dbApi.loadApps();
+                        if (cloudApps && cloudApps.length > 0) {
+                            const currentLocal = localStorage.getItem(STORAGE_KEY);
+                            if (JSON.stringify(cloudApps) !== currentLocal) {
+                                renderAppsToDOM(cloudApps, true); 
+                                localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudApps));
+                            }
+                        } else { saveCurrentState(); }
+                    }
+                } else {
+                    console.log("User logged out");
+                    renderAppsToDOM(DEFAULT_APPS);
+                    localStorage.removeItem(STORAGE_KEY);
+                    // Обои можно не сбрасывать, или сбросить на дефолт, если хотите
+                }
+            });
+        }
+    }, 100);
 
     </script>
 <script type="module" src="sidebar.js"></script>

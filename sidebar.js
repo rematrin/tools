@@ -39,6 +39,7 @@ window.db = db;
 
 // API для работы с БД
 window.dbApi = {
+    // --- ПРИЛОЖЕНИЯ ---
     // Сохранить массив приложений
     saveApps: async (appsArray) => {
         const user = auth.currentUser;
@@ -48,9 +49,9 @@ window.dbApi = {
                 apps: appsArray,
                 lastUpdated: new Date()
             }, { merge: true });
-            console.log("Settings saved to cloud");
+            console.log("Apps saved to cloud");
         } catch (e) {
-            console.error("Error saving settings:", e);
+            console.error("Error saving apps:", e);
         }
     },
 
@@ -67,7 +68,41 @@ window.dbApi = {
                 return null; // Данных нет (новый юзер)
             }
         } catch (e) {
-            console.error("Error loading settings:", e);
+            console.error("Error loading apps:", e);
+            return null;
+        }
+    },
+
+    // --- ОБОИ (Wallpaper) ---
+    // Сохранить настройки обоев
+    saveWallpaper: async (settings) => {
+        const user = auth.currentUser;
+        if (!user) return;
+        try {
+            await setDoc(doc(db, "users", user.uid), { 
+                wallpaper: settings,
+                lastUpdated: new Date()
+            }, { merge: true });
+            console.log("Wallpaper settings saved to cloud");
+        } catch (e) {
+            console.error("Error saving wallpaper:", e);
+        }
+    },
+
+    // Загрузить настройки обоев
+    loadWallpaper: async () => {
+        const user = auth.currentUser;
+        if (!user) return null;
+        try {
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                return docSnap.data().wallpaper || null;
+            } else {
+                return null;
+            }
+        } catch (e) {
+            console.error("Error loading wallpaper:", e);
             return null;
         }
     }

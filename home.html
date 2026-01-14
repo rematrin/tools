@@ -86,23 +86,25 @@
         }
 
         .menu-btn {
-            position: absolute;
-            right: 25px;
-            top: 58px;
-            width: 32px;
-            height: 32px;
+            position: fixed; /* Фиксируем относительно экрана */
+            right: 20px;
+            top: 20px;
+            width: 44px;  /* Увеличили размер (было 32px) */
+            height: 44px; /* Увеличили размер */
             display: flex;
             flex-direction: column;
             justify-content: center;
-            align-items: flex-end;
+            align-items: center;
             cursor: pointer;
-            gap: 5px;
+            gap: 6px;     /* Чуть больше расстояние между линиями */
             background: rgba(255, 255, 255, 0.2);
             border-radius: 50%;
-            padding: 8px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            transition: transform 0.2s, background 0.2s;
+            padding: 10px;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            z-index: 1000; /* Чтобы была поверх всего */
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .menu-btn:active {
@@ -112,24 +114,26 @@
 
         .menu-btn span {
             display: block;
-            height: 2px;
+            height: 2.5px; /* Линии чуть толще */
             background-color: white;
             border-radius: 2px;
-            width: 100%;
-        }
-        .menu-btn span:nth-child(2) {
-            width: 100%; 
+            width: 22px;   /* Линии чуть длиннее */
         }
 
-        /* --- APP GRID STYLES --- */
+        /* --- APP GRID STYLES (Базовые настройки) --- */
         .app-grid {
             display: grid;
             grid-template-columns: repeat(var(--grid-cols, 4), 1fr);
             row-gap: 20px;
             column-gap: 8px;
             padding: 10px 12px;
-            margin-top: 5px;
+            margin-top: 5px; /* Это будет работать для папок */
             position: relative;
+        }
+
+        /* Специфический отступ только для главной сетки */
+        #appGrid {
+            margin-top: 60px; /* Здесь кнопка меню не будет перекрывать иконки */
         }
 
         .app-item {
@@ -1259,13 +1263,10 @@ body.folder-open { overflow: hidden; }
 
     <div class="iphone-screen">
         <header id="header">
-            <h1>Продуктивность</h1>
-            <div class="menu-btn" id="menuBtn">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </header>
+            </header>
+        <div class="menu-btn" id="menuBtn">
+            <span></span><span></span><span></span>
+        </div>
 
         <div class="app-grid" id="appGrid"></div>
     </div>
@@ -1357,6 +1358,14 @@ body.folder-open { overflow: hidden; }
             { name: 'GitHub', url: 'https://github.com', icon: 'https://www.google.com/s2/favicons?domain=github.com&sz=128' },
             { name: 'Telegram', url: 'https://telegram.org', icon: 'https://www.google.com/s2/favicons?domain=telegram.org&sz=128' },
             { name: 'YouTube', url: 'https://youtube.com', icon: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128' },
+            { 
+                type: "folder", 
+                name: "Папка", 
+                items: [
+                    { name: 'Google', url: 'https://google.com', icon: 'https://www.google.com/s2/favicons?domain=google.com&sz=128' },
+                    { name: 'YouTube', url: 'https://youtube.com', icon: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128' }
+                ] 
+            },
             { name: 'Notion', url: 'https://notion.so', icon: 'https://www.google.com/s2/favicons?domain=notion.so&sz=128' }
         ];
 

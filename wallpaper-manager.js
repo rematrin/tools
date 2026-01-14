@@ -2,9 +2,9 @@ export class WallpaperManager {
     constructor() {
         this.STORAGE_KEY = 'user_wallpaper_settings_v1';
         this.defaultSettings = {
-            url: 'https://images.unsplash.com/photo-1621619856624-42fd193a0661?q=80&w=2560&auto=format&fit=crop',
-            blur: 50, // 0-100%
-            dim: 10   // 0-100%
+            url: 'https://i.ibb.co/9krvx4ms/465581.jpg',
+            blur: 0, // 0-100%
+            dim: 30   // 0-100%
         };
         this.settings = this.loadSettings();
         this.applySettings();

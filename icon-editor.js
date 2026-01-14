@@ -26,6 +26,7 @@ export class IconEditor {
 
             const nameInput = document.getElementById('editorAppName');
             const urlInput = document.getElementById('editorAppUrl');
+            
             if (nameInput) nameInput.value = initialData.name || '';
             if (urlInput) urlInput.value = initialData.url || '';
 
@@ -38,7 +39,7 @@ export class IconEditor {
                 };
                 this.uploadedImage.onerror = () => {
                     this.uploadedImage = null;
-                    this.draw(); // Просто рисуем пустой фон
+                    this.draw();
                 };
                 this.uploadedImage.src = initialData.icon;
             }
@@ -101,9 +102,9 @@ export class IconEditor {
                             
                             <button class="btn-upload btn-fetch" id="btnFetchFromUrl">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                  <circle cx="12" cy="12" r="10"></circle>
+                                  <path d="M2 12h20"></path>
+                                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
                                 </svg>
                                 <span>С сайта</span>
                             </button>
@@ -133,12 +134,12 @@ export class IconEditor {
                         
                         <div class="editor-inputs">
                             <div class="input-group">
-                                <label>Название сайта</label>
-                                <input type="text" id="editorAppName" placeholder="Например: Google" autocomplete="off">
+                                <label>Ссылка<span id="urlErrorText" class="error-msg"></span></label>
+                                <input type="text" id="editorAppUrl" placeholder="Введите URL" autocomplete="off">
                             </div>
                             <div class="input-group">
-                                <label>Адрес (URL)</label>
-                                <input type="text" id="editorAppUrl" placeholder="https://..." autocomplete="off">
+                                <label>Название</label>
+                                <input type="text" id="editorAppName" placeholder="Ввведите название сайта" autocomplete="off">
                             </div>
                         </div>
 
@@ -173,15 +174,8 @@ export class IconEditor {
             .tool-btn { background: #f1f3f4; border: none; cursor: pointer; width: 32px; height: 32px; border-radius: 4px; font-size: 18px; display: flex; align-items: center; justify-content: center; color: #5f6368; }
             .tool-btn:hover { background: #e8eaed; color: #202124; }
 
-            /* НОВЫЙ КОНТЕЙНЕР ДЛЯ КНОПОК */
-            .img-btns-row {
-                display: flex;
-                gap: 10px;
-                width: 100%;
-                margin-top: 5px;
-            }
+            .img-btns-row { display: flex; gap: 10px; width: 100%; margin-top: 5px; }
 
-            /* ОБНОВЛЕННЫЕ СТИЛИ КНОПОК */
             .btn-upload {
                 background-color: #4285f4;
                 color: white;
@@ -196,14 +190,11 @@ export class IconEditor {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 8px; /* Расстояние между иконкой и текстом */
+                gap: 8px;
             }
             .btn-upload:hover { background-color: #3367d6; }
             
-            /* Стиль для второй кнопки (можно сделать другим цветом, если нужно) */
-            .btn-fetch {
-                background-color: #34A853; /* Зеленый цвет Google */
-            }
+            .btn-fetch { background-color: #34A853; }
             .btn-fetch:hover { background-color: #2D9147; }
             
             .editor-right-col { display: flex; flex-direction: column; gap: 20px; min-width: 250px; flex: 1; max-width: 300px; }
@@ -221,9 +212,13 @@ export class IconEditor {
             
             .editor-inputs { margin-top: 10px; display: flex; flex-direction: column; gap: 15px; border-top: 1px solid #eee; padding-top: 20px; }
             .input-group { display: flex; flex-direction: column; gap: 5px; }
-            .input-group label { font-size: 13px; color: #5f6368; font-weight: 500; }
+            .input-group label { font-size: 13px; color: #5f6368; font-weight: 500; display: flex; justify-content: space-between; }
             .input-group input { padding: 8px 12px; border: 1px solid #dadce0; border-radius: 6px; font-size: 14px; outline: none; transition: border 0.2s; }
             .input-group input:focus { border-color: #4285f4; }
+            
+            /* СТИЛИ ОШИБОК */
+            .input-group input.input-error { border-color: #ea4335; background-color: #fce8e6; }
+            .error-msg { color: #ea4335; font-size: 11px; font-weight: 600; display: none; }
 
             .editor-footer { padding: 15px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #eee; background: #f8f9fa; }
             .btn { padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; }
@@ -231,6 +226,7 @@ export class IconEditor {
             .btn-reset { background: white; border: 1px solid #dadce0; color: #3c4043; }
             .btn-ok { background: #1a73e8; color: white; }
             .btn-ok:hover { background: #1557b0; }
+            .btn-ok:disabled { background: #a8c7fa; cursor: wait; }
         </style>
         `;
 
@@ -241,10 +237,8 @@ export class IconEditor {
 
     attachEvents() {
         const fileInput = document.getElementById('editorFileInput');
-        // Стандартная обработка выбора файла
         fileInput.addEventListener('change', (e) => this.handleUpload(e));
 
-        // Кнопка "Загрузить"
         const triggerBtn = document.getElementById('triggerFileSelect');
         if(triggerBtn) {
             triggerBtn.addEventListener('click', () => {
@@ -252,44 +246,98 @@ export class IconEditor {
             });
         }
 
-        // НОВАЯ КНОПКА "С сайта"
         const fetchBtn = document.getElementById('btnFetchFromUrl');
         if(fetchBtn) {
             fetchBtn.addEventListener('click', () => {
                 const urlInput = document.getElementById('editorAppUrl');
+                const errorMsg = document.getElementById('urlErrorText');
+                
+                // Сброс состояния ошибок
+                urlInput.classList.remove('input-error');
+                if(errorMsg) errorMsg.style.display = 'none';
+
                 let urlVal = urlInput.value.trim();
                 
+                // 1. Валидация пустого ввода
                 if(!urlVal) {
-                    alert('Пожалуйста, введите адрес сайта в поле URL');
+                    urlInput.classList.add('input-error');
+                    if(errorMsg) {
+                        errorMsg.innerText = 'Введите URL';
+                        errorMsg.style.display = 'inline';
+                    }
                     urlInput.focus();
+                    
+                    urlInput.addEventListener('input', () => {
+                         urlInput.classList.remove('input-error');
+                         if(errorMsg) errorMsg.style.display = 'none';
+                    }, { once: true });
+                    
                     return;
                 }
 
-                // Убираем https:// для чистоты, если пользователь ввел полный URL
                 urlVal = urlVal.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
-                // 1. Формируем ссылку на Google Favicon
-                const googleFaviconUrl = `https://www.google.com/s2/favicons?domain=${urlVal}&sz=512`;
-                
-                // 2. Оборачиваем её в прокси wsrv.nl
-                // Это добавит заголовки CORS, чтобы Canvas не блокировал картинку
-                const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(googleFaviconUrl)}`;
+                const highResFaviconUrl = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${urlVal}&size=256`;
+                const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(highResFaviconUrl)}&w=512&h=512&output=png`;
+
+                const originalBtnContent = fetchBtn.innerHTML;
+                fetchBtn.innerHTML = `<span>Загрузка...</span>`;
+                fetchBtn.style.opacity = 0.7;
 
                 this.uploadedImage = new Image();
-                this.uploadedImage.crossOrigin = "anonymous"; // Теперь это сработает благодаря прокси
+                this.uploadedImage.crossOrigin = "anonymous"; 
                 
                 this.uploadedImage.onload = () => {
                     this.resetImageState();
                     this.draw();
+                    fetchBtn.innerHTML = originalBtnContent;
+                    fetchBtn.style.opacity = 1;
                 };
                 
+                // 2. Обработка ошибок загрузки (Fallback)
                 this.uploadedImage.onerror = () => {
-                    alert('Не удалось загрузить иконку. Попробуйте загрузить файл вручную.');
-                    this.uploadedImage = null;
-                    this.draw();
+                    console.log("High-res failed, trying fallback...");
+                    const fallbackUrl = `https://www.google.com/s2/favicons?domain=${urlVal}&sz=512`;
+                    const fallbackProxy = `https://wsrv.nl/?url=${encodeURIComponent(fallbackUrl)}`;
+                    
+                    const fallbackImg = new Image();
+                    fallbackImg.crossOrigin = "anonymous";
+                    
+                    fallbackImg.onload = () => {
+                        this.uploadedImage = fallbackImg;
+                        this.resetImageState();
+                        this.draw();
+                        fetchBtn.innerHTML = originalBtnContent;
+                        fetchBtn.style.opacity = 1;
+                    };
+                    
+                    // ЕСЛИ ОБА МЕТОДА НЕ СРАБОТАЛИ -> ПОКАЗЫВАЕМ ОШИБКУ В ИНТЕРФЕЙСЕ
+                    fallbackImg.onerror = () => {
+                        // Вместо alert подсвечиваем поле
+                        urlInput.classList.add('input-error');
+                        if(errorMsg) {
+                            errorMsg.innerText = 'Иконка не найдена';
+                            errorMsg.style.display = 'inline';
+                        }
+                        
+                        // Сброс состояния редактора
+                        this.uploadedImage = null;
+                        this.draw();
+                        
+                        // Сброс кнопки
+                        fetchBtn.innerHTML = originalBtnContent;
+                        fetchBtn.style.opacity = 1;
+                        
+                        // При вводе сбрасываем ошибку
+                        urlInput.addEventListener('input', () => {
+                             urlInput.classList.remove('input-error');
+                             if(errorMsg) errorMsg.style.display = 'none';
+                        }, { once: true });
+                    };
+                    
+                    fallbackImg.src = fallbackProxy;
                 };
                 
-                // Добавляем timestamp, чтобы избежать кеширования браузером старых ошибок
                 this.uploadedImage.src = proxyUrl + '&t=' + new Date().getTime();
             });
         }
@@ -323,7 +371,9 @@ export class IconEditor {
                 this.resetEditor(false); 
             }
             if (e.target.closest('.btn-ok')) {
-                this.save();
+                if (!e.target.closest('.btn-ok').disabled) {
+                    this.save();
+                }
             }
         });
 
@@ -338,6 +388,8 @@ export class IconEditor {
     initCanvas() {
         this.canvas = document.getElementById('editorCanvas');
         this.ctx = this.canvas.getContext('2d');
+        this.ctx.imageSmoothingEnabled = true;
+        this.ctx.imageSmoothingQuality = 'high';
     }
 
     handleUpload(e) {
@@ -354,7 +406,6 @@ export class IconEditor {
             };
             reader.readAsDataURL(file);
         }
-        // Сбрасываем value, чтобы можно было выбрать тот же файл повторно при желании
         e.target.value = '';
     }
 
@@ -431,6 +482,10 @@ export class IconEditor {
             this.ctx.translate((this.canvas.width / 2) + this.state.offsetX, (this.canvas.height / 2) + this.state.offsetY);
             this.ctx.rotate(this.state.rotation * Math.PI / 180);
             this.ctx.scale(this.state.scale, this.state.scale);
+            
+            this.ctx.imageSmoothingEnabled = true;
+            this.ctx.imageSmoothingQuality = 'high';
+            
             this.ctx.drawImage(this.uploadedImage, -this.uploadedImage.width / 2, -this.uploadedImage.height / 2);
             this.ctx.restore();
         }
@@ -440,32 +495,73 @@ export class IconEditor {
         if(preview) preview.src = dataUrl;
     }
 
-    save() {
-    if (this.onSaveCallback) {
-        const offscreenCanvas = document.createElement('canvas');
-        const offCtx = offscreenCanvas.getContext('2d');
-        
-        // 256x256 — это очень высокая четкость для иконки
-        offscreenCanvas.width = 256;
-        offscreenCanvas.height = 256;
+    async save() {
+        if (this.onSaveCallback) {
+            const btnOk = this.modal.querySelector('.btn-ok');
+            const originalText = btnOk.innerText;
+            
+            btnOk.innerText = 'Загрузка...';
+            btnOk.disabled = true;
 
-        // Рисуем с основного холста (512) на уменьшенный (256)
-        offCtx.drawImage(this.canvas, 0, 0, 256, 256);
+            try {
+                const offscreenCanvas = document.createElement('canvas');
+                const offCtx = offscreenCanvas.getContext('2d');
+                
+                offscreenCanvas.width = 256;
+                offscreenCanvas.height = 256;
+                
+                offCtx.imageSmoothingEnabled = true;
+                offCtx.imageSmoothingQuality = 'high';
 
-        // Используем сжатие JPEG 0.9 для фото-иконок или PNG для прозрачности
-        const dataUrl = offscreenCanvas.toDataURL('image/png');
-        
-        const name = document.getElementById('editorAppName').value.trim();
-        const url = document.getElementById('editorAppUrl').value.trim();
-        
-        this.onSaveCallback({
-            icon: dataUrl,
-            name: name,
-            url: url
-        });
+                offCtx.drawImage(this.canvas, 0, 0, 256, 256);
+                
+                const dataUrl = offscreenCanvas.toDataURL('image/png');
+                
+                const hostedUrl = await this.uploadToImgBB(dataUrl);
+
+                const name = document.getElementById('editorAppName').value.trim();
+                const url = document.getElementById('editorAppUrl').value.trim();
+                
+                this.onSaveCallback({
+                    icon: hostedUrl,
+                    name: name,
+                    url: url
+                });
+                
+                this.close();
+
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('Ошибка загрузки изображения. Проверьте интернет или API ключ.');
+                
+                btnOk.innerText = originalText;
+                btnOk.disabled = false;
+            }
+        }
     }
-    this.close();
-}
+
+    async uploadToImgBB(base64Image) {
+        // !!! ВСТАВЬТЕ СЮДА ВАШ API KEY ОТ IMGBB !!!
+        const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee'; 
+        
+        const cleanBase64 = base64Image.split(',')[1];
+
+        const formData = new FormData();
+        formData.append('image', cleanBase64);
+
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            return result.data.url;
+        } else {
+            throw new Error('ImgBB Upload Failed');
+        }
+    }
 
     close() {
         if (this.modal) {

@@ -53,10 +53,22 @@
 
         .iphone-screen {
             width: 100%;
-            max-width: 450px;
+            /* БЫЛО: max-width: 450px; */
+            
+            /* СТАЛО: 
+               Используем формулу: умножаем кол-во колонок на ~110px.
+               Функция max(450px, ...) гарантирует, что ширина никогда не будет
+               меньше стандартных 450px (для 1-4 иконок), но будет расти,
+               если иконок станет 5, 6, 10 и т.д.
+            */
+            max-width: max(450px, calc(var(--grid-cols, 4) * 110px));
+            
             position: relative;
             padding-bottom: 40px;
             margin: 0 auto;
+            
+            /* Добавляем плавность, чтобы при движении ползунка экран "разъезжался" красиво */
+            transition: max-width 0.2s ease;
         }
 
         /* --- HEADER & MENU BTN --- */
@@ -67,6 +79,10 @@
             background: rgba(255, 255, 255, 0);
             padding: 50px 20px 10px 20px;
             width: 100%;
+            /* --- ИСПРАВЛЕНИЕ: Фиксируем ширину шапки --- */
+            max-width: 450px; /* Не даем шапке стать шире телефона */
+            margin-left: auto; /* Центрируем шапку */
+            margin-right: auto;
             transition: all 0.2s ease-in-out;
             display: flex;
             justify-content: center;
@@ -120,7 +136,8 @@
         /* --- APP GRID STYLES --- */
         .app-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            /* ИЗМЕНЕНО: Используем переменную --grid-cols, по умолчанию 4 */
+            grid-template-columns: repeat(var(--grid-cols, 4), 1fr);
             row-gap: 20px;
             column-gap: 8px;
             padding: 10px 12px;
@@ -179,27 +196,24 @@
             border-radius: 16px;
         }
 
-        /* --- GLASS EFFECT STYLES (НОВОЕ) --- */
+        /* --- GLASS EFFECT STYLES --- */
         .glass-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            /* Файл glass.jpg должен лежать рядом с index.html */
             background-image: url('glass.jpg'); 
             background-size: cover;
             background-position: center;
-            /* Наложение "Экран" делает черное прозрачным */
             mix-blend-mode: screen; 
             opacity: 0;
             pointer-events: none;
             z-index: 2;
             transition: opacity 0.3s ease;
-            border-radius: 16px; /* Должно совпадать с иконкой */
+            border-radius: 16px; 
         }
 
-        /* Когда включен режим стекла */
         body.glass-mode .glass-overlay {
             opacity: 1;
         }
@@ -358,20 +372,7 @@
             touch-action: pan-y;
         }
 
-        /* --- SWITCH TOGGLE STYLES (НОВОЕ) --- */
-        .settings-switch-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            background: #fff;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            border: 1px solid rgba(0,0,0,0.05);
-            width: 100%;
-        }
-        .settings-switch-label { font-size: 15px; font-weight: 500; color: #000; }
-
+        /* --- SWITCH TOGGLE STYLES --- */
         .switch { position: relative; display: inline-block; width: 50px; height: 30px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider-toggle { 
@@ -1082,11 +1083,14 @@
         import { IconEditor } from './icon-editor.js';
         import { WallpaperManager } from './wallpaper-manager.js';
 
-        // --- ИНИЦИАЛИЗАЦИЯ GLASSEFFECT СРАЗУ ---
+        // --- ИНИЦИАЛИЗАЦИЯ НАСТРОЕК (СТЕКЛО И КОЛОНКИ) ---
         const savedGlass = localStorage.getItem('glassEffect') === 'true';
         if (savedGlass) {
             document.body.classList.add('glass-mode');
         }
+
+        const savedCols = localStorage.getItem('gridColumns') || '4';
+        document.documentElement.style.setProperty('--grid-cols', savedCols);
 
         // --- ИНИЦИАЛИЗАЦИЯ ---
         const iconEditor = new IconEditor();
@@ -1129,7 +1133,6 @@
             }
             grid.innerHTML = ''; 
             appsArray.forEach(app => {
-                // ДОБАВЛЕН .glass-overlay
                 const newItemHTML = `
                     <div class="app-item">
                         <a href="${app.url}" class="icon-container">
@@ -1445,7 +1448,7 @@
                 return;
             }
 
-            // HTML ДЛЯ ПЕРЕКЛЮЧАТЕЛЯ СТЕКЛА (ОБНОВЛЕННЫЙ ДИЗАЙН)
+            // HTML ДЛЯ ПЕРЕКЛЮЧАТЕЛЯ СТЕКЛА
             const glassSwitchHTML = `
                 <div class="profile-card">
                     <h2 class="profile-title-in-card">Оформление</h2>
@@ -1455,6 +1458,21 @@
                             <input type="checkbox" id="globalGlassToggle">
                             <span class="slider-toggle"></span>
                         </label>
+                    </div>
+                </div>
+            `;
+
+            // HTML ДЛЯ МАКЕТА (СЛАЙДЕР)
+            const currentCols = localStorage.getItem('gridColumns') || '4';
+            const layoutSettingsHTML = `
+                <div class="profile-card">
+                    <h2 class="profile-title-in-card">Настроить макет</h2>
+                    <div class="slider-group" style="margin-top: 15px;">
+                        <div class="slider-header" style="margin-bottom: 10px;">
+                            <span style="font-size: 16px; font-weight: 400;">Колонок</span>
+                            <span id="colCountValue" style="font-size: 16px; font-weight: 400; color: #8E8E93;">${currentCols}</span>
+                        </div>
+                        <input type="range" id="colCountSlider" class="ios-slider" min="3" max="10" step="1" value="${currentCols}">
                     </div>
                 </div>
             `;
@@ -1493,7 +1511,7 @@
                 `;
             };
 
-            // 2. Вход (для гостей) - обновленный дизайн
+            // 2. Вход (для гостей)
             const getLoginHTML = () => {
                 return `
                     <div class="profile-cardnon">
@@ -1513,7 +1531,7 @@
                     </div>`;
             };
 
-            // 3. Регистрация (для гостей) - обновленный дизайн
+            // 3. Регистрация (для гостей)
             const getRegisterHTML = () => {
                 return `
                     <div class="profile-cardnon">
@@ -1529,16 +1547,15 @@
             };
 
             // --- РЕНДЕР ---
-            // Добавляем glassSwitchHTML в обоих случаях
             if (auth.currentUser) { 
-                content.innerHTML = getProfileHTML(auth.currentUser) + wallpaperManager.getSettingsHTML(false) + glassSwitchHTML;
+                content.innerHTML = getProfileHTML(auth.currentUser) + layoutSettingsHTML + glassSwitchHTML + wallpaperManager.getSettingsHTML(false);
                 
                 document.getElementById('logoutBtn').addEventListener('click', () => { if (window.authApi) window.authApi.logout(); });
                 wallpaperManager.attachListeners();
 
             } else { 
                 const authHTML = (authMode === 'login') ? getLoginHTML() : getRegisterHTML();
-                content.innerHTML = authHTML + wallpaperManager.getSettingsHTML(true) + glassSwitchHTML;
+                content.innerHTML = authHTML + layoutSettingsHTML + glassSwitchHTML + wallpaperManager.getSettingsHTML(true);
 
                 if (authMode === 'login') {
                     document.getElementById('doLoginBtn').onclick = () => { 
@@ -1564,29 +1581,37 @@
             setTimeout(() => {
                 const toggle = document.getElementById('globalGlassToggle');
                 if (toggle) {
-                    // 1. Сначала берем из LocalStorage для мгновенного отображения
                     const isGlassEnabled = localStorage.getItem('glassEffect') === 'true';
                     toggle.checked = isGlassEnabled;
-                    
-                    if (isGlassEnabled) document.body.classList.add('glass-mode');
-                    else document.body.classList.remove('glass-mode');
-
-                    // 2. Слушаем изменения
                     toggle.addEventListener('change', (e) => {
                         const isEnabled = e.target.checked;
-                        
-                        // Применяем визуально
-                        if (isEnabled) {
-                            document.body.classList.add('glass-mode');
-                            localStorage.setItem('glassEffect', 'true');
-                        } else {
-                            document.body.classList.remove('glass-mode');
-                            localStorage.setItem('glassEffect', 'false');
-                        }
-
-                        // СОХРАНЯЕМ В FIREBASE (Если пользователь вошел)
+                        if (isEnabled) document.body.classList.add('glass-mode');
+                        else document.body.classList.remove('glass-mode');
+                        localStorage.setItem('glassEffect', isEnabled.toString());
                         if (window.auth && window.auth.currentUser && window.dbApi) {
                             window.dbApi.saveSettings({ glassEffect: isEnabled });
+                        }
+                    });
+                }
+            }, 0);
+
+            // --- ЛОГИКА СЛАЙДЕРА МАКЕТА ---
+            setTimeout(() => {
+                const slider = document.getElementById('colCountSlider');
+                const valueDisplay = document.getElementById('colCountValue');
+
+                if (slider && valueDisplay) {
+                    slider.addEventListener('input', (e) => {
+                        const val = e.target.value;
+                        valueDisplay.innerText = val;
+                        document.documentElement.style.setProperty('--grid-cols', val);
+                    });
+
+                    slider.addEventListener('change', (e) => {
+                        const val = e.target.value;
+                        localStorage.setItem('gridColumns', val);
+                        if (window.auth && window.auth.currentUser && window.dbApi) {
+                            window.dbApi.saveSettings({ gridColumns: val });
                         }
                     });
                 }
@@ -1598,33 +1623,39 @@
             if (window.auth) {
                 clearInterval(waitForAuth);
                 window.auth.onAuthStateChanged(async (user) => {
-                    // Если открыта вкладка настроек, перерисовываем её (чтобы сменился профиль/форма входа)
                     if (tabSettings.classList.contains('active')) { renderSettingsTab(); }
                     
                     if (user) {
                         console.log("User logged in:", user.uid);
                         
-                        // 1. Грузим обои
                         await wallpaperManager.loadFromCloud();
 
-                        // 2. Грузим НАСТРОЙКИ (Стекло) - НОВОЕ
                         if (window.dbApi) {
                             const cloudSettings = await window.dbApi.loadSettings();
-                            if (cloudSettings && typeof cloudSettings.glassEffect !== 'undefined') {
-                                const isGlass = cloudSettings.glassEffect;
-                                // Применяем
-                                if (isGlass) document.body.classList.add('glass-mode');
-                                else document.body.classList.remove('glass-mode');
-                                // Синхронизируем локальный кеш
-                                localStorage.setItem('glassEffect', isGlass.toString());
+                            if (cloudSettings) {
+                                // Загрузка Стекла
+                                if (typeof cloudSettings.glassEffect !== 'undefined') {
+                                    const isGlass = cloudSettings.glassEffect;
+                                    if (isGlass) document.body.classList.add('glass-mode');
+                                    else document.body.classList.remove('glass-mode');
+                                    localStorage.setItem('glassEffect', isGlass.toString());
+                                    const toggle = document.getElementById('globalGlassToggle');
+                                    if (toggle) toggle.checked = isGlass;
+                                }
                                 
-                                // Если тумблер сейчас на экране, обновляем его положение
-                                const toggle = document.getElementById('globalGlassToggle');
-                                if (toggle) toggle.checked = isGlass;
+                                // Загрузка Колонок
+                                if (typeof cloudSettings.gridColumns !== 'undefined') {
+                                    const cols = cloudSettings.gridColumns;
+                                    document.documentElement.style.setProperty('--grid-cols', cols);
+                                    localStorage.setItem('gridColumns', cols);
+                                    const slider = document.getElementById('colCountSlider');
+                                    const valDisplay = document.getElementById('colCountValue');
+                                    if (slider) slider.value = cols;
+                                    if (valDisplay) valDisplay.innerText = cols;
+                                }
                             }
                         }
 
-                        // 3. Грузим Приложения
                         if (window.dbApi) {
                             const cloudApps = await window.dbApi.loadApps();
                             if (cloudApps && cloudApps.length > 0) {
@@ -1637,7 +1668,6 @@
                         }
                     } else {
                         console.log("User logged out");
-                        // При выходе сбрасываем приложения на дефолтные, но настройки можно оставить локальные или сбросить
                         renderAppsToDOM(DEFAULT_APPS);
                         localStorage.removeItem(STORAGE_KEY);
                     }

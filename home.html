@@ -183,25 +183,39 @@
             border-radius: 16px;
         }
         
-        /* FOLDER ICON STYLES */
+        /* --- FOLDER PREVIEW GRID --- */
         .folder-icon {
             width: 100%;
             height: 100%;
+            /* Фон папки (стекло) */
             background: rgba(255, 255, 255, 0.25);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
             border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            
+            /* Сетка 3x3 */
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 2px; /* Расстояние между иконками */
+            padding: 5px; /* Отступ от края папки */
+            
+            /* Скрываем всё, что вылезает (если вдруг) */
+            overflow: hidden; 
         }
         
-        .folder-icon svg {
-             width: 50%;
-             height: 50%;
-             opacity: 0.8;
-             fill: white;
+        /* Скрываем старую SVG, если вдруг останется */
+        .folder-icon svg { display: none; }
+
+        /* Стиль мини-иконок внутри папки */
+        .mini-icon {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 5px !important; 
+            background: rgba(255, 255, 255, 0.1); /* Если иконка прозрачная #fff; */
+            pointer-events: none;
         }
 
         /* --- GLASS EFFECT STYLES --- */
@@ -222,8 +236,14 @@
             border-radius: 16px; 
         }
 
-        body.glass-mode .glass-overlay {
+        /* Применяем эффект стекла ко всем, КРОМЕ дочерних элементов folder-icon */
+        body.glass-mode .icon-container:not(.folder-trigger) .glass-overlay {
             opacity: 1;
+        }
+
+        /* Дополнительно гарантируем, что внутри папки (превью) его нет */
+        .folder-icon .glass-overlay {
+            display: none !important;
         }
 
         .app-name {
@@ -1032,6 +1052,204 @@
         }
         .wp-btn-cancel { background: #F2F2F7; color: #000; }
         .wp-btn-save { background: #34C759; color: white; }
+
+        /* Блокировка скролла при открытой папке */
+body.folder-open { overflow: hidden; }
+
+/* Анимация обоев */
+.global-wallpaper-blurred { transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform; }
+
+/* Анимация главной сетки при открытии папки */
+.app-grid {
+    transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    transform-origin: center center;
+}
+
+/* --- FOLDER OVERLAY UI --- */
+        .folder-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 15vh;
+            
+            /* Скрываем сам блок, но не анимируем его прозрачность */
+            visibility: hidden;
+            /* Задержка закрытия visibility, чтобы успела проиграть анимация фона */
+            transition: visibility 0s linear 0.3s;
+        }
+
+        .folder-overlay.active {
+            visibility: visible;
+            /* Убираем задержку при открытии */
+            transition-delay: 0s;
+        }
+
+        .folder-overlay-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            
+            /* Сразу ставим финальный блюр, но скрываем слой полностью */
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            
+            opacity: 0; 
+            z-index: -1;
+            
+            /* Плавная анимация только прозрачности */
+            transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: opacity;
+        }
+
+        .folder-overlay.active .folder-overlay-bg {
+            opacity: 1;
+        }
+
+        .folder-content {
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            
+            /* Начальное состояние контента: чуть меньше и прозрачный */
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .folder-overlay.active .folder-content {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .folder-title {
+            font-size: 34px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            text-align: left;
+            width: 90%;
+            padding-left: 5px;
+        }
+
+        .folder-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            row-gap: 20px;
+            column-gap: 15px;
+            width: 90%;
+            padding: 0;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        .folder-grid.edit-mode .icon-container {
+            animation: wiggle 0.28s infinite linear;
+            cursor: grab;
+            overflow: visible;
+        }
+
+        .folder-grid.edit-mode .delete-btn {
+            display: flex;
+        }
+
+        /* --- FINAL ROUND MENU STYLES --- */
+        .ios-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            /* Только легкое затемнение, без блюра фона */
+            background: rgba(0, 0, 0, 0.25); 
+            z-index: 5000;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.2s ease;
+        }
+        .ios-modal-overlay.active { opacity: 1; visibility: visible; }
+
+        .ios-modal {
+            width: 280px;
+            /* Темное меню с высокой прозрачностью и сильным блюром внутри */
+            background: rgba(28, 28, 30, 0.7); 
+            backdrop-filter: blur(25px) saturate(160%);
+            -webkit-backdrop-filter: blur(25px) saturate(160%);
+            
+            border-radius: 30px; /* Очень круглые края */
+            overflow: hidden;
+            display: flex; flex-direction: column;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            
+            transform: scale(1.1); opacity: 0;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .ios-modal-overlay.active .ios-modal {
+            transform: scale(1); opacity: 1;
+        }
+
+        .ios-modal-text {
+            padding: 24px 20px 18px 20px;
+        }
+
+        .ios-modal h3 {
+            margin: 0 0 4px 0;
+            font-size: 17px; font-weight: 600; color: #fff;
+        }
+
+        .ios-modal p {
+            margin: 0; font-size: 13px; color: rgba(255, 255, 255, 0.5);
+            line-height: 1.4;
+        }
+
+        .ios-modal-actions {
+            display: flex; flex-direction: column;
+            padding: 0 12px 12px 12px; /* Отступы для кнопок */
+            gap: 8px;
+        }
+
+        .ios-btn {
+            /* Полностью прозрачные кнопки (фон берется от меню) */
+            background: rgba(255, 255, 255, 0.08); 
+            border: none;
+            padding: 14px; 
+            font-size: 17px; 
+            cursor: pointer;
+            width: 100%;
+            border-radius: 18px; /* Скругление самих кнопок */
+            transition: background 0.1s;
+        }
+        
+        /* При нажатии кнопка чуть подсвечивается */
+        .ios-btn:active { 
+            background: rgba(255, 255, 255, 0.15); 
+        }
+
+        /* Кнопка удалить: фон прозрачный, только текст красный */
+        .ios-btn.delete { 
+            color: #FF453A; 
+            font-weight: 500;
+        }
+
+        /* Кнопка отмены: белый текст */
+        .ios-btn.cancel { 
+            color: #FFFFFF; 
+            font-weight: 600; 
+        }
+        
+        .ios-divider { display: none; }
     </style>
 </head>
 <body>
@@ -1051,6 +1269,29 @@
 
         <div class="app-grid" id="appGrid"></div>
     </div>
+
+    <div id="iosModalOverlay" class="ios-modal-overlay">
+        <div class="ios-modal">
+            <div class="ios-modal-text">
+                <h3 id="iosModalTitle">Удалить приложение?</h3>
+                <p id="iosModalDesc">Приложение будет удалено с главного экрана.</p>
+            </div>
+            <div class="ios-modal-actions">
+                <button id="iosModalConfirm" class="ios-btn delete">Удалить приложение</button>
+                <div class="ios-divider"></div>
+                <button id="iosModalCancel" class="ios-btn cancel">Отменить</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="folderOverlay" class="folder-overlay">
+    <div class="folder-overlay-bg"></div>
+    <div class="folder-content">
+        <h1 id="folderTitle" class="folder-title">Папка</h1>
+        <div id="folderGrid" class="folder-grid app-grid">
+            </div>
+    </div>
+</div>
 
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <aside class="sidebar" id="sidebar">
@@ -1089,8 +1330,9 @@
         import autoAnimate from 'https://cdn.jsdelivr.net/npm/@formkit/auto-animate/index.min.js';
         import { IconEditor } from './icon-editor.js';
         import { WallpaperManager } from './wallpaper-manager.js';
-        // Импортируем нашу новую функцию из sidebar.js
         import { initSidebarManager } from './sidebar.js';
+        import { FolderManager } from './folder-manager.js';
+        import { ConfirmModal } from './confirm-modal.js';
 
         // --- ИНИЦИАЛИЗАЦИЯ НАСТРОЕК (СТЕКЛО И КОЛОНКИ) ---
         const savedGlass = localStorage.getItem('glassEffect') === 'true';
@@ -1104,6 +1346,8 @@
         // --- ИНИЦИАЛИЗАЦИЯ ---
         const iconEditor = new IconEditor();
         const wallpaperManager = new WallpaperManager();
+        const confirmModal = new ConfirmModal();
+        let folderManager;
 
         // --- КОНФИГУРАЦИЯ ---
         const STORAGE_KEY = 'my_apps_cache_v1';
@@ -1130,41 +1374,63 @@
             }
             grid.innerHTML = ''; 
             
-            appsArray.forEach(app => {
+            appsArray.forEach((app, index) => {
                 let newItemHTML;
+                const tempDiv = document.createElement('div');
                 
                 if (app.type === 'folder') {
-                    // Рендер папки
+                    // --- ГЕНЕРАЦИЯ МИНИ-СЕТКИ (3x3) ---
+                    // Берём первые 9 элементов из папки
+                    const previewItems = app.items ? app.items.slice(0, 9) : [];
+                    let miniGridHTML = '';
+                    
+                    previewItems.forEach(item => {
+                        miniGridHTML += `<img src="${item.icon}" class="mini-icon" onerror="this.style.opacity='0'">`;
+                    });
+
+                    // --- РЕНДЕР ПАПКИ ---
                     newItemHTML = `
                     <div class="app-item">
-                        <div class="icon-container">
+                        <div class="icon-container folder-trigger" data-index="${index}">
                             <div class="folder-icon">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                                </svg>
+                                ${miniGridHTML}
                             </div>
                             <div class="glass-overlay"></div>
+                            <div class="delete-btn"></div>
                         </div>
                         <span class="app-name">${app.name}</span>
                     </div>`;
+                    
+                    tempDiv.innerHTML = newItemHTML;
+                    const el = tempDiv.firstElementChild;
+                    
+                    // Обработчик открытия папки
+                    const trigger = el.querySelector('.folder-trigger');
+                    trigger.onclick = (e) => {
+                        if (grid.classList.contains('edit-mode')) return;
+                        if (folderManager) {
+                            folderManager.open(app, index);
+                        }
+                    };
+                    grid.appendChild(el);
+
                 } else {
-                    // Рендер приложения
+                    // --- РЕНДЕР САЙТА (без изменений) ---
                     newItemHTML = `
                     <div class="app-item">
                         <a href="${app.url}" class="icon-container">
                             <img src="${app.icon}" alt="${app.name}" onerror="this.src='https://via.placeholder.com/62?text=?'">
                             <div class="glass-overlay"></div>
+                            <div class="delete-btn"></div>
                         </a>
                         <span class="app-name">${app.name}</span>
                     </div>`;
+                    tempDiv.innerHTML = newItemHTML;
+                    grid.appendChild(tempDiv.firstElementChild);
                 }
-
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = newItemHTML;
-                grid.appendChild(tempDiv.firstElementChild);
             });
             
-            initAppItems(); // Добавляем обработчики удаления и т.д.
+            initAppItems();
             
             if (silent && animationController) {
                 setTimeout(() => { animationController.enable(); }, 100); 
@@ -1254,7 +1520,7 @@
                 const iconContainer = item.querySelector('.icon-container');
                 const link = item.querySelector('a');
                 
-                // Удаление кнопки, если была
+                // Удаление кнопки, если была (чтобы не дублировать при перерисовке)
                 const existingBtn = iconContainer.querySelector('.delete-btn');
                 if (existingBtn) existingBtn.remove();
                 
@@ -1265,13 +1531,22 @@
                 
                 item.oncontextmenu = (e) => { e.preventDefault(); enableEditMode(); };
                 
+                // --- ЛОГИКА УДАЛЕНИЯ С МОДАЛЬНЫМ ОКНОМ ---
                 deleteBtn.onclick = (e) => { 
                     e.preventDefault(); 
                     e.stopPropagation(); 
-                    item.remove(); 
-                    // При удалении через кнопку на гриде мы также должны вызвать save
-                    // Тут можно вызвать saveCurrentState() без аргументов, так как DOM уже изменился (item.remove)
-                    saveCurrentState(); 
+                    
+                    // Получаем имя и тип (папка или сайт)
+                    const nameEl = item.querySelector('.app-name');
+                    const name = nameEl ? nameEl.innerText : 'Приложение';
+                    const isFolder = item.querySelector('.folder-icon') !== null; // Проверка: это папка?
+                    const type = isFolder ? 'folder' : 'site';
+
+                    // Вызываем окно подтверждения
+                    confirmModal.show(name, type, () => {
+                        item.remove(); 
+                        saveCurrentState(); // Сохраняем удаление
+                    });
                 };
                 
                 if(link) { 
@@ -1284,7 +1559,24 @@
         
         window.enableEditMode = function() { appGrid.classList.add('edit-mode'); sortable.option("disabled", false); }
         window.disableEditMode = function() { appGrid.classList.remove('edit-mode'); sortable.option("disabled", true); }
-        document.addEventListener('click', (e) => { if (!e.target.closest('.app-item') && !e.target.closest('.delete-btn') && !e.target.closest('.menu-btn') && !e.target.closest('.sidebar') && !e.target.closest('.add-btn') && !e.target.closest('.editor-overlay')) { window.disableEditMode(); } });
+        
+        // ОБНОВЛЕННЫЙ ОБРАБОТЧИК КЛИКОВ (Блокируем закрытие, если клик в папке)
+        document.addEventListener('click', (e) => { 
+            if (e.target.closest('.folder-overlay')) return; // Игнорируем клики внутри открытой папки
+
+            if (!e.target.closest('.app-item') && !e.target.closest('.delete-btn') && !e.target.closest('.menu-btn') && !e.target.closest('.sidebar') && !e.target.closest('.add-btn') && !e.target.closest('.editor-overlay')) { 
+                window.disableEditMode(); 
+            } 
+        });
+
+        // --- ИНИЦИАЛИЗАЦИЯ FolderManager (Вставьте это!) ---
+        folderManager = new FolderManager({
+            getApps: getAppsFromDOM,
+            saveApps: (newApps) => saveCurrentState(newApps),
+            renderMain: renderAppsToDOM,
+            iconEditor: iconEditor,
+            confirmModal: confirmModal
+        });
 
         // --- ИНИЦИАЛИЗАЦИЯ МЕНЕДЖЕРА БОКОВОГО МЕНЮ (из sidebar.js) ---
         const sidebarManager = initSidebarManager({

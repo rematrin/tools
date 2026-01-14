@@ -26,7 +26,7 @@
             user-select: none; 
         }
 
-        /* --- ОБОИ --- */
+        /* --- ОБОИ (ДИНАМИЧЕСКИЙ ЗУМ) --- */
         .global-wallpaper-blurred {
             position: fixed;
             top: 0;
@@ -34,11 +34,12 @@
             width: 100%;
             height: 100%;
             z-index: -2;
-            background-image: url('https://images.unsplash.com/photo-1621619856624-42fd193a0661?q=80&w=2560&auto=format&fit=crop');
+            background-repeat: no-repeat;
             background-size: cover;
-            background-position: center;
-            filter: blur(40px);
-            transform: scale(1.1);
+            background-position: center center;
+            /* transform будем задавать через JS */
+            transition: transform 0.1s linear, filter 0.1s linear; /* Плавность для JS изменений */
+            will-change: transform, filter; /* Оптимизация производительности */
         }
 
         .folder-backdrop {
@@ -194,20 +195,23 @@
             pointer-events: none;
         }
 
-        /* --- SIDEBAR (БОКОВОЕ МЕНЮ) - УМЕНЬШЕННЫЙ МАСШТАБ --- */
-        
+        /* --- SIDEBAR OVERLAY (ПРОЗРАЧНЫЙ) --- */
         .sidebar-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.6);
+            /* Убираем цвет фона (было rgba(0, 0, 0, 0.6)) */
+            background: transparent; 
             z-index: 1000;
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
-            backdrop-filter: blur(2px);
+            /* Убираем размытие фона (было blur(2px)) */
+            backdrop-filter: none; 
+            /* Чтобы на мобильных не было задержки тапа при закрытии */
+            touch-action: manipulation;
         }
 
         .sidebar-overlay.active {
@@ -816,7 +820,7 @@
         
         .wallpaper-preview-container {
             width: 100%;
-            height: 120px;
+            height: 130px;
             border-radius: 12px;
             position: relative;
             overflow: hidden;

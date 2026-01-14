@@ -3,8 +3,8 @@ export class WallpaperManager {
         this.STORAGE_KEY = 'user_wallpaper_settings_v1';
         this.defaultSettings = {
             url: 'https://images.unsplash.com/photo-1621619856624-42fd193a0661?q=80&w=2560&auto=format&fit=crop',
-            blur: 40,
-            dim: 45
+            blur: 50, // Теперь это ПРОЦЕНТЫ (0-100), по дефолту 50%
+            dim: 45   // Проценты (0-100)
         };
         this.settings = this.loadSettings();
         this.applySettings();
@@ -19,22 +19,20 @@ export class WallpaperManager {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.settings));
     }
 
-    // Сохранение в облако (Firebase)
     saveToCloud() {
         if (window.dbApi && window.auth && window.auth.currentUser) {
             window.dbApi.saveWallpaper(this.settings);
         }
     }
 
-    // Загрузка из облака (вызывается при входе)
     async loadFromCloud() {
         if (window.dbApi && window.auth && window.auth.currentUser) {
             const cloudSettings = await window.dbApi.loadWallpaper();
             if (cloudSettings) {
                 this.settings = { ...this.defaultSettings, ...cloudSettings };
-                this.saveSettings(); // Обновляем локальный кеш
-                this.applySettings(); // Применяем визуально
-                this.refreshUI(); // Обновляем ползунки в меню
+                this.saveSettings();
+                this.applySettings();
+                this.refreshUI();
             }
         }
     }
@@ -45,7 +43,18 @@ export class WallpaperManager {
 
         if (bgElement) {
             bgElement.style.backgroundImage = `url('${this.settings.url}')`;
-            bgElement.style.filter = `blur(${this.settings.blur}px)`;
+            
+            // --- КОНВЕРТАЦИЯ % В PX ---
+            const maxBlurPx = 30; // Реальность
+            const currentBlurPx = (this.settings.blur / 100) * maxBlurPx;
+
+            // --- ДИНАМИЧЕСКИЙ ЗУМ ---
+            // Используем реальные пиксели (currentBlurPx) для расчета зума.
+            // При 50px (100%) зум будет примерно 1.17, что достаточно.
+            const scale = 1.02 + (currentBlurPx * 0.003);
+            
+            bgElement.style.filter = `blur(${currentBlurPx}px)`;
+            bgElement.style.transform = `scale(${scale})`;
         }
         
         if (dimElement) {
@@ -54,7 +63,6 @@ export class WallpaperManager {
         }
     }
 
-    // Обновляет значения ползунков, если настройки пришли из облака
     refreshUI() {
         const sliderDim = document.getElementById('sliderDim');
         const sliderBlur = document.getElementById('sliderBlur');
@@ -65,12 +73,12 @@ export class WallpaperManager {
         if (sliderDim) { sliderDim.value = this.settings.dim; }
         if (sliderBlur) { sliderBlur.value = this.settings.blur; }
         if (dimLabel) { dimLabel.innerText = `${this.settings.dim}%`; }
-        if (blurLabel) { blurLabel.innerText = `${this.settings.blur}px`; }
+        // Теперь пишем %
+        if (blurLabel) { blurLabel.innerText = `${this.settings.blur}%`; }
         if (preview) { preview.style.backgroundImage = `url('${this.settings.url}')`; }
     }
 
     getSettingsHTML() {
-        // Иконка карандаша (path d="...") и max="100" для затемнения
         return `
             <div class="profile-card" style="margin-top: 0;">
                 <h2 class="profile-title-in-card" style="margin-bottom: 12px;">Обои</h2>
@@ -96,7 +104,7 @@ export class WallpaperManager {
                 <div class="slider-group">
                     <div class="slider-header">
                         <span>Размытие</span>
-                        <span id="blurValueLabel">${this.settings.blur}px</span>
+                        <span id="blurValueLabel">${this.settings.blur}%</span>
                     </div>
                     <input type="range" min="0" max="100" value="${this.settings.blur}" class="ios-slider" id="sliderBlur">
                 </div>
@@ -109,7 +117,6 @@ export class WallpaperManager {
         const sliderBlur = document.getElementById('sliderBlur');
         const btnChange = document.getElementById('btnChangeWallpaper');
         
-        // Вспомогательная функция для обновления
         const updateDim = (val) => {
             this.settings.dim = val;
             const label = document.getElementById('dimValueLabel');
@@ -121,15 +128,14 @@ export class WallpaperManager {
         const updateBlur = (val) => {
             this.settings.blur = val;
             const label = document.getElementById('blurValueLabel');
-            if(label) label.innerText = `${val}px`;
+            // Обновляем лейбл с процентами
+            if(label) label.innerText = `${val}%`;
             this.applySettings();
             this.saveSettings();
         };
 
         if (sliderDim) {
-            // 'input' срабатывает мгновенно при перетаскивании (только локально)
             sliderDim.addEventListener('input', (e) => updateDim(e.target.value));
-            // 'change' срабатывает, когда отпустили ползунок (сохраняем в БД)
             sliderDim.addEventListener('change', () => this.saveToCloud());
         }
 
@@ -152,7 +158,7 @@ export class WallpaperManager {
                 <div class="wp-modal-overlay" id="wpModal">
                     <div class="wp-modal-card">
                         <h3>Ссылка на изображение</h3>
-                        <input type="text" id="wpUrlInput" class="form-input" placeholder="https://site.com/image.jpg" autocomplete="off">
+                        <input type="text" id="wpUrlInput" class="form-input" placeholder="https://..." autocomplete="off">
                         <div class="wp-modal-actions">
                             <button class="wp-btn-cancel" id="wpBtnCancel">Отмена</button>
                             <button class="wp-btn-save" id="wpBtnSave">Сохранить</button>
@@ -171,7 +177,7 @@ export class WallpaperManager {
                     this.settings.url = input.value.trim();
                     this.applySettings();
                     this.saveSettings();
-                    this.saveToCloud(); // Сохраняем в БД сразу после смены URL
+                    this.saveToCloud();
                     
                     const preview = document.querySelector('.wallpaper-preview-bg');
                     if(preview) preview.style.backgroundImage = `url('${this.settings.url}')`;
@@ -180,7 +186,6 @@ export class WallpaperManager {
             };
         }
         
-        // Очищаем поле ввода перед открытием
         const input = document.getElementById('wpUrlInput');
         if (input) input.value = ''; 
         

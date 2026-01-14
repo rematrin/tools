@@ -152,7 +152,7 @@ export class WallpaperManager {
                 <div class="wp-modal-overlay" id="wpModal">
                     <div class="wp-modal-card">
                         <h3>Ссылка на изображение</h3>
-                        <input type="text" id="wpUrlInput" class="form-input" placeholder="https://..." autocomplete="off">
+                        <input type="text" id="wpUrlInput" class="form-input" placeholder="https://site.com/image.jpg" autocomplete="off">
                         <div class="wp-modal-actions">
                             <button class="wp-btn-cancel" id="wpBtnCancel">Отмена</button>
                             <button class="wp-btn-save" id="wpBtnSave">Сохранить</button>

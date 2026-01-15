@@ -15,6 +15,35 @@ export class IconEditor {
         };
     }
 
+    // Метод для извлечения названия из URL
+    extractNameFromUrl(url) {
+        try {
+            let domain = url.trim();
+            if (!domain) return '';
+            
+            // Добавляем протокол для корректной работы конструктора URL
+            if (!/^https?:\/\//i.test(domain)) {
+                domain = 'http://' + domain;
+            }
+            
+            const urlObj = new URL(domain);
+            let host = urlObj.hostname;
+            
+            // Убираем www. и выделяем основное имя
+            host = host.replace(/^www\./i, '');
+            const parts = host.split('.');
+            
+            if (parts.length > 0) {
+                // Берем первую часть (например, 'google' из 'google.com')
+                const name = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+                return name;
+            }
+        } catch (e) {
+            return '';
+        }
+        return '';
+    }
+
     open(onSave, initialData = null) {
         this.onSaveCallback = onSave;
         this.createModal();
@@ -206,10 +235,35 @@ export class IconEditor {
         const triggerBtn = document.getElementById('triggerFileSelect');
         if(triggerBtn) triggerBtn.addEventListener('click', () => fileInput.click());
 
+        const urlInput = document.getElementById('editorAppUrl');
+        const nameInput = document.getElementById('editorAppName');
+
+        // Автозаполнение названия при вводе URL
+        if (urlInput && nameInput) {
+            urlInput.addEventListener('input', () => {
+                const urlVal = urlInput.value.trim();
+                
+                // Срабатывает, если введено более 3 символов
+                if(urlVal.length > 3) {
+                    const guessedName = this.extractNameFromUrl(urlVal);
+                    
+                    // Обновляем, если поле пустое или было заполнено автоматически
+                    if (guessedName && (nameInput.value === '' || nameInput.dataset.autoFilled === 'true')) {
+                        nameInput.value = guessedName;
+                        nameInput.dataset.autoFilled = 'true'; // Флаг автоматического заполнения
+                    }
+                }
+            });
+
+            // Если пользователь редактирует название вручную, отключаем флаг автозаполнения
+            nameInput.addEventListener('input', () => {
+                nameInput.dataset.autoFilled = 'false';
+            });
+        }
+
         const fetchBtn = document.getElementById('btnFetchFromUrl');
         if(fetchBtn) {
             fetchBtn.addEventListener('click', () => {
-                const urlInput = document.getElementById('editorAppUrl');
                 const errorMsg = document.getElementById('urlErrorText');
                 urlInput.classList.remove('input-error');
                 if(errorMsg) errorMsg.style.display = 'none';
@@ -219,7 +273,6 @@ export class IconEditor {
                     urlInput.classList.add('input-error');
                     if(errorMsg) { errorMsg.innerText = 'Введите URL'; errorMsg.style.display = 'inline'; }
                     urlInput.focus();
-                    urlInput.addEventListener('input', () => { urlInput.classList.remove('input-error'); if(errorMsg) errorMsg.style.display = 'none'; }, { once: true });
                     return;
                 }
 
@@ -259,7 +312,6 @@ export class IconEditor {
                         this.draw();
                         fetchBtn.innerHTML = originalBtnContent;
                         fetchBtn.style.opacity = 1;
-                        urlInput.addEventListener('input', () => { urlInput.classList.remove('input-error'); if(errorMsg) errorMsg.style.display = 'none'; }, { once: true });
                     };
                     fallbackImg.src = fallbackProxy;
                 };
@@ -346,7 +398,8 @@ export class IconEditor {
         const swatches = document.querySelectorAll('.swatch');
         if (swatches.length > 0) {
             swatches.forEach(s => s.classList.remove('active'));
-            document.querySelector('[data-color="#ffffff"]').classList.add('active');
+            const whiteSwatch = document.querySelector('[data-color="#ffffff"]');
+            if(whiteSwatch) whiteSwatch.classList.add('active');
         }
         if (fullClear) {
             const nameInput = document.getElementById('editorAppName');
@@ -398,13 +451,11 @@ export class IconEditor {
                 offCtx.imageSmoothingEnabled = true;
                 offCtx.imageSmoothingQuality = 'high';
 
-                // Перерисовка на малый холст
                 if (this.state.bgColor !== 'transparent') {
                     offCtx.fillStyle = this.state.bgColor;
                     offCtx.fillRect(0, 0, 256, 256);
                 }
                 
-                // Просто рисуем с большого канваса, так как там уже все слои сведены (без стекла)
                 offCtx.drawImage(this.canvas, 0, 0, 256, 256);
                 
                 const dataUrl = offscreenCanvas.toDataURL('image/png');
@@ -426,9 +477,7 @@ export class IconEditor {
     }
 
     async uploadToImgBB(base64Image) {
-        // !!! ВСТАВЬТЕ СЮДА ВАШ API KEY ОТ IMGBB !!!
         const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee'; 
-        
         const cleanBase64 = base64Image.split(',')[1];
         const formData = new FormData();
         formData.append('image', cleanBase64);

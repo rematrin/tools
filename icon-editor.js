@@ -112,34 +112,38 @@ export class IconEditor {
                             </div>
                         </div>
 
-                        <div class="img-btns-row" style="position: relative;">
-                            <button class="btn-upload" id="triggerFileSelect">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                                <span>Файл</span>
-                            </button>
-                            <button class="btn-upload btn-fetch" id="btnFetchFromUrl">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                                <span>С сайта</span>
-                            </button>
+                        <div style="width: 100%; display: flex; flex-direction: column; gap: 5px; margin-top: 5px;">
+                            <div style="font-size: 14px; color: #5f6368; font-weight: 500;">Выбрать другую иконку:</div>
                             
-                            <button class="btn-upload btn-search" id="btnOpenSearch">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                                <span>Каталог</span>
-                            </button>
-                            
-                            <div id="searchPopup" class="search-popup" style="display: none;">
-                                <div class="search-popup-header">
-                                    <div class="search-input-wrapper">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                                        <input type="text" id="iconSearchInput" placeholder="Поиск.." autocomplete="off">
+                            <div class="img-btns-row" style="position: relative;">
+                                <button class="btn-upload" id="triggerFileSelect">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                    <span>Файл</span>
+                                </button>
+                                <button class="btn-upload btn-fetch" id="btnFetchFromUrl">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                    <span>С сайта</span>
+                                </button>
+                                
+                                <button class="btn-upload btn-search" id="btnOpenSearch">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                    <span>Каталог</span>
+                                </button>
+                                
+                                <div id="searchPopup" class="search-popup" style="display: none;">
+                                    <div class="search-popup-header">
+                                        <div class="search-input-wrapper">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                            <input type="text" id="iconSearchInput" placeholder="Поиск иконок..." autocomplete="off">
+                                        </div>
+                                        <div class="search-close" id="closeSearchPopup">&times;</div>
                                     </div>
-                                    <div class="search-close" id="closeSearchPopup">&times;</div>
+                                    <div class="search-options">
+                                        <label for="iconColorPicker" class="color-label">Покрасить:</label>
+                                        <input type="color" id="iconColorPicker" value="#000000">
+                                    </div>
+                                    <div id="iconSearchResults" class="search-results"></div>
                                 </div>
-                                <div class="search-options">
-                                    <label for="iconColorPicker" class="color-label">Покрасить:</label>
-                                    <input type="color" id="iconColorPicker" value="#000000">
-                                </div>
-                                <div id="iconSearchResults" class="search-results"></div>
                             </div>
                         </div>
                         <input type="file" id="editorFileInput" accept="image/*" style="display: none;">
@@ -165,12 +169,12 @@ export class IconEditor {
                         </div>
                         <div class="editor-inputs">
                             <div class="input-group">
-                                <label>Адрес (URL) <span id="urlErrorText" class="error-msg"></span></label>
-                                <input type="text" id="editorAppUrl" placeholder="https://..." autocomplete="off">
+                                <label>Ссылка<span id="urlErrorText" class="error-msg"></span></label>
+                                <input type="text" id="editorAppUrl" placeholder="Введите URL" autocomplete="off">
                             </div>
                             <div class="input-group">
-                                <label>Название сайта</label>
-                                <input type="text" id="editorAppName" placeholder="Например: Google" autocomplete="off">
+                                <label>Название</label>
+                                <input type="text" id="editorAppName" placeholder="Введите название" autocomplete="off">
                             </div>
                         </div>
                     </div>
@@ -210,7 +214,6 @@ export class IconEditor {
             .btn-fetch { background-color: #34A853; }
             .btn-fetch:hover { background-color: #2D9147; }
             
-            /* Стили для поиска (УЛУЧШЕННЫЕ) */
             .btn-search { background-color: #8e44ad; }
             .btn-search:hover { background-color: #732d91; }
 
@@ -219,7 +222,7 @@ export class IconEditor {
                 bottom: 50px;
                 left: 0;
                 width: 100%;
-                height: 320px; /* Немного увеличили высоту */
+                height: 320px;
                 background: white;
                 border: 1px solid #ddd;
                 border-radius: 8px;
@@ -319,6 +322,7 @@ export class IconEditor {
 
         const urlInput = document.getElementById('editorAppUrl');
         const nameInput = document.getElementById('editorAppName');
+        const fetchBtn = document.getElementById('btnFetchFromUrl');
 
         if (urlInput && nameInput) {
             urlInput.addEventListener('input', () => {
@@ -332,9 +336,19 @@ export class IconEditor {
                 }
             });
             nameInput.addEventListener('input', () => { nameInput.dataset.autoFilled = 'false'; });
+            
+            // --- НОВАЯ ЛОГИКА: Авто-нажатие (только если иконка НЕ загружена) ---
+            urlInput.addEventListener('paste', () => {
+                setTimeout(() => {
+                    const val = urlInput.value.trim();
+                    // Добавлено условие !this.uploadedImage
+                    if (!this.uploadedImage && val.length > 4 && val.includes('.')) {
+                        if (fetchBtn) fetchBtn.click();
+                    }
+                }, 50);
+            });
         }
 
-        const fetchBtn = document.getElementById('btnFetchFromUrl');
         if(fetchBtn) {
             fetchBtn.addEventListener('click', () => {
                 const errorMsg = document.getElementById('urlErrorText');
@@ -392,7 +406,7 @@ export class IconEditor {
             });
         }
 
-        // --- ЛОГИКА ПОИСКА ICONIFY (ОБНОВЛЕННАЯ) ---
+        // --- ЛОГИКА ПОИСКА ICONIFY ---
         const searchBtn = document.getElementById('btnOpenSearch');
         const searchPopup = document.getElementById('searchPopup');
         const closeSearch = document.getElementById('closeSearchPopup');
@@ -413,10 +427,8 @@ export class IconEditor {
                 searchPopup.style.display = 'none';
             });
 
-            // Обновление цвета в реальном времени
             colorPicker.addEventListener('input', (e) => {
                 currentSearchColor = e.target.value;
-                // Обновляем все иконки в результатах, добавляя параметр цвета
                 const images = resultsContainer.querySelectorAll('img');
                 images.forEach(img => {
                     const baseUrl = img.src.split('?')[0];
@@ -447,7 +459,6 @@ export class IconEditor {
                             data.icons.forEach(iconName => {
                                 const div = document.createElement('div');
                                 div.className = 'search-item';
-                                // Формируем базовый URL и URL с цветом
                                 const baseUrl = `https://api.iconify.design/${iconName}.svg`;
                                 const coloredUrl = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
                                 
@@ -456,19 +467,14 @@ export class IconEditor {
                                 img.loading = "lazy";
                                 div.appendChild(img);
                                 
-                                // Клик по иконке
                                 div.addEventListener('click', () => {
-                                    // Используем актуальный цвет на момент клика
                                     const finalUrl = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
                                     
                                     this.uploadedImage = new Image();
                                     this.uploadedImage.crossOrigin = "anonymous";
                                     
-                                    // СПЕЦИАЛЬНАЯ ЗАГРУЗКА ДЛЯ ИКОНОК (ФИКС РАЗМЕРА)
                                     this.uploadedImage.onload = () => {
-                                        // Вместо resetImageState() считаем масштаб вручную
-                                        // Цель: иконка занимает ~80% холста
-                                        const targetSize = this.canvas.width * 0.8; 
+                                        const targetSize = this.canvas.width * 0.6; 
                                         const scale = targetSize / Math.max(this.uploadedImage.width, this.uploadedImage.height);
                                         
                                         this.state.scale = scale;
@@ -494,7 +500,6 @@ export class IconEditor {
                 }, 500);
             });
         }
-        // --- КОНЕЦ ЛОГИКИ ПОИСКА ---
 
         this.modal.addEventListener('click', (e) => {
             const btn = e.target.closest('.tool-btn');

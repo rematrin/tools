@@ -21,7 +21,6 @@ export class IconEditor {
             let domain = url.trim();
             if (!domain) return '';
             
-            // Добавляем протокол для корректной работы конструктора URL
             if (!/^https?:\/\//i.test(domain)) {
                 domain = 'http://' + domain;
             }
@@ -29,12 +28,10 @@ export class IconEditor {
             const urlObj = new URL(domain);
             let host = urlObj.hostname;
             
-            // Убираем www. и выделяем основное имя
             host = host.replace(/^www\./i, '');
             const parts = host.split('.');
             
             if (parts.length > 0) {
-                // Берем первую часть (например, 'google' из 'google.com')
                 const name = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
                 return name;
             }
@@ -115,17 +112,38 @@ export class IconEditor {
                             </div>
                         </div>
 
-                        <div class="img-btns-row">
+                        <div class="img-btns-row" style="position: relative;">
                             <button class="btn-upload" id="triggerFileSelect">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                                <span>Загрузить</span>
+                                <span>Файл</span>
                             </button>
                             <button class="btn-upload btn-fetch" id="btnFetchFromUrl">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                                 <span>С сайта</span>
                             </button>
+                            
+                            <button class="btn-upload btn-search" id="btnOpenSearch">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                <span>Каталог</span>
+                            </button>
+                            
+                            <div id="searchPopup" class="search-popup" style="display: none;">
+                                <div class="search-popup-header">
+                                    <div class="search-input-wrapper">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                        <input type="text" id="iconSearchInput" placeholder="Поиск.." autocomplete="off">
+                                    </div>
+                                    <div class="search-close" id="closeSearchPopup">&times;</div>
+                                </div>
+                                <div class="search-options">
+                                    <label for="iconColorPicker" class="color-label">Покрасить:</label>
+                                    <input type="color" id="iconColorPicker" value="#000000">
+                                </div>
+                                <div id="iconSearchResults" class="search-results"></div>
+                            </div>
                         </div>
                         <input type="file" id="editorFileInput" accept="image/*" style="display: none;">
+
                     </div>
                     <div class="editor-right-col">
                         <div>
@@ -187,10 +205,74 @@ export class IconEditor {
             .tool-btn:hover { background: #e8eaed; color: #202124; }
 
             .img-btns-row { display: flex; gap: 10px; width: 100%; margin-top: 5px; }
-            .btn-upload { background-color: #4285f4; color: white; border: none; border-radius: 6px; padding: 10px 0; width: 100%; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+            .btn-upload { background-color: #4285f4; color: white; border: none; border-radius: 6px; padding: 10px 0; width: 100%; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
             .btn-upload:hover { background-color: #3367d6; }
             .btn-fetch { background-color: #34A853; }
             .btn-fetch:hover { background-color: #2D9147; }
+            
+            /* Стили для поиска (УЛУЧШЕННЫЕ) */
+            .btn-search { background-color: #8e44ad; }
+            .btn-search:hover { background-color: #732d91; }
+
+            .search-popup {
+                position: absolute;
+                bottom: 50px;
+                left: 0;
+                width: 100%;
+                height: 320px; /* Немного увеличили высоту */
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                padding: 12px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                box-sizing: border-box;
+                z-index: 100;
+            }
+            .search-popup-header { display: flex; align-items: center; gap: 10px; }
+            .search-input-wrapper { flex: 1; position: relative; display: flex; align-items: center; }
+            .search-input-wrapper svg { position: absolute; left: 10px; pointer-events: none; }
+            #iconSearchInput { width: 100%; padding: 8px 8px 8px 32px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; outline: none; transition: border 0.2s; }
+            #iconSearchInput:focus { border-color: #8e44ad; }
+            
+            .search-close { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #999; font-size: 22px; line-height: 1; border-radius: 4px; transition: background 0.2s; }
+            .search-close:hover { background: #f1f3f4; color: #333; }
+            
+            .search-options { display: flex; align-items: center; gap: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee; font-size: 13px; color: #5f6368; }
+            .color-label { font-weight: 500; }
+            #iconColorPicker { -webkit-appearance: none; border: none; width: 24px; height: 24px; padding: 0; margin: 0; border-radius: 4px; cursor: pointer; overflow: hidden; }
+            #iconColorPicker::-webkit-color-swatch-wrapper { padding: 0; }
+            #iconColorPicker::-webkit-color-swatch { border: 1px solid #ddd; border-radius: 4px; }
+
+            .search-results {
+                flex: 1;
+                overflow-y: auto;
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 8px;
+                align-content: start;
+                padding-right: 4px;
+                padding-top: 5px;
+            }
+            .search-results::-webkit-scrollbar { width: 4px; }
+            .search-results::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+
+            .search-item {
+                aspect-ratio: 1;
+                border: 1px solid #eee;
+                border-radius: 6px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+                background: #fff;
+            }
+            .search-item:hover { background: #f8f9fa; border-color: #8e44ad; transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+            .search-item img { width: 28px; height: 28px; transition: transform 0.2s; }
+            .search-item:hover img { transform: scale(1.1); }
             
             .editor-right-col { display: flex; flex-direction: column; gap: 20px; min-width: 250px; flex: 1; max-width: 300px; }
             h4 { margin: 0 0 10px 0; font-weight: 500; font-size: 14px; color: #5f6368; }
@@ -238,27 +320,18 @@ export class IconEditor {
         const urlInput = document.getElementById('editorAppUrl');
         const nameInput = document.getElementById('editorAppName');
 
-        // Автозаполнение названия при вводе URL
         if (urlInput && nameInput) {
             urlInput.addEventListener('input', () => {
                 const urlVal = urlInput.value.trim();
-                
-                // Срабатывает, если введено более 3 символов
                 if(urlVal.length > 3) {
                     const guessedName = this.extractNameFromUrl(urlVal);
-                    
-                    // Обновляем, если поле пустое или было заполнено автоматически
                     if (guessedName && (nameInput.value === '' || nameInput.dataset.autoFilled === 'true')) {
                         nameInput.value = guessedName;
-                        nameInput.dataset.autoFilled = 'true'; // Флаг автоматического заполнения
+                        nameInput.dataset.autoFilled = 'true';
                     }
                 }
             });
-
-            // Если пользователь редактирует название вручную, отключаем флаг автозаполнения
-            nameInput.addEventListener('input', () => {
-                nameInput.dataset.autoFilled = 'false';
-            });
+            nameInput.addEventListener('input', () => { nameInput.dataset.autoFilled = 'false'; });
         }
 
         const fetchBtn = document.getElementById('btnFetchFromUrl');
@@ -318,6 +391,110 @@ export class IconEditor {
                 this.uploadedImage.src = proxyUrl + '&t=' + new Date().getTime();
             });
         }
+
+        // --- ЛОГИКА ПОИСКА ICONIFY (ОБНОВЛЕННАЯ) ---
+        const searchBtn = document.getElementById('btnOpenSearch');
+        const searchPopup = document.getElementById('searchPopup');
+        const closeSearch = document.getElementById('closeSearchPopup');
+        const searchInput = document.getElementById('iconSearchInput');
+        const resultsContainer = document.getElementById('iconSearchResults');
+        const colorPicker = document.getElementById('iconColorPicker');
+        
+        let currentSearchColor = colorPicker ? colorPicker.value : '#000000';
+
+        if (searchBtn) {
+            searchBtn.addEventListener('click', () => {
+                const isHidden = searchPopup.style.display === 'none';
+                searchPopup.style.display = isHidden ? 'flex' : 'none';
+                if (isHidden) searchInput.focus();
+            });
+
+            closeSearch.addEventListener('click', () => {
+                searchPopup.style.display = 'none';
+            });
+
+            // Обновление цвета в реальном времени
+            colorPicker.addEventListener('input', (e) => {
+                currentSearchColor = e.target.value;
+                // Обновляем все иконки в результатах, добавляя параметр цвета
+                const images = resultsContainer.querySelectorAll('img');
+                images.forEach(img => {
+                    const baseUrl = img.src.split('?')[0];
+                    img.src = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
+                });
+            });
+
+            let debounceTimer;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(debounceTimer);
+                const query = e.target.value.trim();
+                
+                if (query.length < 2) {
+                    resultsContainer.innerHTML = '';
+                    return;
+                }
+
+                debounceTimer = setTimeout(async () => {
+                    resultsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">Ищу...</div>';
+                    
+                    try {
+                        const resp = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=100`);
+                        const data = await resp.json();
+
+                        resultsContainer.innerHTML = '';
+                        
+                        if (data.icons && data.icons.length > 0) {
+                            data.icons.forEach(iconName => {
+                                const div = document.createElement('div');
+                                div.className = 'search-item';
+                                // Формируем базовый URL и URL с цветом
+                                const baseUrl = `https://api.iconify.design/${iconName}.svg`;
+                                const coloredUrl = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
+                                
+                                const img = document.createElement('img');
+                                img.src = coloredUrl;
+                                img.loading = "lazy";
+                                div.appendChild(img);
+                                
+                                // Клик по иконке
+                                div.addEventListener('click', () => {
+                                    // Используем актуальный цвет на момент клика
+                                    const finalUrl = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
+                                    
+                                    this.uploadedImage = new Image();
+                                    this.uploadedImage.crossOrigin = "anonymous";
+                                    
+                                    // СПЕЦИАЛЬНАЯ ЗАГРУЗКА ДЛЯ ИКОНОК (ФИКС РАЗМЕРА)
+                                    this.uploadedImage.onload = () => {
+                                        // Вместо resetImageState() считаем масштаб вручную
+                                        // Цель: иконка занимает ~80% холста
+                                        const targetSize = this.canvas.width * 0.8; 
+                                        const scale = targetSize / Math.max(this.uploadedImage.width, this.uploadedImage.height);
+                                        
+                                        this.state.scale = scale;
+                                        this.state.rotation = 0;
+                                        this.state.offsetX = 0;
+                                        this.state.offsetY = 0;
+
+                                        this.draw();
+                                        searchPopup.style.display = 'none';
+                                    };
+                                    
+                                    this.uploadedImage.src = finalUrl;
+                                });
+                                resultsContainer.appendChild(div);
+                            });
+                        } else {
+                            resultsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">Ничего не найдено</div>';
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        resultsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ea4335; padding: 20px;">Ошибка сети</div>';
+                    }
+                }, 500);
+            });
+        }
+        // --- КОНЕЦ ЛОГИКИ ПОИСКА ---
 
         this.modal.addEventListener('click', (e) => {
             const btn = e.target.closest('.tool-btn');

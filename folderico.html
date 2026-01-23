@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Folder Icon Maker Pro</title>
+    <style>
+        /* --- 1. Базовые стили и Переменные --- */
+        :root {
+            --bg-body: #f3f4f6;
+            --bg-sidebar: #ffffff;
+            --text-main: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --accent: #3b82f6;
+            --radius: 12px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* --- 2. Сайдбар --- */
+        .sidebar {
+            width: 380px;
+            background-color: var(--bg-sidebar);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+            padding: 24px;
+            gap: 24px;
+            overflow-y: auto;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.02);
+        }
+
+        h3 {
+            margin: 0 0 12px 0;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        h3::before {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+
+        /* --- 3. Переключатель стиля папки (macOS / Windows) --- */
+        .style-toggle-container {
+            display: flex;
+            background: #f3f4f6;
+            padding: 4px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .style-btn {
+            flex: 1;
+            border: none;
+            padding: 10px;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .style-btn.active {
+            background: #fff;
+            color: var(--text-main);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .style-btn img, .style-btn svg {
+            width: 16px;
+            height: 16px;
+            opacity: 0.7;
+        }
+        
+        .style-btn.active img, .style-btn.active svg {
+            opacity: 1;
+        }
+
+
+        /* --- 4. Слайдеры --- */
+        .slider-group {
+            margin-bottom: 20px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+        }
+
+        /* Радужная полоска */
+        #hueRange::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: linear-gradient(to right, 
+                #ff0000 0%, #ffff00 17%, #00ff00 33%, 
+                #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
+            border-radius: 4px;
+        }
+
+        /* ЧБ полоска */
+        #brightnessRange::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: linear-gradient(to right, black, white);
+            border-radius: 4px;
+        }
+
+
+        /* --- 5. Поиск и иконки --- */
+        .search-box {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 12px 12px 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: #f9fafb;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+        
+        .search-box input:focus {
+            background: #fff;
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .search-icon-svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            fill: #9ca3af;
+        }
+
+        .icons-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            overflow-y: auto;
+            padding-right: 5px;
+            max-height: 400px;
+        }
+
+        .icon-item {
+            aspect-ratio: 1;
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .icon-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        .icon-item img {
+            width: 24px;
+            height: 24px;
+            opacity: 0.7;
+        }
+        
+        .icon-item:hover img {
+            opacity: 1;
+        }
+
+        .download-btn {
+            margin-top: auto;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        /* --- 6. Превью --- */
+        .preview-area {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: radial-gradient(#ddd 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        canvas {
+            max-width: 80%;
+            height: auto;
+            filter: drop-shadow(0 20px 40px rgba(0,0,0,0.15));
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div>
+            <h3>Folder Style</h3>
+            <div class="style-toggle-container">
+                <button class="style-btn active" id="btnMac" onclick="setFolderStyle('mac')">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.8-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1m-1.33 1.68c.55-.68.97-1.59.88-2.53-1.03.06-2.07.61-2.67 1.3-.53.63-.92 1.52-.83 2.48.96.06 1.98-.44 2.62-1.25z"/></svg>
+                    macOS
+                </button>
+                <button class="style-btn" id="btnWin" onclick="setFolderStyle('win')">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 12V6.75L9 5.43v6.57H3zm13.5 10.31V12h4.5v10.13l-4.5.18zm-9 0V12h7.5v10.31l-7.5-.31zM21 4.5l-4.5.31V12h4.5V4.5z"/></svg>
+                    Windows
+                </button>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; width: 100%; margin: 0;">
+
+        <div>
+            <h3>Color</h3>
+            
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span>Folder Hue</span>
+                    <span id="hueValue">0°</span>
+                </div>
+                <input type="range" id="hueRange" min="0" max="360" value="210">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span>Folder Brightness</span>
+                    <span id="brightValue">100%</span>
+                </div>
+                <input type="range" id="brightnessRange" min="0" max="200" value="100">
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; width: 100%; margin: 0;">
+
+        <div>
+            <h3>Icons</h3>
+            
+            <div class="search-box">
+                <svg class="search-icon-svg" viewBox="0 0 20 20">
+                    <path d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"></path>
+                </svg>
+                <input type="text" id="iconSearch" placeholder="Search icons (e.g. cat, work)...">
+            </div>
+
+            <div class="icons-grid" id="iconsGrid">
+                <div style="grid-column: span 4; text-align: center; color: #999; padding: 20px;">
+                    Type to search icons...
+                </div>
+            </div>
+        </div>
+
+        <button class="download-btn" id="downloadBtn">Download Icon</button>
+    </div>
+
+    <div class="preview-area">
+        <canvas id="canvas" width="512" height="512"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // --- Настройка путей к файлам ---
+        // Важно: Эти файлы должны лежать рядом с HTML!
+        // Если ты переименовал их, измени названия тут.
+        // Заметь: я использовал расширение .webp или .png, так как .html не подойдет для картинки.
+        const FOLDER_SOURCES = {
+            mac: 'folder_macos.webp', 
+            win: 'folder_windows.webp'
+        };
+
+        let currentFolderImg = new Image();
+        let currentIconUrl = null;
+        let activeStyle = 'mac'; // 'mac' или 'win'
+
+        // --- Инициализация ---
+        function init() {
+            setFolderStyle('mac'); // Загружаем мак по умолчанию
+            searchIcons('folder'); // Показываем стартовые иконки
+        }
+
+        // --- Переключение стилей (macOS / Windows) ---
+        function setFolderStyle(style) {
+            activeStyle = style;
+            
+            // UI переключение кнопок
+            document.getElementById('btnMac').className = style === 'mac' ? 'style-btn active' : 'style-btn';
+            document.getElementById('btnWin').className = style === 'win' ? 'style-btn active' : 'style-btn';
+
+            // Загрузка картинки
+            const img = new Image();
+            img.onload = () => {
+                currentFolderImg = img;
+                draw(); // Рисуем как только загрузилась
+            };
+            img.onerror = () => {
+                alert(`Не удалось загрузить файл ${FOLDER_SOURCES[style]}. Проверь, лежит ли он рядом с файлом index.html`);
+            };
+            img.src = FOLDER_SOURCES[style];
+        }
+
+
+        // --- Логика отрисовки ---
+        const ui = {
+            hue: document.getElementById('hueRange'),
+            hueVal: document.getElementById('hueValue'),
+            bright: document.getElementById('brightnessRange'),
+            brightVal: document.getElementById('brightValue'),
+            search: document.getElementById('iconSearch'),
+            grid: document.getElementById('iconsGrid'),
+            download: document.getElementById('downloadBtn')
+        };
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Рисуем папку
+            if (currentFolderImg.complete && currentFolderImg.naturalWidth !== 0) {
+                ctx.save();
+                ctx.drawImage(currentFolderImg, 0, 0, canvas.width, canvas.height);
+
+                // 2. Красим папку
+                // Режим overlay сохраняет тени и блики
+                ctx.globalCompositeOperation = 'overlay'; 
+                const h = ui.hue.value;
+                const b = ui.bright.value; 
+
+                // Яркость < 100% -> затемняем, > 100% -> осветляем
+                if (b != 100) {
+                   // Для простоты здесь только Hue + Brightness слоя
+                }
+                
+                // Рисуем цвет (Hue)
+                // Сначала ограничиваем область рисования только непрозрачными пикселями папки
+                ctx.globalCompositeOperation = 'source-atop';
+                
+                // Цвет заливки
+                ctx.fillStyle = `hsla(${h}, 100%, 50%, 0.5)`; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Дополнительная коррекция яркости
+                if (b != 100) {
+                    ctx.globalCompositeOperation = b > 100 ? 'overlay' : 'multiply';
+                    const opacity = Math.abs(b - 100) / 100;
+                    ctx.fillStyle = b > 100 ? `rgba(255,255,255,${opacity})` : `rgba(0,0,0,${opacity})`;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+                
+                ctx.restore();
+            }
+
+            // 3. Рисуем Иконку
+            if (currentIconUrl) {
+                const iconImg = new Image();
+                iconImg.onload = () => {
+                    ctx.save();
+                    // Легкая тень иконке для реализма
+                    ctx.shadowColor = "rgba(0,0,0,0.3)";
+                    ctx.shadowBlur = 4;
+                    ctx.shadowOffsetY = 2;
+
+                    // Размер и позиция (зависит от стиля папки, Windows папки часто требуют другого сдвига)
+                    const size = 256; 
+                    const x = (canvas.width - size) / 2;
+                    // Для Windows иконок обычно нужно сдвинуть чуть выше, так как папка стоит "вертикальнее"
+                    let yOffset = activeStyle === 'win' ? 10 : 30; 
+                    
+                    const y = (canvas.height - size) / 2 + yOffset;
+
+                    ctx.drawImage(iconImg, x, y, size, size);
+                    ctx.restore();
+                };
+                iconImg.src = currentIconUrl;
+            }
+        }
+
+        // --- Поиск (Iconify) ---
+        function debounce(func, timeout = 500){
+            let timer;
+            return (...args) => {
+                clearTimeout(timer);
+                timer = setTimeout(() => { func.apply(this, args); }, timeout);
+            };
+        }
+
+        async function searchIcons(query) {
+            if (!query || query.length < 2) return;
+            ui.grid.innerHTML = '<div style="grid-column:span 4; text-align:center;">Loading...</div>';
+
+            const limit = 60;
+            const url = `https://api.iconify.design/search?query=${query}&limit=${limit}`;
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                ui.grid.innerHTML = ''; 
+
+                if (data.icons && data.icons.length > 0) {
+                    data.icons.forEach(iconStr => {
+                        const btn = document.createElement('div');
+                        btn.className = 'icon-item';
+                        const previewUrl = `https://api.iconify.design/${iconStr}.svg`;
+                        btn.innerHTML = `<img src="${previewUrl}" loading="lazy">`;
+                        
+                        btn.onclick = () => {
+                            // Грузим белую иконку для наложения
+                            currentIconUrl = `https://api.iconify.design/${iconStr}.svg?color=white`; 
+                            document.querySelectorAll('.icon-item').forEach(i => i.style.borderColor = '#e5e7eb');
+                            btn.style.borderColor = '#3b82f6';
+                            draw(); 
+                        };
+                        ui.grid.appendChild(btn);
+                    });
+                } else {
+                    ui.grid.innerHTML = '<div style="color:#666;">No icons found</div>';
+                }
+
+            } catch (e) {
+                console.error(e);
+                ui.grid.innerHTML = 'Error loading icons';
+            }
+        }
+
+        // --- События ---
+        ui.hue.addEventListener('input', (e) => {
+            ui.hueVal.textContent = e.target.value + '°';
+            draw();
+        });
+        
+        ui.bright.addEventListener('input', (e) => {
+            ui.brightVal.textContent = e.target.value + '%';
+            draw();
+        });
+
+        const processSearch = debounce((e) => searchIcons(e.target.value));
+        ui.search.addEventListener('input', processSearch);
+
+        ui.download.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = `folder-${activeStyle}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        // Старт
+        init();
+
+    </script>
+</body>
+</html>

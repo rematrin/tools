@@ -1,408 +1,483 @@
 <!doctype html>
 <html lang="ru">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Все сервисы</title>
-<link rel="icon" type="image/png" href="favicon.png">
-<link rel="apple-touch-icon" href="favicon.png">
-<style>
-/* === БАЗОВЫЕ НАСТРОЙКИ И ТЕМА === */
-:root {
-    --bg: #f4f6fb;
-    --text: #0b0d12;
-    --card-bg: #ffffff;
-    --border: #e6e9f2;
-    --accent: #7aa2ff;
-    --hover-bg: #f4f6fb;
-    
-    /* Цвета подсказки */
-    --tooltip-bg: #2a2c33;
-    --tooltip-text: #ffffff;
-    
-    /* Цвет кнопки доната */
-    --donate-bg: #ffdd00;
-    --donate-text: #3e2d00;
-}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Все сервисы</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <style>
+        /* === БАЗОВЫЕ НАСТРОЙКИ И ТЕМА === */
+        :root {
+            --bg: #f4f6fb;
+            --text: #0b0d12;
+            --card-bg: #ffffff;
+            --border: #e6e9f2;
+            --accent: #7aa2ff;
+            --hover-bg: #f4f6fb;
 
-body.dark {
-    --bg: #0f1115;
-    --text: #f3f3f3;
-    --card-bg: #1a1d22;
-    --border: #292c33;
-    --accent: #5b8af0;
-    --hover-bg: #23262b;
-    
-    --tooltip-bg: #e6e9f2;
-    --tooltip-text: #0f1115;
-    
-    /* Донат в темной теме */
-    --donate-bg: #ffd500;
-    --donate-text: #000000;
-}
+            /* Цвета подсказки */
+            --tooltip-bg: #2a2c33;
+            --tooltip-text: #ffffff;
 
-/* Системные иконки в темной теме */
-body.dark img.icon { filter: invert(1) brightness(1.3); }
+            /* Цвет кнопки доната */
+            --donate-bg: #ffdd00;
+            --donate-text: #3e2d00;
+        }
 
-* { box-sizing: border-box; }
+        body.dark {
+            --bg: #0f1115;
+            --text: #f3f3f3;
+            --card-bg: #1a1d22;
+            --border: #292c33;
+            --accent: #5b8af0;
+            --hover-bg: #23262b;
 
-body {
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    margin: 0;
-    background: var(--bg);
-    padding-top: 60px;
-    color: var(--text);
-    transition: background 0.3s ease, color 0.3s ease;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
+            --tooltip-bg: #e6e9f2;
+            --tooltip-text: #0f1115;
 
-.wrap {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 40px 20px;
-    width: 100%;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
+            /* Донат в темной теме */
+            --donate-bg: #ffd500;
+            --donate-text: #000000;
+        }
 
-/* === ЗАГОЛОВОК СЕРВИСОВ (ШАПКА) === */
-.section-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    margin-bottom: 30px;
-    height: 40px;
-}
+        /* Системные иконки в темной теме */
+        body.dark img.icon {
+            filter: invert(1) brightness(1.3);
+        }
 
-.section-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 0;
-    opacity: 0.9;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+        * {
+            box-sizing: border-box;
+        }
 
-.section-icon {
-    color: var(--text);
-    opacity: 0.8;
-}
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            margin: 0;
+            background: var(--bg);
+            padding-top: 60px;
+            color: var(--text);
+            transition: background 0.3s ease, color 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-/* Кнопка темы УДАЛЕНА отсюда */
+        .wrap {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
 
-/* === СЕТКА КАРТОЧЕК === */
-.services-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 15px;
-}
+        /* === ЗАГОЛОВОК СЕРВИСОВ (ШАПКА) === */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 30px;
+            height: 40px;
+        }
 
-.tool-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 18px 20px;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    text-decoration: none;
-    color: var(--text);
-    font-size: 1rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-}
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-.tool-card:hover {
-    background: var(--hover-bg);
-    border-color: var(--accent);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
-}
+        .section-icon {
+            color: var(--text);
+            opacity: 0.8;
+        }
 
-.tool-icon {
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
-    color: var(--text);
-    opacity: 0.6;
-    transition: all 0.2s;
-}
+        /* Кнопка темы УДАЛЕНА отсюда */
 
-.tool-card:hover .tool-icon {
-    opacity: 1;
-    color: var(--accent);
-    transform: scale(1.1);
-}
+        /* === СЕТКА КАРТОЧЕК === */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+        }
 
-.fade-in {
-    animation: fadeIn 0.5s ease forwards;
-    opacity: 0;
-    transform: translateY(10px);
-}
-@keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+        .tool-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 18px 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            text-decoration: none;
+            color: var(--text);
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        }
 
-/* === МИНИ ФУТЕР (ДОНАТ) === */
-.main-footer {
-    margin-top: auto;
-    padding-top: 60px;
-    padding-bottom: 30px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-}
+        .tool-card:hover {
+            background: var(--hover-bg);
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+        }
 
-.footer-desc {
-    font-size: 0.9rem;
-    opacity: 0.6;
-    margin: 0;
-}
+        .tool-icon {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+            color: var(--text);
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
 
-.donate-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--donate-bg);
-    color: var(--donate-text);
-    padding: 12px 24px;
-    border-radius: 30px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1rem;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 15px rgba(255, 220, 0, 0.15);
-}
+        .tool-card:hover .tool-icon {
+            opacity: 1;
+            color: var(--accent);
+            transform: scale(1.1);
+        }
 
-.donate-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 220, 0, 0.3);
-}
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+            opacity: 0;
+            transform: translateY(10px);
+        }
 
-body.dark .donate-btn {
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-}
-body.dark .donate-btn:hover {
-    box-shadow: 0 6px 20px rgba(255, 230, 0, 0.15);
-}
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-/* === TOOLTIP (ПОДСКАЗКА) === */
-#customTooltip {
-    position: fixed;
-    background: var(--tooltip-bg);
-    color: var(--tooltip-text);
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    pointer-events: none;
-    opacity: 0;
-    transform: translateY(5px);
-    transition: opacity 0.2s, transform 0.2s;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    white-space: nowrap;
-    font-weight: 500;
-}
-#customTooltip.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-</style>
+        /* === МИНИ ФУТЕР (ДОНАТ) === */
+        .main-footer {
+            margin-top: auto;
+            padding-top: 60px;
+            padding-bottom: 30px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .footer-desc {
+            font-size: 0.9rem;
+            opacity: 0.6;
+            margin: 0;
+        }
+
+        .donate-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--donate-bg);
+            color: var(--donate-text);
+            padding: 12px 24px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(255, 220, 0, 0.15);
+        }
+
+        .donate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 220, 0, 0.3);
+        }
+
+        body.dark .donate-btn {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        body.dark .donate-btn:hover {
+            box-shadow: 0 6px 20px rgba(255, 230, 0, 0.15);
+        }
+
+        /* === TOOLTIP (ПОДСКАЗКА) === */
+        #customTooltip {
+            position: fixed;
+            background: var(--tooltip-bg);
+            color: var(--tooltip-text);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(5px);
+            transition: opacity 0.2s, transform 0.2s;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        #customTooltip.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
 
-  gtag('config', 'G-384FKZ1NQP');
-</script>
+        gtag('config', 'G-384FKZ1NQP');
+    </script>
 </head>
+
 <body>
-<div id="header-container"></div>
-<div id="customTooltip"></div>
+    <div id="header-container"></div>
+    <div id="customTooltip"></div>
 
-<div class="wrap">
+    <div class="wrap">
 
-    <div class="section-header">
-        <div class="section-title">
-            <svg class="section-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            <span>Все сервисы</span>
+        <div class="section-header">
+            <div class="section-title">
+                <svg class="section-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span>Все сервисы</span>
+            </div>
         </div>
+
+        <div class="services-grid">
+
+            <a href="calc.html" class="tool-card fade-in">
+                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="2" width="16" height="20" rx="2" />
+                    <line x1="8" y1="6" x2="16" y2="6" />
+                    <line x1="16" y1="14" x2="16" y2="18" />
+                    <path d="M16 10h.01" />
+                    <path d="M12 10h.01" />
+                    <path d="M8 10h.01" />
+                    <path d="M12 14h.01" />
+                    <path d="M8 14h.01" />
+                    <path d="M12 18h.01" />
+                    <path d="M8 18h.01" />
+                </svg>
+                Калькулятор процентов
+            </a>
+
+            <a href="fx_converter.html" class="tool-card fade-in">
+                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23" />
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+                Конвертер валют
+            </a>
+
+            <a href="clock.html" class="tool-card fade-in">
+                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                </svg>
+                Мировые часы
+            </a>
+
+            <a href="thumbnail.html" class="tool-card fade-in">
+                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                </svg>
+                Скачать YouTube превью
+            </a>
+
+            <a href="time_convert.html" class="tool-card fade-in">
+                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 22h14" />
+                    <path d="M5 2h14" />
+                    <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
+                    <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+                </svg>
+                Конвертер времени
+            </a>
+
+            <a href="case_converter.html" class="tool-card fade-in">
+                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 7V4h16v3" />
+                    <path d="M9 20h6" />
+                    <path d="M12 4v16" />
+                </svg>
+                Конвертер регистров
+            </a>
+
+            <a href="income_dis.html" class="tool-card fade-in">
+                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                    <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                </svg>
+                Распределитель дохода
+            </a>
+
+            <a href="mp3_cover.html" class="tool-card fade-in">
+                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18V5l12-2v13"></path>
+                    <circle cx="6" cy="18" r="3"></circle>
+                    <circle cx="18" cy="16" r="3"></circle>
+                </svg>
+                Скачать обложку из MP3
+            </a>
+
+            <a href="music.html" class="tool-card fade-in">
+                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                    <path
+                        d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z">
+                    </path>
+                </svg>
+                Lofi Плеер
+            </a>
+
+            <a href="home.html" class="tool-card fade-in">
+                <svg class="tool-icon" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                    <path
+                        d="M10.875 3.375H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969V4.969h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688V4.969h4.688v4.688zM10.875 12.75H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969v-4.688h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688v-4.688h4.688v4.688z" />
+                </svg>
+                Home (beta)
+            </a>
+
+            <a href="crossfade.html" class="tool-card fade-in">
+                <svg class="tool-icon" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                    <path
+                        d="M10.875 3.375H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969V4.969h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688V4.969h4.688v4.688zM10.875 12.75H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969v-4.688h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688v-4.688h4.688v4.688z" />
+                </svg>
+                Crossfade
+            </a>
+
+            <a href="folderico.html" class="tool-card fade-in">
+                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Folder Icon Maker
+            </a>
+
+
         </div>
 
-    <div class="services-grid">
-        
-        <a href="calc.html" class="tool-card fade-in">
-            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
-            Калькулятор процентов
-        </a>
-
-        <a href="fx_converter.html" class="tool-card fade-in">
-            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            Конвертер валют
-        </a>
-
-        <a href="clock.html" class="tool-card fade-in">
-            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Мировые часы
-        </a>
-
-        <a href="thumbnail.html" class="tool-card fade-in">
-            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            Скачать YouTube превью
-        </a>
-
-        <a href="time_convert.html" class="tool-card fade-in">
-            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>
-            Конвертер времени
-        </a>
-
-        <a href="case_converter.html" class="tool-card fade-in">
-            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
-            Конвертер регистров
-        </a>
-
-        <a href="income_dis.html" class="tool-card fade-in">
-            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-                <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-            </svg>
-            Распределитель дохода
-        </a>
-
-        <a href="mp3_cover.html" class="tool-card fade-in">
-            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle>
-            </svg>
-            Скачать обложку из MP3
-        </a>
-
-        <a href="music.html" class="tool-card fade-in">
-            <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
-            </svg>
-            Lofi Плеер
-        </a>
-
-        <a href="home.html" class="tool-card fade-in">
-            <svg class="tool-icon" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-            <path d="M10.875 3.375H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969V4.969h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688V4.969h4.688v4.688zM10.875 12.75H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969v-4.688h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688v-4.688h4.688v4.688z"/>
-        </svg>
-            Home (beta)
-        </a>
-
-        <a href="crossfade.html" class="tool-card fade-in">
-            <svg class="tool-icon" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-            <path d="M10.875 3.375H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969V4.969h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688V4.969h4.688v4.688zM10.875 12.75H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969v-4.688h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688v-4.688h4.688v4.688z"/>
-        </svg>
-            Crossfade
-        </a>
+        <div class="main-footer">
+            <a href="https://t.me/tribute/app?startapp=dAvG" target="_blank" class="donate-btn">
+                <span>Угостить автора кофе</span>
+                <span>☕</span>
+            </a>
+            <p class="footer-desc">Поддержите автора, угостив чашкой кофе</p>
+        </div>
 
     </div>
 
-    <div class="main-footer">
-        <a href="https://t.me/tribute/app?startapp=dAvG" target="_blank" class="donate-btn">
-            <span>Угостить автора кофе</span>
-            <span>☕</span>
-        </a>
-        <p class="footer-desc">Поддержите автора, угостив чашкой кофе</p>
-    </div>
+    <script>
+        // ==== 0. АНИМАЦИЯ ====
+        document.querySelectorAll('.tool-card').forEach((el, index) => {
+            el.style.animationDelay = `${index * 0.05}s`;
+        });
 
-</div>
+        // ==== 1. УЛУЧШЕННАЯ СИСТЕМА ТЕМ (3 РЕЖИМА) ====
+        const themeModes = ['system', 'light', 'dark']; // Возможные режимы
+        let currentThemeMode = localStorage.getItem('themeMode') || 'system';
 
-<script>
-// ==== 0. АНИМАЦИЯ ====
-document.querySelectorAll('.tool-card').forEach((el, index) => {
-    el.style.animationDelay = `${index * 0.05}s`;
-});
+        // Функция применения темы
+        function applyTheme(mode) {
+            if (mode === 'dark') {
+                document.body.classList.add('dark');
+            } else if (mode === 'light') {
+                document.body.classList.remove('dark');
+            } else {
+                // System: Смотрим настройки системы
+                const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (systemDark) document.body.classList.add('dark');
+                else document.body.classList.remove('dark');
+            }
+            // Сохраняем выбор
+            localStorage.setItem('themeMode', mode);
+            currentThemeMode = mode;
 
-// ==== 1. УЛУЧШЕННАЯ СИСТЕМА ТЕМ (3 РЕЖИМА) ====
-const themeModes = ['system', 'light', 'dark']; // Возможные режимы
-let currentThemeMode = localStorage.getItem('themeMode') || 'system';
+            // Если меню открыто, просим его обновить текст (вызываем событие или глобальную функцию)
+            if (window.updateAuthMenuThemeText) window.updateAuthMenuThemeText(getThemeLabel(mode));
+        }
 
-// Функция применения темы
-function applyTheme(mode) {
-    if (mode === 'dark') {
-        document.body.classList.add('dark');
-    } else if (mode === 'light') {
-        document.body.classList.remove('dark');
-    } else {
-        // System: Смотрим настройки системы
-        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (systemDark) document.body.classList.add('dark');
-        else document.body.classList.remove('dark');
-    }
-    // Сохраняем выбор
-    localStorage.setItem('themeMode', mode);
-    currentThemeMode = mode;
-    
-    // Если меню открыто, просим его обновить текст (вызываем событие или глобальную функцию)
-    if (window.updateAuthMenuThemeText) window.updateAuthMenuThemeText(getThemeLabel(mode));
-}
+        // Получить красивое название режима
+        function getThemeLabel(mode) {
+            if (mode === 'system') return 'Системная';
+            if (mode === 'light') return 'Светлая';
+            if (mode === 'dark') return 'Темная';
+            return mode;
+        }
 
-// Получить красивое название режима
-function getThemeLabel(mode) {
-    if (mode === 'system') return 'Системная';
-    if (mode === 'light') return 'Светлая';
-    if (mode === 'dark') return 'Темная';
-    return mode;
-}
+        // Глобальная функция для переключения (циклического)
+        window.cycleTheme = () => {
+            const currentIndex = themeModes.indexOf(currentThemeMode);
+            const nextIndex = (currentIndex + 1) % themeModes.length;
+            const nextMode = themeModes[nextIndex];
+            applyTheme(nextMode);
+        };
 
-// Глобальная функция для переключения (циклического)
-window.cycleTheme = () => {
-    const currentIndex = themeModes.indexOf(currentThemeMode);
-    const nextIndex = (currentIndex + 1) % themeModes.length;
-    const nextMode = themeModes[nextIndex];
-    applyTheme(nextMode);
-};
+        // Глобальная функция, чтобы виджет мог узнать текущее название
+        window.getCurrentThemeLabel = () => getThemeLabel(currentThemeMode);
 
-// Глобальная функция, чтобы виджет мог узнать текущее название
-window.getCurrentThemeLabel = () => getThemeLabel(currentThemeMode);
+        // Слушаем изменения системы (если выбран режим system)
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            if (currentThemeMode === 'system') {
+                if (e.matches) document.body.classList.add('dark');
+                else document.body.classList.remove('dark');
+            }
+        });
 
-// Слушаем изменения системы (если выбран режим system)
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-    if (currentThemeMode === 'system') {
-        if (e.matches) document.body.classList.add('dark');
-        else document.body.classList.remove('dark');
-    }
-});
-
-// Запуск при старте
-applyTheme(currentThemeMode);
+        // Запуск при старте
+        applyTheme(currentThemeMode);
 
 
-// ==== 2. TOOLTIPS ====
-const tooltipEl = document.getElementById('customTooltip');
-function showTooltip(el) {
-    const text = el.getAttribute('data-tip');
-    if (!text) return;
-    const rect = el.getBoundingClientRect();
-    tooltipEl.textContent = text;
-    tooltipEl.classList.add('visible');
-    let top = rect.bottom + 8;
-    let left = rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
-    if (left < 10) left = 10;
-    if (left + tooltipEl.offsetWidth > window.innerWidth) left = window.innerWidth - tooltipEl.offsetWidth - 10;
-    tooltipEl.style.top = `${top}px`;
-    tooltipEl.style.left = `${left}px`;
-}
-document.querySelectorAll('[data-tip]').forEach(el => {
-    el.addEventListener('mouseenter', () => showTooltip(el));
-    el.addEventListener('mouseleave', () => tooltipEl.classList.remove('visible'));
-    el.addEventListener('click', () => tooltipEl.classList.remove('visible'));
-});
-</script>
+        // ==== 2. TOOLTIPS ====
+        const tooltipEl = document.getElementById('customTooltip');
+        function showTooltip(el) {
+            const text = el.getAttribute('data-tip');
+            if (!text) return;
+            const rect = el.getBoundingClientRect();
+            tooltipEl.textContent = text;
+            tooltipEl.classList.add('visible');
+            let top = rect.bottom + 8;
+            let left = rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
+            if (left < 10) left = 10;
+            if (left + tooltipEl.offsetWidth > window.innerWidth) left = window.innerWidth - tooltipEl.offsetWidth - 10;
+            tooltipEl.style.top = `${top}px`;
+            tooltipEl.style.left = `${left}px`;
+        }
+        document.querySelectorAll('[data-tip]').forEach(el => {
+            el.addEventListener('mouseenter', () => showTooltip(el));
+            el.addEventListener('mouseleave', () => tooltipEl.classList.remove('visible'));
+            el.addEventListener('click', () => tooltipEl.classList.remove('visible'));
+        });
+    </script>
 
-<link rel="stylesheet" href="auth-widget.css">
-<script type="module" src="nav-widget.js"></script> 
-<script type="module" src="auth-widget.js"></script>
-<script type="module" src="header.js"></script>
+    <link rel="stylesheet" href="auth-widget.css">
+    <script type="module" src="nav-widget.js"></script>
+    <script type="module" src="auth-widget.js"></script>
+    <script type="module" src="header.js"></script>
 </body>
+
 </html>

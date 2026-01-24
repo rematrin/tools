@@ -1,519 +1,732 @@
 <!doctype html>
 <html lang="ru">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Конвертер валют</title>
-<link rel="icon" type="image/png" href="exchange.png">
-<link rel="apple-touch-icon" href="exchange2.png">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Конвертер валют</title>
+  <link rel="icon" type="image/png" href="exchange.png">
+  <link rel="apple-touch-icon" href="exchange2.png">
 
-<link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="theme.css">
 
-<style>
-/* === ЛОКАЛЬНЫЕ СТИЛИ (Специфика конвертера) === */
+  <style>
+    /* === ЛОКАЛЬНЫЕ СТИЛИ (Специфика конвертера) === */
 
-/* Переопределяем некоторые переменные или добавляем свои */
-:root {
-  --input-bg: transparent; /* Уникально для этого файла */
-}
+    /* Переопределяем некоторые переменные или добавляем свои */
+    :root {
+      --input-bg: transparent;
+      /* Уникально для этого файла */
+    }
 
-body.dark {
-  --input-bg: transparent;
-}
+    body.dark {
+      --input-bg: transparent;
+    }
 
-/* Специфичные стили кнопок в темной теме (если хотим оставить как было) */
-body.dark button {
-    background: #141519;
-    border-color: #2a2c34;
-    color: #e6e6e6;
-}
-body.dark button:hover {
-    background: #1b1c21;
-}
+    /* Специфичные стили кнопок в темной теме (если хотим оставить как было) */
+    body.dark button {
+      background: #141519;
+      border-color: #2a2c34;
+      color: #e6e6e6;
+    }
 
-.share-item {
-  background: var(--card-bg) !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-}
-  
-input[type="text"], input, textarea, select {
-    color: var(--text) !important;
-}
-input:focus {
-    color: var(--text) !important;
-}
+    body.dark button:hover {
+      background: #1b1c21;
+    }
 
-/* Цвета кнопок шаринга (Светлая тема) */
-#copyLink { background: #f5f5f5; color: var(--text); }
-#tgShare { background: #e3f2fd; color: var(--text); }
-#waShare { background: #e8f5e9; color: var(--text); }
-#fbShare { background: #e3f2fd; color: var(--text); }
+    .share-item {
+      background: var(--card-bg) !important;
+      color: var(--text) !important;
+      border: 1px solid var(--border) !important;
+    }
 
-/* Цвета кнопок шаринга (Тёмная тема) */
-body.dark #copyLink { background: #1b1c21 !important; color: var(--text) !important; border-color: var(--border) !important; }
-body.dark #tgShare { background: #1e2a38 !important; color: var(--text) !important; border-color: var(--border) !important; }
-body.dark #waShare { background: #1f2e22 !important; color: var(--text) !important; border-color: var(--border) !important; }
-body.dark #fbShare { background: #1e2940 !important; color: var(--text) !important; border-color: var(--border) !important; }
+    input[type="text"],
+    input,
+    textarea,
+    select {
+      color: var(--text) !important;
+    }
 
-/* Анимация обновления */
-@keyframes fadeText {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-.muted.animate { animation: fadeText 0.6s ease; }
+    input:focus {
+      color: var(--text) !important;
+    }
 
-.wrap { max-width: 520px; margin: 0 auto; padding: 22px 14px 28px; }
+    /* Специфичные настройки для шаринга */
+    body.dark #sharePopup {
+      background: var(--card-bg);
+      border-color: var(--border);
+      color: var(--text);
+    }
 
-/* Шапка инструмента */
-.header-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 5px;
-}
+    body.dark .share-input-group {
+      background: #0f1115;
+      border-color: var(--border);
+    }
 
-h1 { font-size: 1.25rem; margin: 0; color: var(--text); }
+    /* Анимация обновления */
+    @keyframes fadeText {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
 
-/* Панель кнопок */
-.topbar-row {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-  
-.topbar-row .muted {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .muted.animate {
+      animation: fadeText 0.6s ease;
+    }
+
+    .wrap {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 22px 14px 28px;
+    }
+
+    /* Шапка инструмента */
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      margin: 0;
+      color: var(--text);
+    }
+
+    /* Панель кнопок */
+    .topbar-row {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .topbar-row .muted {
       margin-right: auto;
       color: var(--text-secondary);
       opacity: .8;
       font-size: 0.9rem;
-}
+    }
 
-.topbar-row button {
-    font-size: 0.9rem;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 4px 10px;
-    cursor: pointer;
-    transition: all .2s ease;
-    height: 27px; 
-    display: flex; align-items: center; justify-content: center;
-}
-.topbar-row button:hover { background: var(--hover-bg); }
+    .topbar-row button {
+      font-size: 0.9rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: all .2s ease;
+      height: 27px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-.card { display: flex; flex-direction: column; gap: 5px; background: var(--bg); }
-  
-.row {
-  display: flex; align-items: center; justify-content: space-between;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,.03);
-  padding: 10px 12px;
-  gap: 10px; 
-  transition: border-color 0.2s ease;
-}
+    .topbar-row button:hover {
+      background: var(--hover-bg);
+    }
 
-.row:focus-within {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(122,162,255,.16);
-}
+    .card {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      background: var(--bg);
+    }
 
-.amount { display: flex; align-items: center; gap: 8px; }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .03);
+      padding: 10px 12px;
+      gap: 10px;
+      transition: border-color 0.2s ease;
+    }
 
-.row .remove-btn {
-  background: none; border: none; cursor: pointer; padding: 4px;
-  opacity: 0.6; transition: opacity .15s ease;
-}
-.row .remove-btn:hover { opacity: 1; }
-.row .remove-btn img { width: 14px; height: 14px; pointer-events: none; }
+    .row:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(122, 162, 255, .16);
+    }
 
-.code { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--text); }
-.flag { border-radius: 4px; width: 24px; height: 18px; vertical-align: middle; }
-  
-.amount input[type="text"] {
-      width: 200px; max-width: 50vw;
+    .amount {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .row .remove-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      opacity: 0.6;
+      transition: opacity .15s ease;
+    }
+
+    .row .remove-btn:hover {
+      opacity: 1;
+    }
+
+    .row .remove-btn img {
+      width: 14px;
+      height: 14px;
+      pointer-events: none;
+    }
+
+    .code {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .flag {
+      border-radius: 4px;
+      width: 24px;
+      height: 18px;
+      vertical-align: middle;
+    }
+
+    .amount input[type="text"] {
+      width: 200px;
+      max-width: 50vw;
       text-align: right;
       font-size: 1.15rem !important;
       padding: 6px 0;
       border: none;
       border-radius: 0;
       background: transparent;
-}
-  
-.amount input[type="text"]:focus {
-      outline: none; border-color: transparent; box-shadow: none;
-}
-  
-button { 
-  padding: 4px 10px; border: 1px solid var(--border); 
-  background: var(--card-bg); border-radius: 8px; 
-  cursor: pointer; font-size: .95rem; color: var(--text);
-}
+    }
 
-button:hover { background: var(--hover-bg); }
-button img { pointer-events: none; }
+    .amount input[type="text"]:focus {
+      outline: none;
+      border-color: transparent;
+      box-shadow: none;
+    }
 
-.center-controls { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 18px; }
-.searchbox { position: relative; width: 100%; max-width: 360px; }
-  
-input, select, textarea {
-    font-size: 16px!important;
-    width: 100%;
-    transition: all .15s ease;
-}
-  
-#search {
+    button {
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: .95rem;
+      color: var(--text);
+    }
+
+    button:hover {
+      background: var(--hover-bg);
+    }
+
+    button img {
+      pointer-events: none;
+    }
+
+    .center-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .searchbox {
+      position: relative;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+      width: 100%;
+      transition: all .15s ease;
+    }
+
+    #search {
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 8px 10px;
       background: var(--card-bg);
       color: var(--text);
-}
-#search:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(122,162,255,.16);
-    outline: none;
-}
-  
-.suggest {
-    position: absolute; left: 0; right: 0; bottom: calc(100% + 6px);
-    width: calc(100% - 100px);
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.12);
-    overflow: hidden; z-index: 10;
-    display: none; max-height: 300px; overflow-y: auto;
-}
-.suggest.visible { display: block; }
+    }
 
-.opt { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--border); cursor: pointer; color: var(--text); }
-.opt:last-child { border-bottom: 0; }
-.opt:hover { background: var(--hover-bg); }
-.opt .subtitle { font-size: .85rem; opacity: .7; }
+    #search:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(122, 162, 255, .16);
+      outline: none;
+    }
 
-#sharePopup {
-    position: absolute; display: none; 
-    background: var(--card-bg); border: 1px solid var(--border);
-    padding: 10px; border-radius: 12px; 
-    box-shadow: 0 4px 10px rgba(0,0,0,.15);
-    flex-direction: column; gap: 8px; z-index: 100; width: 190px;
-    animation: fadeIn .2s ease; color: var(--text);
-}
-@keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
- 
-/* === TOOLTIP (Используем переменные из theme.css) === */
-#customTooltip {
-  position: fixed;
-  background: var(--tooltip-bg);
-  color: var(--tooltip-text);
-  padding: 6px 12px; border-radius: 6px; font-size: 0.8rem;
-  pointer-events: none; opacity: 0; transform: translateY(5px);
-  transition: opacity 0.2s, transform 0.2s;
-  z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  white-space: nowrap; font-weight: 500;
-}
-#customTooltip.visible { opacity: 1; transform: translateY(0); }
+    .suggest {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: calc(100% + 6px);
+      width: calc(100% - 100px);
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+      z-index: 10;
+      display: none;
+      max-height: 300px;
+      overflow-y: auto;
+    }
 
-</style>
+    .suggest.visible {
+      display: block;
+    }
+
+    .opt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    .opt:last-child {
+      border-bottom: 0;
+    }
+
+    .opt:hover {
+      background: var(--hover-bg);
+    }
+
+    .opt .subtitle {
+      font-size: .85rem;
+      opacity: .7;
+    }
+
+    /* SHARE POPUP NEW DESIGN */
+    #sharePopup {
+      position: absolute;
+      display: none;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 14px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      width: 340px;
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      color: var(--text);
+      flex-direction: column;
+    }
+
+    .share-title {
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .share-input-group {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 6px;
+      gap: 4px;
+      transition: border-color 0.2s;
+    }
+
+    body.dark .share-input-group {
+      background: #1a1d22;
+    }
+
+    .share-link-icon {
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      color: var(--text);
+      opacity: 0.5;
+    }
+
+    #shareUrlInput {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 0.95rem;
+      color: var(--text);
+      padding: 6px 2px;
+      outline: none;
+      width: 100%;
+      font-family: inherit;
+    }
+
+    #copyLinkBtn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    #copyLinkBtn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    #copyLinkBtn.copied {
+      background: #10b981;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-4px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    /* === TOOLTIP (Используем переменные из theme.css) === */
+    #customTooltip {
+      position: fixed;
+      background: var(--tooltip-bg);
+      color: var(--tooltip-text);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(5px);
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    #customTooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
 
-  gtag('config', 'G-384FKZ1NQP');
-</script>
+    gtag('config', 'G-384FKZ1NQP');
+  </script>
 </head>
+
 <body>
 
-<script src="theme-loader.js"></script>
+  <script src="theme-loader.js"></script>
 
-<div id="customTooltip"></div>
+  <div id="customTooltip"></div>
 
-<div id="header-container"></div>
+  <div id="header-container"></div>
 
-<div class="wrap">
+  <div class="wrap">
 
-<div class="header-container">
-  <h1>Конвертер валют</h1>
-</div>
+    <div class="header-container">
+      <h1>Конвертер валют</h1>
+    </div>
 
-<div class="topbar-row">
-  <span class="muted" data-role="updated">Курс обновлен: …</span>
-  
-  <button class="btn" data-role="refresh" data-tip="Обновить курс">
-    <img class="icon" src="https://cdn-icons-png.flaticon.com/128/2546/2546743.png" width="12" height="12" alt="">
-  </button>
-  
-  <button id="shareBtn" data-tip="Поделиться">
-    <img class="icon" src="https://cdn-icons-png.flaticon.com/512/1828/1828954.png" width="12" height="12" alt="">
-  </button>
-</div>
+    <div class="topbar-row">
+      <span class="muted" data-role="updated">Курс обновлен: …</span>
+
+      <button class="btn" data-role="refresh" data-tip="Обновить курс">
+        <img class="icon" src="https://cdn-icons-png.flaticon.com/128/2546/2546743.png" width="12" height="12" alt="">
+      </button>
+
+      <button id="shareBtn" data-tip="Поделиться">
+        <img class="icon" src="https://cdn-icons-png.flaticon.com/512/1828/1828954.png" width="12" height="12" alt="">
+      </button>
+    </div>
 
 
-  <div class="card" id="fx"></div>
+    <div class="card" id="fx"></div>
 
-  <div class="center-controls" id="mainControls">
-    <button id="editBtn" style="
+    <div class="center-controls" id="mainControls">
+      <button id="editBtn" style="
       font-size:0.9rem;
       border-radius:8px;
       padding:4px 10px;
       cursor:pointer;
       transition:all .2s ease;
-    "><img class="icon" src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" width="10" height="10" alt=""> Редактировать</button>
-  </div>
+    "><img class="icon" src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" width="10" height="10" alt="">
+        Редактировать</button>
+    </div>
 
-  <div class="center-controls" id="editControls" style="display:none;">
-    <div class="searchbox" style="display:flex;gap:8px;align-items:center;justify-content:center;width:100%;max-width:360px;">
-  <input id="search" type="text" placeholder="Добавить валюту.." autocomplete="off" autocorrect="off" spellcheck="false" style="flex:1;">
-  <button id="saveBtn" style="
+    <div class="center-controls" id="editControls" style="display:none;">
+      <div class="searchbox"
+        style="display:flex;gap:8px;align-items:center;justify-content:center;width:100%;max-width:360px;">
+        <input id="search" type="text" placeholder="Добавить валюту.." autocomplete="off" autocorrect="off"
+          spellcheck="false" style="flex:1;">
+        <button id="saveBtn" style="
     font-size:0.9rem;
     border-radius:8px;
     padding:8px 10px;
     cursor:pointer;
     transition:all .2s ease;
   ">
-    <img src="https://cdn-icons-png.flaticon.com/128/5610/5610944.png" width="11" height="11" alt="">
-    Сохранить
-  </button>
-  <div id="suggest" class="suggest" role="listbox" aria-label="Подсказки"></div>
-</div>
+          <img src="https://cdn-icons-png.flaticon.com/128/5610/5610944.png" width="11" height="11" alt="">
+          Сохранить
+        </button>
+        <div id="suggest" class="suggest" role="listbox" aria-label="Подсказки"></div>
+      </div>
 
 
+    </div>
+
+    <div id="sharePopup">
+      <div class="share-title">Ваш список доступен по ссылке:</div>
+      <div class="share-input-group">
+        <div class="share-link-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+        </div>
+        <input type="text" id="shareUrlInput" readonly value="">
+        <button id="copyLinkBtn">Копировать</button>
+      </div>
+    </div>
   </div>
 
-  <div id="sharePopup">
-    <button id="copyLink" class="share-item" style="display:flex;align-items:center;gap:8px;padding:8px;border:none;background:#f5f5f5;border-radius:8px;cursor:pointer;color:#222;">
-      <img class="icon" src="https://cdn-icons-png.flaticon.com/512/7640/7640062.png" width="18" height="18" alt=""> Ссылка
-    </button>
-    <a id="tgShare"  target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:8px;border-radius:8px;color:#222;">
-      <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" width="18" height="18" alt=""> Telegram
-    </a>
-    <a id="waShare"  target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:8px;border-radius:8px;color:#222;">
-      <img src="https://cdn-icons-png.flaticon.com/512/2111/2111728.png" width="18" height="18" alt=""> WhatsApp
-    </a>
-    <a id="fbShare" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:8px;border-radius:8px;color:#222;">
-      <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" width="18" height="18" alt=""> Facebook
-    </a>
-  </div>
-</div>
+  <script>
+    // === Флаги и параметры ===
+    const flagURL = c => c === 'xx' ? `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='18'><rect width='24' height='18' rx='3' ry='3' fill='#e9edf5'/></svg>` : `https://flagcdn.com/w40/${c}.png`;
+    const params = new URLSearchParams(location.search);
 
-<script>
-// === Флаги и параметры ===
-const flagURL = c => c==='xx'?`data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='18'><rect width='24' height='18' rx='3' ry='3' fill='#e9edf5'/></svg>`:`https://flagcdn.com/w40/${c}.png`;
-const params = new URLSearchParams(location.search);
+    // === База валют ===
+    const CURRENCIES_DB = [
+      { code: 'AED', name: 'дирхам ОАЭ', flag: 'ae', precision: 2 },
+      { code: 'AFN', name: 'афгани', flag: 'af', precision: 2 },
+      { code: 'ALL', name: 'албанский лек', flag: 'al', precision: 2 },
+      { code: 'AMD', name: 'армянский драм', flag: 'am', precision: 2 },
+      { code: 'ANG', name: 'нидерландский антильский гульден', flag: 'nl', precision: 2 },
+      { code: 'AOA', name: 'ангольская кванза', flag: 'ao', precision: 2 },
+      { code: 'ARS', name: 'аргентинское песо', flag: 'ar', precision: 2 },
+      { code: 'AUD', name: 'австралийский доллар', flag: 'au', precision: 2 },
+      { code: 'AWG', name: 'арубанский флорин', flag: 'aw', precision: 2 },
+      { code: 'AZN', name: 'азербайджанский манат', flag: 'az', precision: 2 },
+      { code: 'BAM', name: 'конвертируемая марка', flag: 'ba', precision: 2 },
+      { code: 'BBD', name: 'барбадосский доллар', flag: 'bb', precision: 2 },
+      { code: 'BDT', name: 'бангладешская така', flag: 'bd', precision: 2 },
+      { code: 'BGN', name: 'болгарский лев', flag: 'bg', precision: 2 },
+      { code: 'BHD', name: 'бахрейнский динар', flag: 'bh', precision: 2 },
+      { code: 'BIF', name: 'бурундийский франк', flag: 'bi', precision: 2 },
+      { code: 'BMD', name: 'бермудский доллар', flag: 'bm', precision: 2 },
+      { code: 'BND', name: 'брунейский доллар', flag: 'bn', precision: 2 },
+      { code: 'BOB', name: 'боливиано', flag: 'bo', precision: 2 },
+      { code: 'BRL', name: 'бразильский реал', flag: 'br', precision: 2 },
+      { code: 'BSD', name: 'багамский доллар', flag: 'bs', precision: 2 },
+      { code: 'BTN', name: 'нгултрум Бутана', flag: 'bt', precision: 2 },
+      { code: 'BWP', name: 'пула Ботсваны', flag: 'bw', precision: 2 },
+      { code: 'BYN', name: 'белорусский рубль', flag: 'by', precision: 2 },
+      { code: 'BZD', name: 'белизский доллар', flag: 'bz', precision: 2 },
+      { code: 'CAD', name: 'канадский доллар', flag: 'ca', precision: 2 },
+      { code: 'CDF', name: 'конголезский франк', flag: 'cd', precision: 2 },
+      { code: 'CHF', name: 'швейцарский франк', flag: 'ch', precision: 2 },
+      { code: 'CLP', name: 'чилийское песо', flag: 'cl', precision: 2 },
+      { code: 'CNY', name: 'китайский юань', flag: 'cn', precision: 2 },
+      { code: 'COP', name: 'колумбийское песо', flag: 'co', precision: 2 },
+      { code: 'CRC', name: 'костариканский колон', flag: 'cr', precision: 2 },
+      { code: 'CUP', name: 'кубинское песо', flag: 'cu', precision: 2 },
+      { code: 'CVE', name: 'эскудо Кабо-Верде', flag: 'cv', precision: 2 },
+      { code: 'CZK', name: 'чешская крона', flag: 'cz', precision: 2 },
+      { code: 'DJF', name: 'джибутийский франк', flag: 'dj', precision: 2 },
+      { code: 'DKK', name: 'датская крона', flag: 'dk', precision: 2 },
+      { code: 'DOP', name: 'доминиканское песо', flag: 'do', precision: 2 },
+      { code: 'DZD', name: 'алжирский динар', flag: 'dz', precision: 2 },
+      { code: 'EGP', name: 'египетский фунт', flag: 'eg', precision: 2 },
+      { code: 'ERN', name: 'эритрейская накфа', flag: 'er', precision: 2 },
+      { code: 'ETB', name: 'эфиопский быр', flag: 'et', precision: 2 },
+      { code: 'EUR', name: 'евро', flag: 'eu', precision: 2 },
+      { code: 'FJD', name: 'доллар Фиджи', flag: 'fj', precision: 2 },
+      { code: 'FKP', name: 'фунт Фолклендских островов', flag: 'fk', precision: 2 },
+      { code: 'FOK', name: 'фарерская крона', flag: 'fo', precision: 2 },
+      { code: 'GBP', name: 'фунт стерлингов', flag: 'gb', precision: 2 },
+      { code: 'GEL', name: 'грузинский лари', flag: 'ge', precision: 2 },
+      { code: 'GGP', name: 'фунт Гернси', flag: 'gg', precision: 2 },
+      { code: 'GHS', name: 'ганский седи', flag: 'gh', precision: 2 },
+      { code: 'GIP', name: 'гибралтарский фунт', flag: 'gi', precision: 2 },
+      { code: 'GMD', name: 'даласи Гамбии', flag: 'gm', precision: 2 },
+      { code: 'GNF', name: 'гвинейский франк', flag: 'gn', precision: 2 },
+      { code: 'GTQ', name: 'гватемальский кетсаль', flag: 'gt', precision: 2 },
+      { code: 'GYD', name: 'гайанский доллар', flag: 'gy', precision: 2 },
+      { code: 'HKD', name: 'гонконгский доллар', flag: 'hk', precision: 2 },
+      { code: 'HNL', name: 'гондурасская лемпира', flag: 'hn', precision: 2 },
+      { code: 'HRK', name: 'хорватская куна', flag: 'hr', precision: 2 },
+      { code: 'HTG', name: 'гаитянский гурд', flag: 'ht', precision: 2 },
+      { code: 'HUF', name: 'венгерский форинт', flag: 'hu', precision: 2 },
+      { code: 'IDR', name: 'индонезийская рупия', flag: 'id', precision: 2 },
+      { code: 'ILS', name: 'новый израильский шекель', flag: 'il', precision: 2 },
+      { code: 'IMP', name: 'фунт Острова Мэн', flag: 'im', precision: 2 },
+      { code: 'INR', name: 'индийская рупия', flag: 'in', precision: 2 },
+      { code: 'IQD', name: 'иракский динар', flag: 'iq', precision: 2 },
+      { code: 'IRR', name: 'иранский риал', flag: 'ir', precision: 2 },
+      { code: 'ISK', name: 'исландская крона', flag: 'is', precision: 2 },
+      { code: 'JEP', name: 'фунт Джерси', flag: 'je', precision: 2 },
+      { code: 'JMD', name: 'ямайский доллар', flag: 'jm', precision: 2 },
+      { code: 'JOD', name: 'иорданский динар', flag: 'jo', precision: 2 },
+      { code: 'JPY', name: 'японская иена', flag: 'jp', precision: 2 },
+      { code: 'KES', name: 'кенийский шиллинг', flag: 'ke', precision: 2 },
+      { code: 'KGS', name: 'киргизский сом', flag: 'kg', precision: 2 },
+      { code: 'KHR', name: 'камбоджийский риель', flag: 'kh', precision: 2 },
+      { code: 'KID', name: 'доллар Кирибати', flag: 'ki', precision: 2 },
+      { code: 'KMF', name: 'коморский франк', flag: 'km', precision: 2 },
+      { code: 'KRW', name: 'южнокорейская вона', flag: 'kr', precision: 2 },
+      { code: 'KWD', name: 'кувейтский динар', flag: 'kw', precision: 2 },
+      { code: 'KYD', name: 'доллар Каймановых островов', flag: 'ky', precision: 2 },
+      { code: 'KZT', name: 'казахстанский тенге', flag: 'kz', precision: 2 },
+      { code: 'LAK', name: 'лаосский кип', flag: 'la', precision: 2 },
+      { code: 'LBP', name: 'ливанский фунт', flag: 'lb', precision: 2 },
+      { code: 'LKR', name: 'шри-ланкийская рупия', flag: 'lk', precision: 2 },
+      { code: 'LRD', name: 'либерийский доллар', flag: 'lr', precision: 2 },
+      { code: 'LSL', name: 'лоти Лесото', flag: 'ls', precision: 2 },
+      { code: 'LYD', name: 'ливийский динар', flag: 'ly', precision: 2 },
+      { code: 'MAD', name: 'марокканский дирхам', flag: 'ma', precision: 2 },
+      { code: 'MDL', name: 'молдавский лей', flag: 'md', precision: 2 },
+      { code: 'MGA', name: 'малагасийский ариари', flag: 'mg', precision: 2 },
+      { code: 'MKD', name: 'македонский денар', flag: 'mk', precision: 2 },
+      { code: 'MMK', name: 'мьянманский кьят', flag: 'mm', precision: 2 },
+      { code: 'MNT', name: 'монгольский тугрик', flag: 'mn', precision: 2 },
+      { code: 'MOP', name: 'патака Макао', flag: 'mo', precision: 2 },
+      { code: 'MRU', name: 'угия Мавритании', flag: 'mr', precision: 2 },
+      { code: 'MUR', name: 'маврикийская рупия', flag: 'mu', precision: 2 },
+      { code: 'MVR', name: 'мальдивская руфия', flag: 'mv', precision: 2 },
+      { code: 'MWK', name: 'малавийская квача', flag: 'mw', precision: 2 },
+      { code: 'MXN', name: 'мексиканское песо', flag: 'mx', precision: 2 },
+      { code: 'MYR', name: 'малайзийский ринггит', flag: 'my', precision: 2 },
+      { code: 'MZN', name: 'мозамбикский метикал', flag: 'mz', precision: 2 },
+      { code: 'NAD', name: 'намибийский доллар', flag: 'na', precision: 2 },
+      { code: 'NGN', name: 'нигерийская найра', flag: 'ng', precision: 2 },
+      { code: 'NIO', name: 'никарагуанская кордоба', flag: 'ni', precision: 2 },
+      { code: 'NOK', name: 'норвежская крона', flag: 'no', precision: 2 },
+      { code: 'NPR', name: 'непальская рупия', flag: 'np', precision: 2 },
+      { code: 'NZD', name: 'новозеландский доллар', flag: 'nz', precision: 2 },
+      { code: 'OMR', name: 'оманский риал', flag: 'om', precision: 2 },
+      { code: 'PAB', name: 'панамский бальбоа', flag: 'pa', precision: 2 },
+      { code: 'PEN', name: 'перуанский соль', flag: 'pe', precision: 2 },
+      { code: 'PGK', name: 'кина Папуа – Новой Гвинеи', flag: 'pg', precision: 2 },
+      { code: 'PHP', name: 'филиппинское песо', flag: 'ph', precision: 2 },
+      { code: 'PKR', name: 'пакистанская рупия', flag: 'pk', precision: 2 },
+      { code: 'PLN', name: 'польский злотый', flag: 'pl', precision: 2 },
+      { code: 'PYG', name: 'парагвайский гуарани', flag: 'py', precision: 2 },
+      { code: 'QAR', name: 'катарский риал', flag: 'qa', precision: 2 },
+      { code: 'RON', name: 'румынский лей', flag: 'ro', precision: 2 },
+      { code: 'RSD', name: 'сербский динар', flag: 'rs', precision: 2 },
+      { code: 'RUB', name: 'российский рубль', flag: 'ru', precision: 2 },
+      { code: 'RWF', name: 'франк Руанды', flag: 'rw', precision: 2 },
+      { code: 'SAR', name: 'саудовский риал', flag: 'sa', precision: 2 },
+      { code: 'SBD', name: 'доллар Соломоновых островов', flag: 'sb', precision: 2 },
+      { code: 'SCR', name: 'сейшельская рупия', flag: 'sc', precision: 2 },
+      { code: 'SDG', name: 'суданский фунт', flag: 'sd', precision: 2 },
+      { code: 'SEK', name: 'шведская крона', flag: 'se', precision: 2 },
+      { code: 'SGD', name: 'сингапурский доллар', flag: 'sg', precision: 2 },
+      { code: 'SHP', name: 'фунт Святой Елены', flag: 'sh', precision: 2 },
+      { code: 'SLE', name: 'леоне Сьерра-Леоне', flag: 'sl', precision: 2 },
+      { code: 'SOS', name: 'сомалийский шиллинг', flag: 'so', precision: 2 },
+      { code: 'SRD', name: 'суринамский доллар', flag: 'sr', precision: 2 },
+      { code: 'SSP', name: 'южносуданский фунт', flag: 'ss', precision: 2 },
+      { code: 'STN', name: 'добра Сан-Томе и Принсипи', flag: 'st', precision: 2 },
+      { code: 'SYP', name: 'сирийский фунт', flag: 'sy', precision: 2 },
+      { code: 'SZL', name: 'лилангени Эсватини', flag: 'sz', precision: 2 },
+      { code: 'THB', name: 'таиландский бат', flag: 'th', precision: 2 },
+      { code: 'TJS', name: 'таджикский сомони', flag: 'tj', precision: 2 },
+      { code: 'TMT', name: 'туркменский манат', flag: 'tm', precision: 2 },
+      { code: 'TND', name: 'тунисский динар', flag: 'tn', precision: 2 },
+      { code: 'TOP', name: 'паанга Тонга', flag: 'to', precision: 2 },
+      { code: 'TRY', name: 'турецкая лира', flag: 'tr', precision: 2 },
+      { code: 'TTD', name: 'доллар Тринидада и Тобаго', flag: 'tt', precision: 2 },
+      { code: 'TVD', name: 'тувальский доллар', flag: 'tv', precision: 2 },
+      { code: 'TZS', name: 'танзанийский шиллинг', flag: 'tz', precision: 2 },
+      { code: 'UAH', name: 'украинская гривна', flag: 'ua', precision: 2 },
+      { code: 'UGX', name: 'угандийский шиллинг', flag: 'ug', precision: 2 },
+      { code: 'USD', name: 'доллар США', flag: 'us', precision: 2 },
+      { code: 'UYU', name: 'уругвайское песо', flag: 'uy', precision: 2 },
+      { code: 'UZS', name: 'узбекский сум', flag: 'uz', precision: 2 },
+      { code: 'VES', name: 'венесуэльский боливар', flag: 've', precision: 2 },
+      { code: 'VND', name: 'вьетнамский донг', flag: 'vn', precision: 2 },
+      { code: 'VUV', name: 'вату Вануату', flag: 'vu', precision: 2 },
+      { code: 'WST', name: 'самаоанская тала', flag: 'ws', precision: 2 },
+      { code: 'XAF', name: 'франк КФА BEAC', flag: 'cm', precision: 2 },
+      { code: 'XCD', name: 'восточно-карибский доллар', flag: 'ag', precision: 2 },
+      { code: 'XOF', name: 'франк КФА BCEAO', flag: 'sn', precision: 2 },
+      { code: 'XPF', name: 'франк КФП', flag: 'pf', precision: 2 },
+      { code: 'YER', name: 'йеменский риал', flag: 'ye', precision: 2 },
+      { code: 'ZAR', name: 'южноафриканский рэнд', flag: 'za', precision: 2 },
+      { code: 'ZMW', name: 'замбийская квача', flag: 'zm', precision: 2 },
+      { code: 'ZWL', name: 'зимбабвийский доллар', flag: 'zw', precision: 2 }
+    ];
 
-// === База валют ===
-const CURRENCIES_DB = [
-  {code:'AED', name:'дирхам ОАЭ', flag:'ae', precision:2},
-  {code:'AFN', name:'афгани', flag:'af', precision:2},
-  {code:'ALL', name:'албанский лек', flag:'al', precision:2},
-  {code:'AMD', name:'армянский драм', flag:'am', precision:2},
-  {code:'ANG', name:'нидерландский антильский гульден', flag:'nl', precision:2},
-  {code:'AOA', name:'ангольская кванза', flag:'ao', precision:2},
-  {code:'ARS', name:'аргентинское песо', flag:'ar', precision:2},
-  {code:'AUD', name:'австралийский доллар', flag:'au', precision:2},
-  {code:'AWG', name:'арубанский флорин', flag:'aw', precision:2},
-  {code:'AZN', name:'азербайджанский манат', flag:'az', precision:2},
-  {code:'BAM', name:'конвертируемая марка', flag:'ba', precision:2},
-  {code:'BBD', name:'барбадосский доллар', flag:'bb', precision:2},
-  {code:'BDT', name:'бангладешская така', flag:'bd', precision:2},
-  {code:'BGN', name:'болгарский лев', flag:'bg', precision:2},
-  {code:'BHD', name:'бахрейнский динар', flag:'bh', precision:2},
-  {code:'BIF', name:'бурундийский франк', flag:'bi', precision:2},
-  {code:'BMD', name:'бермудский доллар', flag:'bm', precision:2},
-  {code:'BND', name:'брунейский доллар', flag:'bn', precision:2},
-  {code:'BOB', name:'боливиано', flag:'bo', precision:2},
-  {code:'BRL', name:'бразильский реал', flag:'br', precision:2},
-  {code:'BSD', name:'багамский доллар', flag:'bs', precision:2},
-  {code:'BTN', name:'нгултрум Бутана', flag:'bt', precision:2},
-  {code:'BWP', name:'пула Ботсваны', flag:'bw', precision:2},
-  {code:'BYN', name:'белорусский рубль', flag:'by', precision:2},
-  {code:'BZD', name:'белизский доллар', flag:'bz', precision:2},
-  {code:'CAD', name:'канадский доллар', flag:'ca', precision:2},
-  {code:'CDF', name:'конголезский франк', flag:'cd', precision:2},
-  {code:'CHF', name:'швейцарский франк', flag:'ch', precision:2},
-  {code:'CLP', name:'чилийское песо', flag:'cl', precision:2},
-  {code:'CNY', name:'китайский юань', flag:'cn', precision:2},
-  {code:'COP', name:'колумбийское песо', flag:'co', precision:2},
-  {code:'CRC', name:'костариканский колон', flag:'cr', precision:2},
-  {code:'CUP', name:'кубинское песо', flag:'cu', precision:2},
-  {code:'CVE', name:'эскудо Кабо-Верде', flag:'cv', precision:2},
-  {code:'CZK', name:'чешская крона', flag:'cz', precision:2},
-  {code:'DJF', name:'джибутийский франк', flag:'dj', precision:2},
-  {code:'DKK', name:'датская крона', flag:'dk', precision:2},
-  {code:'DOP', name:'доминиканское песо', flag:'do', precision:2},
-  {code:'DZD', name:'алжирский динар', flag:'dz', precision:2},
-  {code:'EGP', name:'египетский фунт', flag:'eg', precision:2},
-  {code:'ERN', name:'эритрейская накфа', flag:'er', precision:2},
-  {code:'ETB', name:'эфиопский быр', flag:'et', precision:2},
-  {code:'EUR', name:'евро', flag:'eu', precision:2},
-  {code:'FJD', name:'доллар Фиджи', flag:'fj', precision:2},
-  {code:'FKP', name:'фунт Фолклендских островов', flag:'fk', precision:2},
-  {code:'FOK', name:'фарерская крона', flag:'fo', precision:2},
-  {code:'GBP', name:'фунт стерлингов', flag:'gb', precision:2},
-  {code:'GEL', name:'грузинский лари', flag:'ge', precision:2},
-  {code:'GGP', name:'фунт Гернси', flag:'gg', precision:2},
-  {code:'GHS', name:'ганский седи', flag:'gh', precision:2},
-  {code:'GIP', name:'гибралтарский фунт', flag:'gi', precision:2},
-  {code:'GMD', name:'даласи Гамбии', flag:'gm', precision:2},
-  {code:'GNF', name:'гвинейский франк', flag:'gn', precision:2},
-  {code:'GTQ', name:'гватемальский кетсаль', flag:'gt', precision:2},
-  {code:'GYD', name:'гайанский доллар', flag:'gy', precision:2},
-  {code:'HKD', name:'гонконгский доллар', flag:'hk', precision:2},
-  {code:'HNL', name:'гондурасская лемпира', flag:'hn', precision:2},
-  {code:'HRK', name:'хорватская куна', flag:'hr', precision:2},
-  {code:'HTG', name:'гаитянский гурд', flag:'ht', precision:2},
-  {code:'HUF', name:'венгерский форинт', flag:'hu', precision:2},
-  {code:'IDR', name:'индонезийская рупия', flag:'id', precision:2},
-  {code:'ILS', name:'новый израильский шекель', flag:'il', precision:2},
-  {code:'IMP', name:'фунт Острова Мэн', flag:'im', precision:2},
-  {code:'INR', name:'индийская рупия', flag:'in', precision:2},
-  {code:'IQD', name:'иракский динар', flag:'iq', precision:2},
-  {code:'IRR', name:'иранский риал', flag:'ir', precision:2},
-  {code:'ISK', name:'исландская крона', flag:'is', precision:2},
-  {code:'JEP', name:'фунт Джерси', flag:'je', precision:2},
-  {code:'JMD', name:'ямайский доллар', flag:'jm', precision:2},
-  {code:'JOD', name:'иорданский динар', flag:'jo', precision:2},
-  {code:'JPY', name:'японская иена', flag:'jp', precision:2},
-  {code:'KES', name:'кенийский шиллинг', flag:'ke', precision:2},
-  {code:'KGS', name:'киргизский сом', flag:'kg', precision:2},
-  {code:'KHR', name:'камбоджийский риель', flag:'kh', precision:2},
-  {code:'KID', name:'доллар Кирибати', flag:'ki', precision:2},
-  {code:'KMF', name:'коморский франк', flag:'km', precision:2},
-  {code:'KRW', name:'южнокорейская вона', flag:'kr', precision:2},
-  {code:'KWD', name:'кувейтский динар', flag:'kw', precision:2},
-  {code:'KYD', name:'доллар Каймановых островов', flag:'ky', precision:2},
-  {code:'KZT', name:'казахстанский тенге', flag:'kz', precision:2},
-  {code:'LAK', name:'лаосский кип', flag:'la', precision:2},
-  {code:'LBP', name:'ливанский фунт', flag:'lb', precision:2},
-  {code:'LKR', name:'шри-ланкийская рупия', flag:'lk', precision:2},
-  {code:'LRD', name:'либерийский доллар', flag:'lr', precision:2},
-  {code:'LSL', name:'лоти Лесото', flag:'ls', precision:2},
-  {code:'LYD', name:'ливийский динар', flag:'ly', precision:2},
-  {code:'MAD', name:'марокканский дирхам', flag:'ma', precision:2},
-  {code:'MDL', name:'молдавский лей', flag:'md', precision:2},
-  {code:'MGA', name:'малагасийский ариари', flag:'mg', precision:2},
-  {code:'MKD', name:'македонский денар', flag:'mk', precision:2},
-  {code:'MMK', name:'мьянманский кьят', flag:'mm', precision:2},
-  {code:'MNT', name:'монгольский тугрик', flag:'mn', precision:2},
-  {code:'MOP', name:'патака Макао', flag:'mo', precision:2},
-  {code:'MRU', name:'угия Мавритании', flag:'mr', precision:2},
-  {code:'MUR', name:'маврикийская рупия', flag:'mu', precision:2},
-  {code:'MVR', name:'мальдивская руфия', flag:'mv', precision:2},
-  {code:'MWK', name:'малавийская квача', flag:'mw', precision:2},
-  {code:'MXN', name:'мексиканское песо', flag:'mx', precision:2},
-  {code:'MYR', name:'малайзийский ринггит', flag:'my', precision:2},
-  {code:'MZN', name:'мозамбикский метикал', flag:'mz', precision:2},
-  {code:'NAD', name:'намибийский доллар', flag:'na', precision:2},
-  {code:'NGN', name:'нигерийская найра', flag:'ng', precision:2},
-  {code:'NIO', name:'никарагуанская кордоба', flag:'ni', precision:2},
-  {code:'NOK', name:'норвежская крона', flag:'no', precision:2},
-  {code:'NPR', name:'непальская рупия', flag:'np', precision:2},
-  {code:'NZD', name:'новозеландский доллар', flag:'nz', precision:2},
-  {code:'OMR', name:'оманский риал', flag:'om', precision:2},
-  {code:'PAB', name:'панамский бальбоа', flag:'pa', precision:2},
-  {code:'PEN', name:'перуанский соль', flag:'pe', precision:2},
-  {code:'PGK', name:'кина Папуа – Новой Гвинеи', flag:'pg', precision:2},
-  {code:'PHP', name:'филиппинское песо', flag:'ph', precision:2},
-  {code:'PKR', name:'пакистанская рупия', flag:'pk', precision:2},
-  {code:'PLN', name:'польский злотый', flag:'pl', precision:2},
-  {code:'PYG', name:'парагвайский гуарани', flag:'py', precision:2},
-  {code:'QAR', name:'катарский риал', flag:'qa', precision:2},
-  {code:'RON', name:'румынский лей', flag:'ro', precision:2},
-  {code:'RSD', name:'сербский динар', flag:'rs', precision:2},
-  {code:'RUB', name:'российский рубль', flag:'ru', precision:2},
-  {code:'RWF', name:'франк Руанды', flag:'rw', precision:2},
-  {code:'SAR', name:'саудовский риал', flag:'sa', precision:2},
-  {code:'SBD', name:'доллар Соломоновых островов', flag:'sb', precision:2},
-  {code:'SCR', name:'сейшельская рупия', flag:'sc', precision:2},
-  {code:'SDG', name:'суданский фунт', flag:'sd', precision:2},
-  {code:'SEK', name:'шведская крона', flag:'se', precision:2},
-  {code:'SGD', name:'сингапурский доллар', flag:'sg', precision:2},
-  {code:'SHP', name:'фунт Святой Елены', flag:'sh', precision:2},
-  {code:'SLE', name:'леоне Сьерра-Леоне', flag:'sl', precision:2},
-  {code:'SOS', name:'сомалийский шиллинг', flag:'so', precision:2},
-  {code:'SRD', name:'суринамский доллар', flag:'sr', precision:2},
-  {code:'SSP', name:'южносуданский фунт', flag:'ss', precision:2},
-  {code:'STN', name:'добра Сан-Томе и Принсипи', flag:'st', precision:2},
-  {code:'SYP', name:'сирийский фунт', flag:'sy', precision:2},
-  {code:'SZL', name:'лилангени Эсватини', flag:'sz', precision:2},
-  {code:'THB', name:'таиландский бат', flag:'th', precision:2},
-  {code:'TJS', name:'таджикский сомони', flag:'tj', precision:2},
-  {code:'TMT', name:'туркменский манат', flag:'tm', precision:2},
-  {code:'TND', name:'тунисский динар', flag:'tn', precision:2},
-  {code:'TOP', name:'паанга Тонга', flag:'to', precision:2},
-  {code:'TRY', name:'турецкая лира', flag:'tr', precision:2},
-  {code:'TTD', name:'доллар Тринидада и Тобаго', flag:'tt', precision:2},
-  {code:'TVD', name:'тувальский доллар', flag:'tv', precision:2},
-  {code:'TZS', name:'танзанийский шиллинг', flag:'tz', precision:2},
-  {code:'UAH', name:'украинская гривна', flag:'ua', precision:2},
-  {code:'UGX', name:'угандийский шиллинг', flag:'ug', precision:2},
-  {code:'USD', name:'доллар США', flag:'us', precision:2},
-  {code:'UYU', name:'уругвайское песо', flag:'uy', precision:2},
-  {code:'UZS', name:'узбекский сум', flag:'uz', precision:2},
-  {code:'VES', name:'венесуэльский боливар', flag:'ve', precision:2},
-  {code:'VND', name:'вьетнамский донг', flag:'vn', precision:2},
-  {code:'VUV', name:'вату Вануату', flag:'vu', precision:2},
-  {code:'WST', name:'самаоанская тала', flag:'ws', precision:2},
-  {code:'XAF', name:'франк КФА BEAC', flag:'cm', precision:2},
-  {code:'XCD', name:'восточно-карибский доллар', flag:'ag', precision:2},
-  {code:'XOF', name:'франк КФА BCEAO', flag:'sn', precision:2},
-  {code:'XPF', name:'франк КФП', flag:'pf', precision:2},
-  {code:'YER', name:'йеменский риал', flag:'ye', precision:2},
-  {code:'ZAR', name:'южноафриканский рэнд', flag:'za', precision:2},
-  {code:'ZMW', name:'замбийская квача', flag:'zm', precision:2},
-  {code:'ZWL', name:'зимбабвийский доллар', flag:'zw', precision:2}
-];
+    // Восстановление списка из URL (?fx=USD|us,EUR|eu) или дефолт
+    let fxList = params.get('fx')
+      ? params.get('fx').split(',').map(s => {
+        const [code, flag] = decodeURIComponent(s).split('|');
+        return { code, flag: flag || 'xx' };
+      })
+      : [
+        { code: 'CZK', flag: 'cz', },
+        { code: 'RUB', flag: 'ru', },
+        { code: 'UAH', flag: 'ua', },
+        { code: 'USD', flag: 'us', },
+        { code: 'EUR', flag: 'eu', },
+        { code: 'BYN', flag: 'by', },
+        { code: 'GBP', flag: 'gb', },
+        { code: 'PLN', flag: 'pl', },
+        { code: 'TRY', flag: 'tr', },
+        { code: 'KZT', flag: 'kz', },
+      ];
 
-// Восстановление списка из URL (?fx=USD|us,EUR|eu) или дефолт
-let fxList = params.get('fx')
-? params.get('fx').split(',').map(s=>{
-const [code,flag] = decodeURIComponent(s).split('|');
-return {code, flag: flag || 'xx'};
-})
-: [
-{code:'CZK', flag:'cz',},
-{code:'RUB', flag:'ru',},
-{code:'UAH', flag:'ua',},
-{code:'USD', flag:'us',},
-{code:'EUR', flag:'eu',},
-{code:'BYN', flag:'by',},
-{code:'GBP', flag:'gb',},
-{code:'PLN', flag:'pl',},
-{code:'TRY', flag:'tr',},
-{code:'KZT', flag:'kz',},
-];
+    // === Элементы DOM ===
+    const fxBox = document.getElementById('fx');
+    const inputSearch = document.getElementById('search');
+    const sugg = document.getElementById('suggest');
+    const mainControls = document.getElementById('mainControls');
+    const editControls = document.getElementById('editControls');
+    const updatedLbl = document.querySelector('[data-role="updated"]');
+    const refreshBtn = document.querySelector('[data-role="refresh"]');
 
-// === Элементы DOM ===
-const fxBox = document.getElementById('fx');
-const inputSearch = document.getElementById('search');
-const sugg = document.getElementById('suggest');
-const mainControls = document.getElementById('mainControls');
-const editControls = document.getElementById('editControls');
-const updatedLbl = document.querySelector('[data-role="updated"]');
-const refreshBtn = document.querySelector('[data-role="refresh"]');
+    // === Логика конвертера (из fx_converter) ===
+    const base = 'USD';
+    let rates = null;
+    function getCurMeta(code) { return CURRENCIES_DB.find(c => c.code === code) || { precision: 2 }; }
+    function numberFormat(code, n) { const cur = getCurMeta(code); const hasFraction = Math.abs(n % 1) > 1e-9; return n.toLocaleString('ru-RU', { minimumFractionDigits: hasFraction ? cur.precision : 0, maximumFractionDigits: hasFraction ? cur.precision : 0 }); }
+    function formatEdit(code, n) { const cur = getCurMeta(code); return n.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: cur.precision }); }
+    function parseNum(str) { if (typeof str !== 'string') return NaN; str = str.replace(/[\s\u00A0\u202F]/g, '').replace(',', '.').trim(); if (str === '' || str === '-' || str === '.') return NaN; return Number(str); }
+    function formatWithCaret(inputEl) { const code = inputEl.dataset.code; let raw = inputEl.value; if (/[.,]$/.test(raw)) { const noSp = raw.replace(/[\s\u00A0\u202F]/g, ''); const intDigits = noSp.replace(/[.,].*$/, '').replace(/\D/g, ''); const grouped = intDigits ? Number(intDigits).toLocaleString('ru-RU') : ''; inputEl.value = grouped + ','; requestAnimationFrame(() => { const p = inputEl.value.length; inputEl.setSelectionRange(p, p); }); return; } const caret = inputEl.selectionStart ?? raw.length; const digitsLeft = (raw.slice(0, caret).match(/\d/g) || []).length; raw = raw.replace(/[^\d.,]/g, ''); const firstSep = raw.search(/[.,]/); if (firstSep !== -1) { const before = raw.slice(0, firstSep).replace(/[^\d]/g, ''); let after = raw.slice(firstSep + 1).replace(/[^\d]/g, ''); after = after.slice(0, getCurMeta(code).precision); inputEl.value = (before ? Number(before).toLocaleString('ru-RU') : '') + (after !== '' ? ',' + after : ''); } else { const digits = raw.replace(/[^\d]/g, ''); inputEl.value = digits ? Number(digits).toLocaleString('ru-RU') : ''; } requestAnimationFrame(() => { let i = 0, seen = 0, s = inputEl.value; while (i < s.length && seen < digitsLeft) { if (/\d/.test(s[i])) seen++; i++; } inputEl.setSelectionRange(i, i); }); }
 
-// === Логика конвертера (из fx_converter) ===
-const base = 'USD';
-let rates = null;
-function getCurMeta(code){return CURRENCIES_DB.find(c=>c.code===code)||{precision:2};}
-function numberFormat(code,n){const cur=getCurMeta(code);const hasFraction=Math.abs(n%1)>1e-9;return n.toLocaleString('ru-RU',{minimumFractionDigits:hasFraction?cur.precision:0,maximumFractionDigits:hasFraction?cur.precision:0});}
-function formatEdit(code,n){const cur=getCurMeta(code);return n.toLocaleString('ru-RU',{minimumFractionDigits:0,maximumFractionDigits:cur.precision});}
-function parseNum(str){if(typeof str!== 'string')return NaN;str=str.replace(/[\s\u00A0\u202F]/g,'').replace(',', '.').trim();if(str===''||str==='-'||str==='.')return NaN;return Number(str);} 
-function formatWithCaret(inputEl){const code=inputEl.dataset.code;let raw=inputEl.value;if(/[.,]$/.test(raw)){const noSp=raw.replace(/[\s\u00A0\u202F]/g,'');const intDigits=noSp.replace(/[.,].*$/,'').replace(/\D/g,'');const grouped=intDigits?Number(intDigits).toLocaleString('ru-RU'):'';inputEl.value=grouped+',';requestAnimationFrame(()=>{const p=inputEl.value.length;inputEl.setSelectionRange(p,p);});return;}const caret=inputEl.selectionStart??raw.length;const digitsLeft=(raw.slice(0,caret).match(/\d/g)||[]).length;raw=raw.replace(/[^\d.,]/g,'');const firstSep=raw.search(/[.,]/);if(firstSep!==-1){const before=raw.slice(0,firstSep).replace(/[^\d]/g,'');let after=raw.slice(firstSep+1).replace(/[^\d]/g,'');after=after.slice(0,getCurMeta(code).precision);inputEl.value=(before?Number(before).toLocaleString('ru-RU'):'')+(after!==''?','+after:'');}else{const digits=raw.replace(/[^\d]/g,'');inputEl.value=digits?Number(digits).toLocaleString('ru-RU'):'';}requestAnimationFrame(()=>{let i=0,seen=0,s=inputEl.value;while(i<s.length&&seen<digitsLeft){if(/\d/.test(s[i]))seen++;i++;}inputEl.setSelectionRange(i,i);});}
-
-function renderRows() {
-  fxBox.innerHTML = '';
-  fxList.forEach(({ code, flag }, index) => {
-    const row = document.createElement('div');
-    row.className = 'row';
-    row.innerHTML = `
+    function renderRows() {
+      fxBox.innerHTML = '';
+      fxList.forEach(({ code, flag }, index) => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `
   <div class="code">
     <img class="flag" src="${flagURL(flag)}" alt="${code}">
     <span>${code}</span>
@@ -526,193 +739,183 @@ function renderRows() {
   </div>
 `;
 
-    fxBox.appendChild(row);
-  });
+        fxBox.appendChild(row);
+      });
 
-  // Привязываем события для инпутов
-  fxBox.querySelectorAll('input').forEach(inp => {
-    inp.addEventListener('input', e => {
-      formatWithCaret(e.target);
-      onInput(e);
-    });
-    inp.addEventListener('focus', e => {
-      const code = e.target.dataset.code;
-      const v = parseNum(e.target.value);
-      if (isFinite(v)) e.target.value = formatEdit(code, v);
-    });
-    inp.addEventListener('blur', e => {
-      const code = e.target.dataset.code;
-      const v = parseNum(e.target.value);
-      if (isFinite(v)) e.target.value = numberFormat(code, v);
-    });
-  });
+      // Привязываем события для инпутов
+      fxBox.querySelectorAll('input').forEach(inp => {
+        inp.addEventListener('input', e => {
+          formatWithCaret(e.target);
+          onInput(e);
+        });
+        inp.addEventListener('focus', e => {
+          const code = e.target.dataset.code;
+          const v = parseNum(e.target.value);
+          if (isFinite(v)) e.target.value = formatEdit(code, v);
+        });
+        inp.addEventListener('blur', e => {
+          const code = e.target.dataset.code;
+          const v = parseNum(e.target.value);
+          if (isFinite(v)) e.target.value = numberFormat(code, v);
+        });
+      });
 
-  // Привязываем событие для удаления
-  fxBox.querySelectorAll('.remove-btn').forEach((btn, i) => {
-    btn.addEventListener('click', () => {
-      fxList.splice(i, 1);
-      renderRows();
+      // Привязываем событие для удаления
+      fxBox.querySelectorAll('.remove-btn').forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+          fxList.splice(i, 1);
+          renderRows();
+          updateURL();
+        });
+      });
+
+      // Показываем или скрываем крестики в зависимости от режима
+      const showRemove = editControls.style.display !== 'none';
+      fxBox.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.style.display = showRemove ? 'block' : 'none';
+      });
+    }
+
+
+    function onInput(e) { if (!rates) return; const el = e.target, code = el.dataset.code; if (/[.,]$/.test(el.value)) return; const val = parseNum(el.value); if (!isFinite(val)) { fxBox.querySelectorAll('input').forEach(i => { if (i !== el) i.value = ''; }); return; } const inBase = val / (rates[code] || 1); fxList.forEach(({ code: c }) => { if (c === code) return; const target = fxBox.querySelector(`input[data-code="${c}"]`); if (!target) return; const res = inBase * (rates[c] || 1); target.value = numberFormat(c, res); }); }
+
+    async function loadRates() {
+      try {
+        const url = `https://open.er-api.com/v6/latest/${base}`; const res = await fetch(url); const data = await res.json(); rates = data.rates || {}; rates[base] = 1; updatedLbl.textContent = 'Курс обновлен: ' + new Date().toLocaleString('ru-RU', {
+          hour: '2-digit',
+          minute: '2-digit',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        }); updatedLbl.classList.remove('animate');
+        void updatedLbl.offsetWidth; // сброс анимации
+        updatedLbl.classList.add('animate');
+
+      } catch (e) { updatedLbl.textContent = 'Не удалось загрузить курсы (нужен интернет).'; }
+    }
+    refreshBtn.addEventListener('click', loadRates);
+
+    // === Редактирование и поиск (как в clock) ===
+    function buildQS() { const parts = fxList.map(c => encodeURIComponent(`${c.code}|${c.flag}`)); return `?fx=${parts.join(',')}`; }
+    function updateURL() { history.replaceState(null, '', location.pathname + buildQS()); }
+
+    document.getElementById('editBtn').onclick = () => {
+      mainControls.style.display = 'none';
+      editControls.style.display = 'flex';
+      fxBox.querySelectorAll('.remove-btn').forEach(btn => btn.style.display = 'block');
+    };
+
+    document.getElementById('saveBtn').onclick = () => {
+      editControls.style.display = 'none';
+      mainControls.style.display = 'flex';
+      fxBox.querySelectorAll('.remove-btn').forEach(btn => btn.style.display = 'none');
       updateURL();
+    };
+
+    function filterDB(q) { q = (q || '').toLowerCase().trim(); return CURRENCIES_DB.filter(x => x.code.toLowerCase().includes(q) || x.name.toLowerCase().includes(q)).slice(0, 3); }
+    function renderSuggest(items) { sugg.innerHTML = ''; if (!items.length) { sugg.classList.remove('visible'); return; } for (const it of items) { const el = document.createElement('div'); el.className = 'opt'; el.innerHTML = `<img class="flag" src="${flagURL(it.flag)}" alt="${it.code}"><div><div><strong>${it.code}</strong></div><div class='subtitle'>${it.name}</div></div>`; el.onclick = () => { if (!fxList.some(c => c.code === it.code)) { fxList.push({ code: it.code, flag: it.flag }); renderRows(); updateURL(); } inputSearch.value = ''; hideSuggest(); }; sugg.appendChild(el); } sugg.classList.add('visible'); }
+    function hideSuggest() { sugg.classList.remove('visible'); }
+    inputSearch.oninput = () => renderSuggest(filterDB(inputSearch.value));
+    inputSearch.onfocus = () => renderSuggest(filterDB(inputSearch.value));
+    document.addEventListener('click', e => { if (!sugg.contains(e.target) && e.target !== inputSearch) hideSuggest(); });
+
+    // === Поделиться (как в clock) ===
+    // --- SHARE LOGIC ---
+    const shareBtn = document.getElementById('shareBtn');
+    const popup = document.getElementById('sharePopup');
+    const shareUrlInput = document.getElementById('shareUrlInput');
+    const copyLinkBtn = document.getElementById('copyLinkBtn');
+    const tooltipEl = document.getElementById('customTooltip');
+
+    async function showSharePopup() {
+      tooltipEl.classList.remove('visible');
+
+      let longUrl = window.location.href;
+      let shortUrl = longUrl;
+      try {
+        const r = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`);
+        const data = await r.json();
+        if (data.shorturl) shortUrl = data.shorturl;
+      } catch (e) { }
+
+      shareUrlInput.value = shortUrl;
+
+      copyLinkBtn.onclick = () => {
+        shareUrlInput.select();
+        navigator.clipboard.writeText(shortUrl);
+        copyLinkBtn.textContent = 'Скопировано!';
+        copyLinkBtn.classList.add('copied');
+        setTimeout(() => {
+          copyLinkBtn.textContent = 'Копировать';
+          copyLinkBtn.classList.remove('copied');
+        }, 2000);
+      };
+
+      const rect = shareBtn.getBoundingClientRect();
+      const popupWidth = 340;
+      let left = rect.left + rect.width / 2 - popupWidth / 2;
+      if (left < 10) left = 10;
+      if (left + popupWidth > window.innerWidth) left = window.innerWidth - popupWidth - 10;
+
+      popup.style.left = left + "px";
+      popup.style.top = rect.bottom + 8 + "px";
+      popup.style.display = "flex";
+    }
+
+    shareBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (popup.style.display === 'flex') popup.style.display = 'none';
+      else showSharePopup();
+    };
+
+    document.addEventListener('click', e => {
+      if (!popup.contains(e.target) && e.target !== shareBtn)
+        popup.style.display = 'none';
     });
-  });
 
-  // Показываем или скрываем крестики в зависимости от режима
-  const showRemove = editControls.style.display !== 'none';
-  fxBox.querySelectorAll('.remove-btn').forEach(btn => {
-    btn.style.display = showRemove ? 'block' : 'none';
-  });
-}
+    // ==== TOOLTIPS (ПОДСКАЗКИ) ====
 
+    function showTooltip(el) {
+      const text = el.getAttribute('data-tip');
+      if (!text) return;
 
-function onInput(e){if(!rates)return;const el=e.target,code=el.dataset.code;if(/[.,]$/.test(el.value))return;const val=parseNum(el.value);if(!isFinite(val)){fxBox.querySelectorAll('input').forEach(i=>{if(i!==el)i.value='';});return;}const inBase=val/(rates[code]||1);fxList.forEach(({code:c})=>{if(c===code)return;const target=fxBox.querySelector(`input[data-code="${c}"]`);if(!target)return;const res=inBase*(rates[c]||1);target.value=numberFormat(c,res);});}
+      const rect = el.getBoundingClientRect();
+      tooltipEl.textContent = text;
+      tooltipEl.classList.add('visible');
 
-async function loadRates(){try{const url=`https://open.er-api.com/v6/latest/${base}`;const res=await fetch(url);const data=await res.json();rates=data.rates||{};rates[base]=1;updatedLbl.textContent = 'Курс обновлен: ' + new Date().toLocaleString('ru-RU', {
-  hour: '2-digit',
-  minute: '2-digit',
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric'
-}); updatedLbl.classList.remove('animate');
-void updatedLbl.offsetWidth; // сброс анимации
-updatedLbl.classList.add('animate');
+      let top = rect.bottom + 8;
+      let left = rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
 
-}catch(e){updatedLbl.textContent='Не удалось загрузить курсы (нужен интернет).';}}
-refreshBtn.addEventListener('click',loadRates);
+      if (left < 10) left = 10;
+      if (left + tooltipEl.offsetWidth > window.innerWidth) {
+        left = window.innerWidth - tooltipEl.offsetWidth - 10;
+      }
 
-// === Редактирование и поиск (как в clock) ===
-function buildQS(){const parts=fxList.map(c=>encodeURIComponent(`${c.code}|${c.flag}`));return `?fx=${parts.join(',')}`;}
-function updateURL(){history.replaceState(null,'',location.pathname+buildQS());}
+      tooltipEl.style.top = `${top}px`;
+      tooltipEl.style.left = `${left}px`;
+    }
 
-document.getElementById('editBtn').onclick = () => {
-  mainControls.style.display = 'none';
-  editControls.style.display = 'flex';
-  fxBox.querySelectorAll('.remove-btn').forEach(btn => btn.style.display = 'block');
-};
+    document.querySelectorAll('[data-tip]').forEach(el => {
+      el.addEventListener('mouseenter', () => showTooltip(el));
+      el.addEventListener('mouseleave', () => tooltipEl.classList.remove('visible'));
+      el.addEventListener('click', () => tooltipEl.classList.remove('visible'));
+    });
 
-document.getElementById('saveBtn').onclick = () => {
-  editControls.style.display = 'none';
-  mainControls.style.display = 'flex';
-  fxBox.querySelectorAll('.remove-btn').forEach(btn => btn.style.display = 'none');
-  updateURL();
-};
-
-function filterDB(q){q=(q||'').toLowerCase().trim();return CURRENCIES_DB.filter(x=>x.code.toLowerCase().includes(q)||x.name.toLowerCase().includes(q)).slice(0,3);} 
-function renderSuggest(items){sugg.innerHTML='';if(!items.length){sugg.classList.remove('visible');return;}for(const it of items){const el=document.createElement('div');el.className='opt';el.innerHTML=`<img class="flag" src="${flagURL(it.flag)}" alt="${it.code}"><div><div><strong>${it.code}</strong></div><div class='subtitle'>${it.name}</div></div>`;el.onclick=()=>{if(!fxList.some(c=>c.code===it.code)){fxList.push({code:it.code,flag:it.flag});renderRows();updateURL();}inputSearch.value='';hideSuggest();};sugg.appendChild(el);}sugg.classList.add('visible');}
-function hideSuggest(){sugg.classList.remove('visible');}
-inputSearch.oninput=()=>renderSuggest(filterDB(inputSearch.value));
-inputSearch.onfocus=()=>renderSuggest(filterDB(inputSearch.value));
-document.addEventListener('click',e=>{if(!sugg.contains(e.target)&&e.target!==inputSearch)hideSuggest();});
-
-// === Поделиться (как в clock) ===
-const shareBtn=document.getElementById('shareBtn');
-const popup=document.getElementById('sharePopup');
-const copyLink=document.getElementById('copyLink');
-const tg=document.getElementById('tgShare');
-const wa=document.getElementById('waShare');
-const fb=document.getElementById('fbShare');
-
-// ===== Поделиться (с сокращением через is.gd) =====
-
-async function shorten(url) {
-  try {
-    const r = await fetch(
-      `https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`
-    );
-    const data = await r.json();
-    return data.shorturl || url;
-  } catch (e) {
-    return url;
-  }
-}
-
-async function showSharePopup() {
-  let longUrl = window.location.href;
-  let shortUrl = await shorten(longUrl);
-
-  // --- обновляем ссылки ---
-  tg.href = `https://t.me/share/url?url=${encodeURIComponent(shortUrl)}`;
-  wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shortUrl)}`;
-  fb.href = `https://www.facebook.com/share_channel/?type=reshare&link=${encodeURIComponent(shortUrl)}&app_id=87741124305&source_surface=external_reshare&display=popup`;
-
-  // --- обработка копирования ---
-  copyLink.onclick = () => {
-    navigator.clipboard.writeText(shortUrl);
-    copyLink.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/1442/1442912.png" width="18" height="18"> Скопировано!`;
-    setTimeout(() => {
-      copyLink.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/7640/7640062.png" width="18" height="18"> Ссылка`;
-    }, 2000);
-  };
-
-  // --- показать popup ---
-  popup.style.display = 'flex';
-
-  // позиционирование
-  const r = shareBtn.getBoundingClientRect();
-  popup.style.left = (r.left + r.width / 2 - popup.offsetWidth / 2) + 'px';
-  popup.style.top = (r.bottom + 8) + 'px';
-
-  // не вылезать за экран
-  if (r.left + popup.offsetWidth > window.innerWidth)
-    popup.style.left = (window.innerWidth - popup.offsetWidth - 8) + 'px';
-
-  if (parseFloat(popup.style.left) < 8)
-    popup.style.left = '8px';
-}
-
-shareBtn.onclick = (e) => {
-  e.stopPropagation();
-  if (popup.style.display === 'flex') popup.style.display = 'none';
-  else showSharePopup();
-};
-
-document.addEventListener('click', e => {
-  if (!popup.contains(e.target) && e.target !== shareBtn)
-    popup.style.display = 'none';
-});
-
-// ==== TOOLTIPS (ПОДСКАЗКИ) ====
-const tooltipEl = document.getElementById('customTooltip');
-
-function showTooltip(el) {
-  const text = el.getAttribute('data-tip');
-  if (!text) return;
-
-  const rect = el.getBoundingClientRect();
-  tooltipEl.textContent = text;
-  tooltipEl.classList.add('visible');
-
-  let top = rect.bottom + 8;
-  let left = rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
-
-  if (left < 10) left = 10;
-  if (left + tooltipEl.offsetWidth > window.innerWidth) {
-    left = window.innerWidth - tooltipEl.offsetWidth - 10;
-  }
-
-  tooltipEl.style.top = `${top}px`;
-  tooltipEl.style.left = `${left}px`;
-}
-
-document.querySelectorAll('[data-tip]').forEach(el => {
-  el.addEventListener('mouseenter', () => showTooltip(el));
-  el.addEventListener('mouseleave', () => tooltipEl.classList.remove('visible'));
-  el.addEventListener('click', () => tooltipEl.classList.remove('visible'));
-});
-
-// === Init ===
-(async function init(){renderRows();await loadRates();})();
-</script>
+    // === Init ===
+    (async function init() { renderRows(); await loadRates(); })();
+  </script>
   <link rel="stylesheet" href="footer.css">
-<div id="footer"></div>
-<script>
-fetch('footer.html')
-  .then(r => r.text())
-  .then(html => document.getElementById('footer').innerHTML = html);
-</script>
+  <div id="footer"></div>
+  <script>
+    fetch('footer.html')
+      .then(r => r.text())
+      .then(html => document.getElementById('footer').innerHTML = html);
+  </script>
 
-<link rel="stylesheet" href="auth-widget.css">
-<script type="module" src="nav-widget.js"></script> 
-<script type="module" src="auth-widget.js"></script>
-<script type="module" src="header.js"></script>
+  <link rel="stylesheet" href="auth-widget.css">
+  <script type="module" src="nav-widget.js"></script>
+  <script type="module" src="auth-widget.js"></script>
+  <script type="module" src="header.js"></script>
 </body>
+
 </html>

@@ -335,6 +335,13 @@
       flex-direction: column;
     }
 
+    .share-title {
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
     .share-input-group {
       display: flex;
       align-items: center;
@@ -371,7 +378,7 @@
     }
 
     #copyLinkBtn {
-      background: #8b5cf6;
+      background: var(--accent);
       color: white;
       border: none;
       border-radius: 8px;
@@ -384,7 +391,7 @@
     }
 
     #copyLinkBtn:hover {
-      background: #7c3aed;
+      background: var(--accent-hover);
       transform: translateY(-1px);
     }
 
@@ -485,6 +492,7 @@
     </div>
 
     <div id="sharePopup">
+      <div class="share-title">Ваш список доступен по ссылке:</div>
       <div class="share-input-group">
         <div class="share-link-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -494,7 +502,7 @@
           </svg>
         </div>
         <input type="text" id="shareUrlInput" readonly value="">
-        <button id="copyLinkBtn">Copy</button>
+        <button id="copyLinkBtn">Копировать</button>
       </div>
     </div>
   </div>
@@ -719,10 +727,10 @@
       copyLinkBtn.onclick = () => {
         shareUrlInput.select();
         navigator.clipboard.writeText(shortUrl);
-        copyLinkBtn.textContent = 'Copied!';
+        copyLinkBtn.textContent = 'Скопировано!';
         copyLinkBtn.classList.add('copied');
         setTimeout(() => {
-          copyLinkBtn.textContent = 'Copy';
+          copyLinkBtn.textContent = 'Копировать';
           copyLinkBtn.classList.remove('copied');
         }, 2000);
       };

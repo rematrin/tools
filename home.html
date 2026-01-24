@@ -15,12 +15,20 @@
             outline: none;
         }
 
+        html,
+        body {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             color: white;
             min-height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
             overflow-x: hidden;
             background-color: #000;
             overscroll-behavior-y: none;
@@ -79,6 +87,7 @@
 
         .iphone-screen {
             width: 100%;
+            max-width: 450px;
             max-width: max(450px, calc(var(--grid-cols, 4) * 110px));
             position: relative;
             padding-bottom: 40px;
@@ -1622,9 +1631,6 @@
         </div>
         <div class="sidebar-content" id="sidebarContent">
         </div>
-    </aside>
-    <div class="sidebar-content" id="sidebarContent">
-    </div>
     </aside>
 
     <script type="module">

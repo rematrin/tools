@@ -334,8 +334,20 @@
 
         .sidebar-top-row {
             display: flex;
-            justify-content: flex-start;
-            margin-bottom: 5px;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 10px;
+        }
+
+        .sidebar-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #000;
+            margin: 0;
+            flex: 1;
+            text-align: center;
+            padding-left: 28px;
+            /* Offset to center title effectively against scale-back close btn */
         }
 
         .close-menu-btn {
@@ -898,29 +910,65 @@
         }
 
         /* --- РЕЖИМ РЕДАКТИРОВАНИЯ (GRID) --- */
-        .delete-btn {
+        /* --- РЕЖИМ РЕДАКТИРОВАНИЯ (GRID) --- */
+        .action-bar {
             position: absolute;
-            top: -8px;
-            left: -8px;
-            width: 24px;
-            height: 24px;
-            background: rgba(50, 50, 50, 0.95);
-            border-radius: 50%;
-            z-index: 10;
+            top: -10px;
+            left: -11px;
             display: none;
-            justify-content: center;
             align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-            cursor: pointer;
+            background: rgba(30, 30, 30, 0.9);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 0.5px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 1px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 100;
         }
 
-        .delete-btn::before {
+        .app-grid.edit-mode .action-bar,
+        .folder-grid.edit-mode .action-bar {
+            display: flex;
+        }
+
+        .action-btn {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:active {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-del::before {
             content: '×';
             color: white;
-            font-size: 18px;
+            font-size: 16px;
+            font-weight: 400;
             line-height: 1;
-            padding-bottom: 2px;
+            margin-bottom: 2px;
+        }
+
+        .btn-edit::before {
+            content: '✎';
+            color: white;
+            font-size: 11px;
+            line-height: 1;
+        }
+
+        .action-divider {
+            width: 0.5px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 0 1px;
         }
 
         @keyframes wiggle {
@@ -953,7 +1001,8 @@
             cursor: -webkit-grabbing;
         }
 
-        .app-grid.edit-mode .delete-btn {
+        .app-grid.edit-mode .delete-btn,
+        .app-grid.edit-mode .edit-btn {
             display: flex;
         }
 
@@ -1251,14 +1300,70 @@
             transform: scale(1);
         }
 
+        .folder-title-wrapper {
+            width: 90%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
         .folder-title {
             font-size: 34px;
             font-weight: 700;
-            margin-bottom: 20px;
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             text-align: left;
-            width: 90%;
-            padding-left: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.2s;
+            outline: none;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-height: 40px;
+            line-height: normal;
+        }
+
+        .folder-title:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .folder-title[contenteditable="true"] {
+            background: rgba(255, 255, 255, 0.2);
+            cursor: text;
+            text-shadow: none;
+        }
+
+        .title-save-btn {
+            width: 36px;
+            height: 36px;
+            background: #34A853;
+            border-radius: 50%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            flex-shrink: 0;
+            transition: transform 0.15s;
+        }
+
+        .title-save-btn:active {
+            transform: scale(0.9);
+        }
+
+        .title-save-btn::after {
+            content: '✓';
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .folder-title[contenteditable="true"]~.title-save-btn {
+            display: flex;
         }
 
         .folder-grid {
@@ -1281,7 +1386,8 @@
             overflow: visible;
         }
 
-        .folder-grid.edit-mode .delete-btn {
+        .folder-grid.edit-mode .delete-btn,
+        .folder-grid.edit-mode .edit-btn {
             display: flex;
         }
 
@@ -1472,7 +1578,10 @@
             <div id="removeFromFolderZone" class="remove-from-folder-zone">
                 <span>Вынести из папки</span>
             </div>
-            <h1 id="folderTitle" class="folder-title">Папка</h1>
+            <div class="folder-title-wrapper">
+                <h1 id="folderTitle" class="folder-title">Папка</h1>
+                <div id="titleSaveBtn" class="title-save-btn"></div>
+            </div>
             <div id="folderGrid" class="folder-grid app-grid">
             </div>
         </div>
@@ -1482,37 +1591,15 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-top-row">
+                <h2 class="sidebar-title">Настройки</h2>
                 <div class="close-menu-btn" id="closeMenuBtn">×</div>
-            </div>
-            <div class="sidebar-tabs">
-                <div class="tab-item active" id="tabAdd">
-                    <span class="tab-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="14" width="7" height="7"></rect>
-                            <rect x="3" y="14" width="7" height="7"></rect>
-                        </svg>
-                    </span>
-                    <span class="tab-label">Приложения</span>
-                </div>
-                <div class="tab-item" id="tabSettings">
-                    <span class="tab-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path
-                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
-                            </path>
-                        </svg>
-                    </span>
-                    <span class="tab-label">Настройки</span>
-                </div>
             </div>
         </div>
         <div class="sidebar-content" id="sidebarContent">
         </div>
+    </aside>
+    <div class="sidebar-content" id="sidebarContent">
+    </div>
     </aside>
 
     <script type="module">
@@ -1593,7 +1680,9 @@
                                 ${miniGridHTML}
                             </div>
                             <div class="glass-overlay"></div>
-                            <div class="delete-btn"></div>
+                            <div class="action-bar">
+                                <div class="action-btn btn-del"></div>
+                            </div>
                         </div>
                         <span class="app-name">${app.name}</span>
                     </div>`;
@@ -1618,7 +1707,11 @@
                         <a href="${app.url}" class="icon-container">
                             <img src="${app.icon}" alt="${app.name}" onerror="this.src='https://via.placeholder.com/62?text=?'">
                             <div class="glass-overlay"></div>
-                            <div class="delete-btn"></div>
+                            <div class="action-bar">
+                                <div class="action-btn btn-del"></div>
+                                <div class="action-divider"></div>
+                                <div class="action-btn btn-edit"></div>
+                            </div>
                         </a>
                         <span class="app-name">${app.name}</span>
                     </div>`;
@@ -1868,56 +1961,71 @@
                 const existingBtn = iconContainer.querySelector('.delete-btn');
                 if (existingBtn) existingBtn.remove();
 
-                // Создание кнопки удаления
+                // Создание кнопки удаления (old structure, removed)
+                // const deleteBtn = document.createElement('div');
+                // deleteBtn.className = 'delete-btn';
+                // iconContainer.appendChild(deleteBtn);
+
+                // --- ЛОГИКА УДАЛЕНИЯ ---
                 const isFolder = item.querySelector('.folder-trigger') !== null;
-                const type = isFolder ? 'folder' : 'site';
+                const btnDel = iconContainer.querySelector('.btn-del');
+                if (btnDel) {
+                    btnDel.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
 
-                const deleteBtn = document.createElement('div');
-                deleteBtn.className = 'delete-btn';
-                iconContainer.appendChild(deleteBtn);
+                        const nameEl = item.querySelector('.app-name');
+                        const name = nameEl ? nameEl.innerText : (isFolder ? 'Папка' : 'Приложение');
 
-                // --- ЛОГИКА УДАЛЕНИЯ С МОДАЛЬНЫМ ОКНОМ ---
-                deleteBtn.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
+                        if (isFolder) {
+                            confirmModal.show(name, 'folder', {
+                                onConfirm: () => {
+                                    item.remove();
+                                    saveCurrentState();
+                                },
+                                onUngroup: () => {
+                                    const currentApps = getAppsFromDOM();
+                                    const folderIdx = currentApps.findIndex(a => a.name === name && a.type === 'folder');
 
-                    const nameEl = item.querySelector('.app-name');
-                    const name = nameEl ? nameEl.innerText : (isFolder ? 'Папка' : 'Приложение');
-
-                    if (isFolder) {
-                        confirmModal.show(name, 'folder', {
-                            onConfirm: () => {
-                                // Просто удаляем папку (и всё внутри)
+                                    if (folderIdx !== -1) {
+                                        const folder = currentApps[folderIdx];
+                                        const items = folder.items || [];
+                                        currentApps.splice(folderIdx, 1);
+                                        currentApps.splice(folderIdx, 0, ...items);
+                                        saveCurrentState(currentApps);
+                                        renderAppsToDOM(currentApps);
+                                    }
+                                }
+                            });
+                        } else {
+                            confirmModal.show(name, 'site', () => {
                                 item.remove();
                                 saveCurrentState();
-                            },
-                            onUngroup: () => {
-                                // Разгруппировать: достаем все элементы и кладем на главный экран
-                                const currentApps = getAppsFromDOM();
-                                const folderIdx = currentApps.findIndex(a => a.name === name && a.type === 'folder');
+                            });
+                        }
+                    };
+                }
 
-                                if (folderIdx !== -1) {
-                                    const folder = currentApps[folderIdx];
-                                    const items = folder.items || [];
+                // --- ЛОГИКА РЕДАКТИРОВАНИЯ ---
+                const btnEdit = iconContainer.querySelector('.btn-edit');
+                if (btnEdit) {
+                    btnEdit.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
 
-                                    // Удаляем папку
-                                    currentApps.splice(folderIdx, 1);
+                        const currentApps = getAppsFromDOM();
+                        const appIdx = Array.from(document.querySelectorAll('.app-item')).indexOf(item);
+                        const appData = currentApps[appIdx];
 
-                                    // Вставляем элементы папки на место, где была папка
-                                    currentApps.splice(folderIdx, 0, ...items);
-
-                                    saveCurrentState(currentApps);
-                                    renderAppsToDOM(currentApps);
-                                }
-                            }
-                        });
-                    } else {
-                        confirmModal.show(name, 'site', () => {
-                            item.remove();
-                            saveCurrentState();
-                        });
-                    }
-                };
+                        if (appData) {
+                            iconEditor.open((newData) => {
+                                currentApps[appIdx] = { ...appData, ...newData };
+                                saveCurrentState(currentApps);
+                                renderAppsToDOM(currentApps);
+                            }, appData);
+                        }
+                    };
+                }
 
                 item.oncontextmenu = (e) => { e.preventDefault(); enableEditMode(); };
 
@@ -1966,8 +2074,8 @@
             if (window.auth) {
                 clearInterval(waitForAuth);
                 window.auth.onAuthStateChanged(async (user) => {
-                    // Обновляем настройки в сайдбаре при смене пользователя
-                    sidebarManager.refreshSettingsTab();
+                    // Обновляем сайдбар при смене пользователя
+                    sidebarManager.refreshSidebar();
 
                     if (user) {
                         console.log("User logged in:", user.uid);

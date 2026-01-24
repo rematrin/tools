@@ -5,7 +5,7 @@ export class IconEditor {
         this.ctx = null;
         this.uploadedImage = null;
         this.onSaveCallback = null;
-        
+
         this.state = {
             scale: 1,
             rotation: 0,
@@ -20,17 +20,17 @@ export class IconEditor {
         try {
             let domain = url.trim();
             if (!domain) return '';
-            
+
             if (!/^https?:\/\//i.test(domain)) {
                 domain = 'http://' + domain;
             }
-            
+
             const urlObj = new URL(domain);
             let host = urlObj.hostname;
-            
+
             host = host.replace(/^www\./i, '');
             const parts = host.split('.');
-            
+
             if (parts.length > 0) {
                 const name = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
                 return name;
@@ -50,13 +50,13 @@ export class IconEditor {
             this.resetEditor(false);
             const nameInput = document.getElementById('editorAppName');
             const urlInput = document.getElementById('editorAppUrl');
-            
+
             if (nameInput) nameInput.value = initialData.name || '';
             if (urlInput) urlInput.value = initialData.url || '';
 
             if (initialData.icon) {
                 this.uploadedImage = new Image();
-                this.uploadedImage.crossOrigin = "anonymous"; 
+                this.uploadedImage.crossOrigin = "anonymous";
                 this.uploadedImage.onload = () => {
                     this.resetImageState();
                     this.draw();
@@ -68,7 +68,7 @@ export class IconEditor {
                 this.uploadedImage.src = initialData.icon;
             }
         } else {
-            this.resetEditor(true); 
+            this.resetEditor(true);
         }
     }
 
@@ -169,7 +169,7 @@ export class IconEditor {
                         </div>
                         <div class="editor-inputs">
                             <div class="input-group">
-                                <label>Ссылка<span id="urlErrorText" class="error-msg"></span></label>
+                                <label>Ссылка на сайт<span id="urlErrorText" class="error-msg"></span></label>
                                 <input type="text" id="editorAppUrl" placeholder="Введите URL" autocomplete="off">
                             </div>
                             <div class="input-group">
@@ -318,7 +318,7 @@ export class IconEditor {
         const fileInput = document.getElementById('editorFileInput');
         fileInput.addEventListener('change', (e) => this.handleUpload(e));
         const triggerBtn = document.getElementById('triggerFileSelect');
-        if(triggerBtn) triggerBtn.addEventListener('click', () => fileInput.click());
+        if (triggerBtn) triggerBtn.addEventListener('click', () => fileInput.click());
 
         const urlInput = document.getElementById('editorAppUrl');
         const nameInput = document.getElementById('editorAppName');
@@ -327,7 +327,7 @@ export class IconEditor {
         if (urlInput && nameInput) {
             urlInput.addEventListener('input', () => {
                 const urlVal = urlInput.value.trim();
-                if(urlVal.length > 3) {
+                if (urlVal.length > 3) {
                     const guessedName = this.extractNameFromUrl(urlVal);
                     if (guessedName && (nameInput.value === '' || nameInput.dataset.autoFilled === 'true')) {
                         nameInput.value = guessedName;
@@ -336,7 +336,7 @@ export class IconEditor {
                 }
             });
             nameInput.addEventListener('input', () => { nameInput.dataset.autoFilled = 'false'; });
-            
+
             // --- НОВАЯ ЛОГИКА: Авто-нажатие (только если иконка НЕ загружена) ---
             urlInput.addEventListener('paste', () => {
                 setTimeout(() => {
@@ -349,16 +349,16 @@ export class IconEditor {
             });
         }
 
-        if(fetchBtn) {
+        if (fetchBtn) {
             fetchBtn.addEventListener('click', () => {
                 const errorMsg = document.getElementById('urlErrorText');
                 urlInput.classList.remove('input-error');
-                if(errorMsg) errorMsg.style.display = 'none';
+                if (errorMsg) errorMsg.style.display = 'none';
 
                 let urlVal = urlInput.value.trim();
-                if(!urlVal) {
+                if (!urlVal) {
                     urlInput.classList.add('input-error');
-                    if(errorMsg) { errorMsg.innerText = 'Введите URL'; errorMsg.style.display = 'inline'; }
+                    if (errorMsg) { errorMsg.innerText = 'Введите URL'; errorMsg.style.display = 'inline'; }
                     urlInput.focus();
                     return;
                 }
@@ -372,14 +372,14 @@ export class IconEditor {
                 fetchBtn.style.opacity = 0.7;
 
                 this.uploadedImage = new Image();
-                this.uploadedImage.crossOrigin = "anonymous"; 
+                this.uploadedImage.crossOrigin = "anonymous";
                 this.uploadedImage.onload = () => {
                     this.resetImageState();
                     this.draw();
                     fetchBtn.innerHTML = originalBtnContent;
                     fetchBtn.style.opacity = 1;
                 };
-                
+
                 this.uploadedImage.onerror = () => {
                     const fallbackUrl = `https://www.google.com/s2/favicons?domain=${urlVal}&sz=512`;
                     const fallbackProxy = `https://wsrv.nl/?url=${encodeURIComponent(fallbackUrl)}`;
@@ -394,7 +394,7 @@ export class IconEditor {
                     };
                     fallbackImg.onerror = () => {
                         urlInput.classList.add('input-error');
-                        if(errorMsg) { errorMsg.innerText = 'Иконка не найдена'; errorMsg.style.display = 'inline'; }
+                        if (errorMsg) { errorMsg.innerText = 'Иконка не найдена'; errorMsg.style.display = 'inline'; }
                         this.uploadedImage = null;
                         this.draw();
                         fetchBtn.innerHTML = originalBtnContent;
@@ -413,7 +413,7 @@ export class IconEditor {
         const searchInput = document.getElementById('iconSearchInput');
         const resultsContainer = document.getElementById('iconSearchResults');
         const colorPicker = document.getElementById('iconColorPicker');
-        
+
         let currentSearchColor = colorPicker ? colorPicker.value : '#000000';
 
         if (searchBtn) {
@@ -440,7 +440,7 @@ export class IconEditor {
             searchInput.addEventListener('input', (e) => {
                 clearTimeout(debounceTimer);
                 const query = e.target.value.trim();
-                
+
                 if (query.length < 2) {
                     resultsContainer.innerHTML = '';
                     return;
@@ -448,35 +448,35 @@ export class IconEditor {
 
                 debounceTimer = setTimeout(async () => {
                     resultsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">Ищу...</div>';
-                    
+
                     try {
                         const resp = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=100`);
                         const data = await resp.json();
 
                         resultsContainer.innerHTML = '';
-                        
+
                         if (data.icons && data.icons.length > 0) {
                             data.icons.forEach(iconName => {
                                 const div = document.createElement('div');
                                 div.className = 'search-item';
                                 const baseUrl = `https://api.iconify.design/${iconName}.svg`;
                                 const coloredUrl = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
-                                
+
                                 const img = document.createElement('img');
                                 img.src = coloredUrl;
                                 img.loading = "lazy";
                                 div.appendChild(img);
-                                
+
                                 div.addEventListener('click', () => {
                                     const finalUrl = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
-                                    
+
                                     this.uploadedImage = new Image();
                                     this.uploadedImage.crossOrigin = "anonymous";
-                                    
+
                                     this.uploadedImage.onload = () => {
-                                        const targetSize = this.canvas.width * 0.6; 
+                                        const targetSize = this.canvas.width * 0.6;
                                         const scale = targetSize / Math.max(this.uploadedImage.width, this.uploadedImage.height);
-                                        
+
                                         this.state.scale = scale;
                                         this.state.rotation = 0;
                                         this.state.offsetX = 0;
@@ -485,7 +485,7 @@ export class IconEditor {
                                         this.draw();
                                         searchPopup.style.display = 'none';
                                     };
-                                    
+
                                     this.uploadedImage.src = finalUrl;
                                 });
                                 resultsContainer.appendChild(div);
@@ -514,7 +514,7 @@ export class IconEditor {
                 if (action === 'zoom-in') this.zoom(0.1);
                 if (action === 'zoom-out') this.zoom(-0.1);
             }
-            
+
             const swatch = e.target.closest('.swatch');
             if (swatch && !swatch.classList.contains('swatch-rainbow')) {
                 document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
@@ -524,7 +524,7 @@ export class IconEditor {
             }
 
             if (e.target.closest('.editor-close-btn') || e.target.closest('.btn-cancel')) this.close();
-            if (e.target.closest('.btn-reset')) this.resetEditor(false); 
+            if (e.target.closest('.btn-reset')) this.resetEditor(false);
             if (e.target.closest('.btn-ok') && !e.target.closest('.btn-ok').disabled) this.save();
         });
 
@@ -581,7 +581,7 @@ export class IconEditor {
         if (swatches.length > 0) {
             swatches.forEach(s => s.classList.remove('active'));
             const whiteSwatch = document.querySelector('[data-color="#ffffff"]');
-            if(whiteSwatch) whiteSwatch.classList.add('active');
+            if (whiteSwatch) whiteSwatch.classList.add('active');
         }
         if (fullClear) {
             const nameInput = document.getElementById('editorAppName');
@@ -615,7 +615,7 @@ export class IconEditor {
         }
         const dataUrl = this.canvas.toDataURL('image/png');
         const preview = document.getElementById('editorPreviewImg');
-        if(preview) preview.src = dataUrl;
+        if (preview) preview.src = dataUrl;
     }
 
     async save() {
@@ -637,15 +637,15 @@ export class IconEditor {
                     offCtx.fillStyle = this.state.bgColor;
                     offCtx.fillRect(0, 0, 256, 256);
                 }
-                
+
                 offCtx.drawImage(this.canvas, 0, 0, 256, 256);
-                
+
                 const dataUrl = offscreenCanvas.toDataURL('image/png');
                 const hostedUrl = await this.uploadToImgBB(dataUrl);
 
                 const name = document.getElementById('editorAppName').value.trim();
                 const url = document.getElementById('editorAppUrl').value.trim();
-                
+
                 this.onSaveCallback({ icon: hostedUrl, name: name, url: url });
                 this.close();
 
@@ -659,7 +659,7 @@ export class IconEditor {
     }
 
     async uploadToImgBB(base64Image) {
-        const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee'; 
+        const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee';
         const cleanBase64 = base64Image.split(',')[1];
         const formData = new FormData();
         formData.append('image', cleanBase64);

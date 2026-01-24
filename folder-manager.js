@@ -26,6 +26,47 @@ export class FolderManager {
                 this.close();
             }
         });
+
+        // --- ЛОГИКА ПЕРЕИМЕНОВАНИЯ ПАПКИ ---
+        this.titleSaveBtn = document.getElementById('titleSaveBtn');
+
+        this.titleEl.addEventListener('click', () => {
+            if (this.titleEl.contentEditable === "true") return;
+
+            this.titleEl.contentEditable = "true";
+            this.titleEl.focus();
+
+            // Ставим курсор в конец текста (вместо выделения всего)
+            const range = document.createRange();
+            range.selectNodeContents(this.titleEl);
+            range.collapse(false); // false означает коллапс к концу
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        });
+
+        this.titleSaveBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.titleEl.blur();
+        });
+
+        this.titleEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.titleEl.blur();
+            }
+        });
+
+        this.titleEl.addEventListener('blur', () => {
+            this.titleEl.contentEditable = "false";
+            const newName = this.titleEl.innerText.trim() || "Папка";
+            this.titleEl.innerText = newName;
+
+            if (this.currentFolderData && this.currentFolderData.name !== newName) {
+                this.currentFolderData.name = newName;
+                this.syncToGlobalState();
+            }
+        });
     }
 
     open(folderData, index) {
@@ -82,17 +123,20 @@ export class FolderManager {
                 <a href="${app.url}" class="icon-container" onclick="if(document.body.classList.contains('edit-mode-folder')) return false;">
                     <img src="${app.icon}" alt="${app.name}" onerror="this.src='https://via.placeholder.com/62?text=?'">
                     <div class="glass-overlay"></div>
-                    <div class="delete-btn"></div>
+                    <div class="action-bar">
+                        <div class="action-btn btn-del"></div>
+                        <div class="action-divider"></div>
+                        <div class="action-btn btn-edit"></div>
+                    </div>
                 </a>
                 <span class="app-name">${app.name}</span>
             `;
 
-            // --- ОБНОВЛЕННАЯ ЛОГИКА УДАЛЕНИЯ ---
-            const delBtn = item.querySelector('.delete-btn');
-            delBtn.onclick = (e) => {
+            // --- ЛОГИКА УДАЛЕНИЯ ---
+            const btnDel = item.querySelector('.btn-del');
+            btnDel.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                // Вызываем модальное окно вместо мгновенного удаления
                 if (this.confirmModal) {
                     this.confirmModal.show(app.name, 'site', () => {
                         this.deleteItem(idx);
@@ -101,6 +145,21 @@ export class FolderManager {
                     this.deleteItem(idx);
                 }
             };
+
+            // --- ЛОГИКА РЕДАКТИРОВАНИЯ В ПАПКЕ ---
+            const btnEdit = item.querySelector('.btn-edit');
+            if (btnEdit && this.ctx.iconEditor) {
+                btnEdit.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    this.ctx.iconEditor.open((newData) => {
+                        this.currentFolderData.items[idx] = { ...app, ...newData };
+                        this.renderItems();
+                        this.syncToGlobalState();
+                    }, app);
+                };
+            }
             // -------------------------------------
 
             const link = item.querySelector('a');

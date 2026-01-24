@@ -1,10 +1,44 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Folder Icon Maker Pro</title>
     <style>
+        /* --- 0. Сброс и База --- */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        /* --- Custom Scrollbar --- */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+            border: 2px solid #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        /* Firefox support */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #ccc #f1f1f1;
+        }
+
         /* --- 1. Базовые стили и Переменные --- */
         :root {
             --bg-body: #f3f4f6;
@@ -20,15 +54,27 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-body);
             color: var(--text-main);
-            display: flex;
-            height: 100vh;
             margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
         }
 
         /* --- 2. Сайдбар --- */
         .sidebar {
             width: 380px;
+            min-width: 380px;
+            /* Prevent crushing on some browsers */
+            flex-shrink: 0;
             background-color: var(--bg-sidebar);
             display: flex;
             flex-direction: column;
@@ -36,7 +82,7 @@
             padding: 24px;
             gap: 24px;
             overflow-y: auto;
-            box-shadow: 4px 0 24px rgba(0,0,0,0.02);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02);
         }
 
         h3 {
@@ -71,7 +117,7 @@
             flex: 1;
             border: none;
             padding: 10px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             border-radius: 8px;
             cursor: pointer;
             background: transparent;
@@ -80,23 +126,53 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
             transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .blend-mode-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            background: #f3f4f6;
+            padding: 4px;
+            border-radius: 10px;
+        }
+
+        .blend-btn {
+            border: none;
+            padding: 8px 4px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .blend-btn.active {
+            background: #fff;
+            color: var(--text-main);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .style-btn.active {
             background: #fff;
             color: var(--text-main);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
 
-        .style-btn img, .style-btn svg {
+        .style-btn img,
+        .style-btn svg {
             width: 16px;
             height: 16px;
             opacity: 0.7;
         }
-        
-        .style-btn.active img, .style-btn.active svg {
+
+        .style-btn.active img,
+        .style-btn.active svg {
             opacity: 1;
         }
 
@@ -125,16 +201,30 @@
             outline: none;
         }
 
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #e5e7eb;
+            border-radius: 4px;
+        }
+
         input[type=range]::-webkit-slider-thumb {
-            height: 20px;
-            width: 20px;
+            height: 22px;
+            width: 22px;
             border-radius: 50%;
-            background: #ffffff;
-            border: 2px solid #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            background: var(--accent);
+            border: 3px solid #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
             cursor: pointer;
             -webkit-appearance: none;
-            margin-top: -6px;
+            margin-top: -7px;
+            /* (Track height / 2) - (Thumb height / 2) = (8/2) - (22/2) = 4 - 11 = -7 */
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:active {
+            transform: scale(1.1);
         }
 
         /* Радужная полоска */
@@ -142,9 +232,9 @@
             width: 100%;
             height: 8px;
             cursor: pointer;
-            background: linear-gradient(to right, 
-                #ff0000 0%, #ffff00 17%, #00ff00 33%, 
-                #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
+            background: linear-gradient(to right,
+                    #ff0000 0%, #ffff00 17%, #00ff00 33%,
+                    #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
             border-radius: 4px;
         }
 
@@ -174,7 +264,7 @@
             box-sizing: border-box;
             transition: all 0.2s;
         }
-        
+
         .search-box input:focus {
             background: #fff;
             border-color: var(--accent);
@@ -216,15 +306,15 @@
         .icon-item:hover {
             border-color: var(--accent);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
-        
+
         .icon-item img {
             width: 24px;
             height: 24px;
             opacity: 0.7;
         }
-        
+
         .icon-item:hover img {
             opacity: 1;
         }
@@ -245,113 +335,224 @@
         /* --- 6. Превью --- */
         .preview-area {
             flex-grow: 1;
+            min-width: 0;
+            /* Critical for flex child overflow fix */
             display: flex;
             justify-content: center;
             align-items: center;
             background-image: radial-gradient(#ddd 1px, transparent 1px);
             background-size: 24px 24px;
+            overflow: hidden;
+            /* Ensure content doesn't spill out */
         }
 
         canvas {
-            max-width: 80%;
+            display: block;
+            /* Remove inline-block spacing */
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
             height: auto;
-            filter: drop-shadow(0 20px 40px rgba(0,0,0,0.15));
+            object-fit: contain;
+            /* Maintain aspect ratio nicely */
+            filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.15));
         }
-
     </style>
 </head>
+
 <body>
+    <div id="app">
 
-    <div class="sidebar">
-        <div>
-            <h3>Folder Style</h3>
-            <div class="style-toggle-container">
-                <button class="style-btn active" id="btnMac" onclick="setFolderStyle('mac')">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.8-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1m-1.33 1.68c.55-.68.97-1.59.88-2.53-1.03.06-2.07.61-2.67 1.3-.53.63-.92 1.52-.83 2.48.96.06 1.98-.44 2.62-1.25z"/></svg>
-                    macOS
-                </button>
-                <button class="style-btn" id="btnWin" onclick="setFolderStyle('win')">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 12V6.75L9 5.43v6.57H3zm13.5 10.31V12h4.5v10.13l-4.5.18zm-9 0V12h7.5v10.31l-7.5-.31zM21 4.5l-4.5.31V12h4.5V4.5z"/></svg>
-                    Windows
-                </button>
-            </div>
-        </div>
-
-        <hr style="border: 0; border-top: 1px solid #e5e7eb; width: 100%; margin: 0;">
-
-        <div>
-            <h3>Color</h3>
-            
-            <div class="slider-group">
-                <div class="slider-header">
-                    <span>Folder Hue</span>
-                    <span id="hueValue">0°</span>
-                </div>
-                <input type="range" id="hueRange" min="0" max="360" value="210">
-            </div>
-
-            <div class="slider-group">
-                <div class="slider-header">
-                    <span>Folder Brightness</span>
-                    <span id="brightValue">100%</span>
-                </div>
-                <input type="range" id="brightnessRange" min="0" max="200" value="100">
-            </div>
-        </div>
-
-        <hr style="border: 0; border-top: 1px solid #e5e7eb; width: 100%; margin: 0;">
-
-        <div>
-            <h3>Icons</h3>
-            
-            <div class="search-box">
-                <svg class="search-icon-svg" viewBox="0 0 20 20">
-                    <path d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"></path>
-                </svg>
-                <input type="text" id="iconSearch" placeholder="Search icons (e.g. cat, work)...">
-            </div>
-
-            <div class="icons-grid" id="iconsGrid">
-                <div style="grid-column: span 4; text-align: center; color: #999; padding: 20px;">
-                    Type to search icons...
+        <div class="sidebar">
+            <div>
+                <h3>Folder Style</h3>
+                <div class="style-toggle-container">
+                    <button class="style-btn active" id="btnMac" onclick="setFolderStyle('mac')">
+                        <svg viewBox="0 0 1024 1024" fill="currentColor" width="16" height="16">
+                            <path
+                                d="M747.4 535.7c-.4-68.2 30.5-119.6 92.9-157.5c-34.9-50-87.7-77.5-157.3-82.8c-65.9-5.2-138 38.4-164.4 38.4c-27.9 0-91.7-36.6-141.9-36.6C273.1 298.8 163 379.8 163 544.6c0 48.7 8.9 99 26.7 150.8c23.8 68.2 109.6 235.3 199.1 232.6c46.8-1.1 79.9-33.2 140.8-33.2c59.1 0 89.7 33.2 141.9 33.2c90.3-1.3 167.9-153.2 190.5-221.6c-121.1-57.1-114.6-167.2-114.6-170.7m-105.1-305c50.7-60.2 46.1-115 44.6-134.7c-44.8 2.6-96.6 30.5-126.1 64.8c-32.5 36.8-51.6 82.3-47.5 133.6c48.4 3.7 92.6-21.2 129-63.7" />
+                        </svg>
+                        macOS
+                    </button>
+                    <button class="style-btn" id="btnWin" onclick="setFolderStyle('win')">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="m3 5.557l7.357-1.002l.004 7.097l-7.354.042zm7.354 6.913l.006 7.103l-7.354-1.011v-6.14zm.892-8.046L21.001 3v8.562l-9.755.077zm9.758 8.113l-.003 8.523l-9.755-1.378l-.014-7.161z" />
+                        </svg>
+                        Windows
+                    </button>
                 </div>
             </div>
+
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; width: 100%; margin: 0;">
+
+            <div>
+                <h3>Color</h3>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>Hue Shift</span>
+                        <span id="hueValue">0°</span>
+                    </div>
+                    <!-- Default 0 -->
+                    <input type="range" id="hueRange" min="0" max="360" value="0">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>Brightness</span>
+                        <span id="brightValue">100%</span>
+                    </div>
+                    <input type="range" id="brightnessRange" min="0" max="200" value="100">
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; width: 100%; margin: 0;">
+
+            <!-- New Icon Settings Section -->
+            <div>
+                <h3>Icon Overlay Settings</h3>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>Opacity</span>
+                        <span id="opacityValue">0.8</span>
+                    </div>
+                    <input type="range" id="iconOpacity" min="0" max="1" step="0.05" value="0.8">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>Size</span>
+                        <span id="sizeValue">0.5</span>
+                    </div>
+                    <input type="range" id="iconSize" min="0.2" max="0.9" step="0.05" value="0.5">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>Position Y</span>
+                        <span id="posValue">0</span>
+                    </div>
+                    <!-- Range centered at 0 -->
+                    <input type="range" id="iconY" min="-100" max="100" value="0">
+                </div>
+
+                <div class="slider-group" style="margin-bottom:0;">
+                    <div class="slider-header">
+                        <span>Blend Mode</span>
+                    </div>
+                    <div class="blend-mode-container">
+                        <button class="blend-btn active" data-mode="overlay"
+                            onclick="setBlendMode('overlay')">Overlay</button>
+                        <button class="blend-btn" data-mode="soft-light" onclick="setBlendMode('soft-light')">Soft
+                            Light</button>
+                        <button class="blend-btn" data-mode="source-over"
+                            onclick="setBlendMode('source-over')">Normal</button>
+                    </div>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; width: 100%; margin: 0;">
+
+            <div>
+                <h3>Icons</h3>
+
+                <div class="search-box">
+                    <svg class="search-icon-svg" viewBox="0 0 20 20">
+                        <path
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z">
+                        </path>
+                    </svg>
+                    <input type="text" id="iconSearch" placeholder="Search icons (e.g. cat, work)...">
+                </div>
+
+                <div class="icons-grid" id="iconsGrid">
+                    <div style="grid-column: span 4; text-align: center; color: #999; padding: 20px;">
+                        Type to search icons...
+                    </div>
+                </div>
+            </div>
+
+            <button class="download-btn" id="downloadBtn">Download Icon</button>
         </div>
 
-        <button class="download-btn" id="downloadBtn">Download Icon</button>
+        <div class="preview-area">
+            <canvas id="canvas" width="512" height="512"></canvas>
+        </div>
+
     </div>
-
-    <div class="preview-area">
-        <canvas id="canvas" width="512" height="512"></canvas>
-    </div>
-
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        
+
         // --- Настройка путей к файлам ---
         // Важно: Эти файлы должны лежать рядом с HTML!
         // Если ты переименовал их, измени названия тут.
         // Заметь: я использовал расширение .webp или .png, так как .html не подойдет для картинки.
         const FOLDER_SOURCES = {
-            mac: 'folder_macos.webp', 
+            mac: 'folder_macos.webp',
             win: 'folder_windows.webp'
         };
 
         let currentFolderImg = new Image();
-        let currentIconUrl = null;
+        let loadedIconImg = null; // Caching loaded icon to prevent flickering
         let activeStyle = 'mac'; // 'mac' или 'win'
+        let currentBlendMode = 'overlay';
 
         // --- Инициализация ---
         function init() {
             setFolderStyle('mac'); // Загружаем мак по умолчанию
-            searchIcons('folder'); // Показываем стартовые иконки
+            loadStarterIcons(); // Показываем микс популярных иконок
+        }
+
+        // --- Загрузка стартовых иконок (чтобы не было скучных папок) ---
+        function loadStarterIcons() {
+            const starterIcons = [
+                'lucide:star', 'lucide:heart', 'lucide:zap', 'lucide:rocket',
+                'lucide:music', 'lucide:camera', 'lucide:gamepad', 'lucide:ghost',
+                'lucide:smile', 'lucide:coffee', 'lucide:code', 'lucide:globe',
+                'lucide:bookmark', 'lucide:bell', 'lucide:gift', 'lucide:sun',
+                'lucide:cloud', 'lucide:umbrella', 'lucide:anchor', 'lucide:crown'
+            ];
+
+            ui.grid.innerHTML = '';
+
+            starterIcons.forEach(iconStr => {
+                const btn = document.createElement('div');
+                btn.className = 'icon-item';
+                const previewUrl = `https://api.iconify.design/${iconStr}.svg`;
+                btn.innerHTML = `<img src="${previewUrl}" loading="lazy">`;
+
+                btn.onclick = () => {
+                    const url = `https://api.iconify.design/${iconStr}.svg?color=black`;
+                    document.querySelectorAll('.icon-item').forEach(i => i.style.borderColor = '#e5e7eb');
+                    btn.style.borderColor = '#3b82f6';
+                    loadIcon(url);
+                };
+                ui.grid.appendChild(btn);
+            });
+        }
+
+        // --- Load Icon Helper ---
+        function loadIcon(url) {
+            // Only load if different or force reload
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = () => {
+                loadedIconImg = img;
+                draw();
+            };
+            img.onerror = () => {
+                console.error("Failed to load icon", url);
+            };
+            img.src = url;
         }
 
         // --- Переключение стилей (macOS / Windows) ---
         function setFolderStyle(style) {
             activeStyle = style;
-            
+
             // UI переключение кнопок
             document.getElementById('btnMac').className = style === 'mac' ? 'style-btn active' : 'style-btn';
             document.getElementById('btnWin').className = style === 'win' ? 'style-btn active' : 'style-btn';
@@ -375,76 +576,84 @@
             hueVal: document.getElementById('hueValue'),
             bright: document.getElementById('brightnessRange'),
             brightVal: document.getElementById('brightValue'),
+
+            // New UI
+            iconOpacity: document.getElementById('iconOpacity'),
+            iconOpacityVal: document.getElementById('opacityValue'),
+            iconSize: document.getElementById('iconSize'),
+            iconSizeVal: document.getElementById('sizeValue'),
+            iconY: document.getElementById('iconY'),
+            iconYVal: document.getElementById('posValue'),
+
             search: document.getElementById('iconSearch'),
             grid: document.getElementById('iconsGrid'),
             download: document.getElementById('downloadBtn')
         };
 
+        function setBlendMode(mode) {
+            currentBlendMode = mode;
+            document.querySelectorAll('.blend-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+            draw();
+        }
+
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Рисуем папку
+            // 1. Рисуем папку с Hue/Brightness фильтрами
             if (currentFolderImg.complete && currentFolderImg.naturalWidth !== 0) {
                 ctx.save();
+
+                // Используем CSS filter для hue-rotate (0 = оригинал) и brightness
+                // Это намного проще и качественнее, чем ручное наложение цвета
+                const h = ui.hue.value;
+                const b = ui.bright.value;
+
+                ctx.filter = `hue-rotate(${h}deg) brightness(${b}%)`;
                 ctx.drawImage(currentFolderImg, 0, 0, canvas.width, canvas.height);
 
-                // 2. Красим папку
-                // Режим overlay сохраняет тени и блики
-                ctx.globalCompositeOperation = 'overlay'; 
-                const h = ui.hue.value;
-                const b = ui.bright.value; 
-
-                // Яркость < 100% -> затемняем, > 100% -> осветляем
-                if (b != 100) {
-                   // Для простоты здесь только Hue + Brightness слоя
-                }
-                
-                // Рисуем цвет (Hue)
-                // Сначала ограничиваем область рисования только непрозрачными пикселями папки
-                ctx.globalCompositeOperation = 'source-atop';
-                
-                // Цвет заливки
-                ctx.fillStyle = `hsla(${h}, 100%, 50%, 0.5)`; 
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                // Дополнительная коррекция яркости
-                if (b != 100) {
-                    ctx.globalCompositeOperation = b > 100 ? 'overlay' : 'multiply';
-                    const opacity = Math.abs(b - 100) / 100;
-                    ctx.fillStyle = b > 100 ? `rgba(255,255,255,${opacity})` : `rgba(0,0,0,${opacity})`;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                }
-                
-                ctx.restore();
+                ctx.restore(); // Сбрасываем фильтры
             }
 
-            // 3. Рисуем Иконку
-            if (currentIconUrl) {
-                const iconImg = new Image();
-                iconImg.onload = () => {
-                    ctx.save();
-                    // Легкая тень иконке для реализма
+            // 2. Рисуем Иконку
+            if (loadedIconImg) {
+                ctx.save();
+
+                // Настройки иконки
+                ctx.globalAlpha = parseFloat(ui.iconOpacity.value);
+                ctx.globalCompositeOperation = currentBlendMode;
+
+                // Размер
+                const scale = parseFloat(ui.iconSize.value); // 0.2 to 0.9 (percent of canvas)
+                const iconSize = canvas.width * scale;
+
+                // Позиция
+                const x = (canvas.width - iconSize) / 2;
+                // Базовый центр + смещение пользователя
+                // Центр канваса = canvas.height / 2
+                // Смещение Y от слайдера
+                const userY = parseInt(ui.iconY.value);
+
+                // Небольшая корректировка для визуального центра папки
+                const baseOffset = activeStyle === 'win' ? 0 : 20;
+
+                const y = ((canvas.height - iconSize) / 2) + baseOffset + userY;
+
+                // Рисуем тень только если режим Normal, иначе в Overlay тень выглядит грязно
+                if (currentBlendMode === 'source-over') {
                     ctx.shadowColor = "rgba(0,0,0,0.3)";
-                    ctx.shadowBlur = 4;
-                    ctx.shadowOffsetY = 2;
+                    ctx.shadowBlur = 8;
+                    ctx.shadowOffsetY = 4;
+                }
 
-                    // Размер и позиция (зависит от стиля папки, Windows папки часто требуют другого сдвига)
-                    const size = 256; 
-                    const x = (canvas.width - size) / 2;
-                    // Для Windows иконок обычно нужно сдвинуть чуть выше, так как папка стоит "вертикальнее"
-                    let yOffset = activeStyle === 'win' ? 10 : 30; 
-                    
-                    const y = (canvas.height - size) / 2 + yOffset;
-
-                    ctx.drawImage(iconImg, x, y, size, size);
-                    ctx.restore();
-                };
-                iconImg.src = currentIconUrl;
+                ctx.drawImage(loadedIconImg, x, y, iconSize, iconSize);
+                ctx.restore();
             }
         }
 
         // --- Поиск (Iconify) ---
-        function debounce(func, timeout = 500){
+        function debounce(func, timeout = 500) {
             let timer;
             return (...args) => {
                 clearTimeout(timer);
@@ -462,8 +671,8 @@
             try {
                 const res = await fetch(url);
                 const data = await res.json();
-                
-                ui.grid.innerHTML = ''; 
+
+                ui.grid.innerHTML = '';
 
                 if (data.icons && data.icons.length > 0) {
                     data.icons.forEach(iconStr => {
@@ -471,13 +680,13 @@
                         btn.className = 'icon-item';
                         const previewUrl = `https://api.iconify.design/${iconStr}.svg`;
                         btn.innerHTML = `<img src="${previewUrl}" loading="lazy">`;
-                        
+
                         btn.onclick = () => {
-                            // Грузим белую иконку для наложения
-                            currentIconUrl = `https://api.iconify.design/${iconStr}.svg?color=white`; 
+                            // Грузим черную иконку для наложения (Overlay лучше работает с черным/темным)
+                            const url = `https://api.iconify.design/${iconStr}.svg?color=black`;
                             document.querySelectorAll('.icon-item').forEach(i => i.style.borderColor = '#e5e7eb');
                             btn.style.borderColor = '#3b82f6';
-                            draw(); 
+                            loadIcon(url);
                         };
                         ui.grid.appendChild(btn);
                     });
@@ -496,13 +705,32 @@
             ui.hueVal.textContent = e.target.value + '°';
             draw();
         });
-        
+
         ui.bright.addEventListener('input', (e) => {
             ui.brightVal.textContent = e.target.value + '%';
             draw();
         });
 
-        const processSearch = debounce((e) => searchIcons(e.target.value));
+        // Icon Customization Events
+        [ui.iconOpacity, ui.iconSize, ui.iconY].forEach(el => {
+            el.addEventListener('input', () => {
+                ui.iconOpacityVal.textContent = ui.iconOpacity.value;
+                ui.iconSizeVal.textContent = ui.iconSize.value;
+                ui.iconYVal.textContent = ui.iconY.value;
+                draw();
+            });
+        });
+
+
+
+        const processSearch = debounce((e) => {
+            const val = e.target.value.trim();
+            if (val.length === 0) {
+                loadStarterIcons();
+            } else {
+                searchIcons(val);
+            }
+        });
         ui.search.addEventListener('input', processSearch);
 
         ui.download.addEventListener('click', () => {
@@ -517,4 +745,5 @@
 
     </script>
 </body>
+
 </html>

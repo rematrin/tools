@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -23,7 +24,7 @@
             overflow-x: hidden;
             background-color: #000;
             overscroll-behavior-y: none;
-            user-select: none; 
+            user-select: none;
         }
 
         /* --- ОБОИ (ДИНАМИЧЕСКИЙ ЗУМ) --- */
@@ -68,8 +69,8 @@
             background: rgba(255, 255, 255, 0);
             padding: 50px 20px 10px 20px;
             width: 100%;
-            max-width: none; 
-            margin-left: auto; 
+            max-width: none;
+            margin-left: auto;
             margin-right: auto;
             transition: all 0.2s ease-in-out;
             display: flex;
@@ -82,27 +83,32 @@
             font-weight: 700;
             letter-spacing: 0.3px;
             margin: 0;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .menu-btn {
-            position: fixed; /* Фиксируем относительно экрана */
+            position: fixed;
+            /* Фиксируем относительно экрана */
             right: 20px;
             top: 20px;
-            width: 44px;  /* Увеличили размер (было 32px) */
-            height: 44px; /* Увеличили размер */
+            width: 44px;
+            /* Увеличили размер (было 32px) */
+            height: 44px;
+            /* Увеличили размер */
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            gap: 6px;     /* Чуть больше расстояние между линиями */
+            gap: 6px;
+            /* Чуть больше расстояние между линиями */
             background: rgba(255, 255, 255, 0.2);
             border-radius: 50%;
             padding: 10px;
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            z-index: 1000; /* Чтобы была поверх всего */
+            z-index: 1000;
+            /* Чтобы была поверх всего */
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
@@ -114,10 +120,12 @@
 
         .menu-btn span {
             display: block;
-            height: 2.5px; /* Линии чуть толще */
+            height: 2.5px;
+            /* Линии чуть толще */
             background-color: white;
             border-radius: 2px;
-            width: 22px;   /* Линии чуть длиннее */
+            width: 22px;
+            /* Линии чуть длиннее */
         }
 
         /* --- APP GRID STYLES (Базовые настройки) --- */
@@ -127,13 +135,15 @@
             row-gap: 20px;
             column-gap: 8px;
             padding: 10px 12px;
-            margin-top: 5px; /* Это будет работать для папок */
+            margin-top: 5px;
+            /* Это будет работать для папок */
             position: relative;
         }
 
         /* Специфический отступ только для главной сетки */
         #appGrid {
-            margin-top: 60px; /* Здесь кнопка меню не будет перекрывать иконки */
+            margin-top: 60px;
+            /* Здесь кнопка меню не будет перекрывать иконки */
         }
 
         .app-item {
@@ -141,7 +151,7 @@
             flex-direction: column;
             align-items: center;
             position: relative;
-            height: 90px; 
+            height: 90px;
             width: 100%;
             touch-action: none;
         }
@@ -155,25 +165,25 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             margin-bottom: 6px;
             cursor: pointer;
             text-decoration: none;
             z-index: 1;
-            flex-shrink: 0; 
+            flex-shrink: 0;
             will-change: transform, filter;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
             transform: translate3d(0, 0, 0);
             transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.2s;
-            overflow: hidden; 
+            overflow: hidden;
         }
 
         .app-grid:not(.edit-mode) .icon-container:active {
             filter: brightness(0.6);
             transform: scale(0.92) translate3d(0, 0, 0);
         }
-        
+
         .app-grid:not(.edit-mode) .icon-container:hover {
             transform: scale(1.05) translate3d(0, 0, 0);
         }
@@ -186,7 +196,7 @@
             display: block;
             border-radius: 16px;
         }
-        
+
         /* --- FOLDER PREVIEW GRID --- */
         .folder-icon {
             width: 100%;
@@ -197,28 +207,33 @@
             -webkit-backdrop-filter: blur(15px);
             border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            
+
             /* Сетка 3x3 */
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
-            gap: 2px; /* Расстояние между иконками */
-            padding: 5px; /* Отступ от края папки */
-            
+            gap: 2px;
+            /* Расстояние между иконками */
+            padding: 5px;
+            /* Отступ от края папки */
+
             /* Скрываем всё, что вылезает (если вдруг) */
-            overflow: hidden; 
+            overflow: hidden;
         }
-        
+
         /* Скрываем старую SVG, если вдруг останется */
-        .folder-icon svg { display: none; }
+        .folder-icon svg {
+            display: none;
+        }
 
         /* Стиль мини-иконок внутри папки */
         .mini-icon {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 5px !important; 
-            background: rgba(255, 255, 255, 0.1); /* Если иконка прозрачная #fff; */
+            border-radius: 5px !important;
+            background: rgba(255, 255, 255, 0.1);
+            /* Если иконка прозрачная #fff; */
             pointer-events: none;
         }
 
@@ -229,15 +244,15 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('glass.jpg'); 
+            background-image: url('glass.jpg');
             background-size: cover;
             background-position: center;
-            mix-blend-mode: screen; 
+            mix-blend-mode: screen;
             opacity: 0;
             pointer-events: none;
             z-index: 2;
             transition: opacity 0.3s ease;
-            border-radius: 16px; 
+            border-radius: 16px;
         }
 
         /* Применяем эффект стекла ко всем, КРОМЕ дочерних элементов folder-icon */
@@ -260,7 +275,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
             opacity: 0.95;
             pointer-events: none;
         }
@@ -272,12 +287,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: transparent; 
+            background: transparent;
             z-index: 1000;
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
-            backdrop-filter: none; 
+            backdrop-filter: none;
             touch-action: manipulation;
         }
 
@@ -298,7 +313,7 @@
             z-index: 1001;
             transform: translateX(100%);
             transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: -5px 0 25px rgba(0,0,0,0.3);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.3);
             display: flex;
             flex-direction: column;
             color: #000;
@@ -378,12 +393,12 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .tab-icon svg {
             width: 20px;
             height: 20px;
         }
-        
+
         .tab-label {
             font-size: 12px;
         }
@@ -405,19 +420,51 @@
         }
 
         /* --- SWITCH TOGGLE STYLES --- */
-        .switch { position: relative; display: inline-block; width: 50px; height: 30px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider-toggle { 
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; 
-            background-color: #E5E5EA; transition: .4s; border-radius: 34px; 
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 30px;
         }
-        .slider-toggle:before { 
-            position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; 
-            background-color: white; transition: .4s; border-radius: 50%; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
-        input:checked + .slider-toggle { background-color: #34C759; }
-        input:checked + .slider-toggle:before { transform: translateX(20px); }
+
+        .slider-toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #E5E5EA;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider-toggle:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked+.slider-toggle {
+            background-color: #34C759;
+        }
+
+        input:checked+.slider-toggle:before {
+            transform: translateX(20px);
+        }
 
         /* --- СТИЛИ ФОРМЫ --- */
         .form-container {
@@ -465,7 +512,7 @@
             justify-content: center;
             align-items: center;
         }
-        
+
         .primary-btn:active {
             background: #0056b3;
             transform: scale(0.98);
@@ -486,7 +533,7 @@
             align-items: center;
             gap: 8px;
         }
-        
+
         .google-btn:active {
             background: #F5F5F7;
         }
@@ -509,13 +556,21 @@
             margin: 6px 0;
             width: 100%;
         }
-        .divider::before, .divider::after {
+
+        .divider::before,
+        .divider::after {
             content: '';
             flex: 1;
             border-bottom: 1px solid #E5E5EA;
         }
-        .divider::before { margin-right: 10px; }
-        .divider::after { margin-left: 10px; }
+
+        .divider::before {
+            margin-right: 10px;
+        }
+
+        .divider::after {
+            margin-left: 10px;
+        }
 
         .section-title {
             font-size: 18px;
@@ -523,7 +578,7 @@
             margin-bottom: 3px;
             color: #000;
         }
-        
+
         .section-desc {
             font-size: 12px;
             color: #8E8E93;
@@ -541,7 +596,7 @@
             gap: 12px;
             width: 100%;
             margin-bottom: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
             position: relative;
         }
 
@@ -554,7 +609,7 @@
             gap: 1px;
             width: 100%;
             margin-bottom: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
             position: relative;
         }
 
@@ -585,7 +640,7 @@
             border-radius: 50%;
             object-fit: cover;
             background: #E5E5EA;
-            border: 1px solid rgba(0,0,0,0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .google-badge {
@@ -596,7 +651,7 @@
             height: 18px;
             background: white;
             border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -671,7 +726,7 @@
             flex-shrink: 0;
             transition: background 0.2s;
         }
-        
+
         .sidebar-dummy-btn:hover {
             background: #3367d6;
             color: hsl(0, 0%, 100%);
@@ -708,7 +763,7 @@
             border-radius: 9px;
             object-fit: cover;
             background: #f2f2f2;
-            border: 1px solid rgba(0,0,0,0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
             flex-shrink: 0;
             margin-top: 2px;
         }
@@ -751,6 +806,7 @@
             font-size: 13px;
             border-color: #E5E5EA;
         }
+
         .sidebar-edit-input.url:focus {
             border-color: #007AFF;
         }
@@ -759,7 +815,7 @@
             display: flex;
             align-items: center;
             gap: 2px;
-            height: 32px; 
+            height: 32px;
         }
 
         .action-btn {
@@ -780,7 +836,7 @@
             color: #000;
             background: rgba(0, 0, 0, 0.05);
         }
-           
+
         .action-btn svg {
             width: 18px;
             height: 18px;
@@ -815,17 +871,30 @@
             background: #FF3B30;
             color: white;
         }
-        .confirm-yes:hover { opacity: 0.9; }
+
+        .confirm-yes:hover {
+            opacity: 0.9;
+        }
 
         .confirm-no {
             background: #E5E5EA;
             color: #000;
         }
-        .confirm-no:hover { background: #d1d1d6; }
+
+        .confirm-no:hover {
+            background: #d1d1d6;
+        }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateX(10px); }
-            to { opacity: 1; transform: translateX(0); }
+            from {
+                opacity: 0;
+                transform: translateX(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         /* --- РЕЖИМ РЕДАКТИРОВАНИЯ (GRID) --- */
@@ -838,11 +907,11 @@
             background: rgba(50, 50, 50, 0.95);
             border-radius: 50%;
             z-index: 10;
-            display: none; 
+            display: none;
             justify-content: center;
             align-items: center;
-            border: 1px solid rgba(255,255,255,0.3);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
             cursor: pointer;
         }
 
@@ -855,19 +924,30 @@
         }
 
         @keyframes wiggle {
-            0% { transform: rotate(0deg); }
-            25% { transform: rotate(-2.5deg); }
-            75% { transform: rotate(2.5deg); }
-            100% { transform: rotate(0deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            25% {
+                transform: rotate(-2.5deg);
+            }
+
+            75% {
+                transform: rotate(2.5deg);
+            }
+
+            100% {
+                transform: rotate(0deg);
+            }
         }
 
         .app-grid.edit-mode .icon-container {
             animation: wiggle 0.28s infinite linear;
-            cursor: grab; 
+            cursor: grab;
             cursor: -webkit-grab;
-            overflow: visible; 
+            overflow: visible;
         }
-        
+
         .app-grid.edit-mode .icon-container:active {
             cursor: grabbing;
             cursor: -webkit-grabbing;
@@ -877,20 +957,30 @@
             display: flex;
         }
 
+        /* Эффект наведения при слиянии в папку */
+        .app-item.drop-target .icon-container,
+        .app-item.drop-target-icon .icon-container {
+            transform: scale(1.3) !important;
+            animation: none !important;
+            z-index: 50;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.6), 0 0 10px rgba(0, 0, 0, 0.3);
+            filter: brightness(1.1);
+        }
+
         /* --- DRAGGING STYLES --- */
         .sortable-drag .icon-container {
-            animation: none !important; 
+            animation: none !important;
             transform: scale(1.15) !important;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
             z-index: 999;
             cursor: grabbing !important;
             cursor: -webkit-grabbing !important;
         }
 
         .sortable-drag {
-            opacity: 1 !important; 
+            opacity: 1 !important;
         }
-        
+
         .sortable-drag .delete-btn {
             opacity: 0;
         }
@@ -898,17 +988,18 @@
         .sortable-ghost .icon-container {
             opacity: 0;
         }
+
         .sortable-ghost .app-name {
             opacity: 0;
         }
-        
+
         .sortable-ghost {
             border-radius: 14px;
-            background: rgba(255,255,255,0.05); 
+            background: rgba(255, 255, 255, 0.05);
         }
-        
+
         /* --- СТИЛИ ДЛЯ ОБОЕВ И ПОЛЗУНКОВ --- */
-        
+
         .wallpaper-preview-container {
             width: 100%;
             height: 130px;
@@ -916,7 +1007,7 @@
             position: relative;
             overflow: hidden;
             margin-bottom: 15px;
-            border: 1px solid rgba(0,0,0,0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .wallpaper-preview-bg {
@@ -935,7 +1026,7 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             color: white;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 12px;
@@ -946,7 +1037,10 @@
             gap: 6px;
             transition: transform 0.1s;
         }
-        .wp-change-btn:active { transform: scale(0.95); }
+
+        .wp-change-btn:active {
+            transform: scale(0.95);
+        }
 
         .slider-group {
             display: flex;
@@ -954,7 +1048,10 @@
             gap: 8px;
             margin-bottom: 12px;
         }
-        .slider-group:last-child { margin-bottom: 0; }
+
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
 
         .slider-header {
             display: flex;
@@ -963,6 +1060,7 @@
             color: #000;
             font-weight: 500;
         }
+
         .slider-header span:last-child {
             color: #8E8E93;
             font-weight: 400;
@@ -979,19 +1077,19 @@
             padding: 0;
             margin: 0;
         }
-        
+
         .ios-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             width: 20px;
             height: 20px;
             border-radius: 50%;
             background: #FFFFFF;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            border: 0.5px solid rgba(0,0,0,0.04);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            border: 0.5px solid rgba(0, 0, 0, 0.04);
             cursor: pointer;
             transition: transform 0.1s;
         }
-        
+
         .ios-slider::-webkit-slider-thumb:active {
             transform: scale(1.1);
         }
@@ -1003,7 +1101,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.4);
+            background: rgba(0, 0, 0, 0.4);
             z-index: 2000;
             display: flex;
             align-items: center;
@@ -1013,11 +1111,12 @@
             transition: all 0.2s ease;
             backdrop-filter: blur(3px);
         }
+
         .wp-modal-overlay.active {
             opacity: 1;
             visibility: visible;
         }
-        
+
         .wp-modal-card {
             background: white;
             width: 85%;
@@ -1026,8 +1125,9 @@
             padding: 20px;
             transform: scale(0.95);
             transition: transform 0.2s ease;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
         }
+
         .wp-modal-overlay.active .wp-modal-card {
             transform: scale(1);
         }
@@ -1044,8 +1144,9 @@
             gap: 10px;
             margin-top: 15px;
         }
-        
-        .wp-btn-cancel, .wp-btn-save {
+
+        .wp-btn-cancel,
+        .wp-btn-save {
             flex: 1;
             padding: 10px;
             border-radius: 8px;
@@ -1054,22 +1155,35 @@
             border: none;
             cursor: pointer;
         }
-        .wp-btn-cancel { background: #F2F2F7; color: #000; }
-        .wp-btn-save { background: #34C759; color: white; }
+
+        .wp-btn-cancel {
+            background: #F2F2F7;
+            color: #000;
+        }
+
+        .wp-btn-save {
+            background: #34C759;
+            color: white;
+        }
 
         /* Блокировка скролла при открытой папке */
-body.folder-open { overflow: hidden; }
+        body.folder-open {
+            overflow: hidden;
+        }
 
-/* Анимация обоев */
-.global-wallpaper-blurred { transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform; }
+        /* Анимация обоев */
+        .global-wallpaper-blurred {
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: transform;
+        }
 
-/* Анимация главной сетки при открытии папки */
-.app-grid {
-    transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-    transform-origin: center center;
-}
+        /* Анимация главной сетки при открытии папки */
+        .app-grid {
+            transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            transform-origin: center center;
+        }
 
-/* --- FOLDER OVERLAY UI --- */
+        /* --- FOLDER OVERLAY UI --- */
         .folder-overlay {
             position: fixed;
             top: 0;
@@ -1082,7 +1196,7 @@ body.folder-open { overflow: hidden; }
             align-items: center;
             justify-content: flex-start;
             padding-top: 15vh;
-            
+
             /* Скрываем сам блок, но не анимируем его прозрачность */
             visibility: hidden;
             /* Задержка закрытия visibility, чтобы успела проиграть анимация фона */
@@ -1101,15 +1215,15 @@ body.folder-open { overflow: hidden; }
             left: 0;
             width: 100%;
             height: 100%;
-            
+
             /* Сразу ставим финальный блюр, но скрываем слой полностью */
             background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(30px) saturate(180%);
             -webkit-backdrop-filter: blur(30px) saturate(180%);
-            
-            opacity: 0; 
+
+            opacity: 0;
             z-index: -1;
-            
+
             /* Плавная анимация только прозрачности */
             transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1);
             will-change: opacity;
@@ -1125,7 +1239,7 @@ body.folder-open { overflow: hidden; }
             display: flex;
             flex-direction: column;
             align-items: center;
-            
+
             /* Начальное состояние контента: чуть меньше и прозрачный */
             opacity: 0;
             transform: scale(0.9);
@@ -1141,7 +1255,7 @@ body.folder-open { overflow: hidden; }
             font-size: 34px;
             font-weight: 700;
             margin-bottom: 20px;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             text-align: left;
             width: 90%;
             padding-left: 5px;
@@ -1173,35 +1287,50 @@ body.folder-open { overflow: hidden; }
 
         /* --- FINAL ROUND MENU STYLES --- */
         .ios-modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             /* Только легкое затемнение, без блюра фона */
-            background: rgba(0, 0, 0, 0.25); 
+            background: rgba(0, 0, 0, 0.25);
             z-index: 5000;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
             transition: opacity 0.2s ease;
         }
-        .ios-modal-overlay.active { opacity: 1; visibility: visible; }
+
+        .ios-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
 
         .ios-modal {
             width: 280px;
             /* Темное меню с высокой прозрачностью и сильным блюром внутри */
-            background: rgba(28, 28, 30, 0.7); 
+            background: rgba(28, 28, 30, 0.7);
             backdrop-filter: blur(25px) saturate(160%);
             -webkit-backdrop-filter: blur(25px) saturate(160%);
-            
-            border-radius: 30px; /* Очень круглые края */
+
+            border-radius: 30px;
+            /* Очень круглые края */
             overflow: hidden;
-            display: flex; flex-direction: column;
+            display: flex;
+            flex-direction: column;
             text-align: center;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-            
-            transform: scale(1.1); opacity: 0;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+
+            transform: scale(1.1);
+            opacity: 0;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
         .ios-modal-overlay.active .ios-modal {
-            transform: scale(1); opacity: 1;
+            transform: scale(1);
+            opacity: 1;
         }
 
         .ios-modal-text {
@@ -1210,52 +1339,104 @@ body.folder-open { overflow: hidden; }
 
         .ios-modal h3 {
             margin: 0 0 4px 0;
-            font-size: 17px; font-weight: 600; color: #fff;
+            font-size: 17px;
+            font-weight: 600;
+            color: #fff;
         }
 
         .ios-modal p {
-            margin: 0; font-size: 13px; color: rgba(255, 255, 255, 0.5);
+            margin: 0;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
             line-height: 1.4;
         }
 
         .ios-modal-actions {
-            display: flex; flex-direction: column;
-            padding: 0 12px 12px 12px; /* Отступы для кнопок */
-            gap: 8px;
+            display: flex;
+            flex-direction: column;
+            padding: 0 12px 14px 12px;
+            gap: 10px;
         }
 
         .ios-btn {
-            /* Полностью прозрачные кнопки (фон берется от меню) */
-            background: rgba(255, 255, 255, 0.08); 
+            background: rgba(255, 255, 255, 0.08);
             border: none;
-            padding: 14px; 
-            font-size: 17px; 
+            padding: 14px;
+            font-size: 17px;
             cursor: pointer;
             width: 100%;
-            border-radius: 18px; /* Скругление самих кнопок */
+            border-radius: 18px;
             transition: background 0.1s;
         }
-        
-        /* При нажатии кнопка чуть подсвечивается */
-        .ios-btn:active { 
-            background: rgba(255, 255, 255, 0.15); 
+
+        .ios-btn:active {
+            background: rgba(255, 255, 255, 0.15);
         }
 
-        /* Кнопка удалить: фон прозрачный, только текст красный */
-        .ios-btn.delete { 
-            color: #FF453A; 
+        .ios-btn.delete {
+            color: #FF453A;
             font-weight: 500;
         }
 
-        /* Кнопка отмены: белый текст */
-        .ios-btn.cancel { 
-            color: #FFFFFF; 
-            font-weight: 600; 
+        .ios-btn.ungroup {
+            color: #FFFFFF;
+            font-weight: 500;
         }
-        
-        .ios-divider { display: none; }
+
+        .ios-btn.cancel {
+            color: #FFFFFF;
+            font-weight: 600;
+        }
+
+        .ios-divider {
+            display: none;
+        }
+
+        /* Зона выноса из папки */
+        .remove-from-folder-zone {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            width: 85%;
+            max-width: 350px;
+            height: 60px;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 15px;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .remove-from-folder-zone.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+
+        .remove-from-folder-zone.hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.8);
+            color: #fff;
+            transform: translateX(-50%) scale(1.05);
+            border-style: solid;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+        }
     </style>
 </head>
+
 <body>
 
     <div class="global-wallpaper-blurred"></div>
@@ -1263,7 +1444,7 @@ body.folder-open { overflow: hidden; }
 
     <div class="iphone-screen">
         <header id="header">
-            </header>
+        </header>
         <div class="menu-btn" id="menuBtn">
             <span></span><span></span><span></span>
         </div>
@@ -1278,21 +1459,24 @@ body.folder-open { overflow: hidden; }
                 <p id="iosModalDesc">Приложение будет удалено с главного экрана.</p>
             </div>
             <div class="ios-modal-actions">
-                <button id="iosModalConfirm" class="ios-btn delete">Удалить приложение</button>
-                <div class="ios-divider"></div>
+                <button id="iosModalUngroup" class="ios-btn ungroup">Разгрупировать папку</button>
+                <button id="iosModalConfirm" class="ios-btn delete">Удалить папку</button>
                 <button id="iosModalCancel" class="ios-btn cancel">Отменить</button>
             </div>
         </div>
     </div>
 
     <div id="folderOverlay" class="folder-overlay">
-    <div class="folder-overlay-bg"></div>
-    <div class="folder-content">
-        <h1 id="folderTitle" class="folder-title">Папка</h1>
-        <div id="folderGrid" class="folder-grid app-grid">
+        <div class="folder-overlay-bg"></div>
+        <div class="folder-content">
+            <div id="removeFromFolderZone" class="remove-from-folder-zone">
+                <span>Вынести из папки</span>
             </div>
+            <h1 id="folderTitle" class="folder-title">Папка</h1>
+            <div id="folderGrid" class="folder-grid app-grid">
+            </div>
+        </div>
     </div>
-</div>
 
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <aside class="sidebar" id="sidebar">
@@ -1303,7 +1487,8 @@ body.folder-open { overflow: hidden; }
             <div class="sidebar-tabs">
                 <div class="tab-item active" id="tabAdd">
                     <span class="tab-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="3" width="7" height="7"></rect>
                             <rect x="14" y="3" width="7" height="7"></rect>
                             <rect x="14" y="14" width="7" height="7"></rect>
@@ -1313,18 +1498,21 @@ body.folder-open { overflow: hidden; }
                     <span class="tab-label">Приложения</span>
                 </div>
                 <div class="tab-item" id="tabSettings">
-                <span class="tab-icon">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg>
-                </span>
-                <span class="tab-label">Настройки</span>
-            </div>
+                    <span class="tab-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                            </path>
+                        </svg>
+                    </span>
+                    <span class="tab-label">Настройки</span>
+                </div>
             </div>
         </div>
         <div class="sidebar-content" id="sidebarContent">
-            </div>
+        </div>
     </aside>
 
     <script type="module">
@@ -1358,13 +1546,13 @@ body.folder-open { overflow: hidden; }
             { name: 'GitHub', url: 'https://github.com', icon: 'https://www.google.com/s2/favicons?domain=github.com&sz=128' },
             { name: 'Telegram', url: 'https://telegram.org', icon: 'https://www.google.com/s2/favicons?domain=telegram.org&sz=128' },
             { name: 'YouTube', url: 'https://youtube.com', icon: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128' },
-            { 
-                type: "folder", 
-                name: "Папка", 
+            {
+                type: "folder",
+                name: "Папка",
                 items: [
                     { name: 'Google', url: 'https://google.com', icon: 'https://www.google.com/s2/favicons?domain=google.com&sz=128' },
                     { name: 'YouTube', url: 'https://youtube.com', icon: 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128' }
-                ] 
+                ]
             },
             { name: 'Notion', url: 'https://notion.so', icon: 'https://www.google.com/s2/favicons?domain=notion.so&sz=128' }
         ];
@@ -1381,18 +1569,18 @@ body.folder-open { overflow: hidden; }
             if (silent && animationController) {
                 animationController.disable();
             }
-            grid.innerHTML = ''; 
-            
+            grid.innerHTML = '';
+
             appsArray.forEach((app, index) => {
                 let newItemHTML;
                 const tempDiv = document.createElement('div');
-                
+
                 if (app.type === 'folder') {
                     // --- ГЕНЕРАЦИЯ МИНИ-СЕТКИ (3x3) ---
                     // Берём первые 9 элементов из папки
                     const previewItems = app.items ? app.items.slice(0, 9) : [];
                     let miniGridHTML = '';
-                    
+
                     previewItems.forEach(item => {
                         miniGridHTML += `<img src="${item.icon}" class="mini-icon" onerror="this.style.opacity='0'">`;
                     });
@@ -1409,10 +1597,10 @@ body.folder-open { overflow: hidden; }
                         </div>
                         <span class="app-name">${app.name}</span>
                     </div>`;
-                    
+
                     tempDiv.innerHTML = newItemHTML;
                     const el = tempDiv.firstElementChild;
-                    
+
                     // Обработчик открытия папки
                     const trigger = el.querySelector('.folder-trigger');
                     trigger.onclick = (e) => {
@@ -1438,11 +1626,11 @@ body.folder-open { overflow: hidden; }
                     grid.appendChild(tempDiv.firstElementChild);
                 }
             });
-            
+
             initAppItems();
-            
+
             if (silent && animationController) {
-                setTimeout(() => { animationController.enable(); }, 100); 
+                setTimeout(() => { animationController.enable(); }, 100);
             }
         }
 
@@ -1463,21 +1651,21 @@ body.folder-open { overflow: hidden; }
                 items.forEach(item => {
                     const nameSpan = item.querySelector('.app-name');
                     const name = nameSpan ? nameSpan.innerText : '';
-                    
+
                     // Ищем элемент в старом кэше по имени
                     const found = currentCache.find(a => a.name === name);
                     if (found) {
                         appsToSave.push(found);
                     }
                 });
-                
+
                 // Защита от потери данных: если длина списка изменилась подозрительно (например баг DOM),
                 // лучше не сохранять, чем сохранить пустой список. 
                 // Но при Drag&Drop длина не должна меняться.
                 if (appsToSave.length === 0 && items.length > 0) {
-                     // Что-то пошло не так при парсинге, не сохраняем
-                     console.warn("Save failed: DOM mismatch");
-                     return;
+                    // Что-то пошло не так при парсинге, не сохраняем
+                    console.warn("Save failed: DOM mismatch");
+                    return;
                 }
             }
 
@@ -1494,8 +1682,8 @@ body.folder-open { overflow: hidden; }
         if (cachedData) {
             try {
                 const parsed = JSON.parse(cachedData);
-                renderAppsToDOM(parsed); 
-            } catch(e) { renderAppsToDOM(DEFAULT_APPS); }
+                renderAppsToDOM(parsed);
+            } catch (e) { renderAppsToDOM(DEFAULT_APPS); }
         } else { renderAppsToDOM(DEFAULT_APPS); }
 
         // --- UI & EVENTS ---
@@ -1517,10 +1705,157 @@ body.folder-open { overflow: hidden; }
         const appGrid = document.getElementById('appGrid');
         const animationController = autoAnimate(appGrid, { duration: 250, easing: 'ease-in-out' });
 
+        let hoveredTargetEl = null;
+
+        const checkHover = (e) => {
+            const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+
+            if (!clientX || !clientY) return;
+
+            const dragEl = document.querySelector('.sortable-drag');
+            let originalPointerEvents = '';
+            if (dragEl) {
+                originalPointerEvents = dragEl.style.pointerEvents;
+                dragEl.style.pointerEvents = 'none';
+            }
+
+            const target = document.elementFromPoint(clientX, clientY);
+            if (dragEl) dragEl.style.pointerEvents = originalPointerEvents;
+
+            const itemEl = target?.closest('.app-item');
+
+            const isTargetFolder = itemEl?.querySelector('.folder-trigger') !== null;
+            const isDraggingFolder = dragEl?.querySelector('.folder-trigger') !== null;
+            const isDragged = itemEl === dragEl || itemEl?.classList.contains('sortable-ghost');
+
+            if (itemEl && !isDraggingFolder && !isDragged) {
+                // ПРОВЕРКА ЦЕНТРА
+                const rect = itemEl.getBoundingClientRect();
+                const bufferX = rect.width * 0.25;
+                const bufferY = rect.height * 0.15;
+
+                const isInsideBuffer = (
+                    clientX > rect.left + bufferX &&
+                    clientX < rect.right - bufferX &&
+                    clientY > rect.top + bufferY &&
+                    clientY < rect.bottom - bufferY
+                );
+
+                if (isInsideBuffer) {
+                    if (hoveredTargetEl !== itemEl) {
+                        if (hoveredTargetEl) hoveredTargetEl.classList.remove('drop-target', 'drop-target-icon');
+                        hoveredTargetEl = itemEl;
+                        if (isTargetFolder) {
+                            hoveredTargetEl.classList.add('drop-target');
+                        } else {
+                            hoveredTargetEl.classList.add('drop-target-icon');
+                        }
+                    }
+                    return;
+                }
+            }
+
+            if (hoveredTargetEl) {
+                hoveredTargetEl.classList.remove('drop-target', 'drop-target-icon');
+                hoveredTargetEl = null;
+            }
+        };
+
         let sortable = Sortable.create(appGrid, {
             animation: 300, delay: 200, delayOnTouchOnly: true, disabled: true, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', easing: "cubic-bezier(0.25, 1, 0.5, 1)", swapThreshold: 0.5, invertSwap: true, direction: 'horizontal', forceFallback: true, fallbackClass: "sortable-drag", fallbackOnBody: true,
-            onStart: function () { animationController.disable(); document.body.style.cursor = 'grabbing'; if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(10); },
-            onEnd: function () { animationController.enable(); document.body.style.cursor = ''; saveCurrentState(); }
+            onStart: function () {
+                animationController.disable();
+                document.body.style.cursor = 'grabbing';
+                if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(10);
+                document.addEventListener('mousemove', checkHover);
+                document.addEventListener('touchmove', checkHover);
+            },
+            onMove: function (evt) {
+                // Если мы тащим ПАПКУ - всегда разрешаем своп
+                const isDraggingFolder = evt.dragged.querySelector('.folder-trigger') !== null;
+                if (isDraggingFolder) return true;
+
+                // Если мы тащим САЙТ и активировали hoveredTargetEl (курсор в центре), блокируем своп
+                if (hoveredTargetEl && hoveredTargetEl === evt.related) {
+                    return false;
+                }
+                return true;
+            },
+            onEnd: function (evt) {
+                document.removeEventListener('mousemove', checkHover);
+                document.removeEventListener('touchmove', checkHover);
+                animationController.enable();
+                document.body.style.cursor = '';
+
+                if (hoveredTargetEl) {
+                    hoveredTargetEl.classList.remove('drop-target', 'drop-target-icon');
+
+                    const draggedName = evt.item.querySelector('.app-name')?.innerText;
+                    const folderName = hoveredTargetEl.querySelector('.app-name')?.innerText;
+
+                    // Проверка: нельзя класть папку в папку
+                    const isDraggedFolder = evt.item.querySelector('.folder-trigger') !== null;
+
+                    if (draggedName && folderName && !isDraggedFolder) {
+                        const currentApps = getAppsFromDOM();
+                        const draggedIdx = currentApps.findIndex(a => a.name === draggedName && a.type !== 'folder');
+                        const folderIdx = currentApps.findIndex(a => a.name === folderName && a.type === 'folder');
+
+                        if (draggedIdx !== -1 && folderIdx !== -1 && draggedIdx !== folderIdx) {
+                            const draggedApp = currentApps[draggedIdx];
+                            const folder = currentApps[folderIdx];
+
+                            if (!folder.items) folder.items = [];
+                            folder.items.push(draggedApp);
+                            currentApps.splice(draggedIdx, 1);
+
+                            saveCurrentState(currentApps);
+                            renderAppsToDOM(currentApps);
+
+                            hoveredTargetEl = null;
+                            return;
+                        }
+                    }
+                }
+
+                // --- НОВАЯ ЛОГИКА: СОЗДАНИЕ ПАПКИ ---
+                if (hoveredTargetEl) {
+                    const draggedName = evt.item.querySelector('.app-name')?.innerText;
+                    const targetName = hoveredTargetEl.querySelector('.app-name')?.innerText;
+                    const isTargetFolder = hoveredTargetEl.querySelector('.folder-trigger') !== null;
+
+                    if (draggedName && targetName && !isTargetFolder) {
+                        const currentApps = getAppsFromDOM();
+                        const draggedIdx = currentApps.findIndex(a => a.name === draggedName && a.type !== 'folder');
+                        const targetIdx = currentApps.findIndex(a => a.name === targetName && a.type !== 'folder');
+
+                        if (draggedIdx !== -1 && targetIdx !== -1 && draggedIdx !== targetIdx) {
+                            const newFolder = {
+                                type: "folder",
+                                name: "Новая папка",
+                                items: [currentApps[targetIdx], currentApps[draggedIdx]]
+                            };
+
+                            if (draggedIdx < targetIdx) {
+                                currentApps.splice(targetIdx, 1, newFolder);
+                                currentApps.splice(draggedIdx, 1);
+                            } else {
+                                currentApps.splice(draggedIdx, 1);
+                                currentApps.splice(targetIdx, 1, newFolder);
+                            }
+
+                            saveCurrentState(currentApps);
+                            renderAppsToDOM(currentApps);
+                            hoveredTargetEl = null;
+                            return;
+                        }
+                    }
+                }
+
+                hoveredTargetEl = null;
+                saveCurrentState();
+            }
         });
 
         function initAppItems() {
@@ -1528,54 +1863,83 @@ body.folder-open { overflow: hidden; }
             appItems.forEach(item => {
                 const iconContainer = item.querySelector('.icon-container');
                 const link = item.querySelector('a');
-                
+
                 // Удаление кнопки, если была (чтобы не дублировать при перерисовке)
                 const existingBtn = iconContainer.querySelector('.delete-btn');
                 if (existingBtn) existingBtn.remove();
-                
+
                 // Создание кнопки удаления
+                const isFolder = item.querySelector('.folder-trigger') !== null;
+                const type = isFolder ? 'folder' : 'site';
+
                 const deleteBtn = document.createElement('div');
                 deleteBtn.className = 'delete-btn';
                 iconContainer.appendChild(deleteBtn);
-                
-                item.oncontextmenu = (e) => { e.preventDefault(); enableEditMode(); };
-                
-                // --- ЛОГИКА УДАЛЕНИЯ С МОДАЛЬНЫМ ОКНОМ ---
-                deleteBtn.onclick = (e) => { 
-                    e.preventDefault(); 
-                    e.stopPropagation(); 
-                    
-                    // Получаем имя и тип (папка или сайт)
-                    const nameEl = item.querySelector('.app-name');
-                    const name = nameEl ? nameEl.innerText : 'Приложение';
-                    const isFolder = item.querySelector('.folder-icon') !== null; // Проверка: это папка?
-                    const type = isFolder ? 'folder' : 'site';
 
-                    // Вызываем окно подтверждения
-                    confirmModal.show(name, type, () => {
-                        item.remove(); 
-                        saveCurrentState(); // Сохраняем удаление
-                    });
+                // --- ЛОГИКА УДАЛЕНИЯ С МОДАЛЬНЫМ ОКНОМ ---
+                deleteBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const nameEl = item.querySelector('.app-name');
+                    const name = nameEl ? nameEl.innerText : (isFolder ? 'Папка' : 'Приложение');
+
+                    if (isFolder) {
+                        confirmModal.show(name, 'folder', {
+                            onConfirm: () => {
+                                // Просто удаляем папку (и всё внутри)
+                                item.remove();
+                                saveCurrentState();
+                            },
+                            onUngroup: () => {
+                                // Разгруппировать: достаем все элементы и кладем на главный экран
+                                const currentApps = getAppsFromDOM();
+                                const folderIdx = currentApps.findIndex(a => a.name === name && a.type === 'folder');
+
+                                if (folderIdx !== -1) {
+                                    const folder = currentApps[folderIdx];
+                                    const items = folder.items || [];
+
+                                    // Удаляем папку
+                                    currentApps.splice(folderIdx, 1);
+
+                                    // Вставляем элементы папки на место, где была папка
+                                    currentApps.splice(folderIdx, 0, ...items);
+
+                                    saveCurrentState(currentApps);
+                                    renderAppsToDOM(currentApps);
+                                }
+                            }
+                        });
+                    } else {
+                        confirmModal.show(name, 'site', () => {
+                            item.remove();
+                            saveCurrentState();
+                        });
+                    }
                 };
-                
-                if(link) { 
-                    link.onclick = (e) => { 
-                        if (appGrid.classList.contains('edit-mode')) { e.preventDefault(); } 
-                    }; 
+
+                item.oncontextmenu = (e) => { e.preventDefault(); enableEditMode(); };
+
+
+                if (link) {
+                    link.onclick = (e) => {
+                        if (appGrid.classList.contains('edit-mode')) { e.preventDefault(); }
+                    };
                 }
             });
         }
-        
-        window.enableEditMode = function() { appGrid.classList.add('edit-mode'); sortable.option("disabled", false); }
-        window.disableEditMode = function() { appGrid.classList.remove('edit-mode'); sortable.option("disabled", true); }
-        
+
+        window.enableEditMode = function () { appGrid.classList.add('edit-mode'); sortable.option("disabled", false); }
+        window.disableEditMode = function () { appGrid.classList.remove('edit-mode'); sortable.option("disabled", true); }
+
         // ОБНОВЛЕННЫЙ ОБРАБОТЧИК КЛИКОВ (Блокируем закрытие, если клик в папке)
-        document.addEventListener('click', (e) => { 
+        document.addEventListener('click', (e) => {
             if (e.target.closest('.folder-overlay')) return; // Игнорируем клики внутри открытой папки
 
-            if (!e.target.closest('.app-item') && !e.target.closest('.delete-btn') && !e.target.closest('.menu-btn') && !e.target.closest('.sidebar') && !e.target.closest('.add-btn') && !e.target.closest('.editor-overlay')) { 
-                window.disableEditMode(); 
-            } 
+            if (!e.target.closest('.app-item') && !e.target.closest('.delete-btn') && !e.target.closest('.menu-btn') && !e.target.closest('.sidebar') && !e.target.closest('.add-btn') && !e.target.closest('.editor-overlay')) {
+                window.disableEditMode();
+            }
         });
 
         // --- ИНИЦИАЛИЗАЦИЯ FolderManager (Вставьте это!) ---
@@ -1604,10 +1968,10 @@ body.folder-open { overflow: hidden; }
                 window.auth.onAuthStateChanged(async (user) => {
                     // Обновляем настройки в сайдбаре при смене пользователя
                     sidebarManager.refreshSettingsTab();
-                    
+
                     if (user) {
                         console.log("User logged in:", user.uid);
-                        
+
                         await wallpaperManager.loadFromCloud();
 
                         if (window.dbApi) {
@@ -1619,18 +1983,18 @@ body.folder-open { overflow: hidden; }
                                     if (isGlass) document.body.classList.add('glass-mode');
                                     else document.body.classList.remove('glass-mode');
                                     localStorage.setItem('glassEffect', isGlass.toString());
-                                    
+
                                     // Обновляем UI чекбокса, если он сейчас отрендерен
                                     const toggle = document.getElementById('globalGlassToggle');
                                     if (toggle) toggle.checked = isGlass;
                                 }
-                                
+
                                 // Загрузка Колонок
                                 if (typeof cloudSettings.gridColumns !== 'undefined') {
                                     const cols = cloudSettings.gridColumns;
                                     document.documentElement.style.setProperty('--grid-cols', cols);
                                     localStorage.setItem('gridColumns', cols);
-                                    
+
                                     // Обновляем UI слайдера, если он сейчас отрендерен
                                     const slider = document.getElementById('colCountSlider');
                                     const valDisplay = document.getElementById('colCountValue');
@@ -1645,12 +2009,12 @@ body.folder-open { overflow: hidden; }
                             if (cloudApps && cloudApps.length > 0) {
                                 const currentLocal = localStorage.getItem(STORAGE_KEY);
                                 if (JSON.stringify(cloudApps) !== currentLocal) {
-                                    renderAppsToDOM(cloudApps, true); 
+                                    renderAppsToDOM(cloudApps, true);
                                     localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudApps));
                                 }
-                            } else { 
+                            } else {
                                 // Если в облаке пусто, сохраняем локальное состояние туда
-                                saveCurrentState(getAppsFromDOM()); 
+                                saveCurrentState(getAppsFromDOM());
                             }
                         }
                     } else {
@@ -1664,4 +2028,5 @@ body.folder-open { overflow: hidden; }
 
     </script>
 </body>
+
 </html>

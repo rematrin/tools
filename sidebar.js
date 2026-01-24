@@ -1,30 +1,30 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { 
-    getAuth, 
-    createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword, 
-    signOut, 
-    onAuthStateChanged, 
+import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged,
     updateProfile,
     GoogleAuthProvider,
-    signInWithPopup       
+    signInWithPopup
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { 
-    getFirestore, 
-    doc, 
-    setDoc, 
-    getDoc 
+import {
+    getFirestore,
+    doc,
+    setDoc,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- КОНФИГ FIREBASE ---
 const firebaseConfig = {
-  apiKey: "AIzaSyDBNCQo3rYgmDZkZrGKT-g2t0LlpsfH1Pg",
-  authDomain: "tools-c98fd.firebaseapp.com",
-  projectId: "tools-c98fd",
-  storageBucket: "tools-c98fd.firebasestorage.app",
-  messagingSenderId: "595986762798",
-  appId: "1:595986762798:web:b8c05cddcb0f3a610163bf",
-  measurementId: "G-X3Z1KH8760"
+    apiKey: "AIzaSyDBNCQo3rYgmDZkZrGKT-g2t0LlpsfH1Pg",
+    authDomain: "tools-c98fd.firebaseapp.com",
+    projectId: "tools-c98fd",
+    storageBucket: "tools-c98fd.firebasestorage.app",
+    messagingSenderId: "595986762798",
+    appId: "1:595986762798:web:b8c05cddcb0f3a610163bf",
+    measurementId: "G-X3Z1KH8760"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -95,7 +95,7 @@ window.authApi = {
     register: async (email, password, name) => {
         try {
             const userCred = await createUserWithEmailAndPassword(auth, email, password);
-            if(name) await updateProfile(userCred.user, { displayName: name });
+            if (name) await updateProfile(userCred.user, { displayName: name });
         } catch (e) { alert("Ошибка регистрации: " + e.message); }
     },
     google: async () => {
@@ -117,8 +117,8 @@ export function initSidebarManager(context) {
     const closeMenuBtn = document.getElementById('closeMenuBtn');
     const tabAdd = document.getElementById('tabAdd');
     const tabSettings = document.getElementById('tabSettings');
-    let authMode = 'login'; 
-    let folderOpenTimer = null; 
+    let authMode = 'login';
+    let folderOpenTimer = null;
 
     // Добавляем стили для вложенности и D&D
     if (!document.getElementById('sidebar-dnd-styles')) {
@@ -185,33 +185,33 @@ export function initSidebarManager(context) {
 
     // Открытие/Закрытие меню
     function openMenu() {
-        sidebar.classList.add('active'); 
-        sidebarOverlay.classList.add('active'); 
-        document.body.style.overflow = 'hidden'; 
+        sidebar.classList.add('active');
+        sidebarOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
         if (!tabSettings.classList.contains('active')) { renderAddTab(); }
     }
 
     function closeMenu() {
-        sidebar.classList.remove('active'); 
-        sidebarOverlay.classList.remove('active'); 
-        document.body.style.overflow = ''; 
+        sidebar.classList.remove('active');
+        sidebarOverlay.classList.remove('active');
+        document.body.style.overflow = '';
     }
 
     // Привязка событий
     menuBtn.addEventListener('click', openMenu);
     closeMenuBtn.addEventListener('click', closeMenu);
     sidebarOverlay.addEventListener('click', closeMenu);
-    
-    tabAdd.addEventListener('click', () => { 
-        tabAdd.classList.add('active'); 
-        tabSettings.classList.remove('active'); 
-        renderAddTab(); 
+
+    tabAdd.addEventListener('click', () => {
+        tabAdd.classList.add('active');
+        tabSettings.classList.remove('active');
+        renderAddTab();
     });
-    
-    tabSettings.addEventListener('click', () => { 
-        tabSettings.classList.add('active'); 
-        tabAdd.classList.remove('active'); 
-        renderSettingsTab(); 
+
+    tabSettings.addEventListener('click', () => {
+        tabSettings.classList.add('active');
+        tabAdd.classList.remove('active');
+        renderSettingsTab();
     });
 
     // --- ЛОГИКА ВКЛАДКИ "ПРИЛОЖЕНИЯ" ---
@@ -236,7 +236,7 @@ export function initSidebarManager(context) {
 
             <div id="sidebarFoldersList" class="sidebar-app-list" style="margin-bottom: 40px;"></div>
         `;
-        
+
         // Обработчик "Добавить сайт"
         setTimeout(() => {
             const btn = document.getElementById('btnOpenEditor');
@@ -253,14 +253,14 @@ export function initSidebarManager(context) {
                             url: finalUrl,
                             icon: data.icon
                         };
-                        const currentApps = context.getAppsFromDOM(); 
+                        const currentApps = context.getAppsFromDOM();
                         currentApps.push(newApp);
-                        
+
                         context.renderAppsToDOM(currentApps);
                         context.saveCurrentState(currentApps);
-                        
+
                         renderSidebarAppsList();
-                        closeMenu(); 
+                        closeMenu();
                     });
                 });
             }
@@ -276,29 +276,29 @@ export function initSidebarManager(context) {
                     };
                     const currentApps = context.getAppsFromDOM();
                     currentApps.push(newFolder);
-                    
+
                     context.renderAppsToDOM(currentApps);
                     context.saveCurrentState(currentApps);
-                    
+
                     renderSidebarAppsList();
                 });
             }
         }, 0);
-        
+
         renderSidebarAppsList();
     }
 
     // --- РЕНДЕР СПИСКОВ И D&D ---
-    window.renderSidebarAppsList = function() {
+    window.renderSidebarAppsList = function () {
         const appsListContainer = document.getElementById('sidebarAppsList');
         const foldersListContainer = document.getElementById('sidebarFoldersList');
-        
+
         if (!appsListContainer || !foldersListContainer) return;
-        
+
         // Сохранение состояния
         const openFolderNames = new Set();
         document.querySelectorAll('.sidebar-folder-row.open').forEach(row => {
-            const nameEl = row.querySelector('.folder-name-text'); 
+            const nameEl = row.querySelector('.folder-name-text');
             const name = nameEl ? nameEl.innerText : row._appData?.name;
             if (name) openFolderNames.add(name);
         });
@@ -318,12 +318,12 @@ export function initSidebarManager(context) {
             empty.style.textAlign = 'center';
             empty.style.color = '#8E8E93';
             empty.innerText = 'Список пуст';
-            empty.className = 'empty-placeholder'; 
+            empty.className = 'empty-placeholder';
             appsListContainer.appendChild(empty);
         }
 
         sites.forEach((app) => {
-            const row = createSiteRow(app, false); 
+            const row = createSiteRow(app, false);
             appsListContainer.appendChild(row);
         });
 
@@ -335,7 +335,7 @@ export function initSidebarManager(context) {
         folders.forEach((folder) => {
             const folderRow = document.createElement('div');
             folderRow.className = 'sidebar-folder-row';
-            
+
             if (openFolderNames.has(folder.name)) {
                 folderRow.classList.add('open');
             }
@@ -345,13 +345,13 @@ export function initSidebarManager(context) {
             folderRow.style.background = '#fff';
             folderRow.style.borderBottom = '1px solid #E5E5EA';
 
-            folderRow._appData = folder; 
+            folderRow._appData = folder;
 
             // Заголовок папки
             const header = document.createElement('div');
-            header.className = 'sidebar-app-row'; 
-            header.style.borderBottom = 'none'; 
-            
+            header.className = 'sidebar-app-row';
+            header.style.borderBottom = 'none';
+
             // ИЗМЕНЕНИЕ: Убрали количество штук
             header.innerHTML = `
                 <div class="folder-arrow" onclick="toggleFolder(this)">
@@ -380,24 +380,24 @@ export function initSidebarManager(context) {
                     </button>
                 </div>
             `;
-            
+
             const nestedContainer = document.createElement('div');
             nestedContainer.className = 'sidebar-nested-list';
-            
+
             if (folder.items && folder.items.length > 0) {
                 folder.items.forEach(subItem => {
-                    const subRow = createSiteRow(subItem, true); 
+                    const subRow = createSiteRow(subItem, true);
                     nestedContainer.appendChild(subRow);
                 });
             } else {
-                nestedContainer.style.minHeight = "40px"; 
+                nestedContainer.style.minHeight = "40px";
             }
 
             folderRow.appendChild(header);
             folderRow.appendChild(nestedContainer);
             foldersListContainer.appendChild(folderRow);
         });
-        
+
         initSidebarDragAndDrop();
     }
 
@@ -405,8 +405,8 @@ export function initSidebarManager(context) {
         const row = document.createElement('div');
         row.className = 'sidebar-app-row';
         if (isNested) row.classList.add('nested-item-bg');
-        
-        row._appData = app; 
+
+        row._appData = app;
 
         row.innerHTML = `
             <img src="${app.icon}" class="sidebar-app-icon" onerror="this.src='https://via.placeholder.com/36?text=?'">
@@ -441,28 +441,28 @@ export function initSidebarManager(context) {
         const sitesGroupConfig = {
             name: 'sitesGroup',
             pull: true,
-            put: ['sitesGroup'] 
+            put: ['sitesGroup']
         };
 
         new Sortable(appsList, {
             group: sitesGroupConfig,
             animation: 250,
             swapThreshold: 0.65,
-            invertSwap: true, 
+            invertSwap: true,
             ghostClass: 'sortable-ghost',
             onEnd: handleDragEnd,
             onMove: function (evt) {
-                const related = evt.related; 
+                const related = evt.related;
                 if (!related) return;
 
                 const folderRow = related.closest('.sidebar-folder-row');
-                
+
                 if (folderRow && !folderRow.classList.contains('open')) {
                     if (!folderOpenTimer) {
                         folderOpenTimer = setTimeout(() => {
                             folderRow.classList.add('open');
                             folderOpenTimer = null;
-                        }, 600); 
+                        }, 600);
                     }
                 } else {
                     if (folderOpenTimer) {
@@ -475,7 +475,7 @@ export function initSidebarManager(context) {
 
         nestedLists.forEach(list => {
             new Sortable(list, {
-                group: sitesGroupConfig, 
+                group: sitesGroupConfig,
                 animation: 250,
                 swapThreshold: 0.65,
                 invertSwap: true,
@@ -487,11 +487,11 @@ export function initSidebarManager(context) {
 
         const foldersList = document.getElementById('sidebarFoldersList');
         new Sortable(foldersList, {
-            group: 'foldersGroup', 
+            group: 'foldersGroup',
             animation: 250,
             swapThreshold: 0.65,
             invertSwap: true,
-            handle: '.sidebar-folder-row', 
+            handle: '.sidebar-folder-row',
             onEnd: handleDragEnd
         });
     }
@@ -506,10 +506,10 @@ export function initSidebarManager(context) {
 
     function rebuildAndSaveState() {
         const newApps = [];
-        
+
         const appsList = document.getElementById('sidebarAppsList');
         const siteRows = Array.from(appsList.children).filter(el => el.classList.contains('sidebar-app-row'));
-        
+
         siteRows.forEach(row => {
             if (row._appData) {
                 newApps.push(row._appData);
@@ -520,9 +520,9 @@ export function initSidebarManager(context) {
         const folderRows = Array.from(foldersList.children).filter(el => el.classList.contains('sidebar-folder-row'));
 
         folderRows.forEach(fRow => {
-            const folderData = { ...fRow._appData }; 
-            folderData.items = []; 
-            
+            const folderData = { ...fRow._appData };
+            folderData.items = [];
+
             const nestedContainer = fRow.querySelector('.sidebar-nested-list');
             if (nestedContainer) {
                 const subRows = Array.from(nestedContainer.children).filter(el => el.classList.contains('sidebar-app-row'));
@@ -535,72 +535,39 @@ export function initSidebarManager(context) {
             newApps.push(folderData);
         });
 
-        context.renderAppsToDOM(newApps); 
-        context.saveCurrentState(newApps); 
+        context.renderAppsToDOM(newApps);
+        context.saveCurrentState(newApps);
         renderSidebarAppsList();
     }
 
     // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
-    
-    window.toggleFolder = function(element) {
+
+    window.toggleFolder = function (element) {
         const folderRow = element.closest('.sidebar-folder-row');
-        if(folderRow) folderRow.classList.toggle('open');
+        if (folderRow) folderRow.classList.toggle('open');
     };
 
-    window.startEditSite = function(btn) {
+    window.startEditSite = function (btn) {
         const row = btn.closest('.sidebar-app-row');
         const app = row._appData;
-        
-        const infoDiv = row.querySelector('.sidebar-app-info');
-        const actionsDiv = row.querySelector('.row-actions');
-        
-        // ИЗМЕНЕНИЕ: Текст кнопки и класс
-        infoDiv.innerHTML = `
-            <div class="sidebar-edit-wrapper">
-                <input type="text" class="sidebar-edit-input edit-name" value="${app.name}" placeholder="Название">
-                <input type="text" class="sidebar-edit-input edit-url" value="${app.url}" placeholder="URL">
-                <button class="edit-icon-btn-small" onclick="editIconFromRow(this)">Изменить иконку</button>
-            </div>
-        `;
 
-        actionsDiv.innerHTML = `
-            <button class="action-btn" onclick="renderSidebarAppsList()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
-            </button>
-            <button class="action-btn" onclick="saveSiteFromRow(this)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </button>
-        `;
-    };
-
-    window.saveSiteFromRow = function(btn) {
-        const row = btn.closest('.sidebar-app-row');
-        const nameInput = row.querySelector('.edit-name');
-        const urlInput = row.querySelector('.edit-url');
-        
-        if (nameInput.value && urlInput.value) {
-            row._appData.name = nameInput.value;
-            let u = urlInput.value;
-            if (!u.startsWith('http')) u = 'https://' + u;
-            row._appData.url = u;
-            rebuildAndSaveState();
-        }
-    };
-
-    window.editIconFromRow = function(btn) {
-        const row = btn.closest('.sidebar-app-row');
-        const app = row._appData;
-        
         context.iconEditor.open((newData) => {
-            app.icon = newData.icon;
-            rebuildAndSaveState(); 
+            if (newData.name) app.name = newData.name;
+            if (newData.url) {
+                let u = newData.url.trim();
+                if (u && !u.startsWith('http')) u = 'https://' + u;
+                app.url = u;
+            }
+            if (newData.icon) app.icon = newData.icon;
+
+            rebuildAndSaveState();
         }, { name: app.name, url: app.url, icon: app.icon });
     };
 
-    window.askDeleteSite = function(btn) {
+    window.askDeleteSite = function (btn) {
         const row = btn.closest('.sidebar-app-row');
         const actionsDiv = row.querySelector('.row-actions');
-        
+
         actionsDiv.innerHTML = `
             <div class="delete-confirm-container">
                 <span class="confirm-text" style="color:#FF3B30; font-size:12px;">Удалить?</span>
@@ -609,7 +576,7 @@ export function initSidebarManager(context) {
             </div>`;
     };
 
-    window.startEditFolder = function(btn) {
+    window.startEditFolder = function (btn) {
         const folderRow = btn.closest('.sidebar-folder-row');
         const header = folderRow.children[0];
         const infoDiv = header.querySelector('.sidebar-app-info');
@@ -621,7 +588,7 @@ export function initSidebarManager(context) {
                 <input type="text" class="sidebar-edit-input edit-folder-name" value="${app.name}" placeholder="Название папки">
             </div>
         `;
-        
+
         actionsDiv.innerHTML = `
              <button class="action-btn" onclick="renderSidebarAppsList()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/></svg>
@@ -632,20 +599,20 @@ export function initSidebarManager(context) {
         `;
     };
 
-    window.saveFolderFromRow = function(btn) {
+    window.saveFolderFromRow = function (btn) {
         const folderRow = btn.closest('.sidebar-folder-row');
         const nameInput = folderRow.querySelector('.edit-folder-name');
-        
+
         if (nameInput.value) {
             folderRow._appData.name = nameInput.value;
             rebuildAndSaveState();
         }
     };
 
-    window.askDeleteFolder = function(btn) {
+    window.askDeleteFolder = function (btn) {
         const header = btn.closest('.sidebar-app-row');
         const actionsDiv = header.querySelector('.row-actions');
-        
+
         actionsDiv.innerHTML = `
             <div class="delete-confirm-container">
                 <span class="confirm-text" style="color:#FF3B30; font-size:12px;">Удалить?</span>
@@ -654,16 +621,16 @@ export function initSidebarManager(context) {
             </div>`;
     };
 
-    window.confirmDeleteRow = function(btn) {
+    window.confirmDeleteRow = function (btn) {
         const siteRow = btn.closest('.sidebar-app-row');
         const folderRow = btn.closest('.sidebar-folder-row');
-        
+
         if (folderRow && folderRow.contains(btn) && (!siteRow || folderRow.children[0] === siteRow)) {
             folderRow.remove();
         } else if (siteRow) {
             siteRow.remove();
         }
-        
+
         rebuildAndSaveState();
     };
 
@@ -672,7 +639,7 @@ export function initSidebarManager(context) {
         const content = document.getElementById('sidebarContent');
         const auth = window.auth;
 
-        if (!auth) { 
+        if (!auth) {
             content.innerHTML = `<div style="padding: 20px; text-align: center; color: #8E8E93;">Загрузка...</div>`;
             return;
         }
@@ -709,7 +676,7 @@ export function initSidebarManager(context) {
             const displayName = user.displayName || 'Пользователь';
             const email = user.email || '';
             const isGoogleAuth = user.providerData.some(provider => provider.providerId === 'google.com');
-            const googleBadgeHTML = isGoogleAuth 
+            const googleBadgeHTML = isGoogleAuth
                 ? `<div class="google-badge"><img src="https://www.google.com/s2/favicons?domain=google.com" style="width: 100%; height: 100%; display: block;"></div>` : '';
 
             return `
@@ -770,30 +737,30 @@ export function initSidebarManager(context) {
                 </div>`;
         };
 
-        if (auth.currentUser) { 
+        if (auth.currentUser) {
             content.innerHTML = getProfileHTML(auth.currentUser) + layoutSettingsHTML + glassSwitchHTML + context.wallpaperManager.getSettingsHTML(false);
-            
+
             document.getElementById('logoutBtn').addEventListener('click', () => { if (window.authApi) window.authApi.logout(); });
             context.wallpaperManager.attachListeners();
 
-        } else { 
+        } else {
             const authHTML = (authMode === 'login') ? getLoginHTML() : getRegisterHTML();
             content.innerHTML = authHTML + layoutSettingsHTML + glassSwitchHTML + context.wallpaperManager.getSettingsHTML(true);
 
             if (authMode === 'login') {
-                document.getElementById('doLoginBtn').onclick = () => { 
-                    const e = document.getElementById('authEmail').value; 
-                    const p = document.getElementById('authPass').value; 
-                    if(window.authApi) window.authApi.login(e, p); 
+                document.getElementById('doLoginBtn').onclick = () => {
+                    const e = document.getElementById('authEmail').value;
+                    const p = document.getElementById('authPass').value;
+                    if (window.authApi) window.authApi.login(e, p);
                 };
-                document.getElementById('doGoogleBtn').onclick = () => { if(window.authApi) window.authApi.google(); };
+                document.getElementById('doGoogleBtn').onclick = () => { if (window.authApi) window.authApi.google(); };
                 document.getElementById('goRegister').onclick = () => { authMode = 'register'; renderSettingsTab(); };
             } else {
-                document.getElementById('doRegisterBtn').onclick = () => { 
-                    const n = document.getElementById('regName').value; 
-                    const e = document.getElementById('regEmail').value; 
-                    const p = document.getElementById('regPass').value; 
-                    if(window.authApi) window.authApi.register(e, p, n); 
+                document.getElementById('doRegisterBtn').onclick = () => {
+                    const n = document.getElementById('regName').value;
+                    const e = document.getElementById('regEmail').value;
+                    const p = document.getElementById('regPass').value;
+                    if (window.authApi) window.authApi.register(e, p, n);
                 };
                 document.getElementById('goLogin').onclick = () => { authMode = 'login'; renderSettingsTab(); };
             }
@@ -838,10 +805,10 @@ export function initSidebarManager(context) {
             }
         }, 0);
     }
-    
+
     return {
         refreshSettingsTab: () => {
-             if (tabSettings.classList.contains('active')) renderSettingsTab();
+            if (tabSettings.classList.contains('active')) renderSettingsTab();
         }
     };
 }

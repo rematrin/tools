@@ -140,10 +140,14 @@ export function initSidebarManager(context) {
         const addSiteHTML = `
             <div class="profile-cardnon" style="margin-bottom: 20px;">
                 <h2 class="profile-title-in-card" style="margin-bottom: 10px;">Мои сайты</h2>
-                <p class="section-desc">Нажмите для добавления нового сайта.</p>
-                <button class="sidebar-dummy-btn" id="btnOpenEditor" style="margin-bottom: 0;">
+                <button class="sidebar-dummy-btn" id="btnOpenEditor" style="margin-bottom: 0; ${!currentUser ? 'opacity: 0.5; filter: grayscale(1); cursor: default;' : ''}" ${!currentUser ? 'disabled' : ''}>
                     <span>+</span> Добавить сайт
                 </button>
+                ${!currentUser ? `
+                    <p class="section-desc" style="margin-top: 10px; color: #565656ff; font-weight: 500;">Войдите для добавления сайта и синхронизации между устройствами.</p>
+                ` : `
+                    <p class="section-desc" style="margin-top: 10px;">Нажмите для добавления нового сайта.</p>
+                `}
             </div>
         `;
 

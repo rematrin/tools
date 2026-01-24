@@ -357,6 +357,101 @@
             /* Maintain aspect ratio nicely */
             filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.15));
         }
+
+        /* --- 7. Modal --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+
+        .modal {
+            background: #fff;
+            padding: 32px;
+            border-radius: 20px;
+            width: 360px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .modal h3 {
+            margin-bottom: 24px;
+            text-align: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .modal h3::before {
+            display: none;
+        }
+
+        .modal-option-group {
+            margin-bottom: 20px;
+        }
+
+        .modal-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+            color: var(--text-secondary);
+            padding-left: 4px;
+        }
+
+        .modal-download-btn {
+            width: 100%;
+            padding: 16px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 12px;
+            background: var(--accent);
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .modal-download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+        }
+
+        .close-modal {
+            margin-top: 16px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-align: center;
+            width: 100%;
+            display: block;
+            font-weight: 500;
+        }
+
+        .close-modal:hover {
+            color: var(--text-main);
+        }
     </style>
 </head>
 
@@ -464,7 +559,8 @@
                             d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z">
                         </path>
                     </svg>
-                    <input type="text" id="iconSearch" placeholder="Search icons (e.g. cat, work)...">
+                    <input type="text" id="iconSearch" placeholder="Search icons (e.g. cat, work)..."
+                        autocomplete="off">
                 </div>
 
                 <div class="icons-grid" id="iconsGrid">
@@ -481,6 +577,32 @@
             <canvas id="canvas" width="512" height="512"></canvas>
         </div>
 
+    </div>
+
+    <!-- Download Modal -->
+    <div class="modal-overlay" id="downloadModal" onclick="if(event.target === this) closeModal()">
+        <div class="modal">
+            <h3>Download Icon</h3>
+
+            <div class="modal-option-group">
+                <span class="modal-label">Resolution</span>
+                <div class="style-toggle-container">
+                    <button class="style-btn active" id="btnRes256" onclick="setDownloadRes(256)">256x256</button>
+                    <button class="style-btn" id="btnRes512" onclick="setDownloadRes(512)">512x512</button>
+                </div>
+            </div>
+
+            <div class="modal-option-group">
+                <span class="modal-label">File Format</span>
+                <div class="style-toggle-container">
+                    <button class="style-btn active" id="btnFmtPng" onclick="setDownloadFmt('png')">PNG</button>
+                    <button class="style-btn" id="btnFmtIco" onclick="setDownloadFmt('ico')">ICO</button>
+                </div>
+            </div>
+
+            <button class="modal-download-btn" onclick="performDownload()">Download Now</button>
+            <span class="close-modal" onclick="closeModal()">Cancel</span>
+        </div>
     </div>
     <script>
         const canvas = document.getElementById('canvas');
@@ -499,6 +621,10 @@
         let loadedIconImg = null; // Caching loaded icon to prevent flickering
         let activeStyle = 'mac'; // 'mac' или 'win'
         let currentBlendMode = 'overlay';
+
+        // Download Settings
+        let downloadRes = 256;
+        let downloadFmt = 'png';
 
         // --- Инициализация ---
         function init() {
@@ -599,56 +725,53 @@
         }
 
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            renderTo(ctx, canvas.width);
+        }
+
+        /**
+         * Ультра-гибкая функция отрисовки на любой контекст
+         */
+        function renderTo(targetCtx, size) {
+            targetCtx.clearRect(0, 0, size, size);
 
             // 1. Рисуем папку с Hue/Brightness фильтрами
             if (currentFolderImg.complete && currentFolderImg.naturalWidth !== 0) {
-                ctx.save();
+                targetCtx.save();
 
-                // Используем CSS filter для hue-rotate (0 = оригинал) и brightness
-                // Это намного проще и качественнее, чем ручное наложение цвета
                 const h = ui.hue.value;
                 const b = ui.bright.value;
 
-                ctx.filter = `hue-rotate(${h}deg) brightness(${b}%)`;
-                ctx.drawImage(currentFolderImg, 0, 0, canvas.width, canvas.height);
+                targetCtx.filter = `hue-rotate(${h}deg) brightness(${b}%)`;
+                targetCtx.drawImage(currentFolderImg, 0, 0, size, size);
 
-                ctx.restore(); // Сбрасываем фильтры
+                targetCtx.restore();
             }
 
             // 2. Рисуем Иконку
             if (loadedIconImg) {
-                ctx.save();
+                targetCtx.save();
 
-                // Настройки иконки
-                ctx.globalAlpha = parseFloat(ui.iconOpacity.value);
-                ctx.globalCompositeOperation = currentBlendMode;
+                targetCtx.globalAlpha = parseFloat(ui.iconOpacity.value);
+                targetCtx.globalCompositeOperation = currentBlendMode;
 
-                // Размер
-                const scale = parseFloat(ui.iconSize.value); // 0.2 to 0.9 (percent of canvas)
-                const iconSize = canvas.width * scale;
+                const scale = parseFloat(ui.iconSize.value);
+                const iconSize = size * scale;
 
-                // Позиция
-                const x = (canvas.width - iconSize) / 2;
-                // Базовый центр + смещение пользователя
-                // Центр канваса = canvas.height / 2
-                // Смещение Y от слайдера
-                const userY = parseInt(ui.iconY.value);
+                const x = (size - iconSize) / 2;
+                const userY = (parseInt(ui.iconY.value) / 100) * (size / 4); // Adaptive Y scaling
 
-                // Небольшая корректировка для визуального центра папки
-                const baseOffset = activeStyle === 'win' ? 0 : 20;
+                const baseOffset = (activeStyle === 'win' ? 0 : (size * 0.04));
 
-                const y = ((canvas.height - iconSize) / 2) + baseOffset + userY;
+                const y = ((size - iconSize) / 2) + baseOffset + userY;
 
-                // Рисуем тень только если режим Normal, иначе в Overlay тень выглядит грязно
                 if (currentBlendMode === 'source-over') {
-                    ctx.shadowColor = "rgba(0,0,0,0.3)";
-                    ctx.shadowBlur = 8;
-                    ctx.shadowOffsetY = 4;
+                    targetCtx.shadowColor = "rgba(0,0,0,0.3)";
+                    targetCtx.shadowBlur = size * 0.015;
+                    targetCtx.shadowOffsetY = size * 0.008;
                 }
 
-                ctx.drawImage(loadedIconImg, x, y, iconSize, iconSize);
-                ctx.restore();
+                targetCtx.drawImage(loadedIconImg, x, y, iconSize, iconSize);
+                targetCtx.restore();
             }
         }
 
@@ -734,11 +857,100 @@
         ui.search.addEventListener('input', processSearch);
 
         ui.download.addEventListener('click', () => {
-            const link = document.createElement('a');
-            link.download = `folder-${activeStyle}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
+            document.getElementById('downloadModal').classList.add('active');
         });
+
+        function closeModal() {
+            document.getElementById('downloadModal').classList.remove('active');
+        }
+
+        function setDownloadRes(res) {
+            downloadRes = res;
+            document.getElementById('btnRes256').classList.toggle('active', res === 256);
+            document.getElementById('btnRes512').classList.toggle('active', res === 512);
+        }
+
+        function setDownloadFmt(fmt) {
+            downloadFmt = fmt;
+            document.getElementById('btnFmtPng').classList.toggle('active', fmt === 'png');
+            document.getElementById('btnFmtIco').classList.toggle('active', fmt === 'ico');
+        }
+
+        function generateRandomId(length = 10) {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        async function performDownload() {
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = downloadRes;
+            exportCanvas.height = downloadRes;
+            const exportCtx = exportCanvas.getContext('2d');
+
+            renderTo(exportCtx, downloadRes);
+
+            const randomId = generateRandomId();
+            const filename = `folder-${randomId}.${downloadFmt}`;
+            const link = document.createElement('a');
+            link.download = filename;
+
+            if (downloadFmt === 'png') {
+                link.href = exportCanvas.toDataURL('image/png');
+                link.click();
+            } else {
+                // ICO Format
+                const icoBlob = await canvasToIco(exportCanvas);
+                link.href = URL.createObjectURL(icoBlob);
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(link.href), 100);
+            }
+
+            closeModal();
+        }
+
+        async function canvasToIco(canvas) {
+            return new Promise(async (resolve) => {
+                const pngBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+                const pngArrayBuffer = await pngBlob.arrayBuffer();
+                const pngUint8Array = new Uint8Array(pngArrayBuffer);
+
+                // ICO Header (6 bytes)
+                const header = new Uint8Array([0, 0, 1, 0, 1, 0]);
+
+                // ICO Entry (16 bytes)
+                const entry = new Uint8Array(16);
+                const size = canvas.width;
+                entry[0] = size >= 256 ? 0 : size;
+                entry[1] = size >= 256 ? 0 : size;
+                entry[2] = 0;
+                entry[3] = 0;
+                entry[4] = 1; entry[5] = 0; // Planes
+                entry[6] = 32; entry[7] = 0; // BPP
+
+                const dataSize = pngUint8Array.length;
+                entry[8] = dataSize & 0xFF;
+                entry[9] = (dataSize >> 8) & 0xFF;
+                entry[10] = (dataSize >> 16) & 0xFF;
+                entry[11] = (dataSize >> 24) & 0xFF;
+
+                const offset = 22; // 6 (header) + 16 (entry)
+                entry[12] = offset & 0xFF;
+                entry[13] = (offset >> 8) & 0xFF;
+                entry[14] = (offset >> 16) & 0xFF;
+                entry[15] = (offset >> 24) & 0xFF;
+
+                const icoData = new Uint8Array(22 + pngUint8Array.length);
+                icoData.set(header, 0);
+                icoData.set(entry, 6);
+                icoData.set(pngUint8Array, 22);
+
+                resolve(new Blob([icoData], { type: 'image/x-icon' }));
+            });
+        }
 
         // Старт
         init();

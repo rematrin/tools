@@ -39,6 +39,8 @@ export class ConfirmModal {
         }
 
         this.titleEl.innerText = `Удалить «${name}»?`;
+        this.confirmBtn.style.display = 'block';
+        this.cancelBtn.style.display = 'block';
 
         if (type === 'folder') {
             this.descEl.innerText = "Выберите действие для папки.";
@@ -50,15 +52,47 @@ export class ConfirmModal {
             this.ungroupBtn.style.display = 'none';
         }
 
+        this.openWithAnimation();
+    }
+
+    showPrompt({ title, desc, confirmText, ungroupText, cancelText, onConfirm, onUngroup, onCancel }) {
+        this.titleEl.innerText = title;
+        this.descEl.innerText = desc || "";
+
+        this.confirmBtn.innerText = confirmText || "OK";
+        this.confirmBtn.style.display = confirmText ? 'block' : 'none';
+
+        this.ungroupBtn.innerText = ungroupText || "";
+        this.ungroupBtn.style.display = ungroupText ? 'block' : 'none';
+
+        this.cancelBtn.innerText = cancelText || "Отменить";
+        this.cancelBtn.style.display = cancelText ? 'block' : 'none';
+
+        this.onConfirm = onConfirm;
+        this.onUngroup = onUngroup;
+        this.onCancel = onCancel || null;
+
+        this.openWithAnimation();
+    }
+
+    openWithAnimation() {
         this.overlay.classList.add('active');
         const card = this.overlay.querySelector('.ios-modal');
         card.style.transform = 'scale(1.1)';
-        setTimeout(() => card.style.transform = 'scale(1)', 10);
+        card.style.opacity = '0';
+        setTimeout(() => {
+            card.style.transform = 'scale(1)';
+            card.style.opacity = '1';
+        }, 10);
     }
 
     close() {
+        if (this.onCancel && typeof this.onCancel === 'function') {
+            this.onCancel();
+        }
         this.overlay.classList.remove('active');
         this.onConfirm = null;
         this.onUngroup = null;
+        this.onCancel = null;
     }
 }

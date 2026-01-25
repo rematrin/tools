@@ -90,16 +90,25 @@ window.dbApi = {
 // --- API АВТОРИЗАЦИИ ---
 window.authApi = {
     login: async (email, password) => {
-        try { await signInWithEmailAndPassword(auth, email, password); } catch (e) { alert("Ошибка входа: " + e.message); }
+        try { await signInWithEmailAndPassword(auth, email, password); } catch (e) {
+            if (window.showToast) window.showToast("Ошибка входа: " + e.message, true);
+            else alert("Ошибка входа: " + e.message);
+        }
     },
     register: async (email, password, name) => {
         try {
             const userCred = await createUserWithEmailAndPassword(auth, email, password);
             if (name) await updateProfile(userCred.user, { displayName: name });
-        } catch (e) { alert("Ошибка регистрации: " + e.message); }
+        } catch (e) {
+            if (window.showToast) window.showToast("Ошибка регистрации: " + e.message, true);
+            else alert("Ошибка регистрации: " + e.message);
+        }
     },
     google: async () => {
-        try { await signInWithPopup(auth, provider); } catch (e) { alert("Ошибка Google: " + e.message); }
+        try { await signInWithPopup(auth, provider); } catch (e) {
+            if (window.showToast) window.showToast("Ошибка Google: " + e.message, true);
+            else alert("Ошибка Google: " + e.message);
+        }
     },
     logout: async () => {
         try { await signOut(auth); } catch (e) { console.error(e); }
@@ -239,8 +248,25 @@ export function initSidebarManager(context) {
             </div>
         `;
 
+        // УПРАВЛЕНИЕ ДАННЫМИ
+        const dataManagementHTML = `
+            <div class="profile-card">
+                <h2 class="profile-title-in-card">Резервное копирование</h2>
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                    <button class="primary-btn" id="btnExportData" style="background: #34C759; margin-top: 0; flex: 1; height: 38px; padding: 0; font-size: 13px; ${!currentUser ? 'opacity: 0.5; filter: grayscale(1); cursor: default;' : ''}" ${!currentUser ? 'disabled' : ''}>Экспорт данных</button>
+                    <button class="primary-btn" id="btnImportData" style="background: #007AFF; margin-top: 0; flex: 1; height: 38px; padding: 0; font-size: 13px; ${!currentUser ? 'opacity: 0.5; filter: grayscale(1); cursor: default;' : ''}" ${!currentUser ? 'disabled' : ''}>Импорт данных</button>
+                </div>
+                ${!currentUser ? `
+                    <p class="section-desc" style="margin-top: 10px; color: #565656ff; font-weight: 500;">Войдите для управления файлами настроек.</p>
+                ` : `
+                    <p class="section-desc" style="margin-top: 10px;">Вы можете скачать файл со всеми вашими сайтами и настройками или загрузить его обратно.</p>
+                `}
+                <input type="file" id="importFileInput" style="display: none;" accept=".json">
+            </div>
+        `;
+
         // СБОРКА КОНТЕНТА
-        content.innerHTML = addSiteHTML + accountHTML + glassSettingsHTML + context.wallpaperManager.getSettingsHTML(!currentUser);
+        content.innerHTML = addSiteHTML + accountHTML + glassSettingsHTML + context.wallpaperManager.getSettingsHTML(!currentUser) + dataManagementHTML;
 
         // ПРИВЯЗКА СОБЫТИЙ
         attachSidebarEvents();
@@ -323,6 +349,127 @@ export function initSidebarManager(context) {
 
         // Обои
         context.wallpaperManager.attachListeners();
+
+        // Экспорт и Импорт
+        const btnExport = document.getElementById('btnExportData');
+        if (btnExport) {
+            btnExport.onclick = () => {
+                const data = {
+                    apps: context.getAppsFromDOM(),
+                    gridColumns: localStorage.getItem('gridColumns') || '4',
+                    glassEffect: localStorage.getItem('glassEffect') === 'true',
+                    wallpaper: JSON.parse(localStorage.getItem('user_wallpaper_settings_v1') || '{}')
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const date = new Date().toISOString().split('T')[0];
+                a.href = url;
+                a.download = `productivity_backup_${date}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+        }
+
+        const btnImport = document.getElementById('btnImportData');
+        const fileInput = document.getElementById('importFileInput');
+        if (btnImport && fileInput) {
+            btnImport.onclick = () => fileInput.click();
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+
+                        // Импорт сайтов
+                        if (data.apps && Array.isArray(data.apps)) {
+                            const processImport = (replace) => {
+                                let finalApps;
+                                if (replace) {
+                                    finalApps = data.apps;
+                                } else {
+                                    const currentApps = context.getAppsFromDOM();
+                                    finalApps = [...currentApps, ...data.apps];
+
+                                    const seen = new Set();
+                                    finalApps = finalApps.filter(app => {
+                                        const key = `${app.name}-${app.url}`;
+                                        if (seen.has(key) && app.type !== 'folder') return false;
+                                        seen.add(key);
+                                        return true;
+                                    });
+                                }
+
+                                localStorage.setItem('my_apps_cache_v1', JSON.stringify(finalApps));
+                                context.renderAppsToDOM(finalApps);
+                                context.saveCurrentState(finalApps);
+
+                                // Продолжаем импорт настроек
+                                finalizeImport(data);
+                            };
+
+                            if (context.confirmModal && context.confirmModal.showPrompt) {
+                                context.confirmModal.showPrompt({
+                                    title: "Импорт сайтов",
+                                    desc: "Вы хотите заменить текущие сайты или добавить новые к существующим?",
+                                    confirmText: "Заменить",
+                                    ungroupText: "Объединить",
+                                    cancelText: "Отмена",
+                                    onConfirm: () => processImport(true),
+                                    onUngroup: () => processImport(false)
+                                });
+                            } else {
+                                const replace = confirm("Заменить текущие сайты импортированными? \n\n'ОК' — заменить полностью. \n'Отмена' — объединить (добавить к текущим).");
+                                processImport(replace);
+                            }
+                        } else {
+                            finalizeImport(data);
+                        }
+
+                        function finalizeImport(data) {
+                            // Импорт колонок
+                            if (data.gridColumns) {
+                                localStorage.setItem('gridColumns', data.gridColumns);
+                                document.documentElement.style.setProperty('--grid-cols', data.gridColumns);
+                            }
+
+                            // Импорт эффекта стекла
+                            if (typeof data.glassEffect !== 'undefined') {
+                                localStorage.setItem('glassEffect', data.glassEffect.toString());
+                                if (data.glassEffect) document.body.classList.add('glass-mode');
+                                else document.body.classList.remove('glass-mode');
+                            }
+
+                            // Импорт обоев
+                            if (data.wallpaper) {
+                                localStorage.setItem('user_wallpaper_settings_v1', JSON.stringify(data.wallpaper));
+                                if (context.wallpaperManager) {
+                                    context.wallpaperManager.settings = { ...context.wallpaperManager.defaultSettings, ...data.wallpaper };
+                                    context.wallpaperManager.applySettings();
+                                    context.wallpaperManager.refreshUI();
+                                    context.wallpaperManager.saveToCloud();
+                                }
+                            }
+
+                            if (context.showToast) context.showToast('Настройки успешно импортированы!');
+                            else alert('Настройки и сайты успешно импортированы!');
+
+                            renderSidebar();
+                        }
+
+                    } catch (err) {
+                        console.error("Import error:", err);
+                        if (context.showToast) context.showToast('Ошибка при импорте файла', true);
+                        else alert('Ошибка при импорте файла. Убедитесь, что это корректный JSON файл настроек.');
+                    }
+                    // Сбрасываем input, чтобы можно было выбрать тот же файл снова
+                    fileInput.value = '';
+                };
+                reader.readAsText(file);
+            };
+        }
     }
 
     return {

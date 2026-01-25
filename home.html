@@ -1574,6 +1574,50 @@
             border-style: solid;
             box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
         }
+
+        /* --- TOAST NOTIFICATIONS --- */
+        .toast-container {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            z-index: 10000;
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        .toast-container.active {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast {
+            background: rgba(25, 25, 25, 0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 12px 20px;
+            border-radius: 24px;
+            color: white;
+            font-size: 15px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        .toast-icon {
+            width: 20px;
+            height: 20px;
+            color: #34C759;
+            flex-shrink: 0;
+        }
+
+        .toast-error .toast-icon {
+            color: #FF453A;
+        }
     </style>
 </head>
 
@@ -1581,6 +1625,16 @@
 
     <div class="global-wallpaper-blurred"></div>
     <div class="folder-backdrop"></div>
+
+    <div id="toastContainer" class="toast-container">
+        <div class="toast" id="toast">
+            <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span id="toastText">Готово</span>
+        </div>
+    </div>
 
     <div class="iphone-screen">
         <header id="header">
@@ -2090,6 +2144,22 @@
             confirmModal: confirmModal
         });
 
+        // --- ИНИЦИАЛИЗАЦИЯ TOAST ---
+        function showToast(text, isError = false) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toastText');
+
+            toastText.innerText = text;
+            if (isError) toast.classList.add('toast-error');
+            else toast.classList.remove('toast-error');
+
+            container.classList.add('active');
+            setTimeout(() => {
+                container.classList.remove('active');
+            }, 3000);
+        }
+
         // --- ИНИЦИАЛИЗАЦИЯ МЕНЕДЖЕРА БОКОВОГО МЕНЮ (из sidebar.js) ---
         const sidebarManager = initSidebarManager({
             iconEditor,
@@ -2097,7 +2167,9 @@
             getAppsFromDOM, // Передаем нашу функцию
             renderAppsToDOM,
             saveCurrentState, // Передаем новую функцию с поддержкой аргумента
-            defaultApps: DEFAULT_APPS
+            defaultApps: DEFAULT_APPS,
+            confirmModal,
+            showToast
         });
 
         // --- AUTH & SYNC ---

@@ -10,7 +10,7 @@
     <style>
         :root {
             --primary-color: #2563eb;
-            --bg-color: #e6e9ed;
+            --bg-color: #F2F2F7;
             --card-bg: #ffffff;
             --text-color: #1e293b;
             --border-color: #e2e8f0;
@@ -78,16 +78,16 @@
         }
 
         .btn-load {
-            background-color: #10b981;
+            background-color: #10b948;
         }
 
         .section {
             background: var(--card-bg);
             border-radius: 15px;
             padding: 25px;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 4px 12px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
         }
 
         .form-group {
@@ -151,6 +151,16 @@
             background: #fff;
         }
 
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%234b5563' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3 4.5 3 3 3-3'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
+            cursor: pointer;
+        }
+
         .rich-textarea {
             min-height: 80px;
             cursor: text;
@@ -195,6 +205,12 @@
             gap: 20px;
         }
 
+        .grid-info {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 20px;
+        }
+
         .grid-cover {
             display: grid;
             grid-template-columns: 1fr 300px;
@@ -209,6 +225,14 @@
             }
         }
 
+        .section-divider {
+            border: none;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #bdbdbda1, transparent);
+            margin: 20px auto;
+            width: 100%;
+        }
+
         .thesis-block {
             background: var(--card-bg);
             border-radius: 10px;
@@ -216,12 +240,6 @@
             margin-bottom: 15px;
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            transition: all 0.2s ease;
-        }
-
-        .thesis-block:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
         }
 
         .thesis-header {
@@ -417,7 +435,7 @@
             border-radius: 15px;
             overflow: hidden;
             margin-bottom: 20px;
-            border: 2px dashed var(--border-color);
+            border: 1px solid var(--border-color);
             position: relative;
             display: flex;
             align-items: center;
@@ -527,9 +545,9 @@
                         <div class="form-group">
                             <label>Название
                                 <span class="info-icon"
-                                    data-tooltip="Указываем ориентировочный/финальный заголовок.">?</span>
+                                    data-tooltip="Указываем ориентировочный/финальный заголовок. Как будет называться видео?">?</span>
                             </label>
-                            <input type="text" id="title" placeholder="Как будет называться видео?">
+                            <input type="text" id="title" placeholder="">
                         </div>
 
                         <div class="form-group" style="margin-bottom: 0;">
@@ -585,18 +603,16 @@
                     <div class="form-group">
                         <label>Тз для превью
                             <span class="info-icon"
-                                data-tooltip="Здесь важно указать эмоцию и контекст для фото автора.">?</span>
+                                data-tooltip="Описание фотографии для превью. Здесь важно указать эмоцию и контекст для фото автора.">?</span>
                         </label>
-                        <div id="preview" class="rich-textarea" contenteditable="true"
-                            placeholder="Описание фотографии для превью"></div>
+                        <div id="preview" class="rich-textarea" contenteditable="true" placeholder=""></div>
                     </div>
 
                     <div class="form-group">
                         <label>Комментарий
-                            <span class="info-icon" data-tooltip="Краткое описание видео.">?</span>
+                            <span class="info-icon" data-tooltip="Кратко описываем суть видео.">?</span>
                         </label>
-                        <div id="producer_comment" class="rich-textarea" contenteditable="true"
-                            placeholder="Кратко описываем суть видео."></div>
+                        <div id="producer_comment" class="rich-textarea" contenteditable="true" placeholder=""></div>
                     </div>
                 </div>
             </div>
@@ -610,7 +626,7 @@
                     </div>
                 </div>
 
-                <div class="grid-2">
+                <div class="grid-info">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label>Текст автора</label>
                         <div id="intro" class="rich-textarea" contenteditable="true"
@@ -624,6 +640,8 @@
                 </div>
             </div>
 
+            <hr class="section-divider">
+
             <div id="theses-container"></div>
 
             <div style="text-align: center; margin-bottom: 25px;">
@@ -633,9 +651,11 @@
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    Добавить тезис
+                    Добавить блок
                 </button>
             </div>
+
+            <hr class="section-divider">
 
             <div class="section">
                 <div class="thesis-header">
@@ -645,7 +665,7 @@
                             data-tooltip="В данном блоке желательно НЕ размазывать концовку. Можно быстро призвать подписаться и посмотреть другие ролики на канале.">?</span>
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <select id="outro_duration" style="width: 150px;" onchange="handleCustomSelect(this)">
+                        <select id="outro_duration" style="width: 160px;" onchange="handleCustomSelect(this)">
                             <option value="" disabled selected>Длительность</option>
                             <option value="20 сек">20 сек</option>
                             <option value="30 - 60 сек">30 - 60 сек</option>
@@ -656,17 +676,15 @@
                     </div>
                 </div>
 
-                <div class="grid-2">
+                <div class="grid-info">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label>Текст автора</label>
-                        <div id="outro" class="rich-textarea" contenteditable="true"
-                            placeholder="Что нужно сказать в финале ролика?"></div>
+                        <div id="outro" class="rich-textarea" contenteditable="true" placeholder=""></div>
                     </div>
 
                     <div class="form-group" style="margin-bottom: 0;">
                         <label>Комментарий</label>
-                        <div id="outro_comment" class="rich-textarea" contenteditable="true"
-                            placeholder="Дополнительные примечания к концовке..."></div>
+                        <div id="outro_comment" class="rich-textarea" contenteditable="true" placeholder=""></div>
                     </div>
                 </div>
             </div>
@@ -847,7 +865,7 @@
                         <span class="info-icon" data-tooltip="${thesisTooltipText}">?</span>
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <select id="thesis_${currentThesisCount}_time" style="width: 150px;" onchange="handleCustomSelect(this)">
+                        <select id="thesis_${currentThesisCount}_time" style="width: 160px;" onchange="handleCustomSelect(this)">
                             ${optionsHtml}
                         </select>
                         <div class="menu-container">
@@ -862,7 +880,7 @@
                     </div>
                 </div>
                 
-                <div class="grid-2">
+                <div class="grid-info">
                     <div class="form-group">
                         <label>Тезис автора</label>
                         <div id="thesis_${currentThesisCount}_author" class="rich-textarea" contenteditable="true"></div>

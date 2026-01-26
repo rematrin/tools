@@ -1787,9 +1787,12 @@
 
                 } else {
                     // --- РЕНДЕР САЙТА (без изменений) ---
+                    const openInNewTab = localStorage.getItem('openInNewTab') === 'true';
+                    const targetAttr = openInNewTab ? 'target="_blank" rel="noopener noreferrer"' : '';
+
                     newItemHTML = `
                     <div class="app-item">
-                        <a href="${app.url}" class="icon-container">
+                        <a href="${app.url}" class="icon-container" ${targetAttr}>
                             <img src="${app.icon}" alt="${app.name}" onerror="this.src='https://via.placeholder.com/62?text=?'">
                             <div class="glass-overlay"></div>
                             <div class="action-bar">

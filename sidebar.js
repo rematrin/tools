@@ -153,9 +153,9 @@ export function initSidebarManager(context) {
                     <span>+</span> Добавить сайт
                 </button>
                 ${!currentUser ? `
-                    <p class="section-desc" style="margin-top: 10px; color: #565656ff; font-weight: 500;">Войдите для добавления сайта и синхронизации между устройствами.</p>
+                    <p class="section-desc" style="margin-top: 6px; color: #565656ff; font-weight: 500;">Войдите для добавления сайта и синхронизации.</p>
                 ` : `
-                    <p class="section-desc" style="margin-top: 10px;">Нажмите для добавления нового сайта.</p>
+                    <p class="section-desc" style="margin-top: 6px;">Нажмите для добавления нового сайта.</p>
                 `}
             </div>
         `;
@@ -227,19 +227,27 @@ export function initSidebarManager(context) {
         // ОФОРМЛЕНИЕ
         const currentCols = localStorage.getItem('gridColumns') || '4';
         const isGlassEnabled = localStorage.getItem('glassEffect') === 'true';
+        const openInNewTab = localStorage.getItem('openInNewTab') === 'true';
 
         const glassSettingsHTML = `
-            <div class="profile-card">
-                <h2 class="profile-title-in-card">Макет и Стекло</h2>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                    <span>Эффект стекла</span>
-                    <label class="switch">
+            <div class="profile-card" style="gap: 8px; padding: 12px 16px;">
+                <h2 class="profile-title-in-card" style="font-size: 16px;">Макет и интерфейс</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                    <span style="font-size: 14px;">Эффект стекла</span>
+                    <label class="switch" style="transform: scale(0.85); transform-origin: right;">
                         <input type="checkbox" id="globalGlassToggle" ${isGlassEnabled ? 'checked' : ''}>
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
-                <div class="slider-group" style="margin-top: 15px;">
-                    <div class="slider-header" style="margin-bottom: 5px; display:flex; justify-content:space-between;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
+                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Открывать сайты в новой вкладке</span>
+                    <label class="switch" style="transform: scale(0.85); transform-origin: right;">
+                        <input type="checkbox" id="openNewTabToggle" ${openInNewTab ? 'checked' : ''}>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+                <div class="slider-group" style="margin-top: 8px;">
+                    <div class="slider-header" style="margin-bottom: 2px; display:flex; justify-content:space-between; font-size: 14px;">
                         <span>Колонок</span>
                         <span id="colCountValue">${currentCols}</span>
                     </div>
@@ -250,16 +258,16 @@ export function initSidebarManager(context) {
 
         // УПРАВЛЕНИЕ ДАННЫМИ
         const dataManagementHTML = `
-            <div class="profile-card">
-                <h2 class="profile-title-in-card">Резервное копирование</h2>
-                <div style="display: flex; gap: 8px; margin-top: 10px;">
-                    <button class="primary-btn" id="btnExportData" style="background: #34C759; margin-top: 0; flex: 1; height: 38px; padding: 0; font-size: 13px; ${!currentUser ? 'opacity: 0.5; filter: grayscale(1); cursor: default;' : ''}" ${!currentUser ? 'disabled' : ''}>Экспорт данных</button>
-                    <button class="primary-btn" id="btnImportData" style="background: #007AFF; margin-top: 0; flex: 1; height: 38px; padding: 0; font-size: 13px; ${!currentUser ? 'opacity: 0.5; filter: grayscale(1); cursor: default;' : ''}" ${!currentUser ? 'disabled' : ''}>Импорт данных</button>
+            <div class="profile-card" style="padding: 12px 16px; margin-bottom: 12px;">
+                <h2 class="profile-title-in-card" style="font-size: 16px;">Резервное копирование</h2>
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <button class="primary-btn" id="btnExportData" style="background: #34C759; margin-top: 0; flex: 1; height: 34px; padding: 0; font-size: 12px; ${!currentUser ? 'opacity: 0.5; filter: grayscale(1); cursor: default;' : ''}" ${!currentUser ? 'disabled' : ''}>Экспорт данных</button>
+                    <button class="primary-btn" id="btnImportData" style="background: #007AFF; margin-top: 0; flex: 1; height: 34px; padding: 0; font-size: 12px; ${!currentUser ? 'opacity: 0.5; filter: grayscale(1); cursor: default;' : ''}" ${!currentUser ? 'disabled' : ''}>Импорт данных</button>
                 </div>
                 ${!currentUser ? `
-                    <p class="section-desc" style="margin-top: 10px; color: #565656ff; font-weight: 500;">Войдите для управления файлами настроек.</p>
+                    <p class="section-desc" style="margin-top: 6px; color: #565656ff; font-weight: 500;">Войдите для управления файлами.</p>
                 ` : `
-                    <p class="section-desc" style="margin-top: 10px;">Вы можете скачать файл со всеми вашими сайтами и настройками или загрузить его обратно.</p>
+                    <p class="section-desc" style="margin-top: 6px;">Скачать или загрузить файл с сайтами и настройками.</p>
                 `}
                 <input type="file" id="importFileInput" style="display: none;" accept=".json">
             </div>
@@ -331,6 +339,18 @@ export function initSidebarManager(context) {
             };
         }
 
+        // Открытие в новой вкладке
+        const newTabToggle = document.getElementById('openNewTabToggle');
+        if (newTabToggle) {
+            newTabToggle.onchange = (e) => {
+                const isEnabled = e.target.checked;
+                localStorage.setItem('openInNewTab', isEnabled.toString());
+                if (auth.currentUser) window.dbApi.saveSettings({ openInNewTab: isEnabled });
+                // Принудительно перерисовываем иконки, чтобы обновились ссылки
+                context.renderAppsToDOM(context.getAppsFromDOM());
+            };
+        }
+
         // Колонки
         const colSlider = document.getElementById('colCountSlider');
         const colValue = document.getElementById('colCountValue');
@@ -358,6 +378,7 @@ export function initSidebarManager(context) {
                     apps: context.getAppsFromDOM(),
                     gridColumns: localStorage.getItem('gridColumns') || '4',
                     glassEffect: localStorage.getItem('glassEffect') === 'true',
+                    openInNewTab: localStorage.getItem('openInNewTab') === 'true',
                     wallpaper: JSON.parse(localStorage.getItem('user_wallpaper_settings_v1') || '{}')
                 };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -440,6 +461,11 @@ export function initSidebarManager(context) {
                                 localStorage.setItem('glassEffect', data.glassEffect.toString());
                                 if (data.glassEffect) document.body.classList.add('glass-mode');
                                 else document.body.classList.remove('glass-mode');
+                            }
+
+                            // Импорт настройки открытия в новой вкладке
+                            if (typeof data.openInNewTab !== 'undefined') {
+                                localStorage.setItem('openInNewTab', data.openInNewTab.toString());
                             }
 
                             // Импорт обоев

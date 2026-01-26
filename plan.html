@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Опорный план ролика (L-BURO)</title>
+    <title>План повествования</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
     <style>
@@ -43,7 +43,7 @@
             padding: 15px 25px;
             border-radius: 15px;
             margin-bottom: 25px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--border-color);
         }
 
@@ -94,7 +94,7 @@
             padding: 25px;
             margin-bottom: 15px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 4px 12px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 4px 12px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
         .form-group {
@@ -138,11 +138,93 @@
             padding: 10px;
             border-radius: 6px;
             font-size: 0.85rem;
-            font-weight: 400;
             z-index: 100;
             white-space: normal;
             line-height: 1.4;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Toggle Switch iOS Style */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle-container:hover {
+            background: #f8fafc;
+        }
+
+        .toggle-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e2e8f0;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        input:checked+.slider {
+            background-color: #34c759;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        .comment-group {
+            display: none;
+        }
+
+        .comment-group.visible {
+            display: block;
+        }
+
+        .grid-info.wide {
+            grid-template-columns: 1fr;
+        }
+
+        .grid-info.with-comment {
+            grid-template-columns: 2.5fr 1fr;
         }
 
         input,
@@ -244,9 +326,9 @@
             background: var(--card-bg);
             border-radius: 20px;
             padding: 20px;
-            margin-bottom: 15px;
+            margin-bottom: 5px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
         .thesis-header {
@@ -330,7 +412,7 @@
             top: 100%;
             background-color: white;
             min-width: 150px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
             z-index: 100;
             border-radius: 8px;
             border: 1px solid var(--border-color);
@@ -355,6 +437,18 @@
         .menu-content button:hover {
             background-color: #fef2f2;
             opacity: 1;
+        }
+
+        .menu-content .menu-item {
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .menu-content .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .menu-content button.btn-delete {
+            color: #ef4444;
         }
 
         .show {
@@ -423,7 +517,7 @@
             border-radius: 12px;
             max-width: 400px;
             width: 90%;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
         }
 
         .modal h3 {
@@ -537,7 +631,7 @@
 
     <div class="container">
         <header class="header-bar">
-            <h1>Опорный план ролика</h1>
+            <h1>План повествования</h1>
             <div class="controls">
                 <button onclick="saveData()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -647,16 +741,31 @@
                         <span class="info-icon"
                             data-tooltip="Заполняется в самую последнюю очередь. Когда понятно, какой байт будет на превью, как его раскрываем в видео и на что сделать акцент, чтоб зритель досмотрел видео до самого конца.">?</span>
                     </div>
+                    <div class="menu-container">
+                        <button type="button" class="menu-dots" onclick="toggleMenu('intro')">⋮</button>
+                        <div id="menu_intro" class="menu-content">
+                            <div class="menu-item">
+                                <label class="toggle-container" onclick="event.stopPropagation()">
+                                    <span class="toggle-label">Комментарии</span>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="toggle_intro"
+                                            onchange="toggleComment('intro', this.checked)">
+                                        <span class="slider"></span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="grid-info">
+                <div class="grid-info wide" id="grid_intro">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label>Текст автора</label>
                         <div id="intro" class="rich-textarea" contenteditable="true"
                             placeholder="Прямая речь автора. Что нужно сказать, чтоб зритель досмотрел видео до самого конца?">
                         </div>
                     </div>
-                    <div class="form-group" style="margin-bottom: 0;">
+                    <div class="form-group comment-group" id="group_intro_comment" style="margin-bottom: 0;">
                         <label>Комментарий</label>
                         <div id="intro_comment" class="rich-textarea" contenteditable="true"></div>
                     </div>
@@ -667,7 +776,7 @@
 
             <div id="theses-container"></div>
 
-            <div style="text-align: center; margin-bottom: 25px;">
+            <div style="text-align: center; margin-bottom: 25px; margin-top: 20px;">
                 <button type="button" class="btn-load btn-add-thesis" onclick="addThesis()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
@@ -696,16 +805,31 @@
                             <option value="2 минуты">2 минуты</option>
                             <option value="custom">Свой вариант...</option>
                         </select>
+                        <div class="menu-container">
+                            <button type="button" class="menu-dots" onclick="toggleMenu('outro')">⋮</button>
+                            <div id="menu_outro" class="menu-content">
+                                <div class="menu-item">
+                                    <label class="toggle-container" onclick="event.stopPropagation()">
+                                        <span class="toggle-label">Комментарии</span>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="toggle_outro"
+                                                onchange="toggleComment('outro', this.checked)">
+                                            <span class="slider"></span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid-info">
+                <div class="grid-info wide" id="grid_outro">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label>Текст автора</label>
                         <div id="outro" class="rich-textarea" contenteditable="true" placeholder=""></div>
                     </div>
 
-                    <div class="form-group" style="margin-bottom: 0;">
+                    <div class="form-group comment-group" id="group_outro_comment" style="margin-bottom: 0;">
                         <label>Комментарий</label>
                         <div id="outro_comment" class="rich-textarea" contenteditable="true" placeholder=""></div>
                     </div>
@@ -806,7 +930,24 @@
             document.querySelectorAll('.menu-content').forEach(menu => {
                 if (menu.id !== `menu_${id}`) menu.classList.remove('show');
             });
-            document.getElementById(`menu_${id}`).classList.toggle("show");
+            const menu = document.getElementById(`menu_${id}`);
+            if (menu) menu.classList.toggle("show");
+        }
+
+        // Логика переключения комментариев
+        function toggleComment(sectionId, isVisible) {
+            const group = document.getElementById(`group_${sectionId}_comment`);
+            const grid = document.getElementById(`grid_${sectionId}`);
+
+            if (isVisible) {
+                group.classList.add('visible');
+                grid.classList.remove('wide');
+                grid.classList.add('with-comment');
+            } else {
+                group.classList.remove('visible');
+                grid.classList.add('wide');
+                grid.classList.remove('with-comment');
+            }
         }
 
         // Закрытие меню при клике вне
@@ -894,7 +1035,17 @@
                         <div class="menu-container">
                             <button type="button" class="menu-dots" onclick="toggleMenu(${currentThesisCount})">⋮</button>
                             <div id="menu_${currentThesisCount}" class="menu-content">
-                                <button type="button" onclick="removeThesis(${currentThesisCount})">
+                                <div class="menu-item">
+                                    <label class="toggle-container" onclick="event.stopPropagation()">
+                                        <span class="toggle-label">Комментарии</span>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="toggle_thesis_${currentThesisCount}"
+                                                onchange="toggleComment('thesis_${currentThesisCount}', this.checked)">
+                                            <span class="slider"></span>
+                                        </div>
+                                    </label>
+                                </div>
+                                <button type="button" class="btn-delete" onclick="removeThesis(${currentThesisCount})">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                                     Удалить блок
                                 </button>
@@ -903,12 +1054,12 @@
                     </div>
                 </div>
                 
-                <div class="grid-info">
+                <div class="grid-info wide" id="grid_thesis_${currentThesisCount}">
                     <div class="form-group">
                         <label>Тезис автора</label>
                         <div id="thesis_${currentThesisCount}_author" class="rich-textarea" contenteditable="true"></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group comment-group" id="group_thesis_${currentThesisCount}_comment">
                         <label>Комментарий</label>
                         <div id="thesis_${currentThesisCount}_producer" class="rich-textarea" contenteditable="true"></div>
                     </div>
@@ -1000,6 +1151,11 @@
                 });
             });
 
+            // Сохраняем состояния тогглов
+            document.querySelectorAll('input[id^="toggle_"]').forEach(el => {
+                data[el.id] = el.checked;
+            });
+
             const titleEl = document.getElementById('title');
             const title = (titleEl.innerText || titleEl.textContent || '').trim() || 'План';
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1070,8 +1226,30 @@
                             document.getElementById(`thesis_${id}_name`).innerText = t.name || '';
                             document.getElementById(`thesis_${id}_author`).innerHTML = t.author;
                             document.getElementById(`thesis_${id}_producer`).innerHTML = t.producer;
+
+                            // Включаем комментарии если они были включены или если поле не пустое
+                            const toggleId = `toggle_thesis_${id}`;
+                            const shouldToggle = data[toggleId] === true || (t.producer && t.producer.trim() !== '' && t.producer !== '<br>');
+                            const toggle = document.getElementById(toggleId);
+                            if (toggle) {
+                                toggle.checked = shouldToggle;
+                                toggleComment(`thesis_${id}`, shouldToggle);
+                            }
                         });
                     }
+
+                    // Обработка тогглов для основных секций (интро / оутро)
+                    ['intro', 'outro'].forEach(section => {
+                        const toggleId = `toggle_${section}`;
+                        const commentId = `${section}_comment`;
+                        const commentEl = document.getElementById(commentId);
+                        const shouldToggle = data[toggleId] === true || (commentEl && commentEl.innerHTML.trim() !== '' && commentEl.innerHTML !== '<br>');
+                        const toggle = document.getElementById(toggleId);
+                        if (toggle) {
+                            toggle.checked = shouldToggle;
+                            toggleComment(section, shouldToggle);
+                        }
+                    });
 
                     showToast('Данные загружены!');
                 } catch (err) {

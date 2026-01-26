@@ -1743,7 +1743,13 @@
             }
             grid.innerHTML = '';
 
+            const gridCols = parseInt(localStorage.getItem('gridColumns') || '4');
+            const gridRows = parseInt(localStorage.getItem('gridRows') || '6');
+            const maxIcons = gridCols * gridRows;
+
             appsArray.forEach((app, index) => {
+                if (index >= maxIcons) return; // Пропускаем иконки, не влезающие в лимит рядов
+
                 let newItemHTML;
                 const tempDiv = document.createElement('div');
 
@@ -2210,10 +2216,23 @@
                                     localStorage.setItem('gridColumns', cols);
 
                                     // Обновляем UI слайдера, если он сейчас отрендерен
-                                    const slider = document.getElementById('colCountSlider');
-                                    const valDisplay = document.getElementById('colCountValue');
                                     if (slider) slider.value = cols;
                                     if (valDisplay) valDisplay.innerText = cols;
+                                }
+
+                                // Загрузка Рядов
+                                if (typeof cloudSettings.gridRows !== 'undefined') {
+                                    const rows = cloudSettings.gridRows;
+                                    localStorage.setItem('gridRows', rows);
+
+                                    // Обновляем UI слайдера, если он сейчас отрендерен
+                                    const slider = document.getElementById('rowCountSlider');
+                                    const valDisplay = document.getElementById('rowCountValue');
+                                    if (slider) slider.value = rows;
+                                    if (valDisplay) valDisplay.innerText = rows;
+
+                                    // Перерисовываем сетку
+                                    renderAppsToDOM(getAppsFromDOM());
                                 }
                             }
                         }

@@ -226,6 +226,7 @@ export function initSidebarManager(context) {
 
         // ОФОРМЛЕНИЕ
         const currentCols = localStorage.getItem('gridColumns') || '4';
+        const currentRows = localStorage.getItem('gridRows') || '6';
         const isGlassEnabled = localStorage.getItem('glassEffect') === 'true';
         const openInNewTab = localStorage.getItem('openInNewTab') === 'true';
 
@@ -252,6 +253,13 @@ export function initSidebarManager(context) {
                         <span id="colCountValue">${currentCols}</span>
                     </div>
                     <input type="range" id="colCountSlider" class="ios-slider" min="3" max="10" step="1" value="${currentCols}">
+                </div>
+                <div class="slider-group" style="margin-top: 8px;">
+                    <div class="slider-header" style="margin-bottom: 2px; display:flex; justify-content:space-between; font-size: 14px;">
+                        <span>Рядов</span>
+                        <span id="rowCountValue">${currentRows}</span>
+                    </div>
+                    <input type="range" id="rowCountSlider" class="ios-slider" min="3" max="10" step="1" value="${currentRows}">
                 </div>
             </div>
         `;
@@ -364,6 +372,23 @@ export function initSidebarManager(context) {
                 const val = e.target.value;
                 localStorage.setItem('gridColumns', val);
                 if (auth.currentUser) window.dbApi.saveSettings({ gridColumns: val });
+                context.renderAppsToDOM(context.getAppsFromDOM());
+            };
+        }
+
+        // Ряды
+        const rowSlider = document.getElementById('rowCountSlider');
+        const rowValue = document.getElementById('rowCountValue');
+        if (rowSlider && rowValue) {
+            rowSlider.oninput = (e) => {
+                const val = e.target.value;
+                rowValue.innerText = val;
+            };
+            rowSlider.onchange = (e) => {
+                const val = e.target.value;
+                localStorage.setItem('gridRows', val);
+                if (auth.currentUser) window.dbApi.saveSettings({ gridRows: val });
+                context.renderAppsToDOM(context.getAppsFromDOM());
             };
         }
 
@@ -377,6 +402,7 @@ export function initSidebarManager(context) {
                 const data = {
                     apps: context.getAppsFromDOM(),
                     gridColumns: localStorage.getItem('gridColumns') || '4',
+                    gridRows: localStorage.getItem('gridRows') || '6',
                     glassEffect: localStorage.getItem('glassEffect') === 'true',
                     openInNewTab: localStorage.getItem('openInNewTab') === 'true',
                     wallpaper: JSON.parse(localStorage.getItem('user_wallpaper_settings_v1') || '{}')
@@ -454,6 +480,11 @@ export function initSidebarManager(context) {
                             if (data.gridColumns) {
                                 localStorage.setItem('gridColumns', data.gridColumns);
                                 document.documentElement.style.setProperty('--grid-cols', data.gridColumns);
+                            }
+
+                            // Импорт рядов
+                            if (data.gridRows) {
+                                localStorage.setItem('gridRows', data.gridRows);
                             }
 
                             // Импорт эффекта стекла

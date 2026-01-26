@@ -81,9 +81,16 @@
             background-color: #10b948;
         }
 
+        .btn-add-thesis {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px 20px;
+            font-size: 1rem;
+        }
+
         .section {
             background: var(--card-bg);
-            border-radius: 15px;
+            border-radius: 20px;
             padding: 25px;
             margin-bottom: 15px;
             border: 1px solid var(--border-color);
@@ -207,7 +214,7 @@
 
         .grid-info {
             display: grid;
-            grid-template-columns: 1.2fr 1fr;
+            grid-template-columns: 2.5fr 1fr;
             gap: 20px;
         }
 
@@ -235,7 +242,7 @@
 
         .thesis-block {
             background: var(--card-bg);
-            border-radius: 10px;
+            border-radius: 20px;
             padding: 20px;
             margin-bottom: 15px;
             border: 1px solid var(--border-color);
@@ -255,21 +262,37 @@
             font-size: 1.1rem;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 5px;
             flex-grow: 1;
         }
 
         .thesis-name-input {
-            padding: 8px 12px;
+            padding: 8px 5px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
             font-size: 1rem;
             font-weight: 600;
             color: var(--text-color);
             background: #fff;
-            width: 100%;
-            max-width: 300px;
+            width: 89%;
+            max-width: none;
             transition: all 0.2s;
+            min-height: 1.4em;
+            line-height: 1.4;
+            word-wrap: break-word;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        #title {
+            width: 100%;
+        }
+
+        .thesis-name-input:empty:before {
+            content: attr(placeholder);
+            color: #94a3b8;
+            font-weight: 400;
+            pointer-events: none;
         }
 
         .thesis-name-input:focus {
@@ -429,7 +452,7 @@
 
         /* Стили для обложки */
         .cover-container {
-            width: 300px;
+            width: 400px;
             aspect-ratio: 16 / 9;
             background: #f1f5f9;
             border-radius: 15px;
@@ -539,68 +562,68 @@
         <form id="planForm">
 
             <div class="section">
-                <!-- Верхний ряд: Название/Время и Обложка -->
-                <div class="grid-cover" style="align-items: start; margin-bottom: 20px;">
-                    <div>
-                        <div class="form-group">
-                            <label>Название
-                                <span class="info-icon"
-                                    data-tooltip="Указываем ориентировочный/финальный заголовок. Как будет называться видео?">?</span>
-                            </label>
-                            <input type="text" id="title" placeholder="">
+                <!-- Обложка сверху -->
+                <div class="form-group"
+                    style="display: flex; flex-direction: column; align-items: center; margin-bottom: 30px;">
+                    <label style="margin-bottom: 10px;">Обложка
+                        <span class="info-icon"
+                            data-tooltip="В этом блоке размещен эскиз превью, чтобы было наглядно ясно, как может выглядеть обложка.">?</span>
+                    </label>
+                    <div class="cover-container" id="coverContainer" style="margin-bottom: 0;">
+                        <img id="coverPreview"
+                            src="https://placehold.co/800x450?text=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D0%B5+%D0%9F%D1%80%D0%B5%D0%B2%D1%8C%D1%8E"
+                            class="cover-preview" draggable="false">
+                        <div class="upload-overlay">
+                            <input type="file" id="coverInput" accept="image/*" style="display: none"
+                                onchange="uploadImage(this)">
+                            <button type="button" class="upload-icon-btn"
+                                onclick="document.getElementById('coverInput').click()" id="uploadBtn"
+                                title="Загрузить обложку">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                            </button>
+                            <span class="loader" id="uploadLoader"
+                                style="background: rgba(0,0,0,0.5); padding: 5px; border-radius: 50%;"></span>
                         </div>
-
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Хронометраж видео
-                                <span class="info-icon"
-                                    data-tooltip="Итоговая длина ролика, основыванная исходя из среднего хронометража конкурентов в нише.">?</span>
-                            </label>
-                            <select id="duration" onchange="handleCustomSelect(this)">
-                                <option value="" disabled selected>Выберите длительность</option>
-                                <option value="8 - 10 минут">8 - 10 минут</option>
-                                <option value="10 - 12 минут">10 - 12 минут</option>
-                                <option value="12 - 14 минут">12 - 14 минут</option>
-                                <option value="14 - 16 минут">14 - 16 минут</option>
-                                <option value="16+ минут">16+ минут</option>
-                                <option value="custom">Свой вариант...</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group"
-                        style="margin-bottom: 0; display: flex; flex-direction: column; align-items: flex-end;">
-                        <label style="width: 300px;">Обложка
-                            <span class="info-icon"
-                                data-tooltip="В этом блоке размещен эскиз превью, чтобы было наглядно ясно, как может выглядеть обложка.">?</span>
-                        </label>
-                        <div class="cover-container" id="coverContainer" style="margin-bottom: 0;">
-                            <img id="coverPreview"
-                                src="https://placehold.co/800x450?text=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D0%B5+%D0%9F%D1%80%D0%B5%D0%B2%D1%8C%D1%8E"
-                                class="cover-preview" draggable="false">
-                            <div class="upload-overlay">
-                                <input type="file" id="coverInput" accept="image/*" style="display: none"
-                                    onchange="uploadImage(this)">
-                                <button type="button" class="upload-icon-btn"
-                                    onclick="document.getElementById('coverInput').click()" id="uploadBtn"
-                                    title="Загрузить обложку">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                        <polyline points="17 8 12 3 7 8"></polyline>
-                                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                                    </svg>
-                                </button>
-                                <span class="loader" id="uploadLoader"
-                                    style="background: rgba(0,0,0,0.5); padding: 5px; border-radius: 50%;"></span>
-                            </div>
-                            <input type="hidden" id="coverUrl">
-                        </div>
+                        <input type="hidden" id="coverUrl">
                     </div>
                 </div>
 
-                <!-- Второй ряд: ТЗ и Комментарий рядом (как в тезисах) -->
+                <!-- Название и Хронометраж -->
+                <div class="grid-info" style="align-items: flex-start; margin-bottom: 25px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Название
+                            <span class="info-icon"
+                                data-tooltip="Указываем ориентировочный/финальный заголовок. Как будет называться видео?">?</span>
+                        </label>
+                        <div id="title" class="thesis-name-input" contenteditable="true"
+                            placeholder="Как будет называться видео?"></div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Хронометраж видео
+                            <span class="info-icon"
+                                data-tooltip="Итоговая длина ролика, основыванная исходя из среднего хронометража конкурентов в нише.">?</span>
+                        </label>
+                        <select id="duration" style="width: 100%;" onchange="handleCustomSelect(this)">
+                            <option value="" disabled selected>Выберите длительность</option>
+                            <option value="8 - 10 минут">8 - 10 минут</option>
+                            <option value="10 - 12 минут">10 - 12 минут</option>
+                            <option value="12 - 14 минут">12 - 14 минут</option>
+                            <option value="14 - 16 минут">14 - 16 минут</option>
+                            <option value="16+ минут">16+ минут</option>
+                            <option value="custom">Свой вариант...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ТЗ и О видео -->
                 <div class="grid-2">
-                    <div class="form-group">
+                    <div class="form-group" style="margin-bottom: 0;">
                         <label>Тз для превью
                             <span class="info-icon"
                                 data-tooltip="Описание фотографии для превью. Здесь важно указать эмоцию и контекст для фото автора.">?</span>
@@ -608,15 +631,15 @@
                         <div id="preview" class="rich-textarea" contenteditable="true" placeholder=""></div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Комментарий
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>О видео
                             <span class="info-icon" data-tooltip="Кратко описываем суть видео.">?</span>
                         </label>
                         <div id="producer_comment" class="rich-textarea" contenteditable="true" placeholder=""></div>
                     </div>
                 </div>
             </div>
-
+            <hr class="section-divider">
             <div class="section">
                 <div class="thesis-header">
                     <div style="font-weight: 600; font-size: 1.1rem; display: flex; align-items: center;">
@@ -645,7 +668,7 @@
             <div id="theses-container"></div>
 
             <div style="text-align: center; margin-bottom: 25px;">
-                <button type="button" class="btn-load" onclick="addThesis()">
+                <button type="button" class="btn-load btn-add-thesis" onclick="addThesis()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -861,7 +884,7 @@
             <div class="thesis-block" id="thesis_block_${currentThesisCount}">
                 <div class="thesis-header">
                     <div class="thesis-title">
-                        <input type="text" id="thesis_${currentThesisCount}_name" class="thesis-name-input" placeholder="Название тезиса...">
+                        <div id="thesis_${currentThesisCount}_name" class="thesis-name-input" contenteditable="true" placeholder="Название тезиса..."></div>
                         <span class="info-icon" data-tooltip="${thesisTooltipText}">?</span>
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center;">
@@ -906,9 +929,10 @@
             const inputs = container.querySelectorAll('.thesis-name-input');
             inputs.forEach((input, index) => {
                 const newDefaultName = `Тезис ${index + 1}`;
+                const currentText = input.innerText.trim();
                 // Если поле пустое или в нем стандартное название "Тезис ...", обновляем его
-                if (!input.value || /^Тезис \d+$/.test(input.value)) {
-                    input.value = newDefaultName;
+                if (!currentText || /^Тезис \d+$/.test(currentText)) {
+                    input.innerText = newDefaultName;
                 }
             });
         }
@@ -947,12 +971,16 @@
                 theses: []
             };
 
-            // Сохраняем текстовые инпуты и селекты
+            // Сохраняем текстовые инпуты и селекты (кроме тех, что стали div-ами)
             document.querySelectorAll('input:not(.thesis-name-input), select').forEach(el => {
-                if (el.id && el.type !== 'file') {
+                if (el.id && el.id !== 'title' && el.type !== 'file') {
                     data[el.id] = el.value;
                 }
             });
+
+            // Сохраняем основной заголовок
+            const mainTitle = document.getElementById('title');
+            if (mainTitle) data['title'] = mainTitle.innerText;
 
             // Сохраняем rich-текст (Интро, Оутро, Превью и т.д.)
             document.querySelectorAll('.rich-textarea').forEach(el => {
@@ -965,14 +993,15 @@
             document.querySelectorAll('.thesis-block').forEach(block => {
                 const id = block.id.replace('thesis_block_', '');
                 data.theses.push({
-                    name: document.getElementById(`thesis_${id}_name`).value,
+                    name: document.getElementById(`thesis_${id}_name`).innerText,
                     time: document.getElementById(`thesis_${id}_time`).value,
                     author: document.getElementById(`thesis_${id}_author`).innerHTML,
                     producer: document.getElementById(`thesis_${id}_producer`).innerHTML
                 });
             });
 
-            const title = document.getElementById('title').value || 'План';
+            const titleEl = document.getElementById('title');
+            const title = (titleEl.innerText || titleEl.textContent || '').trim() || 'План';
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
 
@@ -1003,8 +1032,12 @@
                         if (key !== 'theses') {
                             const el = document.getElementById(key);
                             if (el) {
-                                if (el.classList.contains('rich-textarea')) {
-                                    el.innerHTML = data[key];
+                                if (el.classList.contains('rich-textarea') || el.id === 'title' || el.classList.contains('thesis-name-input')) {
+                                    if (el.id === 'title' || el.classList.contains('thesis-name-input')) {
+                                        el.innerText = data[key];
+                                    } else {
+                                        el.innerHTML = data[key];
+                                    }
                                 } else {
                                     el.value = data[key];
                                 }
@@ -1034,7 +1067,7 @@
 
                             timeEl.value = t.time;
                             updateSelectStyle(timeEl);
-                            document.getElementById(`thesis_${id}_name`).value = t.name || '';
+                            document.getElementById(`thesis_${id}_name`).innerText = t.name || '';
                             document.getElementById(`thesis_${id}_author`).innerHTML = t.author;
                             document.getElementById(`thesis_${id}_producer`).innerHTML = t.producer;
                         });

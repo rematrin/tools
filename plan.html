@@ -7,6 +7,10 @@
     <title>План повествования</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
+    <script src="theme-loader.js"></script>
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="auth-widget.css">
+    <script src="gdrive-service.js"></script>
     <style>
         :root {
             --primary-color: #2563eb;
@@ -14,42 +18,103 @@
             --card-bg: #ffffff;
             --text-color: #1e293b;
             --border-color: #e2e8f0;
+            --sidebar-width: 280px;
         }
 
+        /* Sidebar Styles (Keeping these) */
         body {
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
             line-height: 1.5;
         }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-
-        .header-bar {
+        .app-root {
             display: flex;
-            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: #ffffff;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            flex-shrink: 0;
+            overflow: hidden;
+            z-index: 100;
+        }
+
+        .sidebar-scrollable {
+            flex-grow: 1;
+            padding: 20px 16px;
+            overflow-y: auto;
+        }
+
+        .sidebar-user {
+            padding: 16px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
             align-items: center;
-            background: var(--card-bg);
-            padding: 15px 25px;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            border: 1px solid var(--border-color);
+            gap: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            background: #fff;
         }
 
-        .controls {
+        .sidebar-user:hover {
+            background: #f8fafc;
+        }
+
+        .sidebar-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #f1f5f9;
+        }
+
+        .sidebar-user-info-text {
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .sidebar-user-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-user-email {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-header {
             display: flex;
-            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 4px;
+            margin-bottom: 24px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
         }
 
         button {
@@ -72,13 +137,232 @@
             height: 18px;
         }
 
-        button:hover {
-            opacity: 0.9;
+        .sidebar-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #1e293b;
+        }
+
+        .sidebar-icon-box {
+            background: #f1f5f9;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+        }
+
+        .btn-create-new {
+            background: #8b3dff;
+            color: #ffffff;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 28px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            box-shadow: 0 4px 12px rgba(139, 61, 255, 0.2);
+        }
+
+        .btn-create-new:hover {
+            background: #7a2de0;
             transform: translateY(-1px);
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: #f1f5f9;
+            margin: 15px 8px;
+        }
+
+        .sidebar-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #94a3b8;
+            font-weight: 800;
+            margin-bottom: 12px;
+            padding-left: 8px;
+        }
+
+        .sidebar-nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            color: #475569;
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .sidebar-nav-item:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .sidebar-nav-item.active {
+            background: #f1f5f9;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .sidebar-nav-item svg {
+            width: 20px;
+            height: 20px;
+            color: #94a3b8;
+            flex-shrink: 0;
+        }
+
+        .sidebar-file-wrapper {
+            position: relative;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-file-wrapper:hover .item-menu-dots {
+            opacity: 1;
+        }
+
+        .item-menu-dots {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 6px;
+            opacity: 0;
+            transition: opacity 0.2s, background 0.2s;
+            z-index: 10;
+            font-size: 1.2rem;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-menu-dots:hover {
+            background: #e2e8f0;
+            color: var(--text-color);
+        }
+
+        .sidebar-file-menu {
+            display: none;
+            position: absolute;
+            right: 10px;
+            top: 100%;
+            background-color: white;
+            min-width: 140px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .sidebar-file-menu.show {
+            display: block;
+        }
+
+        .sidebar-file-menu button {
+            padding: 10px 16px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            text-align: left;
+            background: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 0;
+            color: var(--text-color);
+            transition: background 0.2s;
+        }
+
+        .sidebar-file-menu button:hover {
+            background-color: #f8fafc;
+        }
+
+        .btn-menu-delete {
+            color: #ef4444 !important;
+        }
+
+        .btn-menu-delete:hover {
+            background-color: #fef2f2 !important;
+        }
+
+        .btn-sidebar-action {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            width: 100%;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+        }
+
+        .btn-sidebar-action:hover {
+            background: #f8fafc;
+        }
+
+        .btn-sidebar-action.primary {
+            background: #4285f4;
+            color: #fff;
+            border: none;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            background: var(--bg-color);
+            overflow-y: auto;
+            padding: 32px 24px;
+            scroll-behavior: smooth;
+        }
+
+        .main-container-limited {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            /* Explicitly center */
+            padding-bottom: 50px;
         }
 
         .btn-load {
             background-color: #10b948;
+            color: white;
         }
 
         .btn-add-thesis {
@@ -88,6 +372,7 @@
             font-size: 1rem;
         }
 
+        /* User's Original Styles (Returned) */
         .section {
             background: var(--card-bg);
             border-radius: 20px;
@@ -109,7 +394,6 @@
             font-size: 0.95rem;
         }
 
-        /* Иконка подсказки */
         .info-icon {
             margin-left: 8px;
             width: 18px;
@@ -125,7 +409,6 @@
             position: relative;
         }
 
-        /* Текст подсказки */
         .info-icon:hover::after {
             content: attr(data-tooltip);
             position: absolute;
@@ -138,13 +421,19 @@
             padding: 10px;
             border-radius: 6px;
             font-size: 0.85rem;
-            z-index: 100;
+            z-index: 10000;
+            /* Extremely high to prevent overlap by header */
             white-space: normal;
             line-height: 1.4;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
-        /* Toggle Switch iOS Style */
+        /* Tooltip position fix for items near top */
+        .info-icon.bottom:hover::after {
+            bottom: auto;
+            top: 130%;
+        }
+
         .toggle-container {
             display: flex;
             align-items: center;
@@ -276,11 +565,6 @@
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
-        textarea {
-            display: none;
-            /* Мы больше не используем стандартные textarea */
-        }
-
         select.filled {
             background-color: #dcfce7;
             color: #166534;
@@ -298,20 +582,6 @@
             display: grid;
             grid-template-columns: 2.5fr 1fr;
             gap: 20px;
-        }
-
-        .grid-cover {
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            gap: 20px;
-        }
-
-        @media(max-width: 700px) {
-
-            .grid-2,
-            .grid-cover {
-                grid-template-columns: 1fr;
-            }
         }
 
         .section-divider {
@@ -366,10 +636,6 @@
             vertical-align: middle;
         }
 
-        #title {
-            width: 100%;
-        }
-
         .thesis-name-input:empty:before {
             content: attr(placeholder);
             color: #94a3b8;
@@ -377,13 +643,6 @@
             pointer-events: none;
         }
 
-        .thesis-name-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        /* Стили для меню "три точки" */
         .menu-container {
             position: relative;
             display: inline-block;
@@ -405,6 +664,16 @@
             background: #f1f5f9;
         }
 
+        .upload-icon-btn:hover {
+            transform: scale(1.1);
+            background: #fff;
+        }
+
+        .upload-icon-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
         .menu-content {
             display: none;
             position: absolute;
@@ -418,6 +687,10 @@
             border: 1px solid var(--border-color);
             margin-top: 5px;
             overflow: hidden;
+        }
+
+        .menu-content.show {
+            display: block;
         }
 
         .menu-content button {
@@ -436,31 +709,21 @@
 
         .menu-content button:hover {
             background-color: #fef2f2;
-            opacity: 1;
         }
 
         .menu-content .menu-item {
             border-bottom: 1px solid var(--border-color);
         }
 
-        .menu-content .menu-item:last-child {
-            border-bottom: none;
+        .btn-delete {
+            color: #ef4444 !important;
         }
 
-        .menu-content button.btn-delete {
-            color: #ef4444;
-        }
-
-        .show {
-            display: block;
-        }
-
-        /* Кастомные уведомления (Toasts) */
         #toast-container {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            z-index: 1000;
+            z-index: 2000;
         }
 
         .toast {
@@ -496,7 +759,6 @@
             }
         }
 
-        /* Кастомные модальные окна */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -507,7 +769,7 @@
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 2000;
+            z-index: 3000;
             backdrop-filter: blur(2px);
         }
 
@@ -538,13 +800,13 @@
 
         .btn-danger {
             background: #ef4444;
+            color: white;
         }
 
         .modal input {
             margin-top: 15px;
         }
 
-        /* Стили для обложки */
         .cover-container {
             width: 400px;
             aspect-ratio: 16 / 9;
@@ -594,16 +856,6 @@
             border: none;
         }
 
-        .upload-icon-btn:hover {
-            transform: scale(1.1);
-            background: #fff;
-        }
-
-        .upload-icon-btn svg {
-            width: 20px;
-            height: 20px;
-        }
-
         .loader {
             width: 24px;
             height: 24px;
@@ -624,219 +876,327 @@
                 transform: rotate(360deg);
             }
         }
+
+        /* Dark Mode Support (Basic) */
+        body.dark {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f1f5f9;
+            --border-color: #334155;
+        }
+
+        body.dark .sidebar {
+            background: #1e293b;
+        }
+
+        body.dark .sidebar-header-left {
+            color: #f1f5f9;
+        }
+
+        body.dark .sidebar-nav-item:hover,
+        body.dark .sidebar-nav-item.active {
+            background: #334155;
+            color: #fff;
+        }
+
+        body.dark input,
+        body.dark select,
+        body.dark .rich-textarea,
+        body.dark .thesis-name-input {
+            background: #0f172a;
+            color: #f1f5f9;
+            border-color: #334155;
+        }
+
+        body.dark .modal {
+            background: #1e293b;
+            color: #f1f5f9;
+        }
+
+        body.dark .sidebar-user {
+            background: #1e293b;
+            border-top-color: #334155;
+        }
+
+        body.dark .sidebar-user:hover {
+            background: #334155;
+        }
+
+        body.dark .sidebar-user-name {
+            color: #f1f5f9;
+        }
+
+        body.dark .sidebar-user-email {
+            color: #94a3b8;
+        }
     </style>
 </head>
 
 <body>
 
-    <div class="container">
-        <header class="header-bar">
-            <h1>План повествования</h1>
-            <div class="controls">
-                <button onclick="saveData()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
+    <div class="app-root">
+        <aside class="sidebar">
+            <div class="sidebar-scrollable">
+                <div class="sidebar-header">
+                    <div class="sidebar-header-left">
+                        <div class="sidebar-icon-box">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <span>Мои работы</span>
+                    </div>
+                </div>
+
+                <button class="btn-create-new" onclick="createNewPlan()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Создать проект
+                </button>
+
+                <div class="sidebar-divider"></div>
+
+                <div class="sidebar-label">Действия</div>
+                <button class="btn-sidebar-action primary" id="btnSaveGDrive" onclick="saveToGDrive()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                         <polyline points="17 21 17 13 7 13 7 21"></polyline>
                         <polyline points="7 3 7 8 15 8"></polyline>
                     </svg>
-                    Сохранить план
+                    Сохранить в облако
                 </button>
-                <button class="btn-load" onclick="document.getElementById('fileInput').click()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
+                <button class="btn-sidebar-action" onclick="saveData()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path>
+                    </svg>
+                    Экспорт JSON
+                </button>
+                <button class="btn-sidebar-action" onclick="document.getElementById('fileInput').click()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                     </svg>
                     Загрузить из файла
                 </button>
                 <input type="file" id="fileInput" accept=".json" style="display: none" onchange="loadData(this)">
-            </div>
-        </header>
 
-        <form id="planForm">
+                <div class="sidebar-divider"></div>
 
-            <div class="section">
-                <!-- Обложка сверху -->
-                <div class="form-group"
-                    style="display: flex; flex-direction: column; align-items: center; margin-bottom: 30px;">
-                    <label style="margin-bottom: 10px;">Обложка
-                        <span class="info-icon"
-                            data-tooltip="В этом блоке размещен эскиз превью, чтобы было наглядно ясно, как может выглядеть обложка.">?</span>
-                    </label>
-                    <div class="cover-container" id="coverContainer" style="margin-bottom: 0;">
-                        <img id="coverPreview"
-                            src="https://placehold.co/800x450?text=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D0%B5+%D0%9F%D1%80%D0%B5%D0%B2%D1%8C%D1%8E"
-                            class="cover-preview" draggable="false">
-                        <div class="upload-overlay">
-                            <input type="file" id="coverInput" accept="image/*" style="display: none"
-                                onchange="uploadImage(this)">
-                            <button type="button" class="upload-icon-btn"
-                                onclick="document.getElementById('coverInput').click()" id="uploadBtn"
-                                title="Загрузить обложку">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="17 8 12 3 7 8"></polyline>
-                                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
-                            </button>
-                            <span class="loader" id="uploadLoader"
-                                style="background: rgba(0,0,0,0.5); padding: 5px; border-radius: 50%;"></span>
-                        </div>
-                        <input type="hidden" id="coverUrl">
-                    </div>
-                </div>
-
-                <!-- Название и Хронометраж -->
-                <div class="grid-info" style="align-items: flex-start; margin-bottom: 25px;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Название
-                            <span class="info-icon"
-                                data-tooltip="Указываем ориентировочный/финальный заголовок. Как будет называться видео?">?</span>
-                        </label>
-                        <div id="title" class="thesis-name-input" contenteditable="true"
-                            placeholder="Как будет называться видео?"></div>
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Хронометраж видео
-                            <span class="info-icon"
-                                data-tooltip="Итоговая длина ролика, основыванная исходя из среднего хронометража конкурентов в нише.">?</span>
-                        </label>
-                        <select id="duration" style="width: 100%;" onchange="handleCustomSelect(this)">
-                            <option value="" disabled selected>Выберите длительность</option>
-                            <option value="8 - 10 минут">8 - 10 минут</option>
-                            <option value="10 - 12 минут">10 - 12 минут</option>
-                            <option value="12 - 14 минут">12 - 14 минут</option>
-                            <option value="14 - 16 минут">14 - 16 минут</option>
-                            <option value="16+ минут">16+ минут</option>
-                            <option value="custom">Свой вариант...</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- ТЗ и О видео -->
-                <div class="grid-2">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Тз для превью
-                            <span class="info-icon"
-                                data-tooltip="Описание фотографии для превью. Здесь важно указать эмоцию и контекст для фото автора.">?</span>
-                        </label>
-                        <div id="preview" class="rich-textarea" contenteditable="true" placeholder=""></div>
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>О видео
-                            <span class="info-icon" data-tooltip="Кратко описываем суть видео.">?</span>
-                        </label>
-                        <div id="producer_comment" class="rich-textarea" contenteditable="true" placeholder=""></div>
+                <div class="sidebar-label">Мои файлы</div>
+                <div id="sidebar-file-list" style="margin-bottom: 20px;">
+                    <div style="padding: 20px; color: #94a3b8; font-size: 0.85rem; text-align: center;">
+                        Войдите для просмотра
                     </div>
                 </div>
             </div>
-            <hr class="section-divider">
-            <div class="section">
-                <div class="thesis-header">
-                    <div style="font-weight: 600; font-size: 1.1rem; display: flex; align-items: center;">
-                        Интро
-                        <span class="info-icon"
-                            data-tooltip="Заполняется в самую последнюю очередь. Когда понятно, какой байт будет на превью, как его раскрываем в видео и на что сделать акцент, чтоб зритель досмотрел видео до самого конца.">?</span>
-                    </div>
-                    <div class="menu-container">
-                        <button type="button" class="menu-dots" onclick="toggleMenu('intro')">⋮</button>
-                        <div id="menu_intro" class="menu-content">
-                            <div class="menu-item">
-                                <label class="toggle-container" onclick="event.stopPropagation()">
-                                    <span class="toggle-label">Комментарии</span>
-                                    <div class="toggle-switch">
-                                        <input type="checkbox" id="toggle_intro"
-                                            onchange="toggleComment('intro', this.checked)">
-                                        <span class="slider"></span>
-                                    </div>
-                                </label>
+
+            <div class="sidebar-user" id="sidebar-user-trigger" onclick="window.openAuthModal(this)">
+                <img id="sidebar-user-avatar" class="sidebar-avatar" src="https://via.placeholder.com/36">
+                <div class="sidebar-user-info-text">
+                    <p class="sidebar-user-name" id="sidebar-user-name">Гость</p>
+                    <p class="sidebar-user-email" id="sidebar-user-email">Войти в аккаунт</p>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="main-container-limited">
+                <form id="planForm">
+                    <div class="section">
+                        <!-- Обложка сверху -->
+                        <div class="form-group"
+                            style="display: flex; flex-direction: column; align-items: center; margin-bottom: 30px;">
+                            <label style="margin-bottom: 10px;">Обложка
+                                <span class="info-icon bottom"
+                                    data-tooltip="В этом блоке размещен эскиз превью, чтобы было наглядно ясно, как может выглядеть обложка.">?</span>
+                            </label>
+                            <div class="cover-container" id="coverContainer" style="margin: 0 auto;">
+                                <img id="coverPreview"
+                                    src="https://placehold.co/800x450?text=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D0%B5+%D0%9F%D1%80%D0%B5%D0%B2%D1%8C%D1%8E"
+                                    class="cover-preview" draggable="false">
+                                <div class="upload-overlay">
+                                    <input type="file" id="coverInput" accept="image/*" style="display: none"
+                                        onchange="uploadImage(this)">
+                                    <button type="button" class="upload-icon-btn"
+                                        onclick="document.getElementById('coverInput').click()" id="uploadBtn"
+                                        title="Загрузить обложку">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12">
+                                            </path>
+                                        </svg>
+                                    </button>
+                                    <span class="loader" id="uploadLoader" style="display: none;"></span>
+                                </div>
+                                <input type="hidden" id="coverUrl">
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div class="grid-info wide" id="grid_intro">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Текст автора</label>
-                        <div id="intro" class="rich-textarea" contenteditable="true"
-                            placeholder="Прямая речь автора. Что нужно сказать, чтоб зритель досмотрел видео до самого конца?">
+                        <!-- Название и Хронометраж -->
+                        <div class="grid-info" style="align-items: flex-start; margin-bottom: 25px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Название
+                                    <span class="info-icon"
+                                        data-tooltip="Указываем ориентировочный/финальный заголовок. Как будет называться видео?">?</span>
+                                </label>
+                                <div id="title" class="thesis-name-input" contenteditable="true"
+                                    placeholder="Как будет называться видео?"></div>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Хронометраж видео
+                                    <span class="info-icon"
+                                        data-tooltip="Итоговая длина ролика, основыванная исходя из среднего хронометража конкурентов в нише.">?</span>
+                                </label>
+                                <select id="duration" style="width: 100%;" onchange="handleCustomSelect(this)">
+                                    <option value="" disabled selected>Выберите длительность</option>
+                                    <option value="8 - 10 минут">8 - 10 минут</option>
+                                    <option value="10 - 12 минут">10 - 12 минут</option>
+                                    <option value="12 - 14 минут">12 - 14 минут</option>
+                                    <option value="14 - 16 минут">14 - 16 минут</option>
+                                    <option value="16+ минут">16+ минут</option>
+                                    <option value="custom">Свой вариант...</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group comment-group" id="group_intro_comment" style="margin-bottom: 0;">
-                        <label>Комментарий</label>
-                        <div id="intro_comment" class="rich-textarea" contenteditable="true"></div>
-                    </div>
-                </div>
-            </div>
 
-            <hr class="section-divider">
+                        <!-- ТЗ и О видео -->
+                        <div class="grid-2">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Тз для превью
+                                    <span class="info-icon"
+                                        data-tooltip="Описание фотографии для превью. Здесь важно указать эмоцию и контекст для фото автора.">?</span>
+                                </label>
+                                <div id="preview" class="rich-textarea" contenteditable="true" placeholder=""></div>
+                            </div>
 
-            <div id="theses-container"></div>
-
-            <div style="text-align: center; margin-bottom: 25px; margin-top: 20px;">
-                <button type="button" class="btn-load btn-add-thesis" onclick="addThesis()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Добавить блок
-                </button>
-            </div>
-
-            <hr class="section-divider">
-
-            <div class="section">
-                <div class="thesis-header">
-                    <div style="font-weight: 600; font-size: 1.1rem; display: flex; align-items: center;">
-                        Заключительная часть
-                        <span class="info-icon"
-                            data-tooltip="В данном блоке желательно НЕ размазывать концовку. Можно быстро призвать подписаться и посмотреть другие ролики на канале.">?</span>
-                    </div>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <select id="outro_duration" style="width: 160px;" onchange="handleCustomSelect(this)">
-                            <option value="" disabled selected>Длительность</option>
-                            <option value="20 сек">20 сек</option>
-                            <option value="30 - 60 сек">30 - 60 сек</option>
-                            <option value="60 - 90 сек">60 - 90 сек</option>
-                            <option value="2 минуты">2 минуты</option>
-                            <option value="custom">Свой вариант...</option>
-                        </select>
-                        <div class="menu-container">
-                            <button type="button" class="menu-dots" onclick="toggleMenu('outro')">⋮</button>
-                            <div id="menu_outro" class="menu-content">
-                                <div class="menu-item">
-                                    <label class="toggle-container" onclick="event.stopPropagation()">
-                                        <span class="toggle-label">Комментарии</span>
-                                        <div class="toggle-switch">
-                                            <input type="checkbox" id="toggle_outro"
-                                                onchange="toggleComment('outro', this.checked)">
-                                            <span class="slider"></span>
-                                        </div>
-                                    </label>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>О видео
+                                    <span class="info-icon" data-tooltip="Кратко описываем суть видео.">?</span>
+                                </label>
+                                <div id="producer_comment" class="rich-textarea" contenteditable="true" placeholder="">
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="grid-info wide" id="grid_outro">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Текст автора</label>
-                        <div id="outro" class="rich-textarea" contenteditable="true" placeholder=""></div>
+                    <hr class="section-divider">
+
+                    <div class="section">
+                        <div class="thesis-header">
+                            <div style="font-weight: 600; font-size: 1.1rem; display: flex; align-items: center;">
+                                Интро
+                                <span class="info-icon"
+                                    data-tooltip="Заполняется в самую последнюю очередь. Когда понятно, какой байт будет на превью, как его раскрываем в видео и на что сделать акцент, чтоб зритель досмотрел видео до самого конца.">?</span>
+                            </div>
+                            <div class="menu-container">
+                                <button type="button" class="menu-dots" onclick="toggleMenu('intro')">⋮</button>
+                                <div id="menu_intro" class="menu-content">
+                                    <div class="menu-item">
+                                        <label class="toggle-container" onclick="event.stopPropagation()">
+                                            <span class="toggle-label">Комментарии</span>
+                                            <div class="toggle-switch">
+                                                <input type="checkbox" id="toggle_intro"
+                                                    onchange="toggleComment('intro', this.checked)">
+                                                <span class="slider"></span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid-info wide" id="grid_intro">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Текст автора</label>
+                                <div id="intro" class="rich-textarea" contenteditable="true"
+                                    placeholder="Прямая речь автора. Что нужно сказать, чтоб зритель досмотрел видео до самого конца?">
+                                </div>
+                            </div>
+                            <div class="form-group comment-group" id="group_intro_comment" style="margin-bottom: 0;">
+                                <label>Комментарий</label>
+                                <div id="intro_comment" class="rich-textarea" contenteditable="true"></div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-group comment-group" id="group_outro_comment" style="margin-bottom: 0;">
-                        <label>Комментарий</label>
-                        <div id="outro_comment" class="rich-textarea" contenteditable="true" placeholder=""></div>
+                    <hr class="section-divider">
+
+                    <div id="theses-container"></div>
+
+                    <div style="text-align: center; margin-bottom: 25px; margin-top: 20px;">
+                        <button type="button" class="btn-load btn-add-thesis" onclick="addThesis()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Добавить блок
+                        </button>
                     </div>
-                </div>
+
+                    <hr class="section-divider">
+
+                    <div class="section">
+                        <div class="thesis-header">
+                            <div style="font-weight: 600; font-size: 1.1rem; display: flex; align-items: center;">
+                                Заключительная часть
+                                <span class="info-icon"
+                                    data-tooltip="В данном блоке желательно НЕ размазывать концовку. Можно быстро призвать подписаться и посмотреть другие ролики на канале.">?</span>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <select id="outro_duration" style="width: 160px;" onchange="handleCustomSelect(this)">
+                                    <option value="" disabled selected>Длительность</option>
+                                    <option value="20 сек">20 сек</option>
+                                    <option value="30 - 60 сек">30 - 60 сек</option>
+                                    <option value="60 - 90 сек">60 - 90 сек</option>
+                                    <option value="2 минуты">2 минуты</option>
+                                    <option value="custom">Свой вариант...</option>
+                                </select>
+                                <div class="menu-container">
+                                    <button type="button" class="menu-dots" onclick="toggleMenu('outro')">⋮</button>
+                                    <div id="menu_outro" class="menu-content">
+                                        <div class="menu-item">
+                                            <label class="toggle-container" onclick="event.stopPropagation()">
+                                                <span class="toggle-label">Комментарии</span>
+                                                <div class="toggle-switch">
+                                                    <input type="checkbox" id="toggle_outro"
+                                                        onchange="toggleComment('outro', this.checked)">
+                                                    <span class="slider"></span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid-info wide" id="grid_outro">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Текст автора</label>
+                                <div id="outro" class="rich-textarea" contenteditable="true" placeholder=""></div>
+                            </div>
+
+                            <div class="form-group comment-group" id="group_outro_comment" style="margin-bottom: 0;">
+                                <label>Комментарий</label>
+                                <div id="outro_comment" class="rich-textarea" contenteditable="true" placeholder="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
             </div>
-
-        </form>
+        </main>
     </div>
 
     <div id="toast-container"></div>
@@ -854,171 +1214,88 @@
 
     <div id="promptModal" class="modal-overlay">
         <div class="modal">
-            <h3>Свой вариант</h3>
-            <p>Введите длительность (например, 5-7 минут):</p>
-            <input type="text" id="promptInput" placeholder="Введите значение...">
+            <h3 id="promptTitle">Свой вариант</h3>
+            <p id="promptText">Введите значение:</p>
+            <input type="text" id="promptInput" placeholder="Введите...">
             <div class="modal-buttons">
                 <button class="btn-secondary" onclick="closeModal('promptModal')">Отмена</button>
-                <button id="promptBtn">Готово</button>
+                <button id="promptBtn" class="btn-primary"
+                    style="color: white; padding: 10px 20px; border-radius: 6px; font-weight: 600;">Готово</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Система уведомлений
+        // Utilities
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.textContent = message;
             container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
         }
 
-        function openModal(id) {
-            document.getElementById(id).style.display = 'flex';
-        }
+        const openModal = id => document.getElementById(id).style.display = 'flex';
+        const closeModal = id => document.getElementById(id).style.display = 'none';
 
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
-        }
-
-        // Функция для обработки пользовательского варианта
         function handleCustomSelect(select) {
             updateSelectStyle(select);
             if (select.value === 'custom') {
                 const input = document.getElementById('promptInput');
                 input.value = '';
+                document.getElementById('promptTitle').textContent = 'Свой вариант';
+                document.getElementById('promptText').textContent = 'Введите значение:';
                 openModal('promptModal');
-
                 document.getElementById('promptBtn').onclick = () => {
-                    const customValue = input.value.trim();
-                    if (customValue) {
-                        const newOpt = document.createElement('option');
-                        newOpt.value = customValue;
-                        newOpt.text = customValue;
-                        newOpt.selected = true;
-                        select.add(newOpt, select.options[select.options.length - 1]);
+                    const val = input.value.trim();
+                    if (val) {
+                        const opt = document.createElement('option');
+                        opt.value = val; opt.text = val; opt.selected = true;
+                        select.add(opt, select.options[select.options.length - 1]);
                         closeModal('promptModal');
                         updateSelectStyle(select);
                     }
                 };
-
-                // Сброс если закрыли без ввода
-                const cancelBtn = document.querySelector('#promptModal .btn-secondary');
-                const oldCancel = cancelBtn.onclick;
-                cancelBtn.onclick = () => {
-                    select.selectedIndex = 0;
-                    closeModal('promptModal');
-                    cancelBtn.onclick = oldCancel;
-                };
             }
         }
 
-        // Функция для автоматического расширения textarea
-        function autoExpand(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
+        function updateSelectStyle(select) {
+            if (select.value && select.value !== "" && select.value !== "custom") select.classList.add('filled');
+            else select.classList.remove('filled');
         }
 
-        // Переключение меню
         function toggleMenu(id) {
-            // Закрываем другие открытые меню
-            document.querySelectorAll('.menu-content').forEach(menu => {
-                if (menu.id !== `menu_${id}`) menu.classList.remove('show');
-            });
+            document.querySelectorAll('.menu-content').forEach(m => { if (m.id !== `menu_${id}`) m.classList.remove('show'); });
             const menu = document.getElementById(`menu_${id}`);
             if (menu) menu.classList.toggle("show");
         }
 
-        // Логика переключения комментариев
         function toggleComment(sectionId, isVisible) {
             const group = document.getElementById(`group_${sectionId}_comment`);
             const grid = document.getElementById(`grid_${sectionId}`);
-
-            if (isVisible) {
-                group.classList.add('visible');
-                grid.classList.remove('wide');
-                grid.classList.add('with-comment');
-            } else {
-                group.classList.remove('visible');
-                grid.classList.add('wide');
-                grid.classList.remove('with-comment');
-            }
+            if (isVisible) { group.classList.add('visible'); grid.classList.remove('wide'); grid.classList.add('with-comment'); }
+            else { group.classList.remove('visible'); grid.classList.add('wide'); grid.classList.remove('with-comment'); }
         }
 
-        // Закрытие меню при клике вне
-        window.onclick = function (event) {
-            if (!event.target.matches('.menu-dots')) {
-                document.querySelectorAll('.menu-content').forEach(menu => {
-                    menu.classList.remove('show');
-                });
+        window.onclick = e => {
+            if (!e.target.matches('.menu-dots') && !e.target.matches('.item-menu-dots')) {
+                document.querySelectorAll('.menu-content, .sidebar-file-menu').forEach(m => m.classList.remove('show'));
             }
-        }
+        };
 
-        // Загрузка изображения на ImgBB
-        async function uploadImage(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            const apiKey = 'fbd88ce7045582e4c4176c67de93ceee';
-            const formData = new FormData();
-            formData.append('image', file);
-
-            // Показываем лоадер
-            const loader = document.getElementById('uploadLoader');
-            const btn = document.getElementById('uploadBtn');
-            loader.style.display = 'inline-block';
-            btn.style.display = 'none';
-
-            try {
-                const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    const url = result.data.url;
-                    document.getElementById('coverUrl').value = url;
-                    document.getElementById('coverPreview').src = url;
-                    showToast('Обложка загружена!');
-                } else {
-                    throw new Error('Ошибка API');
-                }
-            } catch (err) {
-                console.error(err);
-                showToast('Ошибка при загрузке изображения', 'error');
-            } finally {
-                loader.style.display = 'none';
-                btn.style.display = 'inline-block';
-                input.value = '';
-            }
-        }
-
+        // Logic
+        let currentGDriveId = null;
         let currentThesisCount = 0;
         const container = document.getElementById('theses-container');
-
-        // Текст подсказки для ВСЕХ тезисов (из таблицы)
+        // Текст подсказки для ВСЕХ тезисов
         const thesisTooltipText = "В данных блоках автор видео прописывает краткие тезисы и ключевые поинты о том, что он может рассказать на заданную тему. Это может быть грубый набросок, все, что появляется в голове. После того, как все тезисы заполнены - продюсер сортирует их в логическом порядке, добавляет логические/наводящие вопросы (опционально), чтоб раскрыть тему интереснее. Рядом с каждым тезисом также важно указать хронометраж.";
-
-        // Варианты времени для тезисов
-        const timeOptions = [
-            "20 сек",
-            "30 - 60 сек",
-            "60 - 90 сек",
-            "2 минуты"
-        ];
+        const timeOptions = ["20 сек", "30 - 60 сек", "60 - 90 сек", "2 минуты"];
 
         function addThesis() {
             currentThesisCount++;
             let optionsHtml = `<option value="" disabled selected>Длительность</option>`;
-            timeOptions.forEach(opt => {
-                optionsHtml += `<option value="${opt}">${opt}</option>`;
-            });
+            timeOptions.forEach(opt => { optionsHtml += `<option value="${opt}">${opt}</option>`; });
             optionsHtml += `<option value="custom">Свой вариант...</option>`;
 
             const html = `
@@ -1053,38 +1330,19 @@
                         </div>
                     </div>
                 </div>
-                
                 <div class="grid-info wide" id="grid_thesis_${currentThesisCount}">
-                    <div class="form-group">
-                        <label>Тезис автора</label>
-                        <div id="thesis_${currentThesisCount}_author" class="rich-textarea" contenteditable="true"></div>
-                    </div>
-                    <div class="form-group comment-group" id="group_thesis_${currentThesisCount}_comment">
-                        <label>Комментарий</label>
-                        <div id="thesis_${currentThesisCount}_producer" class="rich-textarea" contenteditable="true"></div>
-                    </div>
+                    <div class="form-group"><label>Тезис автора</label><div id="thesis_${currentThesisCount}_author" class="rich-textarea" contenteditable="true"></div></div>
+                    <div class="form-group comment-group" id="group_thesis_${currentThesisCount}_comment"><label>Комментарий</label><div id="thesis_${currentThesisCount}_producer" class="rich-textarea" contenteditable="true"></div></div>
                 </div>
-            </div>
-        `;
+            </div>`;
             container.insertAdjacentHTML('beforeend', html);
-
-            // Обновляем нумерацию
             renumberTheses();
-
-            // Инициализируем авто-расширение для новых textarea
-            const newBlock = document.getElementById(`thesis_block_${currentThesisCount}`);
-            newBlock.querySelectorAll('textarea').forEach(autoExpand);
         }
 
         function renumberTheses() {
-            const inputs = container.querySelectorAll('.thesis-name-input');
-            inputs.forEach((input, index) => {
-                const newDefaultName = `Тезис ${index + 1}`;
-                const currentText = input.innerText.trim();
-                // Если поле пустое или в нем стандартное название "Тезис ...", обновляем его
-                if (!currentText || /^Тезис \d+$/.test(currentText)) {
-                    input.innerText = newDefaultName;
-                }
+            container.querySelectorAll('.thesis-name-input').forEach((input, index) => {
+                const newDefault = `Тезис ${index + 1}`;
+                if (!input.innerText.trim() || /^Тезис \d+$/.test(input.innerText.trim())) input.innerText = newDefault;
             });
         }
 
@@ -1092,55 +1350,19 @@
             document.getElementById('modalText').textContent = 'Вы уверены, что хотите удалить этот тезис?';
             openModal('confirmModal');
             document.getElementById('confirmBtn').onclick = () => {
-                const block = document.getElementById(`thesis_block_${id}`);
-                if (block) {
-                    block.remove();
-                    renumberTheses();
-                }
+                document.getElementById(`thesis_block_${id}`)?.remove();
+                renumberTheses();
                 closeModal('confirmModal');
-                showToast('Тезис удален', 'success');
+                showToast('Тезис удален');
             };
         }
 
-        // Инициализируем первые 3 тезиса по умолчанию
-        window.addEventListener('load', () => {
-            for (let i = 0; i < 3; i++) addThesis();
-        });
-
-        // Инициализация авто-расширения для всех textarea
-        document.addEventListener('input', function (event) {
-            if (event.target.tagName.toLowerCase() === 'textarea') {
-                autoExpand(event.target);
-            }
-        });
-
-        // Инициализация авто-расширения удалена для rich-textarea, так как div растет сам
-
-        // Логика Сохранения
-        function saveData() {
-            const data = {
-                theses: []
-            };
-
-            // Сохраняем текстовые инпуты и селекты (кроме тех, что стали div-ами)
-            document.querySelectorAll('input:not(.thesis-name-input), select').forEach(el => {
-                if (el.id && el.id !== 'title' && el.type !== 'file') {
-                    data[el.id] = el.value;
-                }
-            });
-
-            // Сохраняем основной заголовок
-            const mainTitle = document.getElementById('title');
-            if (mainTitle) data['title'] = mainTitle.innerText;
-
-            // Сохраняем rich-текст (Интро, Оутро, Превью и т.д.)
-            document.querySelectorAll('.rich-textarea').forEach(el => {
-                if (el.id && !el.id.startsWith('thesis_')) {
-                    data[el.id] = el.innerHTML;
-                }
-            });
-
-            // Сохраняем динамические тезисы
+        // Data Management
+        function getFormData() {
+            const data = { theses: [] };
+            document.querySelectorAll('input:not(.thesis-name-input), select').forEach(el => { if (el.id && el.id !== 'title' && el.type !== 'file') data[el.id] = el.value; });
+            const mainTitle = document.getElementById('title'); if (mainTitle) data['title'] = mainTitle.innerText;
+            document.querySelectorAll('.rich-textarea').forEach(el => { if (el.id && !el.id.startsWith('thesis_')) data[el.id] = el.innerHTML; });
             document.querySelectorAll('.thesis-block').forEach(block => {
                 const id = block.id.replace('thesis_block_', '');
                 data.theses.push({
@@ -1150,148 +1372,238 @@
                     producer: document.getElementById(`thesis_${id}_producer`).innerHTML
                 });
             });
-
-            // Сохраняем состояния тогглов
-            document.querySelectorAll('input[id^="toggle_"]').forEach(el => {
-                data[el.id] = el.checked;
-            });
-
-            const titleEl = document.getElementById('title');
-            const title = (titleEl.innerText || titleEl.textContent || '').trim() || 'План';
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${title}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            document.querySelectorAll('input[id^="toggle_"]').forEach(el => data[el.id] = el.checked);
+            return data;
         }
 
-        // Логика Загрузки
-        function loadData(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-
-                    // Очищаем текущие тезисы
-                    container.innerHTML = '';
-                    currentThesisCount = 0;
-
-                    // Загружаем основные поля
-                    for (const key in data) {
-                        if (key !== 'theses') {
-                            const el = document.getElementById(key);
-                            if (el) {
-                                if (el.classList.contains('rich-textarea') || el.id === 'title' || el.classList.contains('thesis-name-input')) {
-                                    if (el.id === 'title' || el.classList.contains('thesis-name-input')) {
-                                        el.innerText = data[key];
-                                    } else {
-                                        el.innerHTML = data[key];
-                                    }
-                                } else {
-                                    el.value = data[key];
-                                }
-                                if (el.tagName.toLowerCase() === 'select') updateSelectStyle(el);
-                                // Специальная обработка для обложки
-                                if (key === 'coverUrl' && data[key]) {
-                                    document.getElementById('coverPreview').src = data[key];
-                                }
-                            }
-                        }
+        function applyData(data) {
+            container.innerHTML = ''; currentThesisCount = 0;
+            for (const key in data) {
+                if (key !== 'theses') {
+                    const el = document.getElementById(key);
+                    if (el) {
+                        if (el.classList.contains('rich-textarea') || el.id === 'title' || el.classList.contains('thesis-name-input')) {
+                            if (el.id === 'title' || el.classList.contains('thesis-name-input')) el.innerText = data[key];
+                            else el.innerHTML = data[key];
+                        } else el.value = data[key];
+                        if (el.tagName === 'SELECT') updateSelectStyle(el);
+                        if (key === 'coverUrl' && data[key]) document.getElementById('coverPreview').src = data[key];
                     }
-
-                    // Загружаем тезисы
-                    if (data.theses) {
-                        data.theses.forEach(t => {
-                            addThesis();
-                            const id = currentThesisCount;
-
-                            const timeEl = document.getElementById(`thesis_${id}_time`);
-                            // Проверяем, есть ли такое значение в списке, если нет - создаем кастомное
-                            if (!Array.from(timeEl.options).some(opt => opt.value === t.time)) {
-                                const newOpt = document.createElement('option');
-                                newOpt.value = t.time;
-                                newOpt.text = t.time;
-                                timeEl.add(newOpt, timeEl.options[timeEl.options.length - 1]);
-                            }
-
-                            timeEl.value = t.time;
-                            updateSelectStyle(timeEl);
-                            document.getElementById(`thesis_${id}_name`).innerText = t.name || '';
-                            document.getElementById(`thesis_${id}_author`).innerHTML = t.author;
-                            document.getElementById(`thesis_${id}_producer`).innerHTML = t.producer;
-
-                            // Включаем комментарии если они были включены или если поле не пустое
-                            const toggleId = `toggle_thesis_${id}`;
-                            const shouldToggle = data[toggleId] === true || (t.producer && t.producer.trim() !== '' && t.producer !== '<br>');
-                            const toggle = document.getElementById(toggleId);
-                            if (toggle) {
-                                toggle.checked = shouldToggle;
-                                toggleComment(`thesis_${id}`, shouldToggle);
-                            }
-                        });
-                    }
-
-                    // Обработка тогглов для основных секций (интро / оутро)
-                    ['intro', 'outro'].forEach(section => {
-                        const toggleId = `toggle_${section}`;
-                        const commentId = `${section}_comment`;
-                        const commentEl = document.getElementById(commentId);
-                        const shouldToggle = data[toggleId] === true || (commentEl && commentEl.innerHTML.trim() !== '' && commentEl.innerHTML !== '<br>');
-                        const toggle = document.getElementById(toggleId);
-                        if (toggle) {
-                            toggle.checked = shouldToggle;
-                            toggleComment(section, shouldToggle);
-                        }
-                    });
-
-                    showToast('Данные загружены!');
-                } catch (err) {
-                    console.error(err);
-                    showToast('Ошибка чтения файла', 'error');
                 }
-                input.value = '';
+            }
+            if (data.theses) {
+                data.theses.forEach(t => {
+                    addThesis(); const id = currentThesisCount;
+                    const timeEl = document.getElementById(`thesis_${id}_time`);
+                    if (!Array.from(timeEl.options).some(o => o.value === t.time)) {
+                        const newOpt = document.createElement('option'); newOpt.value = t.time; newOpt.text = t.time;
+                        timeEl.add(newOpt, timeEl.options[timeEl.options.length - 1]);
+                    }
+                    timeEl.value = t.time; updateSelectStyle(timeEl);
+                    document.getElementById(`thesis_${id}_name`).innerText = t.name || '';
+                    document.getElementById(`thesis_${id}_author`).innerHTML = t.author;
+                    document.getElementById(`thesis_${id}_producer`).innerHTML = t.producer;
+                    const toggleId = `toggle_thesis_${id}`;
+                    if (data[toggleId]) { document.getElementById(toggleId).checked = true; toggleComment(`thesis_${id}`, true); }
+                });
+            }
+            ['intro', 'outro'].forEach(section => {
+                const toggleId = `toggle_${section}`;
+                const commentEl = document.getElementById(`${section}_comment`);
+                const shouldToggle = data[toggleId] === true || (commentEl && commentEl.innerHTML.trim() !== '' && commentEl.innerHTML !== '<br>');
+                const toggle = document.getElementById(toggleId);
+                if (toggle) { toggle.checked = shouldToggle; toggleComment(section, shouldToggle); }
+            });
+        }
+
+        // Google Drive
+        async function refreshSidebarFiles() {
+            const list = document.getElementById('sidebar-file-list');
+            if (!list || !window.currentUser) return;
+            list.innerHTML = '<div style="padding: 20px; text-align: center;"><span class="loader" style="border-bottom-color:transparent; border-color:var(--primary-color); display:inline-block"></span></div>';
+            try {
+                const files = await GDriveService.listFiles();
+                if (files.length === 0) { list.innerHTML = '<div style="padding: 20px; color: #94a3b8; font-size: 0.85rem; text-align: center;">Нет сохраненных планов</div>'; return; }
+                files.sort((a, b) => new Date(b.modifiedTime) - new Date(a.modifiedTime));
+                list.innerHTML = '';
+                files.forEach(f => {
+                    const cleanName = f.name.replace('.json', '');
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'sidebar-file-wrapper';
+
+                    const btn = document.createElement('button');
+                    btn.className = 'sidebar-nav-item';
+                    if (currentGDriveId === f.id) btn.classList.add('active');
+                    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg> <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${cleanName}</span>`;
+                    btn.onclick = () => loadFromGDrive(f.id);
+
+                    const menuBtn = document.createElement('button');
+                    menuBtn.className = 'item-menu-dots';
+                    menuBtn.innerHTML = '⋮';
+                    menuBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        toggleFileMenu(f.id, e);
+                    };
+
+                    const menu = document.createElement('div');
+                    menu.id = `file_menu_${f.id}`;
+                    menu.className = 'sidebar-file-menu';
+                    menu.innerHTML = `
+                        <button onclick="promptRenameFile('${f.id}', '${cleanName}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            Переименовать
+                        </button>
+                        <button class="btn-menu-delete" onclick="confirmDeleteFile('${f.id}', '${cleanName}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            Удалить
+                        </button>
+                    `;
+
+                    wrapper.appendChild(btn);
+                    wrapper.appendChild(menuBtn);
+                    wrapper.appendChild(menu);
+                    list.appendChild(wrapper);
+                });
+            } catch (err) { list.innerHTML = '<div style="padding: 20px; color: #ef4444; font-size: 0.85rem; text-align: center;">Ошибка загрузки</div>'; }
+        }
+
+        function toggleFileMenu(id, event) {
+            document.querySelectorAll('.sidebar-file-menu').forEach(m => { if (m.id !== `file_menu_${id}`) m.classList.remove('show'); });
+            const menu = document.getElementById(`file_menu_${id}`);
+            if (menu) menu.classList.toggle("show");
+        }
+
+        function promptRenameFile(id, oldName) {
+            const input = document.getElementById('promptInput');
+            input.value = oldName;
+            document.getElementById('promptTitle').textContent = 'Переименовать';
+            document.getElementById('promptText').textContent = 'Введите новое название:';
+            openModal('promptModal');
+            document.getElementById('promptBtn').onclick = async () => {
+                const newName = input.value.trim();
+                if (newName && newName !== oldName) {
+                    try {
+                        await GDriveService.renameFile(id, newName);
+                        showToast('Файл переименован');
+                        refreshSidebarFiles();
+                        if (currentGDriveId === id) {
+                            document.getElementById('title').innerText = newName;
+                        }
+                    } catch (e) { showToast(e.message, 'error'); }
+                }
+                closeModal('promptModal');
             };
+        }
+
+        function confirmDeleteFile(id, name) {
+            document.getElementById('modalText').textContent = `Вы уверены, что хотите удалить файл "${name}"?`;
+            openModal('confirmModal');
+            document.getElementById('confirmBtn').onclick = async () => {
+                try {
+                    await GDriveService.deleteFile(id);
+                    showToast('Файл удален');
+                    if (currentGDriveId === id) currentGDriveId = null;
+                    refreshSidebarFiles();
+                } catch (e) { showToast(e.message, 'error'); }
+                closeModal('confirmModal');
+            };
+        }
+
+        async function saveToGDrive() {
+            if (!window.currentUser) { showToast('Войдите через Google', 'error'); if (window.openAuthModal) window.openAuthModal(); return; }
+            const btn = document.getElementById('btnSaveGDrive'); const old = btn.innerHTML;
+            btn.innerHTML = '<span class="loader" style="width:16px; height:16px; display:inline-block"></span>'; btn.disabled = true;
+            try {
+                const title = document.getElementById('title').innerText.trim() || 'Новый план';
+                const result = await GDriveService.saveFile(title, getFormData(), currentGDriveId);
+                if (result && result.id) currentGDriveId = result.id;
+                showToast('Сохранено в облако!'); refreshSidebarFiles();
+            } catch (err) { showToast(err.message, 'error'); }
+            finally { btn.innerHTML = old; btn.disabled = false; }
+        }
+
+        async function loadFromGDrive(id) {
+            try {
+                showToast('Загрузка из облака...');
+                const data = await GDriveService.getFile(id);
+                applyData(data);
+                currentGDriveId = id;
+                showToast('Проект загружен');
+            }
+            catch (err) { showToast(err.message, 'error'); }
+        }
+
+        function createNewPlan() {
+            if (confirm('Создать новый проект? Несохраненные данные будут потеряны.')) {
+                currentGDriveId = null;
+                document.getElementById('planForm').reset();
+                document.getElementById('title').innerText = '';
+                document.querySelectorAll('.rich-textarea').forEach(el => el.innerHTML = '');
+                document.getElementById('coverUrl').value = '';
+                document.getElementById('coverPreview').src = 'https://placehold.co/800x450?text=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D0%B5+%D0%9F%D1%80%D0%B5%D0%B2%D1%8C%D1%8E';
+                container.innerHTML = ''; currentThesisCount = 0;
+                for (let i = 0; i < 3; i++) addThesis();
+                showToast('Новый проект создан');
+            }
+        }
+
+        // Image
+        async function uploadImage(input) {
+            const file = input.files[0]; if (!file) return;
+            const loader = document.getElementById('uploadLoader'); const btn = document.getElementById('uploadBtn');
+            loader.style.display = 'inline-block'; btn.style.display = 'none';
+            try {
+                const fd = new FormData(); fd.append('image', file);
+                const res = await fetch('https://api.imgbb.com/1/upload?key=fbd88ce7045582e4c4176c67de93ceee', { method: 'POST', body: fd });
+                const json = await res.json();
+                if (json.success) {
+                    document.getElementById('coverUrl').value = json.data.url;
+                    document.getElementById('coverPreview').src = json.data.url;
+                    showToast('Обложка обновлена');
+                }
+            } catch (e) { showToast('Ошибка загрузки', 'error'); }
+            finally { loader.style.display = 'none'; btn.style.display = 'inline-block'; }
+        }
+
+        function saveData() {
+            const data = getFormData();
+            const title = document.getElementById('title').innerText.trim() || 'Проект';
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${title}.json`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        function loadData(input) {
+            const file = input.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => { try { applyData(JSON.parse(e.target.result)); showToast('Данные загружены!'); } catch (err) { showToast('Ошибка чтения', 'error'); } input.value = ''; };
             reader.readAsText(file);
         }
-        // Функция для обновления стиля выпадающего списка
-        function updateSelectStyle(select) {
-            if (select.value && select.value !== "" && select.value !== "custom") {
-                select.classList.add('filled');
+
+        // Init
+        window.addEventListener('load', () => { if (currentThesisCount === 0) for (let i = 0; i < 3; i++) addThesis(); refreshSidebarFiles(); document.querySelectorAll('select').forEach(updateSelectStyle); });
+        window.addEventListener('authChanged', e => {
+            const user = e.detail.user;
+            const nameEl = document.getElementById('sidebar-user-name');
+            const emailEl = document.getElementById('sidebar-user-email');
+            const avatarEl = document.getElementById('sidebar-user-avatar');
+
+            if (user) {
+                nameEl.textContent = user.displayName || 'Пользователь';
+                emailEl.textContent = user.email;
+                avatarEl.src = user.photoURL || `https://via.placeholder.com/36/CCCCCC/FFFFFF?text=${(user.displayName || 'U')[0]}`;
             } else {
-                select.classList.remove('filled');
+                nameEl.textContent = 'Гость';
+                emailEl.textContent = 'Войти в аккаунт';
+                avatarEl.src = 'https://via.placeholder.com/36/F1F5F9/64748B?text=?';
             }
-        }
-
-        // Глобальный слушатель для всех select
-        document.addEventListener('change', (e) => {
-            if (e.target.tagName === 'SELECT') {
-                updateSelectStyle(e.target);
-                if (e.target.onchange) e.target.onchange(); // Для вызова принудительно если нужно
-            }
+            refreshSidebarFiles();
         });
-
-        // Инициализация при загрузке страниц
-        window.addEventListener('load', () => {
-            document.querySelectorAll('select').forEach(updateSelectStyle);
-        });
-
-        // Очистка при вставке (чтобы не тянуть стили извне, но оставить жирный/курсив)
-        document.addEventListener('paste', (e) => {
-            if (e.target.classList.contains('rich-textarea')) {
-                e.preventDefault();
-                const text = e.clipboardData.getData('text/plain');
-                document.execCommand('insertText', false, text);
-            }
-        });
+        document.addEventListener('paste', e => { if (e.target.classList.contains('rich-textarea')) { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')); } });
     </script>
 
+    <script type="module" src="auth-widget.js"></script>
+    <script type="module" src="nav-widget.js"></script>
 </body>
 
 </html>

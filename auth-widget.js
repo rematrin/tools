@@ -1,25 +1,25 @@
 // auth-widget.js
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { 
-    getAuth, 
-    createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword, 
-    signOut, 
-    onAuthStateChanged, 
+import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged,
     updateProfile,
     GoogleAuthProvider,
     signInWithPopup
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDBNCQo3rYgmDZkZrGKT-g2t0LlpsfH1Pg",
-  authDomain: "tools-c98fd.firebaseapp.com",
-  projectId: "tools-c98fd",
-  storageBucket: "tools-c98fd.firebasestorage.app",
-  messagingSenderId: "595986762798",
-  appId: "1:595986762798:web:b8c05cddcb0f3a610163bf",
-  measurementId: "G-X3Z1KH8760"
+    apiKey: "AIzaSyDBNCQo3rYgmDZkZrGKT-g2t0LlpsfH1Pg",
+    authDomain: "tools-c98fd.firebaseapp.com",
+    projectId: "tools-c98fd",
+    storageBucket: "tools-c98fd.firebasestorage.app",
+    messagingSenderId: "595986762798",
+    appId: "1:595986762798:web:b8c05cddcb0f3a610163bf",
+    measurementId: "G-X3Z1KH8760"
 };
 
 const modalHTML = `
@@ -54,11 +54,6 @@ const modalHTML = `
                 <img id="profileAvatar" src="" class="vk-avatar-large">
                 <div class="vk-user-name" id="profileName">Загрузка...</div>
                 <div class="vk-user-sub" id="profileEmail">...</div>
-                <button class="vk-manage-btn">
-                    <div class="vk-manage-text">
-                        <span>Управление аккаунтом</span>
-                    </div>
-                </button>
             </div>
             <div class="vk-menu-list">
                 <button class="vk-menu-item item-logout" id="btnLogout">
@@ -93,10 +88,11 @@ function initAuthWidget() {
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
+    provider.addScope('https://www.googleapis.com/auth/drive.file');
 
     const overlay = document.getElementById('authOverlay');
     const modal = document.getElementById('authModal');
-    
+
     let activeTrigger = null;
 
     // === ЛОГИКА ОПРЕДЕЛЕНИЯ ТЕМЫ ===
@@ -117,34 +113,48 @@ function initAuthWidget() {
     const detectCurrentTheme = () => {
         // Проверяем наличие глобальной функции из theme-loader.js
         if (typeof window.getThemeMode === 'function') {
-            return window.getThemeMode(); 
+            return window.getThemeMode();
         }
-        
+
         // Фолбэк, если лоадер еще не загрузился или произошла ошибка
         const stored = localStorage.getItem('themeMode');
         if (stored === 'system') return 'auto';
         if (stored === 'light' || stored === 'dark') return stored;
-        return 'auto'; 
+        return 'auto';
     };
 
     // === ПОЗИЦИОНИРОВАНИЕ ===
     const recalcPosition = () => {
         const triggerBtn = activeTrigger || document.getElementById('profile-container');
-        
+
         if (triggerBtn && overlay.classList.contains('open')) {
             const rect = triggerBtn.getBoundingClientRect();
-            modal.style.top = (rect.bottom + 8) + 'px';
+            const modalHeight = modal.offsetHeight || 300; // Rough estimate if not rendered
+
+            // Если снизу мало места, открываем над кнопкой
+            if (rect.bottom + modalHeight > window.innerHeight) {
+                modal.style.top = 'auto';
+                modal.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+                modal.style.transformOrigin = 'bottom left';
+            } else {
+                modal.style.top = (rect.bottom + 8) + 'px';
+                modal.style.bottom = 'auto';
+                modal.style.transformOrigin = 'top left';
+            }
 
             const centerX = window.innerWidth / 2;
             if (rect.left < centerX) {
                 modal.style.left = rect.left + 'px';
                 modal.style.right = 'auto';
-                modal.style.transformOrigin = 'top left';
             } else {
                 const rightPos = window.innerWidth - rect.right;
                 modal.style.right = rightPos + 'px';
                 modal.style.left = 'auto';
-                modal.style.transformOrigin = 'top right';
+                if (modal.style.transformOrigin.includes('bottom')) {
+                    modal.style.transformOrigin = 'bottom right';
+                } else {
+                    modal.style.transformOrigin = 'top right';
+                }
             }
         }
     };
@@ -164,7 +174,7 @@ function initAuthWidget() {
         overlay.classList.add('open');
         recalcPosition();
         window.addEventListener('resize', recalcPosition);
-        
+
         // Синхронизируем UI при открытии
         updateThemeUI(detectCurrentTheme());
     };
@@ -173,7 +183,7 @@ function initAuthWidget() {
     themeBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const selectedTheme = btn.dataset.theme; // 'light', 'dark', 'auto'
-            
+
             // 1. Сразу меняем UI
             updateThemeUI(selectedTheme);
 
@@ -183,7 +193,7 @@ function initAuthWidget() {
             } else {
                 // Если theme-loader.js почему-то не прогрузился
                 console.error("Ошибка: theme-loader.js не инициализирован. Применяю локальный фоллбэк.");
-                
+
                 // Простой фоллбэк, чтобы хоть как-то работало
                 document.body.classList.remove('dark');
                 if (selectedTheme === 'dark') {
@@ -199,7 +209,7 @@ function initAuthWidget() {
     });
 
     document.getElementById('authClose').addEventListener('click', closeModal);
-    overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
 
     document.getElementById('toRegister').onclick = () => {
         modal.classList.remove('mode-login'); modal.classList.add('mode-register');
@@ -209,12 +219,19 @@ function initAuthWidget() {
     };
 
     document.getElementById('btnGoogleLogin').addEventListener('click', async () => {
-        try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); }
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const credential = GoogleAuthProvider.credentialFromResult(result);
+            const token = credential.accessToken;
+            if (token) {
+                localStorage.setItem('google_access_token', token);
+            }
+        } catch (e) { console.error(e); }
     });
     document.getElementById('btnRegister').addEventListener('click', async () => {
         try {
-            const uc = await createUserWithEmailAndPassword(auth, 
-                document.getElementById('regEmail').value, 
+            const uc = await createUserWithEmailAndPassword(auth,
+                document.getElementById('regEmail').value,
                 document.getElementById('regPass').value
             );
             await updateProfile(uc.user, { displayName: document.getElementById('regName').value });
@@ -222,37 +239,47 @@ function initAuthWidget() {
     });
     document.getElementById('btnLogin').addEventListener('click', async () => {
         try {
-            await signInWithEmailAndPassword(auth, 
-                document.getElementById('loginEmail').value, 
+            await signInWithEmailAndPassword(auth,
+                document.getElementById('loginEmail').value,
                 document.getElementById('loginPass').value
             );
         } catch (e) { alert("Error: " + e.message); }
     });
     document.getElementById('btnLogout').addEventListener('click', () => {
         signOut(auth);
+        localStorage.removeItem('google_access_token');
         closeModal();
     });
 
     onAuthStateChanged(auth, (user) => {
+        window.currentUser = user; // Делаем пользователя доступным глобально
         if (user) {
             modal.classList.remove('mode-login', 'mode-register');
             modal.classList.add('mode-profile');
             document.getElementById('profileName').textContent = user.displayName || "Пользователь";
             document.getElementById('profileEmail').textContent = user.email;
-            
+
             const avatar = document.getElementById('profileAvatar');
             if (user.photoURL) avatar.src = user.photoURL;
-            else avatar.src = `https://via.placeholder.com/64/CCCCCC/FFFFFF?text=${(user.displayName||"U")[0]}`;
-            
-            if(overlay.classList.contains('open') && !modal.classList.contains('logged-in-flag')) {
-                 closeModal();
+            else avatar.src = `https://via.placeholder.com/64/CCCCCC/FFFFFF?text=${(user.displayName || "U")[0]}`;
+
+            if (overlay.classList.contains('open') && !modal.classList.contains('logged-in-flag')) {
+                closeModal();
             }
             modal.classList.add('logged-in-flag');
+
+            // Генерируем событие об изменении состояния авторизации
+            window.dispatchEvent(new CustomEvent('authChanged', { detail: { user } }));
         } else {
             modal.classList.remove('mode-profile', 'logged-in-flag');
             modal.classList.add('mode-login');
+            window.dispatchEvent(new CustomEvent('authChanged', { detail: { user: null } }));
         }
     });
+
+    // Экспортируем auth и provider для возможности повторного получения токена если он протух
+    window.firebaseAuth = auth;
+    window.googleProvider = provider;
 }
 
 initAuthWidget();

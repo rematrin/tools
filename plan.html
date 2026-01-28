@@ -20,6 +20,7 @@
             --text-color: #1e293b;
             --border-color: #e2e8f0;
             --sidebar-width: 280px;
+            --thesis-accent: #cbd5e1;
         }
 
         /* Sidebar Styles (Keeping these) */
@@ -588,8 +589,8 @@
             border-color: var(--border-color);
             background: #fff;
             padding: 10px 12px;
-            margin-left: -12px;
-            /* Pull the box left so text stays aligned */
+            margin-left: -8px;
+            /* Slightly reduced pull to keep distance from accent */
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
@@ -676,10 +677,29 @@
         .thesis-block {
             background: var(--card-bg);
             border-radius: 20px;
-            padding: 20px;
+            padding: 24px;
             margin-bottom: 20px;
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .thesis-block::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 8px;
+            background-color: var(--thesis-accent);
+            z-index: 0;
+        }
+
+        .thesis-block .thesis-header,
+        .thesis-block .grid-info {
+            position: relative;
+            z-index: 1;
         }
 
         .thesis-header {
@@ -999,6 +1019,7 @@
             --card-bg: #1e293b;
             --text-color: #f1f5f9;
             --border-color: #334155;
+            --thesis-accent: #475569;
         }
 
         body.dark .sidebar {
@@ -1190,7 +1211,7 @@
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    Добавить тезис
+                    Добавить блок
                 </button>
             </div>
 
@@ -1224,7 +1245,7 @@
                     <div class="section" id="section_main">
                         <div class="thesis-header">
                             <div
-                                style="font-weight: 600; font-size: 1.1rem; display: flex; align-items: center; color: var(--text-color);">
+                                style="font-weight: 600; font-size: 1.3rem; display: flex; align-items: center; color: var(--text-color);">
                                 Основная информация
                             </div>
                             <button type="button" class="btn-edit-toggle"
@@ -1316,7 +1337,7 @@
 
                     <div class="section" id="section_intro">
                         <div class="thesis-header">
-                            <div style="font-weight: 600; font-size: 1.1rem; display: flex; align-items: center;">
+                            <div style="font-weight: 600; font-size: 1.3rem; display: flex; align-items: center;">
                                 Интро
                                 <span class="info-icon"
                                     data-tooltip="Заполняется в самую последнюю очередь. Когда понятно, какой байт будет на превью, как его раскрываем в видео и на что сделать акцент, чтоб зритель досмотрел видео до самого конца.">?</span>
@@ -1378,7 +1399,7 @@
 
                     <div class="section" id="section_outro">
                         <div class="thesis-header">
-                            <div style="font-weight: 600; font-size: 1.1rem; display: flex; align-items: center;">
+                            <div style="font-weight: 600; font-size: 1.3rem; display: flex; align-items: center;">
                                 Заключительная часть
                                 <span class="info-icon"
                                     data-tooltip="В данном блоке желательно НЕ размазывать концовку. Можно быстро призвать подписаться и посмотреть другие ролики на канале.">?</span>

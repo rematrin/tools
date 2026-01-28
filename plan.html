@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="auth-widget.css">
     <script src="gdrive-service.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root {
             --primary-color: #2563eb;
@@ -499,12 +500,18 @@
             transform: translateX(20px);
         }
 
-        .comment-group {
+        .comment-group,
+        .transition-group {
             display: none;
         }
 
-        .comment-group.visible {
+        .comment-group.visible,
+        .transition-group.visible {
             display: block;
+        }
+
+        .transition-textarea {
+            min-height: 1.5em !important;
         }
 
         .grid-info.wide {
@@ -794,6 +801,38 @@
 
         .btn-delete {
             color: #ef4444 !important;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: #94a3b8;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .is-editing .drag-handle {
+            margin-right: 4px;
+        }
+
+        .is-editing .thesis-name-input {
+            margin-left: -8px !important;
+            /* Slightly less negative margin to give room to the handle */
+        }
+
+        .drag-handle:hover {
+            color: #64748b;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .sortable-ghost {
+            opacity: 0.4;
+            background: #f1f5f9;
         }
 
         #toast-container {
@@ -1476,6 +1515,12 @@
             else { group.classList.remove('visible'); grid.classList.add('wide'); grid.classList.remove('with-comment'); }
         }
 
+        function toggleTransition(sectionId, isVisible) {
+            const group = document.getElementById(`group_${sectionId}_transition`);
+            if (isVisible) group.classList.add('visible');
+            else group.classList.remove('visible');
+        }
+
         window.onclick = e => {
             if (!e.target.matches('.menu-dots') && !e.target.matches('.item-menu-dots')) {
                 document.querySelectorAll('.menu-content, .sidebar-file-menu').forEach(m => m.classList.remove('show'));
@@ -1502,6 +1547,14 @@
             <div class="thesis-block" id="thesis_block_${currentThesisCount}">
                 <div class="thesis-header">
                     <div style="font-weight: 600; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; flex-grow: 1;">
+                        <svg class="drag-handle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="9" cy="5" r="1" fill="currentColor"></circle>
+                            <circle cx="9" cy="12" r="1" fill="currentColor"></circle>
+                            <circle cx="9" cy="19" r="1" fill="currentColor"></circle>
+                            <circle cx="15" cy="5" r="1" fill="currentColor"></circle>
+                            <circle cx="15" cy="12" r="1" fill="currentColor"></circle>
+                            <circle cx="15" cy="19" r="1" fill="currentColor"></circle>
+                        </svg>
                         <div id="thesis_${currentThesisCount}_name" class="thesis-name-input" contenteditable="false" placeholder="Название тезиса..."></div>
                         <span class="info-icon" data-tooltip="${thesisTooltipText}">?</span>
                     </div>
@@ -1525,6 +1578,16 @@
                                         </div>
                                     </label>
                                 </div>
+                                <div class="menu-item">
+                                    <label class="toggle-container" onclick="event.stopPropagation()">
+                                        <span class="toggle-label">Переход</span>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="toggle_transition_thesis_${currentThesisCount}"
+                                                onchange="toggleTransition('thesis_${currentThesisCount}', this.checked)">
+                                            <span class="slider"></span>
+                                        </div>
+                                    </label>
+                                </div>
                                 <button type="button" class="btn-delete" onclick="removeThesis(${currentThesisCount})">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                                     Удалить блок
@@ -1536,6 +1599,10 @@
                 <div class="grid-info wide" id="grid_thesis_${currentThesisCount}">
                     <div class="form-group"><label>Тезис автора</label><div id="thesis_${currentThesisCount}_author" class="rich-textarea" contenteditable="false"></div></div>
                     <div class="form-group comment-group" id="group_thesis_${currentThesisCount}_comment"><label>Комментарий</label><div id="thesis_${currentThesisCount}_producer" class="rich-textarea" contenteditable="false"></div></div>
+                </div>
+                <div class="form-group transition-group" id="group_thesis_${currentThesisCount}_transition" style="margin-top: 15px;">
+                    <label>Переход</label>
+                    <div id="thesis_${currentThesisCount}_transition" class="rich-textarea transition-textarea" contenteditable="false" placeholder="Текст перехода..."></div>
                 </div>
             </div>`;
             container.insertAdjacentHTML('beforeend', html);
@@ -1577,7 +1644,8 @@
                     name: document.getElementById(`thesis_${id}_name`).innerText,
                     time: document.getElementById(`thesis_${id}_time`).value,
                     author: document.getElementById(`thesis_${id}_author`).innerHTML,
-                    producer: document.getElementById(`thesis_${id}_producer`).innerHTML
+                    producer: document.getElementById(`thesis_${id}_producer`).innerHTML,
+                    transition: document.getElementById(`thesis_${id}_transition`).innerHTML
                 });
             });
             document.querySelectorAll('input[id^="toggle_"]').forEach(el => data[el.id] = el.checked);
@@ -1673,14 +1741,25 @@
                     }
                     timeEl.value = t.time; updateSelectStyle(timeEl);
                     document.getElementById(`thesis_${id}_name`).innerText = t.name || '';
-                    document.getElementById(`thesis_${id}_author`).innerHTML = t.author;
-                    document.getElementById(`thesis_${id}_producer`).innerHTML = t.producer;
+                    document.getElementById(`thesis_${id}_author`).innerHTML = t.author || '';
+                    document.getElementById(`thesis_${id}_producer`).innerHTML = t.producer || '';
+                    document.getElementById(`thesis_${id}_transition`).innerHTML = t.transition || '';
+
                     const toggleId = `toggle_thesis_${id}`;
                     if (data[toggleId]) {
                         const toggleEl = document.getElementById(toggleId);
                         if (toggleEl) {
                             toggleEl.checked = true;
                             toggleComment(`thesis_${id}`, true);
+                        }
+                    }
+
+                    const toggleTransitionId = `toggle_transition_thesis_${id}`;
+                    if (data[toggleTransitionId]) {
+                        const toggleEl = document.getElementById(toggleTransitionId);
+                        if (toggleEl) {
+                            toggleEl.checked = true;
+                            toggleTransition(`thesis_${id}`, true);
                         }
                     }
                 });
@@ -1956,6 +2035,17 @@
         window.addEventListener('load', () => {
             refreshSidebarFiles();
             document.querySelectorAll('select').forEach(updateSelectStyle);
+
+            // Инициализация Drag & Drop для тезисов
+            new Sortable(document.getElementById('theses-container'), {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: () => {
+                    renumberTheses();
+                    saveToGDrive(true);
+                }
+            });
         });
         window.addEventListener('authChanged', e => {
             const user = e.detail.user;

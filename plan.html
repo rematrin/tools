@@ -1621,11 +1621,15 @@
                 list.innerHTML = '';
                 list.appendChild(fragment);
             } catch (err) {
-                const isAuthError = err.message.includes('авторизация') || err.message.includes('истекла') || err.message.includes('401') || !GDriveService.getAccessToken();
+                const isAuthError = err.message.includes('авторизация') ||
+                    err.message.includes('истекла') ||
+                    err.message.includes('401') ||
+                    err.message.includes('обновление') ||
+                    !GDriveService.getAccessToken();
                 if (isAuthError) {
                     list.innerHTML = `
                         <div style="padding: 20px; text-align: center;">
-                            <div style="color: #64748b; font-size: 0.85rem; margin-bottom: 12px;">Сессия Google Drive истекла</div>
+                            <div style="color: #64748b; font-size: 0.85rem; margin-bottom: 12px;">Требуется подключение Google Drive</div>
                             <button onclick="window.openAuthModal()" class="btn-sidebar-action primary" style="padding: 8px 12px; font-size: 0.8rem; height: auto; width: auto; margin: 0 auto;">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
                                 Подключить

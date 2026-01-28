@@ -3,12 +3,9 @@ const GDRIVE_FOLDER_NAME = 'Narrative Plans';
 const GDriveService = {
     // Получает токен из localStorage (быстрая проверка)
     getStoredAccessToken() {
-        const token = localStorage.getItem('google_access_token');
-        const expiry = localStorage.getItem('google_token_expiry');
-        if (token && expiry && Date.now() < parseInt(expiry)) {
-            return token;
-        }
-        return null;
+        // Мы убираем проверку expiry, чтобы сессия казалась "вечной" в UI.
+        // Токен будет проверен только при реальном запросе к API.
+        return localStorage.getItem('google_access_token');
     },
 
     // Основной метод для получения валидного токена (с проверкой БД и рефрешем)
@@ -41,10 +38,10 @@ const GDriveService = {
             const newToken = await window.refreshGoogleToken();
             return newToken;
         } catch (err) {
-            console.error('Ошибка автоматического обноления:', err);
+            console.error('Ошибка автоматического обновления:', err);
             // Если автоматический рефреш не удался (например, заблокирован попап),
             // просим пользователя нажать кнопку войти
-            throw new Error('Сессия Google истекла. Нажмите на иконку профиля и войдите заново.');
+            throw new Error('Требуется обновление доступа. Нажмите на иконку профиля и войдите заново.');
         }
     },
 
@@ -62,9 +59,9 @@ const GDriveService = {
         });
 
         if (response.status === 401) {
-            // Если все же 401, пробуем форсированный рефреш один раз
-            localStorage.removeItem('google_access_token');
-            const newToken = await this.ensureValidToken();
+            // Если все же 401, пробуем обновить один раз
+            // Но мы не удаляем его из localStorage сразу, чтобы не ломать UI в других местах
+            const newToken = await this.refreshAccessToken();
             return this.apiCall(endpoint, { ...options, headers: { ...options.headers, 'Authorization': `Bearer ${newToken}` } });
         }
 
@@ -202,6 +199,10 @@ const GDriveService = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(metadata)
         });
+    },
+
+    getAccessToken() {
+        return this.getStoredAccessToken();
     }
 };
 

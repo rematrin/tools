@@ -109,8 +109,8 @@ function initAuthWidget() {
 
     // ПАРАМЕТРЫ ДЛЯ OFFLINE ACCESS (Refresh Token)
     provider.setCustomParameters({
-        'access_type': 'offline',
-        'prompt': 'consent'
+        'access_type': 'offline'
+        // 'prompt': 'consent' // Удалено, чтобы не заставлять пользователя подтверждать права каждый раз
     });
 
     const overlay = document.getElementById('authOverlay');
@@ -250,7 +250,9 @@ function initAuthWidget() {
             const refreshToken = result._tokenResponse?.refreshToken || null;
 
             if (token) {
-                const expiry = Date.now() + 3500 * 1000;
+                // Устанавливаем "вечный" срок жизни для локальной проверки (10 лет)
+                // На самом деле токен Google живет 1 час, но мы будем обновлять его только по факту ошибки 401
+                const expiry = Date.now() + 10 * 365 * 24 * 3600 * 1000;
                 localStorage.setItem('google_access_token', token);
                 localStorage.setItem('google_token_expiry', expiry);
 

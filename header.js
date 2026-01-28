@@ -18,7 +18,8 @@ function updateHeaderData(user) {
         avatarEl.style.display = "block";
     } else {
         nameEl.innerText = "Войти";
-        avatarEl.style.display = "none";
+        avatarEl.src = "https://i.ibb.co/Z6vRKK9x/0000000.jpg";
+        avatarEl.style.display = "block";
     }
 }
 

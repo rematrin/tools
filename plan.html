@@ -639,9 +639,30 @@
         .thesis-name-input:empty:before {
             content: attr(placeholder);
             color: #94a3b8;
-            font-weight: 400;
             pointer-events: none;
         }
+
+        /* СОСТОЯНИЯ ДЛЯ ДВУХ ЭТАПОВ КЛИКА */
+        .rich-textarea.state-selected,
+        .thesis-name-input.state-selected {
+            border-color: #94a3b8 !important;
+            box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.2) !important;
+            cursor: pointer;
+        }
+
+        .rich-textarea.state-editing,
+        .thesis-name-input.state-editing {
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+            cursor: text;
+        }
+
+        /* Отключаем дефолтный фокус на элементах управления */
+        .rich-textarea:focus,
+        .thesis-name-input:focus {
+            outline: none;
+        }
+
 
         .menu-container {
             position: relative;
@@ -1049,7 +1070,7 @@
                                     <span class="info-icon"
                                         data-tooltip="Указываем ориентировочный/финальный заголовок. Как будет называться видео?">?</span>
                                 </label>
-                                <div id="title" class="thesis-name-input" contenteditable="true"
+                                <div id="title" class="thesis-name-input" contenteditable="false"
                                     placeholder="Как будет называться видео?"></div>
                             </div>
 
@@ -1077,14 +1098,14 @@
                                     <span class="info-icon"
                                         data-tooltip="Описание фотографии для превью. Здесь важно указать эмоцию и контекст для фото автора.">?</span>
                                 </label>
-                                <div id="preview" class="rich-textarea" contenteditable="true" placeholder=""></div>
+                                <div id="preview" class="rich-textarea" contenteditable="false" placeholder=""></div>
                             </div>
 
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label>О видео
                                     <span class="info-icon" data-tooltip="Кратко описываем суть видео.">?</span>
                                 </label>
-                                <div id="producer_comment" class="rich-textarea" contenteditable="true" placeholder="">
+                                <div id="producer_comment" class="rich-textarea" contenteditable="false" placeholder="">
                                 </div>
                             </div>
                         </div>
@@ -1119,13 +1140,13 @@
                         <div class="grid-info wide" id="grid_intro">
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label>Текст автора</label>
-                                <div id="intro" class="rich-textarea" contenteditable="true"
+                                <div id="intro" class="rich-textarea" contenteditable="false"
                                     placeholder="Прямая речь автора. Что нужно сказать, чтоб зритель досмотрел видео до самого конца?">
                                 </div>
                             </div>
                             <div class="form-group comment-group" id="group_intro_comment" style="margin-bottom: 0;">
                                 <label>Комментарий</label>
-                                <div id="intro_comment" class="rich-textarea" contenteditable="true"></div>
+                                <div id="intro_comment" class="rich-textarea" contenteditable="false"></div>
                             </div>
                         </div>
                     </div>
@@ -1302,7 +1323,7 @@
             <div class="thesis-block" id="thesis_block_${currentThesisCount}">
                 <div class="thesis-header">
                     <div class="thesis-title">
-                        <div id="thesis_${currentThesisCount}_name" class="thesis-name-input" contenteditable="true" placeholder="Название тезиса..."></div>
+                        <div id="thesis_${currentThesisCount}_name" class="thesis-name-input" contenteditable="false" placeholder="Название тезиса..."></div>
                         <span class="info-icon" data-tooltip="${thesisTooltipText}">?</span>
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center;">
@@ -1331,8 +1352,8 @@
                     </div>
                 </div>
                 <div class="grid-info wide" id="grid_thesis_${currentThesisCount}">
-                    <div class="form-group"><label>Тезис автора</label><div id="thesis_${currentThesisCount}_author" class="rich-textarea" contenteditable="true"></div></div>
-                    <div class="form-group comment-group" id="group_thesis_${currentThesisCount}_comment"><label>Комментарий</label><div id="thesis_${currentThesisCount}_producer" class="rich-textarea" contenteditable="true"></div></div>
+                    <div class="form-group"><label>Тезис автора</label><div id="thesis_${currentThesisCount}_author" class="rich-textarea" contenteditable="false"></div></div>
+                    <div class="form-group comment-group" id="group_thesis_${currentThesisCount}_comment"><label>Комментарий</label><div id="thesis_${currentThesisCount}_producer" class="rich-textarea" contenteditable="false"></div></div>
                 </div>
             </div>`;
             container.insertAdjacentHTML('beforeend', html);
@@ -1348,8 +1369,11 @@
 
         function removeThesis(id) {
             document.getElementById('modalText').textContent = 'Вы уверены, что хотите удалить этот тезис?';
+            const confirmBtn = document.getElementById('confirmBtn');
+            confirmBtn.textContent = 'Удалить';
+            confirmBtn.className = 'btn-danger';
             openModal('confirmModal');
-            document.getElementById('confirmBtn').onclick = () => {
+            confirmBtn.onclick = () => {
                 document.getElementById(`thesis_block_${id}`)?.remove();
                 renumberTheses();
                 closeModal('confirmModal');
@@ -1420,21 +1444,34 @@
         async function refreshSidebarFiles() {
             const list = document.getElementById('sidebar-file-list');
             if (!list || !window.currentUser) return;
-            list.innerHTML = '<div style="padding: 20px; text-align: center;"><span class="loader" style="border-bottom-color:transparent; border-color:var(--primary-color); display:inline-block"></span></div>';
+
+            // Показываем лоадер только если список совсем пустой
+            if (list.children.length === 0) {
+                list.innerHTML = '<div style="padding: 20px; text-align: center;"><span class="loader" style="border-bottom-color:transparent; border-color:var(--primary-color); display:inline-block"></span></div>';
+            }
+
             try {
                 const files = await GDriveService.listFiles();
-                if (files.length === 0) { list.innerHTML = '<div style="padding: 20px; color: #94a3b8; font-size: 0.85rem; text-align: center;">Нет сохраненных планов</div>'; return; }
+                if (files.length === 0) {
+                    list.innerHTML = '<div style="padding: 20px; color: #94a3b8; font-size: 0.85rem; text-align: center;">Нет сохраненных планов</div>';
+                    return;
+                }
+
                 files.sort((a, b) => new Date(b.modifiedTime) - new Date(a.modifiedTime));
-                list.innerHTML = '';
+
+                // Создаем временный контейнер, чтобы не дергать DOM
+                const fragment = document.createDocumentFragment();
+
                 files.forEach(f => {
                     const cleanName = f.name.replace('.json', '');
                     const wrapper = document.createElement('div');
                     wrapper.className = 'sidebar-file-wrapper';
+                    wrapper.dataset.id = f.id;
 
                     const btn = document.createElement('button');
                     btn.className = 'sidebar-nav-item';
                     if (currentGDriveId === f.id) btn.classList.add('active');
-                    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg> <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${cleanName}</span>`;
+                    btn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2"><path stroke-linecap="round" d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.342a2 2 0 0 0-.602-1.43l-4.44-4.342A2 2 0 0 0 13.56 2H6a2 2 0 0 0-2 2m5 9h6m-6 4h3"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></g></svg> <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${cleanName}</span>`;
                     btn.onclick = () => loadFromGDrive(f.id);
 
                     const menuBtn = document.createElement('button');
@@ -1462,9 +1499,36 @@
                     wrapper.appendChild(btn);
                     wrapper.appendChild(menuBtn);
                     wrapper.appendChild(menu);
-                    list.appendChild(wrapper);
+                    fragment.appendChild(wrapper);
                 });
-            } catch (err) { list.innerHTML = '<div style="padding: 20px; color: #ef4444; font-size: 0.85rem; text-align: center;">Ошибка загрузки</div>'; }
+
+                list.innerHTML = '';
+                list.appendChild(fragment);
+            } catch (err) {
+                const isAuthError = err.message.includes('авторизация') || err.message.includes('истекла') || err.message.includes('401') || !GDriveService.getAccessToken();
+                if (isAuthError) {
+                    list.innerHTML = `
+                        <div style="padding: 20px; text-align: center;">
+                            <div style="color: #64748b; font-size: 0.85rem; margin-bottom: 12px;">Сессия Google Drive истекла</div>
+                            <button onclick="window.openAuthModal()" class="btn-sidebar-action primary" style="padding: 8px 12px; font-size: 0.8rem; height: auto; width: auto; margin: 0 auto;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                                Подключить
+                            </button>
+                        </div>`;
+                } else {
+                    list.innerHTML = '<div style="padding: 20px; color: #ef4444; font-size: 0.85rem; text-align: center;">Ошибка загрузки</div>';
+                }
+            }
+        }
+
+        function updateSidebarSelection() {
+            document.querySelectorAll('.sidebar-file-wrapper').forEach(w => {
+                const btn = w.querySelector('.sidebar-nav-item');
+                if (btn) {
+                    if (w.dataset.id === currentGDriveId) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+            });
         }
 
         function toggleFileMenu(id, event) {
@@ -1497,8 +1561,11 @@
 
         function confirmDeleteFile(id, name) {
             document.getElementById('modalText').textContent = `Вы уверены, что хотите удалить файл "${name}"?`;
+            const confirmBtn = document.getElementById('confirmBtn');
+            confirmBtn.textContent = 'Удалить';
+            confirmBtn.className = 'btn-danger';
             openModal('confirmModal');
-            document.getElementById('confirmBtn').onclick = async () => {
+            confirmBtn.onclick = async () => {
                 try {
                     await GDriveService.deleteFile(id);
                     showToast('Файл удален');
@@ -1524,27 +1591,49 @@
 
         async function loadFromGDrive(id) {
             try {
-                showToast('Загрузка из облака...');
                 const data = await GDriveService.getFile(id);
                 applyData(data);
                 currentGDriveId = id;
-                showToast('Проект загружен');
+                updateSidebarSelection(); // Обновляем только подсветку, без перезагрузки списка
             }
             catch (err) { showToast(err.message, 'error'); }
         }
 
         function createNewPlan() {
-            if (confirm('Создать новый проект? Несохраненные данные будут потеряны.')) {
+            document.getElementById('modalText').textContent = 'Создать новый проект? Несохраненные данные будут потеряны.';
+            const confirmBtn = document.getElementById('confirmBtn');
+            confirmBtn.textContent = 'Создать';
+            confirmBtn.className = 'btn-primary';
+            openModal('confirmModal');
+            confirmBtn.onclick = async () => {
                 currentGDriveId = null;
                 document.getElementById('planForm').reset();
-                document.getElementById('title').innerText = '';
+
+                // Генерируем уникальное имя, чтобы не перезатирать старые "Новые планы"
+                const existingNames = Array.from(document.querySelectorAll('.sidebar-nav-item span')).map(s => s.innerText.trim());
+                let baseName = 'Новый план';
+                let newName = baseName;
+                let counter = 1;
+                while (existingNames.includes(newName)) {
+                    newName = `${baseName} ${counter++}`;
+                }
+
+                document.getElementById('title').innerText = newName;
                 document.querySelectorAll('.rich-textarea').forEach(el => el.innerHTML = '');
                 document.getElementById('coverUrl').value = '';
                 document.getElementById('coverPreview').src = 'https://placehold.co/800x450?text=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D0%B5+%D0%9F%D1%80%D0%B5%D0%B2%D1%8C%D1%8E';
                 container.innerHTML = ''; currentThesisCount = 0;
                 for (let i = 0; i < 3; i++) addThesis();
-                showToast('Новый проект создан');
-            }
+
+                closeModal('confirmModal');
+
+                // Сразу сохраняем на диск, чтобы появился новый файл
+                if (window.currentUser) {
+                    await saveToGDrive();
+                } else {
+                    showToast('Новый проект создан локально (войдите для сохранения)', 'success');
+                }
+            };
         }
 
         // Image
@@ -1595,11 +1684,70 @@
             } else {
                 nameEl.textContent = 'Гость';
                 emailEl.textContent = 'Войти в аккаунт';
-                avatarEl.src = 'https://via.placeholder.com/36/F1F5F9/64748B?text=?';
+                avatarEl.src = 'https://i.ibb.co/Z6vRKK9x/0000000.jpg';
             }
             refreshSidebarFiles();
         });
+
+        window.addEventListener('googleTokenChanged', () => {
+            refreshSidebarFiles();
+            showToast('Доступ к Google Drive обновлен', 'success');
+        });
         document.addEventListener('paste', e => { if (e.target.classList.contains('rich-textarea')) { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')); } });
+
+        // Логика двухэтапного редактирования
+        document.addEventListener('mousedown', function (e) {
+            const trackClasses = ['.rich-textarea', '.thesis-name-input'];
+            const selector = trackClasses.join(', ');
+            const el = e.target.closest(selector);
+
+            // Если кликнули мимо или в другой блок
+            if (!el) {
+                document.querySelectorAll(selector).forEach(item => {
+                    item.classList.remove('state-selected', 'state-editing');
+                    item.setAttribute('contenteditable', 'false');
+                });
+                return;
+            }
+
+            // Если уже редактируем - не мешаем
+            if (el.classList.contains('state-editing')) return;
+
+            // Если уже выделено - включаем редактирование
+            if (el.classList.contains('state-selected')) {
+                el.classList.remove('state-selected');
+                el.classList.add('state-editing');
+                el.setAttribute('contenteditable', 'true');
+                // Даем браузеру время обновить атрибут перед фокусом
+                setTimeout(() => {
+                    el.focus();
+                    // Ставим курсор в конец
+                    const range = document.createRange();
+                    const sel = window.getSelection();
+                    range.selectNodeContents(el);
+                    range.collapse(false);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }, 0);
+            } else {
+                // Первый клик - выделяем серым
+                document.querySelectorAll(selector).forEach(item => {
+                    item.classList.remove('state-selected', 'state-editing');
+                    item.setAttribute('contenteditable', 'false');
+                });
+                el.classList.add('state-selected');
+                e.preventDefault(); // Запрещаем немедленный фокус
+            }
+        });
+
+        // Снимаем редактирование при потере фокуса
+        document.addEventListener('focusout', function (e) {
+            const el = e.target.closest('.rich-textarea, .thesis-name-input');
+            if (el) {
+                el.classList.remove('state-editing', 'state-selected');
+                el.setAttribute('contenteditable', 'false');
+            }
+        });
     </script>
 
     <script type="module" src="auth-widget.js"></script>

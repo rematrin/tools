@@ -1,19 +1,55 @@
-/**
- * Google Drive Service for Narrative Plans
- */
-
 const GDRIVE_FOLDER_NAME = 'Narrative Plans';
 
 const GDriveService = {
-    getAccessToken() {
-        return localStorage.getItem('google_access_token');
+    // Получает токен из localStorage (быстрая проверка)
+    getStoredAccessToken() {
+        const token = localStorage.getItem('google_access_token');
+        const expiry = localStorage.getItem('google_token_expiry');
+        if (token && expiry && Date.now() < parseInt(expiry)) {
+            return token;
+        }
+        return null;
+    },
+
+    // Основной метод для получения валидного токена (с проверкой БД и рефрешем)
+    async ensureValidToken() {
+        let token = this.getStoredAccessToken();
+        if (token) return token;
+
+        // Если в localStorage нет или протух - идем в БД
+        console.log('Access token протух, пытаемся обновить через Refresh Token...');
+        return await this.refreshAccessToken();
+    },
+
+    async refreshAccessToken() {
+        // Ждем немного если db еще не инициализирован (так как auth-widget.js - модуль и грузится позже)
+        for (let i = 0; i < 10; i++) {
+            if (window.db && window.refreshGoogleToken) break;
+            await new Promise(r => setTimeout(r, 200));
+        }
+
+        if (!window.refreshGoogleToken) {
+            throw new Error('Сервис авторизации не готов. Попробуйте обновить страницу.');
+        }
+
+        try {
+            // В статическом приложении (без бекенда) мы не можем безопасно использовать 
+            // grant_type=refresh_token напрямую из-за необходимости client_secret.
+            // Поэтому мы используем window.refreshGoogleToken(), который делает signInWithPopup.
+            // Так как у нас настроен prompt=consent, это обновление пройдет гладко.
+            console.log('Попытка автоматического обновления токена...');
+            const newToken = await window.refreshGoogleToken();
+            return newToken;
+        } catch (err) {
+            console.error('Ошибка автоматического обноления:', err);
+            // Если автоматический рефреш не удался (например, заблокирован попап),
+            // просим пользователя нажать кнопку войти
+            throw new Error('Сессия Google истекла. Нажмите на иконку профиля и войдите заново.');
+        }
     },
 
     async apiCall(endpoint, options = {}) {
-        const token = this.getAccessToken();
-        if (!token) {
-            throw new Error('Необходима авторизация Google');
-        }
+        const token = await this.ensureValidToken();
 
         const headers = {
             'Authorization': `Bearer ${token}`,
@@ -26,8 +62,10 @@ const GDriveService = {
         });
 
         if (response.status === 401) {
+            // Если все же 401, пробуем форсированный рефреш один раз
             localStorage.removeItem('google_access_token');
-            throw new Error('Сессия Google истекла. Пожалуйста, войдите в аккаунт снова.');
+            const newToken = await this.ensureValidToken();
+            return this.apiCall(endpoint, { ...options, headers: { ...options.headers, 'Authorization': `Bearer ${newToken}` } });
         }
 
         if (!response.ok) {
@@ -36,23 +74,20 @@ const GDriveService = {
                 const errorData = await response.json();
                 errorMsg = errorData.error.message || errorMsg;
             } catch (e) {
-                // If body is not JSON or empty
                 errorMsg = `HTTP Error ${response.status}: ${response.statusText}`;
             }
             throw new Error(errorMsg);
         }
 
-        // Handle empty responses (like 204 No Content for DELETE)
         const text = await response.text();
         try {
             return text ? JSON.parse(text) : null;
         } catch (e) {
-            return text; // Return as text if not JSON
+            return text;
         }
     },
 
     async findOrCreateFolder() {
-        // Поиск папки по имени
         const query = encodeURIComponent(`name = '${GDRIVE_FOLDER_NAME}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
         const result = await this.apiCall(`drive/v3/files?q=${query}`);
 
@@ -60,7 +95,6 @@ const GDriveService = {
             return result.files[0].id;
         }
 
-        // Создание папки, если не найдена
         const folderMetadata = {
             name: GDRIVE_FOLDER_NAME,
             mimeType: 'application/vnd.google-apps.folder'
@@ -80,7 +114,6 @@ const GDriveService = {
         let existingFileId = fileId;
 
         if (!existingFileId) {
-            // Поиск существующего файла с таким же именем в этой папке, если ID не передан
             const query = encodeURIComponent(`name = '${fileName}.json' and '${folderId}' in parents and trashed = false`);
             const searchResult = await this.apiCall(`drive/v3/files?q=${query}`);
             if (searchResult.files && searchResult.files.length > 0) {
@@ -102,10 +135,9 @@ const GDriveService = {
         let url = 'upload/drive/v3/files?uploadType=multipart';
 
         if (existingFileId) {
-            // Обновление существующего файла
             method = 'PATCH';
             url = `upload/drive/v3/files/${existingFileId}?uploadType=multipart`;
-            delete metadata.parents; // Не нужно при обновлении
+            delete metadata.parents;
         }
 
         const multipartRequestBody =
@@ -117,10 +149,11 @@ const GDriveService = {
             fileContent +
             close_delim;
 
+        const token = await this.ensureValidToken();
         const response = await fetch(`https://www.googleapis.com/${url}`, {
             method: method,
             headers: {
-                'Authorization': `Bearer ${this.getAccessToken()}`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': `multipart/related; boundary=${boundary}`
             },
             body: multipartRequestBody
@@ -142,8 +175,7 @@ const GDriveService = {
     },
 
     async getFile(fileId) {
-        // Мы используем alt=media для получения содержимого файла
-        const token = this.getAccessToken();
+        const token = await this.ensureValidToken();
         const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -156,8 +188,6 @@ const GDriveService = {
     },
 
     async deleteFile(fileId) {
-        // Используем перемещение в корзину (trashed: true) вместо окончательного удаления.
-        // Это безопаснее и часто решает проблемы с правами доступа в drive.file scope.
         return this.apiCall(`drive/v3/files/${fileId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },

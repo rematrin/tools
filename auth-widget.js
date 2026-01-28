@@ -11,6 +11,13 @@ import {
     GoogleAuthProvider,
     signInWithPopup
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+    getFirestore,
+    doc,
+    setDoc,
+    getDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDBNCQo3rYgmDZkZrGKT-g2t0LlpsfH1Pg",
@@ -21,6 +28,13 @@ const firebaseConfig = {
     appId: "1:595986762798:web:b8c05cddcb0f3a610163bf",
     measurementId: "G-X3Z1KH8760"
 };
+
+// Экспортируем функции для других модулей
+window.doc = doc;
+window.setDoc = setDoc;
+window.getDoc = getDoc;
+window.updateDoc = (d, data) => setDoc(d, data, { merge: true }); // Упрощенный update
+window.serverTimestamp = serverTimestamp;
 
 const modalHTML = `
 <div class="auth-overlay" id="authOverlay">
@@ -51,7 +65,7 @@ const modalHTML = `
 
         <div class="view-profile">
             <div class="vk-user-card">
-                <img id="profileAvatar" src="" class="vk-avatar-large">
+                <img id="profileAvatar" src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" class="vk-avatar-large">
                 <div class="vk-user-name" id="profileName">Загрузка...</div>
                 <div class="vk-user-sub" id="profileEmail">...</div>
             </div>
@@ -87,8 +101,17 @@ function initAuthWidget() {
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
+    window.db = db; // Экспортируем для сервиса диска
+
     const provider = new GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/drive.file');
+
+    // ПАРАМЕТРЫ ДЛЯ OFFLINE ACCESS (Refresh Token)
+    provider.setCustomParameters({
+        'access_type': 'offline',
+        'prompt': 'consent'
+    });
 
     const overlay = document.getElementById('authOverlay');
     const modal = document.getElementById('authModal');
@@ -218,16 +241,51 @@ function initAuthWidget() {
         modal.classList.remove('mode-register'); modal.classList.add('mode-login');
     };
 
-    document.getElementById('btnGoogleLogin').addEventListener('click', async () => {
+    const refreshGoogleToken = async () => {
         try {
+            console.log("Запускаем обновление токена через Popup...");
             const result = await signInWithPopup(auth, provider);
             const credential = GoogleAuthProvider.credentialFromResult(result);
             const token = credential.accessToken;
+            const refreshToken = result._tokenResponse?.refreshToken || null;
+
             if (token) {
+                const expiry = Date.now() + 3500 * 1000;
                 localStorage.setItem('google_access_token', token);
+                localStorage.setItem('google_token_expiry', expiry);
+
+                const user = auth.currentUser;
+                if (user) {
+                    await setDoc(doc(db, "users", user.uid), {
+                        google_access_token: token,
+                        google_token_expiry: expiry,
+                        google_refresh_token: refreshToken,
+                        updated_at: serverTimestamp()
+                    }, { merge: true });
+                }
+
+                window.dispatchEvent(new CustomEvent('googleTokenChanged', { detail: { token } }));
+                return token;
             }
-        } catch (e) { console.error(e); }
-    });
+        } catch (e) {
+            console.error("Ошибка при обновлении токена:", e);
+            throw e;
+        }
+    };
+    window.refreshGoogleToken = refreshGoogleToken;
+
+    document.getElementById('btnGoogleLogin').addEventListener('click', refreshGoogleToken);
+
+    // Функция для получения токена с проверкой на протухание
+    window.getGoogleAccessToken = () => {
+        const token = localStorage.getItem('google_access_token');
+        const expiry = localStorage.getItem('google_token_expiry');
+
+        if (token && expiry && Date.now() < parseInt(expiry)) {
+            return token;
+        }
+        return null; // Токен протух или отсутствует
+    };
     document.getElementById('btnRegister').addEventListener('click', async () => {
         try {
             const uc = await createUserWithEmailAndPassword(auth,
@@ -235,7 +293,10 @@ function initAuthWidget() {
                 document.getElementById('regPass').value
             );
             await updateProfile(uc.user, { displayName: document.getElementById('regName').value });
-        } catch (e) { alert("Error: " + e.message); }
+        } catch (e) {
+            if (typeof showToast === 'function') showToast("Ошибка: " + e.message, 'error');
+            else console.error(e);
+        }
     });
     document.getElementById('btnLogin').addEventListener('click', async () => {
         try {
@@ -243,7 +304,10 @@ function initAuthWidget() {
                 document.getElementById('loginEmail').value,
                 document.getElementById('loginPass').value
             );
-        } catch (e) { alert("Error: " + e.message); }
+        } catch (e) {
+            if (typeof showToast === 'function') showToast("Ошибка: " + e.message, 'error');
+            else console.error(e);
+        }
     });
     document.getElementById('btnLogout').addEventListener('click', () => {
         signOut(auth);
@@ -251,7 +315,7 @@ function initAuthWidget() {
         closeModal();
     });
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         window.currentUser = user; // Делаем пользователя доступным глобально
         if (user) {
             modal.classList.remove('mode-login', 'mode-register');
@@ -268,11 +332,29 @@ function initAuthWidget() {
             }
             modal.classList.add('logged-in-flag');
 
+            // Попробуем достать токен из БД если его нет в localStorage
+            if (!localStorage.getItem('google_access_token')) {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists()) {
+                        const data = userDoc.data();
+                        if (data.google_access_token) {
+                            localStorage.setItem('google_access_token', data.google_access_token);
+                            localStorage.setItem('google_token_expiry', data.google_token_expiry || 0);
+                        }
+                    }
+                } catch (e) { console.error("Ошибка синхронизации токена:", e); }
+            }
+
             // Генерируем событие об изменении состояния авторизации
             window.dispatchEvent(new CustomEvent('authChanged', { detail: { user } }));
         } else {
             modal.classList.remove('mode-profile', 'logged-in-flag');
             modal.classList.add('mode-login');
+
+            const avatar = document.getElementById('profileAvatar');
+            if (avatar) avatar.src = 'https://i.ibb.co/Z6vRKK9x/0000000.jpg';
+
             window.dispatchEvent(new CustomEvent('authChanged', { detail: { user: null } }));
         }
     });

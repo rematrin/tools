@@ -375,7 +375,7 @@
         .section {
             background: var(--card-bg);
             border-radius: 20px;
-            padding: 25px;
+            padding: 24px;
             margin-bottom: 15px;
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 12px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -564,11 +564,86 @@
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
+        /* NEW EDITING STYLES: Fixed alignment */
+        .rich-textarea,
+        .thesis-name-input {
+            border: 1px solid transparent;
+            background: transparent;
+            padding: 10px 0;
+            /* No horizontal padding by default */
+            transition: all 0.2s;
+            border-radius: 6px;
+            margin-left: 0;
+        }
+
+        .is-editing .rich-textarea,
+        .is-editing .thesis-name-input {
+            border-color: var(--border-color);
+            background: #fff;
+            padding: 10px 12px;
+            margin-left: -12px;
+            /* Pull the box left so text stays aligned */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .is-editing .rich-textarea:focus,
+        .is-editing .thesis-name-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        body.dark .is-editing .rich-textarea,
+        body.dark .is-editing .thesis-name-input {
+            background: #0f172a;
+            border-color: #334155;
+        }
+
+        .btn-edit-toggle {
+            background: #f1f5f9;
+            color: #64748b;
+            padding: 6px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .btn-edit-toggle:hover {
+            background: #e2e8f0;
+            color: var(--primary-color);
+        }
+
+        .is-editing .btn-edit-toggle {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .is-editing .btn-edit-toggle:hover {
+            background: #bbf7d0;
+        }
+
+        .section:not(.is-editing) select,
+        .thesis-block:not(.is-editing) select {
+            pointer-events: none;
+            border-color: transparent;
+            background-image: none;
+            padding-right: 10px;
+            cursor: default;
+        }
+
         select.filled {
             background-color: #dcfce7;
             color: #166534;
             border-color: #bbf7d0;
             font-weight: 600;
+        }
+
+        body.dark select.filled {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.3);
         }
 
         .grid-2 {
@@ -594,8 +669,8 @@
         .thesis-block {
             background: var(--card-bg);
             border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 5px;
+            padding: 24px;
+            margin-bottom: 20px;
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
@@ -608,24 +683,19 @@
         }
 
         .thesis-title {
-            font-weight: 700;
-            color: var(--primary-color);
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            flex-grow: 1;
+            display: none;
         }
 
         .thesis-name-input {
-            padding: 8px 5px;
-            border: 1px solid var(--border-color);
+            padding: 10px 0;
+            border: 1px solid transparent;
             border-radius: 6px;
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 600;
             color: var(--text-color);
-            background: #fff;
-            width: 89%;
+            background: transparent;
+            width: auto;
+            min-width: 100px;
             max-width: none;
             transition: all 0.2s;
             min-height: 1.4em;
@@ -633,6 +703,12 @@
             word-wrap: break-word;
             display: inline-block;
             vertical-align: middle;
+            margin-left: 0;
+        }
+
+        .is-editing .thesis-name-input {
+            padding: 10px 12px;
+            margin-left: -12px;
         }
 
         .thesis-name-input:empty:before {
@@ -641,26 +717,7 @@
             pointer-events: none;
         }
 
-        /* СОСТОЯНИЯ ДЛЯ ДВУХ ЭТАПОВ КЛИКА */
-        .rich-textarea.state-selected,
-        .thesis-name-input.state-selected {
-            border-color: #94a3b8 !important;
-            box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.2) !important;
-            cursor: pointer;
-        }
-
-        .rich-textarea.state-editing,
-        .thesis-name-input.state-editing {
-            border-color: var(--primary-color) !important;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
-            cursor: text;
-        }
-
-        /* Отключаем дефолтный фокус на элементах управления */
-        .rich-textarea:focus,
-        .thesis-name-input:focus {
-            outline: none;
-        }
+        /* REMOVED OLD SELECTION STATES */
 
 
         .menu-container {
@@ -1072,20 +1129,34 @@
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    Создать проект
+                    Создать план
                 </button>
 
                 <div class="sidebar-divider"></div>
 
                 <div class="sidebar-label">Мои файлы</div>
-                <div id="sidebar-file-list" style="margin-bottom: 20px;">
+                <div id="sidebar-file-list" style="margin-bottom: 12px;">
                     <div style="padding: 20px; color: #94a3b8; font-size: 0.85rem; text-align: center;">
                         Войдите для просмотра
                     </div>
                 </div>
             </div>
 
-            <div class="sidebar-user" id="sidebar-user-trigger" onclick="window.openAuthModal(this)">
+            <div id="sidebar-action-container"
+                style="display: none; padding: 12px 16px; border-top: 1px solid var(--border-color);">
+                <button type="button" class="btn-load btn-add-thesis" onclick="addThesis()"
+                    style="width: 100%; padding: 10px; font-size: 0.9rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                        stroke-linejoin="round" style="width: 16px; height: 16px;">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Добавить тезис
+                </button>
+            </div>
+
+            <div class="sidebar-user" id="sidebar-user-trigger" onclick="window.openAuthModal(this)"
+                style="border-top: 1px solid var(--border-color);">
                 <img id="sidebar-user-avatar" class="sidebar-avatar" src="https://via.placeholder.com/36">
                 <div class="sidebar-user-info-text">
                     <p class="sidebar-user-name" id="sidebar-user-name">Гость</p>
@@ -1107,12 +1178,25 @@
                     <img src="https://todoist.b-cdn.net/assets/images/f6defa2ca953237a.png"
                         class="welcome-screen-illustration" alt="Welcome" draggable="false">
                     <h2>Добро пожаловать!</h2>
-                    <p>Выберите существующий план из бокового меню слева или создайте новый проект, чтобы начать работу
-                        над сценарием.</p>
+                    <p>Выберите существующий план из бокового меню слева или создайте новый, чтобы начать работу.</p>
                 </div>
 
                 <form id="planForm" style="display: none;">
-                    <div class="section">
+                    <div class="section" id="section_main">
+                        <div class="thesis-header">
+                            <div
+                                style="font-weight: 600; font-size: 1.1rem; display: flex; align-items: center; color: var(--text-color);">
+                                Основная информация
+                            </div>
+                            <button type="button" class="btn-edit-toggle"
+                                onclick="toggleSectionEdit('section_main', this)" title="Редактировать">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                        </div>
                         <!-- Обложка сверху -->
                         <div class="form-group"
                             style="display: flex; flex-direction: column; align-items: center; margin-bottom: 30px;">
@@ -1191,25 +1275,43 @@
 
                     <hr class="section-divider">
 
-                    <div class="section">
+                    <div class="section" id="section_intro">
                         <div class="thesis-header">
                             <div style="font-weight: 600; font-size: 1.1rem; display: flex; align-items: center;">
                                 Интро
                                 <span class="info-icon"
                                     data-tooltip="Заполняется в самую последнюю очередь. Когда понятно, какой байт будет на превью, как его раскрываем в видео и на что сделать акцент, чтоб зритель досмотрел видео до самого конца.">?</span>
                             </div>
-                            <div class="menu-container">
-                                <button type="button" class="menu-dots" onclick="toggleMenu('intro')">⋮</button>
-                                <div id="menu_intro" class="menu-content">
-                                    <div class="menu-item">
-                                        <label class="toggle-container" onclick="event.stopPropagation()">
-                                            <span class="toggle-label">Комментарии</span>
-                                            <div class="toggle-switch">
-                                                <input type="checkbox" id="toggle_intro"
-                                                    onchange="toggleComment('intro', this.checked)">
-                                                <span class="slider"></span>
-                                            </div>
-                                        </label>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <select id="intro_duration" style="width: 160px;" onchange="handleCustomSelect(this)">
+                                    <option value="" disabled selected>Длительность</option>
+                                    <option value="20 сек">20 сек</option>
+                                    <option value="30 - 60 сек">30 - 60 сек</option>
+                                    <option value="60 - 90 сек">60 - 90 сек</option>
+                                    <option value="2 минуты">2 минуты</option>
+                                    <option value="custom">Свой вариант...</option>
+                                </select>
+                                <button type="button" class="btn-edit-toggle"
+                                    onclick="toggleSectionEdit('section_intro', this)" title="Редактировать">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </button>
+                                <div class="menu-container">
+                                    <button type="button" class="menu-dots" onclick="toggleMenu('intro')">⋮</button>
+                                    <div id="menu_intro" class="menu-content">
+                                        <div class="menu-item">
+                                            <label class="toggle-container" onclick="event.stopPropagation()">
+                                                <span class="toggle-label">Комментарии</span>
+                                                <div class="toggle-switch">
+                                                    <input type="checkbox" id="toggle_intro"
+                                                        onchange="toggleComment('intro', this.checked)">
+                                                    <span class="slider"></span>
+                                                </div>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1233,27 +1335,16 @@
 
                     <div id="theses-container"></div>
 
-                    <div style="text-align: center; margin-bottom: 25px; margin-top: 20px;">
-                        <button type="button" class="btn-load btn-add-thesis" onclick="addThesis()">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            Добавить блок
-                        </button>
-                    </div>
-
                     <hr class="section-divider">
 
-                    <div class="section">
+                    <div class="section" id="section_outro">
                         <div class="thesis-header">
                             <div style="font-weight: 600; font-size: 1.1rem; display: flex; align-items: center;">
                                 Заключительная часть
                                 <span class="info-icon"
                                     data-tooltip="В данном блоке желательно НЕ размазывать концовку. Можно быстро призвать подписаться и посмотреть другие ролики на канале.">?</span>
                             </div>
-                            <div style="display: flex; gap: 10px; align-items: center;">
+                            <div style="display: flex; gap: 8px; align-items: center;">
                                 <select id="outro_duration" style="width: 160px;" onchange="handleCustomSelect(this)">
                                     <option value="" disabled selected>Длительность</option>
                                     <option value="20 сек">20 сек</option>
@@ -1262,6 +1353,14 @@
                                     <option value="2 минуты">2 минуты</option>
                                     <option value="custom">Свой вариант...</option>
                                 </select>
+                                <button type="button" class="btn-edit-toggle"
+                                    onclick="toggleSectionEdit('section_outro', this)" title="Редактировать">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </button>
                                 <div class="menu-container">
                                     <button type="button" class="menu-dots" onclick="toggleMenu('outro')">⋮</button>
                                     <div id="menu_outro" class="menu-content">
@@ -1386,6 +1485,8 @@
         // Logic
         let currentGDriveId = null;
         let currentThesisCount = 0;
+        let isSaving = false;
+        let isBulkUpdating = false;
         const container = document.getElementById('theses-container');
         // Текст подсказки для ВСЕХ тезисов
         const thesisTooltipText = "В данных блоках автор видео прописывает краткие тезисы и ключевые поинты о том, что он может рассказать на заданную тему. Это может быть грубый набросок, все, что появляется в голове. После того, как все тезисы заполнены - продюсер сортирует их в логическом порядке, добавляет логические/наводящие вопросы (опционально), чтоб раскрыть тему интереснее. Рядом с каждым тезисом также важно указать хронометраж.";
@@ -1400,14 +1501,17 @@
             const html = `
             <div class="thesis-block" id="thesis_block_${currentThesisCount}">
                 <div class="thesis-header">
-                    <div class="thesis-title">
+                    <div style="font-weight: 600; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; flex-grow: 1;">
                         <div id="thesis_${currentThesisCount}_name" class="thesis-name-input" contenteditable="false" placeholder="Название тезиса..."></div>
                         <span class="info-icon" data-tooltip="${thesisTooltipText}">?</span>
                     </div>
-                    <div style="display: flex; gap: 10px; align-items: center;">
+                    <div style="display: flex; gap: 8px; align-items: center;">
                         <select id="thesis_${currentThesisCount}_time" style="width: 160px;" onchange="handleCustomSelect(this)">
                             ${optionsHtml}
                         </select>
+                        <button type="button" class="btn-edit-toggle" onclick="toggleSectionEdit('thesis_block_${currentThesisCount}', this)" title="Редактировать">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
                         <div class="menu-container">
                             <button type="button" class="menu-dots" onclick="toggleMenu(${currentThesisCount})">⋮</button>
                             <div id="menu_${currentThesisCount}" class="menu-content">
@@ -1436,6 +1540,7 @@
             </div>`;
             container.insertAdjacentHTML('beforeend', html);
             renumberTheses();
+            if (!isBulkUpdating) saveToGDrive(true);
         }
 
         function renumberTheses() {
@@ -1456,6 +1561,7 @@
                 renumberTheses();
                 closeModal('confirmModal');
                 showToast('Тезис удален');
+                if (!isBulkUpdating) saveToGDrive(true);
             };
         }
 
@@ -1481,11 +1587,13 @@
         function showEditor() {
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('planForm').style.display = 'block';
+            document.getElementById('sidebar-action-container').style.display = 'block';
         }
 
         function hideEditor() {
             document.getElementById('welcomeScreen').style.display = 'flex';
             document.getElementById('planForm').style.display = 'none';
+            document.getElementById('sidebar-action-container').style.display = 'none';
             currentGDriveId = null;
             setSyncStatus('idle');
         }
@@ -1509,8 +1617,21 @@
         }
 
         function applyData(data) {
+            isBulkUpdating = true; // Отключаем автосохранение на время заливки данных
             showEditor();
             container.innerHTML = ''; currentThesisCount = 0;
+
+            // Сбрасываем состояния редактирования
+            document.querySelectorAll('.is-editing').forEach(el => {
+                el.classList.remove('is-editing');
+                const btn = el.querySelector('.btn-edit-toggle');
+                if (btn) {
+                    btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+                    btn.title = "Редактировать";
+                }
+                el.querySelectorAll('.rich-textarea, .thesis-name-input').forEach(f => f.setAttribute('contenteditable', 'false'));
+            });
+
             // Сбрасываем обложку на дефолтную перед загрузкой новых данных
             const coverPreview = document.getElementById('coverPreview');
             if (coverPreview) {
@@ -1525,7 +1646,18 @@
                         if (el.classList.contains('rich-textarea') || el.id === 'title' || el.classList.contains('thesis-name-input')) {
                             if (el.id === 'title' || el.classList.contains('thesis-name-input')) el.innerText = data[key];
                             else el.innerHTML = data[key];
-                        } else el.value = data[key];
+                        } else {
+                            if (el.tagName === 'SELECT' && data[key]) {
+                                // Если значения нет в списке опций (свой вариант), добавляем его
+                                if (!Array.from(el.options).some(o => o.value === data[key])) {
+                                    const newOpt = document.createElement('option');
+                                    newOpt.value = data[key];
+                                    newOpt.text = data[key];
+                                    el.add(newOpt, el.options[el.options.length - 1]);
+                                }
+                            }
+                            el.value = data[key];
+                        }
                         if (el.tagName === 'SELECT') updateSelectStyle(el);
                         if (key === 'coverUrl' && data[key]) document.getElementById('coverPreview').src = data[key];
                     }
@@ -1544,7 +1676,13 @@
                     document.getElementById(`thesis_${id}_author`).innerHTML = t.author;
                     document.getElementById(`thesis_${id}_producer`).innerHTML = t.producer;
                     const toggleId = `toggle_thesis_${id}`;
-                    if (data[toggleId]) { document.getElementById(toggleId).checked = true; toggleComment(`thesis_${id}`, true); }
+                    if (data[toggleId]) {
+                        const toggleEl = document.getElementById(toggleId);
+                        if (toggleEl) {
+                            toggleEl.checked = true;
+                            toggleComment(`thesis_${id}`, true);
+                        }
+                    }
                 });
             }
             ['intro', 'outro'].forEach(section => {
@@ -1554,6 +1692,8 @@
                 const toggle = document.getElementById(toggleId);
                 if (toggle) { toggle.checked = shouldToggle; toggleComment(section, shouldToggle); }
             });
+
+            isBulkUpdating = false; // Возвращаем режим автосохранения
         }
 
         // Google Drive
@@ -1707,6 +1847,9 @@
                 return;
             }
 
+            if (isSaving) return; // Предотвращаем одновременные запросы
+            isSaving = true;
+
             setSyncStatus('saving');
 
             try {
@@ -1720,6 +1863,8 @@
             } catch (err) {
                 if (!silent) showToast(err.message, 'error');
                 setSyncStatus('idle');
+            } finally {
+                isSaving = false;
             }
         }
 
@@ -1751,11 +1896,23 @@
             // Даем 250мс на анимацию затухания до смены данных
             await new Promise(r => setTimeout(r, 250));
 
+            isBulkUpdating = true; // Отключаем автосохранение на время инициализации
             showEditor();
             currentGDriveId = null;
             document.getElementById('planForm').reset();
 
-            // Генерируем уникальное имя, чтобы не перезатирать старые "Новые планы"
+            // Сбрасываем обложку и всё остальное
+            document.getElementById('coverUrl').value = '';
+            document.getElementById('coverPreview').src = 'https://placehold.co/800x450?text=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D0%B5+%D0%9F%D1%80%D0%B5%D0%B2%D1%8C%D1%8E';
+            document.getElementById('title').innerText = 'Новый план';
+            document.querySelectorAll('.rich-textarea').forEach(el => el.innerHTML = '');
+            container.innerHTML = ''; currentThesisCount = 0;
+
+            for (let i = 0; i < 3; i++) addThesis();
+
+            isBulkUpdating = false; // Включаем обратно
+
+            // Генерируем уникальное имя
             const existingNames = Array.from(document.querySelectorAll('.sidebar-nav-item span')).map(s => s.innerText.trim());
             let baseName = 'Новый план';
             let newName = baseName;
@@ -1763,21 +1920,15 @@
             while (existingNames.includes(newName)) {
                 newName = `${baseName} ${counter++}`;
             }
-
             document.getElementById('title').innerText = newName;
-            document.querySelectorAll('.rich-textarea').forEach(el => el.innerHTML = '');
-            document.getElementById('coverUrl').value = '';
-            document.getElementById('coverPreview').src = 'https://placehold.co/800x450?text=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D0%B5+%D0%9F%D1%80%D0%B5%D0%B2%D1%8C%D1%8E';
-            container.innerHTML = ''; currentThesisCount = 0;
-            for (let i = 0; i < 3; i++) addThesis();
 
             form.classList.remove('content-fade'); // Показываем данные
 
-            // Сразу сохраняем на диск, чтобы появился новый файл
+            // Сразу сохраняем на диск (теперь только один раз!)
             if (window.currentUser) {
                 await saveToGDrive();
             } else {
-                showToast('Новый проект создан локально (войдите для сохранения)', 'success');
+                showToast('Новый план создан локально', 'success');
             }
         }
 
@@ -1830,50 +1981,32 @@
         });
         document.addEventListener('paste', e => { if (e.target.classList.contains('rich-textarea')) { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')); } });
 
-        // Логика двухэтапного редактирования
-        document.addEventListener('mousedown', function (e) {
-            const trackClasses = ['.rich-textarea', '.thesis-name-input'];
-            const selector = trackClasses.join(', ');
-            const el = e.target.closest(selector);
+        // NEW LOGIC: Section-based editing
+        function toggleSectionEdit(containerId, btn) {
+            const container = document.getElementById(containerId);
+            const isEditing = container.classList.toggle('is-editing');
+            const fields = container.querySelectorAll('.rich-textarea, .thesis-name-input');
 
-            // Если кликнули мимо или в другой блок
-            if (!el) {
-                document.querySelectorAll(selector).forEach(item => {
-                    item.classList.remove('state-selected', 'state-editing');
-                    item.setAttribute('contenteditable', 'false');
-                });
-                return;
-            }
+            if (isEditing) {
+                // Включаем редактирование
+                fields.forEach(f => f.setAttribute('contenteditable', 'true'));
+                btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                btn.title = "Сохранить";
 
-            // Если уже редактируем - не мешаем
-            if (el.classList.contains('state-editing')) return;
-
-            // Если уже выделено - включаем редактирование
-            if (el.classList.contains('state-selected')) {
-                el.classList.remove('state-selected');
-                el.classList.add('state-editing');
-                el.setAttribute('contenteditable', 'true');
-                // Даем браузеру время обновить атрибут перед фокусом
-                setTimeout(() => {
-                    el.focus();
-                    // Ставим курсор в конец
-                    const range = document.createRange();
-                    const sel = window.getSelection();
-                    range.selectNodeContents(el);
-                    range.collapse(false);
-                    sel.removeAllRanges();
-                    sel.addRange(range);
-                }, 0);
+                // Фокус на первое поле
+                if (fields.length > 0) fields[0].focus();
             } else {
-                // Первый клик - выделяем серым
-                document.querySelectorAll(selector).forEach(item => {
-                    item.classList.remove('state-selected', 'state-editing');
-                    item.setAttribute('contenteditable', 'false');
-                });
-                el.classList.add('state-selected');
-                e.preventDefault(); // Запрещаем немедленный фокус
+                // Выключаем редактирование
+                fields.forEach(f => f.setAttribute('contenteditable', 'false'));
+                btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+                btn.title = "Редактировать";
+
+                // Автосохранение при закрытии редактора
+                saveToGDrive(true);
             }
-        });
+        }
+
+        // Логика двухэтапного редактирования (REMOVED)
 
         // Снимаем редактирование при потере фокуса + автосохранение
         let hasChanged = false;
@@ -1890,15 +2023,13 @@
         });
 
         document.addEventListener('focusout', function (e) {
-            const el = e.target.closest('.rich-textarea, .thesis-name-input');
-            if (el) {
-                el.classList.remove('state-editing', 'state-selected');
-                el.setAttribute('contenteditable', 'false');
-
-                if (hasChanged) {
-                    saveToGDrive(true); // Сохраняем "тихо" при выходе из поля
-                    hasChanged = false;
-                }
+            // Больше не сбрасываем contenteditable автоматически, чтобы не мешать кнопке "Сохранить"
+            // Но сохраняем изменения
+            if (hasChanged) {
+                // saveToGDrive(true); // Теперь сохраняем только при клике на галочку или если фокус ушел совсем из блока?
+                // Оставим тихое сохранение на фоне
+                saveToGDrive(true);
+                hasChanged = false;
             }
         });
     </script>

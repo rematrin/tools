@@ -950,6 +950,18 @@
         body.dark .sidebar-user-email {
             color: #94a3b8;
         }
+
+        /* Анимация переключения контента */
+        #planForm {
+            transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #planForm.content-fade {
+            opacity: 0;
+            transform: translateY(10px);
+        }
     </style>
 </head>
 
@@ -1402,6 +1414,13 @@
 
         function applyData(data) {
             container.innerHTML = ''; currentThesisCount = 0;
+            // Сбрасываем обложку на дефолтную перед загрузкой новых данных
+            const coverPreview = document.getElementById('coverPreview');
+            if (coverPreview) {
+                coverPreview.src = 'https://placehold.co/800x450?text=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D0%B5+%D0%9F%D1%80%D0%B5%D0%B2%D1%8C%D1%8E';
+            }
+            if (document.getElementById('coverUrl')) document.getElementById('coverUrl').value = '';
+
             for (const key in data) {
                 if (key !== 'theses') {
                     const el = document.getElementById(key);
@@ -1576,27 +1595,59 @@
             };
         }
 
-        async function saveToGDrive() {
-            if (!window.currentUser) { showToast('Войдите через Google', 'error'); if (window.openAuthModal) window.openAuthModal(); return; }
-            const btn = document.getElementById('btnSaveGDrive'); const old = btn.innerHTML;
-            btn.innerHTML = '<span class="loader" style="width:16px; height:16px; display:inline-block"></span>'; btn.disabled = true;
+        async function saveToGDrive(silent = false) {
+            if (!window.currentUser) {
+                if (!silent) {
+                    showToast('Войдите через Google', 'error');
+                    if (window.openAuthModal) window.openAuthModal();
+                }
+                return;
+            }
+            const btn = document.getElementById('btnSaveGDrive');
+            const old = btn.innerHTML;
+
+            if (!silent) {
+                btn.innerHTML = '<span class="loader" style="width:16px; height:16px; display:inline-block"></span>';
+                btn.disabled = true;
+            }
+
             try {
                 const title = document.getElementById('title').innerText.trim() || 'Новый план';
                 const result = await GDriveService.saveFile(title, getFormData(), currentGDriveId);
                 if (result && result.id) currentGDriveId = result.id;
-                showToast('Сохранено в облако!'); refreshSidebarFiles();
-            } catch (err) { showToast(err.message, 'error'); }
-            finally { btn.innerHTML = old; btn.disabled = false; }
+
+                if (!silent) showToast('Сохранено в облако!');
+                refreshSidebarFiles();
+            } catch (err) {
+                if (!silent) showToast(err.message, 'error');
+            }
+            finally {
+                if (!silent) {
+                    btn.innerHTML = old;
+                    btn.disabled = false;
+                }
+            }
         }
 
         async function loadFromGDrive(id) {
             try {
+                const form = document.getElementById('planForm');
+                form.classList.add('content-fade'); // Запускаем затухание
+
+                // Даем 250мс на анимацию затухания до смены данных
+                await new Promise(r => setTimeout(r, 250));
+
                 const data = await GDriveService.getFile(id);
                 applyData(data);
                 currentGDriveId = id;
-                updateSidebarSelection(); // Обновляем только подсветку, без перезагрузки списка
+                updateSidebarSelection();
+
+                form.classList.remove('content-fade'); // Показываем данные
             }
-            catch (err) { showToast(err.message, 'error'); }
+            catch (err) {
+                document.getElementById('planForm').classList.remove('content-fade');
+                showToast(err.message, 'error');
+            }
         }
 
         function createNewPlan() {
@@ -1740,12 +1791,30 @@
             }
         });
 
-        // Снимаем редактирование при потере фокуса
+        // Снимаем редактирование при потере фокуса + автосохранение
+        let hasChanged = false;
+        document.addEventListener('input', (e) => {
+            if (e.target.closest('.rich-textarea, .thesis-name-input')) {
+                hasChanged = true;
+            }
+        });
+
+        document.addEventListener('change', (e) => {
+            if (e.target.tagName === 'SELECT' || e.target.type === 'checkbox') {
+                saveToGDrive(true); // Автосохранение для селектов и чекбоксов сразу
+            }
+        });
+
         document.addEventListener('focusout', function (e) {
             const el = e.target.closest('.rich-textarea, .thesis-name-input');
             if (el) {
                 el.classList.remove('state-editing', 'state-selected');
                 el.setAttribute('contenteditable', 'false');
+
+                if (hasChanged) {
+                    saveToGDrive(true); // Сохраняем "тихо" при выходе из поля
+                    hasChanged = false;
+                }
             }
         });
     </script>

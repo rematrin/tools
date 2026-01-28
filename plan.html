@@ -679,26 +679,16 @@
         }
 
         .thesis-block {
-            background: var(--card-bg);
+            background: linear-gradient(to right, var(--thesis-accent) 8px, var(--card-bg) 8px);
             border-radius: 20px;
             padding: 24px;
             margin-bottom: 20px;
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             position: relative;
-            overflow: hidden;
         }
 
-        .thesis-block::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 8px;
-            background-color: var(--thesis-accent);
-            z-index: 0;
-        }
+        /* Stripe is now integrated into background for perfect clipping */
 
         .thesis-block .thesis-header {
             position: relative;

@@ -439,10 +439,13 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
-            padding: 10px 16px;
+            gap: 12px;
+            padding: 12px 16px;
             cursor: pointer;
             transition: background 0.2s;
+            margin-bottom: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .toggle-container:hover {
@@ -453,6 +456,7 @@
             font-size: 0.9rem;
             font-weight: 500;
             color: var(--text-color);
+            white-space: nowrap;
         }
 
         .toggle-switch {
@@ -696,7 +700,11 @@
             z-index: 0;
         }
 
-        .thesis-block .thesis-header,
+        .thesis-block .thesis-header {
+            position: relative;
+            z-index: 5;
+        }
+
         .thesis-block .grid-info {
             position: relative;
             z-index: 1;
@@ -707,6 +715,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
+            position: relative;
+            z-index: 5;
         }
 
         .thesis-title {
@@ -783,13 +793,13 @@
             position: absolute;
             right: 0;
             top: 100%;
-            background-color: white;
-            min-width: 150px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
-            z-index: 100;
-            border-radius: 8px;
+            background: #ffffff !important;
+            min-width: 190px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            border-radius: 12px;
             border: 1px solid var(--border-color);
-            margin-top: 5px;
+            margin-top: 8px;
             overflow: hidden;
         }
 
@@ -1524,9 +1534,24 @@
         }
 
         function toggleMenu(id) {
-            document.querySelectorAll('.menu-content').forEach(m => { if (m.id !== `menu_${id}`) m.classList.remove('show'); });
+            // Close all other menus
+            document.querySelectorAll('.menu-content').forEach(m => {
+                if (m.id !== `menu_${id}`) m.classList.remove('show');
+            });
+
+            // Reset z-indices
+            document.querySelectorAll('.thesis-block, .section').forEach(b => b.style.zIndex = '');
+
             const menu = document.getElementById(`menu_${id}`);
-            if (menu) menu.classList.toggle("show");
+            if (!menu) return;
+
+            const isShowing = menu.classList.toggle("show");
+
+            if (isShowing) {
+                // Raise parent z-index so absolute menu is on top
+                const block = menu.closest('.thesis-block') || menu.closest('.section');
+                if (block) block.style.zIndex = '1100';
+            }
         }
 
         function toggleComment(sectionId, isVisible) {
@@ -1543,8 +1568,10 @@
         }
 
         window.onclick = e => {
-            if (!e.target.matches('.menu-dots') && !e.target.matches('.item-menu-dots')) {
+            if (!e.target.closest('.menu-dots') && !e.target.closest('.item-menu-dots')) {
                 document.querySelectorAll('.menu-content, .sidebar-file-menu').forEach(m => m.classList.remove('show'));
+                // Сбрасываем z-index при закрытии меню
+                document.querySelectorAll('.thesis-block, .section').forEach(b => b.style.zIndex = '');
             }
         };
 

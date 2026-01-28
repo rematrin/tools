@@ -962,6 +962,88 @@
             opacity: 0;
             transform: translateY(10px);
         }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 60vh;
+            text-align: center;
+            padding: 20px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .welcome-screen-illustration {
+            width: 180px;
+            height: auto;
+            margin-bottom: 0px;
+            opacity: 0.9;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        .welcome-screen h2 {
+            font-size: 1.4rem;
+            color: #1e293b;
+            margin: 0 0 8px 0;
+            font-weight: 700;
+        }
+
+        .welcome-screen p {
+            color: #64748b;
+            font-size: 0.9rem;
+            max-width: 340px;
+            line-height: 1.5;
+            margin-top: 0px;
+            margin-bottom: 24px;
+        }
+
+        .welcome-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        body.dark .welcome-screen h2 {
+            color: #f1f5f9;
+        }
+
+        body.dark .welcome-screen p {
+            color: #94a3b8;
+        }
+
+        .sync-status {
+            font-size: 13px;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: -16px 0 20px 8px;
+            /* Отрицательный маржин вверх чтобы быть ближе к шапке */
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .sync-status svg {
+            width: 18px;
+            height: 18px;
+            color: #64748b;
+        }
     </style>
 </head>
 
@@ -979,9 +1061,11 @@
                                 </path>
                             </svg>
                         </div>
-                        <span>Мои работы</span>
+                        <span>План повествования</span>
                     </div>
                 </div>
+                <!-- Индикатор синхронизации -->
+                <div id="syncStatus" class="sync-status"></div>
 
                 <button class="btn-create-new" onclick="createNewPlan()">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
@@ -1045,7 +1129,16 @@
 
         <main class="main-content">
             <div class="main-container-limited">
-                <form id="planForm">
+                <!-- Welcome Screen -->
+                <div id="welcomeScreen" class="welcome-screen">
+                    <img src="https://todoist.b-cdn.net/assets/images/f6defa2ca953237a.png"
+                        class="welcome-screen-illustration" alt="Welcome" draggable="false">
+                    <h2>Добро пожаловать!</h2>
+                    <p>Выберите существующий план из бокового меню слева или создайте новый проект, чтобы начать работу
+                        над сценарием.</p>
+                </div>
+
+                <form id="planForm" style="display: none;">
                     <div class="section">
                         <!-- Обложка сверху -->
                         <div class="form-group"
@@ -1412,7 +1505,31 @@
             return data;
         }
 
+        function showEditor() {
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('planForm').style.display = 'block';
+        }
+
+        function setSyncStatus(state) {
+            const statusEl = document.getElementById('syncStatus');
+            if (!statusEl) return;
+            if (state === 'saving') {
+                statusEl.innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M14 16h5v5M10 8H5V3m14.418 6.003A8 8 0 0 0 5.086 7.976m-.504 7.021a8 8 0 0 0 14.331 1.027"/></svg>
+                    <span>Сохранение...</span>`;
+                statusEl.style.opacity = '1';
+            } else if (state === 'saved') {
+                statusEl.innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24"><g fill="currentColor" stroke="currentColor" stroke-width="0.3"><path d="M15.03 10.47a.75.75 0 0 1 0 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 0 1 1.06-1.06L11 13.44l2.97-2.97a.75.75 0 0 1 1.06 0"/><path d="M12.932 6.208a3.91 3.91 0 0 0-3.524 2.214a.75.75 0 0 1-.947.373a4.375 4.375 0 1 0-1.586 8.455h11.648a2.978 2.978 0 1 0-.77-5.855a.75.75 0 0 1-.939-.812a3.91 3.91 0 0 0-3.882-4.374m-4.552.986A5.41 5.41 0 0 1 18.332 9.8a4.478 4.478 0 1 1 .191 8.951H6.875A5.875 5.875 0 1 1 8.38 7.194"/></g></svg>
+                    <span>Сохранено на Диске.</span>`;
+                statusEl.style.opacity = '1';
+            } else {
+                statusEl.style.opacity = '0';
+            }
+        }
+
         function applyData(data) {
+            showEditor();
             container.innerHTML = ''; currentThesisCount = 0;
             // Сбрасываем обложку на дефолтную перед загрузкой новых данных
             const coverPreview = document.getElementById('coverPreview');
@@ -1611,15 +1728,19 @@
                 btn.disabled = true;
             }
 
+            setSyncStatus('saving');
+
             try {
                 const title = document.getElementById('title').innerText.trim() || 'Новый план';
                 const result = await GDriveService.saveFile(title, getFormData(), currentGDriveId);
                 if (result && result.id) currentGDriveId = result.id;
 
                 if (!silent) showToast('Сохранено в облако!');
+                setSyncStatus('saved');
                 refreshSidebarFiles();
             } catch (err) {
                 if (!silent) showToast(err.message, 'error');
+                setSyncStatus('idle');
             }
             finally {
                 if (!silent) {
@@ -1657,6 +1778,7 @@
             confirmBtn.className = 'btn-primary';
             openModal('confirmModal');
             confirmBtn.onclick = async () => {
+                showEditor();
                 currentGDriveId = null;
                 document.getElementById('planForm').reset();
 
@@ -1700,6 +1822,7 @@
                     document.getElementById('coverUrl').value = json.data.url;
                     document.getElementById('coverPreview').src = json.data.url;
                     showToast('Обложка обновлена');
+                    saveToGDrive(true); // Автосохранение после загрузки картинки
                 }
             } catch (e) { showToast('Ошибка загрузки', 'error'); }
             finally { loader.style.display = 'none'; btn.style.display = 'inline-block'; }
@@ -1721,7 +1844,10 @@
         }
 
         // Init
-        window.addEventListener('load', () => { if (currentThesisCount === 0) for (let i = 0; i < 3; i++) addThesis(); refreshSidebarFiles(); document.querySelectorAll('select').forEach(updateSelectStyle); });
+        window.addEventListener('load', () => {
+            refreshSidebarFiles();
+            document.querySelectorAll('select').forEach(updateSelectStyle);
+        });
         window.addEventListener('authChanged', e => {
             const user = e.detail.user;
             const nameEl = document.getElementById('sidebar-user-name');

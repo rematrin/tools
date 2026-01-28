@@ -1078,32 +1078,6 @@
 
                 <div class="sidebar-divider"></div>
 
-                <div class="sidebar-label">Действия</div>
-                <button class="btn-sidebar-action primary" id="btnSaveGDrive" onclick="saveToGDrive()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                        <polyline points="7 3 7 8 15 8"></polyline>
-                    </svg>
-                    Сохранить в облако
-                </button>
-                <button class="btn-sidebar-action" onclick="saveData()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path>
-                    </svg>
-                    Экспорт JSON
-                </button>
-                <button class="btn-sidebar-action" onclick="document.getElementById('fileInput').click()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    Загрузить из файла
-                </button>
-                <input type="file" id="fileInput" accept=".json" style="display: none" onchange="loadData(this)">
-
-                <div class="sidebar-divider"></div>
-
                 <div class="sidebar-label">Мои файлы</div>
                 <div id="sidebar-file-list" style="margin-bottom: 20px;">
                     <div style="padding: 20px; color: #94a3b8; font-size: 0.85rem; text-align: center;">
@@ -1510,6 +1484,13 @@
             document.getElementById('planForm').style.display = 'block';
         }
 
+        function hideEditor() {
+            document.getElementById('welcomeScreen').style.display = 'flex';
+            document.getElementById('planForm').style.display = 'none';
+            currentGDriveId = null;
+            setSyncStatus('idle');
+        }
+
         function setSyncStatus(state) {
             const statusEl = document.getElementById('syncStatus');
             if (!statusEl) return;
@@ -1705,7 +1686,9 @@
                 try {
                     await GDriveService.deleteFile(id);
                     showToast('Файл удален');
-                    if (currentGDriveId === id) currentGDriveId = null;
+                    if (currentGDriveId === id) {
+                        hideEditor();
+                    }
                     refreshSidebarFiles();
                 } catch (e) { showToast(e.message, 'error'); }
                 closeModal('confirmModal');
@@ -1719,13 +1702,6 @@
                     if (window.openAuthModal) window.openAuthModal();
                 }
                 return;
-            }
-            const btn = document.getElementById('btnSaveGDrive');
-            const old = btn.innerHTML;
-
-            if (!silent) {
-                btn.innerHTML = '<span class="loader" style="width:16px; height:16px; display:inline-block"></span>';
-                btn.disabled = true;
             }
 
             setSyncStatus('saving');
@@ -1741,12 +1717,6 @@
             } catch (err) {
                 if (!silent) showToast(err.message, 'error');
                 setSyncStatus('idle');
-            }
-            finally {
-                if (!silent) {
-                    btn.innerHTML = old;
-                    btn.disabled = false;
-                }
             }
         }
 
@@ -1828,20 +1798,6 @@
             finally { loader.style.display = 'none'; btn.style.display = 'inline-block'; }
         }
 
-        function saveData() {
-            const data = getFormData();
-            const title = document.getElementById('title').innerText.trim() || 'Проект';
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${title}.json`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        }
-
-        function loadData(input) {
-            const file = input.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = e => { try { applyData(JSON.parse(e.target.result)); showToast('Данные загружены!'); } catch (err) { showToast('Ошибка чтения', 'error'); } input.value = ''; };
-            reader.readAsText(file);
-        }
 
         // Init
         window.addEventListener('load', () => {

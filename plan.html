@@ -1741,42 +1741,41 @@
             }
         }
 
-        function createNewPlan() {
-            document.getElementById('modalText').textContent = 'Создать новый проект? Несохраненные данные будут потеряны.';
-            const confirmBtn = document.getElementById('confirmBtn');
-            confirmBtn.textContent = 'Создать';
-            confirmBtn.className = 'btn-primary';
-            openModal('confirmModal');
-            confirmBtn.onclick = async () => {
-                showEditor();
-                currentGDriveId = null;
-                document.getElementById('planForm').reset();
+        async function createNewPlan() {
+            const form = document.getElementById('planForm');
+            form.classList.add('content-fade'); // Запускаем затухание
 
-                // Генерируем уникальное имя, чтобы не перезатирать старые "Новые планы"
-                const existingNames = Array.from(document.querySelectorAll('.sidebar-nav-item span')).map(s => s.innerText.trim());
-                let baseName = 'Новый план';
-                let newName = baseName;
-                let counter = 1;
-                while (existingNames.includes(newName)) {
-                    newName = `${baseName} ${counter++}`;
-                }
+            // Даем 250мс на анимацию затухания до смены данных
+            await new Promise(r => setTimeout(r, 250));
 
-                document.getElementById('title').innerText = newName;
-                document.querySelectorAll('.rich-textarea').forEach(el => el.innerHTML = '');
-                document.getElementById('coverUrl').value = '';
-                document.getElementById('coverPreview').src = 'https://placehold.co/800x450?text=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D0%B5+%D0%9F%D1%80%D0%B5%D0%B2%D1%8C%D1%8E';
-                container.innerHTML = ''; currentThesisCount = 0;
-                for (let i = 0; i < 3; i++) addThesis();
+            showEditor();
+            currentGDriveId = null;
+            document.getElementById('planForm').reset();
 
-                closeModal('confirmModal');
+            // Генерируем уникальное имя, чтобы не перезатирать старые "Новые планы"
+            const existingNames = Array.from(document.querySelectorAll('.sidebar-nav-item span')).map(s => s.innerText.trim());
+            let baseName = 'Новый план';
+            let newName = baseName;
+            let counter = 1;
+            while (existingNames.includes(newName)) {
+                newName = `${baseName} ${counter++}`;
+            }
 
-                // Сразу сохраняем на диск, чтобы появился новый файл
-                if (window.currentUser) {
-                    await saveToGDrive();
-                } else {
-                    showToast('Новый проект создан локально (войдите для сохранения)', 'success');
-                }
-            };
+            document.getElementById('title').innerText = newName;
+            document.querySelectorAll('.rich-textarea').forEach(el => el.innerHTML = '');
+            document.getElementById('coverUrl').value = '';
+            document.getElementById('coverPreview').src = 'https://placehold.co/800x450?text=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D0%B5+%D0%9F%D1%80%D0%B5%D0%B2%D1%8C%D1%8E';
+            container.innerHTML = ''; currentThesisCount = 0;
+            for (let i = 0; i < 3; i++) addThesis();
+
+            form.classList.remove('content-fade'); // Показываем данные
+
+            // Сразу сохраняем на диск, чтобы появился новый файл
+            if (window.currentUser) {
+                await saveToGDrive();
+            } else {
+                showToast('Новый проект создан локально (войдите для сохранения)', 'success');
+            }
         }
 
         // Image

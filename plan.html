@@ -15,12 +15,26 @@
     <style>
         :root {
             --primary-color: #2563eb;
-            --bg-color: #F2F2F7;
+            --bg-color: #f6f7fb;
             --card-bg: #ffffff;
-            --text-color: #1e293b;
-            --border-color: #e2e8f0;
+            --text-color: #0b0d12;
+            --text-secondary: #64748b;
+            --border-color: #e6e9f2;
+            --hover-bg: #f1f5f9;
             --sidebar-width: 280px;
             --thesis-accent: #cbd5e1;
+            --sidebar-bg: #ffffff;
+        }
+
+        body.dark {
+            --bg-color: #0f1115;
+            --card-bg: #1a1d22;
+            --text-color: #f3f3f3;
+            --text-secondary: #a0a0a0;
+            --border-color: #292c33;
+            --hover-bg: #23262b;
+            --thesis-accent: #334155;
+            --sidebar-bg: #1a1d22;
         }
 
         /* Sidebar Styles (Keeping these) */
@@ -45,7 +59,7 @@
 
         .sidebar {
             width: var(--sidebar-width);
-            background: #ffffff;
+            background: var(--sidebar-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
@@ -69,11 +83,11 @@
             gap: 12px;
             cursor: pointer;
             transition: background 0.2s;
-            background: #fff;
+            background: var(--sidebar-bg);
         }
 
         .sidebar-user:hover {
-            background: #f8fafc;
+            background: var(--hover-bg);
         }
 
         .sidebar-avatar {
@@ -81,7 +95,7 @@
             height: 36px;
             border-radius: 50%;
             object-fit: cover;
-            background: #f1f5f9;
+            background: var(--hover-bg);
         }
 
         .sidebar-user-info-text {
@@ -101,7 +115,7 @@
 
         .sidebar-user-email {
             font-size: 0.75rem;
-            color: #64748b;
+            color: var(--text-secondary);
             margin: 0;
             white-space: nowrap;
             overflow: hidden;
@@ -144,18 +158,18 @@
             gap: 12px;
             font-weight: 700;
             font-size: 1.05rem;
-            color: #1e293b;
+            color: var(--text-color);
         }
 
         .sidebar-icon-box {
-            background: #f1f5f9;
+            background: var(--hover-bg);
             width: 32px;
             height: 32px;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #64748b;
+            color: var(--text-secondary);
         }
 
         .btn-create-new {
@@ -184,7 +198,7 @@
 
         .sidebar-divider {
             height: 1px;
-            background: #f1f5f9;
+            background: var(--border-color);
             margin: 15px 8px;
         }
 
@@ -205,7 +219,7 @@
             gap: 12px;
             padding: 10px 12px;
             border-radius: 10px;
-            color: #475569;
+            color: var(--text-secondary);
             text-decoration: none;
             font-size: 0.95rem;
             font-weight: 500;
@@ -219,12 +233,12 @@
         }
 
         .sidebar-nav-item:hover {
-            background: #f1f5f9;
-            color: #1e293b;
+            background: var(--hover-bg);
+            color: var(--text-color);
         }
 
         .sidebar-nav-item.active {
-            background: #f1f5f9;
+            background: var(--hover-bg);
             color: var(--primary-color);
             font-weight: 600;
         }
@@ -267,7 +281,7 @@
         }
 
         .item-menu-dots:hover {
-            background: #e2e8f0;
+            background: var(--border-color);
             color: var(--text-color);
         }
 
@@ -276,7 +290,7 @@
             position: absolute;
             right: 10px;
             top: 100%;
-            background-color: white;
+            background-color: var(--card-bg);
             min-width: 140px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             z-index: 1000;
@@ -307,7 +321,7 @@
         }
 
         .sidebar-file-menu button:hover {
-            background-color: #f8fafc;
+            background-color: var(--hover-bg);
         }
 
         .btn-menu-delete {
@@ -324,19 +338,19 @@
             gap: 10px;
             padding: 12px;
             width: 100%;
-            background: #fff;
-            border: 1px solid #e2e8f0;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
             font-weight: 600;
             font-size: 0.85rem;
-            color: #475569;
+            color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.2s;
             margin-bottom: 8px;
         }
 
         .btn-sidebar-action:hover {
-            background: #f8fafc;
+            background: var(--hover-bg);
         }
 
         .btn-sidebar-action.primary {
@@ -399,7 +413,7 @@
             margin-left: 8px;
             width: 18px;
             height: 18px;
-            background: #e0e7ff;
+            background: var(--hover-bg);
             color: var(--primary-color);
             border-radius: 50%;
             display: inline-flex;
@@ -417,10 +431,11 @@
             left: 50%;
             transform: translateX(-50%);
             width: 280px;
-            background: #334155;
-            color: white;
+            background: var(--card-bg);
+            color: var(--text-color);
             padding: 10px;
             border-radius: 6px;
+            border: 1px solid var(--border-color);
             font-size: 0.85rem;
             z-index: 10000;
             /* Extremely high to prevent overlap by header */
@@ -449,7 +464,7 @@
         }
 
         .toggle-container:hover {
-            background: #f8fafc;
+            background: var(--hover-bg);
         }
 
         .toggle-label {
@@ -479,7 +494,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #e2e8f0;
+            background-color: var(--border-color);
             transition: .3s;
             border-radius: 24px;
         }
@@ -491,7 +506,7 @@
             width: 18px;
             left: 3px;
             bottom: 3px;
-            background-color: white;
+            background-color: var(--card-bg);
             transition: .3s;
             border-radius: 50%;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -537,7 +552,8 @@
             font-size: 1rem;
             font-family: inherit;
             box-sizing: border-box;
-            background: #fff;
+            background: var(--card-bg);
+            color: var(--text-color);
         }
 
         select {
@@ -591,7 +607,7 @@
         .is-editing .rich-textarea,
         .is-editing .thesis-name-input {
             border-color: var(--border-color);
-            background: #fff;
+            background: var(--card-bg);
             padding: 10px 12px;
             margin-left: -8px;
             /* Slightly reduced pull to keep distance from accent */
@@ -611,8 +627,8 @@
         }
 
         .btn-edit-toggle {
-            background: #f1f5f9;
-            color: #64748b;
+            background: var(--hover-bg);
+            color: var(--text-secondary);
             padding: 6px;
             border-radius: 8px;
             display: flex;
@@ -623,7 +639,7 @@
         }
 
         .btn-edit-toggle:hover {
-            background: #e2e8f0;
+            background: var(--border-color);
             color: var(--primary-color);
         }
 
@@ -765,17 +781,28 @@
 
         .menu-dots:hover {
             color: var(--text-color);
-            background: #f1f5f9;
+            background: var(--hover-bg);
+        }
+
+        .upload-icon-btn {
+            background: var(--card-bg);
+            color: var(--primary-color);
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
+            border: none;
         }
 
         .upload-icon-btn:hover {
             transform: scale(1.1);
-            background: #fff;
-        }
-
-        .upload-icon-btn svg {
-            width: 20px;
-            height: 20px;
+            background: var(--hover-bg);
         }
 
         .menu-content {
@@ -783,7 +810,7 @@
             position: absolute;
             right: 0;
             top: 100%;
-            background: #ffffff !important;
+            background: var(--card-bg) !important;
             min-width: 190px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
             z-index: 1000;
@@ -798,7 +825,7 @@
         }
 
         .menu-content button {
-            color: #ef4444;
+            color: var(--text-color);
             padding: 12px 16px;
             text-decoration: none;
             display: block;
@@ -809,10 +836,11 @@
             font-weight: 500;
             border: none;
             border-radius: 0;
+            transition: background 0.2s;
         }
 
         .menu-content button:hover {
-            background-color: #fef2f2;
+            background-color: var(--hover-bg);
         }
 
         .menu-content .menu-item {
@@ -852,7 +880,7 @@
 
         .sortable-ghost {
             opacity: 0.4;
-            background: #f1f5f9;
+            background: var(--hover-bg);
         }
 
         #toast-container {
@@ -910,12 +938,13 @@
         }
 
         .modal {
-            background: white;
+            background: var(--card-bg);
             padding: 24px;
             border-radius: 12px;
             max-width: 400px;
             width: 90%;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+            color: var(--text-color);
         }
 
         .modal h3 {
@@ -930,8 +959,8 @@
         }
 
         .btn-secondary {
-            background: #f1f5f9;
-            color: #64748b;
+            background: var(--hover-bg);
+            color: var(--text-secondary);
         }
 
         .btn-danger {
@@ -946,7 +975,7 @@
         .cover-container {
             width: 400px;
             aspect-ratio: 16 / 9;
-            background: #f1f5f9;
+            background: var(--hover-bg);
             border-radius: 15px;
             overflow: hidden;
             margin-bottom: 20px;
@@ -995,7 +1024,7 @@
         .loader {
             width: 24px;
             height: 24px;
-            border: 3px solid #FFF;
+            border: 3px solid var(--primary-color);
             border-bottom-color: transparent;
             border-radius: 50%;
             display: none;
@@ -1013,58 +1042,13 @@
             }
         }
 
-        /* Dark Mode Support (Basic) */
-        body.dark {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-color: #f1f5f9;
-            --border-color: #334155;
-            --thesis-accent: #475569;
+        /* Welcome Screen Dark Adjustments */
+        body.dark .welcome-screen h2 {
+            color: var(--text-color);
         }
 
-        body.dark .sidebar {
-            background: #1e293b;
-        }
-
-        body.dark .sidebar-header-left {
-            color: #f1f5f9;
-        }
-
-        body.dark .sidebar-nav-item:hover,
-        body.dark .sidebar-nav-item.active {
-            background: #334155;
-            color: #fff;
-        }
-
-        body.dark input,
-        body.dark select,
-        body.dark .rich-textarea,
-        body.dark .thesis-name-input {
-            background: #0f172a;
-            color: #f1f5f9;
-            border-color: #334155;
-        }
-
-        body.dark .modal {
-            background: #1e293b;
-            color: #f1f5f9;
-        }
-
-        body.dark .sidebar-user {
-            background: #1e293b;
-            border-top-color: #334155;
-        }
-
-        body.dark .sidebar-user:hover {
-            background: #334155;
-        }
-
-        body.dark .sidebar-user-name {
-            color: #f1f5f9;
-        }
-
-        body.dark .sidebar-user-email {
-            color: #94a3b8;
+        body.dark .welcome-screen p {
+            color: var(--text-secondary);
         }
 
         /* Анимация переключения контента */
@@ -1215,7 +1199,7 @@
                 </button>
             </div>
 
-            <div class="sidebar-user" id="sidebar-user-trigger" onclick="window.openAuthModal(this)"
+            <div class="sidebar-user" id="sidebar-user-trigger" onclick="window.openAuthModal(this, 'profile')"
                 style="border-top: 1px solid var(--border-color);">
                 <img id="sidebar-user-avatar" class="sidebar-avatar" src="https://via.placeholder.com/36">
                 <div class="sidebar-user-info-text">
@@ -1887,7 +1871,7 @@
                     list.innerHTML = `
                         <div style="padding: 20px; text-align: center;">
                             <div style="color: #64748b; font-size: 0.85rem; margin-bottom: 12px;">Требуется подключение Google Drive</div>
-                            <button onclick="window.openAuthModal()" class="btn-sidebar-action primary" style="padding: 8px 12px; font-size: 0.8rem; height: auto; width: auto; margin: 0 auto;">
+                            <button onclick="window.openAuthModal(this, 'connect')" class="btn-sidebar-action primary" style="padding: 8px 12px; font-size: 0.8rem; height: auto; width: auto; margin: 0 auto;">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
                                 Подключить
                             </button>
@@ -1959,7 +1943,7 @@
             if (!window.currentUser) {
                 if (!silent) {
                     showToast('Войдите через Google', 'error');
-                    if (window.openAuthModal) window.openAuthModal();
+                    if (window.openAuthModal) window.openAuthModal(null, window.currentUser ? 'connect' : 'login');
                 }
                 return;
             }

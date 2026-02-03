@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Продуктивность</title>
+    <title>Home</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
         * {
@@ -25,11 +25,12 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             color: white;
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            overflow-x: hidden;
+            justify-content: flex-start;
+            overflow: hidden;
             background-color: #000;
             overscroll-behavior-y: none;
             user-select: none;
@@ -87,10 +88,11 @@
 
         .iphone-screen {
             width: 100%;
-            max-width: 450px;
             max-width: max(450px, calc(var(--grid-cols, 4) * 110px));
+            height: 100%;
+            display: flex;
+            flex-direction: column;
             position: relative;
-            padding-bottom: 40px;
             margin: 0 auto;
             transition: max-width 0.2s ease;
         }
@@ -184,11 +186,14 @@
             scroll-snap-align: center;
             display: grid;
             grid-template-columns: repeat(var(--grid-cols, 4), 1fr);
+            grid-template-rows: repeat(var(--grid-rows, 6), auto);
             row-gap: 20px;
             column-gap: 8px;
             padding: 10px 12px;
             align-content: start;
-            /* Убрали margin-top, так как он теперь у враппера */
+            overflow: hidden;
+            max-height: calc(var(--grid-rows, 6) * 110px - 10px);
+            min-height: calc(var(--grid-rows, 6) * 110px - 10px);
         }
 
         .pagination-dots {
@@ -221,7 +226,9 @@
 
         .pages-wrapper {
             width: 100%;
-            margin-top: 40px;
+            margin: auto 0;
+            padding-bottom: 60px;
+            /* Компенсация высоты хедера для визуального центра */
         }
 
 
@@ -1810,20 +1817,29 @@
         import { FolderManager } from './folder-manager.js';
         import { ConfirmModal } from './confirm-modal.js';
 
-        // --- ИНИЦИАЛИЗАЦИЯ НАСТРОЕК (СТЕКЛО И КОЛОНКИ) ---
+        // --- ИНИЦИАЛИЗАЦИЯ НАСТРОЕК (СТЕКЛО, КОЛОНКИ, РЯДЫ) ---
         const savedGlass = localStorage.getItem('glassEffect') === 'true';
         if (savedGlass) {
             document.body.classList.add('glass-mode');
         }
 
         const savedCols = localStorage.getItem('gridColumns') || '4';
+        const savedRows = localStorage.getItem('gridRows') || '6';
         document.documentElement.style.setProperty('--grid-cols', savedCols);
+        document.documentElement.style.setProperty('--grid-rows', savedRows);
+
+        function getAppsPerPage() {
+            const cols = parseInt(localStorage.getItem('gridColumns') || '4');
+            const rows = parseInt(localStorage.getItem('gridRows') || '6');
+            return cols * rows;
+        }
 
         // --- ИНИЦИАЛИЗАЦИЯ ---
         const iconEditor = new IconEditor();
         const wallpaperManager = new WallpaperManager();
         const confirmModal = new ConfirmModal();
         let folderManager;
+        let currentApps = []; // Глобальное состояние текущих приложений
 
         // --- КОНФИГУРАЦИЯ ---
         const STORAGE_KEY = 'my_apps_cache_v1';
@@ -1846,16 +1862,16 @@
 
         // --- ФУНКЦИИ СИНХРОНИЗАЦИИ ---
         // --- ФУНКЦИИ СИНХРОНИЗАЦИИ ---
-        function getAppsFromDOM() {
-            // Читаем актуальное состояние из LocalStorage
+        function getAppsFromStorage() {
             const stored = localStorage.getItem(STORAGE_KEY);
             return stored ? JSON.parse(stored) : [];
         }
 
-        const APPS_PER_PAGE = 24;
         let sortables = [];
 
         function renderAppsToDOM(appsArray, silent = false) {
+            currentApps = appsArray; // Обновляем глобальное состояние
+            const APPS_PER_PAGE = getAppsPerPage();
             const pagesContainer = document.getElementById('pagesContainer');
             const dotsContainer = document.getElementById('paginationDots');
 
@@ -1935,16 +1951,18 @@
                 });
 
                 // Add dot
-                const dot = document.createElement('div');
-                dot.className = 'dot' + (i === 0 ? ' active' : '');
-                dot.style.cursor = 'pointer';
-                dot.onclick = () => {
-                    pagesContainer.scrollTo({
-                        left: i * pagesContainer.clientWidth,
-                        behavior: 'smooth'
-                    });
-                };
-                dotsContainer.appendChild(dot);
+                if (numPages > 1) {
+                    const dot = document.createElement('div');
+                    dot.className = 'dot' + (i === 0 ? ' active' : '');
+                    dot.style.cursor = 'pointer';
+                    dot.onclick = () => {
+                        pagesContainer.scrollTo({
+                            left: i * pagesContainer.clientWidth,
+                            behavior: 'smooth'
+                        });
+                    };
+                    dotsContainer.appendChild(dot);
+                }
             }
 
             initAppItems();
@@ -2010,7 +2028,7 @@
                             const isDraggedFolder = evt.item.querySelector('.folder-trigger') !== null;
 
                             if (draggedName && folderName && !isDraggedFolder) {
-                                const currentApps = getAppsFromDOM();
+                                const currentApps = getAppsFromStorage();
                                 const draggedIdx = currentApps.findIndex(a => a.name === draggedName && a.type !== 'folder');
                                 const folderIdx = currentApps.findIndex(a => a.name === folderName && a.type === 'folder');
 
@@ -2032,7 +2050,7 @@
                             const isTargetFolder = hoveredTargetEl.querySelector('.folder-trigger') !== null;
 
                             if (draggedName2 && targetName && !isTargetFolder) {
-                                const currentApps = getAppsFromDOM();
+                                const currentApps = getAppsFromStorage();
                                 const draggedIdx = currentApps.findIndex(a => a.name === draggedName2 && a.type !== 'folder');
                                 const targetIdx = currentApps.findIndex(a => a.name === targetName && a.type !== 'folder');
 
@@ -2058,6 +2076,7 @@
                         }
                         hoveredTargetEl = null;
                         saveCurrentState();
+                        renderAppsToDOM(getAppsFromStorage()); // Пересчитываем страницы
                     }
                 });
                 sortables.push(s);
@@ -2070,14 +2089,13 @@
             if (updatedApps) {
                 appsToSave = updatedApps;
             } else {
-                const currentCache = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
                 const items = document.querySelectorAll('.pages-container .app-item');
                 appsToSave = [];
                 items.forEach(item => {
-                    const nameSpan = item.querySelector('.app-name');
-                    const name = nameSpan ? nameSpan.innerText : '';
-                    const found = currentCache.find(a => a.name === name);
-                    if (found) appsToSave.push(found);
+                    const absIdx = parseInt(item.dataset.absIndex);
+                    if (!isNaN(absIdx) && currentApps[absIdx]) {
+                        appsToSave.push(currentApps[absIdx]);
+                    }
                 });
                 if (appsToSave.length === 0 && items.length > 0) return;
             }
@@ -2284,7 +2302,7 @@
                                     saveCurrentState();
                                 },
                                 onUngroup: () => {
-                                    const currentApps = getAppsFromDOM();
+                                    const currentApps = getAppsFromStorage();
                                     const folderIdx = currentApps.findIndex(a => a.name === name && a.type === 'folder');
 
                                     if (folderIdx !== -1) {
@@ -2313,7 +2331,7 @@
                         e.preventDefault();
                         e.stopPropagation();
 
-                        const currentApps = getAppsFromDOM();
+                        const currentApps = getAppsFromStorage();
                         const absIndex = parseInt(item.dataset.absIndex);
                         const appData = currentApps[absIndex];
 
@@ -2384,7 +2402,7 @@
 
         // --- ИНИЦИАЛИЗАЦИЯ FolderManager (Вставьте это!) ---
         folderManager = new FolderManager({
-            getApps: getAppsFromDOM,
+            getApps: getAppsFromStorage,
             saveApps: (newApps) => saveCurrentState(newApps),
             renderMain: renderAppsToDOM,
             iconEditor: iconEditor,
@@ -2411,9 +2429,22 @@
         const sidebarManager = initSidebarManager({
             iconEditor,
             wallpaperManager,
-            getAppsFromDOM, // Передаем нашу функцию
+            getAppsFromStorage,
             renderAppsToDOM,
-            saveCurrentState, // Передаем новую функцию с поддержкой аргумента
+            saveCurrentState,
+            onLayoutChange: () => {
+                const pagesContainer = document.getElementById('pagesContainer');
+                const pageWidth = pagesContainer.clientWidth || 1;
+                const currentIndex = Math.round(pagesContainer.scrollLeft / pageWidth);
+
+                renderAppsToDOM(getAppsFromStorage());
+
+                // Восстанавливаем страницу после перерисовки
+                setTimeout(() => {
+                    const newPageWidth = pagesContainer.clientWidth || 1;
+                    pagesContainer.scrollLeft = currentIndex * newPageWidth;
+                }, 0);
+            },
             defaultApps: DEFAULT_APPS,
             confirmModal,
             showToast
@@ -2453,12 +2484,24 @@
                                     document.documentElement.style.setProperty('--grid-cols', cols);
                                     localStorage.setItem('gridColumns', cols);
 
-                                    // Обновляем UI слайдера, если он сейчас отрендерен
                                     const slider = document.getElementById('colCountSlider');
                                     const valDisplay = document.getElementById('colCountValue');
                                     if (slider) slider.value = cols;
                                     if (valDisplay) valDisplay.innerText = cols;
                                 }
+
+                                // Загрузка Рядов
+                                if (typeof cloudSettings.gridRows !== 'undefined') {
+                                    const rows = cloudSettings.gridRows;
+                                    localStorage.setItem('gridRows', rows);
+
+                                    const slider = document.getElementById('rowCountSlider');
+                                    const valDisplay = document.getElementById('rowCountValue');
+                                    if (slider) slider.value = rows;
+                                    if (valDisplay) valDisplay.innerText = rows;
+                                }
+
+                                renderAppsToDOM(getAppsFromStorage());
                             }
                         }
 
@@ -2472,7 +2515,7 @@
                                 }
                             } else {
                                 // Если в облаке пусто, сохраняем локальное состояние туда
-                                saveCurrentState(getAppsFromDOM());
+                                saveCurrentState(getAppsFromStorage());
                             }
                         }
                     } else {

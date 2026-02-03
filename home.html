@@ -163,22 +163,67 @@
         }
 
         /* --- APP GRID STYLES (Базовые настройки) --- */
-        .app-grid {
+        /* --- PAGINATION & PAGES --- */
+        .pages-container {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            width: 100%;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            cursor: default;
+        }
+
+        .pages-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .app-page {
+            flex: 0 0 100%;
+            width: 100%;
+            scroll-snap-align: center;
             display: grid;
             grid-template-columns: repeat(var(--grid-cols, 4), 1fr);
             row-gap: 20px;
             column-gap: 8px;
             padding: 10px 12px;
-            margin-top: 5px;
-            /* Это будет работать для папок */
-            position: relative;
+            align-content: start;
+            /* Убрали margin-top, так как он теперь у враппера */
         }
 
-        /* Специфический отступ только для главной сетки */
-        #appGrid {
-            margin-top: 60px;
-            /* Здесь кнопка меню не будет перекрывать иконки */
+        .pagination-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            margin-bottom: 20px;
+            z-index: 100;
         }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            background: #fff;
+            transform: scale(1.2);
+        }
+
+        /* Убираем старый отступ у решетки */
+        #appGrid {
+            display: none;
+            /* Мы будем использовать динамические страницы */
+        }
+
+        .pages-wrapper {
+            width: 100%;
+            margin-top: 40px;
+        }
+
 
         .app-item {
             display: flex;
@@ -961,7 +1006,7 @@
             z-index: 100;
         }
 
-        .app-grid.edit-mode .action-bar,
+        body.edit-mode .action-bar,
         .folder-grid.edit-mode .action-bar {
             display: flex;
         }
@@ -1023,7 +1068,7 @@
             }
         }
 
-        .app-grid.edit-mode .icon-container {
+        body.edit-mode .icon-container {
             animation: wiggle 0.28s infinite linear;
             cursor: grab;
             cursor: -webkit-grab;
@@ -1035,8 +1080,8 @@
             cursor: -webkit-grabbing;
         }
 
-        .app-grid.edit-mode .delete-btn,
-        .app-grid.edit-mode .edit-btn {
+        body.edit-mode .btn-del,
+        body.edit-mode .btn-edit {
             display: flex;
         }
 
@@ -1575,6 +1620,62 @@
             box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
         }
 
+        /* Зоны навигации по страницам при перетаскивании */
+        .page-nav-zone {
+            position: fixed;
+            top: 80px;
+            bottom: 80px;
+            width: 40px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 24px;
+        }
+
+        .page-nav-zone.left {
+            left: 0;
+            border-radius: 0 30px 30px 0;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .page-nav-zone.right {
+            right: 0;
+            border-radius: 30px 0 0 30px;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .page-nav-zone.visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .page-nav-zone.hover {
+            background: rgba(255, 255, 255, 0.1);
+            width: 60px;
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .page-nav-zone svg {
+            width: 20px;
+            height: 20px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
         /* --- TOAST NOTIFICATIONS --- */
         .toast-container {
             position: fixed;
@@ -1643,7 +1744,21 @@
             <span></span><span></span><span></span>
         </div>
 
-        <div class="app-grid" id="appGrid"></div>
+        <div class="pages-wrapper">
+            <div id="pagesContainer" class="pages-container"></div>
+            <div id="paginationDots" class="pagination-dots"></div>
+        </div>
+        <div id="pageNavLeft" class="page-nav-zone left">
+            <svg viewBox="0 0 24 24">
+                <path d="M15 18l-6-6 6-6" />
+            </svg>
+        </div>
+        <div id="pageNavRight" class="page-nav-zone right">
+            <svg viewBox="0 0 24 24">
+                <path d="M9 18l6-6-6-6" />
+            </svg>
+        </div>
+        <div class="app-grid" id="appGrid" style="display: none;"></div>
     </div>
 
     <div id="iosModalOverlay" class="ios-modal-overlay">
@@ -1730,126 +1845,242 @@
         ];
 
         // --- ФУНКЦИИ СИНХРОНИЗАЦИИ ---
+        // --- ФУНКЦИИ СИНХРОНИЗАЦИИ ---
         function getAppsFromDOM() {
             // Читаем актуальное состояние из LocalStorage
             const stored = localStorage.getItem(STORAGE_KEY);
             return stored ? JSON.parse(stored) : [];
         }
 
+        const APPS_PER_PAGE = 24;
+        let sortables = [];
+
         function renderAppsToDOM(appsArray, silent = false) {
-            const grid = document.getElementById('appGrid');
+            const pagesContainer = document.getElementById('pagesContainer');
+            const dotsContainer = document.getElementById('paginationDots');
+
             if (silent && animationController) {
                 animationController.disable();
             }
-            grid.innerHTML = '';
 
-            appsArray.forEach((app, index) => {
-                let newItemHTML;
-                const tempDiv = document.createElement('div');
+            pagesContainer.innerHTML = '';
+            dotsContainer.innerHTML = '';
 
-                if (app.type === 'folder') {
-                    // --- ГЕНЕРАЦИЯ МИНИ-СЕТКИ (3x3) ---
-                    // Берём первые 9 элементов из папки
-                    const previewItems = app.items ? app.items.slice(0, 9) : [];
-                    let miniGridHTML = '';
+            const numPages = Math.ceil(appsArray.length / APPS_PER_PAGE) || 1;
 
-                    previewItems.forEach(item => {
-                        miniGridHTML += `<img src="${item.icon}" class="mini-icon" onerror="this.style.opacity='0'">`;
+            for (let i = 0; i < numPages; i++) {
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'app-page';
+                pageDiv.dataset.pageIndex = i;
+                pagesContainer.appendChild(pageDiv);
+
+                const pageApps = appsArray.slice(i * APPS_PER_PAGE, (i + 1) * APPS_PER_PAGE);
+
+                pageApps.forEach((app, innerIndex) => {
+                    const absIndex = i * APPS_PER_PAGE + innerIndex;
+                    let newItemHTML;
+                    const tempDiv = document.createElement('div');
+
+                    if (app.type === 'folder') {
+                        const previewItems = app.items ? app.items.slice(0, 9) : [];
+                        let miniGridHTML = '';
+                        previewItems.forEach(item => {
+                            miniGridHTML += `<img src="${item.icon}" class="mini-icon" onerror="this.style.opacity='0'">`;
+                        });
+
+                        newItemHTML = `
+                        <div class="app-item" data-abs-index="${absIndex}">
+                            <div class="icon-container folder-trigger" data-index="${absIndex}">
+                                <div class="folder-icon">
+                                    ${miniGridHTML}
+                                </div>
+                                <div class="glass-overlay"></div>
+                                <div class="action-bar">
+                                    <div class="action-btn btn-del"></div>
+                                </div>
+                            </div>
+                            <span class="app-name">${app.name}</span>
+                        </div>`;
+
+                        tempDiv.innerHTML = newItemHTML;
+                        const el = tempDiv.firstElementChild;
+                        const trigger = el.querySelector('.folder-trigger');
+                        trigger.onclick = (e) => {
+                            if (document.body.classList.contains('edit-mode')) return;
+                            if (folderManager) {
+                                folderManager.open(app, absIndex);
+                            }
+                        };
+                        pageDiv.appendChild(el);
+                    } else {
+                        const openInNewTab = localStorage.getItem('openInNewTab') === 'true';
+                        const targetAttr = openInNewTab ? 'target="_blank" rel="noopener noreferrer"' : '';
+
+                        newItemHTML = `
+                        <div class="app-item" data-abs-index="${absIndex}">
+                            <a href="${app.url}" class="icon-container" ${targetAttr}>
+                                <img src="${app.icon}" alt="${app.name}" onerror="this.src='https://via.placeholder.com/62?text=?'">
+                                <div class="glass-overlay"></div>
+                                <div class="action-bar">
+                                    <div class="action-btn btn-del"></div>
+                                    <div class="action-divider"></div>
+                                    <div class="action-btn btn-edit"></div>
+                                </div>
+                            </a>
+                            <span class="app-name">${app.name}</span>
+                        </div>`;
+                        tempDiv.innerHTML = newItemHTML;
+                        pageDiv.appendChild(tempDiv.firstElementChild);
+                    }
+                });
+
+                // Add dot
+                const dot = document.createElement('div');
+                dot.className = 'dot' + (i === 0 ? ' active' : '');
+                dot.style.cursor = 'pointer';
+                dot.onclick = () => {
+                    pagesContainer.scrollTo({
+                        left: i * pagesContainer.clientWidth,
+                        behavior: 'smooth'
                     });
-
-                    // --- РЕНДЕР ПАПКИ ---
-                    newItemHTML = `
-                    <div class="app-item">
-                        <div class="icon-container folder-trigger" data-index="${index}">
-                            <div class="folder-icon">
-                                ${miniGridHTML}
-                            </div>
-                            <div class="glass-overlay"></div>
-                            <div class="action-bar">
-                                <div class="action-btn btn-del"></div>
-                            </div>
-                        </div>
-                        <span class="app-name">${app.name}</span>
-                    </div>`;
-
-                    tempDiv.innerHTML = newItemHTML;
-                    const el = tempDiv.firstElementChild;
-
-                    // Обработчик открытия папки
-                    const trigger = el.querySelector('.folder-trigger');
-                    trigger.onclick = (e) => {
-                        if (grid.classList.contains('edit-mode')) return;
-                        if (folderManager) {
-                            folderManager.open(app, index);
-                        }
-                    };
-                    grid.appendChild(el);
-
-                } else {
-                    // --- РЕНДЕР САЙТА (без изменений) ---
-                    const openInNewTab = localStorage.getItem('openInNewTab') === 'true';
-                    const targetAttr = openInNewTab ? 'target="_blank" rel="noopener noreferrer"' : '';
-
-                    newItemHTML = `
-                    <div class="app-item">
-                        <a href="${app.url}" class="icon-container" ${targetAttr}>
-                            <img src="${app.icon}" alt="${app.name}" onerror="this.src='https://via.placeholder.com/62?text=?'">
-                            <div class="glass-overlay"></div>
-                            <div class="action-bar">
-                                <div class="action-btn btn-del"></div>
-                                <div class="action-divider"></div>
-                                <div class="action-btn btn-edit"></div>
-                            </div>
-                        </a>
-                        <span class="app-name">${app.name}</span>
-                    </div>`;
-                    tempDiv.innerHTML = newItemHTML;
-                    grid.appendChild(tempDiv.firstElementChild);
-                }
-            });
+                };
+                dotsContainer.appendChild(dot);
+            }
 
             initAppItems();
+            initSortables();
 
             if (silent && animationController) {
                 setTimeout(() => { animationController.enable(); }, 100);
             }
         }
 
+        function initSortables() {
+            sortables.forEach(s => s.destroy());
+            sortables = [];
+
+            const editMode = document.body.classList.contains('edit-mode');
+
+            document.querySelectorAll('.app-page').forEach(page => {
+                const s = Sortable.create(page, {
+                    group: 'shared-apps',
+                    animation: 300,
+                    delay: 200,
+                    delayOnTouchOnly: true,
+                    disabled: !editMode,
+                    ghostClass: 'sortable-ghost',
+                    dragClass: 'sortable-drag',
+                    easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+                    swapThreshold: 0.5,
+                    invertSwap: true,
+                    direction: 'horizontal',
+                    forceFallback: true,
+                    fallbackClass: "sortable-drag",
+                    fallbackOnBody: true,
+                    onStart: function () {
+                        if (animationController) animationController.disable();
+                        document.body.style.cursor = 'grabbing';
+                        if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(10);
+                        document.querySelectorAll('.page-nav-zone').forEach(z => z.classList.add('visible'));
+                        document.addEventListener('mousemove', checkHover);
+                        document.addEventListener('touchmove', checkHover);
+                    },
+                    onMove: function (evt) {
+                        const isDraggingFolder = evt.dragged.querySelector('.folder-trigger') !== null;
+                        if (isDraggingFolder) return true;
+                        if (hoveredTargetEl && hoveredTargetEl === evt.related) {
+                            return false;
+                        }
+                        return true;
+                    },
+                    onEnd: function (evt) {
+                        document.removeEventListener('mousemove', checkHover);
+                        document.removeEventListener('touchmove', checkHover);
+                        document.querySelectorAll('.page-nav-zone').forEach(z => {
+                            z.classList.remove('visible', 'hover');
+                        });
+                        if (animationController) animationController.enable();
+                        document.body.style.cursor = '';
+
+                        if (hoveredTargetEl) {
+                            hoveredTargetEl.classList.remove('drop-target', 'drop-target-icon');
+
+                            const draggedName = evt.item.querySelector('.app-name')?.innerText;
+                            const folderName = hoveredTargetEl.querySelector('.app-name')?.innerText;
+                            const isDraggedFolder = evt.item.querySelector('.folder-trigger') !== null;
+
+                            if (draggedName && folderName && !isDraggedFolder) {
+                                const currentApps = getAppsFromDOM();
+                                const draggedIdx = currentApps.findIndex(a => a.name === draggedName && a.type !== 'folder');
+                                const folderIdx = currentApps.findIndex(a => a.name === folderName && a.type === 'folder');
+
+                                if (draggedIdx !== -1 && folderIdx !== -1 && draggedIdx !== folderIdx) {
+                                    const draggedApp = currentApps[draggedIdx];
+                                    const folder = currentApps[folderIdx];
+                                    if (!folder.items) folder.items = [];
+                                    folder.items.push(draggedApp);
+                                    currentApps.splice(draggedIdx, 1);
+                                    saveCurrentState(currentApps);
+                                    renderAppsToDOM(currentApps);
+                                    hoveredTargetEl = null;
+                                    return;
+                                }
+                            }
+
+                            const draggedName2 = evt.item.querySelector('.app-name')?.innerText;
+                            const targetName = hoveredTargetEl.querySelector('.app-name')?.innerText;
+                            const isTargetFolder = hoveredTargetEl.querySelector('.folder-trigger') !== null;
+
+                            if (draggedName2 && targetName && !isTargetFolder) {
+                                const currentApps = getAppsFromDOM();
+                                const draggedIdx = currentApps.findIndex(a => a.name === draggedName2 && a.type !== 'folder');
+                                const targetIdx = currentApps.findIndex(a => a.name === targetName && a.type !== 'folder');
+
+                                if (draggedIdx !== -1 && targetIdx !== -1 && draggedIdx !== targetIdx) {
+                                    const newFolder = {
+                                        type: "folder",
+                                        name: "Новая папка",
+                                        items: [currentApps[targetIdx], currentApps[draggedIdx]]
+                                    };
+                                    if (draggedIdx < targetIdx) {
+                                        currentApps.splice(targetIdx, 1, newFolder);
+                                        currentApps.splice(draggedIdx, 1);
+                                    } else {
+                                        currentApps.splice(draggedIdx, 1);
+                                        currentApps.splice(targetIdx, 1, newFolder);
+                                    }
+                                    saveCurrentState(currentApps);
+                                    renderAppsToDOM(currentApps);
+                                    hoveredTargetEl = null;
+                                    return;
+                                }
+                            }
+                        }
+                        hoveredTargetEl = null;
+                        saveCurrentState();
+                    }
+                });
+                sortables.push(s);
+            });
+        }
+
+
         function saveCurrentState(updatedApps = null) {
             let appsToSave;
-
             if (updatedApps) {
-                // 1. Явное сохранение (при добавлении/удалении через сайдбар)
-                // Мы точно знаем массив, который хотим сохранить.
                 appsToSave = updatedApps;
             } else {
-                // 2. Неявное сохранение (при Drag & Drop)
-                // Нужно восстановить порядок на основе DOM.
                 const currentCache = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-                const items = document.querySelectorAll('.app-item');
+                const items = document.querySelectorAll('.pages-container .app-item');
                 appsToSave = [];
-
                 items.forEach(item => {
                     const nameSpan = item.querySelector('.app-name');
                     const name = nameSpan ? nameSpan.innerText : '';
-
-                    // Ищем элемент в старом кэше по имени
                     const found = currentCache.find(a => a.name === name);
-                    if (found) {
-                        appsToSave.push(found);
-                    }
+                    if (found) appsToSave.push(found);
                 });
-
-                // Защита от потери данных: если длина списка изменилась подозрительно (например баг DOM),
-                // лучше не сохранять, чем сохранить пустой список. 
-                // Но при Drag&Drop длина не должна меняться.
-                if (appsToSave.length === 0 && items.length > 0) {
-                    // Что-то пошло не так при парсинге, не сохраняем
-                    console.warn("Save failed: DOM mismatch");
-                    return;
-                }
+                if (appsToSave.length === 0 && items.length > 0) return;
             }
-
             if (appsToSave) {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(appsToSave));
                 if (window.dbApi && window.auth && window.auth.currentUser) {
@@ -1883,10 +2114,44 @@
             }
         });
 
-        const appGrid = document.getElementById('appGrid');
-        const animationController = autoAnimate(appGrid, { duration: 250, easing: 'ease-in-out' });
+        const pagesContainer = document.getElementById('pagesContainer');
+        pagesContainer.addEventListener('scroll', () => {
+            const pageWidth = pagesContainer.clientWidth;
+            const index = Math.round(pagesContainer.scrollLeft / pageWidth);
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+        });
+
+        // Поддержка прокрутки колесиком мыши (горизонтально)
+        let wheelTimeout;
+        pagesContainer.addEventListener('wheel', (e) => {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+
+                // Накапливаем прокрутку для переключения страниц
+                const direction = e.deltaY > 0 ? 1 : -1;
+                const pageWidth = pagesContainer.clientWidth;
+                const currentIndex = Math.round(pagesContainer.scrollLeft / pageWidth);
+
+                clearTimeout(wheelTimeout);
+                wheelTimeout = setTimeout(() => {
+                    pagesContainer.scrollTo({
+                        left: (currentIndex + direction) * pageWidth,
+                        behavior: 'smooth'
+                    });
+                }, 50);
+            }
+        }, { passive: false });
+
+        // Мы не используем один animationController для всего, 
+        // так как структура стала сложнее. Можно добавить на каждую страницу в renderAppsToDOM.
+        let animationController = { disable: () => { }, enable: () => { } };
 
         let hoveredTargetEl = null;
+        let hoveredNavZone = null;
+        let navScrollTimeout = null;
 
         const checkHover = (e) => {
             const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
@@ -1904,14 +2169,58 @@
             const target = document.elementFromPoint(clientX, clientY);
             if (dragEl) dragEl.style.pointerEvents = originalPointerEvents;
 
-            const itemEl = target?.closest('.app-item');
+            // Проверка зон навигации по страницам
+            const navZone = target?.closest('.page-nav-zone');
+            if (navZone) {
+                if (hoveredNavZone !== navZone) {
+                    if (hoveredNavZone) hoveredNavZone.classList.remove('hover');
+                    hoveredNavZone = navZone;
+                    hoveredNavZone.classList.add('hover');
 
-            const isTargetFolder = itemEl?.querySelector('.folder-trigger') !== null;
+                    clearTimeout(navScrollTimeout);
+                    navScrollTimeout = setTimeout(() => {
+                        const direction = hoveredNavZone.classList.contains('right') ? 1 : -1;
+                        const pagesContainer = document.getElementById('pagesContainer');
+                        const pageWidth = pagesContainer.clientWidth;
+                        const currentIndex = Math.round(pagesContainer.scrollLeft / pageWidth);
+                        const numPages = document.querySelectorAll('.app-page').length;
+                        const nextIndex = currentIndex + direction;
+
+                        if (nextIndex >= 0 && nextIndex < numPages) {
+                            pagesContainer.scrollTo({
+                                left: nextIndex * pageWidth,
+                                behavior: 'smooth'
+                            });
+                        }
+                    }, 600);
+                }
+                if (hoveredTargetEl) {
+                    hoveredTargetEl.classList.remove('drop-target', 'drop-target-icon');
+                    hoveredTargetEl = null;
+                }
+                return;
+            }
+
+            if (hoveredNavZone) {
+                hoveredNavZone.classList.remove('hover');
+                hoveredNavZone = null;
+                clearTimeout(navScrollTimeout);
+            }
+
+            const itemEl = target?.closest('.app-item');
+            if (!itemEl) {
+                if (hoveredTargetEl) {
+                    hoveredTargetEl.classList.remove('drop-target', 'drop-target-icon');
+                    hoveredTargetEl = null;
+                }
+                return;
+            }
+
+            const isTargetFolder = itemEl.querySelector('.folder-trigger') !== null;
             const isDraggingFolder = dragEl?.querySelector('.folder-trigger') !== null;
             const isDragged = itemEl === dragEl || itemEl?.classList.contains('sortable-ghost');
 
             if (itemEl && !isDraggingFolder && !isDragged) {
-                // ПРОВЕРКА ЦЕНТРА
                 const rect = itemEl.getBoundingClientRect();
                 const bufferX = rect.width * 0.25;
                 const bufferY = rect.height * 0.15;
@@ -1942,103 +2251,6 @@
                 hoveredTargetEl = null;
             }
         };
-
-        let sortable = Sortable.create(appGrid, {
-            animation: 300, delay: 200, delayOnTouchOnly: true, disabled: true, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', easing: "cubic-bezier(0.25, 1, 0.5, 1)", swapThreshold: 0.5, invertSwap: true, direction: 'horizontal', forceFallback: true, fallbackClass: "sortable-drag", fallbackOnBody: true,
-            onStart: function () {
-                animationController.disable();
-                document.body.style.cursor = 'grabbing';
-                if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(10);
-                document.addEventListener('mousemove', checkHover);
-                document.addEventListener('touchmove', checkHover);
-            },
-            onMove: function (evt) {
-                // Если мы тащим ПАПКУ - всегда разрешаем своп
-                const isDraggingFolder = evt.dragged.querySelector('.folder-trigger') !== null;
-                if (isDraggingFolder) return true;
-
-                // Если мы тащим САЙТ и активировали hoveredTargetEl (курсор в центре), блокируем своп
-                if (hoveredTargetEl && hoveredTargetEl === evt.related) {
-                    return false;
-                }
-                return true;
-            },
-            onEnd: function (evt) {
-                document.removeEventListener('mousemove', checkHover);
-                document.removeEventListener('touchmove', checkHover);
-                animationController.enable();
-                document.body.style.cursor = '';
-
-                if (hoveredTargetEl) {
-                    hoveredTargetEl.classList.remove('drop-target', 'drop-target-icon');
-
-                    const draggedName = evt.item.querySelector('.app-name')?.innerText;
-                    const folderName = hoveredTargetEl.querySelector('.app-name')?.innerText;
-
-                    // Проверка: нельзя класть папку в папку
-                    const isDraggedFolder = evt.item.querySelector('.folder-trigger') !== null;
-
-                    if (draggedName && folderName && !isDraggedFolder) {
-                        const currentApps = getAppsFromDOM();
-                        const draggedIdx = currentApps.findIndex(a => a.name === draggedName && a.type !== 'folder');
-                        const folderIdx = currentApps.findIndex(a => a.name === folderName && a.type === 'folder');
-
-                        if (draggedIdx !== -1 && folderIdx !== -1 && draggedIdx !== folderIdx) {
-                            const draggedApp = currentApps[draggedIdx];
-                            const folder = currentApps[folderIdx];
-
-                            if (!folder.items) folder.items = [];
-                            folder.items.push(draggedApp);
-                            currentApps.splice(draggedIdx, 1);
-
-                            saveCurrentState(currentApps);
-                            renderAppsToDOM(currentApps);
-
-                            hoveredTargetEl = null;
-                            return;
-                        }
-                    }
-                }
-
-                // --- НОВАЯ ЛОГИКА: СОЗДАНИЕ ПАПКИ ---
-                if (hoveredTargetEl) {
-                    const draggedName = evt.item.querySelector('.app-name')?.innerText;
-                    const targetName = hoveredTargetEl.querySelector('.app-name')?.innerText;
-                    const isTargetFolder = hoveredTargetEl.querySelector('.folder-trigger') !== null;
-
-                    if (draggedName && targetName && !isTargetFolder) {
-                        const currentApps = getAppsFromDOM();
-                        const draggedIdx = currentApps.findIndex(a => a.name === draggedName && a.type !== 'folder');
-                        const targetIdx = currentApps.findIndex(a => a.name === targetName && a.type !== 'folder');
-
-                        if (draggedIdx !== -1 && targetIdx !== -1 && draggedIdx !== targetIdx) {
-                            const newFolder = {
-                                type: "folder",
-                                name: "Новая папка",
-                                items: [currentApps[targetIdx], currentApps[draggedIdx]]
-                            };
-
-                            if (draggedIdx < targetIdx) {
-                                currentApps.splice(targetIdx, 1, newFolder);
-                                currentApps.splice(draggedIdx, 1);
-                            } else {
-                                currentApps.splice(draggedIdx, 1);
-                                currentApps.splice(targetIdx, 1, newFolder);
-                            }
-
-                            saveCurrentState(currentApps);
-                            renderAppsToDOM(currentApps);
-                            hoveredTargetEl = null;
-                            return;
-                        }
-                    }
-                }
-
-                hoveredTargetEl = null;
-                saveCurrentState();
-            }
-        });
-
         function initAppItems() {
             const appItems = document.querySelectorAll('.app-item');
             appItems.forEach(item => {
@@ -2094,7 +2306,7 @@
                     };
                 }
 
-                // --- ЛОГИКА РЕДАКТИРОВАНИЯ ---
+                // --- ЛОГИКА РЕДАКТИРОВАНИЯ (Кнопка Карандаш) ---
                 const btnEdit = iconContainer.querySelector('.btn-edit');
                 if (btnEdit) {
                     btnEdit.onclick = (e) => {
@@ -2102,12 +2314,12 @@
                         e.stopPropagation();
 
                         const currentApps = getAppsFromDOM();
-                        const appIdx = Array.from(document.querySelectorAll('.app-item')).indexOf(item);
-                        const appData = currentApps[appIdx];
+                        const absIndex = parseInt(item.dataset.absIndex);
+                        const appData = currentApps[absIndex];
 
                         if (appData) {
                             iconEditor.open((newData) => {
-                                currentApps[appIdx] = { ...appData, ...newData };
+                                currentApps[absIndex] = { ...appData, ...newData };
                                 saveCurrentState(currentApps);
                                 renderAppsToDOM(currentApps);
                             }, appData);
@@ -2115,25 +2327,57 @@
                     };
                 }
 
-                item.oncontextmenu = (e) => { e.preventDefault(); enableEditMode(); };
+                // --- ТРИГГЕР РЕЖИМА РЕДАКТИРОВАНИЯ (Долгое нажатие) ---
+                let longPressTimer;
+                const startPress = () => {
+                    longPressTimer = setTimeout(() => {
+                        window.enableEditMode();
+                        if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(50);
+                    }, 600);
+                };
+                const cancelPress = () => clearTimeout(longPressTimer);
 
+                item.addEventListener('touchstart', startPress, { passive: true });
+                item.addEventListener('touchend', cancelPress, { passive: true });
+                item.addEventListener('touchmove', cancelPress, { passive: true });
+                item.addEventListener('mousedown', (e) => { if (e.button === 0) startPress(); });
+                item.addEventListener('mouseup', cancelPress);
+                item.addEventListener('mouseleave', cancelPress);
 
                 if (link) {
                     link.onclick = (e) => {
-                        if (appGrid.classList.contains('edit-mode')) { e.preventDefault(); }
+                        if (document.body.classList.contains('edit-mode')) { e.preventDefault(); }
                     };
                 }
             });
         }
 
-        window.enableEditMode = function () { appGrid.classList.add('edit-mode'); sortable.option("disabled", false); }
-        window.disableEditMode = function () { appGrid.classList.remove('edit-mode'); sortable.option("disabled", true); }
+        let lastEditActivation = 0;
+        window.enableEditMode = function () {
+            document.body.classList.add('edit-mode');
+            sortables.forEach(s => s.option("disabled", false));
+            lastEditActivation = Date.now();
+        }
+        window.disableEditMode = function () {
+            document.body.classList.remove('edit-mode');
+            sortables.forEach(s => s.option("disabled", true));
+        }
 
-        // ОБНОВЛЕННЫЙ ОБРАБОТЧИК КЛИКОВ (Блокируем закрытие, если клик в папке)
+        // Глобальный перехват ПКМ для режима редактирования
+        document.addEventListener('contextmenu', (e) => {
+            const item = e.target.closest('.app-item');
+            if (item) {
+                e.preventDefault();
+                window.enableEditMode();
+            }
+        });
+
         document.addEventListener('click', (e) => {
-            if (e.target.closest('.folder-overlay')) return; // Игнорируем клики внутри открытой папки
+            if (e.target.closest('.folder-overlay')) return;
+            // Если режим редактирования только что включился, не закрываем его по этому же клику
+            if (Date.now() - lastEditActivation < 300) return;
 
-            if (!e.target.closest('.app-item') && !e.target.closest('.delete-btn') && !e.target.closest('.menu-btn') && !e.target.closest('.sidebar') && !e.target.closest('.add-btn') && !e.target.closest('.editor-overlay')) {
+            if (!e.target.closest('.app-item') && !e.target.closest('.btn-del') && !e.target.closest('.menu-btn') && !e.target.closest('.sidebar') && !e.target.closest('.add-btn') && !e.target.closest('.editor-overlay')) {
                 window.disableEditMode();
             }
         });

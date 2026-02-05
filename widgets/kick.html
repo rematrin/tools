@@ -289,13 +289,14 @@
         const CACHE_DURATION = 5 * 60 * 1000;
 
         // --- 2. DATA & CACHE HANDLING ---
+        let currentStreamers = [...defaultStreamers];
+
         function getStreamersList() {
-            const saved = localStorage.getItem('my_kick_widget_list');
-            return saved ? JSON.parse(saved) : defaultStreamers;
+            return currentStreamers;
         }
 
         async function saveStreamersList(list) {
-            localStorage.setItem('my_kick_widget_list', JSON.stringify(list));
+            currentStreamers = list;
 
             // Сохранение в Firebase
             const parentAuth = window.parent.auth || window.parent.firebaseAuth;
@@ -351,16 +352,10 @@
                     const data = docSnap.data();
                     if (data.kickStreamers && Array.isArray(data.kickStreamers)) {
                         const cloudList = data.kickStreamers;
-                        const localList = getStreamersList();
 
-                        if (JSON.stringify(cloudList) !== JSON.stringify(localList)) {
-                            localStorage.setItem('my_kick_widget_list', JSON.stringify(cloudList));
+                        if (JSON.stringify(cloudList) !== JSON.stringify(currentStreamers)) {
+                            currentStreamers = cloudList;
                             renderWidget();
-                        }
-                    } else {
-                        const localList = getStreamersList();
-                        if (localList.length > 0) {
-                            saveStreamersList(localList);
                         }
                     }
                 }

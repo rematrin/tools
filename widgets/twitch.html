@@ -401,13 +401,14 @@
         }
 
         // --- 2. DATA & CACHE HANDLING ---
+        let currentStreamers = [...defaultStreamers];
+
         function getStreamersList() {
-            const saved = localStorage.getItem('my_twitch_widget_list');
-            return saved ? JSON.parse(saved) : defaultStreamers;
+            return currentStreamers;
         }
 
         async function saveStreamersList(list) {
-            localStorage.setItem('my_twitch_widget_list', JSON.stringify(list));
+            currentStreamers = list;
 
             // Сохранение в Firebase
             const parentAuth = window.parent.auth || window.parent.firebaseAuth;
@@ -437,7 +438,7 @@
             if (!parentAuth || !parentDb) {
                 // Если родитель еще не загрузил Firebase, попробуем подождать или проверить по событию
                 window.parent.addEventListener('authChanged', (e) => {
-                    if (e.detail.user) syncFromCloud(e.detail.user, parentDb);
+                    if (e.detail.user) syncFromCloud(e.detail.user, parentDb || window.parent.db);
                 });
                 return;
             }
@@ -449,11 +450,12 @@
 
             // Слушаем изменения авторизации
             window.parent.addEventListener('authChanged', (e) => {
-                if (e.detail.user) syncFromCloud(e.detail.user, parentDb);
+                if (e.detail.user) syncFromCloud(e.detail.user, parentDb || window.parent.db);
             });
         }
 
         async function syncFromCloud(user, db) {
+            if (!db) return;
             try {
                 const { doc, getDoc } = window.parent;
                 if (!doc || !getDoc) return;
@@ -465,18 +467,11 @@
                     const data = docSnap.data();
                     if (data.twitchStreamers && Array.isArray(data.twitchStreamers)) {
                         const cloudList = data.twitchStreamers;
-                        const localList = getStreamersList();
 
-                        // Простая синхронизация: если облачный список отличается, обновляем локальный
-                        if (JSON.stringify(cloudList) !== JSON.stringify(localList)) {
-                            localStorage.setItem('my_twitch_widget_list', JSON.stringify(cloudList));
+                        // Если в облаке есть список, обновляем текущий и перерисовываем
+                        if (JSON.stringify(cloudList) !== JSON.stringify(currentStreamers)) {
+                            currentStreamers = cloudList;
                             renderWidget();
-                        }
-                    } else {
-                        // Если в облаке пусто, но есть локальный список - сохраняем его в облако
-                        const localList = getStreamersList();
-                        if (localList.length > 0) {
-                            saveStreamersList(localList);
                         }
                     }
                 }

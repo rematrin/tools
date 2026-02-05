@@ -418,10 +418,10 @@
             max-width: 90vw;
             box-shadow: 5px 0 25px rgba(0, 0, 0, 0.3);
             transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-            background: rgba(255, 255, 255, 0.45) !important;
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent !important;
+            backdrop-filter: blur(26px) saturate(100%);
+            -webkit-backdrop-filter: blur(26px) saturate(100%);
+            border-right: none;
         }
 
         .sidebar.widget-sidebar.active {
@@ -1848,14 +1848,15 @@
 
     <div class="sidebar-overlay" id="widgetSidebarOverlay"></div>
     <aside class="sidebar widget-sidebar" id="widgetSidebar">
-        <div class="sidebar-header" style="background: transparent; border-bottom: 1px solid rgba(0,0,0,0.05);">
-            <div class="sidebar-top-row">
-                <h2 class="sidebar-title" style="padding-left: 28px; padding-right: 0;">Виджеты</h2>
-                <div class="close-menu-btn" id="closeWidgetBtn">×</div>
+        <div class="sidebar-header" style="background: transparent; border-bottom: none;">
+            <div class="sidebar-top-row" style="justify-content: center; padding: 20px 10px 10px 10px;">
+                <h2 class="sidebar-title"
+                    style="padding: 0; color: white; font-weight: 800; font-size: 28px; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+                    Виджеты</h2>
             </div>
         </div>
         <div class="sidebar-content" id="widgetSidebarContent"
-            style="padding: 0; overflow: hidden; background: transparent;">
+            style="padding: 0; overflow-y: auto; background: transparent; scrollbar-width: none; -ms-overflow-style: none;">
             <iframe src="dashboard.html" style="width: 100%; height: 100%; border: none;"
                 allowtransparency="true"></iframe>
         </div>
@@ -2521,7 +2522,7 @@
         }
 
         widgetBtn.addEventListener('click', openWidgetMenu);
-        closeWidgetBtn.addEventListener('click', closeWidgetMenu);
+        if (closeWidgetBtn) closeWidgetBtn.addEventListener('click', closeWidgetMenu);
         widgetSidebarOverlay.addEventListener('click', closeWidgetMenu);
 
         // --- AUTH & SYNC ---

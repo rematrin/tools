@@ -29,25 +29,14 @@
             overflow-x: hidden;
         }
 
-        /* Webkit Scrollbar Styling */
+        /* --- HIDE SCROLLBAR --- */
         ::-webkit-scrollbar {
-            width: 8px;
+            display: none;
         }
 
-        ::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 0, 0, 0.3);
+        /* For Firefox */
+        html {
+            scrollbar-width: none;
         }
 
         .dashboard-container {
@@ -69,6 +58,7 @@
             border-radius: 24px;
             overflow: hidden;
             display: block;
+            background: transparent;
         }
 
         /* Размеры для iframe */

@@ -2591,7 +2591,7 @@
         }
 
         // --- ИНИЦИАЛИЗАЦИЯ МЕНЕДЖЕРА БОКОВОГО МЕНЮ (из sidebar.js) ---
-        const sidebarManager = initSidebarManager({
+        window.sidebarManager = initSidebarManager({
             iconEditor,
             wallpaperManager,
             getAppsFromStorage,
@@ -2639,7 +2639,7 @@
             }, 1000);
         });
 
-        function closeWidgetMenu() {
+        window.closeWidgetMenu = function () {
             widgetSidebar.classList.remove('active');
             widgetSidebarOverlay.classList.remove('active');
             document.body.style.overflow = '';

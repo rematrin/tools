@@ -409,6 +409,34 @@
             transform: translateX(0);
         }
 
+        /* --- WIDGET SIDEBAR SPECIFIC OVERRIDES --- */
+        .sidebar.widget-sidebar {
+            left: 0;
+            right: auto;
+            transform: translateX(-100%);
+            width: 370px;
+            max-width: 90vw;
+            box-shadow: 5px 0 25px rgba(0, 0, 0, 0.3);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(255, 255, 255, 0.45) !important;
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar.widget-sidebar.active {
+            transform: translateX(0);
+        }
+
+        .widget-btn {
+            left: 20px;
+            right: auto;
+        }
+
+        .widget-btn svg {
+            color: white;
+        }
+
         .sidebar-header {
             background: #fff;
             padding: 10px 10px 8px 10px;
@@ -1747,6 +1775,15 @@
     <div class="iphone-screen">
         <header id="header">
         </header>
+        <div class="menu-btn widget-btn" id="widgetBtn">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+        </div>
         <div class="menu-btn" id="menuBtn">
             <span></span><span></span><span></span>
         </div>
@@ -1806,6 +1843,21 @@
             </div>
         </div>
         <div class="sidebar-content" id="sidebarContent">
+        </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="widgetSidebarOverlay"></div>
+    <aside class="sidebar widget-sidebar" id="widgetSidebar">
+        <div class="sidebar-header" style="background: transparent; border-bottom: 1px solid rgba(0,0,0,0.05);">
+            <div class="sidebar-top-row">
+                <h2 class="sidebar-title" style="padding-left: 28px; padding-right: 0;">Виджеты</h2>
+                <div class="close-menu-btn" id="closeWidgetBtn">×</div>
+            </div>
+        </div>
+        <div class="sidebar-content" id="widgetSidebarContent"
+            style="padding: 0; overflow: hidden; background: transparent;">
+            <iframe src="dashboard.html" style="width: 100%; height: 100%; border: none;"
+                allowtransparency="true"></iframe>
         </div>
     </aside>
 
@@ -2395,7 +2447,7 @@
             // Если режим редактирования только что включился, не закрываем его по этому же клику
             if (Date.now() - lastEditActivation < 300) return;
 
-            if (!e.target.closest('.app-item') && !e.target.closest('.btn-del') && !e.target.closest('.menu-btn') && !e.target.closest('.sidebar') && !e.target.closest('.add-btn') && !e.target.closest('.editor-overlay')) {
+            if (!e.target.closest('.app-item') && !e.target.closest('.btn-del') && !e.target.closest('.menu-btn') && !e.target.closest('.widget-btn') && !e.target.closest('.sidebar') && !e.target.closest('.widget-sidebar') && !e.target.closest('.add-btn') && !e.target.closest('.editor-overlay')) {
                 window.disableEditMode();
             }
         });
@@ -2449,6 +2501,28 @@
             confirmModal,
             showToast
         });
+
+        // --- ИНИЦИАЛИЗАЦИЯ ВИДЖЕТ-БАР (ЛЕВЫЙ) ---
+        const widgetBtn = document.getElementById('widgetBtn');
+        const widgetSidebar = document.getElementById('widgetSidebar');
+        const widgetSidebarOverlay = document.getElementById('widgetSidebarOverlay');
+        const closeWidgetBtn = document.getElementById('closeWidgetBtn');
+
+        function openWidgetMenu() {
+            widgetSidebar.classList.add('active');
+            widgetSidebarOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeWidgetMenu() {
+            widgetSidebar.classList.remove('active');
+            widgetSidebarOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        widgetBtn.addEventListener('click', openWidgetMenu);
+        closeWidgetBtn.addEventListener('click', closeWidgetMenu);
+        widgetSidebarOverlay.addEventListener('click', closeWidgetMenu);
 
         // --- AUTH & SYNC ---
         const waitForAuth = setInterval(() => {

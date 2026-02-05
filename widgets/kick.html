@@ -401,59 +401,70 @@
 
         // --- УСКОРЕННАЯ ЗАГРУЗКА ---
         async function fetchKickData(login) {
-            const cacheKey = `kick_cache_v2_${login}`; // v2 чтобы сбросить старый кэш
+            const cacheKey = `kick_cache_v3_${login}`;
             const cached = localStorage.getItem(cacheKey);
 
             if (cached) {
                 const { timestamp, data } = JSON.parse(cached);
+                // Если кэш свежий - возвращаем
                 if (Date.now() - timestamp < CACHE_DURATION) return data;
             }
 
-            try {
-                // ИСПОЛЬЗУЕМ CORS.IO - ОН БЫСТРЕЕ
-                const proxyUrl = "https://corsproxy.io/?";
-                const targetUrl = encodeURIComponent(`https://kick.com/api/v1/channels/${login}`);
+            // Список прокси для надежности
+            const proxies = [
+                (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+                (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+                (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
+            ];
 
-                const response = await fetch(proxyUrl + targetUrl);
-                if (!response.ok) throw new Error("Proxy Error");
+            for (let i = 0; i < proxies.length; i++) {
+                try {
+                    const targetUrl = `https://kick.com/api/v1/channels/${login}`;
+                    const response = await fetch(proxies[i](targetUrl), {
+                        headers: { 'Accept': 'application/json' }
+                    });
 
-                // ВАЖНО: corsproxy отдает JSON сразу, не надо парсить contents
-                const kickData = await response.json();
+                    if (!response.ok) throw new Error(`Proxy ${i} status ${response.status}`);
 
-                if (!kickData || !kickData.slug) throw new Error("Not found");
+                    const kickData = await response.json();
+                    if (!kickData || !kickData.user) throw new Error("Invalid JSON");
 
-                const isOnline = kickData.livestream && kickData.livestream.is_live;
-                const gameName = (kickData.livestream && kickData.livestream.categories && kickData.livestream.categories[0])
-                    ? kickData.livestream.categories[0].name
-                    : "Just Chatting";
+                    const isOnline = kickData.livestream && kickData.livestream.is_live;
+                    const gameName = (kickData.livestream && kickData.livestream.categories && kickData.livestream.categories[0])
+                        ? kickData.livestream.categories[0].name
+                        : "Just Chatting";
 
-                const newData = {
-                    login: login,
-                    displayName: kickData.user.username,
-                    avatar: kickData.user.profile_pic,
-                    isOnline: isOnline,
-                    game: isOnline ? gameName : "Offline"
-                };
+                    const newData = {
+                        login: login,
+                        displayName: kickData.user.username,
+                        avatar: kickData.user.profile_pic,
+                        isOnline: !!isOnline,
+                        game: isOnline ? gameName : "Offline"
+                    };
 
-                localStorage.setItem(cacheKey, JSON.stringify({
-                    timestamp: Date.now(),
-                    data: newData
-                }));
+                    localStorage.setItem(cacheKey, JSON.stringify({
+                        timestamp: Date.now(),
+                        data: newData
+                    }));
 
-                return newData;
-
-            } catch (e) {
-                console.error("Kick Error " + login, e);
-                if (cached) return JSON.parse(cached).data;
-
-                return {
-                    login: login,
-                    displayName: login,
-                    avatar: "https://db.kick.com/kick/images/user/default-profile-pic.png",
-                    isOnline: false,
-                    game: "Offline"
-                };
+                    return newData;
+                } catch (e) {
+                    console.warn(`Kick Proxy ${i} failed for ${login}:`, e);
+                    // Пробуем следующий прокси
+                }
             }
+
+            console.error(`All proxies failed for ${login}`);
+            // Если все прокси подвели, но есть хоть какой-то кэш - возвращаем его
+            if (cached) return JSON.parse(cached).data;
+
+            return {
+                login: login,
+                displayName: login,
+                avatar: "https://db.kick.com/kick/images/user/default-profile-pic.png",
+                isOnline: false,
+                game: "Offline"
+            };
         }
 
         async function renderWidget() {
@@ -483,7 +494,7 @@
 
                 card.innerHTML = `
                     <div class="avatar-wrapper">
-                        <img src="${avatarSrc}" class="avatar" onerror="this.src='https://db.kick.com/kick/images/user/default-profile-pic.png'">
+                        <img src="${avatarSrc}" class="avatar" referrerpolicy="no-referrer" onerror="this.src='https://db.kick.com/kick/images/user/default-profile-pic.png'">
                         <div class="status-badge"></div>
                     </div>
                     <div class="info">

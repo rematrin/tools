@@ -2559,14 +2559,22 @@
         const closeWidgetBtn = document.getElementById('closeWidgetBtn');
 
         function openWidgetMenu() {
-            const iframe = document.getElementById('dashboardIframe');
-            if (iframe && !iframe.src) {
-                iframe.src = iframe.dataset.src;
-            }
             widgetSidebar.classList.add('active');
             widgetSidebarOverlay.classList.add('active');
             document.body.style.overflow = 'hidden';
         }
+
+        // --- BACKGROUND WIDGET LOADING ---
+        // Загружаем виджеты через секунду после загрузки страницы, 
+        // чтобы они не мешали основной отрисовке, но были готовы к открытию.
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const iframe = document.getElementById('dashboardIframe');
+                if (iframe && !iframe.src) {
+                    iframe.src = iframe.dataset.src;
+                }
+            }, 1000);
+        });
 
         function closeWidgetMenu() {
             widgetSidebar.classList.remove('active');

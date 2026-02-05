@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOS Clock Wide</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --time-font: 'Oswald', sans-serif;
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --tick-base: #000000;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #eef0f4;
+            margin: 0;
+            font-family: var(--font-stack);
+        }
+
+        .ios-widget {
+            position: relative;
+            width: 330px;
+            height: 160px;
+            background: var(--bg-color);
+            border-radius: 24px;
+            color: var(--text-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: default;
+            user-select: none;
+        }
+
+        .clock-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* === ТЕКСТ ВРЕМЕНИ (Wide only) === */
+        .digital-time {
+            position: relative;
+            z-index: 2;
+            font-family: var(--time-font);
+            font-size: 80px;
+            font-weight: 700;
+            letter-spacing: -3.5px;
+            line-height: 0.9;
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+            margin-top: -4px;
+            white-space: nowrap;
+            transform: scaleY(1.05);
+        }
+
+        .colon {
+            display: inline-block;
+            position: relative;
+            top: -6px;
+            margin: 0 1px;
+        }
+
+        /* Controls & Search Styles */
+        .controls {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            gap: 6px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        .ios-widget:hover .controls {
+            opacity: 1;
+        }
+
+        .ctrl-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.05);
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        .ctrl-btn svg {
+            width: 100%;
+            height: 100%;
+            fill: #333;
+        }
+
+        .search-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 15px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 20;
+            border-radius: 24px;
+        }
+
+        .search-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .city-input {
+            width: 80%;
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            background: #f2f2f7;
+            color: #000;
+            font-size: 14px;
+            outline: none;
+            text-align: center;
+            margin-bottom: 8px;
+            font-family: var(--font-stack);
+        }
+
+        .suggestions-list {
+            width: 80%;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .suggestion-item {
+            padding: 8px;
+            font-size: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover {
+            background: #f9f9f9;
+        }
+
+        .loading-layer {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            border-radius: 24px;
+        }
+
+        .loading .loading-layer {
+            display: flex;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ccc;
+            border-top-color: #333;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="ios-widget" id="widget">
+        <div class="controls">
+            <button class="ctrl-btn" onclick="toggleSearch()" title="Поиск">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="search-overlay" id="searchOverlay">
+            <input type="text" class="city-input" id="cityInput" placeholder="Город или индекс..." autocomplete="off">
+            <ul class="suggestions-list" id="suggestionsList"></ul>
+        </div>
+        <div class="loading-layer">
+            <div class="spinner"></div>
+        </div>
+
+        <div class="clock-container">
+            <svg id="clockSvg" width="100%" height="100%" style="overflow: visible;"></svg>
+        </div>
+
+        <div class="digital-time" id="uiTime">--<span class="colon">:</span>--</div>
+    </div>
+
+    <script>
+        const els = {
+            widget: document.getElementById('widget'),
+            overlay: document.getElementById('searchOverlay'),
+            input: document.getElementById('cityInput'),
+            list: document.getElementById('suggestionsList'),
+            time: document.getElementById('uiTime'),
+            svg: document.getElementById('clockSvg')
+        };
+
+        let currentTimeZone = "Europe/Moscow";
+        let debounceTimer;
+        let animationFrameId;
+
+        // === START ===
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTZ = localStorage.getItem('ios_clock_tz');
+
+            requestAnimationFrame(() => {
+                renderTicks();
+            });
+
+            if (savedTZ) updateClockData(savedTZ);
+            else updateClockData("Europe/Moscow");
+
+            loop();
+
+            window.addEventListener('resize', renderTicks);
+        });
+
+        // === ГЕНЕРАЦИЯ SVG ===
+        function renderTicks() {
+            const w = 330;
+            const h = 160;
+            const padding = 6;
+            const r = 24;
+
+            // Генерируем путь
+            const pathData = generateSmoothRectPath(w, h, padding, r);
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", pathData);
+
+            const totalLen = path.getTotalLength();
+            const step = totalLen / 60;
+
+            const tickLen = 6.5;
+
+            els.svg.innerHTML = '';
+            els.svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+
+            for (let i = 0; i < 60; i++) {
+                const dist = i * step;
+                const pt = path.getPointAtLength(dist);
+
+                const ptPrev = path.getPointAtLength(Math.max(0, dist - 0.5));
+                const ptNext = path.getPointAtLength(Math.min(totalLen, dist + 0.5));
+                const angle = Math.atan2(ptNext.y - ptPrev.y, ptNext.x - ptPrev.x);
+                const normalAngle = angle + (Math.PI / 2);
+
+                const x2 = pt.x + Math.cos(normalAngle) * tickLen;
+                const y2 = pt.y + Math.sin(normalAngle) * tickLen;
+
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", pt.x);
+                line.setAttribute("y1", pt.y);
+                line.setAttribute("x2", x2);
+                line.setAttribute("y2", y2);
+                line.setAttribute("stroke", "var(--tick-base)");
+                line.setAttribute("stroke-width", "1.8");
+                line.setAttribute("stroke-linecap", "round");
+                line.setAttribute("stroke-opacity", "0.2");
+                line.setAttribute("id", `tick-${i}`);
+
+                els.svg.appendChild(line);
+            }
+        }
+
+        function generateSmoothRectPath(w, h, pad, r) {
+            const right = w - pad, left = pad, top = pad, bottom = h - pad;
+            const midX = w / 2;
+            return `M ${midX} ${top} L ${right - r} ${top} A ${r} ${r} 0 0 1 ${right} ${top + r} L ${right} ${bottom - r} A ${r} ${r} 0 0 1 ${right - r} ${bottom} L ${left + r} ${bottom} A ${r} ${r} 0 0 1 ${left} ${bottom - r} L ${left} ${top + r} A ${r} ${r} 0 0 1 ${left + r} ${top} L ${midX} ${top} Z`;
+        }
+
+        // === АНИМАЦИЯ ===
+        function loop() {
+            const now = new Date();
+            const timeOpts = { hour: '2-digit', minute: '2-digit', timeZone: currentTimeZone, hour12: false };
+            const timeString = new Intl.DateTimeFormat('ru-RU', timeOpts).format(now);
+
+            if (els.time.innerText.replace('<span class="colon">:</span>', ':') !== timeString) {
+                els.time.innerHTML = timeString.replace(':', '<span class="colon">:</span>');
+            }
+
+            const floatSeconds = now.getSeconds() + (now.getMilliseconds() / 1000);
+
+            const minOpacity = 0.2;
+            const tailLength = 25;
+            const headLength = 2.0;
+
+            for (let i = 0; i < 60; i++) {
+                const tick = document.getElementById(`tick-${i}`);
+                if (!tick) continue;
+
+                let diff = floatSeconds - i;
+                if (diff < 0) diff += 60;
+
+                let opacity = minOpacity;
+
+                if (diff >= 0 && diff < 1) {
+                    opacity = 1;
+                }
+                else if (diff >= 1 && diff < tailLength) {
+                    const normalizedProgress = (diff - 1) / (tailLength - 1);
+                    opacity = 1 - (normalizedProgress * (1 - minOpacity));
+                }
+                else if (diff > (60 - headLength)) {
+                    const distFromHead = 60 - diff;
+                    const normalizedProgress = 1 - (distFromHead / headLength);
+                    opacity = minOpacity + (normalizedProgress * (1 - minOpacity));
+                }
+
+                tick.setAttribute("stroke-opacity", opacity.toFixed(3));
+            }
+
+            animationFrameId = requestAnimationFrame(loop);
+        }
+
+        function toggleSearch() {
+            els.overlay.classList.toggle('active');
+            if (els.overlay.classList.contains('active')) {
+                els.input.value = ''; els.list.innerHTML = ''; els.input.focus();
+            }
+        }
+        els.overlay.addEventListener('click', (e) => { if (e.target === els.overlay) toggleSearch(); });
+
+        els.input.addEventListener('input', (e) => {
+            const q = e.target.value.trim();
+            clearTimeout(debounceTimer);
+            if (q.length < 2) return;
+            debounceTimer = setTimeout(() => fetchSuggestions(q), 500);
+        });
+
+        async function fetchSuggestions(query) {
+            const isZip = /^\d/.test(query);
+            els.list.innerHTML = '';
+            let results = [];
+            try {
+                if (isZip) {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&addressdetails=1&limit=5&accept-language=ru`);
+                    const data = await res.json();
+                    results = data.map(i => {
+                        const addr = i.address;
+                        const name = addr.city || addr.town || addr.village || addr.hamlet || i.display_name.split(',')[0];
+                        const region = addr.state || addr.country;
+                        return { name: name, display: `📮 ${query} — ${name}, ${region}`, lat: i.lat, lon: i.lon };
+                    });
+                } else {
+                    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10&language=ru&format=json`);
+                    const data = await res.json();
+                    if (data.results) {
+                        results = data.results.map(c => ({ name: c.name, display: `${c.name}, ${c.country_code}`, lat: c.latitude, lon: c.longitude }));
+                    }
+                }
+
+                const uniqueResults = [];
+                const seen = new Set();
+
+                results.forEach(item => {
+                    if (!seen.has(item.display)) {
+                        seen.add(item.display);
+                        uniqueResults.push(item);
+                    }
+                });
+                const finalResults = uniqueResults.slice(0, 5);
+
+                if (finalResults.length > 0) {
+                    finalResults.forEach(item => {
+                        const li = document.createElement('li');
+                        li.className = 'suggestion-item';
+                        li.innerText = item.display;
+                        li.onclick = () => selectLocation(item);
+                        els.list.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.className = 'suggestion-item'; li.style.color = '#999'; li.style.cursor = 'default';
+                    li.innerText = 'Ничего не найдено'; els.list.appendChild(li);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function selectLocation(locData) {
+            toggleSearch();
+            els.widget.classList.add('loading');
+            try {
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${locData.lat}&longitude=${locData.lon}&current=temperature_2m&timezone=auto`;
+                const res = await fetch(url);
+                const data = await res.json();
+                const newTZ = data.timezone;
+                localStorage.setItem('ios_clock_tz', newTZ);
+                updateClockData(newTZ);
+            } catch (e) {
+                console.error(e);
+                alert("Не удалось определить время");
+            } finally {
+                els.widget.classList.remove('loading');
+            }
+        }
+
+        function updateClockData(tz) {
+            currentTimeZone = tz;
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Twitch Widget Cached</title>
+    <style>
+        /* --- БАЗОВЫЕ СТИЛИ --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            outline: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: transparent;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* --- КОНТЕЙНЕР --- */
+        .twitch-widget {
+            width: 330px;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        /* --- ШАПКА --- */
+        .widget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 4px;
+            height: 24px;
+        }
+
+        .header-left {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #000;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #ff3b3b;
+            border-radius: 50%;
+        }
+
+        .twitch-logo {
+            width: 20px;
+            height: 20px;
+            fill: #9146FF;
+            display: block;
+        }
+
+        .settings-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            transition: all 0.2s;
+            opacity: 0;
+            transform: translateX(10px);
+        }
+
+        .settings-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .settings-btn:hover {
+            background-color: #f0f0f0;
+            color: #555;
+        }
+
+        .twitch-widget:hover .settings-btn {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* --- СЕТКА (TWITCH FIX) --- */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            height: 300px;
+            overflow-y: auto;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+
+            /* --- НОВЫЕ СТРОКИ ЧТОБЫ НЕ РАСТЯГИВАЛОСЬ --- */
+            grid-auto-rows: 60px;
+            /* Жесткая высота ряда */
+            align-content: start;
+            /* Прижать всё к верху */
+        }
+
+        .grid-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* --- КАРТОЧКА --- */
+        .streamer-card {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            border-radius: 16px;
+            text-decoration: none;
+            overflow: hidden;
+            height: 60px;
+            flex-shrink: 0;
+            border: 1px solid transparent;
+        }
+
+        .streamer-card.is-online {
+            background-color: #f2f2f5;
+        }
+
+        .streamer-card.is-offline {
+            background-color: #ffffff;
+            border-color: #f0f0f0;
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: block;
+            object-fit: cover;
+            background: #eee;
+        }
+
+        .status-badge {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-sizing: content-box;
+        }
+
+        .is-online .status-badge {
+            background-color: #ff3b3b;
+            border-color: #f2f2f5;
+        }
+
+        .is-offline .status-badge {
+            background-color: #b0b0b0;
+            border-color: #ffffff;
+        }
+
+        .info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .username {
+            font-size: 14px;
+            font-weight: 700;
+            color: #000;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+
+        .category {
+            font-size: 12px;
+            color: #777;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+        }
+
+        /* --- SKELETON --- */
+        .skeleton-card {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            height: 60px;
+            border-radius: 16px;
+            background: #fff;
+            border: 1px solid #f9f9f9;
+        }
+
+        .sk-pulse {
+            background: linear-gradient(90deg, #f0f0f0 25%, #f9f9f9 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite linear;
+            border-radius: 4px;
+        }
+
+        .sk-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .sk-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .sk-line-1 {
+            width: 70%;
+            height: 12px;
+        }
+
+        .sk-line-2 {
+            width: 50%;
+            height: 10px;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* --- НАСТРОЙКИ --- */
+        .settings-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            z-index: 10;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.95);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .settings-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+        }
+
+        .settings-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .channels-input {
+            flex: 1;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            resize: none;
+            background: #f9f9f9;
+            margin-bottom: 15px;
+        }
+
+        .channels-input:focus {
+            border-color: #9146FF;
+            background: #fff;
+        }
+
+        .settings-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-save {
+            background: #9146FF;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #772ce8;
+        }
+
+        .btn-cancel {
+            background: #eee;
+            color: #333;
+        }
+
+        .btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
+        /* Подпись кэша */
+        .cache-info {
+            font-size: 10px;
+            color: #ccc;
+            text-align: center;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="twitch-widget">
+        <div class="widget-header">
+            <div class="header-left"><span class="header-dot"></span>В эфире</div>
+            <div class="header-right">
+                <button class="settings-btn" id="settings-btn" title="Редактировать"><svg viewBox="0 0 24 24">
+                        <path
+                            d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" />
+                    </svg></button>
+                <svg class="twitch-logo" viewBox="0 0 24 24">
+                    <path
+                        d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h2.998L22.286 11.143V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
+                </svg>
+            </div>
+        </div>
+
+        <div id="grid-container" class="grid-container"></div>
+
+        <div class="settings-overlay" id="settings-view">
+            <div class="settings-title">Список каналов</div>
+            <textarea id="channels-input" class="channels-input" placeholder="nickname"></textarea>
+            <div class="settings-actions">
+                <button class="btn btn-cancel" id="cancel-btn">Отмена</button>
+                <button class="btn btn-save" id="save-btn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultStreamers = ["shroud", "s1mple", "ninja", "ixbtgames", "bratishkinoff", "jesusavgn", "buster", "evelon192", "stray228", "ybicanoooobov"];
+        const container = document.getElementById('grid-container');
+        const settingsView = document.getElementById('settings-view');
+        const channelsInput = document.getElementById('channels-input');
+
+        // --- НАСТРОЙКИ КЭША ---
+        const CACHE_DURATION = 5 * 60 * 1000; // 5 минут храним данные (в миллисекундах)
+
+        // --- 1. SKELETON ---
+        function renderSkeleton() {
+            let html = '';
+            for (let i = 0; i < 10; i++) {
+                html += `<div class="skeleton-card"><div class="sk-pulse sk-avatar"></div><div class="sk-info"><div class="sk-pulse sk-line-1"></div><div class="sk-pulse sk-line-2"></div></div></div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        // --- 2. DATA & CACHE HANDLING ---
+        function getStreamersList() {
+            const saved = localStorage.getItem('my_twitch_widget_list');
+            return saved ? JSON.parse(saved) : defaultStreamers;
+        }
+        function saveStreamersList(list) {
+            localStorage.setItem('my_twitch_widget_list', JSON.stringify(list));
+        }
+
+        // --- ЛОГИКА ЗАГРУЗКИ (С ЗАЩИТОЙ) ---
+        async function fetchStreamerData(login) {
+            const cacheKey = `twitch_cache_v1_${login}`;
+            const cached = localStorage.getItem(cacheKey);
+
+            // 1. Проверяем кэш
+            if (cached) {
+                const { timestamp, data } = JSON.parse(cached);
+                // Если данные свежие (меньше 5 минут) - возвращаем их сразу, не трогая сервер
+                if (Date.now() - timestamp < CACHE_DURATION) {
+                    return data;
+                }
+            }
+
+            // 2. Если кэша нет или он старый - делаем запрос
+            try {
+                const [userRes, uptimeRes, gameRes] = await Promise.all([
+                    fetch(`https://api.ivr.fi/v2/twitch/user?login=${login}`),
+                    fetch(`https://decapi.me/twitch/uptime/${login}`),
+                    fetch(`https://decapi.me/twitch/game/${login}`)
+                ]);
+
+                if (!userRes.ok) throw new Error("API Error");
+
+                const userData = await userRes.json();
+                const uptimeText = await uptimeRes.text();
+                const gameText = await gameRes.text();
+
+                if (!userData || !userData[0]) throw new Error("User not found");
+
+                const isOnline = !uptimeText.includes("offline");
+
+                const newData = {
+                    login: login,
+                    displayName: userData[0].displayName,
+                    avatar: userData[0].logo,
+                    isOnline: isOnline,
+                    game: isOnline ? gameText : "Offline"
+                };
+
+                // СОХРАНЯЕМ В КЭШ
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    timestamp: Date.now(),
+                    data: newData
+                }));
+
+                return newData;
+
+            } catch (e) {
+                console.error("Error loading " + login, e);
+
+                // ЕСЛИ ОШИБКА (например бан IP), пробуем вернуть старый кэш, даже если он протух
+                if (cached) {
+                    return JSON.parse(cached).data;
+                }
+
+                // Если совсем ничего нет - возвращаем заглушку
+                return {
+                    login: login,
+                    displayName: login,
+                    avatar: "https://static-cdn.jtvnw.net/user-default-pictures-uv/cdd517fe-def4-11e9-948e-784f43822e80-profile_image-70x70.png",
+                    isOnline: false,
+                    game: "Offline"
+                };
+            }
+        }
+
+        async function renderWidget() {
+            renderSkeleton();
+            const streamers = getStreamersList();
+
+            if (streamers.length === 0) {
+                container.innerHTML = '<div style="grid-column: span 2; text-align:center; color:#999; padding:20px;">Список пуст.</div>';
+                return;
+            }
+
+            const results = await Promise.all(streamers.map(login => fetchStreamerData(login)));
+            container.innerHTML = '';
+
+            const sortedResults = results.filter(r => r).sort((a, b) => Number(b.isOnline) - Number(a.isOnline));
+
+            sortedResults.forEach(data => {
+                const card = document.createElement('a');
+                card.href = `https://twitch.tv/${data.login}`;
+                card.target = "_blank";
+                card.className = data.isOnline ? 'streamer-card is-online' : 'streamer-card is-offline';
+
+                card.innerHTML = `
+                    <div class="avatar-wrapper"><img src="${data.avatar}" class="avatar"><div class="status-badge"></div></div>
+                    <div class="info"><div class="username">${data.displayName}</div><div class="category">${data.game}</div></div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        document.getElementById('settings-btn').addEventListener('click', () => {
+            channelsInput.value = getStreamersList().join('\n');
+            settingsView.classList.add('active');
+        });
+        document.getElementById('cancel-btn').addEventListener('click', () => settingsView.classList.remove('active'));
+        document.getElementById('save-btn').addEventListener('click', () => {
+            const newList = channelsInput.value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+            saveStreamersList(newList);
+            settingsView.classList.remove('active');
+            renderWidget();
+        });
+
+        renderWidget();
+    </script>
+</body>
+
+</html>

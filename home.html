@@ -5,7 +5,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Home</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js" defer></script>
+    <script>
+        // --- CRITICAL WALLPAPER LOADER ---
+        (function () {
+            const STORAGE_KEY = 'user_wallpaper_settings_v1';
+            const defaultSettings = {
+                url: 'https://i.ibb.co/9krvx4ms/465581.jpg',
+                blur: 0,
+                dim: 30
+            };
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                const settings = saved ? JSON.parse(saved) : defaultSettings;
+
+                // Preload image
+                const link = document.createElement('link');
+                link.rel = 'preload';
+                link.as = 'image';
+                link.href = settings.url;
+                document.head.appendChild(link);
+
+                // Apply initial styles to avoid black screen
+                const style = document.createElement('style');
+                const blurPx = (settings.blur / 100) * 30;
+                const scale = 1.02 + (blurPx * 0.003);
+                const dimOpacity = settings.dim / 100;
+
+                style.innerHTML = `
+                    .global-wallpaper-blurred {
+                        background-image: url('${settings.url}') !important;
+                        filter: blur(${blurPx}px) !important;
+                        transform: scale(${scale}) !important;
+                        opacity: 1 !important;
+                    }
+                    .folder-backdrop {
+                        background: rgba(20, 20, 20, ${dimOpacity}) !important;
+                    }
+                `;
+                document.head.appendChild(style);
+
+                // --- CRITICAL GRID LOADER ---
+                const savedCols = localStorage.getItem('gridColumns') || '4';
+                const savedRows = localStorage.getItem('gridRows') || '6';
+                document.documentElement.style.setProperty('--grid-cols', savedCols);
+                document.documentElement.style.setProperty('--grid-rows', savedRows);
+            } catch (e) {
+                console.error('Critical loader error:', e);
+            }
+        })();
+    </script>
     <style>
         * {
             box-sizing: border-box;
@@ -72,8 +121,9 @@
             background-repeat: no-repeat;
             background-size: cover;
             background-position: center center;
-            transition: transform 0.1s linear, filter 0.1s linear;
-            will-change: transform, filter;
+            transition: transform 0.1s linear, filter 0.1s linear, opacity 0.5s ease;
+            will-change: transform, filter, opacity;
+            opacity: 0;
         }
 
         .folder-backdrop {
@@ -94,7 +144,6 @@
             flex-direction: column;
             position: relative;
             margin: 0 auto;
-            transition: max-width 0.2s ease;
         }
 
         /* --- HEADER & MENU BTN --- */
@@ -1857,7 +1906,7 @@
         </div>
         <div class="sidebar-content" id="widgetSidebarContent"
             style="padding: 0; overflow-y: auto; background: transparent; scrollbar-width: none; -ms-overflow-style: none;">
-            <iframe src="dashboard.html" style="width: 100%; height: 100%; border: none;"
+            <iframe id="dashboardIframe" data-src="dashboard.html" style="width: 100%; height: 100%; border: none;"
                 allowtransparency="true"></iframe>
         </div>
     </aside>
@@ -2510,6 +2559,10 @@
         const closeWidgetBtn = document.getElementById('closeWidgetBtn');
 
         function openWidgetMenu() {
+            const iframe = document.getElementById('dashboardIframe');
+            if (iframe && !iframe.src) {
+                iframe.src = iframe.dataset.src;
+            }
             widgetSidebar.classList.add('active');
             widgetSidebarOverlay.classList.add('active');
             document.body.style.overflow = 'hidden';

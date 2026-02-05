@@ -288,13 +288,88 @@
         const globalDot = document.getElementById('global-dot');
         const CACHE_DURATION = 5 * 60 * 1000;
 
+        // --- 2. DATA & CACHE HANDLING ---
         function getStreamersList() {
             const saved = localStorage.getItem('my_kick_widget_list');
             return saved ? JSON.parse(saved) : defaultStreamers;
         }
-        function saveStreamersList(list) {
+
+        async function saveStreamersList(list) {
             localStorage.setItem('my_kick_widget_list', JSON.stringify(list));
+
+            // Сохранение в Firebase
+            const parentAuth = window.parent.auth || window.parent.firebaseAuth;
+            const parentDb = window.parent.db;
+
+            if (parentAuth && parentAuth.currentUser && parentDb) {
+                try {
+                    const user = parentAuth.currentUser;
+                    const { doc, setDoc } = window.parent;
+                    if (doc && setDoc) {
+                        await setDoc(doc(parentDb, "users", user.uid), {
+                            kickStreamers: list
+                        }, { merge: true });
+                        console.log("Kick streamers synced to cloud");
+                    }
+                } catch (e) {
+                    console.error("Error syncing Kick streamers:", e);
+                }
+            }
         }
+
+        // --- FIREBASE SYNC ---
+        async function initCloudSync() {
+            const parentAuth = window.parent.auth || window.parent.firebaseAuth;
+            const parentDb = window.parent.db;
+
+            if (!parentAuth || !parentDb) {
+                window.parent.addEventListener('authChanged', (e) => {
+                    if (e.detail.user) syncFromCloud(e.detail.user, parentDb || window.parent.db);
+                });
+                return;
+            }
+
+            if (parentAuth.currentUser) {
+                syncFromCloud(parentAuth.currentUser, parentDb);
+            }
+
+            window.parent.addEventListener('authChanged', (e) => {
+                if (e.detail.user) syncFromCloud(e.detail.user, parentDb || window.parent.db);
+            });
+        }
+
+        async function syncFromCloud(user, db) {
+            if (!db) return;
+            try {
+                const { doc, getDoc } = window.parent;
+                if (!doc || !getDoc) return;
+
+                const docRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.kickStreamers && Array.isArray(data.kickStreamers)) {
+                        const cloudList = data.kickStreamers;
+                        const localList = getStreamersList();
+
+                        if (JSON.stringify(cloudList) !== JSON.stringify(localList)) {
+                            localStorage.setItem('my_kick_widget_list', JSON.stringify(cloudList));
+                            renderWidget();
+                        }
+                    } else {
+                        const localList = getStreamersList();
+                        if (localList.length > 0) {
+                            saveStreamersList(localList);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Error syncing Kick from cloud:", e);
+            }
+        }
+
+        initCloudSync();
 
         async function fetchKickData(login) {
             const cacheKey = `kick_cache_v7_${login}`; // Новая версия
@@ -437,9 +512,9 @@
             settingsView.classList.add('active');
         });
         document.getElementById('cancel-btn').addEventListener('click', () => settingsView.classList.remove('active'));
-        document.getElementById('save-btn').addEventListener('click', () => {
+        document.getElementById('save-btn').addEventListener('click', async () => {
             const newList = channelsInput.value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-            saveStreamersList(newList);
+            await saveStreamersList(newList);
             settingsView.classList.remove('active');
             renderWidget();
         });

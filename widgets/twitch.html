@@ -405,9 +405,87 @@
             const saved = localStorage.getItem('my_twitch_widget_list');
             return saved ? JSON.parse(saved) : defaultStreamers;
         }
-        function saveStreamersList(list) {
+
+        async function saveStreamersList(list) {
             localStorage.setItem('my_twitch_widget_list', JSON.stringify(list));
+
+            // Сохранение в Firebase
+            const parentAuth = window.parent.auth || window.parent.firebaseAuth;
+            const parentDb = window.parent.db;
+
+            if (parentAuth && parentAuth.currentUser && parentDb) {
+                try {
+                    const user = parentAuth.currentUser;
+                    const { doc, setDoc } = window.parent;
+                    if (doc && setDoc) {
+                        await setDoc(doc(parentDb, "users", user.uid), {
+                            twitchStreamers: list
+                        }, { merge: true });
+                        console.log("Twitch streamers synced to cloud");
+                    }
+                } catch (e) {
+                    console.error("Error syncing Twitch streamers:", e);
+                }
+            }
         }
+
+        // --- FIREBASE SYNC ---
+        async function initCloudSync() {
+            const parentAuth = window.parent.auth || window.parent.firebaseAuth;
+            const parentDb = window.parent.db;
+
+            if (!parentAuth || !parentDb) {
+                // Если родитель еще не загрузил Firebase, попробуем подождать или проверить по событию
+                window.parent.addEventListener('authChanged', (e) => {
+                    if (e.detail.user) syncFromCloud(e.detail.user, parentDb);
+                });
+                return;
+            }
+
+            // Если уже залогинен
+            if (parentAuth.currentUser) {
+                syncFromCloud(parentAuth.currentUser, parentDb);
+            }
+
+            // Слушаем изменения авторизации
+            window.parent.addEventListener('authChanged', (e) => {
+                if (e.detail.user) syncFromCloud(e.detail.user, parentDb);
+            });
+        }
+
+        async function syncFromCloud(user, db) {
+            try {
+                const { doc, getDoc } = window.parent;
+                if (!doc || !getDoc) return;
+
+                const docRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.twitchStreamers && Array.isArray(data.twitchStreamers)) {
+                        const cloudList = data.twitchStreamers;
+                        const localList = getStreamersList();
+
+                        // Простая синхронизация: если облачный список отличается, обновляем локальный
+                        if (JSON.stringify(cloudList) !== JSON.stringify(localList)) {
+                            localStorage.setItem('my_twitch_widget_list', JSON.stringify(cloudList));
+                            renderWidget();
+                        }
+                    } else {
+                        // Если в облаке пусто, но есть локальный список - сохраняем его в облако
+                        const localList = getStreamersList();
+                        if (localList.length > 0) {
+                            saveStreamersList(localList);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Error syncing from cloud:", e);
+            }
+        }
+
+        initCloudSync();
 
         // --- ЛОГИКА ЗАГРУЗКИ (С ЗАЩИТОЙ) ---
         async function fetchStreamerData(login) {
@@ -509,9 +587,9 @@
             settingsView.classList.add('active');
         });
         document.getElementById('cancel-btn').addEventListener('click', () => settingsView.classList.remove('active'));
-        document.getElementById('save-btn').addEventListener('click', () => {
+        document.getElementById('save-btn').addEventListener('click', async () => {
             const newList = channelsInput.value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-            saveStreamersList(newList);
+            await saveStreamersList(newList);
             settingsView.classList.remove('active');
             renderWidget();
         });

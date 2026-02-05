@@ -146,6 +146,12 @@
             margin: 0 auto;
         }
 
+        @media (max-width: 600px) {
+            .iphone-screen {
+                max-width: 100%;
+            }
+        }
+
         /* --- HEADER & MENU BTN --- */
         header {
             position: sticky;
@@ -243,6 +249,12 @@
             overflow: hidden;
             max-height: calc(var(--grid-rows, 6) * 110px - 10px);
             min-height: calc(var(--grid-rows, 6) * 110px - 10px);
+        }
+
+        @media (max-width: 600px) {
+            .app-page {
+                grid-template-columns: repeat(min(var(--grid-cols, 4), 4), 1fr) !important;
+            }
         }
 
         .pagination-dots {
@@ -1931,8 +1943,11 @@
         document.documentElement.style.setProperty('--grid-rows', savedRows);
 
         function getAppsPerPage() {
-            const cols = parseInt(localStorage.getItem('gridColumns') || '4');
+            let cols = parseInt(localStorage.getItem('gridColumns') || '4');
             const rows = parseInt(localStorage.getItem('gridRows') || '6');
+            if (window.innerWidth <= 600) {
+                cols = Math.min(cols, 4);
+            }
             return cols * rows;
         }
 
@@ -2447,9 +2462,14 @@
                     };
                 }
 
-                // --- ТРИГГЕР РЕЖИМА РЕДАКТИРОВАНИЯ (Долгое нажатие) ---
+                // --- ТРИГГЕР РЕЖИМА РЕДАКТИРОВАНИЯ ---
                 let longPressTimer;
+                const isTouch = () => !window.matchMedia('(pointer: fine)').matches;
+
                 const startPress = () => {
+                    // На телефоне при удержании, на ПК - только по ПКМ (пропускаем mousedown удержание)
+                    if (!isTouch()) return;
+
                     longPressTimer = setTimeout(() => {
                         window.enableEditMode();
                         if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(50);
@@ -2460,7 +2480,10 @@
                 item.addEventListener('touchstart', startPress, { passive: true });
                 item.addEventListener('touchend', cancelPress, { passive: true });
                 item.addEventListener('touchmove', cancelPress, { passive: true });
-                item.addEventListener('mousedown', (e) => { if (e.button === 0) startPress(); });
+
+                // Mousedown удержание убираем для ПК, т.к. только ПКМ
+                // item.addEventListener('mousedown', (e) => { if (e.button === 0) startPress(); });
+
                 item.addEventListener('mouseup', cancelPress);
                 item.addEventListener('mouseleave', cancelPress);
 
@@ -2483,8 +2506,11 @@
             sortables.forEach(s => s.option("disabled", true));
         }
 
-        // Глобальный перехват ПКМ для режима редактирования
+        // Глобальный перехват ПКМ для режима редактирования (только если есть курсор)
         document.addEventListener('contextmenu', (e) => {
+            const hasCursor = window.matchMedia('(pointer: fine)').matches;
+            if (!hasCursor) return;
+
             const item = e.target.closest('.app-item');
             if (item) {
                 e.preventDefault();
@@ -2662,6 +2688,15 @@
                 });
             }
         }, 100);
+
+        // Пересчет сетки при изменении размера экрана (для адаптивности)
+        let lastWidth = window.innerWidth;
+        window.addEventListener('resize', () => {
+            if ((lastWidth > 600 && window.innerWidth <= 600) || (lastWidth <= 600 && window.innerWidth > 600)) {
+                renderAppsToDOM(getAppsFromStorage());
+            }
+            lastWidth = window.innerWidth;
+        });
 
     </script>
 </body>

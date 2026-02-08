@@ -298,10 +298,94 @@
             transform: translateY(0);
         }
 
+        /* Collapsible Panel Styles */
+        .controls-panel {
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            cursor: default;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 0 0 0 0;
+            transition: padding 0.3s ease;
+        }
+
+        .controls-panel.collapsed .panel-header {
+            padding: 0;
+        }
+
+        .panel-header h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-header h2::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .toggle-icon {
+            width: 24px;
+            height: 24px;
+            transition: transform 0.4s ease;
+            color: var(--accent);
+        }
+
+        .controls-panel.collapsed .toggle-icon {
+            transform: rotate(-180deg);
+        }
+
+        .panel-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            padding-top: 32px;
+            opacity: 1;
+            max-height: 2000px;
+            transition: all 0.4s ease;
+        }
+
+        .controls-panel.collapsed {
+            max-width: 200px;
+            padding: 16px 24px;
+            border-radius: 40px;
+        }
+
+        .controls-panel.collapsed .panel-content {
+            opacity: 0;
+            max-height: 0;
+            padding-top: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .controls-panel.collapsed .panel-header h2 span {
+            display: none;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .controls-panel {
-                padding: 20px;
+                padding: 24px;
+            }
+
+            .controls-panel.collapsed {
+                padding: 12px 20px;
             }
         }
     </style>
@@ -309,16 +393,6 @@
 
 <body>
 
-    <a href="index.html" id="back-link" class="back-link"
-        style="position: absolute; top: 20px; left: 20px; color: rgba(255,255,255,0.5); text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 500; transition: color 0.3s;"
-        onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">
-        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
-            </path>
-        </svg>
-        Назад
-    </a>
 
     <div class="preview-container">
         <h1 id="main-title" class="pg-label">Loading Resources...</h1>
@@ -330,66 +404,76 @@
         </div>
     </div>
 
-    <div class="controls-panel">
-        <div class="control-group">
-            <label>Текст/Заголовок <span id="label-val">Loading...</span></label>
-            <input type="text" id="input-label" value="Загрузка ресурсов...">
+    <div class="controls-panel collapsed" id="controls-panel">
+        <div class="panel-header" id="panel-toggle">
+            <h2>Настройки</h2>
+            <svg class="toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
         </div>
 
-        <div class="control-group">
-            <label>Прогресс <span id="progress-val">75%</span></label>
-            <input type="range" id="input-progress" min="0" max="100" value="75">
-        </div>
+        <div class="panel-content">
+            <div class="control-group">
+                <label>Текст/Заголовок <span id="label-val">Loading...</span></label>
+                <input type="text" id="input-label" value="Загрузка ресурсов...">
+            </div>
 
-        <div class="control-group">
-            <label>Цвет 1 (Начало)</label>
-            <input type="color" id="input-color-1" value="#6366f1">
-        </div>
+            <div class="control-group">
+                <label>Прогресс <span id="progress-val">75%</span></label>
+                <input type="range" id="input-progress" min="0" max="100" value="75">
+            </div>
 
-        <div class="control-group">
-            <label>Цвет 2 (Конец)</label>
-            <input type="color" id="input-color-2" value="#a855f7">
-        </div>
+            <div class="control-group">
+                <label>Цвет 1 (Начало)</label>
+                <input type="color" id="input-color-1" value="#6366f1">
+            </div>
 
-        <div class="control-group">
-            <label>Высота <span id="height-val">24px</span></label>
-            <input type="range" id="input-height" min="4" max="80" value="24">
-        </div>
+            <div class="control-group">
+                <label>Цвет 2 (Конец)</label>
+                <input type="color" id="input-color-2" value="#a855f7">
+            </div>
 
-        <div class="control-group">
-            <label>Скругление <span id="radius-val">12px</span></label>
-            <input type="range" id="input-radius" min="0" max="40" value="12">
-        </div>
+            <div class="control-group">
+                <label>Высота <span id="height-val">24px</span></label>
+                <input type="range" id="input-height" min="4" max="80" value="24">
+            </div>
 
-        <div class="control-group">
-            <label>Интенсивность свечения <span id="glow-val">10</span></label>
-            <input type="range" id="input-glow" min="0" max="50" value="20">
-        </div>
+            <div class="control-group">
+                <label>Скругление <span id="radius-val">12px</span></label>
+                <input type="range" id="input-radius" min="0" max="40" value="12">
+            </div>
 
-        <div class="control-group">
-            <label>Скорость анимации полос <span id="speed-val">2s</span></label>
-            <input type="range" id="input-speed" min="0" max="100" value="20">
-        </div>
+            <div class="control-group">
+                <label>Интенсивность свечения <span id="glow-val">10</span></label>
+                <input type="range" id="input-glow" min="0" max="50" value="20">
+            </div>
 
-        <div class="actions">
-            <button id="copy-link">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3">
-                    </path>
-                </svg>
-                Копировать ссылку с настройками
-            </button>
-            <button id="randomize">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                    </path>
-                </svg>
-                Случайный дизайн
-            </button>
+            <div class="control-group">
+                <label>Скорость анимации полос <span id="speed-val">2s</span></label>
+                <input type="range" id="input-speed" min="0" max="100" value="20">
+            </div>
+
+            <div class="actions">
+                <button id="copy-link">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3">
+                        </path>
+                    </svg>
+                    Копировать ссылку с настройками
+                </button>
+                <button id="randomize">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
+                    </svg>
+                    Случайный дизайн
+                </button>
+            </div>
         </div>
     </div>
 
@@ -420,12 +504,11 @@
             radiusVal: document.getElementById('radius-val'),
             glowVal: document.getElementById('glow-val'),
             speedVal: document.getElementById('speed-val'),
-
             copyBtn: document.getElementById('copy-link'),
             randomBtn: document.getElementById('randomize'),
             toast: document.getElementById('toast'),
-            panel: document.querySelector('.controls-panel'),
-            backLink: document.getElementById('back-link')
+            panel: document.getElementById('controls-panel'),
+            panelToggle: document.getElementById('panel-toggle')
         };
 
         // Helper for Unicode Base64
@@ -491,7 +574,6 @@
             if (params.get('embed') === 'true') {
                 document.body.classList.add('is-embedded');
                 elements.panel.classList.add('hidden');
-                elements.backLink.classList.add('hidden');
             }
 
             if (params.has('l')) {
@@ -532,6 +614,10 @@
             elements.glow.value = Math.floor(Math.random() * 40);
             elements.speed.value = Math.floor(Math.random() * 80) + 10;
             updateStyles();
+        });
+
+        elements.panelToggle.addEventListener('click', () => {
+            elements.panel.classList.toggle('collapsed');
         });
 
         // Init

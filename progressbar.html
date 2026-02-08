@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Progress Bar Customizer</title>
+    <meta name="description" content="Полностью настраиваемый, стильный прогресс-бар с сохранением настроек по ссылке.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Default values */
+            --pg-val: 75%;
+            --pg-color-1: #6366f1;
+            --pg-color-2: #a855f7;
+            --pg-bg: rgba(255, 255, 255, 0.05);
+            --pg-height: 24px;
+            --pg-radius: 12px;
+            --pg-glow: 0 0 20px rgba(99, 102, 241, 0.4);
+            --pg-animation-speed: 2s;
+
+            --bg-deep: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --accent: #38bdf8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 25%),
+                radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 25%);
+            transition: background 0.5s ease;
+        }
+
+        body.is-embedded {
+            background: transparent !important;
+            background-image: none !important;
+            min-height: unset;
+            height: 100vh;
+        }
+
+        /* --- Preview Section --- */
+        .preview-container {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            transition: all 0.5s ease;
+        }
+
+        body.is-embedded .preview-container {
+            max-width: 100%;
+            padding: 10px;
+            margin: 0;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .pg-label {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: #94a3b8;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .progress-wrapper {
+            width: 100%;
+            position: relative;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: var(--pg-height);
+            background: var(--pg-bg);
+            border-radius: var(--pg-radius);
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: var(--pg-val);
+            background: linear-gradient(90deg, var(--pg-color-1), var(--pg-color-2));
+            box-shadow: var(--pg-glow);
+            border-radius: var(--pg-radius);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg,
+                    rgba(255, 255, 255, 0.1) 25%,
+                    transparent 25%,
+                    transparent 50%,
+                    rgba(255, 255, 255, 0.1) 50%,
+                    rgba(255, 255, 255, 0.1) 75%,
+                    transparent 75%,
+                    transparent);
+            background-size: 40px 40px;
+            animation: move-stripes var(--pg-animation-speed) linear infinite;
+            opacity: var(--pg-stripes-opacity, 0.3);
+        }
+
+        @keyframes move-stripes {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 40px 0;
+            }
+        }
+
+        .percentage-bubble {
+            position: absolute;
+            top: -40px;
+            left: var(--pg-val);
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* --- Controls Section --- */
+        .controls-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 32px;
+            width: 90%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .controls-panel.hidden,
+        .back-link.hidden {
+            display: none !important;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        label span {
+            color: var(--accent);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+            border: 2px solid #fff;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            appearance: none;
+            border: none;
+            width: 100%;
+            height: 40px;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+        }
+
+        input[type="text"] {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 8px;
+            outline: none;
+            transition: border 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent);
+        }
+
+        .actions {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .copy-success {
+            position: fixed;
+            bottom: 30px;
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            transform: translateY(100px);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            z-index: 1000;
+        }
+
+        .copy-success.show {
+            transform: translateY(0);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .controls-panel {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <a href="index.html" id="back-link" class="back-link"
+        style="position: absolute; top: 20px; left: 20px; color: rgba(255,255,255,0.5); text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 500; transition: color 0.3s;"
+        onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+            </path>
+        </svg>
+        Назад
+    </a>
+
+    <div class="preview-container">
+        <h1 id="main-title" class="pg-label">Loading Resources...</h1>
+        <div class="progress-wrapper">
+            <div id="percentage" class="percentage-bubble">75%</div>
+            <div class="progress-track">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="control-group">
+            <label>Текст/Заголовок <span id="label-val">Loading...</span></label>
+            <input type="text" id="input-label" value="Загрузка ресурсов...">
+        </div>
+
+        <div class="control-group">
+            <label>Прогресс <span id="progress-val">75%</span></label>
+            <input type="range" id="input-progress" min="0" max="100" value="75">
+        </div>
+
+        <div class="control-group">
+            <label>Цвет 1 (Начало)</label>
+            <input type="color" id="input-color-1" value="#6366f1">
+        </div>
+
+        <div class="control-group">
+            <label>Цвет 2 (Конец)</label>
+            <input type="color" id="input-color-2" value="#a855f7">
+        </div>
+
+        <div class="control-group">
+            <label>Высота <span id="height-val">24px</span></label>
+            <input type="range" id="input-height" min="4" max="80" value="24">
+        </div>
+
+        <div class="control-group">
+            <label>Скругление <span id="radius-val">12px</span></label>
+            <input type="range" id="input-radius" min="0" max="40" value="12">
+        </div>
+
+        <div class="control-group">
+            <label>Интенсивность свечения <span id="glow-val">10</span></label>
+            <input type="range" id="input-glow" min="0" max="50" value="20">
+        </div>
+
+        <div class="control-group">
+            <label>Скорость анимации полос <span id="speed-val">2s</span></label>
+            <input type="range" id="input-speed" min="0" max="100" value="20">
+        </div>
+
+        <div class="actions">
+            <button id="copy-link">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3">
+                    </path>
+                </svg>
+                Копировать ссылку с настройками
+            </button>
+            <button id="randomize">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                    </path>
+                </svg>
+                Случайный дизайн
+            </button>
+        </div>
+    </div>
+
+    <div id="toast" class="copy-success">Ссылка скопирована!</div>
+
+    <script>
+        const root = document.documentElement;
+
+        // Element selectors
+        const elements = {
+            label: document.getElementById('input-label'),
+            progress: document.getElementById('input-progress'),
+            color1: document.getElementById('input-color-1'),
+            color2: document.getElementById('input-color-2'),
+            height: document.getElementById('input-height'),
+            radius: document.getElementById('input-radius'),
+            glow: document.getElementById('input-glow'),
+            speed: document.getElementById('input-speed'),
+
+            mainTitle: document.getElementById('main-title'),
+            percentage: document.getElementById('percentage'),
+            progressFill: document.getElementById('progress-fill'),
+
+            // Value displays
+            labelVal: document.getElementById('label-val'),
+            progressVal: document.getElementById('progress-val'),
+            heightVal: document.getElementById('height-val'),
+            radiusVal: document.getElementById('radius-val'),
+            glowVal: document.getElementById('glow-val'),
+            speedVal: document.getElementById('speed-val'),
+
+            copyBtn: document.getElementById('copy-link'),
+            randomBtn: document.getElementById('randomize'),
+            toast: document.getElementById('toast'),
+            panel: document.querySelector('.controls-panel'),
+            backLink: document.getElementById('back-link')
+        };
+
+        // Helper for Unicode Base64
+        const b64Encode = (str) => btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
+        const b64Decode = (str) => {
+            try {
+                return decodeURIComponent(Array.prototype.map.call(atob(str), (c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+            } catch (e) { return "Error Reading Label"; }
+        };
+
+        const updateStyles = () => {
+            const val = elements.progress.value;
+            const h = elements.height.value;
+            const r = elements.radius.value;
+            const g = elements.glow.value;
+            const s = (11 - (elements.speed.value / 10)).toFixed(1); // inverse mapping for speed
+
+            root.style.setProperty('--pg-val', val + '%');
+            root.style.setProperty('--pg-color-1', elements.color1.value);
+            root.style.setProperty('--pg-color-2', elements.color2.value);
+            root.style.setProperty('--pg-height', h + 'px');
+            root.style.setProperty('--pg-radius', r + 'px');
+            root.style.setProperty('--pg-glow', `0 0 ${g}px ${elements.color1.value}66`);
+            root.style.setProperty('--pg-animation-speed', elements.speed.value == 0 ? '0s' : s + 's');
+            root.style.setProperty('--pg-stripes-opacity', elements.speed.value == 0 ? '0' : '0.3');
+
+            elements.mainTitle.textContent = elements.label.value;
+            elements.percentage.textContent = val + '%';
+
+            // Update value labels
+            elements.progressVal.textContent = val + '%';
+            elements.heightVal.textContent = h + 'px';
+            elements.radiusVal.textContent = r + 'px';
+            elements.glowVal.textContent = g;
+            elements.speedVal.textContent = elements.speed.value == 0 ? 'Off' : s + 's';
+
+            updateURL();
+        };
+
+        const updateURL = () => {
+            const params = new URLSearchParams();
+            params.set('l', b64Encode(elements.label.value));
+            params.set('p', elements.progress.value);
+            params.set('c1', elements.color1.value.replace('#', ''));
+            params.set('c2', elements.color2.value.replace('#', ''));
+            params.set('h', elements.height.value);
+            params.set('r', elements.radius.value);
+            params.set('g', elements.glow.value);
+            params.set('s', elements.speed.value);
+
+            // Generate embed version of current settings for the copy button
+            const embedParams = new URLSearchParams(params);
+            embedParams.set('embed', 'true');
+            elements.copyBtn.dataset.embedUrl = window.location.origin + window.location.pathname + '?' + embedParams.toString();
+
+            const newURL = window.location.pathname + '?' + params.toString();
+            window.history.replaceState({}, '', newURL);
+        };
+
+        const loadFromURL = () => {
+            const params = new URLSearchParams(window.location.search);
+
+            if (params.get('embed') === 'true') {
+                document.body.classList.add('is-embedded');
+                elements.panel.classList.add('hidden');
+                elements.backLink.classList.add('hidden');
+            }
+
+            if (params.has('l')) {
+                elements.label.value = b64Decode(params.get('l'));
+            }
+            if (params.has('p')) elements.progress.value = params.get('p');
+            if (params.has('c1')) elements.color1.value = '#' + params.get('c1');
+            if (params.has('c2')) elements.color2.value = '#' + params.get('c2');
+            if (params.has('h')) elements.height.value = params.get('h');
+            if (params.has('r')) elements.radius.value = params.get('r');
+            if (params.has('g')) elements.glow.value = params.get('g');
+            if (params.has('s')) elements.speed.value = params.get('s');
+
+            updateStyles();
+        };
+
+        // Event listeners
+        Object.values(elements).forEach(el => {
+            if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT')) {
+                el.addEventListener('input', updateStyles);
+            }
+        });
+
+        elements.copyBtn.addEventListener('click', () => {
+            const urlToCopy = elements.copyBtn.dataset.embedUrl || window.location.href;
+            navigator.clipboard.writeText(urlToCopy);
+            elements.toast.textContent = "Ссылка для Notion скопирована!";
+            elements.toast.classList.add('show');
+            setTimeout(() => elements.toast.classList.remove('show'), 3000);
+        });
+
+        elements.randomBtn.addEventListener('click', () => {
+            const randomColor = () => '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+            elements.color1.value = randomColor();
+            elements.color2.value = randomColor();
+            elements.height.value = Math.floor(Math.random() * 40) + 10;
+            elements.radius.value = Math.floor(Math.random() * 25);
+            elements.glow.value = Math.floor(Math.random() * 40);
+            elements.speed.value = Math.floor(Math.random() * 80) + 10;
+            updateStyles();
+        });
+
+        // Init
+        loadFromURL();
+        // Initial title update if not from URL
+        if (!window.location.search) {
+            elements.label.value = "Загрузка ресурсов...";
+            updateStyles();
+        }
+
+    </script>
+</body>
+
+</html>

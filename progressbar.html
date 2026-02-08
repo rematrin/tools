@@ -172,8 +172,36 @@
         }
 
         .controls-panel.hidden,
-        .back-link.hidden {
+        .back-link.hidden,
+        .unsaved-hint.hidden {
             display: none !important;
+        }
+
+        .unsaved-hint {
+            grid-column: 1 / -1;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            text-align: center;
+            margin-bottom: 10px;
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% {
+                border-color: rgba(245, 158, 11, 0.2);
+            }
+
+            50% {
+                border-color: rgba(245, 158, 11, 0.6);
+            }
+
+            100% {
+                border-color: rgba(245, 158, 11, 0.2);
+            }
         }
 
         .control-group {
@@ -244,8 +272,28 @@
             transition: border 0.3s ease;
         }
 
-        input[type="text"]:focus {
+        input[type="text"]:focus,
+        select:focus {
             border-color: var(--accent);
+        }
+
+        select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+
+        select option {
+            background: #1e293b;
         }
 
         .actions {
@@ -414,6 +462,21 @@
         </div>
 
         <div class="panel-content">
+            <div id="unsaved-hint" class="unsaved-hint hidden">
+                Настройки изменены! <br> Обновите ссылку в Notion, чтобы они сохранились для всех.
+            </div>
+
+            <div class="control-group">
+                <label>Режим <span id="mode-val">Вручную</span></label>
+                <select id="input-mode">
+                    <option value="manual">Вручную (слайдер)</option>
+                    <option value="year">Прогресс года</option>
+                    <option value="month">Прогресс месяца</option>
+                    <option value="week">Прогресс недели</option>
+                    <option value="day">Прогресс дня</option>
+                </select>
+            </div>
+
             <div class="control-group">
                 <label>Текст/Заголовок <span id="label-val">Loading...</span></label>
                 <input type="text" id="input-label" value="Загрузка ресурсов...">
@@ -479,7 +542,24 @@
 
     <div id="toast" class="copy-success">Ссылка скопирована!</div>
 
-    <script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBNCQo3rYgmDZkZrGKT-g2t0LlpsfH1Pg",
+            authDomain: "tools-c98fd.firebaseapp.com",
+            projectId: "tools-c98fd",
+            storageBucket: "tools-c98fd.firebasestorage.app",
+            messagingSenderId: "595986762798",
+            appId: "1:595986762798:web:b8c05cddcb0f3a610163bf",
+            measurementId: "G-X3Z1KH8760"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         const root = document.documentElement;
 
         // Element selectors
@@ -504,12 +584,18 @@
             radiusVal: document.getElementById('radius-val'),
             glowVal: document.getElementById('glow-val'),
             speedVal: document.getElementById('speed-val'),
+            mode: document.getElementById('input-mode'),
+            modeVal: document.getElementById('mode-val'),
             copyBtn: document.getElementById('copy-link'),
             randomBtn: document.getElementById('randomize'),
             toast: document.getElementById('toast'),
             panel: document.getElementById('controls-panel'),
-            panelToggle: document.getElementById('panel-toggle')
+            panelToggle: document.getElementById('panel-toggle'),
+            unsavedHint: document.getElementById('unsaved-hint')
         };
+
+        let isInitialLoad = true;
+        // let lastInUrlParams = ""; // No longer needed with Firebase save/load
 
         // Helper for Unicode Base64
         const b64Encode = (str) => btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
@@ -520,11 +606,34 @@
         };
 
         const updateStyles = () => {
-            const val = elements.progress.value;
+            const mode = elements.mode.value;
+            let val = elements.progress.value;
+
+            // Handle Automatic Modes
+            if (mode !== 'manual') {
+                elements.progress.disabled = true;
+                const now = new Date();
+                if (mode === 'year') {
+                    const start = new Date(now.getFullYear(), 0, 1);
+                    const end = new Date(now.getFullYear() + 1, 0, 1);
+                    val = Math.floor(((now - start) / (end - start)) * 100);
+                } else if (mode === 'month') {
+                    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                    val = Math.floor((now.getDate() / end) * 100);
+                } else if (mode === 'week') {
+                    const day = now.getDay() || 7; // 1-7, Mon-Sun
+                    val = Math.floor((day / 7) * 100);
+                } else if (mode === 'day') {
+                    val = Math.floor(((now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400) * 100);
+                }
+            } else {
+                elements.progress.disabled = false;
+            }
+
             const h = elements.height.value;
             const r = elements.radius.value;
             const g = elements.glow.value;
-            const s = (11 - (elements.speed.value / 10)).toFixed(1); // inverse mapping for speed
+            const s = (11 - (elements.speed.value / 10)).toFixed(1);
 
             root.style.setProperty('--pg-val', val + '%');
             root.style.setProperty('--pg-color-1', elements.color1.value);
@@ -538,47 +647,153 @@
             elements.mainTitle.textContent = elements.label.value;
             elements.percentage.textContent = val + '%';
 
-            // Update value labels
             elements.progressVal.textContent = val + '%';
             elements.heightVal.textContent = h + 'px';
             elements.radiusVal.textContent = r + 'px';
             elements.glowVal.textContent = g;
             elements.speedVal.textContent = elements.speed.value == 0 ? 'Off' : s + 's';
+            elements.modeVal.textContent = elements.mode.options[elements.mode.selectedIndex].text;
 
             updateURL();
         };
 
+        let saveTimeout;
         const updateURL = () => {
+            const id = getID();
             const params = new URLSearchParams();
-            params.set('l', b64Encode(elements.label.value));
-            params.set('p', elements.progress.value);
-            params.set('c1', elements.color1.value.replace('#', ''));
-            params.set('c2', elements.color2.value.replace('#', ''));
-            params.set('h', elements.height.value);
-            params.set('r', elements.radius.value);
-            params.set('g', elements.glow.value);
-            params.set('s', elements.speed.value);
+            params.set('id', id);
 
-            // Generate embed version of current settings for the copy button
-            const embedParams = new URLSearchParams(params);
-            embedParams.set('embed', 'true');
-            elements.copyBtn.dataset.embedUrl = window.location.origin + window.location.pathname + '?' + embedParams.toString();
+            // Update embed URL for the button (still include all params for fallback/initial load)
+            const fullParams = new URLSearchParams(params);
+            fullParams.set('l', b64Encode(elements.label.value));
+            fullParams.set('p', elements.progress.value);
+            fullParams.set('c1', elements.color1.value.replace('#', ''));
+            fullParams.set('c2', elements.color2.value.replace('#', ''));
+            fullParams.set('h', elements.height.value);
+            fullParams.set('r', elements.radius.value);
+            fullParams.set('g', elements.glow.value);
+            fullParams.set('s', elements.speed.value);
+            fullParams.set('m', elements.mode.value);
+            fullParams.set('embed', 'true');
 
+            elements.copyBtn.dataset.embedUrl = window.location.origin + window.location.pathname + '?' + params.toString() + '&embed=true';
+
+            // Sync URL id only
             const newURL = window.location.pathname + '?' + params.toString();
             window.history.replaceState({}, '', newURL);
+
+            // Debounced save to Firebase
+            if (!isInitialLoad) {
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(() => saveToFirebase(id), 1000);
+            }
         };
 
-        const loadFromURL = () => {
+        const getID = () => {
             const params = new URLSearchParams(window.location.search);
+            let id = params.get('id');
+            if (!id) {
+                // Generate a new unique ID if not present
+                id = Math.random().toString(36).substring(2, 10);
+            }
+            return id;
+        };
+
+        const saveToFirebase = async (id) => {
+            try {
+                const state = {
+                    l: elements.label.value,
+                    p: elements.progress.value,
+                    c1: elements.color1.value,
+                    c2: elements.color2.value,
+                    h: elements.height.value,
+                    r: elements.radius.value,
+                    g: elements.glow.value,
+                    s: elements.speed.value,
+                    m: elements.mode.value,
+                    updatedAt: Date.now()
+                };
+                await setDoc(doc(db, "progressbars", id), state);
+                console.log("Saved to Firebase:", id);
+                // Optionally hide hint if it was shown
+                elements.unsavedHint.classList.add('hidden');
+            } catch (e) {
+                console.error("Firebase save error:", e);
+            }
+        };
+
+        const loadFromURL = async () => {
+            const params = new URLSearchParams(window.location.search);
+            let id = params.get('id');
 
             if (params.get('embed') === 'true') {
                 document.body.classList.add('is-embedded');
                 elements.panel.classList.add('hidden');
             }
 
-            if (params.has('l')) {
-                elements.label.value = b64Decode(params.get('l'));
+            // 1. Try to load from Firebase first if ID exists
+            if (id) {
+                try {
+                    const snap = await getDoc(doc(db, "progressbars", id));
+                    if (snap.exists()) {
+                        const state = snap.data();
+                        elements.label.value = state.l || elements.label.value;
+                        elements.progress.value = state.p || elements.progress.value;
+                        elements.color1.value = state.c1 || elements.color1.value;
+                        elements.color2.value = state.c2 || elements.color2.value;
+                        elements.height.value = state.h || elements.height.value;
+                        elements.radius.value = state.r || elements.radius.value;
+                        elements.glow.value = state.g || elements.glow.value;
+                        elements.speed.value = state.s || elements.speed.value;
+                        if (state.m) elements.mode.value = state.m;
+
+                        // Listen for Realtime updates! (Perfect for Notion)
+                        onSnapshot(doc(db, "progressbars", id), (doc) => {
+                            // Only update if the document exists and an input field is not currently active
+                            if (doc.exists() && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT') {
+                                const data = doc.data();
+                                // Check if data has actually changed to avoid unnecessary updates
+                                if (data.l !== elements.label.value ||
+                                    data.p !== elements.progress.value ||
+                                    data.c1 !== elements.color1.value ||
+                                    data.c2 !== elements.color2.value ||
+                                    data.h !== elements.height.value ||
+                                    data.r !== elements.radius.value ||
+                                    data.g !== elements.glow.value ||
+                                    data.s !== elements.speed.value ||
+                                    data.m !== elements.mode.value) {
+
+                                    elements.label.value = data.l || elements.label.value;
+                                    elements.progress.value = data.p || elements.progress.value;
+                                    elements.color1.value = data.c1 || elements.color1.value;
+                                    elements.color2.value = data.c2 || elements.color2.value;
+                                    elements.height.value = data.h || elements.height.value;
+                                    elements.radius.value = data.r || elements.radius.value;
+                                    elements.glow.value = data.g || elements.glow.value;
+                                    elements.speed.value = data.s || elements.speed.value;
+                                    if (data.m) elements.mode.value = data.m;
+                                    updateStyles(); // Re-apply styles based on new data
+                                    console.log("Realtime update from Firebase received.");
+                                }
+                            }
+                        });
+                    } else {
+                        // If ID exists but no doc, it's a new ID, so generate one and save initial state
+                        id = getID(); // Ensure we have an ID for the URL
+                        await saveToFirebase(id);
+                    }
+                } catch (e) {
+                    console.error("Firebase load error:", e);
+                    // Fallback to URL params if Firebase fails
+                }
+            } else {
+                // If no ID in URL, generate one and save initial state
+                id = getID();
+                await saveToFirebase(id);
             }
+
+            // 2. URL params override (fallback or for new creation with seed)
+            if (params.has('l')) elements.label.value = b64Decode(params.get('l'));
             if (params.has('p')) elements.progress.value = params.get('p');
             if (params.has('c1')) elements.color1.value = '#' + params.get('c1');
             if (params.has('c2')) elements.color2.value = '#' + params.get('c2');
@@ -586,7 +801,9 @@
             if (params.has('r')) elements.radius.value = params.get('r');
             if (params.has('g')) elements.glow.value = params.get('g');
             if (params.has('s')) elements.speed.value = params.get('s');
+            if (params.has('m')) elements.mode.value = params.get('m');
 
+            isInitialLoad = false;
             updateStyles();
         };
 
@@ -602,6 +819,7 @@
             navigator.clipboard.writeText(urlToCopy);
             elements.toast.textContent = "Ссылка для Notion скопирована!";
             elements.toast.classList.add('show');
+            elements.unsavedHint.classList.add('hidden'); // Hide hint after copy
             setTimeout(() => elements.toast.classList.remove('show'), 3000);
         });
 
@@ -632,3 +850,4 @@
 </body>
 
 </html>
+```

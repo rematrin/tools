@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Builder & Viewer</title>
+    <meta name="description" content="Создание и просмотр динамических страниц в Firebase.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0a0f1e;
+            --panel-bg: rgba(255, 255, 255, 0.03);
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.4);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --glass-bg: rgba(15, 23, 42, 0.8);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 30%),
+                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 30%);
+        }
+
+        /* --- Transitions --- */
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Layout --- */
+        .container {
+            width: 90%;
+            max-width: 800px;
+            padding: 40px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* --- Viewer Styles --- */
+        #viewer-mode h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #viewer-mode .content {
+            font-size: 1.125rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+        }
+
+        /* --- Editor Styles --- */
+        #editor-mode h2 {
+            font-family: 'Outfit', sans-serif;
+            margin-bottom: 30px;
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 4px var(--accent-glow);
+        }
+
+        textarea {
+            height: 200px;
+            resize: vertical;
+        }
+
+        .slug-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px dashed var(--border);
+        }
+
+        .slug-prefix {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            user-select: none;
+        }
+
+        /* --- Button --- */
+        .btn {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+            text-decoration: none;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* --- Loading Spinner --- */
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #fff;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* --- Success Modal --- */
+        .success-area {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .success-link {
+            display: block;
+            margin-top: 10px;
+            color: #10b981;
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .error-message {
+            color: #ef4444;
+            margin-top: 15px;
+            font-size: 0.875rem;
+        }
+
+        /* Floating Back Button */
+        .back-btn {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .back-btn:hover {
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <a href="#" id="go-back" class="back-btn hidden">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+            </path>
+        </svg>
+        Назад к созданию
+    </a>
+
+    <div class="container fade-in">
+        <!-- Loading State -->
+        <div id="loading-state" class="hidden">
+            <span class="loader"></span>
+            <p>Загрузка...</p>
+        </div>
+
+        <!-- Viewer Mode -->
+        <div id="viewer-mode" class="hidden">
+            <h1 id="page-title">Заголовок страницы</h1>
+            <div id="page-content" class="content">Контент загружается...</div>
+        </div>
+
+        <!-- Editor Mode -->
+        <div id="editor-mode">
+            <h2>Создать новую страницу</h2>
+            <div class="form-group">
+                <label for="input-title">Заголовок страницы</label>
+                <input type="text" id="input-title" placeholder="Например: Мой крутой проект">
+            </div>
+
+            <div class="form-group">
+                <label for="input-slug">Уникальный ID (slug)</label>
+                <div class="slug-input-wrapper">
+                    <span class="slug-prefix" id="url-prefix">site.com/page/</span>
+                    <input type="text" id="input-slug" placeholder="cool-project"
+                        style="border:none; background:transparent; padding: 0;">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="input-content">Контент (текст или HTML)</label>
+                <textarea id="input-content" placeholder="Расскажите о чем ваша страница..."></textarea>
+            </div>
+
+            <button id="btn-save" class="btn">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
+                    </path>
+                </svg>
+                Опубликовать страницу
+            </button>
+
+            <div id="error-area" class="error-message hidden"></div>
+
+            <div id="success-area" class="success-area hidden">
+                <p>🚀 Страница успешно создана!</p>
+                <a href="#" id="new-page-link" class="success-link" target="_blank"></a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Firebase Config (from progressbar.html)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBNCQo3rYgmDZkZrGKT-g2t0LlpsfH1Pg",
+            authDomain: "tools-c98fd.firebaseapp.com",
+            projectId: "tools-c98fd",
+            storageBucket: "tools-c98fd.firebasestorage.app",
+            messagingSenderId: "595986762798",
+            appId: "1:595986762798:web:b8c05cddcb0f3a610163bf",
+            measurementId: "G-X3Z1KH8760"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // UI Elements
+        const editorMode = document.getElementById('editor-mode');
+        const viewerMode = document.getElementById('viewer-mode');
+        const loadingState = document.getElementById('loading-state');
+        const btnSave = document.getElementById('btn-save');
+        const btnBack = document.getElementById('go-back');
+
+        const inputTitle = document.getElementById('input-title');
+        const inputSlug = document.getElementById('input-slug');
+        const inputContent = document.getElementById('input-content');
+        const errorArea = document.getElementById('error-area');
+        const successArea = document.getElementById('success-area');
+        const newPageLink = document.getElementById('new-page-link');
+        const urlPrefixDisplay = document.getElementById('url-prefix');
+
+        const pageTitle = document.getElementById('page-title');
+        const pageContent = document.getElementById('page-content');
+
+        // Logic to determine ID from URL
+        const getSlugFromUrl = () => {
+            const params = new URLSearchParams(window.location.search);
+            const idParam = params.get('id');
+            if (idParam) return idParam;
+
+            // Handle path-based slug site.com/page/myslug
+            const path = window.location.pathname;
+            const match = path.match(/\/page\/([^\/]+)$/);
+            if (match) return match[1];
+
+            return null;
+        };
+
+        const currentSlug = getSlugFromUrl();
+
+        // Update URL prefix display
+        const baseDir = window.location.origin + window.location.pathname;
+        urlPrefixDisplay.textContent = baseDir + '?id=';
+
+        const init = async () => {
+            if (currentSlug) {
+                showViewer(currentSlug);
+            } else {
+                showEditor();
+            }
+
+            // Auto-slug generation
+            inputTitle.addEventListener('input', () => {
+                if (!inputSlug.dataset.manual) {
+                    inputSlug.value = inputTitle.value
+                        .toLowerCase()
+                        .replace(/[^a-zа-я0-9\s]/g, '')
+                        .replace(/\s+/g, '-');
+                }
+            });
+
+            inputSlug.addEventListener('input', () => {
+                inputSlug.dataset.manual = "true";
+            });
+        };
+
+        const showLoading = (show) => {
+            loadingState.classList.toggle('hidden', !show);
+            if (show) {
+                editorMode.classList.add('hidden');
+                viewerMode.classList.add('hidden');
+            }
+        };
+
+        const showEditor = () => {
+            showLoading(false);
+            editorMode.classList.remove('hidden');
+            viewerMode.classList.add('hidden');
+            btnBack.classList.add('hidden');
+            document.title = "Создать страницу | Page Builder";
+        };
+
+        const showViewer = async (slug) => {
+            showLoading(true);
+            try {
+                const docRef = doc(db, "page", slug);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    pageTitle.textContent = data.title || "Без заголовка";
+                    pageContent.innerHTML = data.content || ""; // Dangerously set HTML for MVP
+
+                    showLoading(false);
+                    viewerMode.classList.remove('hidden');
+                    btnBack.classList.remove('hidden');
+                    document.title = `${data.title} | Page Viewer`;
+                } else {
+                    showError("Страница не найдена. Возможно, ссылка неверна.");
+                    showEditor();
+                }
+            } catch (err) {
+                console.error(err);
+                showError("Ошибка при загрузке страницы.");
+                showEditor();
+            }
+        };
+
+        const showError = (msg) => {
+            errorArea.textContent = msg;
+            errorArea.classList.remove('hidden');
+            setTimeout(() => errorArea.classList.add('hidden'), 5000);
+        };
+
+        const handleSave = async () => {
+            const title = inputTitle.value.trim();
+            const slug = inputSlug.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+            const content = inputContent.value.trim();
+
+            if (!title || !slug || !content) {
+                showError("Пожалуйста, заполните все поля.");
+                return;
+            }
+
+            btnSave.disabled = true;
+            btnSave.textContent = "Публикация...";
+
+            try {
+                const pageData = {
+                    title: title,
+                    content: content,
+                    createdAt: new Date().toISOString()
+                };
+
+                await setDoc(doc(db, "page", slug), pageData);
+
+                successArea.classList.remove('hidden');
+                const fullUrl = baseDir + '?id=' + slug;
+                newPageLink.href = fullUrl;
+                newPageLink.textContent = fullUrl;
+
+                btnSave.textContent = "Обновить страницу";
+                btnSave.disabled = false;
+            } catch (err) {
+                console.error(err);
+                showError("Ошибка при сохранении в Firebase. Проверьте консоль.");
+                btnSave.disabled = false;
+                btnSave.textContent = "Опубликовать страницу";
+            }
+        };
+
+        btnSave.addEventListener('click', handleSave);
+        btnBack.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.history.pushState({}, '', baseDir);
+            showEditor();
+        });
+
+        // Listen for browser back/forward
+        window.addEventListener('popstate', () => {
+            const newSlug = getSlugFromUrl();
+            if (newSlug) showViewer(newSlug);
+            else showEditor();
+        });
+
+        init();
+    </script>
+</body>
+
+</html>

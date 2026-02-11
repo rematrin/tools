@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Progress Bar Generator</title>
+    <meta name="description"
+        content="Создавайте уникальные прогресс-бары с собственными ссылками и сохранением в облаке.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Progress Bar Variables */
+            --pg-val: 75%;
+            --pg-color-1: #6366f1;
+            --pg-color-2: #a855f7;
+            --pg-bg: rgba(255, 255, 255, 0.05);
+            --pg-height: 24px;
+            --pg-radius: 12px;
+            --pg-glow: 0 0 20px rgba(99, 102, 241, 0.4);
+            --pg-animation-speed: 2s;
+
+            /* UI Colors */
+            --bg-deep: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --accent: #38bdf8;
+            --glass-bg: rgba(15, 23, 42, 0.8);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 30%),
+                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 30%);
+            transition: background 0.5s ease;
+        }
+
+        body.is-embedded {
+            background: transparent !important;
+            background-image: none !important;
+            min-height: unset;
+            height: 100vh;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+            padding: 40px 20px;
+        }
+
+        body.is-embedded .container {
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+            justify-content: center;
+            gap: 0;
+        }
+
+        /* --- Preview Section --- */
+        .preview-section {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            text-align: center;
+        }
+
+        .pg-label {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            letter-spacing: 0.02em;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .progress-wrapper {
+            width: 100%;
+            position: relative;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: var(--pg-height);
+            background: var(--pg-bg);
+            border-radius: var(--pg-radius);
+            overflow: hidden;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: var(--pg-val);
+            background: linear-gradient(90deg, var(--pg-color-1), var(--pg-color-2));
+            box-shadow: var(--pg-glow);
+            border-radius: var(--pg-radius);
+            transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.1) 75%, transparent 75%);
+            background-size: 40px 40px;
+            animation: move-stripes var(--pg-animation-speed) linear infinite;
+            opacity: var(--pg-stripes-opacity, 0.3);
+        }
+
+        @keyframes move-stripes {
+            from {
+                background-position: 0 0;
+            }
+
+            to {
+                background-position: 40px 0;
+            }
+        }
+
+        .percentage-bubble {
+            position: absolute;
+            top: -45px;
+            left: var(--pg-val);
+            transform: translateX(-50%);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border: 1px solid var(--border);
+            color: #fff;
+            transition: left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- Controls Panel --- */
+        .controls-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 35px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .slug-group {
+            grid-column: 1 / -1;
+            background: rgba(56, 189, 248, 0.05);
+            padding: 20px;
+            border-radius: 18px;
+            border: 1px dashed rgba(56, 189, 248, 0.3);
+            margin-bottom: 10px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        label span {
+            color: var(--accent);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 15px var(--accent);
+            border: 3px solid var(--accent);
+        }
+
+        input[type="text"],
+        select {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 10px;
+            outline: none;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            border-color: var(--accent);
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 100%;
+            height: 45px;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border-radius: 10px;
+            border: 2px solid var(--border);
+        }
+
+        .actions {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: none;
+        }
+
+        /* Notifications */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            background: #10b981;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-weight: 600;
+            transform: translateY(100px);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            box-shadow: 0 15px 40px rgba(16, 185, 129, 0.4);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        .back-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <a href="?" id="back-btn" class="back-link hidden">← Назад к созданию</a>
+
+    <div class="container">
+        <!-- Preview Section -->
+        <div class="preview-section">
+            <h1 id="pg-title-display" class="pg-label">Загрузка...</h1>
+            <div class="progress-wrapper">
+                <div id="pg-percent-display" class="percentage-bubble">75%</div>
+                <div class="progress-track">
+                    <div id="pg-fill-display" class="progress-fill"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor Panel -->
+        <div class="controls-panel" id="editor-panel">
+            <div class="control-group slug-group">
+                <label>Уникальный ID (часть ссылки) <span id="slug-hint">Обязательно</span></label>
+                <input type="text" id="input-slug" placeholder="например: my-progress">
+                <p style="font-size: 0.75rem; color: var(--accent); margin-top: 5px;" id="full-url-preview"></p>
+            </div>
+
+            <div class="control-group">
+                <label>Заголовок</label>
+                <input type="text" id="input-label" value="Мой проект">
+            </div>
+
+            <div class="control-group">
+                <label>Режим <span id="mode-val">Вручную</span></label>
+                <select id="input-mode">
+                    <option value="manual">Вручную (слайдер)</option>
+                    <option value="year">Прогресс года</option>
+                    <option value="month">Прогресс месяца</option>
+                    <option value="week">Прогресс недели</option>
+                    <option value="day">Прогресс дня</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Процент <span id="progress-val">75%</span></label>
+                <input type="range" id="input-progress" min="0" max="100" value="75">
+            </div>
+
+            <div class="control-group">
+                <label>Цвет 1 (Начало)</label>
+                <input type="color" id="input-color-1" value="#6366f1">
+            </div>
+
+            <div class="control-group">
+                <label>Цвет 2 (Конец)</label>
+                <input type="color" id="input-color-2" value="#a855f7">
+            </div>
+
+            <div class="control-group">
+                <label>Высота <span id="height-val">24px</span></label>
+                <input type="range" id="input-height" min="8" max="100" value="24">
+            </div>
+
+            <div class="control-group">
+                <label>Скругление <span id="radius-val">12px</span></label>
+                <input type="range" id="input-radius" min="0" max="50" value="12">
+            </div>
+
+            <div class="actions">
+                <button id="btn-save" class="btn">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
+                        </path>
+                    </svg>
+                    Сохранить и создать ссылку
+                </button>
+                <button id="btn-random" class="btn secondary">
+                    Случайный дизайн
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Настройки сохранены!</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBNCQo3rYgmDZkZrGKT-g2t0LlpsfH1Pg",
+            authDomain: "tools-c98fd.firebaseapp.com",
+            projectId: "tools-c98fd",
+            storageBucket: "tools-c98fd.firebasestorage.app",
+            messagingSenderId: "595986762798",
+            appId: "1:595986762798:web:b8c05cddcb0f3a610163bf",
+            measurementId: "G-X3Z1KH8760"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // UI Selectors
+        const ui = {
+            inputSlug: document.getElementById('input-slug'),
+            inputLabel: document.getElementById('input-label'),
+            inputProgress: document.getElementById('input-progress'),
+            inputMode: document.getElementById('input-mode'),
+            inputColor1: document.getElementById('input-color-1'),
+            inputColor2: document.getElementById('input-color-2'),
+            inputHeight: document.getElementById('input-height'),
+            inputRadius: document.getElementById('input-radius'),
+            btnSave: document.getElementById('btn-save'),
+            btnRandom: document.getElementById('btn-random'),
+            btnBack: document.getElementById('back-btn'),
+            panel: document.getElementById('editor-panel'),
+            toast: document.getElementById('toast'),
+            urlPreview: document.getElementById('full-url-preview'),
+
+            // Displays
+            displayTitle: document.getElementById('pg-title-display'),
+            displayFill: document.getElementById('pg-fill-display'),
+            displayPercent: document.getElementById('pg-percent-display'),
+            valProgress: document.getElementById('progress-val'),
+            valHeight: document.getElementById('height-val'),
+            valRadius: document.getElementById('radius-val')
+        };
+
+        const getUrlId = () => new URLSearchParams(window.location.search).get('id');
+        const isEmbed = () => new URLSearchParams(window.location.search).has('embed');
+        const baseUrl = window.location.origin + window.location.pathname;
+
+        const syncStyles = () => {
+            const mode = ui.inputMode.value;
+            let val = ui.inputProgress.value;
+
+            if (mode !== 'manual') {
+                ui.inputProgress.disabled = true;
+                const now = new Date();
+                if (mode === 'year') {
+                    const s = new Date(now.getFullYear(), 0, 1), e = new Date(now.getFullYear() + 1, 0, 1);
+                    val = Math.floor(((now - s) / (e - s)) * 100);
+                } else if (mode === 'month') {
+                    const e = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                    val = Math.floor((now.getDate() / e) * 100);
+                } else if (mode === 'week') {
+                    const d = now.getDay() || 7; val = Math.floor((d / 7) * 100);
+                } else if (mode === 'day') {
+                    val = Math.floor(((now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400) * 100);
+                }
+            } else {
+                ui.inputProgress.disabled = false;
+            }
+
+            document.documentElement.style.setProperty('--pg-val', val + '%');
+            document.documentElement.style.setProperty('--pg-color-1', ui.inputColor1.value);
+            document.documentElement.style.setProperty('--pg-color-2', ui.inputColor2.value);
+            document.documentElement.style.setProperty('--pg-height', ui.inputHeight.value + 'px');
+            document.documentElement.style.setProperty('--pg-radius', ui.inputRadius.value + 'px');
+            document.documentElement.style.setProperty('--pg-glow', `0 0 20px ${ui.inputColor1.value}66`);
+
+            ui.displayTitle.textContent = ui.inputLabel.value;
+            ui.displayPercent.textContent = val + '%';
+            ui.valProgress.textContent = val + '%';
+            ui.valHeight.textContent = ui.inputHeight.value + 'px';
+            ui.valRadius.textContent = ui.inputRadius.value + 'px';
+
+            ui.urlPreview.textContent = baseUrl + '?id=' + ui.inputSlug.value;
+        };
+
+        const loadState = async (id) => {
+            try {
+                const snap = await getDoc(doc(db, "progressbars", id));
+                if (snap.exists()) {
+                    const d = snap.data();
+                    ui.inputLabel.value = d.l || "Проект";
+                    ui.inputProgress.value = d.p || 75;
+                    ui.inputColor1.value = d.c1 || "#6366f1";
+                    ui.inputColor2.value = d.c2 || "#a855f7";
+                    ui.inputHeight.value = d.h || 24;
+                    ui.inputRadius.value = d.r || 12;
+                    ui.inputMode.value = d.m || "manual";
+                    ui.inputSlug.value = id;
+                    syncStyles();
+
+                    if (isEmbed()) {
+                        document.body.classList.add('is-embedded');
+                        ui.panel.classList.add('hidden');
+                    } else {
+                        ui.btnBack.classList.remove('hidden');
+                    }
+
+                    // Enable real-time updates for existing bars
+                    onSnapshot(doc(db, "progressbars", id), (s) => {
+                        if (s.exists() && document.activeElement.tagName !== 'INPUT') {
+                            const rd = s.data();
+                            ui.inputLabel.value = rd.l;
+                            ui.inputProgress.value = rd.p;
+                            ui.inputColor1.value = rd.c1;
+                            ui.inputColor2.value = rd.c2;
+                            ui.inputHeight.value = rd.h;
+                            ui.inputRadius.value = rd.r;
+                            ui.inputMode.value = rd.m;
+                            syncStyles();
+                        }
+                    });
+                }
+            } catch (e) { console.error(e); }
+        };
+
+        const handleSave = async () => {
+            const id = ui.inputSlug.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+            if (!id) { alert("Введите ID!"); return; }
+
+            ui.btnSave.disabled = true;
+            ui.btnSave.textContent = "Сохранение...";
+
+            try {
+                await setDoc(doc(db, "progressbars", id), {
+                    l: ui.inputLabel.value,
+                    p: ui.inputProgress.value,
+                    c1: ui.inputColor1.value,
+                    c2: ui.inputColor2.value,
+                    h: ui.inputHeight.value,
+                    r: ui.inputRadius.value,
+                    m: ui.inputMode.value,
+                    updatedAt: Date.now()
+                });
+
+                ui.toast.classList.add('show');
+                setTimeout(() => ui.toast.classList.remove('show'), 3000);
+
+                const newUrl = baseUrl + '?id=' + id;
+                window.history.pushState({}, '', newUrl);
+                ui.btnBack.classList.remove('hidden');
+            } catch (e) {
+                alert("Ошибка сохранения. Проверьте правила Firebase или консоль.");
+                console.error(e);
+            } finally {
+                ui.btnSave.disabled = false;
+                ui.btnSave.textContent = "Сохранить и создать ссылку";
+            }
+        };
+
+        const randomize = () => {
+            const randomHex = () => '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+            ui.inputColor1.value = randomHex();
+            ui.inputColor2.value = randomHex();
+            ui.inputHeight.value = Math.floor(Math.random() * 40) + 12;
+            ui.inputRadius.value = Math.floor(Math.random() * 25);
+            syncStyles();
+        };
+
+        // Event Listeners
+        ['input-label', 'input-progress', 'input-mode', 'input-color-1', 'input-color-2', 'input-height', 'input-radius', 'input-slug'].forEach(id => {
+            document.getElementById(id).addEventListener('input', syncStyles);
+        });
+
+        ui.btnSave.addEventListener('click', handleSave);
+        ui.btnRandom.addEventListener('click', randomize);
+
+        // Init logic
+        const init = () => {
+            const id = getUrlId();
+            if (id) {
+                loadState(id);
+            } else {
+                syncStyles();
+            }
+        };
+
+        init();
+    </script>
+</body>
+
+</html>

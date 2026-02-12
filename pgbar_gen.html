@@ -5,8 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Premium Progress Bar Generator</title>
-    <meta name="description"
-        content="Создавайте уникальные прогресс-бары с собственными ссылками и сохранением в облаке.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -14,7 +12,6 @@
         rel="stylesheet">
     <style>
         :root {
-            /* Progress Bar Variables */
             --pg-val: 75%;
             --pg-color-1: #6366f1;
             --pg-color-2: #a855f7;
@@ -23,8 +20,6 @@
             --pg-radius: 12px;
             --pg-glow: 0 0 20px rgba(99, 102, 241, 0.4);
             --pg-animation-speed: 2s;
-
-            /* UI Colors */
             --bg-deep: #0f172a;
             --panel-bg: rgba(30, 41, 59, 0.7);
             --accent: #38bdf8;
@@ -47,18 +42,12 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow-x: hidden;
-            background-image:
-                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 30%),
-                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 30%);
-            transition: background 0.5s ease;
+            background-image: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 30%), radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 30%);
         }
 
         body.is-embedded {
             background: transparent !important;
             background-image: none !important;
-            min-height: unset;
-            height: 100vh;
         }
 
         .container {
@@ -72,30 +61,20 @@
         }
 
         body.is-embedded .container {
-            width: 100%;
-            height: 100%;
             padding: 10px;
-            justify-content: center;
             gap: 0;
         }
 
-        /* --- Preview Section --- */
         .preview-section {
             width: 100%;
             max-width: 800px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 25px;
             text-align: center;
         }
 
         .pg-label {
             font-size: 1.5rem;
             font-weight: 600;
-            color: #f1f5f9;
-            letter-spacing: 0.02em;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            margin-bottom: 25px;
             font-family: 'Outfit', sans-serif;
         }
 
@@ -121,7 +100,7 @@
             background: linear-gradient(90deg, var(--pg-color-1), var(--pg-color-2));
             box-shadow: var(--pg-glow);
             border-radius: var(--pg-radius);
-            transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
+            transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
             position: relative;
         }
 
@@ -135,7 +114,7 @@
             background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.1) 75%, transparent 75%);
             background-size: 40px 40px;
             animation: move-stripes var(--pg-animation-speed) linear infinite;
-            opacity: var(--pg-stripes-opacity, 0.3);
+            opacity: 0.3;
         }
 
         @keyframes move-stripes {
@@ -160,12 +139,9 @@
             font-size: 0.9rem;
             font-weight: 700;
             border: 1px solid var(--border);
-            color: #fff;
             transition: left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
         }
 
-        /* --- Controls Panel --- */
         .controls-panel {
             background: var(--panel-bg);
             backdrop-filter: blur(20px);
@@ -176,7 +152,6 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 25px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
         }
 
         .hidden {
@@ -186,7 +161,7 @@
         .control-group {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
 
         .slug-group {
@@ -195,7 +170,6 @@
             padding: 20px;
             border-radius: 18px;
             border: 1px dashed rgba(56, 189, 248, 0.3);
-            margin-bottom: 10px;
         }
 
         label {
@@ -205,31 +179,14 @@
             display: flex;
             justify-content: space-between;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
 
-        label span {
-            color: var(--accent);
-        }
-
-        input[type="range"] {
-            -webkit-appearance: none;
+        input[type="range"],
+        input[type="text"],
+        select {
             width: 100%;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
+            border-radius: 10px;
             outline: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #fff;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 0 15px var(--accent);
-            border: 3px solid var(--accent);
         }
 
         input[type="text"],
@@ -238,38 +195,14 @@
             border: 1px solid var(--border);
             color: #fff;
             padding: 12px 16px;
-            border-radius: 10px;
-            outline: none;
-            font-size: 1rem;
-            transition: border 0.3s;
-        }
-
-        input[type="text"]:focus,
-        select:focus {
-            border-color: var(--accent);
         }
 
         input[type="color"] {
-            -webkit-appearance: none;
-            border: none;
             width: 100%;
             height: 45px;
             background: transparent;
             cursor: pointer;
-        }
-
-        input[type="color"]::-webkit-color-swatch {
-            border-radius: 10px;
-            border: 2px solid var(--border);
-        }
-
-        .actions {
-            grid-column: 1 / -1;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
+            border: none;
         }
 
         .btn {
@@ -280,54 +213,32 @@
             border-radius: 14px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: 0.3s;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 10px;
-            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
-            text-decoration: none;
         }
 
         .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
         }
 
-        .btn.secondary {
-            background: rgba(255, 255, 255, 0.1);
-            box-shadow: none;
-        }
-
-        /* Notifications */
-        .toast {
+        .save-indicator {
             position: fixed;
-            bottom: 30px;
-            background: #10b981;
-            color: white;
-            padding: 14px 28px;
-            border-radius: 50px;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(16, 185, 129, 0.9);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
             font-weight: 600;
-            transform: translateY(100px);
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 1000;
-            box-shadow: 0 15px 40px rgba(16, 185, 129, 0.4);
+            opacity: 0;
+            transition: 0.3s;
         }
 
-        .toast.show {
-            transform: translateY(0);
-        }
-
-        .back-link {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            opacity: 0.6;
-            transition: opacity 0.3s;
-        }
-
-        .back-link:hover {
+        .save-indicator.show {
             opacity: 1;
         }
     </style>
@@ -335,12 +246,9 @@
 
 <body>
 
-    <a href="?" id="back-btn" class="back-link hidden">← Назад к созданию</a>
-
     <div class="container">
-        <!-- Preview Section -->
         <div class="preview-section">
-            <h1 id="pg-title-display" class="pg-label">Загрузка...</h1>
+            <h1 id="pg-title-display" class="pg-label">Мой проект</h1>
             <div class="progress-wrapper">
                 <div id="pg-percent-display" class="percentage-bubble">75%</div>
                 <div class="progress-track">
@@ -349,72 +257,53 @@
             </div>
         </div>
 
-        <!-- Editor Panel -->
         <div class="controls-panel" id="editor-panel">
             <div class="control-group slug-group">
-                <label>Уникальный ID (часть ссылки) <span id="slug-hint">Обязательно</span></label>
-                <input type="text" id="input-slug" placeholder="например: my-progress">
-                <p style="font-size: 0.75rem; color: var(--accent); margin-top: 5px;" id="full-url-preview"></p>
+                <label>ID ссылки (Slug)</label>
+                <input type="text" id="input-slug" placeholder="Например: goal-2026">
+                <p id="url-preview" style="font-size: 0.75rem; color: var(--accent); margin-top: 5px;"></p>
             </div>
-
             <div class="control-group">
-                <label>Заголовок</label>
+                <label>Текст</label>
                 <input type="text" id="input-label" value="Мой проект">
             </div>
-
             <div class="control-group">
-                <label>Режим <span id="mode-val">Вручную</span></label>
+                <label>Режим</label>
                 <select id="input-mode">
-                    <option value="manual">Вручную (слайдер)</option>
-                    <option value="year">Прогресс года</option>
-                    <option value="month">Прогресс месяца</option>
-                    <option value="week">Прогресс недели</option>
-                    <option value="day">Прогресс дня</option>
+                    <option value="manual">Вручную</option>
+                    <option value="year">Год</option>
+                    <option value="month">Месяц</option>
+                    <option value="week">Неделя</option>
+                    <option value="day">День</option>
                 </select>
             </div>
-
             <div class="control-group">
                 <label>Процент <span id="progress-val">75%</span></label>
                 <input type="range" id="input-progress" min="0" max="100" value="75">
             </div>
-
             <div class="control-group">
-                <label>Цвет 1 (Начало)</label>
+                <label>Цвет 1</label>
                 <input type="color" id="input-color-1" value="#6366f1">
             </div>
-
             <div class="control-group">
-                <label>Цвет 2 (Конец)</label>
+                <label>Цвет 2</label>
                 <input type="color" id="input-color-2" value="#a855f7">
             </div>
-
             <div class="control-group">
                 <label>Высота <span id="height-val">24px</span></label>
                 <input type="range" id="input-height" min="8" max="100" value="24">
             </div>
-
             <div class="control-group">
                 <label>Скругление <span id="radius-val">12px</span></label>
                 <input type="range" id="input-radius" min="0" max="50" value="12">
             </div>
-
-            <div class="actions">
-                <button id="btn-save" class="btn">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
-                        </path>
-                    </svg>
-                    Сохранить и создать ссылку
-                </button>
-                <button id="btn-random" class="btn secondary">
-                    Случайный дизайн
-                </button>
+            <div style="grid-column: 1/-1; display:flex; gap:10px;">
+                <button id="btn-copy" class="btn" style="flex:1">Копировать ссылку</button>
             </div>
         </div>
     </div>
 
-    <div id="toast" class="toast">Настройки сохранены!</div>
+    <div id="save-indicator" class="save-indicator">Сохранено</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -433,42 +322,32 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // UI Selectors
-        const ui = {
-            inputSlug: document.getElementById('input-slug'),
-            inputLabel: document.getElementById('input-label'),
-            inputProgress: document.getElementById('input-progress'),
-            inputMode: document.getElementById('input-mode'),
-            inputColor1: document.getElementById('input-color-1'),
-            inputColor2: document.getElementById('input-color-2'),
-            inputHeight: document.getElementById('input-height'),
-            inputRadius: document.getElementById('input-radius'),
-            btnSave: document.getElementById('btn-save'),
-            btnRandom: document.getElementById('btn-random'),
-            btnBack: document.getElementById('back-btn'),
-            panel: document.getElementById('editor-panel'),
-            toast: document.getElementById('toast'),
-            urlPreview: document.getElementById('full-url-preview'),
-
-            // Displays
+        const els = {
+            slug: document.getElementById('input-slug'),
+            label: document.getElementById('input-label'),
+            progress: document.getElementById('input-progress'),
+            mode: document.getElementById('input-mode'),
+            c1: document.getElementById('input-color-1'),
+            c2: document.getElementById('input-color-2'),
+            h: document.getElementById('input-height'),
+            r: document.getElementById('input-radius'),
+            preview: document.getElementById('url-preview'),
             displayTitle: document.getElementById('pg-title-display'),
-            displayFill: document.getElementById('pg-fill-display'),
             displayPercent: document.getElementById('pg-percent-display'),
-            valProgress: document.getElementById('progress-val'),
-            valHeight: document.getElementById('height-val'),
-            valRadius: document.getElementById('radius-val')
+            btnCopy: document.getElementById('btn-copy'),
+            indicator: document.getElementById('save-indicator'),
+            panel: document.getElementById('editor-panel')
         };
 
+        let saveTimeout;
         const getUrlId = () => new URLSearchParams(window.location.search).get('id');
         const isEmbed = () => new URLSearchParams(window.location.search).has('embed');
-        const baseUrl = window.location.origin + window.location.pathname;
 
-        const syncStyles = () => {
-            const mode = ui.inputMode.value;
-            let val = ui.inputProgress.value;
-
+        const sync = () => {
+            const mode = els.mode.value;
+            let val = els.progress.value;
             if (mode !== 'manual') {
-                ui.inputProgress.disabled = true;
+                els.progress.disabled = true;
                 const now = new Date();
                 if (mode === 'year') {
                     const s = new Date(now.getFullYear(), 0, 1), e = new Date(now.getFullYear() + 1, 0, 1);
@@ -481,128 +360,77 @@
                 } else if (mode === 'day') {
                     val = Math.floor(((now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400) * 100);
                 }
-            } else {
-                ui.inputProgress.disabled = false;
-            }
+            } else els.progress.disabled = false;
 
             document.documentElement.style.setProperty('--pg-val', val + '%');
-            document.documentElement.style.setProperty('--pg-color-1', ui.inputColor1.value);
-            document.documentElement.style.setProperty('--pg-color-2', ui.inputColor2.value);
-            document.documentElement.style.setProperty('--pg-height', ui.inputHeight.value + 'px');
-            document.documentElement.style.setProperty('--pg-radius', ui.inputRadius.value + 'px');
-            document.documentElement.style.setProperty('--pg-glow', `0 0 20px ${ui.inputColor1.value}66`);
+            document.documentElement.style.setProperty('--pg-color-1', els.c1.value);
+            document.documentElement.style.setProperty('--pg-color-2', els.c2.value);
+            document.documentElement.style.setProperty('--pg-height', els.h.value + 'px');
+            document.documentElement.style.setProperty('--pg-radius', els.r.value + 'px');
+            document.documentElement.style.setProperty('--pg-glow', `0 0 20px ${els.c1.value}44`);
 
-            ui.displayTitle.textContent = ui.inputLabel.value;
-            ui.displayPercent.textContent = val + '%';
-            ui.valProgress.textContent = val + '%';
-            ui.valHeight.textContent = ui.inputHeight.value + 'px';
-            ui.valRadius.textContent = ui.inputRadius.value + 'px';
+            els.displayTitle.textContent = els.label.value;
+            els.displayPercent.textContent = val + '%';
+            document.getElementById('progress-val').textContent = val + '%';
+            document.getElementById('height-val').textContent = els.h.value + 'px';
+            document.getElementById('radius-val').textContent = els.r.value + 'px';
+            els.preview.textContent = window.location.origin + window.location.pathname + '?id=' + els.slug.value;
 
-            ui.urlPreview.textContent = baseUrl + '?id=' + ui.inputSlug.value;
+            // Debounced Save
+            if (!isEmbed()) {
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(save, 1000);
+            }
         };
 
-        const loadState = async (id) => {
+        const save = async () => {
+            const id = els.slug.value.trim().toLowerCase();
+            if (!id) return;
             try {
-                const snap = await getDoc(doc(db, "progressbars", id));
-                if (snap.exists()) {
-                    const d = snap.data();
-                    ui.inputLabel.value = d.l || "Проект";
-                    ui.inputProgress.value = d.p || 75;
-                    ui.inputColor1.value = d.c1 || "#6366f1";
-                    ui.inputColor2.value = d.c2 || "#a855f7";
-                    ui.inputHeight.value = d.h || 24;
-                    ui.inputRadius.value = d.r || 12;
-                    ui.inputMode.value = d.m || "manual";
-                    ui.inputSlug.value = id;
-                    syncStyles();
-
-                    if (isEmbed()) {
-                        document.body.classList.add('is-embedded');
-                        ui.panel.classList.add('hidden');
-                    } else {
-                        ui.btnBack.classList.remove('hidden');
-                    }
-
-                    // Enable real-time updates for existing bars
-                    onSnapshot(doc(db, "progressbars", id), (s) => {
-                        if (s.exists() && document.activeElement.tagName !== 'INPUT') {
-                            const rd = s.data();
-                            ui.inputLabel.value = rd.l;
-                            ui.inputProgress.value = rd.p;
-                            ui.inputColor1.value = rd.c1;
-                            ui.inputColor2.value = rd.c2;
-                            ui.inputHeight.value = rd.h;
-                            ui.inputRadius.value = rd.r;
-                            ui.inputMode.value = rd.m;
-                            syncStyles();
-                        }
-                    });
+                await setDoc(doc(db, "progressbars", id), {
+                    l: els.label.value, p: els.progress.value, c1: els.c1.value, c2: els.c2.value,
+                    h: els.h.value, r: els.r.value, m: els.mode.value, updatedAt: Date.now()
+                });
+                els.indicator.classList.add('show');
+                setTimeout(() => els.indicator.classList.remove('show'), 2000);
+                if (getUrlId() !== id) {
+                    const newUrl = window.location.origin + window.location.pathname + '?id=' + id;
+                    window.history.replaceState({}, '', newUrl);
                 }
             } catch (e) { console.error(e); }
         };
 
-        const handleSave = async () => {
-            const id = ui.inputSlug.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
-            if (!id) { alert("Введите ID!"); return; }
-
-            ui.btnSave.disabled = true;
-            ui.btnSave.textContent = "Сохранение...";
-
-            try {
-                await setDoc(doc(db, "progressbars", id), {
-                    l: ui.inputLabel.value,
-                    p: ui.inputProgress.value,
-                    c1: ui.inputColor1.value,
-                    c2: ui.inputColor2.value,
-                    h: ui.inputHeight.value,
-                    r: ui.inputRadius.value,
-                    m: ui.inputMode.value,
-                    updatedAt: Date.now()
+        const load = async (id) => {
+            const snap = await getDoc(doc(db, "progressbars", id));
+            if (snap.exists()) {
+                const d = snap.data();
+                els.label.value = d.l; els.progress.value = d.p; els.c1.value = d.c1; els.c2.value = d.c2;
+                els.h.value = d.h; els.r.value = d.r; els.mode.value = d.m; els.slug.value = id;
+                sync();
+                if (isEmbed()) {
+                    els.panel.classList.add('hidden');
+                    document.body.classList.add('is-embedded');
+                }
+                onSnapshot(doc(db, "progressbars", id), (s) => {
+                    if (s.exists() && document.activeElement.tagName !== 'INPUT') {
+                        const rd = s.data();
+                        els.label.value = rd.l; els.progress.value = rd.p; els.c1.value = rd.c1; els.c2.value = rd.c2;
+                        els.h.value = rd.h; els.r.value = rd.r; els.mode.value = rd.m;
+                        sync();
+                    }
                 });
-
-                ui.toast.classList.add('show');
-                setTimeout(() => ui.toast.classList.remove('show'), 3000);
-
-                const newUrl = baseUrl + '?id=' + id;
-                window.history.pushState({}, '', newUrl);
-                ui.btnBack.classList.remove('hidden');
-            } catch (e) {
-                alert("Ошибка сохранения. Проверьте правила Firebase или консоль.");
-                console.error(e);
-            } finally {
-                ui.btnSave.disabled = false;
-                ui.btnSave.textContent = "Сохранить и создать ссылку";
             }
         };
 
-        const randomize = () => {
-            const randomHex = () => '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-            ui.inputColor1.value = randomHex();
-            ui.inputColor2.value = randomHex();
-            ui.inputHeight.value = Math.floor(Math.random() * 40) + 12;
-            ui.inputRadius.value = Math.floor(Math.random() * 25);
-            syncStyles();
+        Object.values(els).forEach(el => { if (el.tagName === 'INPUT' || el.tagName === 'SELECT') el.oninput = sync; });
+        els.btnCopy.onclick = () => {
+            navigator.clipboard.writeText(els.preview.textContent + '&embed=true');
+            els.btnCopy.textContent = "Скопировано!";
+            setTimeout(() => els.btnCopy.textContent = "Копировать ссылку", 2000);
         };
 
-        // Event Listeners
-        ['input-label', 'input-progress', 'input-mode', 'input-color-1', 'input-color-2', 'input-height', 'input-radius', 'input-slug'].forEach(id => {
-            document.getElementById(id).addEventListener('input', syncStyles);
-        });
-
-        ui.btnSave.addEventListener('click', handleSave);
-        ui.btnRandom.addEventListener('click', randomize);
-
-        // Init logic
-        const init = () => {
-            const id = getUrlId();
-            if (id) {
-                loadState(id);
-            } else {
-                syncStyles();
-            }
-        };
-
-        init();
+        const id = getUrlId();
+        if (id) load(id); else sync();
     </script>
 </body>
 

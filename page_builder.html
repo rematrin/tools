@@ -44,24 +44,6 @@
                 radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 30%);
         }
 
-        /* --- Transitions --- */
-        .fade-in {
-            animation: fadeIn 0.6s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* --- Layout --- */
         .container {
             width: 90%;
             max-width: 800px;
@@ -77,7 +59,6 @@
             display: none !important;
         }
 
-        /* --- Viewer Styles --- */
         #viewer-mode h1 {
             font-family: 'Outfit', sans-serif;
             font-size: 2.5rem;
@@ -93,14 +74,6 @@
             line-height: 1.7;
             color: var(--text-secondary);
             white-space: pre-wrap;
-        }
-
-        /* --- Editor Styles --- */
-        #editor-mode h2 {
-            font-family: 'Outfit', sans-serif;
-            margin-bottom: 30px;
-            font-size: 1.5rem;
-            color: var(--text-primary);
         }
 
         .form-group {
@@ -131,32 +104,14 @@
         input[type="text"]:focus,
         textarea:focus {
             border-color: var(--accent);
-            background: rgba(255, 255, 255, 0.08);
             box-shadow: 0 0 0 4px var(--accent-glow);
         }
 
         textarea {
-            height: 200px;
+            height: 250px;
             resize: vertical;
         }
 
-        .slug-input-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 10px;
-            border-radius: 12px;
-            border: 1px dashed var(--border);
-        }
-
-        .slug-prefix {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            user-select: none;
-        }
-
-        /* --- Button --- */
         .btn {
             background: linear-gradient(135deg, #6366f1, #a855f7);
             color: white;
@@ -171,50 +126,17 @@
             gap: 10px;
             box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
             text-decoration: none;
-            font-size: 1rem;
         }
 
         .btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(99, 102, 241, 0.4);
         }
 
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
+        .btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: none;
         }
 
-        /* --- Loading Spinner --- */
-        .loader {
-            width: 48px;
-            height: 48px;
-            border: 5px solid #fff;
-            border-bottom-color: transparent;
-            border-radius: 50%;
-            display: inline-block;
-            box-sizing: border-box;
-            animation: rotation 1s linear infinite;
-        }
-
-        @keyframes rotation {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        #loading-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-
-        /* --- Success Modal --- */
         .success-area {
             margin-top: 30px;
             padding: 20px;
@@ -225,110 +147,69 @@
         }
 
         .success-link {
-            display: block;
-            margin-top: 10px;
             color: #10b981;
             font-weight: 600;
             word-break: break-all;
         }
 
-        .error-message {
-            color: #ef4444;
-            margin-top: 15px;
-            font-size: 0.875rem;
-        }
-
-        /* Floating Back Button */
-        .back-btn {
+        .nav-tools {
             position: fixed;
-            top: 30px;
-            left: 30px;
-            color: var(--text-secondary);
-            text-decoration: none;
+            top: 20px;
+            left: 20px;
+            right: 20px;
             display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 500;
-            transition: color 0.3s ease;
+            justify-content: space-between;
+            pointer-events: none;
         }
 
-        .back-btn:hover {
-            color: #fff;
+        .nav-tools * {
+            pointer-events: auto;
         }
     </style>
 </head>
 
 <body>
 
-    <a href="#" id="go-back" class="back-btn hidden">
-        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
-            </path>
-        </svg>
-        Назад к созданию
-    </a>
+    <div class="nav-tools">
+        <a href="#" id="go-back" class="btn secondary hidden">← Назад</a>
+        <button id="go-edit" class="btn secondary hidden">📝 Редактировать</button>
+    </div>
 
-    <div class="container fade-in">
-        <!-- Loading State -->
-        <div id="loading-state" class="hidden">
-            <span class="loader"></span>
-            <p>Загрузка...</p>
-        </div>
-
-        <!-- Viewer Mode -->
+    <div class="container" id="main-container">
+        <!-- Viewer -->
         <div id="viewer-mode" class="hidden">
-            <h1 id="page-title">Заголовок страницы</h1>
-            <div id="page-content" class="content">Контент загружается...</div>
+            <h1 id="page-title"></h1>
+            <div id="page-content" class="content"></div>
         </div>
 
-        <!-- Editor Mode -->
+        <!-- Editor -->
         <div id="editor-mode">
-            <h2>Создать новую страницу</h2>
+            <h2 id="editor-heading" style="margin-bottom: 25px;">Создать страницу</h2>
             <div class="form-group">
-                <label for="input-title">Заголовок страницы</label>
-                <input type="text" id="input-title" placeholder="Например: Мой крутой проект">
+                <label>Заголовок</label>
+                <input type="text" id="input-title">
             </div>
-
             <div class="form-group">
-                <label for="input-slug">Уникальный ID (slug)</label>
-                <div class="slug-input-wrapper">
-                    <span class="slug-prefix" id="url-prefix">site.com/page/</span>
-                    <input type="text" id="input-slug" placeholder="cool-project"
-                        style="border:none; background:transparent; padding: 0;">
-                </div>
+                <label>ID (Slug)</label>
+                <input type="text" id="input-slug">
             </div>
-
             <div class="form-group">
-                <label for="input-content">Контент (текст или HTML)</label>
-                <textarea id="input-content" placeholder="Расскажите о чем ваша страница..."></textarea>
+                <label>Контент (Текст или HTML)</label>
+                <textarea id="input-content"></textarea>
             </div>
-
-            <button id="btn-save" class="btn">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
-                    </path>
-                </svg>
-                Опубликовать страницу
-            </button>
-
-            <div id="error-area" class="error-message hidden"></div>
+            <button id="btn-save" class="btn">Опубликовать</button>
 
             <div id="success-area" class="success-area hidden">
-                <p>🚀 Страница успешно создана!</p>
+                <p>🚀 Опубликовано!</p>
                 <a href="#" id="new-page-link" class="success-link" target="_blank"></a>
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Firebase Config (from progressbar.html)
         const firebaseConfig = {
             apiKey: "AIzaSyDBNCQo3rYgmDZkZrGKT-g2t0LlpsfH1Pg",
             authDomain: "tools-c98fd.firebaseapp.com",
@@ -342,166 +223,87 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // UI Elements
-        const editorMode = document.getElementById('editor-mode');
-        const viewerMode = document.getElementById('viewer-mode');
-        const loadingState = document.getElementById('loading-state');
-        const btnSave = document.getElementById('btn-save');
-        const btnBack = document.getElementById('go-back');
-
-        const inputTitle = document.getElementById('input-title');
-        const inputSlug = document.getElementById('input-slug');
-        const inputContent = document.getElementById('input-content');
-        const errorArea = document.getElementById('error-area');
-        const successArea = document.getElementById('success-area');
-        const newPageLink = document.getElementById('new-page-link');
-        const urlPrefixDisplay = document.getElementById('url-prefix');
-
-        const pageTitle = document.getElementById('page-title');
-        const pageContent = document.getElementById('page-content');
-
-        // Logic to determine ID from URL
-        const getSlugFromUrl = () => {
-            const params = new URLSearchParams(window.location.search);
-            const idParam = params.get('id');
-            if (idParam) return idParam;
-
-            // Handle path-based slug site.com/page/myslug
-            const path = window.location.pathname;
-            const match = path.match(/\/page\/([^\/]+)$/);
-            if (match) return match[1];
-
-            return null;
+        const ui = {
+            editor: document.getElementById('editor-mode'),
+            viewer: document.getElementById('viewer-mode'),
+            title: document.getElementById('input-title'),
+            slug: document.getElementById('input-slug'),
+            content: document.getElementById('input-content'),
+            btnSave: document.getElementById('btn-save'),
+            btnEdit: document.getElementById('go-edit'),
+            btnBack: document.getElementById('go-back'),
+            viewTitle: document.getElementById('page-title'),
+            viewContent: document.getElementById('page-content'),
+            success: document.getElementById('success-area'),
+            link: document.getElementById('new-page-link'),
+            heading: document.getElementById('editor-heading')
         };
 
-        const currentSlug = getSlugFromUrl();
+        const getSlug = () => new URLSearchParams(window.location.search).get('id');
+        const base = window.location.origin + window.location.pathname;
 
-        // Update URL prefix display
-        const baseDir = window.location.origin + window.location.pathname;
-        urlPrefixDisplay.textContent = baseDir + '?id=';
+        const showViewer = async (slug) => {
+            const snap = await getDoc(doc(db, "page", slug));
+            if (snap.exists()) {
+                const data = snap.data();
+                ui.viewTitle.textContent = data.title;
+                ui.viewContent.innerHTML = data.content;
+                ui.viewer.classList.remove('hidden');
+                ui.editor.classList.add('hidden');
+                ui.btnEdit.classList.remove('hidden');
+                ui.btnBack.classList.add('hidden');
 
-        const init = async () => {
-            if (currentSlug) {
-                showViewer(currentSlug);
-            } else {
-                showEditor();
-            }
-
-            // Auto-slug generation
-            inputTitle.addEventListener('input', () => {
-                if (!inputSlug.dataset.manual) {
-                    inputSlug.value = inputTitle.value
-                        .toLowerCase()
-                        .replace(/[^a-zа-я0-9\s]/g, '')
-                        .replace(/\s+/g, '-');
-                }
-            });
-
-            inputSlug.addEventListener('input', () => {
-                inputSlug.dataset.manual = "true";
-            });
-        };
-
-        const showLoading = (show) => {
-            loadingState.classList.toggle('hidden', !show);
-            if (show) {
-                editorMode.classList.add('hidden');
-                viewerMode.classList.add('hidden');
+                // Pre-fill editor just in case
+                ui.title.value = data.title;
+                ui.slug.value = slug;
+                ui.slug.disabled = true;
+                ui.content.value = data.content;
             }
         };
 
         const showEditor = () => {
-            showLoading(false);
-            editorMode.classList.remove('hidden');
-            viewerMode.classList.add('hidden');
-            btnBack.classList.add('hidden');
-            document.title = "Создать страницу | Page Builder";
-        };
-
-        const showViewer = async (slug) => {
-            showLoading(true);
-            try {
-                const docRef = doc(db, "page", slug);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    pageTitle.textContent = data.title || "Без заголовка";
-                    pageContent.innerHTML = data.content || ""; // Dangerously set HTML for MVP
-
-                    showLoading(false);
-                    viewerMode.classList.remove('hidden');
-                    btnBack.classList.remove('hidden');
-                    document.title = `${data.title} | Page Viewer`;
-                } else {
-                    showError("Страница не найдена. Возможно, ссылка неверна.");
-                    showEditor();
-                }
-            } catch (err) {
-                console.error(err);
-                showError("Ошибка при загрузке страницы.");
-                showEditor();
+            ui.viewer.classList.add('hidden');
+            ui.editor.classList.remove('hidden');
+            ui.btnEdit.classList.add('hidden');
+            ui.btnBack.classList.remove('hidden');
+            ui.heading.textContent = getSlug() ? "Редактировать страницу" : "Создать страницу";
+            if (!getSlug()) {
+                ui.slug.disabled = false;
+                ui.slug.value = "";
+                ui.title.value = "";
+                ui.content.value = "";
             }
         };
 
-        const showError = (msg) => {
-            errorArea.textContent = msg;
-            errorArea.classList.remove('hidden');
-            setTimeout(() => errorArea.classList.add('hidden'), 5000);
+        ui.btnSave.onclick = async () => {
+            const slug = ui.slug.value.trim();
+            if (!slug) return;
+            ui.btnSave.disabled = true;
+            await setDoc(doc(db, "page", slug), {
+                title: ui.title.value,
+                content: ui.content.value,
+                updatedAt: Date.now()
+            });
+            ui.success.classList.remove('hidden');
+            ui.link.href = base + '?id=' + slug;
+            ui.link.textContent = ui.link.href;
+            ui.btnSave.disabled = false;
+            ui.btnSave.textContent = "Сохранено!";
+            setTimeout(() => ui.btnSave.textContent = "Обновить", 2000);
         };
 
-        const handleSave = async () => {
-            const title = inputTitle.value.trim();
-            const slug = inputSlug.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
-            const content = inputContent.value.trim();
+        ui.btnEdit.onclick = showEditor;
+        ui.btnBack.onclick = (e) => { e.preventDefault(); location.href = base; };
 
-            if (!title || !slug || !content) {
-                showError("Пожалуйста, заполните все поля.");
-                return;
-            }
-
-            btnSave.disabled = true;
-            btnSave.textContent = "Публикация...";
-
-            try {
-                const pageData = {
-                    title: title,
-                    content: content,
-                    createdAt: new Date().toISOString()
-                };
-
-                await setDoc(doc(db, "page", slug), pageData);
-
-                successArea.classList.remove('hidden');
-                const fullUrl = baseDir + '?id=' + slug;
-                newPageLink.href = fullUrl;
-                newPageLink.textContent = fullUrl;
-
-                btnSave.textContent = "Обновить страницу";
-                btnSave.disabled = false;
-            } catch (err) {
-                console.error(err);
-                showError("Ошибка при сохранении в Firebase. Проверьте консоль.");
-                btnSave.disabled = false;
-                btnSave.textContent = "Опубликовать страницу";
+        // Auto-slug
+        ui.title.oninput = () => {
+            if (!getSlug() && !ui.slug.dataset.manual) {
+                ui.slug.value = ui.title.value.toLowerCase().replace(/[^a-zа-я0-9\s]/g, '').replace(/\s+/g, '-');
             }
         };
+        ui.slug.oninput = () => ui.slug.dataset.manual = true;
 
-        btnSave.addEventListener('click', handleSave);
-        btnBack.addEventListener('click', (e) => {
-            e.preventDefault();
-            window.history.pushState({}, '', baseDir);
-            showEditor();
-        });
-
-        // Listen for browser back/forward
-        window.addEventListener('popstate', () => {
-            const newSlug = getSlugFromUrl();
-            if (newSlug) showViewer(newSlug);
-            else showEditor();
-        });
-
-        init();
+        if (getSlug()) showViewer(getSlug());
     </script>
 </body>
 

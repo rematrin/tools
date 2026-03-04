@@ -2660,6 +2660,32 @@
         if (closeWidgetBtn) closeWidgetBtn.addEventListener('click', closeWidgetMenu);
         widgetSidebarOverlay.addEventListener('click', closeWidgetMenu);
 
+        // --- TWITCH OAUTH GLOBAL HANDLER ---
+        (function handleTwitchOAuth() {
+            const hash = window.location.hash;
+            if (hash && hash.includes('access_token=')) {
+                // Прячем меню виджетов если оно было открыто
+                const params = new URLSearchParams(hash.substring(1));
+                const token = params.get('access_token');
+
+                if (token) {
+                    localStorage.setItem('twitch_access_token', token);
+                    // Очищаем хэш из адресной строки чтобы было красиво
+                    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+
+                    // Сразу открываем сайдбар с виджетами, чтобы было видно результат
+                    setTimeout(() => {
+                        openWidgetMenu();
+                        // Перезагружаем iframe виджета для верности
+                        const iframe = document.getElementById('dashboardIframe');
+                        if (iframe) {
+                            iframe.src = iframe.dataset.src || iframe.src;
+                        }
+                    }, 500);
+                }
+            }
+        })();
+
         // --- AUTH & SYNC ---
         const waitForAuth = setInterval(() => {
             if (window.auth) {

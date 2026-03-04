@@ -372,8 +372,12 @@
         <div id="grid-container" class="grid-container"></div>
 
         <div class="settings-overlay" id="settings-view">
-            <div class="settings-title">Список каналов</div>
-            <textarea id="channels-input" class="channels-input" placeholder="nickname"></textarea>
+            <div class="settings-title">Настройки Twitch</div>
+            <div class="auth-section" id="auth-section">
+                <!-- Кнопка появится здесь -->
+            </div>
+            <textarea id="channels-input" class="channels-input"
+                placeholder="Дополнительные каналы (никнеймы через Enter)"></textarea>
             <div class="settings-actions">
                 <button class="btn btn-cancel" id="cancel-btn">Отмена</button>
                 <button class="btn btn-save" id="save-btn">Сохранить</button>
@@ -386,9 +390,161 @@
         const container = document.getElementById('grid-container');
         const settingsView = document.getElementById('settings-view');
         const channelsInput = document.getElementById('channels-input');
+        const authSection = document.getElementById('auth-section');
 
-        // --- НАСТРОЙКИ КЭША ---
+        // --- НАСТРОЙКИ КЭША И API ---
         const CACHE_DURATION = 5 * 60 * 1000; // 5 минут храним данные (в миллисекундах)
+        const TWITCH_CLIENT_ID = 'bgt9i47e6vnu9r06blq0ucpgyfj3vg';
+
+        // Динамически определяем Redirect URI для поддержки и localhost и github pages
+        let REDIRECT_URI = '';
+        try {
+            REDIRECT_URI = window.top.location.href.split('#')[0];
+        } catch (e) {
+            REDIRECT_URI = 'https://rematrin.github.io/tools/home.html';
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                REDIRECT_URI = `http://${window.location.host}/home.html`;
+            }
+        }
+
+        function getTwitchAuthUrl() {
+            const scope = encodeURIComponent('user:read:follows');
+            return `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${scope}`;
+        }
+
+        function checkAuth() {
+            // Токен теперь перехватывается и сохраняется главным окном (home.html)
+            const token = localStorage.getItem('twitch_access_token');
+            if (token) {
+                authSection.innerHTML = `
+                    <div style="font-size: 13px; color: #34C759; margin-bottom: 10px; font-weight: 600;">✓ Вы авторизованы в Twitch</div>
+                    <button class="btn" id="logout-btn" style="background:#eee; color:#333; width: 100%; margin-bottom: 15px;">Выйти из аккаунта</button>
+                `;
+                document.getElementById('logout-btn').addEventListener('click', () => {
+                    localStorage.removeItem('twitch_access_token');
+                    localStorage.removeItem('twitch_user_id');
+                    localStorage.removeItem('twitch_cache_followed');
+                    checkAuth();
+                    renderWidget();
+                });
+            } else {
+                authSection.innerHTML = `
+                    <button class="btn" id="login-btn" style="background:#9146FF; color:white; width: 100%; margin-bottom: 15px;">Войти через Twitch</button>
+                    <div style="font-size: 11px; color:#999; margin-bottom: 15px;">Войдите, чтобы автоматически подтягивать отслеживаемые каналы.</div>
+                `;
+                document.getElementById('login-btn').addEventListener('click', () => {
+                    // Twitch не позволяет открывать страницу авторизации внутри iframe, 
+                    // поэтому редиректим самое верхнее окно (родительскую вкладку)
+                    if (window.top) {
+                        window.top.location.href = getTwitchAuthUrl();
+                    } else {
+                        window.location.href = getTwitchAuthUrl();
+                    }
+                });
+            }
+        }
+
+        async function fetchUserId(token) {
+            const cachedId = localStorage.getItem('twitch_user_id');
+            if (cachedId) return cachedId;
+
+            try {
+                const res = await fetch('https://api.twitch.tv/helix/users', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Client-Id': TWITCH_CLIENT_ID
+                    }
+                });
+                if (res.status === 401) {
+                    localStorage.removeItem('twitch_access_token');
+                    checkAuth();
+                    throw new Error("Token expired");
+                }
+                const data = await res.json();
+                if (data.data && data.data.length > 0) {
+                    const userId = data.data[0].id;
+                    localStorage.setItem('twitch_user_id', userId);
+                    return userId;
+                }
+            } catch (e) {
+                console.error("Error fetching user ID:", e);
+                return null;
+            }
+        }
+
+        async function fetchFollowedLiveStreams(token, userId) {
+            const cacheKey = 'twitch_cache_followed';
+            const cached = localStorage.getItem(cacheKey);
+
+            if (cached) {
+                const { timestamp, data } = JSON.parse(cached);
+                if (Date.now() - timestamp < CACHE_DURATION) {
+                    return data;
+                }
+            }
+
+            try {
+                // Получаем все живые стримы подписок (до 100 за раз)
+                const res = await fetch(`https://api.twitch.tv/helix/streams/followed?user_id=${userId}&first=100`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Client-Id': TWITCH_CLIENT_ID
+                    }
+                });
+
+                if (res.status === 401) {
+                    localStorage.removeItem('twitch_access_token');
+                    checkAuth();
+                    throw new Error("Token expired");
+                }
+
+                const data = await res.json();
+
+                if (data.data && data.data.length > 0) {
+                    // Получаем аватарки пользователей для этих стримов
+                    const userIds = data.data.map(stream => stream.user_id);
+                    const queryParams = userIds.map(id => `id=${id}`).join('&');
+
+                    const usersRes = await fetch(`https://api.twitch.tv/helix/users?${queryParams}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Client-Id': TWITCH_CLIENT_ID
+                        }
+                    });
+
+                    let usersData = [];
+                    if (usersRes.ok) {
+                        const uData = await usersRes.json();
+                        usersData = uData.data || [];
+                    }
+
+                    // Маппим данные в нужный формат
+                    const liveStreams = data.data.map(stream => {
+                        const userInfo = usersData.find(u => u.id === stream.user_id);
+                        return {
+                            login: stream.user_login,
+                            displayName: stream.user_name,
+                            avatar: userInfo ? userInfo.profile_image_url : "https://static-cdn.jtvnw.net/user-default-pictures-uv/cdd517fe-def4-11e9-948e-784f43822e80-profile_image-70x70.png",
+                            isOnline: true,
+                            game: stream.game_name || "Just Chatting",
+                            viewers: stream.viewer_count
+                        };
+                    });
+
+                    localStorage.setItem(cacheKey, JSON.stringify({
+                        timestamp: Date.now(),
+                        data: liveStreams
+                    }));
+
+                    return liveStreams;
+                }
+            } catch (e) {
+                console.error("Error fetching live streams:", e);
+                if (cached) return JSON.parse(cached).data;
+            }
+            return [];
+        }
+
 
         // --- 1. SKELETON ---
         function renderSkeleton() {
@@ -399,7 +555,7 @@
             container.innerHTML = html;
         }
 
-        // --- 2. DATA & CACHE HANDLING ---
+        // --- 2. DATA & CACHE HANDLING (ДЛЯ ДОП. КАНАЛОВ) ---
         function getStreamersList() {
             const saved = localStorage.getItem('my_twitch_widget_list');
             return saved ? JSON.parse(saved) : defaultStreamers;
@@ -477,17 +633,49 @@
 
         async function renderWidget() {
             renderSkeleton();
-            const streamers = getStreamersList();
+            let allStreamersData = [];
 
-            if (streamers.length === 0) {
-                container.innerHTML = '<div style="grid-column: span 2; text-align:center; color:#999; padding:20px;">Список пуст.</div>';
+            // 1. Пытаемся получить авторизованные стримы
+            const token = localStorage.getItem('twitch_access_token');
+            if (token) {
+                const userId = await fetchUserId(token);
+                if (userId) {
+                    const followedLive = await fetchFollowedLiveStreams(token, userId);
+                    allStreamersData = followedLive;
+                }
+            }
+
+            // 2. Добавляем тех, кто прописан вручную (если они не дублируются)
+            const manualStreamers = getStreamersList();
+
+            // Если мы не авторизованы, но список ручных пуст:
+            if (!token && manualStreamers.length === 0) {
+                container.innerHTML = '<div style="grid-column: span 2; text-align:center; color:#999; padding:20px;">Авторизуйтесь или добавьте каналы вручную.</div>';
                 return;
             }
 
-            const results = await Promise.all(streamers.map(login => fetchStreamerData(login)));
+            if (manualStreamers.length > 0) {
+                const manualResults = await Promise.all(manualStreamers.map(login => fetchStreamerData(login)));
+                manualResults.forEach(item => {
+                    if (item && !allStreamersData.find(s => s.login.toLowerCase() === item.login.toLowerCase())) {
+                        allStreamersData.push(item);
+                    }
+                });
+            }
+
+            if (allStreamersData.length === 0) {
+                container.innerHTML = '<div style="grid-column: span 2; text-align:center; color:#999; padding:20px;">Никто из подписок не онлайн.</div>';
+                return;
+            }
+
             container.innerHTML = '';
 
-            const sortedResults = results.filter(r => r).sort((a, b) => Number(b.isOnline) - Number(a.isOnline));
+            // Сортируем: сначала онлайн по убыванию зрителей (если есть), потом остальные онлайн, потом офлайн
+            const sortedResults = allStreamersData.sort((a, b) => {
+                if (a.isOnline !== b.isOnline) return b.isOnline - a.isOnline;
+                if (a.viewers && b.viewers) return b.viewers - a.viewers;
+                return 0;
+            });
 
             sortedResults.forEach(data => {
                 const card = document.createElement('a');
@@ -497,7 +685,10 @@
 
                 card.innerHTML = `
                     <div class="avatar-wrapper"><img src="${data.avatar}" class="avatar"><div class="status-badge"></div></div>
-                    <div class="info"><div class="username">${data.displayName}</div><div class="category">${data.game}</div></div>
+                    <div class="info">
+                        <div class="username">${data.displayName}</div>
+                        <div class="category">${data.game}</div>
+                    </div>
                 `;
                 container.appendChild(card);
             });
@@ -515,6 +706,7 @@
             renderWidget();
         });
 
+        checkAuth();
         renderWidget();
     </script>
 </body>

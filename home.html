@@ -66,6 +66,15 @@
             outline: none;
             -webkit-touch-callout: none;
             /* Отключаем превью на iOS */
+            -webkit-user-select: none;
+            /* Запрет выделения текста на iOS/Safari */
+            user-select: none;
+        }
+
+        input,
+        textarea {
+            -webkit-user-select: auto;
+            user-select: auto;
         }
 
         html,

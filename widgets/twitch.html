@@ -397,9 +397,14 @@
         const TWITCH_CLIENT_ID = 'bgt9i47e6vnu9r06blq0ucpgyfj3vg';
 
         // Динамически определяем Redirect URI для поддержки и localhost и github pages
-        let REDIRECT_URI = 'https://rematrin.github.io/tools/home.html';
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            REDIRECT_URI = `http://${window.location.host}/home.html`;
+        let REDIRECT_URI = '';
+        try {
+            REDIRECT_URI = window.top.location.href.split('#')[0];
+        } catch (e) {
+            REDIRECT_URI = 'https://rematrin.github.io/tools/home.html';
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                REDIRECT_URI = `http://${window.location.host}/home.html`;
+            }
         }
 
         function getTwitchAuthUrl() {

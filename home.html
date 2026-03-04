@@ -64,6 +64,8 @@
             padding: 0;
             -webkit-tap-highlight-color: transparent;
             outline: none;
+            -webkit-touch-callout: none;
+            /* Отключаем превью на iOS */
         }
 
         html,
@@ -2554,15 +2556,19 @@
             sortables.forEach(s => s.option("disabled", true));
         }
 
-        // Глобальный перехват ПКМ для режима редактирования (только если есть курсор)
+        // Глобальный перехват контекстного меню для режима редактирования
         document.addEventListener('contextmenu', (e) => {
             const hasCursor = window.matchMedia('(pointer: fine)').matches;
-            if (!hasCursor) return;
-
             const item = e.target.closest('.app-item');
+
+            // Если клик/долгое нажатие было по иконке
             if (item) {
-                e.preventDefault();
-                window.enableEditMode();
+                e.preventDefault(); // Всегда отменяем стандартное меню для иконок
+
+                // На ПК сразу включаем режим редактирования (на мобильных это делает таймер touchstart)
+                if (hasCursor) {
+                    window.enableEditMode();
+                }
             }
         });
 

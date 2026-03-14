@@ -796,13 +796,20 @@
 
     async function loadRates() {
       try {
-        const url = `https://open.er-api.com/v6/latest/${base}`; const res = await fetch(url); const data = await res.json(); rates = data.rates || {}; rates[base] = 1;
+        // Мы добавляем ?_t=... чтобы старый Service Worker (если он еще не обновился) точно не отдал старый кэш
+        const url = `https://open.er-api.com/v6/latest/${base}?_t=${Date.now()}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        rates = data.rates || {};
+        rates[base] = 1;
+
         const syncTime = new Date().getTime();
         localStorage.setItem('fxRatesCache', JSON.stringify({ rates, syncTime }));
 
         updatedLbl.textContent = 'Курс обновлен: ' + new Date(syncTime).toLocaleString('ru-RU', {
           hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'
-        }); updatedLbl.classList.remove('animate');
+        });
+        updatedLbl.classList.remove('animate');
         void updatedLbl.offsetWidth; updatedLbl.classList.add('animate');
 
       } catch (e) {
@@ -810,11 +817,11 @@
         if (cached) {
           const parsed = JSON.parse(cached);
           rates = parsed.rates;
-          updatedLbl.textContent = 'Офлайн (обновлено: ' + new Date(parsed.syncTime).toLocaleString('ru-RU', {
+          updatedLbl.textContent = 'Офлайн (сохранено: ' + new Date(parsed.syncTime).toLocaleString('ru-RU', {
             hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'
           }) + ')';
         } else {
-          updatedLbl.textContent = 'Не удалось загрузить курсы (нужен интернет).';
+          updatedLbl.textContent = 'Нет сети и нет старых курсов.';
         }
       }
     }

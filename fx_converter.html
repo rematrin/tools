@@ -796,7 +796,7 @@
 
     async function loadRates() {
       try {
-        const url = `https://open.er-api.com/v6/latest/${base}`; const res = await fetch(url); const data = await res.json(); rates = data.rates || {}; rates[base] = 1; updatedLbl.textContent = 'Курс обновлен: ' + new Date().toLocaleString('ru-RU', {
+        const url = `https://open.er-api.com/v6/latest/${base}`; const res = await fetch(url); const data = await res.json(); rates = data.rates || {}; rates[base] = 1; const updDate = data.time_last_update_unix ? new Date(data.time_last_update_unix * 1000) : new Date(); updatedLbl.textContent = 'Курс обновлен: ' + updDate.toLocaleString('ru-RU', {
           hour: '2-digit',
           minute: '2-digit',
           day: '2-digit',

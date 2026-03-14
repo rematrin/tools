@@ -7,6 +7,22 @@
     <title>Home</title>
     <link rel="icon" type="image/svg+xml" href="house-favicon.svg">
     <link rel="apple-touch-icon" href="house-favicon.svg">
+
+    <!-- PWA -->
+    <link rel="manifest" href="home_manifest.json">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Home">
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW reg failed', err));
+            });
+        }
+    </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js" defer></script>
     <script>
         // --- CRITICAL WALLPAPER LOADER ---

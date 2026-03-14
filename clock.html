@@ -7,6 +7,22 @@
   <title>Мировые часы</title>
   <link rel="icon" type="image/png" href="clock.png">
   <link rel="apple-touch-icon" href="clock2.png">
+
+  <!-- PWA -->
+  <link rel="manifest" href="clock_manifest.json">
+  <meta name="theme-color" content="#141519">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Часы">
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed', err));
+      });
+    }
+  </script>
+
   <link rel="stylesheet" href="theme.css">
 
   <style>

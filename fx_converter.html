@@ -796,17 +796,27 @@
 
     async function loadRates() {
       try {
-        const url = `https://open.er-api.com/v6/latest/${base}`; const res = await fetch(url); const data = await res.json(); rates = data.rates || {}; rates[base] = 1; const updDate = data.time_last_update_unix ? new Date(data.time_last_update_unix * 1000) : new Date(); updatedLbl.textContent = 'Курс обновлен: ' + updDate.toLocaleString('ru-RU', {
-          hour: '2-digit',
-          minute: '2-digit',
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        }); updatedLbl.classList.remove('animate');
-        void updatedLbl.offsetWidth; // сброс анимации
-        updatedLbl.classList.add('animate');
+        const url = `https://open.er-api.com/v6/latest/${base}`; const res = await fetch(url); const data = await res.json(); rates = data.rates || {}; rates[base] = 1;
+        const syncTime = new Date().getTime();
+        localStorage.setItem('fxRatesCache', JSON.stringify({ rates, syncTime }));
 
-      } catch (e) { updatedLbl.textContent = 'Не удалось загрузить курсы (нужен интернет).'; }
+        updatedLbl.textContent = 'Курс обновлен: ' + new Date(syncTime).toLocaleString('ru-RU', {
+          hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'
+        }); updatedLbl.classList.remove('animate');
+        void updatedLbl.offsetWidth; updatedLbl.classList.add('animate');
+
+      } catch (e) {
+        const cached = localStorage.getItem('fxRatesCache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          rates = parsed.rates;
+          updatedLbl.textContent = 'Офлайн (обновлено: ' + new Date(parsed.syncTime).toLocaleString('ru-RU', {
+            hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'
+          }) + ')';
+        } else {
+          updatedLbl.textContent = 'Не удалось загрузить курсы (нужен интернет).';
+        }
+      }
     }
     refreshBtn.addEventListener('click', loadRates);
 

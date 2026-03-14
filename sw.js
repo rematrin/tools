@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tools-pwa-v3';
+const CACHE_NAME = 'tools-pwa-v4';
 const DYNAMIC_CACHE = 'tools-dynamic-image-cache-v1';
 const ASSETS = [
     './fx_converter.html',
@@ -48,16 +48,7 @@ self.addEventListener('fetch', event => {
     }
 
     if (url.hostname === 'open.er-api.com') {
-        // Network first for FX API
-        event.respondWith(
-            fetch(event.request)
-                .then(response => {
-                    const resClone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, resClone));
-                    return response;
-                })
-                .catch(() => caches.match(event.request))
-        );
+        // Bypass ServiceWorker totally so fetch() fails natively when offline
         return;
     }
 

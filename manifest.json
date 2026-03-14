@@ -1,0 +1,20 @@
+{
+  "name": "Конвертер валют",
+  "short_name": "Конвертер",
+  "start_url": "./fx_converter.html",
+  "display": "standalone",
+  "background_color": "#141519",
+  "theme_color": "#141519",
+  "icons": [
+    {
+      "src": "exchange.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "exchange2.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

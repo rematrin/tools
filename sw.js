@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tools-pwa-v5';
+const CACHE_NAME = 'tools-pwa-v6';
 const DYNAMIC_CACHE = 'tools-dynamic-image-cache-v1';
 const ASSETS = [
     './fx_converter.html',
@@ -83,16 +83,9 @@ self.addEventListener('fetch', event => {
                     if (cachedResponse) {
                         return cachedResponse;
                     }
-                    // Fallback for navigation requests
-                    if (event.request.mode === 'navigate') {
-                        if (url.pathname.includes('clock.html')) {
-                            return caches.match('./clock.html', { ignoreSearch: true });
-                        }
-                        if (url.pathname.includes('home.html')) {
-                            return caches.match('./home.html', { ignoreSearch: true });
-                        }
-                        return caches.match('./fx_converter.html', { ignoreSearch: true });
-                    }
+                    // If it's a navigation request and we don't have it in cache, 
+                    // we don't aggressively redirect to fx_converter anymore to avoid wrong page loads.
+                    // We just let it fail or you could return a custom offline.html here in the future.
                 });
         })
     );

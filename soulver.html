@@ -339,8 +339,11 @@
             let s = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
             // Highlight numbers and time (e.g. 15:00)
             s = s.replace(/(\b\d+(?:[\.,:]\d+)?\b)/g, '<span class="hl-num">$1</span>');
-            // Highlight keywords and currency
-            s = s.replace(/([%€\$£₽]|EUR|USD|RUB|GBP|недел[июьея]*|мес[яцв]*|год[а]*|лет|дн[ейя]*|день|час[ова]*|мин[утыа]*)/gi, '<span class="hl-kwd">$1</span>');
+
+            // Highlight keywords and dynamically loaded currencies
+            let curs = Object.keys(exchangeRates).join('|');
+            let kwdRegex = new RegExp(`([%€\\$£₽]|\\b(?:${curs})\\b|недел[июьея]*|мес[яцв]*|год[а]*|лет|дн[ейя]*|день|час[ова]*|мин[утыа]*)`, 'gi');
+            s = s.replace(kwdRegex, '<span class="hl-kwd">$1</span>');
 
             s = s.replace(/\n/g, '<br>');
             if (text.endsWith('\n')) {

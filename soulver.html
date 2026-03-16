@@ -184,6 +184,46 @@
             height: 40px;
             /* corresponds to font-size 20px, line-height 2 */
         }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .soulver-container {
+                padding: 10px;
+            }
+
+            .toolbar {
+                display: none;
+                /* Hide toolbar to save space on mobile */
+            }
+
+            .editor-container {
+                padding: 16px;
+            }
+
+            .editor-textarea,
+            .editor-highlight {
+                top: 16px;
+                left: 16px;
+                right: 16px;
+                bottom: 16px;
+                font-size: 16px;
+            }
+
+            .results-container {
+                width: 120px;
+                /* Make results panel smaller */
+                padding: 16px 12px;
+            }
+
+            .results {
+                font-size: 16px;
+            }
+
+            .result-line {
+                height: 32px;
+                /* corresponds to font-size 16px, line-height 2 */
+            }
+        }
     </style>
 </head>
 

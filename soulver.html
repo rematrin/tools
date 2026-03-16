@@ -263,6 +263,8 @@
 
 3 недели после завтра
 
+через 2 недели
+
 15:00 + 03:00
 
 12:00 - 5 часов`;
@@ -318,30 +320,38 @@
                 if (!s) return '';
 
                 // Date evaluation
-                let dateMatch = s.match(/(\d+(?:\.\d+)?)\s+(дн[\w]*|нед[\w]*|мес[\w]*|год[\w]*|лет)\s+(после|до)\s+(завтра|вчера|сегодня)/);
+                let dateMatch1 = s.match(/(\d+(?:\.\d+)?)\s+(дн[a-zа-яё]*|ден[a-zа-яё]*|нед[a-zа-яё]*|мес[a-zа-яё]*|год[a-zа-яё]*|лет)\s+(после|до)\s+(завтра|вчера|сегодня)/);
+                let dateMatch2 = s.match(/(?:через|спустя)\s+(\d+(?:\.\d+)?)\s+(дн[a-zа-яё]*|ден[a-zа-яё]*|нед[a-zа-яё]*|мес[a-zа-яё]*|год[a-zа-яё]*|лет)/);
+
+                let dateMatch = dateMatch1 || dateMatch2;
                 if (dateMatch) {
                     let num = parseFloat(cleanNumber(dateMatch[1]));
                     let unitStr = dateMatch[2];
-                    let dirStr = dateMatch[3];
-                    let baseStr = dateMatch[4];
+
+                    let dir = 1;
+                    let baseOffset = 0;
+
+                    if (dateMatch1) {
+                        let dirStr = dateMatch1[3];
+                        let baseStr = dateMatch1[4];
+                        dir = (dirStr === 'после') ? 1 : -1;
+                        if (baseStr === 'завтра') baseOffset = 1;
+                        if (baseStr === 'вчера') baseOffset = -1;
+                    }
 
                     let days = 0;
-                    if (unitStr.startsWith('дн')) days = num;
+                    if (unitStr.startsWith('дн') || unitStr.startsWith('ден')) days = num;
                     else if (unitStr.startsWith('нед')) days = num * 7;
                     else if (unitStr.startsWith('мес')) days = num * 30;
                     else if (unitStr.startsWith('год') || unitStr.startsWith('лет')) days = num * 365;
-
-                    let dir = (dirStr === 'после') ? 1 : -1;
-                    let baseOffset = 0;
-                    if (baseStr === 'завтра') baseOffset = 1;
-                    if (baseStr === 'вчера') baseOffset = -1;
 
                     let d = new Date();
                     d.setHours(0, 0, 0, 0);
                     d.setDate(d.getDate() + baseOffset + dir * days);
 
                     let months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-                    return `${d.getDate()} ${months[d.getMonth()]}`;
+                    let resYear = d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : '';
+                    return `${d.getDate()} ${months[d.getMonth()]}${resYear}`;
                 }
 
                 // Currency exchange (e.g. 220 EUR в USD)
@@ -389,10 +399,10 @@
                     if (rhsTimeMatch) {
                         addMins = parseInt(rhsTimeMatch[1], 10) * 60 + parseInt(rhsTimeMatch[2], 10);
                     } else {
-                        let hmMatchH = rest.match(/([\d\.,]+)\s*(час[\w]*)/);
+                        let hmMatchH = rest.match(/([\d\.,]+)\s*(час[a-zа-яё]*)/);
                         if (hmMatchH) addMins += parseFloat(cleanNumber(hmMatchH[1])) * 60;
 
-                        let hmMatchM = rest.match(/([\d\.,]+)\s*(мин[\w]*)/);
+                        let hmMatchM = rest.match(/([\d\.,]+)\s*(мин[a-zа-яё]*)/);
                         if (hmMatchM) addMins += parseFloat(cleanNumber(hmMatchM[1]));
                     }
 

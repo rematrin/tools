@@ -61,6 +61,10 @@ const servicesLinks = [
     {
         href: "folderico.html", title: "Folder Icon Maker",
         icon: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>'
+    },
+    {
+        href: "soulver.html", title: "Умный блокнот",
+        icon: '<rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="12" y1="14" x2="16" y2="14"></line><line x1="12" y1="18" x2="16" y2="18"></line><circle cx="9" cy="14" r="1"></circle><circle cx="9" cy="18" r="1"></circle>'
     }
 
 ];

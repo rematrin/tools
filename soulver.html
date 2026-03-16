@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soulver — Умный блокнот</title>
+
+    <link rel="stylesheet" href="theme.css">
+
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            padding-top: 30px;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg, #f4f5f5);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text, #333);
+        }
+
+        .soulver-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .soulver-window {
+            width: 100%;
+            max-width: 900px;
+            height: 80vh;
+            min-height: 500px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1), 0 5px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #dcdcdc;
+            /* Support dark theme gracefully */
+        }
+
+        [data-theme="dark"] .soulver-window {
+            background: #1e1e1e;
+            border-color: #333;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 24px;
+            font-size: 13px;
+            color: #888;
+            background: #fff;
+        }
+
+        [data-theme="dark"] .toolbar {
+            background: #1e1e1e;
+            color: #aaa;
+        }
+
+        .app-content {
+            display: flex;
+            flex: 1;
+            position: relative;
+            background: #fff;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        [data-theme="dark"] .app-content {
+            background: #1e1e1e;
+            border-top-color: #333;
+        }
+
+        .editor-container {
+            flex: 1;
+            position: relative;
+            background: transparent;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .editor-textarea,
+        .editor-highlight {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            right: 24px;
+            bottom: 24px;
+            margin: 0;
+            padding: 0;
+            font-size: 20px;
+            line-height: 2;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            border: none;
+            outline: none;
+            box-sizing: border-box;
+            white-space: pre;
+            overflow: hidden;
+            letter-spacing: 0.3px;
+        }
+
+        .editor-textarea {
+            color: transparent;
+            background: transparent;
+            caret-color: #000;
+            resize: none;
+            z-index: 2;
+        }
+
+        [data-theme="dark"] .editor-textarea {
+            caret-color: #fff;
+        }
+
+        .editor-highlight {
+            z-index: 1;
+            color: #333;
+            pointer-events: none;
+        }
+
+        [data-theme="dark"] .editor-highlight {
+            color: #e0e0e0;
+        }
+
+        /* Highlight Colors */
+        .hl-num {
+            color: #2A64F6;
+            font-weight: 400;
+        }
+
+        .hl-kwd {
+            color: #C24BB8;
+            font-weight: 400;
+        }
+
+        [data-theme="dark"] .hl-num {
+            color: #5B89FF;
+        }
+
+        [data-theme="dark"] .hl-kwd {
+            color: #E071D7;
+        }
+
+        .results-container {
+            width: 260px;
+            background: #f7f7f7;
+            border-left: 1px solid #e5e5e5;
+            padding: 24px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        [data-theme="dark"] .results-container {
+            background: #1a1a1a;
+            border-left-color: #333;
+        }
+
+        .results {
+            margin: 0;
+            padding: 0;
+            font-size: 20px;
+            line-height: 2;
+            color: #333;
+            text-align: left;
+            white-space: pre;
+            letter-spacing: 0.3px;
+        }
+
+        [data-theme="dark"] .results {
+            color: #e0e0e0;
+        }
+
+        .result-line {
+            height: 40px;
+            /* corresponds to font-size 20px, line-height 2 */
+        }
+    </style>
+</head>
+
+<body>
+    <script src="theme-loader.js"></script>
+    <div id="header-container"></div>
+
+    <div class="soulver-container">
+        <div class="soulver-window">
+
+
+            <div class="toolbar">
+                <div>Запишите проблемы слева (попробуйте ниже)</div>
+                <div>Ответы отображаются справа</div>
+            </div>
+
+            <div class="app-content">
+                <div class="editor-container" id="editorContainer">
+                    <div class="editor-highlight" aria-hidden="true" id="highlighter"></div>
+                    <textarea class="editor-textarea" id="textarea" spellcheck="false" placeholder=""></textarea>
+                </div>
+
+                <div class="results-container" id="resultsContainer">
+                    <div class="results" id="results"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <link rel="stylesheet" href="footer.css">
+    <div id="footer"></div>
+    <script>
+        fetch('footer.html')
+            .then(r => r.text())
+            .then(html => document.getElementById('footer').innerHTML = html);
+    </script>
+    <link rel="stylesheet" href="auth-widget.css">
+    <script type="module" src="nav-widget.js"></script>
+    <script type="module" src="auth-widget.js"></script>
+    <script type="module" src="header.js"></script>
+
+    <script>
+        const textarea = document.getElementById('textarea');
+        const highlighter = document.getElementById('highlighter');
+        const resultsDiv = document.getElementById('results');
+        const editorContainer = document.getElementById('editorContainer');
+        const resultsContainer = document.getElementById('resultsContainer');
+
+        // Sync scroll
+        editorContainer.addEventListener('scroll', () => {
+            resultsContainer.scrollTop = editorContainer.scrollTop;
+            textarea.scrollTop = editorContainer.scrollTop;
+            highlighter.style.transform = `translateY(-${editorContainer.scrollTop}px)`;
+        });
+
+        // Remove scrollbars from internal elements to use the container scroll
+        textarea.style.overflow = 'hidden';
+
+        let exchangeRates = { USD: 1, EUR: 0.92, RUB: 90 };
+
+        // Load real exchange rates
+        fetch('https://open.er-api.com/v6/latest/USD')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.rates) {
+                    exchangeRates = data.rates;
+                    update();
+                }
+            })
+            .catch(err => console.error("Could not fetch rates:", err));
+
+        const defaultText = `350 + 490
+
+35% от $550
+
+220 EUR в USD - 15% скидка
+
+3 недели после завтра
+
+15:00 + 03:00
+
+12:00 - 5 часов`;
+        textarea.value = defaultText;
+
+        textarea.addEventListener('input', () => {
+            adjustHeight();
+            update();
+        });
+
+        function adjustHeight() {
+            // Adjust textarea and highlighter height to match content
+            textarea.style.height = 'auto';
+            highlighter.style.height = 'auto';
+            const scrollH = textarea.scrollHeight;
+            textarea.style.height = scrollH + 'px';
+            highlighter.style.height = scrollH + 'px';
+        }
+
+        function update() {
+            const text = textarea.value;
+            highlighter.innerHTML = applyHighlights(text);
+            const lines = text.split('\n');
+
+            resultsDiv.innerHTML = lines.map(line => {
+                let res = evaluateLine(line);
+                return `<div class="result-line">${res || ''}</div>`;
+            }).join('');
+        }
+
+        function applyHighlights(text) {
+            let s = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            // Highlight numbers and time (e.g. 15:00)
+            s = s.replace(/(\b\d+(?:[\.,:]\d+)?\b)/g, '<span class="hl-num">$1</span>');
+            // Highlight keywords and currency
+            s = s.replace(/([%€\$£₽]|EUR|USD|RUB|GBP|недел[июьея]*|мес[яцв]*|год[а]*|лет|дн[ейя]*|день|час[ова]*|мин[утыа]*)/gi, '<span class="hl-kwd">$1</span>');
+
+            s = s.replace(/\n/g, '<br>');
+            if (text.endsWith('\n')) {
+                s += '<br>';
+            }
+            return s;
+        }
+
+        function cleanNumber(str) {
+            return str.replace(/ /g, '').replace(',', '.');
+        }
+
+        function evaluateLine(line) {
+            try {
+                let s = line.toLowerCase().trim();
+                let isCurrencyOut = null;
+                if (!s) return '';
+
+                // Date evaluation
+                let dateMatch = s.match(/(\d+(?:\.\d+)?)\s+(дн[\w]*|нед[\w]*|мес[\w]*|год[\w]*|лет)\s+(после|до)\s+(завтра|вчера|сегодня)/);
+                if (dateMatch) {
+                    let num = parseFloat(cleanNumber(dateMatch[1]));
+                    let unitStr = dateMatch[2];
+                    let dirStr = dateMatch[3];
+                    let baseStr = dateMatch[4];
+
+                    let days = 0;
+                    if (unitStr.startsWith('дн')) days = num;
+                    else if (unitStr.startsWith('нед')) days = num * 7;
+                    else if (unitStr.startsWith('мес')) days = num * 30;
+                    else if (unitStr.startsWith('год') || unitStr.startsWith('лет')) days = num * 365;
+
+                    let dir = (dirStr === 'после') ? 1 : -1;
+                    let baseOffset = 0;
+                    if (baseStr === 'завтра') baseOffset = 1;
+                    if (baseStr === 'вчера') baseOffset = -1;
+
+                    let d = new Date();
+                    d.setHours(0, 0, 0, 0);
+                    d.setDate(d.getDate() + baseOffset + dir * days);
+
+                    let months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+                    return `${d.getDate()} ${months[d.getMonth()]}`;
+                }
+
+                // Currency exchange (e.g. 220 EUR в USD)
+                s = s.replace(/([\d\.,\s]+)\s*([a-zа-я]{3})\s+в\s+([a-zа-я]{3})/gi, (m, val, c1, c2) => {
+                    let v = parseFloat(cleanNumber(val));
+                    let map = { 'eur': 'EUR', 'евр': 'EUR', 'usd': 'USD', 'дол': 'USD', 'rub': 'RUB', 'руб': 'RUB' };
+                    let from = map[c1.toLowerCase()] || c1.toUpperCase();
+                    let to = map[c2.toLowerCase()] || c2.toUpperCase();
+
+                    if (exchangeRates && exchangeRates[from] && exchangeRates[to]) {
+                        isCurrencyOut = to;
+                        return (v / exchangeRates[from] * exchangeRates[to]).toFixed(4);
+                    }
+                    return val; // fallback
+                });
+
+                // Percentage "от" (e.g. 35% от $550)
+                s = s.replace(/([\d\.,\s]+)\s*%\s*(?:от|of)\s*([\$€£₽]?)\s*([\d\.,\s]+)/gi, (m, p, cur, val) => {
+                    if (cur) isCurrencyOut = cur;
+                    let pv = parseFloat(cleanNumber(p));
+                    let vv = parseFloat(cleanNumber(val));
+                    return ((pv / 100) * vv).toFixed(4);
+                });
+
+                // Discount (e.g. X - 15% скидка)
+                s = s.replace(/([\d\.,\s]+)\s*(?:[\$€£₽a-zа-я]{0,3})?\s*([-+])\s*([\d\.,\s]+)\s*%\s*(?:скидка)?/gi, (m, a, sign, b) => {
+                    let av = parseFloat(cleanNumber(a));
+                    let bv = parseFloat(cleanNumber(b));
+                    let pct = (av * bv / 100);
+                    return sign === '-' ? (av - pct).toFixed(4) : (av + pct).toFixed(4);
+                });
+
+                // Time evaluation (e.g. 15:00 + 03:00, 12:00 - 5 часов)
+                let timeMatch = s.match(/(?:^|\s)(\d{1,2}):(\d{2})\s*([-+])\s*(.+)/);
+                if (timeMatch) {
+                    let baseH = parseInt(timeMatch[1], 10);
+                    let baseM = parseInt(timeMatch[2], 10);
+                    let sign = timeMatch[3];
+                    let rest = timeMatch[4].trim();
+
+                    let timeDir = sign === '+' ? 1 : -1;
+                    let addMins = 0;
+
+                    let rhsTimeMatch = rest.match(/^(\d{1,2}):(\d{2})$/);
+                    if (rhsTimeMatch) {
+                        addMins = parseInt(rhsTimeMatch[1], 10) * 60 + parseInt(rhsTimeMatch[2], 10);
+                    } else {
+                        let hmMatchH = rest.match(/([\d\.,]+)\s*(час[\w]*)/);
+                        if (hmMatchH) addMins += parseFloat(cleanNumber(hmMatchH[1])) * 60;
+
+                        let hmMatchM = rest.match(/([\d\.,]+)\s*(мин[\w]*)/);
+                        if (hmMatchM) addMins += parseFloat(cleanNumber(hmMatchM[1]));
+                    }
+
+                    if (rhsTimeMatch || rest.match(/(час|мин)/)) {
+                        let totalMins = baseH * 60 + baseM + timeDir * addMins;
+                        let days = 0;
+                        while (totalMins < 0) { totalMins += 24 * 60; days--; }
+                        while (totalMins >= 24 * 60) { totalMins -= 24 * 60; days++; }
+
+                        let outH = Math.floor(totalMins / 60);
+                        let outM = Math.round(totalMins % 60);
+                        let resTime = `${String(outH).padStart(2, '0')}:${String(outM).padStart(2, '0')}`;
+                        if (days !== 0) {
+                            resTime += ` (${days > 0 ? '+' : ''}${days} дн)`;
+                        }
+                        return resTime;
+                    }
+                }
+
+                // Cleanup currency symbols
+                if (s.includes('$')) { isCurrencyOut = '$'; s = s.replace(/\$/g, ''); }
+                if (s.includes('€')) { isCurrencyOut = '€'; s = s.replace(/€/g, ''); }
+
+                // Pure math evaluation
+                s = cleanNumber(s);
+                let mathStr = s.replace(/[^\d\.\+\-\*\/\(\)]/g, '');
+
+                if (!mathStr) return '';
+
+                let res = eval(mathStr);
+                if (isNaN(res) || !isFinite(res)) return '';
+
+                let out = res;
+                if (out % 1 !== 0) {
+                    out = out.toFixed(2).replace(/\.00$/, '');
+                    out = out.replace('.', ',');
+                }
+
+                if (isCurrencyOut) {
+                    if (isCurrencyOut === '$' || isCurrencyOut === 'USD') return '$' + out;
+                    if (isCurrencyOut === '€' || isCurrencyOut === 'EUR') return '€' + out;
+                    if (isCurrencyOut === 'RUB') return out + ' ₽';
+                    return out + ' ' + isCurrencyOut;
+                }
+
+                return out;
+            } catch (e) {
+                return '';
+            }
+        }
+
+        // Init
+        adjustHeight();
+        update();
+
+        // Responsive text selection
+        new ResizeObserver(() => {
+            adjustHeight();
+        }).observe(editorContainer);
+
+    </script>
+</body>
+
+</html>

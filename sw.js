@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tools-pwa-v4';
+const CACHE_NAME = 'tools-pwa-v5';
 const DYNAMIC_CACHE = 'tools-dynamic-image-cache-v1';
 const ASSETS = [
     './fx_converter.html',
@@ -69,27 +69,31 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // Cache first for main assets with ignoreSearch true to handle ?fx= or ?tz= params
+    // Network First strategy: Try the network, fallback to cache if offline
     event.respondWith(
-        caches.match(event.request, { ignoreSearch: true })
-            .then(cachedResponse => {
-                return cachedResponse || fetch(event.request).then(response => {
-                    const resClone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, resClone));
-                    return response;
+        fetch(event.request).then(response => {
+            // Copy the response to cache for later offline use
+            const resClone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, resClone));
+            return response;
+        }).catch(() => {
+            // If offline, check the cache
+            return caches.match(event.request, { ignoreSearch: true })
+                .then(cachedResponse => {
+                    if (cachedResponse) {
+                        return cachedResponse;
+                    }
+                    // Fallback for navigation requests
+                    if (event.request.mode === 'navigate') {
+                        if (url.pathname.includes('clock.html')) {
+                            return caches.match('./clock.html', { ignoreSearch: true });
+                        }
+                        if (url.pathname.includes('home.html')) {
+                            return caches.match('./home.html', { ignoreSearch: true });
+                        }
+                        return caches.match('./fx_converter.html', { ignoreSearch: true });
+                    }
                 });
-            })
-            .catch(() => {
-                // Fallback for navigation requests
-                if (event.request.mode === 'navigate') {
-                    if (url.pathname.includes('clock.html')) {
-                        return caches.match('./clock.html', { ignoreSearch: true });
-                    }
-                    if (url.pathname.includes('home.html')) {
-                        return caches.match('./home.html', { ignoreSearch: true });
-                    }
-                    return caches.match('./fx_converter.html', { ignoreSearch: true });
-                }
-            })
+        })
     );
 });

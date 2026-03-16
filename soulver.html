@@ -345,6 +345,8 @@
 
 15 это сколько % от 200
 
+5 часов в минутах
+
 3 недели после завтра
 
 через 2 недели
@@ -402,7 +404,7 @@
 
             // Highlight keywords and dynamically loaded currencies
             let curs = Object.keys(exchangeRates).join('|');
-            let kwdRegex = new RegExp(`([%€\\$£₽]|\\b(?:${curs})\\b|недел[июьея]*|мес[яцв]*|год[а]*|лет|дн[ейя]*|день|час[ова]*|мин[утыа]*|это|сколько|от)`, 'gi');
+            let kwdRegex = new RegExp(`([%€\\$£₽]|\\b(?:${curs})\\b|милисек[ундах]*|миллисек[ундах]*|мсек|сек[ундах]*|недел[июьея]*|мес[яцв]*|год[а]*|лет|дн[ейя]*|день|час[ова]*|мин[утыа]*|это|сколько|от)`, 'gi');
             s = s.replace(kwdRegex, '<span class="hl-kwd">$1</span>');
 
             s = s.replace(/\n/g, '<br>');
@@ -502,6 +504,46 @@
                         return (v / exchangeRates[from] * exchangeRates[to]).toFixed(4);
                     }
                     return val; // fallback
+                });
+
+                // Unit Conversion (e.g. 5 часов в минутах)
+                s = s.replace(/([\d\.,\s]+)\s+([a-zа-яё]+)\s+в\s+([a-zа-яё]+)/gi, (m, val, u1, u2) => {
+                    let v = parseFloat(cleanNumber(val));
+
+                    let timeUnits = {
+                        'мс': 0.001, 'мсек': 0.001, 'милисек': 0.001, 'миллисек': 0.001,
+                        'с': 1, 'сек': 1, 'секунд': 1,
+                        'м': 60, 'мин': 60, 'минут': 60,
+                        'ч': 3600, 'час': 3600,
+                        'д': 86400, 'дн': 86400, 'ден': 86400,
+                        'нед': 604800,
+                        'мес': 2592000,
+                        'г': 31536000, 'год': 31536000, 'лет': 31536000
+                    };
+
+                    const getUnitMatch = (str) => {
+                        let lower = str.toLowerCase();
+                        let longestMatch = null;
+                        for (let key in timeUnits) {
+                            if (lower.startsWith(key)) {
+                                if (!longestMatch || key.length > longestMatch.length) {
+                                    longestMatch = key;
+                                }
+                            }
+                        }
+                        return longestMatch ? timeUnits[longestMatch] : null;
+                    };
+
+                    let mult1 = getUnitMatch(u1);
+                    let mult2 = getUnitMatch(u2);
+
+                    if (mult1 !== null && mult2 !== null) {
+                        isCurrencyOut = u2;
+                        let res = (v * mult1 / mult2);
+                        return res.toFixed(4);
+                    }
+
+                    return m;
                 });
 
                 // X это сколько % от Y

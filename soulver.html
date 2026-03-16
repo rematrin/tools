@@ -114,6 +114,13 @@
             background: transparent;
             overflow-y: auto;
             padding: 24px;
+            /* Скрываем скроллбар */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .editor-container::-webkit-scrollbar {
+            display: none;
         }
 
         .editor-wrapper {
@@ -193,15 +200,6 @@
             padding: 24px;
             overflow-y: auto;
             position: relative;
-            scrollbar-width: none;
-            /* Firefox */
-            -ms-overflow-style: none;
-            /* IE and Edge */
-        }
-
-        .results-container::-webkit-scrollbar {
-            display: none;
-            /* Chrome, Safari and Opera */
         }
 
         [data-theme="dark"] .results-container {

@@ -75,11 +75,37 @@
             position: relative;
             background: #fff;
             border-top: 1px solid #e5e5e5;
+            min-height: 0;
+            /* Prevents flex children from stretching container */
         }
 
         [data-theme="dark"] .app-content {
             background: #1e1e1e;
             border-top-color: #333;
+        }
+
+        .clear-btn {
+            background: #f0f0f0;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #666;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .clear-btn:hover {
+            background: #e0e0e0;
+        }
+
+        [data-theme="dark"] .clear-btn {
+            background: #333;
+            color: #aaa;
+        }
+
+        [data-theme="dark"] .clear-btn:hover {
+            background: #444;
         }
 
         .editor-container {
@@ -90,13 +116,13 @@
             padding: 24px;
         }
 
+        .editor-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
         .editor-textarea,
         .editor-highlight {
-            position: absolute;
-            top: 24px;
-            left: 24px;
-            right: 24px;
-            bottom: 24px;
             margin: 0;
             padding: 0;
             font-size: 20px;
@@ -106,16 +132,19 @@
             outline: none;
             box-sizing: border-box;
             white-space: pre;
-            overflow: hidden;
             letter-spacing: 0.3px;
         }
 
         .editor-textarea {
+            display: block;
+            width: 100%;
+            position: relative;
             color: transparent;
             background: transparent;
             caret-color: #000;
             resize: none;
             z-index: 2;
+            overflow: hidden;
         }
 
         [data-theme="dark"] .editor-textarea {
@@ -123,9 +152,15 @@
         }
 
         .editor-highlight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
             z-index: 1;
             color: #333;
             pointer-events: none;
+            overflow: visible;
         }
 
         [data-theme="dark"] .editor-highlight {
@@ -158,6 +193,15 @@
             padding: 24px;
             overflow-y: auto;
             position: relative;
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* IE and Edge */
+        }
+
+        .results-container::-webkit-scrollbar {
+            display: none;
+            /* Chrome, Safari and Opera */
         }
 
         [data-theme="dark"] .results-container {
@@ -202,10 +246,6 @@
 
             .editor-textarea,
             .editor-highlight {
-                top: 16px;
-                left: 16px;
-                right: 16px;
-                bottom: 16px;
                 font-size: 16px;
             }
 
@@ -236,14 +276,19 @@
 
 
             <div class="toolbar">
-                <div>Запишите проблемы слева (попробуйте ниже)</div>
-                <div>Ответы отображаются справа</div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="toolbar-hint">Запишите проблемы слева (попробуйте ниже)</span>
+                    <button id="clearBtn" class="clear-btn">Очистить примеры</button>
+                </div>
+                <div class="toolbar-hint">Ответы отображаются справа</div>
             </div>
 
             <div class="app-content">
                 <div class="editor-container" id="editorContainer">
-                    <div class="editor-highlight" aria-hidden="true" id="highlighter"></div>
-                    <textarea class="editor-textarea" id="textarea" spellcheck="false" placeholder=""></textarea>
+                    <div class="editor-wrapper">
+                        <div class="editor-highlight" aria-hidden="true" id="highlighter"></div>
+                        <textarea class="editor-textarea" id="textarea" spellcheck="false" placeholder=""></textarea>
+                    </div>
                 </div>
 
                 <div class="results-container" id="resultsContainer">
@@ -269,18 +314,17 @@
         const textarea = document.getElementById('textarea');
         const highlighter = document.getElementById('highlighter');
         const resultsDiv = document.getElementById('results');
-        const editorContainer = document.getElementById('editorContainer');
         const resultsContainer = document.getElementById('resultsContainer');
+        const editorContainer = document.getElementById('editorContainer');
 
         // Sync scroll
         editorContainer.addEventListener('scroll', () => {
             resultsContainer.scrollTop = editorContainer.scrollTop;
-            textarea.scrollTop = editorContainer.scrollTop;
-            highlighter.style.transform = `translateY(-${editorContainer.scrollTop}px)`;
         });
 
-        // Remove scrollbars from internal elements to use the container scroll
-        textarea.style.overflow = 'hidden';
+        resultsContainer.addEventListener('scroll', () => {
+            editorContainer.scrollTop = resultsContainer.scrollTop;
+        });
 
         let exchangeRates = { USD: 1, EUR: 0.92, RUB: 90 };
 
@@ -301,22 +345,40 @@
 
 220 EUR в USD - 15% скидка
 
+15 это сколько % от 200
+
 3 недели после завтра
 
 через 2 недели
+
+01.11.2025 + 2 месяца
+
+1 ноября + 2 месяца
 
 15:00 + 03:00
 
 12:00 - 5 часов`;
         textarea.value = defaultText;
 
+        const clearBtn = document.getElementById('clearBtn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                textarea.value = '';
+                adjustHeight();
+                update();
+                clearBtn.remove();
+            });
+        }
+
         textarea.addEventListener('input', () => {
+            if (textarea.value.trim() !== defaultText.trim() && clearBtn && clearBtn.parentNode) {
+                clearBtn.remove();
+            }
             adjustHeight();
             update();
         });
 
         function adjustHeight() {
-            // Adjust textarea and highlighter height to match content
             textarea.style.height = 'auto';
             highlighter.style.height = 'auto';
             const scrollH = textarea.scrollHeight;
@@ -342,7 +404,7 @@
 
             // Highlight keywords and dynamically loaded currencies
             let curs = Object.keys(exchangeRates).join('|');
-            let kwdRegex = new RegExp(`([%€\\$£₽]|\\b(?:${curs})\\b|недел[июьея]*|мес[яцв]*|год[а]*|лет|дн[ейя]*|день|час[ова]*|мин[утыа]*)`, 'gi');
+            let kwdRegex = new RegExp(`([%€\\$£₽]|\\b(?:${curs})\\b|недел[июьея]*|мес[яцв]*|год[а]*|лет|дн[ейя]*|день|час[ова]*|мин[утыа]*|это|сколько|от)`, 'gi');
             s = s.replace(kwdRegex, '<span class="hl-kwd">$1</span>');
 
             s = s.replace(/\n/g, '<br>');
@@ -365,36 +427,69 @@
                 // Date evaluation
                 let dateMatch1 = s.match(/(\d+(?:\.\d+)?)\s+(дн[a-zа-яё]*|ден[a-zа-яё]*|нед[a-zа-яё]*|мес[a-zа-яё]*|год[a-zа-яё]*|лет)\s+(после|до)\s+(завтра|вчера|сегодня)/);
                 let dateMatch2 = s.match(/(?:через|спустя)\s+(\d+(?:\.\d+)?)\s+(дн[a-zа-яё]*|ден[a-zа-яё]*|нед[a-zа-яё]*|мес[a-zа-яё]*|год[a-zа-яё]*|лет)/);
+                let dateMatch3 = s.match(/(\d{1,2}(?:\.\d{1,2}\.\d{4}|\s*[a-zа-яё]+(?:\s*\d{4})?))\s*([-+])\s*(\d+(?:\.\d+)?)\s+(дн[a-zа-яё]*|ден[a-zа-яё]*|нед[a-zа-яё]*|мес[a-zа-яё]*|год[a-zа-яё]*|лет)/);
 
-                let dateMatch = dateMatch1 || dateMatch2;
+                let dateMatch = dateMatch1 || dateMatch2 || dateMatch3;
                 if (dateMatch) {
-                    let num = parseFloat(cleanNumber(dateMatch[1]));
-                    let unitStr = dateMatch[2];
+                    let num, unitStr, dir = 1, baseOffset = 0, baseDate = new Date();
+                    baseDate.setHours(0, 0, 0, 0);
 
-                    let dir = 1;
-                    let baseOffset = 0;
+                    if (dateMatch3) {
+                        let dateStr = dateMatch3[1].trim();
+                        dir = (dateMatch3[2] === '+') ? 1 : -1;
+                        num = parseFloat(cleanNumber(dateMatch3[3]));
+                        unitStr = dateMatch3[4];
 
-                    if (dateMatch1) {
-                        let dirStr = dateMatch1[3];
-                        let baseStr = dateMatch1[4];
-                        dir = (dirStr === 'после') ? 1 : -1;
-                        if (baseStr === 'завтра') baseOffset = 1;
-                        if (baseStr === 'вчера') baseOffset = -1;
+                        if (/\d{1,2}\.\d{1,2}\.\d{4}/.test(dateStr)) {
+                            let parts = dateStr.split('.');
+                            baseDate = new Date(parts[2], parseInt(parts[1], 10) - 1, parts[0]);
+                        } else {
+                            let strParts = dateStr.split(/\s+/);
+                            let day = parseInt(strParts[0], 10);
+                            let monthStr = strParts[1];
+                            let year = strParts[2] ? parseInt(strParts[2], 10) : baseDate.getFullYear();
+
+                            let monthsMap = {
+                                'янв': 0, 'фев': 1, 'мар': 2, 'апр': 3, 'мая': 4, 'май': 4,
+                                'июн': 5, 'июл': 6, 'авг': 7, 'сен': 8, 'окт': 9, 'ноя': 10, 'дек': 11
+                            };
+
+                            let monthIdx = 0;
+                            for (let m in monthsMap) {
+                                if (monthStr.startsWith(m)) { monthIdx = monthsMap[m]; break; }
+                            }
+                            baseDate = new Date(year, monthIdx, day);
+                        }
+                    } else {
+                        num = parseFloat(cleanNumber(dateMatch[1]));
+                        unitStr = dateMatch[2];
+
+                        if (dateMatch1) {
+                            let dirStr = dateMatch1[3];
+                            let baseStr = dateMatch1[4];
+                            dir = (dirStr === 'после') ? 1 : -1;
+                            if (baseStr === 'завтра') baseOffset = 1;
+                            if (baseStr === 'вчера') baseOffset = -1;
+                        }
                     }
 
-                    let days = 0;
-                    if (unitStr.startsWith('дн') || unitStr.startsWith('ден')) days = num;
-                    else if (unitStr.startsWith('нед')) days = num * 7;
-                    else if (unitStr.startsWith('мес')) days = num * 30;
-                    else if (unitStr.startsWith('год') || unitStr.startsWith('лет')) days = num * 365;
+                    let d = new Date(baseDate.getTime());
+                    d.setDate(d.getDate() + baseOffset);
 
-                    let d = new Date();
-                    d.setHours(0, 0, 0, 0);
-                    d.setDate(d.getDate() + baseOffset + dir * days);
+                    if (unitStr.startsWith('мес')) {
+                        d.setMonth(d.getMonth() + dir * num);
+                    } else if (unitStr.startsWith('год') || unitStr.startsWith('лет')) {
+                        d.setFullYear(d.getFullYear() + dir * num);
+                    } else {
+                        let days = 0;
+                        if (unitStr.startsWith('дн') || unitStr.startsWith('ден')) days = num;
+                        else if (unitStr.startsWith('нед')) days = num * 7;
+                        d.setDate(d.getDate() + dir * days);
+                    }
 
-                    let months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+                    let dispMonths = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
                     let resYear = d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : '';
-                    return `${d.getDate()} ${months[d.getMonth()]}${resYear}`;
+                    return `${d.getDate()} ${dispMonths[d.getMonth()]}${resYear}`;
                 }
 
                 // Currency exchange (e.g. 220 EUR в USD)
@@ -409,6 +504,14 @@
                         return (v / exchangeRates[from] * exchangeRates[to]).toFixed(4);
                     }
                     return val; // fallback
+                });
+
+                // X это сколько % от Y
+                s = s.replace(/([\d\.,\s]+)\s+это\s+сколько\s+%\s+от\s+([\d\.,\s]+)/gi, (m, a, b) => {
+                    let va = parseFloat(cleanNumber(a));
+                    let vb = parseFloat(cleanNumber(b));
+                    isCurrencyOut = '%';
+                    return ((va / vb) * 100).toFixed(4);
                 });
 
                 // Percentage "от" (e.g. 35% от $550)

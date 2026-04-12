@@ -62,10 +62,27 @@ export class IconEditor {
                     this.draw();
                 };
                 this.uploadedImage.onerror = () => {
-                    this.uploadedImage = null;
-                    this.draw();
+                    const fallbackProxy = `https://wsrv.nl/?url=${encodeURIComponent(initialData.icon)}&w=512&h=512&output=png`;
+                    const fallbackImg = new Image();
+                    fallbackImg.crossOrigin = "anonymous";
+                    fallbackImg.onload = () => {
+                        this.uploadedImage = fallbackImg;
+                        this.resetImageState();
+                        this.draw();
+                    };
+                    fallbackImg.onerror = () => {
+                        this.uploadedImage = null;
+                        this.draw();
+                    };
+                    fallbackImg.src = fallbackProxy;
                 };
-                this.uploadedImage.src = initialData.icon;
+
+                if (initialData.icon.startsWith('data:')) {
+                    this.uploadedImage.src = initialData.icon;
+                } else {
+                    const separator = initialData.icon.includes('?') ? '&' : '?';
+                    this.uploadedImage.src = initialData.icon + separator + 'cb=' + new Date().getTime();
+                }
             }
         } else {
             this.resetEditor(true);
@@ -86,33 +103,81 @@ export class IconEditor {
                 </div>
                 <div class="editor-body">
                     <div class="editor-left-col">
-                        <div class="canvas-wrapper">
-                            <canvas id="editorCanvas" width="512" height="512"></canvas>
-                            <div class="grid-overlay">
-                                <div class="grid-row"><div class="grid-col"></div><div class="grid-col"></div><div class="grid-col"></div></div>
-                                <div class="grid-row"><div class="grid-col"></div><div class="grid-col"></div><div class="grid-col"></div></div>
-                                <div class="grid-row"><div class="grid-col"></div><div class="grid-col"></div><div class="grid-col"></div></div>
+                        <div class="editor-canvas-container">
+                            <div class="canvas-wrapper">
+                                <canvas id="editorCanvas" width="512" height="512"></canvas>
+                                <div class="grid-overlay">
+                                    <div class="grid-row"><div class="grid-col"></div><div class="grid-col"></div><div class="grid-col"></div></div>
+                                    <div class="grid-row"><div class="grid-col"></div><div class="grid-col"></div><div class="grid-col"></div></div>
+                                    <div class="grid-row"><div class="grid-col"></div><div class="grid-col"></div><div class="grid-col"></div></div>
+                                </div>
+                            </div>
+
+                            <div class="tools-bar">
+                                <div class="tool-group">
+                                    <button class="tool-btn" data-action="rotate-left" title="Вращать влево">↺</button>
+                                    <button class="tool-btn" data-action="rotate-right" title="Вращать вправо">↻</button>
+                                </div>
+                                <div class="tool-group">
+                                    <button class="tool-btn" data-action="move-left">←</button>
+                                    <button class="tool-btn" data-action="move-up">↑</button>
+                                    <button class="tool-btn" data-action="move-down">↓</button>
+                                    <button class="tool-btn" data-action="move-right">→</button>
+                                </div>
+                                <div class="tool-group">
+                                    <button class="tool-btn" data-action="zoom-out">－</button>
+                                    <button class="tool-btn" data-action="zoom-in">＋</button>
+                                </div>
+                            </div>
+                            <div class="color-picker-bar">
+                                <span style="font-size: 13px; color: #5f6368; font-weight: 500;">Цвет фона:</span>
+                                <div class="color-palette">
+                                    <div class="swatch active" style="background-color: #ffffff; border: 1px solid #e0e0e0;" data-color="#ffffff"></div>
+                                    <div class="swatch" style="background-color: #000000;" data-color="#000000"></div>
+                                    <div class="swatch swatch-transparent" data-color="transparent"></div>
+                                    <div class="swatch swatch-rainbow">
+                                        <input type="color" id="editorCustomColorPicker">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="file" id="editorFileInput" accept="image/*" style="display: none;">
+                    </div>
+                    
+                    <div class="editor-right-col">
+                        <div style="display: flex; gap: 20px;">
+                            <div>
+                                <h4>Предпросмотр</h4>
+                                <div class="preview-box">
+                                    <img id="editorPreviewImg" src="" draggable="false">
+                                </div>
                             </div>
                         </div>
 
-                        <div class="tools-bar">
-                            <div class="tool-group">
-                                <button class="tool-btn" data-action="rotate-left" title="Вращать влево">↺</button>
-                                <button class="tool-btn" data-action="rotate-right" title="Вращать вправо">↻</button>
+                        <div class="editor-inputs">
+                            <div class="modern-input-group">
+                                <div class="modern-input-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                </div>
+                                <div class="modern-input-content">
+                                    <input type="text" id="editorAppUrl" placeholder=" " autocomplete="off">
+                                    <label for="editorAppUrl">Ссылка на сайт</label>
+                                    <span id="urlErrorText" class="error-msg"></span>
+                                </div>
                             </div>
-                            <div class="tool-group">
-                                <button class="tool-btn" data-action="move-left">←</button>
-                                <button class="tool-btn" data-action="move-up">↑</button>
-                                <button class="tool-btn" data-action="move-down">↓</button>
-                                <button class="tool-btn" data-action="move-right">→</button>
-                            </div>
-                            <div class="tool-group">
-                                <button class="tool-btn" data-action="zoom-out">－</button>
-                                <button class="tool-btn" data-action="zoom-in">＋</button>
+                            <div class="modern-input-group">
+                                <div class="modern-input-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                                </div>
+                                <div class="modern-input-content">
+                                    <input type="text" id="editorAppName" placeholder=" " autocomplete="off">
+                                    <label for="editorAppName">Название</label>
+                                </div>
                             </div>
                         </div>
 
-                        <div style="width: 100%; display: flex; flex-direction: column; gap: 5px; margin-top: 5px;">
+                        <div style="width: 100%; display: flex; flex-direction: column; gap: 5px;">
+                            <div style="border-top: 1px solid #ddd; margin: 0 0 5px 0;"></div>
                             <div style="font-size: 14px; color: #5f6368; font-weight: 500;">Выбрать другую иконку:</div>
                             
                             <div class="img-btns-row" style="position: relative;">
@@ -120,14 +185,19 @@ export class IconEditor {
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                                     <span>Файл</span>
                                 </button>
+                                <button class="btn-upload btn-search" id="btnOpenSearch">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                    <span>Каталог</span>
+                                </button>
+                                
                                 <button class="btn-upload btn-fetch" id="btnFetchFromUrl">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                                     <span>С сайта</span>
                                 </button>
                                 
-                                <button class="btn-upload btn-search" id="btnOpenSearch">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                                    <span>Каталог</span>
+                                <button class="btn-upload btn-link" id="btnLoadFromImgUrl">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                    <span>По ссылке</span>
                                 </button>
                                 
                                 <div id="searchPopup" class="search-popup" style="display: none;">
@@ -146,37 +216,6 @@ export class IconEditor {
                                 </div>
                             </div>
                         </div>
-                        <input type="file" id="editorFileInput" accept="image/*" style="display: none;">
-
-                    </div>
-                    <div class="editor-right-col">
-                        <div>
-                            <h4>Предпросмотр</h4>
-                            <div class="preview-box">
-                                <img id="editorPreviewImg" src="" draggable="false">
-                            </div>
-                        </div>
-                        <div>
-                            <h4>Цвет фона</h4>
-                            <div class="color-palette">
-                                <div class="swatch active" style="background-color: #ffffff; border: 1px solid #e0e0e0;" data-color="#ffffff"></div>
-                                <div class="swatch" style="background-color: #000000;" data-color="#000000"></div>
-                                <div class="swatch swatch-transparent" data-color="transparent"></div>
-                                <div class="swatch swatch-rainbow">
-                                    <input type="color" id="editorCustomColorPicker">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="editor-inputs">
-                            <div class="input-group">
-                                <label>Ссылка на сайт<span id="urlErrorText" class="error-msg"></span></label>
-                                <input type="text" id="editorAppUrl" placeholder="Введите URL" autocomplete="off">
-                            </div>
-                            <div class="input-group">
-                                <label>Название</label>
-                                <input type="text" id="editorAppName" placeholder="Введите название" autocomplete="off">
-                            </div>
-                        </div>
                     </div>
                 </div>
                 <div class="editor-footer">
@@ -189,12 +228,13 @@ export class IconEditor {
         <style>
             .editor-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
             .editor-modal { background: white; width: 750px; max-width: 95%; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; color: #202124; font-family: sans-serif; }
-            .editor-header { padding: 20px; text-align: center; font-size: 20px; position: relative; border-bottom: 1px solid #eee; }
-            .editor-close-btn { position: absolute; right: 20px; top: 20px; cursor: pointer; color: #9aa0a6; font-size: 24px; line-height: 1; }
+            .editor-header { padding: 10px 20px; text-align: center; font-size: 18px; position: relative; border-bottom: 1px solid #eee; }
+            .editor-close-btn { position: absolute; right: 20px; top: 10px; cursor: pointer; color: #9aa0a6; font-size: 24px; line-height: 1; }
             .editor-body { display: flex; padding: 20px; gap: 30px; justify-content: center; flex-wrap: wrap; }
             .editor-left-col { display: flex; flex-direction: column; align-items: center; gap: 15px; }
             
-            .canvas-wrapper { width: 300px; height: 300px; position: relative; background: #eee; border: 1px solid #ddd; background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%); background-size: 20px 20px; }
+            .editor-canvas-container { width: 300px; border: 1px solid #ddd; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; background: #fff; }
+            .canvas-wrapper { width: 100%; height: 300px; position: relative; background: #eee; background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%); background-size: 20px 20px; }
             canvas { display: block; width: 100%; height: 100%; }
             
             .grid-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; display: flex; flex-direction: column; }
@@ -203,12 +243,17 @@ export class IconEditor {
             .grid-col { flex: 1; border-right: 1px dashed rgba(255,255,255,0.5); }
             .grid-col:last-child { border-right: none; }
             
-            .tools-bar { display: flex; gap: 15px; width: 100%; justify-content: center; }
-            .tool-group { display: flex; gap: 5px; }
-            .tool-btn { background: #f1f3f4; border: none; cursor: pointer; width: 32px; height: 32px; border-radius: 4px; font-size: 18px; display: flex; align-items: center; justify-content: center; color: #5f6368; }
-            .tool-btn:hover { background: #e8eaed; color: #202124; }
+            .tools-bar { display: flex; gap: 10px; width: 100%; justify-content: space-between; padding: 8px; border-top: 1px solid #ddd; background: #f8f9fa; box-sizing: border-box; height: 50px; }
+            .tool-group { display: flex; gap: 4px; flex: 1; }
+            .tool-group:nth-child(1) { flex: 2; }
+            .tool-group:nth-child(2) { flex: 4; }
+            .tool-group:nth-child(3) { flex: 2; }
+            .tool-btn { background: #fff; border: 1px solid #dadce0; cursor: pointer; flex: 1; height: 100%; border-radius: 6px; font-size: 17px; display: flex; align-items: center; justify-content: center; color: #5f6368; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: background 0.2s, box-shadow 0.2s; padding: 0; margin: 0; }
+            .tool-btn:hover { background: #f1f3f4; color: #202124; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+            
+            .color-picker-bar { display: flex; align-items: center; justify-content: center; gap: 15px; padding: 6px 10px 14px 10px; background: #f8f9fa; }
 
-            .img-btns-row { display: flex; gap: 10px; width: 100%; margin-top: 5px; }
+            .img-btns-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 5px; }
             .btn-upload { background-color: #4285f4; color: white; border: none; border-radius: 6px; padding: 10px 0; width: 100%; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
             .btn-upload:hover { background-color: #3367d6; }
             .btn-fetch { background-color: #34A853; }
@@ -216,6 +261,8 @@ export class IconEditor {
             
             .btn-search { background-color: #8e44ad; }
             .btn-search:hover { background-color: #732d91; }
+            .btn-link { background-color: #f39c12; }
+            .btn-link:hover { background-color: #e67e22; }
 
             .search-popup {
                 position: absolute;
@@ -277,7 +324,7 @@ export class IconEditor {
             .search-item img { width: 28px; height: 28px; transition: transform 0.2s; }
             .search-item:hover img { transform: scale(1.1); }
             
-            .editor-right-col { display: flex; flex-direction: column; gap: 20px; min-width: 250px; flex: 1; max-width: 300px; }
+            .editor-right-col { display: flex; flex-direction: column; justify-content: space-between; min-width: 250px; flex: 1; max-width: 300px; }
             h4 { margin: 0 0 10px 0; font-weight: 500; font-size: 14px; color: #5f6368; }
             
             .preview-box { width: 80px; height: 80px; border-radius: 20px; overflow: hidden; border: 1px solid #eee; background: white; flex-shrink: 0; }
@@ -287,19 +334,107 @@ export class IconEditor {
             .swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.1s; overflow: hidden; position: relative; }
             .swatch:hover { transform: scale(1.1); }
             .swatch.active { border-color: #4285f4; box-shadow: 0 0 0 2px white inset; }
-            .swatch-transparent { background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%); background-size: 8px 8px; background-color: white; }
-            .swatch-rainbow { background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red); }
-            #editorCustomColorPicker { opacity: 0; position: absolute; left: 0; top: 0; width: 100%; height: 100%; cursor: pointer; }
+            .swatch-transparent {
+                background-color: #fff;
+                background-image: 
+                    linear-gradient(45deg, #e0e0e0 25%, transparent 25%, transparent 75%, #e0e0e0 75%, #e0e0e0),
+                    linear-gradient(45deg, #e0e0e0 25%, transparent 25%, transparent 75%, #e0e0e0 75%, #e0e0e0);
+                background-position: 0 0, 5px 5px;
+                background-size: 10px 10px;
+            }
+            .swatch-rainbow { background: transparent; }
+            .swatch-rainbow::before {
+                content: '';
+                position: absolute;
+                top: -4px; left: -4px; right: -4px; bottom: -4px;
+                background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+                border-radius: 50%;
+                z-index: 1;
+            }
+            #editorCustomColorPicker { opacity: 0; position: absolute; left: 0; top: 0; width: 100%; height: 100%; cursor: pointer; z-index: 5; }
             
-            .editor-inputs { margin-top: 10px; display: flex; flex-direction: column; gap: 15px; border-top: 1px solid #eee; padding-top: 20px; }
-            .input-group { display: flex; flex-direction: column; gap: 5px; }
-            .input-group label { font-size: 13px; color: #5f6368; font-weight: 500; display: flex; justify-content: space-between; }
-            .input-group input { padding: 8px 12px; border: 1px solid #dadce0; border-radius: 6px; font-size: 14px; outline: none; transition: border 0.2s; }
-            .input-group input:focus { border-color: #4285f4; }
-            .input-group input.input-error { border-color: #ea4335; background-color: #fce8e6; }
-            .error-msg { color: #ea4335; font-size: 11px; font-weight: 600; display: none; }
+            .editor-inputs { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #eee; padding-top: 15px; }
+            .modern-input-group {
+                display: flex;
+                align-items: center;
+                background: #f8f9fa;
+                border: 1px solid #dadce0;
+                border-radius: 10px;
+                padding: 0 12px;
+                height: 52px;
+                transition: all 0.2s ease;
+                position: relative;
+            }
+            .modern-input-group:focus-within {
+                border-color: #4285f4;
+                background: #fff;
+                box-shadow: 0 0 0 1px #4285f4;
+            }
+            .modern-input-group:has(.input-error) {
+                border-color: #ea4335 !important;
+                background-color: #fce8e6;
+            }
+            .modern-input-group:has(.input-error):focus-within {
+                box-shadow: 0 0 0 1px #ea4335;
+            }
+            .modern-input-icon {
+                margin-right: 12px;
+                color: #5f6368;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: color 0.2s;
+            }
+            .modern-input-content {
+                display: flex;
+                flex: 1;
+                position: relative;
+                height: 100%;
+            }
+            .modern-input-content label {
+                position: absolute;
+                left: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 15px;
+                color: #8E8E93;
+                font-weight: 500;
+                pointer-events: none;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .modern-input-content input {
+                border: none;
+                background: transparent;
+                font-size: 15px;
+                padding: 16px 0 0 0;
+                outline: none;
+                color: #202124;
+                width: 100%;
+                height: 100%;
+                box-sizing: border-box;
+            }
+            
+            /* Animation for Floating Label inside bounds */
+            .modern-input-content input:focus ~ label,
+            .modern-input-content input:not(:placeholder-shown) ~ label {
+                top: 8px;
+                transform: translateY(0) scale(0.75);
+                transform-origin: left top;
+            }
+            
+            /* Focus and Error Colors */
+            .modern-input-group:focus-within .modern-input-icon,
+            .modern-input-group:focus-within .modern-input-content label {
+                color: #4285f4;
+            }
+            .modern-input-group:has(.input-error) .modern-input-icon,
+            .modern-input-group:has(.input-error) .modern-input-content label {
+                color: #ea4335 !important;
+            }
+            
+            .error-msg { position: absolute; right: 0; top: 18px; color: #ea4335; font-size: 11px; font-weight: 600; display: none; }
 
-            .editor-footer { padding: 15px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #eee; background: #f8f9fa; }
+            .editor-footer { padding: 10px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #eee; background: #f8f9fa; }
             .btn { padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; }
             .btn-cancel { background: white; border: 1px solid #dadce0; color: #3c4043; }
             .btn-reset { background: white; border: 1px solid #dadce0; color: #3c4043; }
@@ -327,6 +462,11 @@ export class IconEditor {
         if (urlInput && nameInput) {
             urlInput.addEventListener('input', () => {
                 const urlVal = urlInput.value.trim();
+                
+                urlInput.classList.remove('input-error');
+                const errorMsg = document.getElementById('urlErrorText');
+                if (errorMsg) errorMsg.style.display = 'none';
+
                 if (urlVal.length > 3) {
                     const guessedName = this.extractNameFromUrl(urlVal);
                     if (guessedName && (nameInput.value === '' || nameInput.dataset.autoFilled === 'true')) {
@@ -498,6 +638,85 @@ export class IconEditor {
                         resultsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ea4335; padding: 20px;">Ошибка сети</div>';
                     }
                 }, 500);
+            });
+        }
+
+        // --- ЛОГИКА ЗАГРУЗКИ ПО ССЫЛКЕ ---
+        const btnLoadFromImgUrl = document.getElementById('btnLoadFromImgUrl');
+        if (btnLoadFromImgUrl) {
+            btnLoadFromImgUrl.addEventListener('click', () => {
+                let modal = document.getElementById('iconEditorUrlModal');
+                if (!modal) {
+                    const modalHTML = `
+                        <div class="wp-modal-overlay" id="iconEditorUrlModal" style="z-index: 3000;">
+                            <div class="wp-modal-card">
+                                <h3>Ссылка на изображение</h3>
+                                <input type="text" id="iconEditorUrlInput" class="form-input" placeholder="https://site.com/image.png" autocomplete="off">
+                                <div class="wp-modal-actions">
+                                    <button class="wp-btn-cancel" id="iconEditorUrlCancel">Отмена</button>
+                                    <button class="wp-btn-save" id="iconEditorUrlSave">Сохранить</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.insertAdjacentHTML('beforeend', modalHTML);
+                    modal = document.getElementById('iconEditorUrlModal');
+                    
+                    document.getElementById('iconEditorUrlCancel').onclick = () => modal.classList.remove('active');
+                    
+                    document.getElementById('iconEditorUrlSave').onclick = () => {
+                        const input = document.getElementById('iconEditorUrlInput');
+                        const imgUrl = input.value;
+                        if (imgUrl && imgUrl.trim() !== '') {
+                            const originalBtnContent = btnLoadFromImgUrl.innerHTML;
+                            btnLoadFromImgUrl.innerHTML = `<span>Загрузка...</span>`;
+                            btnLoadFromImgUrl.style.opacity = 0.7;
+
+                            const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(imgUrl.trim())}&w=512&h=512&output=png`;
+
+                            this.uploadedImage = new Image();
+                            this.uploadedImage.crossOrigin = "anonymous";
+
+                            this.uploadedImage.onload = () => {
+                                this.resetImageState();
+                                this.draw();
+                                btnLoadFromImgUrl.innerHTML = originalBtnContent;
+                                btnLoadFromImgUrl.style.opacity = 1;
+                            };
+
+                            this.uploadedImage.onerror = () => {
+                                this.uploadedImage = new Image();
+                                this.uploadedImage.crossOrigin = "anonymous";
+                                this.uploadedImage.onload = () => {
+                                    this.resetImageState();
+                                    this.draw();
+                                    btnLoadFromImgUrl.innerHTML = originalBtnContent;
+                                    btnLoadFromImgUrl.style.opacity = 1;
+                                };
+                                this.uploadedImage.onerror = () => {
+                                    alert('Не удалось загрузить картинку по этой ссылке. Возможно, она недоступна или заблокирована.');
+                                    this.uploadedImage = null;
+                                    this.draw();
+                                    btnLoadFromImgUrl.innerHTML = originalBtnContent;
+                                    btnLoadFromImgUrl.style.opacity = 1;
+                                };
+                                // Пытаемся без прокси, если прокси упал
+                                this.uploadedImage.src = imgUrl.trim();
+                            };
+
+                            this.uploadedImage.src = proxyUrl + '&t=' + new Date().getTime();
+                        }
+                        modal.classList.remove('active');
+                    };
+                }
+                
+                const input = document.getElementById('iconEditorUrlInput');
+                if (input) {
+                    input.value = '';
+                    setTimeout(() => input.focus(), 100); 
+                }
+                
+                setTimeout(() => modal.classList.add('active'), 10);
             });
         }
 

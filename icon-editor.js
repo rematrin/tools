@@ -48,6 +48,9 @@ export class IconEditor {
 
         if (initialData) {
             this.resetEditor(false);
+            const previewBox = document.getElementById('editorPreviewBox');
+            if (previewBox) previewBox.classList.add('can-download');
+
             const nameInput = document.getElementById('editorAppName');
             const urlInput = document.getElementById('editorAppUrl');
 
@@ -86,6 +89,8 @@ export class IconEditor {
             }
         } else {
             this.resetEditor(true);
+            const previewBox = document.getElementById('editorPreviewBox');
+            if (previewBox) previewBox.classList.remove('can-download');
         }
     }
 
@@ -148,8 +153,11 @@ export class IconEditor {
                         <div style="display: flex; gap: 20px;">
                             <div>
                                 <h4>Предпросмотр</h4>
-                                <div class="preview-box">
+                                <div class="preview-box" id="editorPreviewBox">
                                     <img id="editorPreviewImg" src="" draggable="false">
+                                    <div class="download-overlay" id="editorDownloadOverlay" style="display: none;">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -327,8 +335,18 @@ export class IconEditor {
             .editor-right-col { display: flex; flex-direction: column; justify-content: space-between; min-width: 250px; flex: 1; max-width: 300px; }
             h4 { margin: 0 0 10px 0; font-weight: 500; font-size: 14px; color: #5f6368; }
             
-            .preview-box { width: 80px; height: 80px; border-radius: 20px; overflow: hidden; border: 1px solid #eee; background: white; flex-shrink: 0; }
-            .preview-box img { width: 100%; height: 100%; object-fit: contain; }
+            .preview-box { width: 80px; height: 80px; border-radius: 20px; overflow: hidden; border: 1px solid #eee; background: white; flex-shrink: 0; position: relative; }
+            .preview-box img { width: 100%; height: 100%; object-fit: contain; display: block; position: relative; z-index: 1; }
+            
+            .download-overlay {
+                position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex; align-items: center; justify-content: center;
+                color: white; opacity: 0; transition: opacity 0.2s;
+                cursor: pointer; z-index: 2;
+            }
+            .preview-box.can-download .download-overlay { display: flex !important; }
+            .preview-box.can-download:hover .download-overlay { opacity: 1; }
             
             .color-palette { display: flex; gap: 8px; flex-wrap: wrap; }
             .swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.1s; overflow: hidden; position: relative; }
@@ -450,6 +468,21 @@ export class IconEditor {
     }
 
     attachEvents() {
+        const downloadOverlay = document.getElementById('editorDownloadOverlay');
+        if (downloadOverlay) {
+            downloadOverlay.addEventListener('click', () => {
+                const dataUrl = this.canvas.toDataURL('image/png');
+                const nameInput = document.getElementById('editorAppName');
+                let linkName = (nameInput && nameInput.value.trim() !== '') ? nameInput.value.trim() : 'icon';
+                const link = document.createElement('a');
+                link.download = `${linkName}.png`;
+                link.href = dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        }
+
         const fileInput = document.getElementById('editorFileInput');
         fileInput.addEventListener('change', (e) => this.handleUpload(e));
         const triggerBtn = document.getElementById('triggerFileSelect');

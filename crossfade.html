@@ -972,7 +972,7 @@
                     </div>
 
                     <div class="import-box" id="importBox">
-                        <input type="text" class="import-input" id="urlInput" placeholder="Ссылка на YouTube...">
+                        <input type="text" class="import-input" id="urlInput" placeholder="Ссылка на YouTube..." autocomplete="off">
                         <button class="btn-add" onclick="handleInput()">+</button>
                     </div>
 
@@ -1069,7 +1069,12 @@
             range.addEventListener('mouseleave', () => {
                 tooltip.style.opacity = '0';
             });
+
+            if (playlist.length === 0) {
+                document.getElementById('importBox').classList.add('show');
+            }
         }
+
 
 
         function onPlayerReady(event) {
@@ -1426,7 +1431,9 @@
                     }
                     updateButtons();
                     updateUrlState();
+                    document.getElementById('importBox').classList.remove('show');
                 } else {
+
                     alert("Ссылка не распознана");
                 }
             }
@@ -1513,7 +1520,9 @@
             } else {
                 window.scannerPlayer.cuePlaylist({ list: listId });
             }
+            document.getElementById('importBox').classList.remove('show');
         }
+
 
         function updateUrlState() {
             let url = new URL(window.location.href);

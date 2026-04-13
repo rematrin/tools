@@ -21,9 +21,7 @@
             --active-item-bg: var(--active-bg);
         }
 
-        body.dark {
-            /* В темной теме можно сделать неон ярче */
-        }
+
 
         body {
             display: flex;
@@ -72,10 +70,11 @@
         /* --- Левая колонка (Плейлист) --- */
         #playlist-sidebar {
             width: 40%;
-            flex-shrink: 0;
+            flex: 0 0 40%;
             display: flex;
             flex-direction: column;
             max-height: 600px;
+            min-width: 320px;
         }
 
         #playlist-header-row {
@@ -96,6 +95,9 @@
             margin: 0;
             color: var(--text);
             font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         #playlist-count-text {
@@ -176,7 +178,8 @@
         .playlist-scroll-area {
             flex-grow: 1;
             overflow-y: auto;
-            padding-right: 6px;
+            padding-right: 4px;
+            scrollbar-gutter: stable;
         }
 
         .playlist-scroll-area::-webkit-scrollbar {
@@ -210,7 +213,7 @@
         }
 
         .playlist-index {
-            width: 20px;
+            width: 28px;
             text-align: center;
             font-size: 0.85rem;
             color: var(--text-secondary);
@@ -317,8 +320,8 @@
 
         /* --- Правая колонка (Плеер) --- */
         #main-player-area {
-            width: 60%;
-            flex-grow: 1;
+            flex: 1;
+            min-width: 0; /* Важно для flex-shrink и текстовых переполнений */
             display: flex;
             flex-direction: column;
             align-items: center;

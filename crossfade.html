@@ -389,6 +389,7 @@ input[type=range] {
         { id: "Cm-wq1djnzI", title: "nyan.mp3 - Double Door" },
         { id: "jfKfPfyJRdk", title: "Lofi Girl - Hip Hop Radio" }
     ];
+    window.currentListId = null;
 
     const CROSSFADE_DURATION = 8; 
 
@@ -439,8 +440,26 @@ input[type=range] {
     function onPlayerReady(event) {
         playersReadyCount++;
         if(playersReadyCount === 2) {
-            updateUI();
-            loadDeck(p1, trackIndex);
+            let urlParams = new URLSearchParams(window.location.search);
+            let listId = urlParams.get('list');
+            let vIds = urlParams.get('v');
+
+            if (listId) {
+                importPlaylist(listId, true);
+            } else if (vIds) {
+                let ids = vIds.split(',');
+                playlist = [];
+                ids.forEach(id => playlist.push({ id: id, title: "Загрузка..." }));
+                trackIndex = 0;
+                window.currentListId = null;
+                renderPlaylist();
+                fetchTitlesForPlaylist();
+                loadDeck(p1, 0);
+                updateUI();
+            } else {
+                updateUI();
+                loadDeck(p1, trackIndex);
+            }
         }
     }
 
@@ -689,10 +708,12 @@ input[type=range] {
         let listId = extractListId(url);
         if(listId) {
             importPlaylist(listId);
+            input.value = "";
         } else {
             let videoId = extractVideoId(url);
             if(videoId) {
                 playlist.push({ id: videoId, title: "Загрузка..." });
+                window.currentListId = null;
                 renderPlaylist();
                 input.value = "";
                 fetchTitlesForPlaylist();
@@ -702,6 +723,7 @@ input[type=range] {
                     updateUI();
                 }
                 updateButtons();
+                updateUrlState();
             } else {
                 alert("Ссылка не распознана");
             }
@@ -720,13 +742,32 @@ input[type=range] {
         return (match && match[1]) ? match[1] : null;
     }
 
-    function importPlaylist(listId) {
+    function importPlaylist(listId, autoReplace = false) {
         let scanner = (currentDeck === 1 || !isPlaying) ? p2 : p1;
         if(isPlaying && isCrossfading) { alert("Подождите конца перехода"); return; }
         
         scanner.cuePlaylist({list: listId});
         window.isScanning = true;
+        window.autoReplacePlaylist = autoReplace;
+        window.scanningListId = listId;
         document.getElementById('current-track-info').innerText = "Сканирую плейлист...";
+    }
+
+    function updateUrlState() {
+        let url = new URL(window.location.href);
+        if (window.currentListId) {
+            url.searchParams.set('list', window.currentListId);
+            url.searchParams.delete('v');
+        } else {
+            let vIds = playlist.map(item => item.id).join(',');
+            if (vIds && vIds.length < 1500) {
+                url.searchParams.set('v', vIds);
+            } else {
+                url.searchParams.delete('v');
+            }
+            url.searchParams.delete('list');
+        }
+        window.history.replaceState({}, '', url);
     }
 
     function onPlayerStateChange(event) {
@@ -754,19 +795,36 @@ input[type=range] {
         if (window.isScanning && event.data === 5) { 
             let ids = event.target.getPlaylist();
             if(ids && ids.length > 0) {
-                if(confirm(`Найдено ${ids.length} треков. Заменить список?`)) {
+                let shouldReplace = window.autoReplacePlaylist || confirm(`Найдено ${ids.length} треков. Заменить список?`);
+                if(shouldReplace) {
                     playlist = [];
                     trackIndex = 0;
                     currentDeck = 1;
                     p1.stopVideo(); p2.stopVideo();
                     isPlaying = false;
                     updatePlayPauseIcon();
+                    window.currentListId = window.scanningListId;
+                } else {
+                    window.currentListId = null;
                 }
                 ids.forEach(vid => playlist.push({ id: vid, title: "Video ID: " + vid }));
                 renderPlaylist();
                 window.isScanning = false;
+                window.autoReplacePlaylist = false;
+                window.scanningListId = null;
+                updateUrlState();
                 fetchTitlesForPlaylist();
-                if(!isPlaying) updateUI();
+                
+                if(!isPlaying) {
+                    if (shouldReplace) {
+                        loadDeck(p1, 0);
+                    }
+                    updateUI();
+                }
+            } else {
+                window.isScanning = false;
+                window.autoReplacePlaylist = false;
+                document.getElementById('current-track-info').innerText = playlist[trackIndex] ? playlist[trackIndex].title : "Ожидание...";
             }
         }
     }
@@ -797,8 +855,10 @@ input[type=range] {
         }
         playlist = [current, ...others];
         trackIndex = 0;
+        window.currentListId = null;
         renderPlaylist();
         prepareNext();
+        updateUrlState();
     }
 
     function seekTo(val) {

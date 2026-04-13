@@ -239,6 +239,8 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            user-select: none;
+            -webkit-user-drag: none;
         }
 
         .playlist-info {
@@ -426,6 +428,8 @@
             opacity: 1;
             pointer-events: auto;
             cursor: default;
+            user-select: none;
+            -webkit-user-drag: none;
         }
 
 
@@ -646,7 +650,7 @@
                         <div id="wrapper2" class="deck-wrapper deck-bg">
                             <div id="player2" style="width:100%; height:100%;"></div>
                         </div>
-                        <img id="cover-overlay" src="" alt="Cover">
+                        <img id="cover-overlay" src="" alt="Cover" draggable="false">
                     </div>
 
                     <div id="current-track-info">Загрузка...</div>
@@ -860,7 +864,7 @@
                 div.innerHTML = `
                 <div class="playlist-index">${indexContent}</div>
                 <div class="playlist-thumb">
-                    <img src="${thumbUrl}" loading="lazy">
+                    <img src="${thumbUrl}" loading="lazy" draggable="false">
                 </div>
                 <div class="playlist-info">
                     <div class="playlist-title">${track.title}</div>

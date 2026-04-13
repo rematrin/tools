@@ -599,6 +599,129 @@
                 padding-bottom: 20px;
             }
         }
+        .volume-container, .crossfade-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .volume-popover, .crossfade-popover {
+            position: absolute;
+            bottom: calc(100% + 12px);
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+            min-width: 150px; /* Фиксированная ширина для стабильности */
+        }
+
+
+        .volume-container:hover .volume-popover,
+        .crossfade-container:hover .crossfade-popover {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .volume-popover::after, .crossfade-popover::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: var(--card-bg);
+        }
+
+        .popover-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .volume-btn {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            transition: 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .volume-btn:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+            background: var(--hover-bg);
+            transform: scale(1.05);
+        }
+
+        .volume-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        #volumeSlider, #crossfadeSlider {
+            width: 120px; /* Чуть шире */
+            height: 4px;
+            cursor: pointer;
+            accent-color: var(--accent);
+            margin: 0;
+        }
+
+        /* Обертка для слайдера с меткой */
+        .slider-wrapper {
+            position: relative;
+            width: 120px;
+            display: flex;
+            align-items: center;
+        }
+
+        .default-tick {
+            position: absolute;
+            top: 50%;
+            left: 32%; /* 8с при диапазоне 5-15с с учетом отступов */
+            transform: translate(-50%, -50%);
+            width: 2px;
+            height: 12px;
+            background: var(--accent);
+            opacity: 0.5;
+            pointer-events: none;
+            border-radius: 1px;
+        }
+
+
+
+
+
+        @media (max-width: 480px) {
+            .volume-popover, .crossfade-popover {
+                width: 140px;
+            }
+        }
+
+
     </style>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
     <script>
@@ -668,6 +791,22 @@
                     </div>
 
                     <div id="controls">
+                        <div class="crossfade-container">
+                            <div class="crossfade-popover">
+                                <div class="popover-label">Переход: <span id="crossfadeValue">8</span>с</div>
+                                <div class="slider-wrapper">
+                                    <div class="default-tick" title="По умолчанию (8с)"></div>
+                                    <input type="range" id="crossfadeSlider" min="5" max="15" value="8" oninput="changeCrossfade(this.value)">
+                                </div>
+                            </div>
+
+                            <button class="volume-btn" id="crossfadeBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                                </svg>
+                            </button>
+                        </div>
+
                         <button id="prevBtn" class="nav-btn" onclick="prevTrack()">
                             <svg viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M6 6h2v12H6zm3.5 6l8.5 6V6l-8.5 6z" />
@@ -688,6 +827,25 @@
                                 <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
                             </svg>
                         </button>
+
+                        <div class="volume-container">
+                            <div class="volume-popover">
+                                <div class="popover-label">Громкость: <span id="volumeValue">100</span>%</div>
+                                <input type="range" id="volumeSlider" min="0" max="100" value="100" oninput="changeVolume(this.value)">
+                            </div>
+                            <button class="volume-btn" onclick="toggleMute()" id="muteBtn">
+                                <svg id="icon-vol-high" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" opacity="0.4"></path>
+                                </svg>
+                                <svg id="icon-vol-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                                    <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                                    <line x1="23" y1="9" x2="17" y2="15"></line>
+                                    <line x1="17" y1="9" x2="23" y2="15"></line>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                 </div>
@@ -743,7 +901,7 @@
         ];
         window.currentListId = null;
 
-        const CROSSFADE_DURATION = 8;
+        let crossfadeDuration = parseInt(localStorage.getItem('crossfade-duration')) || 8;
 
         // --- YOUTUBE API ---
         var tag = document.createElement('script');
@@ -760,6 +918,10 @@
         var updateTimer;
         var currentMode = 'video';
         var playersReadyCount = 0;
+
+        let playerVolume = parseInt(localStorage.getItem('crossfade-volume')) || 100;
+        let prevVolume = playerVolume;
+
 
         function onYouTubeIframeAPIReady() {
             const playerVars = {
@@ -784,12 +946,23 @@
             renderPlaylist();
             fetchTitlesForPlaylist();
 
+            document.getElementById('volumeSlider').value = playerVolume;
+            document.getElementById('volumeValue').innerText = playerVolume;
+            updateVolumeIcon();
+
+
+            document.getElementById('crossfadeSlider').value = crossfadeDuration;
+            document.getElementById('crossfadeValue').innerText = crossfadeDuration;
+
+
             const range = document.getElementById('progressBar');
+
             range.addEventListener('input', () => isDragging = true);
             range.addEventListener('change', () => { isDragging = false; seekTo(range.value); });
         }
 
         function onPlayerReady(event) {
+            event.target.setVolume(playerVolume);
             playersReadyCount++;
             if (playersReadyCount === 2) {
                 let urlParams = new URLSearchParams(window.location.search);
@@ -1015,7 +1188,7 @@
             }
 
             if (!isCrossfading &&
-                (duration - current) < CROSSFADE_DURATION &&
+                (duration - current) < crossfadeDuration &&
                 (duration - current) > 0.5 &&
                 playlist.length > 1) {
                 performCrossfade();
@@ -1032,15 +1205,19 @@
             nextP.playVideo();
 
             let steps = 40;
-            let stepTime = (CROSSFADE_DURATION * 1000) / steps;
+            let stepTime = (crossfadeDuration * 1000) / steps;
             let vol = 0;
 
             let fadeInt = setInterval(() => {
                 vol += (100 / steps);
                 if (vol > 100) vol = 100;
 
-                nextP.setVolume(vol);
-                activeP.setVolume(100 - vol);
+                let realNextVol = (vol / 100) * playerVolume;
+                let realActiveVol = ((100 - vol) / 100) * playerVolume;
+
+                nextP.setVolume(realNextVol);
+                activeP.setVolume(realActiveVol);
+
 
                 if (vol >= 100) {
                     clearInterval(fadeInt);
@@ -1116,7 +1293,52 @@
             }
         }
 
+
+
+        function changeCrossfade(val) {
+            crossfadeDuration = parseInt(val);
+            localStorage.setItem('crossfade-duration', crossfadeDuration);
+            document.getElementById('crossfadeValue').innerText = val;
+        }
+
+        function changeVolume(val) {
+            playerVolume = parseInt(val);
+            localStorage.setItem('crossfade-volume', playerVolume);
+            document.getElementById('volumeValue').innerText = val;
+            
+            if (!isCrossfading) {
+                let activeP = (currentDeck === 1) ? p1 : p2;
+                if (activeP && activeP.setVolume) activeP.setVolume(playerVolume);
+            }
+            updateVolumeIcon();
+        }
+
+        function updateVolumeIcon() {
+            const high = document.getElementById('icon-vol-high');
+            const mute = document.getElementById('icon-vol-mute');
+            if (playerVolume === 0) {
+                high.style.display = 'none';
+                mute.style.display = 'block';
+            } else {
+                high.style.display = 'block';
+                mute.style.display = 'none';
+            }
+        }
+
+        function toggleMute() {
+            if (playerVolume > 0) {
+                prevVolume = playerVolume;
+                changeVolume(0);
+                document.getElementById('volumeSlider').value = 0;
+            } else {
+                let target = prevVolume > 0 ? prevVolume : 100;
+                changeVolume(target);
+                document.getElementById('volumeSlider').value = target;
+            }
+        }
+
         function extractVideoId(url) {
+
             var regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
             var match = url.match(regExp);
             return (match && match[7].length == 11) ? match[7] : false;

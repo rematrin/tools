@@ -281,8 +281,15 @@
         }
 
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .import-input {
@@ -323,7 +330,8 @@
         /* --- Правая колонка (Плеер) --- */
         #main-player-area {
             flex: 1;
-            min-width: 0; /* Важно для flex-shrink и текстовых переполнений */
+            min-width: 0;
+            /* Важно для flex-shrink и текстовых переполнений */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -424,13 +432,15 @@
         }
 
         /* ЛОГИКА РЕЖИМОВ */
-        .mode-audio #cover-overlay {
-            opacity: 1;
+        .mode-audio #cover-overlay,
+        .is-empty #cover-overlay {
+            opacity: 1 !important;
             pointer-events: auto;
             cursor: default;
             user-select: none;
             -webkit-user-drag: none;
         }
+
 
 
         /* 3. Инфо о треке */
@@ -530,7 +540,46 @@
             border-radius: 2px;
             accent-color: var(--accent);
             cursor: pointer;
+            width: 100%;
         }
+
+        .seek-wrapper {
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .seek-tooltip {
+            position: absolute;
+            bottom: calc(100% + 12px);
+            left: 0;
+            background: rgba(20, 20, 20, 0.95);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateX(-50%);
+            transition: opacity 0.2s, transform 0.1s;
+            z-index: 150;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .seek-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(20, 20, 20, 0.95);
+        }
+
 
         /* 6. Контролы */
         #controls {
@@ -599,14 +648,42 @@
                 padding-bottom: 20px;
             }
         }
-        .volume-container, .crossfade-container {
+
+        /* 8. Заглушки */
+        .empty-list-stub {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+            gap: 16px;
+        }
+
+        .empty-list-stub svg {
+            width: 48px;
+            height: 48px;
+            opacity: 0.3;
+        }
+
+        .empty-list-stub p {
+            font-size: 0.9rem;
+            margin: 0;
+            line-height: 1.5;
+            opacity: 0.7;
+        }
+
+        .volume-container,
+        .crossfade-container {
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        .volume-popover, .crossfade-popover {
+        .volume-popover,
+        .crossfade-popover {
             position: absolute;
             bottom: calc(100% + 12px);
             left: 50%;
@@ -625,7 +702,8 @@
             gap: 8px;
             z-index: 100;
             backdrop-filter: blur(8px);
-            min-width: 150px; /* Фиксированная ширина для стабильности */
+            min-width: 150px;
+            /* Фиксированная ширина для стабильности */
         }
 
 
@@ -636,7 +714,8 @@
             transform: translateX(-50%) translateY(0);
         }
 
-        .volume-popover::after, .crossfade-popover::after {
+        .volume-popover::after,
+        .crossfade-popover::after {
             content: '';
             position: absolute;
             top: 100%;
@@ -667,7 +746,7 @@
             height: 48px;
             border-radius: 50%;
             transition: 0.2s;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
         }
 
         .volume-btn:hover {
@@ -682,8 +761,10 @@
             height: 20px;
         }
 
-        #volumeSlider, #crossfadeSlider {
-            width: 120px; /* Чуть шире */
+        #volumeSlider,
+        #crossfadeSlider {
+            width: 120px;
+            /* Чуть шире */
             height: 4px;
             cursor: pointer;
             accent-color: var(--accent);
@@ -701,7 +782,8 @@
         .default-tick {
             position: absolute;
             top: 50%;
-            left: 32%; /* 8с при диапазоне 5-15с с учетом отступов */
+            left: 32%;
+            /* 8с при диапазоне 5-15с с учетом отступов */
             transform: translate(-50%, -50%);
             width: 2px;
             height: 12px;
@@ -716,12 +798,12 @@
 
 
         @media (max-width: 480px) {
-            .volume-popover, .crossfade-popover {
+
+            .volume-popover,
+            .crossfade-popover {
                 width: 140px;
             }
         }
-
-
     </style>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
     <script>
@@ -786,9 +868,13 @@
 
                     <div class="seek-container">
                         <span id="currentTime">0:00</span>
-                        <input type="range" id="progressBar" value="0" step="0.1">
+                        <div class="seek-wrapper">
+                            <input type="range" id="progressBar" value="0" step="0.1">
+                            <div id="seekTooltip" class="seek-tooltip">0:00</div>
+                        </div>
                         <span id="totalTime">0:00</span>
                     </div>
+
 
                     <div id="controls">
                         <div class="crossfade-container">
@@ -796,7 +882,8 @@
                                 <div class="popover-label">Переход: <span id="crossfadeValue">8</span>с</div>
                                 <div class="slider-wrapper">
                                     <div class="default-tick" title="По умолчанию (8с)"></div>
-                                    <input type="range" id="crossfadeSlider" min="5" max="15" value="8" oninput="changeCrossfade(this.value)">
+                                    <input type="range" id="crossfadeSlider" min="5" max="15" value="8"
+                                        oninput="changeCrossfade(this.value)">
                                 </div>
                             </div>
 
@@ -831,15 +918,18 @@
                         <div class="volume-container">
                             <div class="volume-popover">
                                 <div class="popover-label">Громкость: <span id="volumeValue">100</span>%</div>
-                                <input type="range" id="volumeSlider" min="0" max="100" value="100" oninput="changeVolume(this.value)">
+                                <input type="range" id="volumeSlider" min="0" max="100" value="100"
+                                    oninput="changeVolume(this.value)">
                             </div>
                             <button class="volume-btn" onclick="toggleMute()" id="muteBtn">
-                                <svg id="icon-vol-high" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <svg id="icon-vol-high" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
                                     <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
                                     <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                                     <path d="M19.07 4.93a10 10 0 0 1 0 14.14" opacity="0.4"></path>
                                 </svg>
-                                <svg id="icon-vol-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                                <svg id="icon-vol-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" style="display:none;">
                                     <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
                                     <line x1="23" y1="9" x2="17" y2="15"></line>
                                     <line x1="17" y1="9" x2="23" y2="15"></line>
@@ -857,9 +947,11 @@
                             <div id="playlist-count-text">0 видео из 0</div>
                         </div>
                         <div class="playlist-header-actions">
-                            <button class="icon-action-btn btn-shuffle-large" onclick="shufflePlaylist()" data-tooltip="Перемешать">
+                            <button class="icon-action-btn btn-shuffle-large" onclick="shufflePlaylist()"
+                                data-tooltip="Перемешать">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3" />
+                                    <path
+                                        d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3" />
                                 </svg>
                             </button>
                             <button class="icon-action-btn" onclick="copyPlaylistLink()"
@@ -869,7 +961,8 @@
                                     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                                 </svg>
                             </button>
-                            <button class="icon-action-btn" onclick="toggleImportBox()" data-tooltip="Редактировать плейлист">
+                            <button class="icon-action-btn" onclick="toggleImportBox()"
+                                data-tooltip="Редактировать плейлист">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -893,13 +986,9 @@
 
     <script>
         // --- ДАННЫЕ И НАСТРОЙКИ ---
-        let playlist = [
-            { id: "CsQ86xtn2V0", title: "nyan.mp3 - Забывал" },
-            { id: "xbpQ8TXfTi0", title: "nyan.mp3 - Ну-ну-ну" },
-            { id: "Cm-wq1djnzI", title: "nyan.mp3 - Double Door" },
-            { id: "jfKfPfyJRdk", title: "Lofi Girl - Hip Hop Radio" }
-        ];
+        let playlist = [];
         window.currentListId = null;
+
 
         let crossfadeDuration = parseInt(localStorage.getItem('crossfade-duration')) || 8;
 
@@ -956,10 +1045,32 @@
 
 
             const range = document.getElementById('progressBar');
+            const tooltip = document.getElementById('seekTooltip');
 
             range.addEventListener('input', () => isDragging = true);
             range.addEventListener('change', () => { isDragging = false; seekTo(range.value); });
+
+            range.addEventListener('mousemove', (e) => {
+                let activeP = (currentDeck === 1) ? p1 : p2;
+                if (!activeP || typeof activeP.getDuration !== 'function') return;
+                let duration = activeP.getDuration();
+                if (!duration || duration <= 0) return;
+
+                const rect = range.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const pct = Math.max(0, Math.min(1, x / rect.width));
+                const time = duration * pct;
+
+                tooltip.style.left = `${x}px`;
+                tooltip.innerText = formatTime(time);
+                tooltip.style.opacity = '1';
+            });
+
+            range.addEventListener('mouseleave', () => {
+                tooltip.style.opacity = '0';
+            });
         }
+
 
         function onPlayerReady(event) {
             event.target.setVolume(playerVolume);
@@ -1021,11 +1132,26 @@
             const list = document.getElementById('playlist-list');
             list.innerHTML = '';
 
-            document.getElementById('playlist-count-text').innerText = playlist.length > 0 ?
-                `${trackIndex + 1} видео из ${playlist.length}` :
-                `0 видео из 0`;
+            if (playlist.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-list-stub">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M9 18V5l12-2v13"></path>
+                            <circle cx="6" cy="18" r="3"></circle>
+                            <circle cx="18" cy="16" r="3"></circle>
+                        </svg>
+                        <p>Ваш плейлист пуст.<br>Чтобы начать, добавьте ссылку на YouTube плейлист выше.</p>
+                    </div>
+                `;
+                updateUI();
+                return;
+            }
+
+            document.getElementById('playlist-count-text').innerText =
+                `${trackIndex + 1} видео из ${playlist.length}`;
 
             playlist.forEach((track, index) => {
+
                 const isActive = index === trackIndex ? ' active' : '';
                 const thumbUrl = `https://i.ytimg.com/vi/${track.id}/mqdefault.jpg`;
 
@@ -1057,15 +1183,28 @@
         }
 
         function updateUI() {
-            if (playlist[trackIndex]) {
+            const playerArea = document.getElementById('main-player-area');
+            if (playlist.length > 0 && playlist[trackIndex]) {
+                playerArea.classList.remove('is-empty');
                 const t = playlist[trackIndex];
                 document.getElementById('current-track-info').innerText = t.title;
                 document.getElementById('cover-overlay').src = `https://i.ytimg.com/vi/${t.id}/maxresdefault.jpg`;
+            } else {
+                playerArea.classList.add('is-empty');
+                document.getElementById('current-track-info').innerText = "Добавьте ваш плейлист";
+                document.getElementById('cover-overlay').src = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23111'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='30' opacity='0.2'>🎧</text></svg>";
+                document.getElementById('currentTime').innerText = "0:00";
+                document.getElementById('totalTime').innerText = "0:00";
+                document.getElementById('progressBar').value = 0;
             }
 
-            document.getElementById('playlist-count-text').innerText = playlist.length > 0 ?
-                `${trackIndex + 1} видео из ${playlist.length}` :
-                `0 видео из 0`;
+
+            if (playlist.length > 0) {
+                document.getElementById('playlist-count-text').innerText =
+                    `${trackIndex + 1} видео из ${playlist.length}`;
+            } else {
+                document.getElementById('playlist-count-text').innerText = "0 видео из 0";
+            }
 
             updatePlayPauseIcon();
             updateDeckVisibility();
@@ -1305,7 +1444,7 @@
             playerVolume = parseInt(val);
             localStorage.setItem('crossfade-volume', playerVolume);
             document.getElementById('volumeValue').innerText = val;
-            
+
             if (!isCrossfading) {
                 let activeP = (currentDeck === 1) ? p1 : p2;
                 if (activeP && activeP.setVolume) activeP.setVolume(playerVolume);

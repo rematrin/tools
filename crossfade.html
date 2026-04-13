@@ -277,8 +277,8 @@ input[type=range] {
 /* Адаптив */
 @media (max-width: 768px) {
     #player-container { flex-direction: column; }
-    #playlist-sidebar { width: 100%; max-height: 300px; margin-bottom: 20px; border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 20px;}
-    #main-player-area { width: 100%; }
+    #main-player-area { width: 100%; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+    #playlist-sidebar { width: 100%; max-height: 300px; padding-bottom: 20px; }
 }
 </style>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
@@ -302,24 +302,6 @@ input[type=range] {
     <div class="card">
         <div id="player-container">
             
-            <div id="playlist-sidebar">
-                <div id="playlist-header-row">
-                    <h2>Список станций</h2>
-                    <button class="shuffle-btn" onclick="shufflePlaylist()" title="Перемешать">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                        Перемешать
-                    </button>
-                </div>
-                
-                <div class="playlist-scroll-area" id="playlist-list">
-                    </div>
-
-                <div class="import-box">
-                    <input type="text" class="import-input" id="urlInput" placeholder="Ссылка на YouTube...">
-                    <button class="btn-add" onclick="handleInput()">+</button>
-                </div>
-            </div>
-
             <div id="main-player-area" class="mode-video">
                 
                 <div class="mode-switcher">
@@ -377,6 +359,25 @@ input[type=range] {
                 </div>
 
             </div>
+
+            <div id="playlist-sidebar">
+                <div id="playlist-header-row">
+                    <h2>Список станций</h2>
+                    <button class="shuffle-btn" onclick="shufflePlaylist()" title="Перемешать">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                        Перемешать
+                    </button>
+                </div>
+                
+                <div class="playlist-scroll-area" id="playlist-list">
+                    </div>
+
+                <div class="import-box">
+                    <input type="text" class="import-input" id="urlInput" placeholder="Ссылка на YouTube...">
+                    <button class="btn-add" onclick="handleInput()">+</button>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>

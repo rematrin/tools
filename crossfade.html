@@ -455,6 +455,7 @@ input[type=range] {
                 renderPlaylist();
                 fetchTitlesForPlaylist();
                 loadDeck(p1, 0);
+                prepareNext();
                 updateUI();
             } else {
                 updateUI();
@@ -721,6 +722,8 @@ input[type=range] {
                     trackIndex = 0;
                     loadDeck(p1, 0);
                     updateUI();
+                } else if (!isPlaying) {
+                    prepareNext();
                 }
                 updateButtons();
                 updateUrlState();
@@ -743,14 +746,29 @@ input[type=range] {
     }
 
     function importPlaylist(listId, autoReplace = false) {
-        let scanner = (currentDeck === 1 || !isPlaying) ? p2 : p1;
         if(isPlaying && isCrossfading) { alert("Подождите конца перехода"); return; }
         
-        scanner.cuePlaylist({list: listId});
         window.isScanning = true;
         window.autoReplacePlaylist = autoReplace;
         window.scanningListId = listId;
         document.getElementById('current-track-info').innerText = "Сканирую плейлист...";
+
+        if (!window.scannerPlayer) {
+            let div = document.createElement('div');
+            div.id = 'hidden-scanner';
+            div.style.display = 'none';
+            document.body.appendChild(div);
+            window.scannerPlayer = new YT.Player('hidden-scanner', {
+                height: '1', width: '1',
+                playerVars: { origin: window.location.origin },
+                events: {
+                    'onReady': (e) => { e.target.cuePlaylist({list: listId}); },
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        } else {
+            window.scannerPlayer.cuePlaylist({list: listId});
+        }
     }
 
     function updateUrlState() {
@@ -818,6 +836,7 @@ input[type=range] {
                 if(!isPlaying) {
                     if (shouldReplace) {
                         loadDeck(p1, 0);
+                        prepareNext();
                     }
                     updateUI();
                 }

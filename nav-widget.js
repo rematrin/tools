@@ -65,6 +65,10 @@ const servicesLinks = [
     {
         href: "soulver.html", title: "Умный блокнот",
         icon: '<rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="12" y1="14" x2="16" y2="14"></line><line x1="12" y1="18" x2="16" y2="18"></line><circle cx="9" cy="14" r="1"></circle><circle cx="9" cy="18" r="1"></circle>'
+    },
+    {
+        href: "eleven_reader.html", title: "Eleven Reader",
+        icon: '<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line>'
     }
 
 ];

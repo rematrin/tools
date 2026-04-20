@@ -10,72 +10,62 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
-        :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --accent: #38bdf8;
-            --text: #f8fafc;
-            --text-dim: #94a3b8;
-            --border: #334155;
-        }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
             line-height: 1.6;
-            padding: 40px 20px;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
+            padding: 20px 20px 60px 20px;
         }
 
         /* --- Header & Accounts --- */
-        header {
+        .reader-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
             border-bottom: 1px solid var(--border);
         }
 
-        .user-info { font-size: 0.9rem; text-align: right; }
+        .user-info { font-size: 0.9rem; text-align: right; color: var(--text-secondary); }
         .credits-val { color: var(--accent); font-weight: bold; }
 
         /* --- Global Setup --- */
         .setup-panel {
-            background: var(--card);
-            padding: 24px;
-            border-radius: 12px;
-            margin-bottom: 30px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 40px;
             border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         }
 
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            margin-bottom: 20px;
         }
 
         @media (max-width: 600px) {
             .form-row { grid-template-columns: 1fr; }
         }
 
-        label { display: block; font-size: 0.8rem; margin-bottom: 6px; color: var(--text-dim); text-transform: uppercase; }
-        input, select {
+        label { display: block; font-size: 0.75rem; margin-bottom: 8px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; }
+        input {
             width: 100%;
-            padding: 12px;
-            background: #0f172a;
+            padding: 14px 16px;
+            background: var(--bg);
             border: 1px solid var(--border);
-            color: white;
-            border-radius: 6px;
+            color: var(--text);
+            border-radius: 10px;
             outline: none;
+            transition: all 0.2s;
+            font-size: 0.95rem;
         }
         input:focus { border-color: var(--accent); }
 
@@ -84,38 +74,43 @@
             width: 100%;
             padding: 14px;
             background: var(--accent);
-            color: #0f172a;
+            color: #ffffff;
             border: none;
-            border-radius: 6px;
-            font-weight: 700;
+            border-radius: 10px;
+            font-weight: 600;
             cursor: pointer;
             text-align: center;
-            transition: opacity 0.2s;
+            transition: all 0.2s;
+            font-size: 0.95rem;
         }
-        .btn:hover { opacity: 0.9; }
-        .btn:disabled { background: #334155; color: #94a3b8; cursor: wait; }
+        .btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn:disabled { background: var(--disabled); cursor: wait; transform: none; }
 
         /* --- Pages --- */
         .page-card {
-            background: var(--card);
-            border-radius: 12px;
+            background: var(--card-bg);
+            border-radius: 16px;
             padding: 40px;
             margin-bottom: 30px;
             border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         }
 
         .page-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
-            font-size: 0.8rem;
-            color: var(--text-dim);
+            margin-bottom: 24px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 600;
         }
 
         .page-text {
             font-size: 1.1rem;
             margin-bottom: 30px;
             white-space: pre-wrap;
+            color: var(--text);
+            line-height: 1.7;
         }
 
         .action-area {
@@ -123,12 +118,12 @@
             align-items: center;
             gap: 20px;
             border-top: 1px solid var(--border);
-            padding-top: 20px;
+            padding-top: 24px;
         }
 
         .voice-btn {
             background: var(--accent);
-            color: #000;
+            color: #ffffff;
             border: none;
             width: 50px;
             height: 50px;
@@ -137,32 +132,42 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 1.2rem;
+            transition: background 0.2s;
         }
+        .voice-btn:hover { background: var(--accent-hover); }
 
         .player-wrap { flex: 1; display: none; }
-        audio { width: 100%; height: 40px; }
+        audio { width: 100%; height: 40px; outline: none; }
 
         /* --- Utilities --- */
         .toast {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 25px;
-            background: #1e293b;
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 24px;
+            background: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             display: none;
             z-index: 999;
+            font-weight: 500;
         }
     </style>
 </head>
 
 <body>
+    <!-- Универсальная шапка сайта -->
+    <link rel="stylesheet" href="theme.css">
+    <div id="header-container"></div>
+
     <div class="container">
-        <header>
-            <h1>Eleven Reader</h1>
+        <header class="reader-header">
+            <h2>Eleven Reader</h2>
             <div class="user-info" id="account-status">
-                <span id="user-name">Загрузка ключа...</span><br>
+                <span id="eleven-account">Загрузка ключа...</span><br>
                 Кредиты: <span id="credits-spent" class="credits-val">0 / 0</span>
             </div>
         </header>
@@ -195,6 +200,12 @@
 
     <div id="toast" class="toast"></div>
 
+    <!-- Universal Nav, Auth & Header Modules -->
+    <link rel="stylesheet" href="auth-widget.css">
+    <script type="module" src="nav-widget.js"></script>
+    <script type="module" src="auth-widget.js"></script>
+    <script type="module" src="header.js"></script>
+
     <script>
         // Core elements
         const apiKeyInput = document.getElementById('api-key');
@@ -224,13 +235,13 @@
                 const userRes = await fetch('https://api.elevenlabs.io/v1/user', { headers: { 'xi-api-key': key }});
                 if(userRes.ok) {
                     const data = await userRes.json();
-                    document.getElementById('user-name').textContent = data.first_name || 'Аккаунт';
+                    document.getElementById('eleven-account').textContent = data.first_name || 'Аккаунт';
                     const used = data.subscription?.character_count || 0;
                     const limit = data.subscription?.character_limit || 10000;
                     const remaining = limit - used;
-                    document.getElementById('credits-spent').textContent = `${remaining.toLocaleString()} доступно (из ${limit.toLocaleString()})`;
+                    document.getElementById('credits-spent').textContent = `${remaining.toLocaleString()} доступно`;
                 } else {
-                    document.getElementById('user-name').textContent = 'Ошибка';
+                    document.getElementById('eleven-account').textContent = 'Ошибка';
                     document.getElementById('credits-spent').textContent = 'Неверный API Ключ';
                 }
 
@@ -316,8 +327,9 @@
                 const b = document.getElementById(`vbtn-${i}`);
                 b.onclick = () => speakPage(chunk, i, b);
 
-                // Auto-load audio from local cache if it exists!
-                getAudioFromCache(chunk).then(cachedBlob => {
+                const k = apiKeyInput.value.trim();
+                // Auto-load audio from local cache or Firebase if it exists!
+                getAudioFromCache(chunk, k).then(cachedBlob => {
                     if (cachedBlob) {
                         b.textContent = '✅';
                         b.style.background = '#10b981'; // Green
@@ -354,8 +366,10 @@
             const errDiv = document.getElementById(`err-${idx}`);
             errDiv.style.display = 'none';
 
+            const k = apiKeyInput.value.trim();
+
             // Check cache FIRST to save credits and time
-            const cachedBlob = await getAudioFromCache(txt);
+            const cachedBlob = await getAudioFromCache(txt, k);
             if (cachedBlob) {
                 setupPlayer(cachedBlob, idx, true);
                 btn.textContent = '✅';
@@ -364,7 +378,6 @@
                 return;
             }
 
-            const k = apiKeyInput.value.trim();
             const vid = "XrExE9yKIg1WjnnlVkGX"; // Хардкод: Matilda (Стандартный голос, работает на Free-тарифе)
             
             if(!k) return showToast('Настройте API ключ');
@@ -400,10 +413,16 @@
                     throw new Error(msg);
                 }
 
+                // Извлекаем уникальный ID генерации из заголовков ответа
+                const historyId = res.headers.get('history-item-id');
                 const blob = await res.blob();
                 
-                // Save generated audio to local cache using IndexedDB!
-                await saveAudioToCache(txt, blob);
+                // Save generated audio to local and Firebase cache
+                const hash = await hashText(txt);
+                await saveAudioToCacheLocal(hash, blob);
+                if (historyId) {
+                    await saveAudioToFirebaseSync(hash, historyId);
+                }
                 
                 setupPlayer(blob, idx, true);
                 btn.textContent = '✅';
@@ -445,10 +464,9 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        async function saveAudioToCache(text, blob) {
+        async function saveAudioToCacheLocal(hash, blob) {
             try {
                 const db = await initDB();
-                const hash = await hashText(text);
                 return new Promise((resolve) => {
                     const tx = db.transaction(STORE_NAME, 'readwrite');
                     tx.objectStore(STORE_NAME).put(blob, hash);
@@ -457,17 +475,59 @@
             } catch(e) { return false; }
         }
 
-        async function getAudioFromCache(text) {
+        async function saveAudioToFirebaseSync(hash, historyId) {
+            if (window.db && window.setDoc && window.doc && historyId) {
+                try {
+                    await window.setDoc(window.doc(window.db, "eleven_cache", hash), {
+                        history_item_id: historyId,
+                        created_at: window.serverTimestamp ? window.serverTimestamp() : Date.now()
+                    }, { merge: true });
+                } catch (e) { console.error("Firebase sync error:", e); }
+            }
+        }
+
+        async function getAudioFromCache(text, apiKey) {
             try {
-                const db = await initDB();
                 const hash = await hashText(text);
-                return new Promise((resolve) => {
+
+                // 1. Быстрый поиск в IndexedDB (если файл уже на этом устройстве)
+                const db = await initDB();
+                const localBlob = await new Promise((resolve) => {
                     const tx = db.transaction(STORE_NAME, 'readonly');
                     const req = tx.objectStore(STORE_NAME).get(hash);
                     req.onsuccess = () => resolve(req.result);
                     req.onerror = () => resolve(null);
                 });
-            } catch(e) { return null; }
+                
+                if (localBlob) return localBlob;
+
+                // 2. Если нет на ПК, спрашиваем у Firebase (может мы создали это на телефоне?)
+                if (window.db && window.getDoc && window.doc && apiKey) {
+                    const cacheDoc = await window.getDoc(window.doc(window.db, "eleven_cache", hash));
+                    
+                    if (cacheDoc.exists()) {
+                        const historyId = cacheDoc.data().history_item_id;
+                        if (historyId) {
+                            // Качаем файл из безлимитной истории ElevenLabs без кредитов!
+                            const res = await fetch(`https://api.elevenlabs.io/v1/history/${historyId}/audio`, {
+                                headers: { 'xi-api-key': apiKey }
+                            });
+                            
+                            if (res.ok) {
+                                const fbBlob = await res.blob();
+                                // Сохраняем в браузер, чтобы больше не стучаться в сеть
+                                await saveAudioToCacheLocal(hash, fbBlob);
+                                return fbBlob;
+                            }
+                        }
+                    }
+                }
+
+                return null;
+            } catch(e) { 
+                console.error("Cache Check Error:", e);
+                return null; 
+            }
         }
     </script>
 </body>

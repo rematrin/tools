@@ -9,6 +9,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     
+    <!-- Глобальные стили и сохранение темы -->
+    <link rel="stylesheet" href="theme.css">
+    <script src="theme-loader.js"></script>
+    
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -160,7 +164,6 @@
 
 <body>
     <!-- Универсальная шапка сайта -->
-    <link rel="stylesheet" href="theme.css">
     <div id="header-container"></div>
 
     <div class="container">
@@ -478,11 +481,22 @@
         async function saveAudioToFirebaseSync(hash, historyId) {
             if (window.db && window.setDoc && window.doc && historyId) {
                 try {
-                    await window.setDoc(window.doc(window.db, "eleven_cache", hash), {
+                    // Используем личную коллекцию пользователя, чтобы пройти правила безопасности Firestore
+                    let docRef;
+                    if (window.currentUser && window.currentUser.uid) {
+                        docRef = window.doc(window.db, "users", window.currentUser.uid, "eleven_cache", hash);
+                    } else {
+                        docRef = window.doc(window.db, "eleven_cache", hash);
+                    }
+                    
+                    await window.setDoc(docRef, {
                         history_item_id: historyId,
                         created_at: window.serverTimestamp ? window.serverTimestamp() : Date.now()
                     }, { merge: true });
-                } catch (e) { console.error("Firebase sync error:", e); }
+                } catch (e) { 
+                    console.error("Firebase sync error:", e); 
+                    if (typeof showToast === 'function') showToast("Ошибка синхронизации (проверьте БД)", 'error');
+                }
             }
         }
 
@@ -503,7 +517,14 @@
 
                 // 2. Если нет на ПК, спрашиваем у Firebase (может мы создали это на телефоне?)
                 if (window.db && window.getDoc && window.doc && apiKey) {
-                    const cacheDoc = await window.getDoc(window.doc(window.db, "eleven_cache", hash));
+                    let docRef;
+                    if (window.currentUser && window.currentUser.uid) {
+                        docRef = window.doc(window.db, "users", window.currentUser.uid, "eleven_cache", hash);
+                    } else {
+                        docRef = window.doc(window.db, "eleven_cache", hash);
+                    }
+                    
+                    const cacheDoc = await window.getDoc(docRef);
                     
                     if (cacheDoc.exists()) {
                         const historyId = cacheDoc.data().history_item_id;

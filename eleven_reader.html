@@ -179,7 +179,12 @@
             <div class="form-row">
                 <div style="grid-column: span 2;">
                     <label>Eleven Labs API Key</label>
-                    <input type="password" id="api-key" placeholder="Вставьте ключ сюда...">
+                    <div style="display: flex; gap: 10px;">
+                        <select id="api-key" style="flex: 1; padding: 14px 16px; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 10px; outline: none; font-size: 0.95rem; cursor: pointer;">
+                            <option value="">-- Выберите или добавьте ключ --</option>
+                        </select>
+                        <button id="add-key-btn" class="btn" style="width: auto; padding: 0 15px; background: var(--border); color: var(--text);" title="Добавить новый ключ">➕</button>
+                    </div>
                 </div>
             </div>
             <div class="form-row">
@@ -217,16 +222,102 @@
         const pagesContainer = document.getElementById('pages-container');
         const toast = document.getElementById('toast');
 
-        // State & Persistence
-        const savedKey = localStorage.getItem('elevenlabs_api_key');
-        if (savedKey) {
-            apiKeyInput.value = savedKey;
-            initializeInfo();
+        // State & Persistence for Multiple Keys
+        let savedKeys = JSON.parse(localStorage.getItem('eleven_keys') || '[]');
+        let activeKey = localStorage.getItem('eleven_active_key') || '';
+
+        // Миграция старого одинарного ключа
+        const oldKey = localStorage.getItem('eleven_key');
+        if (oldKey && savedKeys.length === 0) {
+            savedKeys.push({ name: 'Основной', key: oldKey });
+            activeKey = oldKey;
+            localStorage.setItem('eleven_keys', JSON.stringify(savedKeys));
+            localStorage.setItem('eleven_active_key', activeKey);
+            localStorage.removeItem('eleven_key');
         }
 
-        apiKeyInput.addEventListener('change', () => {
-            localStorage.setItem('elevenlabs_api_key', apiKeyInput.value);
+        function renderKeyDropdown() {
+            apiKeyInput.innerHTML = '<option value="">-- Выберите ключ --</option>';
+            savedKeys.forEach(k => {
+                const opt = document.createElement('option');
+                opt.value = k.key;
+                opt.textContent = k.name;
+                apiKeyInput.appendChild(opt);
+            });
+            if (activeKey && savedKeys.find(k => k.key === activeKey)) {
+                apiKeyInput.value = activeKey;
+            } else if (savedKeys.length > 0) {
+                apiKeyInput.value = savedKeys[0].key;
+                activeKey = savedKeys[0].key;
+                localStorage.setItem('eleven_active_key', activeKey);
+            }
+        }
+        
+        renderKeyDropdown();
+        if (activeKey) initializeInfo();
+
+        apiKeyInput.addEventListener('change', async () => {
+            activeKey = apiKeyInput.value.trim();
+            localStorage.setItem('eleven_active_key', activeKey);
             initializeInfo();
+            await syncKeysToFirebase(); // Сохраняем активный выбор
+        });
+
+        document.getElementById('add-key-btn').addEventListener('click', async () => {
+            const newKey = prompt("Скопируйте и вставьте ваш Eleven Labs API ключ:");
+            if (!newKey) return;
+            const keyName = prompt("Придумайте имя для этого аккаунта (например, Мой, или Даши)");
+            if (!keyName) return;
+            
+            savedKeys.push({ name: keyName, key: newKey });
+            activeKey = newKey;
+            localStorage.setItem('eleven_keys', JSON.stringify(savedKeys));
+            localStorage.setItem('eleven_active_key', activeKey);
+            
+            renderKeyDropdown();
+            initializeInfo();
+            await syncKeysToFirebase();
+        });
+
+        async function syncKeysToFirebase() {
+            if (window.currentUser && window.db && window.setDoc && window.doc) {
+                try {
+                    await window.setDoc(window.doc(window.db, "users", window.currentUser.uid), { 
+                        eleven_keys: savedKeys,
+                        eleven_active_key: activeKey
+                    }, { merge: true });
+                } catch(e) {}
+            }
+        }
+
+        // Вытягиваем массив ключей из облака при входе
+        window.addEventListener('authChanged', async (e) => {
+            const user = e.detail?.user;
+            if (user && window.db && window.getDoc && window.doc) {
+                try {
+                    const userDoc = await window.getDoc(window.doc(window.db, "users", user.uid));
+                    if (userDoc.exists()) {
+                        const data = userDoc.data();
+                        
+                        // Миграция старого одинарного ключа из облака (если есть)
+                        if (!data.eleven_keys && data.eleven_api_key) {
+                            savedKeys = [{ name: 'Облачный', key: data.eleven_api_key }];
+                            activeKey = data.eleven_api_key;
+                            await syncKeysToFirebase(); // пересохраняем в новый формат массива
+                        } 
+                        // Обычная синхронизация массива
+                        else if (data.eleven_keys && data.eleven_keys.length > 0) {
+                            savedKeys = data.eleven_keys;
+                            if (data.eleven_active_key) activeKey = data.eleven_active_key;
+                        }
+
+                        localStorage.setItem('eleven_keys', JSON.stringify(savedKeys));
+                        localStorage.setItem('eleven_active_key', activeKey);
+                        renderKeyDropdown();
+                        if(activeKey) initializeInfo(); // Подтягиваем баланс
+                    }
+                } catch(err){}
+            }
         });
 
         async function initializeInfo() {
@@ -313,7 +404,7 @@
 
             if (chunks.length === 0 && text.trim()) chunks.push(text.trim());
 
-            chunks.forEach((chunk, i) => {
+            chunks.forEach(async (chunk, i) => {
                 const card = document.createElement('div');
                 card.className = 'page-card';
                 card.innerHTML = `
@@ -331,19 +422,21 @@
                 b.onclick = () => speakPage(chunk, i, b);
 
                 const k = apiKeyInput.value.trim();
+                const chunkHash = await hashText(chunk);
+                
                 // Auto-load audio from local cache or Firebase if it exists!
                 getAudioFromCache(chunk, k).then(cachedBlob => {
                     if (cachedBlob) {
                         b.textContent = '✅';
                         b.style.background = '#10b981'; // Green
-                        setupPlayer(cachedBlob, i, false);
+                        setupPlayer(cachedBlob, i, false, chunkHash);
                     }
                 });
             });
         }
         
         // Setup Player UI
-        function setupPlayer(blob, idx, autoPlay) {
+        function setupPlayer(blob, idx, autoPlay, textHash) {
             const url = URL.createObjectURL(blob);
             const wrap = document.getElementById(`p-wrap-${idx}`);
             const audio = wrap.querySelector('audio');
@@ -362,7 +455,20 @@
             dlBtn.href = url;
             dlBtn.download = `DocuVoice_Page_${idx+1}.mp3`;
 
+            // Add Delete cache button
+            let delBtn = wrap.querySelector('.del-btn');
+            if(!delBtn && textHash) {
+                delBtn = document.createElement('button');
+                delBtn.className = 'del-btn';
+                delBtn.style.cssText = 'background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 0 15px; margin-left: 10px; border-radius: 6px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: background 0.2s;';
+                delBtn.innerHTML = '🗑️';
+                delBtn.title = 'Удалить озвучку';
+                delBtn.onclick = () => deleteAudio(textHash, idx);
+                wrap.appendChild(delBtn);
+            }
+
             if (autoPlay) audio.play();
+            wrap.style.display = 'flex';
         }
 
         async function speakPage(txt, idx, btn) {
@@ -370,11 +476,12 @@
             errDiv.style.display = 'none';
 
             const k = apiKeyInput.value.trim();
+            const hash = await hashText(txt);
 
             // Check cache FIRST to save credits and time
             const cachedBlob = await getAudioFromCache(txt, k);
             if (cachedBlob) {
-                setupPlayer(cachedBlob, idx, true);
+                setupPlayer(cachedBlob, idx, true, hash);
                 btn.textContent = '✅';
                 btn.style.background = '#10b981';
                 showToast('Воспроизведено из кэша!');
@@ -427,7 +534,7 @@
                     await saveAudioToFirebaseSync(hash, historyId);
                 }
                 
-                setupPlayer(blob, idx, true);
+                setupPlayer(blob, idx, true, hash);
                 btn.textContent = '✅';
                 btn.style.background = '#10b981';
                 
@@ -442,6 +549,39 @@
             } finally {
                 btn.style.opacity = '1';
             }
+        }
+
+        async function deleteAudio(hash, idx) {
+            if(!confirm("Удалить аудио из облака? Для новой генерации потребуются кредиты.")) return;
+            
+            try {
+                // Удаляем из локального браузера
+                const db = await initDB();
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                tx.objectStore(STORE_NAME).delete(hash);
+            } catch(e){}
+
+            // Удаляем связь в Firebase
+            if (window.currentUser && window.db && window.doc && window.setDoc) {
+                try {
+                    await window.setDoc(window.doc(window.db, "users", window.currentUser.uid, "eleven_cache", hash), {
+                        history_item_id: null // Аннулируем ссылку на аудио ElevenLabs
+                    }, {merge: true});
+                } catch(e){}
+            }
+
+            // Прячем плеер
+            const wrap = document.getElementById(`p-wrap-${idx}`);
+            wrap.style.display = 'none';
+            const audio = wrap.querySelector('audio');
+            audio.pause();
+            audio.src = '';
+            
+            // Возвращаем кнопку Play
+            const b = document.getElementById(`vbtn-${idx}`);
+            b.textContent = '▶';
+            b.style.background = 'var(--accent)';
+            showToast("Озвучка удалена");
         }
 
         // --- Caching Logic (IndexedDB) ---

@@ -13,6 +13,15 @@
     function applyTheme(mode) {
         console.log('[ThemeLoader] Applying mode:', mode);
 
+        // Сохраняем выбор в память
+        localStorage.setItem('themeMode', mode);
+        currentThemeMode = mode;
+
+        if (!document.body) {
+            console.log('[ThemeLoader] Body not ready, waiting for DOMContentLoaded');
+            return; // Ждем события DOMContentLoaded
+        }
+
         // 1. Сброс: удаляем класс dark, чтобы вернуться к дефолтному (светлому) состоянию
         document.body.classList.remove('dark');
 
@@ -29,10 +38,6 @@
                 document.body.classList.add('dark');
             }
         }
-
-        // 3. Сохраняем выбор
-        localStorage.setItem('themeMode', mode);
-        currentThemeMode = mode;
     }
 
     // === ГЛОБАЛЬНЫЕ ФУНКЦИИ (API) ===

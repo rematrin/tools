@@ -486,11 +486,19 @@
         });
 
         document.getElementById('save-new-key-btn').addEventListener('click', async () => {
-            const newKey = keyValueInput.value.trim();
+            const newKey = keyValueInput.value.replace(/\s/g, ''); // Жестко вырезаем все пробелы, табуляции и переносы строк внутри ключа
             const keyName = keyNameInput.value.trim();
             
             if (!newKey) return showToast('Введите API ключ!');
             if (!keyName) return showToast('Придумайте имя!');
+            
+            // Предотвращаем добавление одинакового ключа
+            if (savedKeys.find(k => k.key === newKey)) {
+                return showToast('Этот ключ уже добавлен в список!');
+            }
+            if (savedKeys.find(k => k.name === keyName)) {
+                return showToast('Это имя уже занято, придумайте другое!');
+            }
             
             savedKeys.push({ name: keyName, key: newKey });
             activeKey = newKey;
@@ -599,7 +607,11 @@
 
         async function initializeInfo() {
             const key = activeKey;
-            if(!key) return;
+            if(!key) {
+                document.getElementById('eleven-account').textContent = 'Аккаунт';
+                document.getElementById('credits-spent').textContent = 'Нет ключа';
+                return;
+            }
             
             try {
                 // User & Credits
@@ -612,13 +624,40 @@
                     const remaining = limit - used;
                     document.getElementById('credits-spent').textContent = `${remaining.toLocaleString()} доступно`;
                 } else {
-                    document.getElementById('eleven-account').textContent = 'Ошибка';
-                    document.getElementById('credits-spent').textContent = 'Неверный API Ключ';
+                    if (userRes.status === 401) {
+                         let isRestricted = false;
+                         try {
+                            const errData = await userRes.json();
+                            if (errData.detail && errData.detail.status === 'missing_permissions') {
+                                isRestricted = true;
+                            }
+                         } catch(e){}
+                         
+                         if (isRestricted) {
+                            document.getElementById('eleven-account').textContent = 'Доступ только к TTS';
+                            document.getElementById('credits-spent').textContent = 'Скрыты настройками ключа';
+                         } else {
+                            document.getElementById('eleven-account').textContent = `Ошибка ${userRes.status}`;
+                            document.getElementById('credits-spent').textContent = 'Неверный API Ключ';
+                         }
+                    } else if (userRes.status === 429) {
+                         document.getElementById('eleven-account').textContent = `Ошибка ${userRes.status}`;
+                         document.getElementById('credits-spent').textContent = 'Лимит запросов';
+                    } else {
+                         document.getElementById('eleven-account').textContent = `Ошибка ${userRes.status}`;
+                         try {
+                            const errData = await userRes.json();
+                            document.getElementById('credits-spent').textContent = errData.detail?.status || 'Сбой API';
+                         } catch(e) {
+                            document.getElementById('credits-spent').textContent = 'Сбой API';
+                         }
+                    }
                 }
-
-                // Voices fetching disabled: hardcoded to Jana per user request
-
-            } catch(e) { console.error(e); }
+            } catch(e) { 
+                console.error(e); 
+                document.getElementById('eleven-account').textContent = 'Сбой сети';
+                document.getElementById('credits-spent').textContent = '-';
+            }
         }
 
         function showToast(txt) {

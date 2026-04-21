@@ -247,8 +247,29 @@
 
         <div id="pages-container">
             <!-- Сюда попадут страницы -->
-            <div style="text-align: center; padding: 50px; color: var(--text-dim);">
-                Документ не загружен. Убедитесь, что он доступен всем по ссылке.
+            <div style="text-align: center; padding: 10px 20px 40px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; user-select: none;">
+                <svg width="180" height="130" viewBox="0 0 220 160" fill="none" style="margin-bottom: 16px; pointer-events: none;">
+                    <!-- Blob background -->
+                    <path d="M60 130C35 120 20 85 45 60C70 35 110 20 145 35C180 50 205 90 190 120C175 150 100 150 60 130Z" fill="var(--card-bg)" />
+                    <!-- Document Base -->
+                    <rect x="80" y="30" width="60" height="85" rx="6" fill="var(--bg)" stroke="var(--border)" stroke-width="2.5"/>
+                    <!-- Lines -->
+                    <line x1="95" y1="50" x2="125" y2="50" stroke="var(--border)" stroke-width="2.5" stroke-linecap="round"/>
+                    <line x1="95" y1="65" x2="125" y2="65" stroke="var(--border)" stroke-width="2.5" stroke-linecap="round"/>
+                    <line x1="95" y1="80" x2="115" y2="80" stroke="var(--border)" stroke-width="2.5" stroke-linecap="round"/>
+                    <!-- Accent Check/Audio Element -->
+                    <circle cx="150" cy="95" r="18" fill="var(--accent)" opacity="0.1"/>
+                    <circle cx="150" cy="95" r="7" fill="var(--accent)"/>
+                    <!-- Small decorative elements -->
+                    <path d="M45 40 l 6 -6 l 6 6" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.8"/>
+                    <circle cx="180" cy="45" r="3" fill="var(--border)"/>
+                    <circle cx="60" cy="100" r="2" fill="var(--border)"/>
+                    <!-- Sound waves around accent circle -->
+                    <path d="M162 105 A 12 12 0 0 0 162 85" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    <path d="M168 110 A 18 18 0 0 0 168 80" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.5"/>
+                </svg>
+                <h3 style="color: var(--text); font-size: 1.3rem; margin: 0 0 10px 0; font-weight: 600;">Документ не загружен</h3>
+                <p style="color: var(--text-dim); font-size: 0.95rem; max-width: 380px; margin: 0 auto; line-height: 1.6;">Убедитесь, что ссылка правильная и доступна всем. Выберите документ из списка и нажмите «Загрузить».</p>
             </div>
         </div>
 
@@ -1059,8 +1080,8 @@
                 
                 if (localBlob) return localBlob;
 
-                // 2. Если нет на ПК, спрашиваем у Firebase (может мы создали это на телефоне?)
-                if (window.db && window.getDoc && window.doc && apiKey) {
+                // 2. Если нет на ПК, спрашиваем у Firebase (может мы создали это на другом девайсе)
+                if (window.db && window.getDoc && window.doc) {
                     let docRef;
                     if (window.currentUser && window.currentUser.uid) {
                         docRef = window.doc(window.db, "users", window.currentUser.uid, "eleven_cache", hash);
@@ -1073,16 +1094,25 @@
                     if (cacheDoc.exists()) {
                         const historyId = cacheDoc.data().history_item_id;
                         if (historyId) {
-                            // Качаем файл из безлимитной истории ElevenLabs без кредитов!
-                            const res = await fetch(`https://api.elevenlabs.io/v1/history/${historyId}/audio`, {
-                                headers: { 'xi-api-key': apiKey }
-                            });
-                            
-                            if (res.ok) {
-                                const fbBlob = await res.blob();
-                                // Сохраняем в браузер, чтобы больше не стучаться в сеть
-                                await saveAudioToCacheLocal(hash, fbBlob);
-                                return fbBlob;
+                            // Пробуем скачать аудио. Если текущий ключ не подошел (генерация с другого ключа), то пробуем все остальные сохраненные.
+                            let keysToTry = apiKey ? [apiKey] : [];
+                            if (typeof savedKeys !== 'undefined' && Array.isArray(savedKeys)) {
+                                const otherKeys = savedKeys.map(k => k.key).filter(k => k !== apiKey);
+                                keysToTry = keysToTry.concat(otherKeys);
+                            }
+
+                            for (const k of keysToTry) {
+                                if (!k) continue;
+                                const res = await fetch(`https://api.elevenlabs.io/v1/history/${historyId}/audio`, {
+                                    headers: { 'xi-api-key': k }
+                                });
+                                
+                                if (res.ok) {
+                                    const fbBlob = await res.blob();
+                                    // Сохраняем локально, чтобы больше не перебирать ключи через сеть
+                                    await saveAudioToCacheLocal(hash, fbBlob);
+                                    return fbBlob;
+                                }
                             }
                         }
                     }

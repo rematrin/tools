@@ -832,39 +832,62 @@
                         <div class="status-msg" id="status-msg-${i}" style="display:none; color:#10b981; font-weight:500; align-items:center; gap:6px;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Озвучка найдена!
                         </div>
-                        <div class="player-wrap" id="p-wrap-${i}"><audio controls></audio></div>
-                        <div class="voice-err" id="err-${i}" style="color:#ef4444; font-size:0.8rem; display:none;"></div>
+                        <div class="warn-msg" id="warn-msg-${i}" style="display:none; color:#f59e0b; width:100%; font-size:0.85rem; margin-top:10px; align-items:center; gap:6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> 
+                            <span>Текст страницы отличается.</span> 
+                            <span style="text-decoration:underline; cursor:pointer;" id="regen-${i}">Перегенерировать</span>
+                        </div>
+                        <div class="player-wrap" id="p-wrap-${i}" style="margin-top: 10px; width: 100%; display:none;"><audio controls></audio></div>
+                        <div class="voice-err" id="err-${i}" style="color:#ef4444; font-size:0.8rem; display:none; width: 100%;"></div>
                     </div>
                 `;
                 pagesContainer.appendChild(card);
                 
                 const b = document.getElementById(`vbtn-${i}`);
-                b.onclick = () => speakPage(chunk, i, b);
+                b.onclick = () => speakPage(chunk, i, b, false);
+                
+                const regenBtn = document.getElementById(`regen-${i}`);
+                if (regenBtn) {
+                     regenBtn.onclick = () => {
+                         document.getElementById(`p-wrap-${i}`).style.display = 'none';
+                         document.getElementById(`warn-msg-${i}`).style.display = 'none';
+                         document.getElementById(`status-msg-${i}`).style.display = 'none';
+                         b.style.display = 'flex';
+                         speakPage(chunk, i, b, true);
+                     };
+                }
 
                 const k = activeKey;
                 const chunkHash = await hashText(chunk);
                 
                 // Auto-load audio from local cache or Firebase if it exists!
-                getAudioFromCache(chunk, k).then(cachedBlob => {
-                    if (cachedBlob) {
-                        setupPlayer(cachedBlob, i, false, chunkHash);
+                getAudioFromCache(chunk, k).then(result => {
+                    if (result && result.blob) {
+                        setupPlayer(result.blob, i, false, result.hash, result.isTopicMatch);
                     }
                 });
             });
         }
         
         // Setup Player UI
-        function setupPlayer(blob, idx, autoPlay, textHash) {
+        function setupPlayer(blob, idx, autoPlay, textHash, isTopicMatch = false) {
             const url = URL.createObjectURL(blob);
             const wrap = document.getElementById(`p-wrap-${idx}`);
             const btn = document.getElementById(`vbtn-${idx}`);
             const statusMsg = document.getElementById(`status-msg-${idx}`);
+            const warnMsg = document.getElementById(`warn-msg-${idx}`);
             const audio = wrap.querySelector('audio');
             audio.src = url;
             
             // Hide the btn, show status text
             btn.style.display = 'none';
             statusMsg.style.display = 'flex';
+            
+            if (isTopicMatch && warnMsg) {
+                warnMsg.style.display = 'flex';
+            } else if (warnMsg) {
+                warnMsg.style.display = 'none';
+            }
             
             // Add Download Button dynamically
             let dlBtn = wrap.querySelector('.dl-btn');
@@ -896,19 +919,21 @@
             wrap.style.display = 'flex';
         }
 
-        async function speakPage(txt, idx, btn) {
+        async function speakPage(txt, idx, btn, force = false) {
             const errDiv = document.getElementById(`err-${idx}`);
             errDiv.style.display = 'none';
 
             const k = activeKey;
-            const hash = await hashText(txt);
-
+            
             // Check cache FIRST to save credits and time
-            const cachedBlob = await getAudioFromCache(txt, k);
-            if (cachedBlob) {
-                setupPlayer(cachedBlob, idx, true, hash);
-                showToast('Воспроизведено из кэша!');
-                return;
+            if (!force) {
+                const cacheResult = await getAudioFromCache(txt, k);
+                if (cacheResult && cacheResult.blob) {
+                    setupPlayer(cacheResult.blob, idx, true, cacheResult.hash, cacheResult.isTopicMatch);
+                    let toastMsg = cacheResult.isTopicMatch ? 'Озвучка подошла по теме документа' : 'Воспроизведено из кэша!';
+                    showToast(toastMsg);
+                    return;
+                }
             }
 
             const vid = "XrExE9yKIg1WjnnlVkGX"; // Хардкод: Matilda (Стандартный голос, работает на Free-тарифе)
@@ -952,13 +977,19 @@
                 const blob = await res.blob();
                 
                 // Save generated audio to local and Firebase cache
-                const hash = await hashText(txt);
-                await saveAudioToCacheLocal(hash, blob);
+                const exactHash = await hashText(txt);
+                const match = txt.match(/^\s*(?:\*\*)?(\d{1,2}[A-B]\s*-[^\n\r]+)/i);
+                const topicHash = match ? await hashText(match[1].trim()) : null;
+
+                await saveAudioToCacheLocal(exactHash, blob);
+                if (topicHash) await saveAudioToCacheLocal(topicHash, blob);
+
                 if (historyId) {
-                    await saveAudioToFirebaseSync(hash, historyId);
+                    await saveAudioToFirebaseSync(exactHash, historyId);
+                    if (topicHash) await saveAudioToFirebaseSync(topicHash, historyId);
                 }
                 
-                setupPlayer(blob, idx, true, hash);
+                setupPlayer(blob, idx, true, exactHash, false);
                 
                 // Refresh credits after successful generation (with slight delay for API to sync)
                 setTimeout(() => initializeInfo(), 1500);
@@ -1067,54 +1098,68 @@
 
         async function getAudioFromCache(text, apiKey) {
             try {
-                const hash = await hashText(text);
-
-                // 1. Быстрый поиск в IndexedDB (если файл уже на этом устройстве)
-                const db = await initDB();
-                const localBlob = await new Promise((resolve) => {
-                    const tx = db.transaction(STORE_NAME, 'readonly');
-                    const req = tx.objectStore(STORE_NAME).get(hash);
-                    req.onsuccess = () => resolve(req.result);
-                    req.onerror = () => resolve(null);
-                });
+                const exactHash = await hashText(text);
                 
-                if (localBlob) return localBlob;
-
-                // 2. Если нет на ПК, спрашиваем у Firebase (может мы создали это на другом девайсе)
-                if (window.db && window.getDoc && window.doc) {
-                    let docRef;
-                    if (window.currentUser && window.currentUser.uid) {
-                        docRef = window.doc(window.db, "users", window.currentUser.uid, "eleven_cache", hash);
-                    } else {
-                        docRef = window.doc(window.db, "eleven_cache", hash);
-                    }
+                // Helper to perform the DB and Network check for a specific hash
+                async function fetchByHash(hash) {
+                    const db = await initDB();
+                    const localBlob = await new Promise((resolve) => {
+                        const tx = db.transaction(STORE_NAME, 'readonly');
+                        const req = tx.objectStore(STORE_NAME).get(hash);
+                        req.onsuccess = () => resolve(req.result);
+                        req.onerror = () => resolve(null);
+                    });
                     
-                    const cacheDoc = await window.getDoc(docRef);
-                    
-                    if (cacheDoc.exists()) {
-                        const historyId = cacheDoc.data().history_item_id;
-                        if (historyId) {
-                            // Пробуем скачать аудио. Если текущий ключ не подошел (генерация с другого ключа), то пробуем все остальные сохраненные.
-                            let keysToTry = apiKey ? [apiKey] : [];
-                            if (typeof savedKeys !== 'undefined' && Array.isArray(savedKeys)) {
-                                const otherKeys = savedKeys.map(k => k.key).filter(k => k !== apiKey);
-                                keysToTry = keysToTry.concat(otherKeys);
-                            }
+                    if (localBlob) return localBlob;
 
-                            for (const k of keysToTry) {
-                                if (!k) continue;
-                                const res = await fetch(`https://api.elevenlabs.io/v1/history/${historyId}/audio`, {
-                                    headers: { 'xi-api-key': k }
-                                });
-                                
-                                if (res.ok) {
-                                    const fbBlob = await res.blob();
-                                    // Сохраняем локально, чтобы больше не перебирать ключи через сеть
-                                    await saveAudioToCacheLocal(hash, fbBlob);
-                                    return fbBlob;
+                    if (window.db && window.getDoc && window.doc) {
+                        let docRef;
+                        if (window.currentUser && window.currentUser.uid) {
+                            docRef = window.doc(window.db, "users", window.currentUser.uid, "eleven_cache", hash);
+                        } else {
+                            docRef = window.doc(window.db, "eleven_cache", hash);
+                        }
+                        
+                        const cacheDoc = await window.getDoc(docRef);
+                        
+                        if (cacheDoc.exists()) {
+                            const historyId = cacheDoc.data().history_item_id;
+                            if (historyId) {
+                                let keysToTry = apiKey ? [apiKey] : [];
+                                if (typeof savedKeys !== 'undefined' && Array.isArray(savedKeys)) {
+                                    const otherKeys = savedKeys.map(k => k.key).filter(k => k !== apiKey);
+                                    keysToTry = keysToTry.concat(otherKeys);
+                                }
+
+                                for (const k of keysToTry) {
+                                    if (!k) continue;
+                                    const res = await fetch(`https://api.elevenlabs.io/v1/history/${historyId}/audio`, {
+                                        headers: { 'xi-api-key': k }
+                                    });
+                                    
+                                    if (res.ok) {
+                                        const fbBlob = await res.blob();
+                                        await saveAudioToCacheLocal(hash, fbBlob);
+                                        return fbBlob;
+                                    }
                                 }
                             }
                         }
+                    }
+                    return null;
+                }
+
+                // 1. Попытка строгого поиска (если текст не менялся ни на букву)
+                let blob = await fetchByHash(exactHash);
+                if (blob) return { blob, isTopicMatch: false, hash: exactHash };
+
+                // 2. Попытка нестрогого поиска (по названию темы)
+                const match = text.match(/^\s*(?:\*\*)?(\d{1,2}[A-B]\s*-[^\n\r]+)/i);
+                if (match) {
+                    const topicHash = await hashText(match[1].trim());
+                    blob = await fetchByHash(topicHash);
+                    if (blob) {
+                        return { blob, isTopicMatch: true, hash: topicHash };
                     }
                 }
 

@@ -1223,7 +1223,7 @@
                 
                 // Save generated audio to local and Firebase cache
                 const exactHash = await hashText(txt);
-                const match = txt.match(/^\s*(?:\*\*)?(\d{1,2}[A-B]\s*-[^\n\r]+)/i);
+                const match = txt.match(/^\s*(?:\*\*)?(\d{1,2}[A-B]\s*-)/i);
                 const topicHash = match ? await hashText(match[1].trim()) : null;
 
                 await saveAudioToCacheLocal(exactHash, blob);
@@ -1398,8 +1398,8 @@
                 let blob = await fetchByHash(exactHash);
                 if (blob) return { blob, isTopicMatch: false, hash: exactHash };
 
-                // 2. Попытка нестрогого поиска (по названию темы)
-                const match = text.match(/^\s*(?:\*\*)?(\d{1,2}[A-B]\s*-[^\n\r]+)/i);
+                // 2. Попытка нестрогого поиска (по номеру билета, например "17A -")
+                const match = text.match(/^\s*(?:\*\*)?(\d{1,2}[A-B]\s*-)/i);
                 if (match) {
                     const topicHash = await hashText(match[1].trim());
                     blob = await fetchByHash(topicHash);

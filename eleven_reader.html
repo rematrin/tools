@@ -150,6 +150,44 @@
         .player-wrap { flex: 1; display: none; }
         audio { width: 100%; height: 40px; outline: none; }
 
+        /* Custom Sliders */
+        .custom-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: var(--border) !important;
+            border-radius: 2px !important;
+            background-image: linear-gradient(var(--accent), var(--accent)) !important;
+            background-size: 0% 100%;
+            background-repeat: no-repeat;
+            outline: none;
+            cursor: pointer;
+            padding: 0 !important;
+            border: none !important;
+        }
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .custom-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        .custom-slider::-moz-range-thumb {
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            border: none;
+        }
+
+
         /* Custom Select */
         .custom-select-wrapper { position: relative; flex: 1; user-select: none; }
         .custom-select {
@@ -818,9 +856,69 @@
 
             if (chunks.length === 0 && text.trim()) chunks.push(text.trim());
 
+            // --- Add Table of Contents Navigation Block ---
+            if (chunks.length > 1) {
+                const navCard = document.createElement('div');
+                navCard.className = 'page-card';
+                navCard.style.padding = '20px 30px';
+                navCard.style.marginBottom = '30px';
+                
+                const navHeader = document.createElement('div');
+                navHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; font-weight: 600; color: var(--text); font-size: 0.95rem;';
+                navHeader.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                        Оглавление документа (${chunks.length} стр.)
+                    </div>
+                    <svg id="nav-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.2s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                `;
+                
+                const navGrid = document.createElement('div');
+                navGrid.style.cssText = 'display: none; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 10px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px;';
+                
+                chunks.forEach((chunk, i) => {
+                    const btn = document.createElement('button');
+                    btn.textContent = i + 1;
+                    btn.style.cssText = 'background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px 0; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.9rem; transition: all 0.2s;';
+                    btn.onmouseover = () => { btn.style.background = 'var(--border)'; btn.style.transform = 'translateY(-2px)'; };
+                    btn.onmouseout = () => { btn.style.background = 'var(--bg)'; btn.style.transform = 'translateY(0)'; };
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        const target = document.getElementById(`page-card-${i}`);
+                        if (target) {
+                            const offset = 20;
+                            const bodyRect = document.body.getBoundingClientRect().top;
+                            const elementRect = target.getBoundingClientRect().top;
+                            const elementPosition = elementRect - bodyRect;
+                            window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
+                        }
+                    };
+                    
+                    const match = chunk.match(/^\s*(?:\*\*)?(\d{1,2}[A-B]\s*-[^\n\r]+)/i);
+                    if (match) {
+                        btn.title = match[1].trim();
+                    } else {
+                        btn.title = `Страница ${i+1}`;
+                    }
+                    
+                    navGrid.appendChild(btn);
+                });
+                
+                navHeader.onclick = () => {
+                    const isExpanded = navGrid.style.display === 'grid';
+                    navGrid.style.display = isExpanded ? 'none' : 'grid';
+                    document.getElementById('nav-arrow').style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+                };
+                
+                navCard.appendChild(navHeader);
+                navCard.appendChild(navGrid);
+                pagesContainer.appendChild(navCard);
+            }
+
             chunks.forEach(async (chunk, i) => {
                 const card = document.createElement('div');
                 card.className = 'page-card';
+                card.id = `page-card-${i}`;
                 card.innerHTML = `
                     <div class="page-header">Страница ${i+1} <span style="margin-left:10px; opacity:0.5;">(${chunk.length} симв.)</span></div>
                     <div class="page-text" style="white-space: normal; line-height: 1.6;">${formatTxtToHtml(chunk)}</div>
@@ -837,7 +935,47 @@
                             <span>Текст страницы отличается.</span> 
                             <span style="text-decoration:underline; cursor:pointer;" id="regen-${i}">Перегенерировать</span>
                         </div>
-                        <div class="player-wrap" id="p-wrap-${i}" style="margin-top: 10px; width: 100%; display:none;"><audio controls></audio></div>
+                        <div class="player-wrap" id="p-wrap-${i}" style="margin-top: 10px; width: 100%; display:none; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <div class="custom-audio-player" style="flex: 1; display: flex; align-items: center; gap: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0 14px; height: 46px; box-sizing: border-box; min-width: 250px;">
+                                <audio id="audio-${i}" style="display:none;"></audio>
+                                <button id="play-btn-${i}" style="background: var(--accent); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; padding-left: 2px; transition: transform 0.1s;">
+                                    <svg class="play-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                    <svg class="pause-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none; margin-left: -2px;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                                </button>
+                                <div style="font-size: 0.8rem; font-family: monospace; color: var(--text-dim); min-width: 35px;" id="time-${i}">0:00</div>
+                                <input type="range" class="custom-slider" id="progress-${i}" value="0" step="0.1" style="flex: 1; margin: 0;">
+                                <div style="font-size: 0.8rem; font-family: monospace; color: var(--text-dim); min-width: 35px; text-align: right;" id="duration-${i}">0:00</div>
+                                
+                                <!-- Speed Control -->
+                                <div style="position: relative;">
+                                    <button id="speed-btn-${i}" title="Скорость воспроизведения" style="background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 2px 6px; font-size: 0.75rem; cursor: pointer; font-weight: 500; min-width: 38px; margin-left: 4px;">1x</button>
+                                    
+                                    <div id="speed-popover-${i}" style="display: none; position: absolute; bottom: calc(100% + 12px); right: -10px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.3); z-index: 100; min-width: 220px; flex-direction: column; gap: 16px;">
+                                        <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                                            <button id="speed-minus-${i}" style="background: var(--border); border: none; color: var(--text); width: 28px; height: 28px; border-radius: 50%; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; padding-bottom: 2px;">-</button>
+                                            <input type="range" class="custom-slider" id="speed-slider-${i}" min="0.5" max="2.0" step="0.05" value="1" style="flex: 1; margin: 0;">
+                                            <button id="speed-plus-${i}" style="background: var(--border); border: none; color: var(--text); width: 28px; height: 28px; border-radius: 50%; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; padding-bottom: 2px;">+</button>
+                                        </div>
+                                        <div style="display: flex; gap: 6px; justify-content: space-between; width: 100%;">
+                                            <button class="speed-preset-${i}" data-speed="0.75" style="background: transparent; border: none; color: var(--text-dim); font-size: 0.8rem; cursor: pointer; flex: 1; padding: 4px 0; border-radius: 4px; transition: all 0.2s;">0.75</button>
+                                            <button class="speed-preset-${i}" data-speed="1.0" style="background: transparent; border: none; color: var(--text-dim); font-size: 0.8rem; cursor: pointer; flex: 1; padding: 4px 0; border-radius: 4px; transition: all 0.2s;">1.0</button>
+                                            <button class="speed-preset-${i}" data-speed="1.25" style="background: transparent; border: none; color: var(--text-dim); font-size: 0.8rem; cursor: pointer; flex: 1; padding: 4px 0; border-radius: 4px; transition: all 0.2s;">1.25</button>
+                                            <button class="speed-preset-${i}" data-speed="1.5" style="background: transparent; border: none; color: var(--text-dim); font-size: 0.8rem; cursor: pointer; flex: 1; padding: 4px 0; border-radius: 4px; transition: all 0.2s;">1.5</button>
+                                            <button class="speed-preset-${i}" data-speed="2.0" style="background: transparent; border: none; color: var(--text-dim); font-size: 0.8rem; cursor: pointer; flex: 1; padding: 4px 0; border-radius: 4px; transition: all 0.2s;">2.0</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="width: 1px; height: 20px; background: var(--border); margin: 0 4px;"></div>
+                                
+                                <a id="dl-btn-${i}" style="color: var(--text-dim); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: color 0.2s;" title="Скачать">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                </a>
+                                <button id="del-btn-${i}" style="background: transparent; color: #ef4444; border: none; padding: 0; cursor: pointer; display: none; align-items: center; justify-content: center; transition: color 0.2s; margin-left: 2px;" title="Удалить озвучку">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                </button>
+                            </div>
+                        </div>
                         <div class="voice-err" id="err-${i}" style="color:#ef4444; font-size:0.8rem; display:none; width: 100%;"></div>
                     </div>
                 `;
@@ -876,8 +1014,132 @@
             const btn = document.getElementById(`vbtn-${idx}`);
             const statusMsg = document.getElementById(`status-msg-${idx}`);
             const warnMsg = document.getElementById(`warn-msg-${idx}`);
-            const audio = wrap.querySelector('audio');
+            
+            const audio = wrap.querySelector(`#audio-${idx}`);
             audio.src = url;
+            
+            // Custom Player Logic
+            const playBtn = wrap.querySelector(`#play-btn-${idx}`);
+            const playIcon = playBtn.querySelector('.play-icon');
+            const pauseIcon = playBtn.querySelector('.pause-icon');
+            const progress = wrap.querySelector(`#progress-${idx}`);
+            const timeDisplay = wrap.querySelector(`#time-${idx}`);
+            const durationDisplay = wrap.querySelector(`#duration-${idx}`);
+            const speedBtn = wrap.querySelector(`#speed-btn-${idx}`);
+            const speedPopover = wrap.querySelector(`#speed-popover-${idx}`);
+            const speedSlider = wrap.querySelector(`#speed-slider-${idx}`);
+            const speedMinus = wrap.querySelector(`#speed-minus-${idx}`);
+            const speedPlus = wrap.querySelector(`#speed-plus-${idx}`);
+            const speedPresets = wrap.querySelectorAll(`.speed-preset-${idx}`);
+            
+            const dlBtn = wrap.querySelector(`#dl-btn-${idx}`);
+            const delBtn = wrap.querySelector(`#del-btn-${idx}`);
+            
+            // Format time helper
+            const formatTime = (time) => {
+                if(isNaN(time)) return "0:00";
+                const mins = Math.floor(time / 60);
+                const secs = Math.floor(time % 60);
+                return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            };
+            
+            const setSliderFill = (slider) => {
+                const max = slider.max ? parseFloat(slider.max) : 100;
+                const min = slider.min ? parseFloat(slider.min) : 0;
+                const val = parseFloat(slider.value) || 0;
+                const pct = ((val - min) / (max - min)) * 100;
+                slider.style.backgroundSize = `${pct}% 100%`;
+            };
+            
+            playBtn.onclick = () => {
+                if (audio.paused) {
+                    document.querySelectorAll('audio').forEach(a => { if (a !== audio) a.pause(); });
+                    audio.play();
+                } else {
+                    audio.pause();
+                }
+            };
+            
+            audio.onplay = () => {
+                playIcon.style.display = 'none';
+                pauseIcon.style.display = 'block';
+                playBtn.style.paddingLeft = '0';
+            };
+            
+            audio.onpause = () => {
+                playIcon.style.display = 'block';
+                pauseIcon.style.display = 'none';
+                playBtn.style.paddingLeft = '2px';
+            };
+            
+            audio.onloadedmetadata = () => {
+                durationDisplay.textContent = formatTime(audio.duration);
+                progress.max = audio.duration;
+                setSliderFill(progress);
+            };
+            
+            audio.ontimeupdate = () => {
+                timeDisplay.textContent = formatTime(audio.currentTime);
+                progress.value = audio.currentTime;
+                setSliderFill(progress);
+            };
+            
+            progress.oninput = (e) => {
+                audio.currentTime = e.target.value;
+                setSliderFill(progress);
+            };
+            
+            // Popover Speed logic
+            speedBtn.onclick = (e) => {
+                e.stopPropagation();
+                const isShowing = speedPopover.style.display === 'flex';
+                document.querySelectorAll('[id^="speed-popover-"]').forEach(p => p.style.display = 'none');
+                if (!isShowing) speedPopover.style.display = 'flex';
+            };
+            
+            document.addEventListener('click', (e) => {
+                if (!speedPopover.contains(e.target) && e.target !== speedBtn) {
+                    speedPopover.style.display = 'none';
+                }
+            });
+
+            speedPopover.onclick = (e) => e.stopPropagation();
+
+            const updateSpeed = (val) => {
+                let s = parseFloat(val);
+                if(s < 0.5) s = 0.5;
+                if(s > 2) s = 2;
+                audio.playbackRate = s;
+                speedSlider.value = s;
+                setSliderFill(speedSlider);
+                
+                speedBtn.textContent = s.toFixed(2).replace(/\.00$/, '').replace(/0$/, '') + 'x';
+                
+                speedPresets.forEach(btn => {
+                    if (parseFloat(btn.dataset.speed) === s) {
+                        btn.style.color = 'var(--text)';
+                        btn.style.background = 'var(--border)';
+                    } else {
+                        btn.style.color = 'var(--text-dim)';
+                        btn.style.background = 'transparent';
+                    }
+                });
+            };
+
+            speedSlider.oninput = (e) => updateSpeed(e.target.value);
+            speedMinus.onclick = () => updateSpeed(audio.playbackRate - 0.05);
+            speedPlus.onclick = () => updateSpeed(audio.playbackRate + 0.05);
+            
+            speedPresets.forEach(btn => {
+                btn.onclick = () => updateSpeed(btn.dataset.speed);
+            });
+            
+            updateSpeed(1.0);
+
+            audio.onended = () => {
+                const nextBtn = document.getElementById(`play-btn-${idx+1}`);
+                if(nextBtn) nextBtn.click();
+            };
             
             // Hide the btn, show status text
             btn.style.display = 'none';
@@ -889,33 +1151,16 @@
                 warnMsg.style.display = 'none';
             }
             
-            // Add Download Button dynamically
-            let dlBtn = wrap.querySelector('.dl-btn');
-            if(!dlBtn) {
-                dlBtn = document.createElement('a');
-                dlBtn.className = 'dl-btn';
-                dlBtn.style.cssText = 'background: var(--border); color: var(--text); padding: 0 15px; margin-left: 15px; text-decoration: none; border-radius: 8px; height: 40px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; font-weight: 500; transition: background 0.2s;';
-                dlBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Скачать';
-                wrap.style.display = 'flex';
-                wrap.style.alignItems = 'center';
-                wrap.appendChild(dlBtn);
-            }
+            // Assign URLs to inline player buttons
             dlBtn.href = url;
             dlBtn.download = `DocuVoice_Page_${idx+1}.mp3`;
-
-            // Add Delete cache button
-            let delBtn = wrap.querySelector('.del-btn');
-            if(!delBtn && textHash) {
-                delBtn = document.createElement('button');
-                delBtn.className = 'del-btn';
-                delBtn.style.cssText = 'background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 0 12px; margin-left: 10px; border-radius: 8px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;';
-                delBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
-                delBtn.title = 'Удалить озвучку';
+            
+            if (textHash) {
+                delBtn.style.display = 'flex';
                 delBtn.onclick = () => deleteAudio(textHash, idx);
-                wrap.appendChild(delBtn);
             }
 
-            if (autoPlay) audio.play();
+            if (autoPlay) playBtn.click();
             wrap.style.display = 'flex';
         }
 

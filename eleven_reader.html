@@ -1223,8 +1223,7 @@
                 
                 // Save generated audio to local and Firebase cache
                 const exactHash = await hashText(txt);
-                const match = txt.match(/^\s*(?:\*\*)?(\d{1,2}[A-B]\s*-)/i);
-                const topicHash = match ? await hashText(match[1].trim()) : null;
+                const topicHash = await getTopicHashInternal(txt);
 
                 await saveAudioToCacheLocal(exactHash, blob);
                 if (topicHash) await saveAudioToCacheLocal(topicHash, blob);
@@ -1306,6 +1305,17 @@
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function getTopicHashInternal(text) {
+            // Строгий поиск только номера билета в начале (например, "17A", "3B") 
+            // Игнорируем любые тире, пробелы и другие символы после номера
+            const match = text.match(/^\s*(?:\*\*)?(\d{1,2}[A-B])/i);
+            if (match) {
+                // Создаем нормализованный хэш (TOPIC_17A)
+                return await hashText("TOPIC_" + match[1].toUpperCase());
+            }
+            return null;
         }
 
         async function saveAudioToCacheLocal(hash, blob) {
@@ -1398,10 +1408,9 @@
                 let blob = await fetchByHash(exactHash);
                 if (blob) return { blob, isTopicMatch: false, hash: exactHash };
 
-                // 2. Попытка нестрогого поиска (по номеру билета, например "17A -")
-                const match = text.match(/^\s*(?:\*\*)?(\d{1,2}[A-B]\s*-)/i);
-                if (match) {
-                    const topicHash = await hashText(match[1].trim());
+                // 2. Попытка нестрогого поиска (по номеру билета, например "17A")
+                const topicHash = await getTopicHashInternal(text);
+                if (topicHash) {
                     blob = await fetchByHash(topicHash);
                     if (blob) {
                         return { blob, isTopicMatch: true, hash: topicHash };

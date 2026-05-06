@@ -84,6 +84,22 @@ window.dbApi = {
             const docSnap = await getDoc(docRef);
             return docSnap.exists() ? docSnap.data().uiSettings || null : null;
         } catch (e) { return null; }
+    },
+    saveCategories: async (categoriesArray) => {
+        const user = auth.currentUser;
+        if (!user) return;
+        try {
+            await setDoc(doc(db, "users", user.uid), { categories: categoriesArray, lastUpdated: new Date() }, { merge: true });
+        } catch (e) { console.error("Error saving categories:", e); }
+    },
+    loadCategories: async () => {
+        const user = auth.currentUser;
+        if (!user) return [];
+        try {
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+            return docSnap.exists() ? docSnap.data().categories || [] : [];
+        } catch (e) { return []; }
     }
 };
 
@@ -296,13 +312,13 @@ export function initSidebarManager(context) {
                 context.iconEditor.open((data) => {
                     let u = data.url || "";
                     if (u && !u.startsWith('http')) u = 'https://' + u;
-                    const newApp = { name: data.name || "Новый сайт", url: u, icon: data.icon };
+                    const newApp = { name: data.name || "Новый сайт", url: u, icon: data.icon, category: data.category || [] };
                     const currentApps = context.getAppsFromStorage();
                     currentApps.push(newApp);
                     context.renderAppsToDOM(currentApps);
                     context.saveCurrentState(currentApps);
                     closeMenu();
-                });
+                }, null, window.userCategories || []);
             };
         }
 

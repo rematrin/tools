@@ -41,10 +41,262 @@ export class IconEditor {
         return '';
     }
 
-    open(onSave, initialData = null) {
+    open(onSave, initialData = null, userCategories = []) {
         this.onSaveCallback = onSave;
         this.createModal();
         this.initCanvas();
+
+        this.selectedCategories = [];
+
+        if (initialData && initialData.category) {
+            if (Array.isArray(initialData.category)) {
+                this.selectedCategories = [...initialData.category];
+            } else {
+                this.selectedCategories = [initialData.category];
+            }
+        }
+
+        const list = document.getElementById('editorAppCategoryList');
+        const newCatInput = document.getElementById('newCategoryInput');
+        const container = document.getElementById('categoryOptionsContainer');
+        const fakeInput = document.getElementById('editorAppCategoryFakeInput');
+
+        const updateHeaderText = () => {
+            if (this.selectedCategories.length === 0) fakeInput.value = '';
+            else if (this.selectedCategories.length === 1) fakeInput.value = this.selectedCategories[0];
+            else fakeInput.value = `Выбрано: ${this.selectedCategories.length}`;
+        };
+
+        const renderCats = () => {
+            if (!container) return;
+            container.innerHTML = '';
+            userCategories.forEach((cat, idx) => {
+                const item = document.createElement('div');
+                item.className = 'category-dropdown-item';
+                const isSelected = this.selectedCategories.includes(cat);
+                
+                item.innerHTML = `
+                    <div class="cat-drag-handle" style="cursor: grab; display: flex; align-items: center; padding-right: 4px; color: #bbb;" title="Перетащить">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    </div>
+                    <div class="cat-check-zone" style="display: flex; align-items: center; flex-grow: 1; gap: 10px;">
+                        <div class="cat-checkbox ${isSelected ? 'checked' : ''}"></div>
+                        <span class="cat-name" style="word-break: break-all;">${cat}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <div class="cat-edit" title="Редактировать название" style="cursor: pointer; color: #9aa0a6; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; opacity: 0.5; transition: all 0.2s;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        </div>
+                        <div class="cat-delete" title="Удалить категорию">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </div>
+                    </div>
+                `;
+
+                // --- КНОПКА РЕДАКТИРОВАНИЯ ---
+                item.querySelector('.cat-edit').onmouseover = function() { this.style.opacity = '1'; this.style.background = 'rgba(154,160,166,0.1)'; };
+                item.querySelector('.cat-edit').onmouseout = function() { this.style.opacity = '0.5'; this.style.background = 'transparent'; };
+                
+                item.querySelector('.cat-edit').onclick = (e) => {
+                    e.stopPropagation();
+                    const nameSpan = item.querySelector('.cat-name');
+                    const currentName = nameSpan.innerText;
+                    
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = currentName;
+                    input.style.cssText = 'border: 1px solid #0A84FF; border-radius: 4px; outline: none; padding: 2px 6px; font-size: 14px; width: 100%; box-sizing: border-box;';
+                    
+                    const checkZone = item.querySelector('.cat-check-zone');
+                    checkZone.replaceChild(input, nameSpan);
+                    input.focus();
+                    input.select();
+                    
+                    const saveRename = () => {
+                        const newName = input.value.trim();
+                        if (newName && newName !== currentName && !userCategories.includes(newName)) {
+                            userCategories[idx] = newName;
+                            const sIdx = this.selectedCategories.indexOf(cat);
+                            if (sIdx !== -1) {
+                                this.selectedCategories[sIdx] = newName;
+                            }
+                            
+                            if (window.getAppsFromStorage && window.saveCurrentState && window.renderAppsToDOM) {
+                                const apps = window.getAppsFromStorage();
+                                const renameCategoryInApps = (appsList) => {
+                                    return appsList.map(app => {
+                                        if (app.type === 'folder') {
+                                            app.items = renameCategoryInApps(app.items || []);
+                                        } else if (Array.isArray(app.category)) {
+                                            app.category = app.category.map(c => c === cat ? newName : c);
+                                        } else if (app.category === cat) {
+                                            app.category = newName;
+                                        }
+                                        return app;
+                                    });
+                                };
+                                const updatedApps = renameCategoryInApps(apps);
+                                window.saveCurrentState(updatedApps);
+                                window.renderAppsToDOM(updatedApps);
+                            }
+                            
+                            if (window.auth && window.auth.currentUser && window.dbApi) window.dbApi.saveCategories(userCategories);
+                            if (window.renderCategoryBar) window.renderCategoryBar();
+                            updateHeaderText();
+                        }
+                        renderCats();
+                    };
+                    
+                    input.onkeydown = (ev) => {
+                        if (ev.key === 'Enter') {
+                            ev.preventDefault();
+                            saveRename();
+                        } else if (ev.key === 'Escape') {
+                            ev.preventDefault();
+                            renderCats();
+                        }
+                    };
+                    input.onclick = (ev) => ev.stopPropagation();
+                    input.onblur = saveRename;
+                };
+
+                // --- ДРАГ-ЭНД-ДРОП СОРТИРОВКА ---
+                const dragHandle = item.querySelector('.cat-drag-handle');
+                dragHandle.onmousedown = () => {
+                    item.setAttribute('draggable', 'true');
+                };
+                dragHandle.onmouseup = () => {
+                    item.removeAttribute('draggable');
+                };
+
+                item.ondragstart = (e) => {
+                    e.dataTransfer.setData('text/plain', idx);
+                    item.classList.add('dragging');
+                    container.classList.add('dragging-active');
+                };
+                item.ondragend = () => {
+                    item.classList.remove('dragging');
+                    item.removeAttribute('draggable');
+                    container.classList.remove('dragging-active');
+                };
+                item.ondragover = (e) => {
+                    e.preventDefault();
+                    item.classList.add('drag-over');
+                };
+                item.ondragleave = () => {
+                    item.classList.remove('drag-over');
+                };
+                item.ondrop = (e) => {
+                    e.preventDefault();
+                    item.classList.remove('drag-over');
+                    const draggedIdx = parseInt(e.dataTransfer.getData('text/plain'));
+                    if (draggedIdx !== idx) {
+                        const draggedCat = userCategories[draggedIdx];
+                        userCategories.splice(draggedIdx, 1);
+                        userCategories.splice(idx, 0, draggedCat);
+                        
+                        if (window.auth && window.auth.currentUser && window.dbApi) window.dbApi.saveCategories(userCategories);
+                        if (window.renderCategoryBar) window.renderCategoryBar();
+                        renderCats();
+                    }
+                };
+                
+                item.querySelector('.cat-check-zone').onclick = (e) => {
+                    e.stopPropagation();
+                    if (isSelected) this.selectedCategories = this.selectedCategories.filter(c => c !== cat);
+                    else this.selectedCategories.push(cat);
+                    updateHeaderText();
+                    renderCats();
+                };
+
+                item.querySelector('.cat-delete').onclick = (e) => {
+                    e.stopPropagation();
+                    item.innerHTML = `
+                        <div style="display: flex; flex-direction: column; width: 100%; gap: 8px; padding: 2px 0;">
+                            <span style="font-size: 13px; color: #ea4335; font-weight: 500; word-break: break-word;">Удалить категорию "${cat}"?</span>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="cat-confirm-btn yes" style="flex: 1; background: #ea4335; color: white; border: none; padding: 6px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: opacity 0.2s;">Да</button>
+                                <button class="cat-confirm-btn no" style="flex: 1; background: #f1f3f4; color: #333; border: none; padding: 6px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: background 0.2s;">Нет</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    item.querySelector('.yes').onmouseover = function() { this.style.opacity = '0.8'; };
+                    item.querySelector('.yes').onmouseout = function() { this.style.opacity = '1'; };
+                    item.querySelector('.no').onmouseover = function() { this.style.background = '#e8eaed'; };
+                    item.querySelector('.no').onmouseout = function() { this.style.background = '#f1f3f4'; };
+
+                    item.querySelector('.yes').onclick = (e2) => {
+                        e2.stopPropagation();
+                        userCategories.splice(idx, 1);
+                        this.selectedCategories = this.selectedCategories.filter(c => c !== cat);
+                        
+                        // Clean up deleted category from all apps (recursively handling folder items)
+                        if (window.getAppsFromStorage && window.saveCurrentState && window.renderAppsToDOM) {
+                            const apps = window.getAppsFromStorage();
+                            const cleanApps = (appsList) => {
+                                return appsList.map(app => {
+                                    if (app.type === 'folder') {
+                                        app.items = cleanApps(app.items || []);
+                                    } else if (Array.isArray(app.category)) {
+                                        app.category = app.category.filter(c => c !== cat);
+                                    } else if (app.category === cat) {
+                                        app.category = '';
+                                    }
+                                    return app;
+                                });
+                            };
+                            const updatedApps = cleanApps(apps);
+                            window.saveCurrentState(updatedApps);
+                            window.renderAppsToDOM(updatedApps);
+                        }
+
+                        if (window.auth && window.auth.currentUser && window.dbApi) window.dbApi.saveCategories(userCategories);
+                        if (window.renderCategoryBar) window.renderCategoryBar();
+                        updateHeaderText();
+                        renderCats();
+                    };
+                    item.querySelector('.no').onclick = (e2) => {
+                        e2.stopPropagation();
+                        renderCats();
+                    };
+                };
+
+                container.appendChild(item);
+            });
+        };
+
+        if (fakeInput && list) {
+            fakeInput.onclick = (e) => { e.stopPropagation(); list.classList.toggle('active'); };
+            updateHeaderText();
+            renderCats();
+            
+            if (newCatInput) {
+                newCatInput.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const val = newCatInput.value.trim();
+                        if (val && !userCategories.includes(val)) {
+                            userCategories.push(val);
+                            this.selectedCategories.push(val);
+                            newCatInput.value = '';
+                            if (window.auth && window.auth.currentUser && window.dbApi) window.dbApi.saveCategories(userCategories);
+                            if (window.renderCategoryBar) window.renderCategoryBar();
+                            updateHeaderText();
+                            renderCats();
+                        }
+                    }
+                };
+            }
+            
+            const outsideClick = (e) => {
+                if (!e.target.closest('.modern-input-content') && list.classList.contains('active')) {
+                    list.classList.remove('active');
+                }
+            };
+            document.addEventListener('click', outsideClick);
+            this.cleanupOutsideClick = () => document.removeEventListener('click', outsideClick);
+        }
 
         if (initialData) {
             this.resetEditor(false);
@@ -182,9 +434,27 @@ export class IconEditor {
                                     <label for="editorAppName">Название</label>
                                 </div>
                             </div>
+                            <div class="modern-input-group" style="overflow: visible;">
+                                <div class="modern-input-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                                </div>
+                                <div class="modern-input-content" style="position: relative;">
+                                    <input type="text" id="editorAppCategoryFakeInput" placeholder=" " readonly style="cursor: pointer; padding-right: 30px;">
+                                    <label for="editorAppCategoryFakeInput">Категория</label>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5f6368" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="category-chevron" style="position: absolute; right: 0px; top: 50%; transform: translateY(-50%); pointer-events: none;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    
+                                    <div id="editorAppCategoryList" class="category-dropdown-list">
+                                        <div id="categoryOptionsContainer"></div>
+                                        <div class="category-dropdown-item add-new" id="categoryAddNewItem">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                            <input type="text" id="newCategoryInput" placeholder="Добавить категорию..." autocomplete="off">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div style="width: 100%; display: flex; flex-direction: column; gap: 5px;">
+                        <div style="width: 100%; display: flex; flex-direction: column; gap: 5px; margin-top: auto;">
                             <div style="border-top: 1px solid #ddd; margin: 0 0 5px 0;"></div>
                             <div style="font-size: 14px; color: #5f6368; font-weight: 500;">Выбрать другую иконку:</div>
                             
@@ -234,6 +504,27 @@ export class IconEditor {
             </div>
         </div>
         <style>
+            .category-dropdown-list { display: none; position: absolute; top: calc(100% - 4px); left: -36px; right: 0; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; max-height: 200px; overflow-y: auto; padding: 4px 0; margin-top: 4px; }
+            .category-dropdown-list.active { display: block; }
+            .category-dropdown-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #333; cursor: pointer; transition: background 0.2s; }
+            .category-dropdown-item:hover { background: #f9f9f9; }
+            .category-dropdown-item:last-child { border-bottom: none; }
+            .cat-check-zone { display: flex; align-items: center; flex-grow: 1; gap: 10px; }
+            .cat-checkbox { width: 18px; height: 18px; border-radius: 4px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+            .cat-checkbox.checked { background: #0A84FF; border-color: #0A84FF; }
+            .cat-checkbox.checked::after { content: ''; width: 4px; height: 8px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px; }
+            .cat-name { flex-grow: 1; user-select: none; }
+            .cat-delete { color: #ff3b30; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; opacity: 0.5; transition: opacity 0.2s, background 0.2s; }
+            .cat-delete:hover { opacity: 1; background: rgba(255,59,48,0.1); }
+            .category-dropdown-item.add-new { color: #0A84FF; gap: 8px; cursor: default; }
+            .category-dropdown-item.add-new input { border: none; outline: none; background: transparent; flex-grow: 1; font-size: 14px; color: #202124; padding: 0 !important; }
+            .category-dropdown-item.add-new input::placeholder { color: #aaa; }
+            
+            .category-dropdown-item.drag-over { box-shadow: inset 0 2px 0 #0A84FF; }
+            .category-dropdown-item.dragging { opacity: 0.4; }
+            
+            .category-dropdown-list.dragging-active .category-dropdown-item * { pointer-events: none; }
+
             .editor-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
             .editor-modal { background: white; width: 750px; max-width: 95%; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; color: #202124; font-family: sans-serif; }
             .editor-header { padding: 10px 20px; text-align: center; font-size: 18px; position: relative; border-bottom: 1px solid #eee; }
@@ -332,7 +623,7 @@ export class IconEditor {
             .search-item img { width: 28px; height: 28px; transition: transform 0.2s; }
             .search-item:hover img { transform: scale(1.1); }
             
-            .editor-right-col { display: flex; flex-direction: column; justify-content: space-between; min-width: 250px; flex: 1; max-width: 300px; }
+            .editor-right-col { display: flex; flex-direction: column; justify-content: flex-start; gap: 15px; min-width: 250px; flex: 1; max-width: 300px; }
             h4 { margin: 0 0 10px 0; font-weight: 500; font-size: 14px; color: #5f6368; }
             
             .preview-box { width: 80px; height: 80px; border-radius: 20px; overflow: hidden; border: 1px solid #eee; background: white; flex-shrink: 0; position: relative; }
@@ -371,7 +662,7 @@ export class IconEditor {
             }
             #editorCustomColorPicker { opacity: 0; position: absolute; left: 0; top: 0; width: 100%; height: 100%; cursor: pointer; z-index: 5; }
             
-            .editor-inputs { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #eee; padding-top: 15px; }
+            .editor-inputs { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #eee; padding-top: 15px; margin-bottom: 10px; }
             .modern-input-group {
                 display: flex;
                 align-items: center;
@@ -434,7 +725,8 @@ export class IconEditor {
             
             /* Animation for Floating Label inside bounds */
             .modern-input-content input:focus ~ label,
-            .modern-input-content input:not(:placeholder-shown) ~ label {
+            .modern-input-content input:not(:placeholder-shown) ~ label,
+            .modern-input-content input.always-float ~ label {
                 top: 8px;
                 transform: translateY(0) scale(0.75);
                 transform-origin: left top;
@@ -838,8 +1130,18 @@ export class IconEditor {
         if (fullClear) {
             const nameInput = document.getElementById('editorAppName');
             const urlInput = document.getElementById('editorAppUrl');
+            
             if (nameInput) nameInput.value = '';
             if (urlInput) urlInput.value = '';
+            
+            this.selectedCategories = [];
+            const fakeInput = document.getElementById('editorAppCategoryFakeInput');
+            if (fakeInput) fakeInput.value = '';
+            const container = document.getElementById('categoryOptionsContainer');
+            if (container) {
+                const checkboxes = container.querySelectorAll('.cat-checkbox');
+                checkboxes.forEach(c => c.classList.remove('checked'));
+            }
             this.uploadedImage = null;
             this.state.scale = 1;
         } else {
@@ -897,8 +1199,9 @@ export class IconEditor {
 
                 const name = document.getElementById('editorAppName').value.trim();
                 const url = document.getElementById('editorAppUrl').value.trim();
+                const category = this.selectedCategories && this.selectedCategories.length > 0 ? this.selectedCategories : null;
 
-                this.onSaveCallback({ icon: hostedUrl, name: name, url: url });
+                this.onSaveCallback({ icon: hostedUrl, name: name, url: url, category: category });
                 this.close();
 
             } catch (error) {
@@ -923,5 +1226,8 @@ export class IconEditor {
         if (result.success) return result.data.url; else throw new Error('ImgBB Upload Failed');
     }
 
-    close() { if (this.modal) { this.modal.remove(); this.modal = null; } }
+    close() { 
+        if (this.cleanupOutsideClick) this.cleanupOutsideClick();
+        if (this.modal) { this.modal.remove(); this.modal = null; } 
+    }
 }

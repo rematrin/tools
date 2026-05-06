@@ -157,7 +157,7 @@ export class FolderManager {
                         this.currentFolderData.items[idx] = { ...app, ...newData };
                         this.renderItems();
                         this.syncToGlobalState();
-                    }, app);
+                    }, app, window.userCategories);
                 };
             }
             // -------------------------------------

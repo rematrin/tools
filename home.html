@@ -264,6 +264,48 @@
             display: none;
         }
 
+        /* --- CATEGORIES BAR --- */
+        .category-bar {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding: 10px 20px;
+            width: 100%;
+            max-width: max(450px, calc(var(--grid-cols, 4) * 110px));
+            position: absolute;
+            top: -50px; /* Отступ вверх относительно сетки */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .category-bar::-webkit-scrollbar { display: none; }
+        .category-capsule {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 14px;
+            color: white;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            user-select: none;
+        }
+        .category-capsule.active {
+            background: rgba(255, 255, 255, 0.8);
+            color: black;
+        }
+        .category-capsule:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .category-capsule.active:hover {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
         .app-page {
             flex: 0 0 100%;
             width: 100%;
@@ -315,6 +357,7 @@
         }
 
         .pages-wrapper {
+            position: relative;
             width: 100%;
             margin: auto 0;
             padding-bottom: 60px;
@@ -1922,6 +1965,7 @@
         </div>
 
         <div class="pages-wrapper">
+            <div id="categoryBar" class="category-bar" style="display: none;"></div>
             <div id="pagesContainer" class="pages-container"></div>
             <div id="paginationDots" class="pagination-dots"></div>
         </div>
@@ -2033,6 +2077,36 @@
         let folderManager;
         let currentApps = []; // Глобальное состояние текущих приложений
 
+        window.userCategories = [];
+        let currentCategoryFilter = null;
+        
+        window.renderCategoryBar = function() {
+            const bar = document.getElementById('categoryBar');
+            if (!bar) return;
+            if (!window.userCategories || window.userCategories.length === 0) {
+                bar.style.display = 'none';
+                return;
+            }
+            bar.style.display = 'flex';
+            bar.innerHTML = '';
+            
+            window.userCategories.forEach(cat => {
+                const capsule = document.createElement('div');
+                capsule.className = 'category-capsule' + (currentCategoryFilter === cat ? ' active' : '');
+                capsule.innerText = cat;
+                capsule.onclick = () => {
+                    if (currentCategoryFilter === cat) {
+                        currentCategoryFilter = null; // deactivate
+                    } else {
+                        currentCategoryFilter = cat;
+                    }
+                    renderCategoryBar();
+                    renderAppsToDOM(currentApps);
+                };
+                bar.appendChild(capsule);
+            });
+        };
+
         // --- КОНФИГУРАЦИЯ ---
         const STORAGE_KEY = 'my_apps_cache_v1';
         const DEFAULT_APPS = [
@@ -2073,8 +2147,25 @@
 
             pagesContainer.innerHTML = '';
             dotsContainer.innerHTML = '';
+            
+            let appsToRender = appsArray;
+            if (currentCategoryFilter) {
+                appsToRender = [];
+                appsArray.forEach(app => {
+                    if (app.type === 'folder') {
+                        // Extract apps from folder that match category
+                        const matchingInFolder = (app.items || []).filter(item => {
+                            return Array.isArray(item.category) ? item.category.includes(currentCategoryFilter) : item.category === currentCategoryFilter;
+                        });
+                        appsToRender.push(...matchingInFolder);
+                    } else {
+                        const hasCat = Array.isArray(app.category) ? app.category.includes(currentCategoryFilter) : app.category === currentCategoryFilter;
+                        if (hasCat) appsToRender.push(app);
+                    }
+                });
+            }
 
-            const numPages = Math.ceil(appsArray.length / APPS_PER_PAGE) || 1;
+            const numPages = Math.ceil(appsToRender.length / APPS_PER_PAGE) || 1;
 
             for (let i = 0; i < numPages; i++) {
                 const pageDiv = document.createElement('div');
@@ -2082,10 +2173,10 @@
                 pageDiv.dataset.pageIndex = i;
                 pagesContainer.appendChild(pageDiv);
 
-                const pageApps = appsArray.slice(i * APPS_PER_PAGE, (i + 1) * APPS_PER_PAGE);
+                const pageApps = appsToRender.slice(i * APPS_PER_PAGE, (i + 1) * APPS_PER_PAGE);
 
                 pageApps.forEach((app, innerIndex) => {
-                    const absIndex = i * APPS_PER_PAGE + innerIndex;
+                    const absIndex = currentCategoryFilter ? -1 : (i * APPS_PER_PAGE + innerIndex); // Disable drag in filter mode
                     let newItemHTML;
                     const tempDiv = document.createElement('div');
 
@@ -2298,6 +2389,9 @@
                 }
             }
         }
+        window.getAppsFromStorage = getAppsFromStorage;
+        window.renderAppsToDOM = renderAppsToDOM;
+        window.saveCurrentState = saveCurrentState;
 
         // --- ЗАПУСК ИЗ КЕША ---
         const cachedData = localStorage.getItem(STORAGE_KEY);
@@ -2529,10 +2623,13 @@
 
                         if (appData) {
                             iconEditor.open((newData) => {
-                                currentApps[absIndex] = { ...appData, ...newData };
-                                saveCurrentState(currentApps);
-                                renderAppsToDOM(currentApps);
-                            }, appData);
+                                const freshApps = getAppsFromStorage();
+                                if (freshApps[absIndex]) {
+                                    freshApps[absIndex] = { ...freshApps[absIndex], ...newData };
+                                    saveCurrentState(freshApps);
+                                    renderAppsToDOM(freshApps);
+                                }
+                            }, appData, window.userCategories);
                         }
                     };
                 }
@@ -2783,6 +2880,14 @@
                             } else {
                                 // Если в облаке пусто, сохраняем локальное состояние туда
                                 saveCurrentState(getAppsFromStorage());
+                            }
+                            
+                            if (window.dbApi.loadCategories) {
+                                const cloudCategories = await window.dbApi.loadCategories();
+                                if (cloudCategories && cloudCategories.length > 0) {
+                                    window.userCategories = cloudCategories;
+                                    if (window.renderCategoryBar) window.renderCategoryBar();
+                                }
                             }
                         }
                     } else {

@@ -273,20 +273,25 @@
             width: 100%;
             max-width: max(450px, calc(var(--grid-cols, 4) * 110px));
             position: absolute;
-            top: -50px; /* Отступ вверх относительно сетки */
+            top: -50px;
+            /* Отступ вверх относительно сетки */
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        .category-bar::-webkit-scrollbar { display: none; }
+
+        .category-bar::-webkit-scrollbar {
+            display: none;
+        }
+
         .category-capsule {
             background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             padding: 6px 14px;
-            border-radius: 16px;
+            border-radius: 10px;
             font-size: 14px;
             color: white;
             white-space: nowrap;
@@ -295,13 +300,16 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             user-select: none;
         }
+
         .category-capsule.active {
             background: rgba(255, 255, 255, 0.8);
             color: black;
         }
+
         .category-capsule:hover {
             background: rgba(255, 255, 255, 0.3);
         }
+
         .category-capsule.active:hover {
             background: rgba(255, 255, 255, 0.9);
         }
@@ -2079,8 +2087,8 @@
 
         window.userCategories = [];
         let currentCategoryFilter = null;
-        
-        window.renderCategoryBar = function() {
+
+        window.renderCategoryBar = function () {
             const bar = document.getElementById('categoryBar');
             if (!bar) return;
             if (!window.userCategories || window.userCategories.length === 0) {
@@ -2089,7 +2097,7 @@
             }
             bar.style.display = 'flex';
             bar.innerHTML = '';
-            
+
             window.userCategories.forEach(cat => {
                 const capsule = document.createElement('div');
                 capsule.className = 'category-capsule' + (currentCategoryFilter === cat ? ' active' : '');
@@ -2147,7 +2155,7 @@
 
             pagesContainer.innerHTML = '';
             dotsContainer.innerHTML = '';
-            
+
             let appsToRender = appsArray;
             if (currentCategoryFilter) {
                 appsToRender = [];
@@ -2881,7 +2889,7 @@
                                 // Если в облаке пусто, сохраняем локальное состояние туда
                                 saveCurrentState(getAppsFromStorage());
                             }
-                            
+
                             if (window.dbApi.loadCategories) {
                                 const cloudCategories = await window.dbApi.loadCategories();
                                 if (cloudCategories && cloudCategories.length > 0) {

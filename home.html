@@ -2878,6 +2878,11 @@
                         }
 
                         if (window.dbApi) {
+                            // Миграция старых данных (массив → подколлекция)
+                            if (window.dbApi.migrateApps) {
+                                await window.dbApi.migrateApps();
+                            }
+
                             const cloudApps = await window.dbApi.loadApps();
                             if (cloudApps && cloudApps.length > 0) {
                                 const currentLocal = localStorage.getItem(STORAGE_KEY);

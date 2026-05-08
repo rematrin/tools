@@ -262,16 +262,25 @@ export class FolderManager {
         // Обновляем UI внутри папки
         this.renderItems();
 
-        // Добавляем в глобальный стейт
+        // Обновляем папку в глобальном стейте
         const allApps = this.ctx.getApps();
-        // Вставляем сразу после текущей папки
-        allApps.splice(this.activeFolderIndex + 1, 0, app);
 
+        // Обновляем (или удаляем) папку в массиве
+        const isEmpty = !this.currentFolderData.items || this.currentFolderData.items.length === 0;
+        if (isEmpty) {
+            allApps.splice(this.activeFolderIndex, 1);
+            // Вставляем вынесенное приложение на место папки
+            allApps.splice(this.activeFolderIndex, 0, app);
+            this.close();
+        } else {
+            allApps[this.activeFolderIndex] = this.currentFolderData;
+            // Вставляем сразу после текущей папки
+            allApps.splice(this.activeFolderIndex + 1, 0, app);
+        }
+
+        // Одна запись вместо двух
         this.ctx.saveApps(allApps);
         this.ctx.renderMain(allApps, true);
-
-        // Если папка пуста (или просто после выноса) сохраняем актуальность в context
-        this.syncToGlobalState();
     }
 
     enableEditMode() {

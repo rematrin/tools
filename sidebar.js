@@ -13,7 +13,12 @@ import {
     getFirestore,
     doc,
     setDoc,
-    getDoc
+    getDoc,
+    collection,
+    getDocs,
+    deleteDoc,
+    writeBatch,
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- КОНФИГ FIREBASE ---
@@ -35,23 +40,148 @@ const provider = new GoogleAuthProvider();
 window.auth = auth;
 window.db = db;
 
+// --- МИГРАЦИЯ: массив apps → подколлекция apps ---
+async function migrateAppsToSubcollection(userId) {
+    try {
+        const userDocRef = doc(db, "users", userId);
+        const userSnap = await getDoc(userDocRef);
+        if (!userSnap.exists()) return false;
+
+        const data = userSnap.data();
+        // Проверяем, есть ли старый массив apps в документе пользователя
+        if (!data.apps || !Array.isArray(data.apps) || data.apps.length === 0) return false;
+
+        console.log(`[Migration] Найдено ${data.apps.length} приложений в старом формате. Миграция...`);
+
+        // Вспомогательная функция: удаляет поле apps из документа пользователя
+        const removeOldAppsField = async () => {
+            const cleanData = { ...data };
+            delete cleanData.apps;
+            await setDoc(userDocRef, { ...cleanData, _appsMigrated: true, lastUpdated: new Date() });
+        };
+
+        // Проверяем, не мигрировали ли уже (если подколлекция уже содержит данные — не перезаписываем)
+        const appsCollRef = collection(db, "users", userId, "apps");
+        const existingSnap = await getDocs(appsCollRef);
+        if (!existingSnap.empty) {
+            console.log(`[Migration] Подколлекция apps уже содержит ${existingSnap.size} документов. Удаляем старое поле.`);
+            await removeOldAppsField();
+            return false;
+        }
+
+        // Записываем каждое приложение как отдельный документ в подколлекцию
+        const batch = writeBatch(db);
+        data.apps.forEach((app, index) => {
+            const appDocRef = doc(appsCollRef); // auto-ID
+            batch.set(appDocRef, { ...app, order: index });
+        });
+        await batch.commit();
+
+        // Удаляем старое поле apps из документа пользователя
+        await removeOldAppsField();
+
+        console.log(`[Migration] Успешно мигрировано ${data.apps.length} приложений в подколлекцию.`);
+        return true;
+    } catch (e) {
+        console.error("[Migration] Ошибка миграции:", e);
+        return false;
+    }
+}
+
+// --- Блокировка для предотвращения одновременной записи в подколлекцию apps ---
+let _appsWriteLock = Promise.resolve();
+function withAppsLock(fn) {
+    const prev = _appsWriteLock;
+    let resolve;
+    _appsWriteLock = new Promise(r => { resolve = r; });
+    return prev.then(() => fn()).finally(() => resolve());
+}
+
 // --- API БАЗЫ ДАННЫХ ---
 window.dbApi = {
+    // Миграция (вызывается при логине)
+    migrateApps: async () => {
+        const user = auth.currentUser;
+        if (!user) return false;
+        return withAppsLock(() => migrateAppsToSubcollection(user.uid));
+    },
+
     saveApps: async (appsArray) => {
         const user = auth.currentUser;
         if (!user) return;
-        try {
-            await setDoc(doc(db, "users", user.uid), { apps: appsArray, lastUpdated: new Date() }, { merge: true });
-        } catch (e) { console.error("Error saving apps:", e); }
+        return withAppsLock(async () => {
+            try {
+                const appsCollRef = collection(db, "users", user.uid, "apps");
+
+                // Удаляем все существующие документы в подколлекции
+                const existingSnap = await getDocs(appsCollRef);
+                const deleteBatch = writeBatch(db);
+                existingSnap.forEach(docSnap => {
+                    deleteBatch.delete(docSnap.ref);
+                });
+                await deleteBatch.commit();
+
+                // Записываем новые приложения
+                const saveBatch = writeBatch(db);
+                appsArray.forEach((app, index) => {
+                    const appDocRef = doc(appsCollRef); // auto-ID
+                    saveBatch.set(appDocRef, { ...app, order: index });
+                });
+                await saveBatch.commit();
+
+                // Обновляем метку времени в документе пользователя
+                await setDoc(doc(db, "users", user.uid), { lastUpdated: new Date() }, { merge: true });
+            } catch (e) { console.error("Error saving apps:", e); }
+        });
     },
+
     loadApps: async () => {
         const user = auth.currentUser;
         if (!user) return null;
-        try {
-            const docRef = doc(db, "users", user.uid);
-            const docSnap = await getDoc(docRef);
-            return docSnap.exists() ? docSnap.data().apps || [] : null;
-        } catch (e) { return null; }
+        return withAppsLock(async () => {
+            try {
+                const appsCollRef = collection(db, "users", user.uid, "apps");
+                const snapshot = await getDocs(appsCollRef);
+
+                if (snapshot.empty) return null;
+
+                // Собираем приложения и сортируем по полю order
+                const apps = [];
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const { order, ...appData } = data;
+                    apps.push({ ...appData, _order: order ?? 9999, _ref: docSnap.ref });
+                });
+                apps.sort((a, b) => a._order - b._order);
+
+                // Дедупликация: если есть дубли (из-за гонки), удаляем лишние
+                const seen = new Set();
+                const unique = [];
+                const dupeRefs = [];
+                for (const app of apps) {
+                    // Для папок добавляем кол-во элементов в ключ
+                    const itemsKey = app.type === 'folder' ? `-${(app.items || []).length}items` : '';
+                    const key = `${app.name || ''}-${app.url || ''}-${app.type || ''}${itemsKey}`;
+                    if (seen.has(key)) {
+                        dupeRefs.push(app._ref);
+                    } else {
+                        seen.add(key);
+                        unique.push(app);
+                    }
+                }
+
+                // Удаляем дубли из Firestore
+                if (dupeRefs.length > 0) {
+                    console.log(`[Dedup] Найдено ${dupeRefs.length} дубликатов, удаляю...`);
+                    const dedupBatch = writeBatch(db);
+                    dupeRefs.forEach(ref => dedupBatch.delete(ref));
+                    await dedupBatch.commit();
+                }
+
+                // Убираем служебные поля
+                return unique.map(({ _order, _ref, ...rest }) => rest);
+            } catch (e) { return null; }
+        });
     },
     saveWallpaper: async (settings) => {
         const user = auth.currentUser;

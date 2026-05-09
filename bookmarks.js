@@ -7,6 +7,7 @@ import {
     addDoc,
     deleteDoc,
     updateDoc,
+    writeBatch,
     doc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -162,6 +163,7 @@ function renderList(items) {
     items.forEach(item => {
         const row = document.createElement('div');
         row.className = 'bookmark-row';
+        row.setAttribute('data-id', item.id);
         
         let domain = '';
         try {
@@ -203,6 +205,12 @@ function renderList(items) {
                         <line x1="10" y1="14" x2="21" y2="3"></line>
                     </svg>
                 </button>
+                <button class="btn-action-round btn-rename-bookmark" title="Переименовать" style="color: var(--text-secondary);">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
                 <button class="btn-action-round btn-move-to-trash" title="В корзину" style="color: #ff5e62;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
@@ -213,6 +221,9 @@ function renderList(items) {
         }
 
         row.innerHTML = `
+            <div class="drag-handle" title="Перетащить">
+                <svg width="10" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+            </div>
             <div class="bookmark-left">
                 <div class="favicon-wrapper">
                     <img src="${faviconUrl}" class="favicon-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -232,6 +243,57 @@ function renderList(items) {
         row.querySelector('.bookmark-left').addEventListener('click', () => {
             window.open(item.url, '_blank');
         });
+
+        // Inline Rename for single bookmark link
+        const renameBtn = row.querySelector('.btn-rename-bookmark');
+        if (renameBtn) {
+            renameBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const titleEl = row.querySelector('.bookmark-title');
+                if (!titleEl || titleEl.querySelector('input')) return;
+
+                const oldTitle = item.title;
+                titleEl.innerHTML = `<input type="text" class="inline-edit-input" style="color:var(--text); border-bottom-color:var(--accent);" value="${oldTitle}">`;
+                const input = titleEl.querySelector('input');
+                input.focus();
+                input.select();
+
+                let fin = false;
+                async function saveBookmarkName() {
+                    if (fin) return;
+                    fin = true;
+                    const newVal = input.value.trim();
+                    if (newVal && newVal !== oldTitle) {
+                        try {
+                            await updateDoc(doc(db, 'users', currentUid, 'bookmarks', item.id), {
+                                title: newVal
+                            });
+                        } catch(err) {
+                            console.error(err);
+                            titleEl.innerText = oldTitle;
+                        }
+                    } else {
+                        titleEl.innerText = oldTitle;
+                    }
+                }
+
+                input.addEventListener('blur', saveBookmarkName);
+                input.addEventListener('keydown', (ev) => {
+                    ev.stopPropagation();
+                    if (ev.key === 'Enter') {
+                        ev.preventDefault();
+                        input.blur();
+                    } else if (ev.key === 'Escape') {
+                        fin = true;
+                        titleEl.innerText = oldTitle;
+                    }
+                });
+                input.addEventListener('click', ev => {
+                    ev.stopPropagation();
+                    ev.preventDefault();
+                });
+            });
+        }
 
         // Move to trash
         const moveTrashBtn = row.querySelector('.btn-move-to-trash');
@@ -367,6 +429,17 @@ function performSearchAndFilter() {
         );
     }
 
+    // 3. Advanced Sorting: respect drag order, fallback to chronological desc
+    filtered.sort((a, b) => {
+        const aOrder = a.order ?? 999999;
+        const bOrder = b.order ?? 999999;
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        
+        const aDate = a.createdAt?.seconds ?? 0;
+        const bDate = b.createdAt?.seconds ?? 0;
+        return bDate - aDate;
+    });
+
     renderList(filtered);
 }
 
@@ -416,6 +489,17 @@ function renderCollections() {
     if (!collectionsContainer) return;
     collectionsContainer.innerHTML = '';
 
+    // Sort: numeric order first, then creation timestamp asc
+    allCollections.sort((a, b) => {
+        const aOrder = a.order ?? 999999;
+        const bOrder = b.order ?? 999999;
+        if (aOrder !== bOrder) return aOrder - bOrder;
+
+        const aDate = a.createdAt?.seconds ?? 0;
+        const bDate = b.createdAt?.seconds ?? 0;
+        return aDate - bDate;
+    });
+
     allCollections.forEach(coll => {
         const collId = coll.id;
         // Count active bookmarks assigned to this collection
@@ -430,6 +514,9 @@ function renderCollections() {
         
         a.innerHTML = `
             <div class="menu-item-left">
+                <div class="drag-handle" title="Перетащить">
+                    <svg width="10" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+                </div>
                 <span class="menu-icon">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
@@ -538,24 +625,70 @@ function showCollectionContextMenu(e, collId, collName) {
     });
 
     // 2. Add operational listener logic for functional items
-    menu.querySelector('#ctx-rename').addEventListener('click', async (evt) => {
+    menu.querySelector('#ctx-rename').addEventListener('click', (evt) => {
         evt.stopPropagation();
         menu.remove();
-        const newName = prompt("Введите новое имя коллекции:", collName);
-        if (!newName || !newName.trim() || newName.trim() === collName) return;
         
-        try {
-            await updateDoc(doc(db, 'users', currentUid, 'collections', collId), {
-                name: newName.trim()
-            });
-            // Update title dynamically if we are currently in that collection
-            if (currentFolder === `coll_${collId}`) {
-                const titleEl = document.getElementById('currentFolderTitle');
-                if (titleEl) titleEl.innerText = newName.trim();
+        // Find exact link in sidebar to do local inline replacement
+        const targetLink = document.querySelector(`[data-folder="coll_${collId}"]`);
+        if (!targetLink) return;
+        
+        const labelSpan = targetLink.querySelector('.menu-item-left span:not(.menu-icon)');
+        if (!labelSpan) return;
+
+        // Store initial name to fallback on if needed
+        const oldVal = collName;
+
+        // Convert text to input
+        labelSpan.innerHTML = `<input type="text" class="inline-edit-input" value="${oldVal}">`;
+        const input = labelSpan.querySelector('input');
+        input.focus();
+        input.select();
+
+        let finished = false;
+
+        async function commitSave() {
+            if (finished) return;
+            finished = true;
+            const newVal = input.value.trim();
+
+            if (newVal && newVal !== oldVal) {
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'collections', collId), {
+                        name: newVal
+                    });
+                    // Update title dynamically if we are currently in that collection
+                    if (currentFolder === `coll_${collId}`) {
+                        const titleEl = document.getElementById('currentFolderTitle');
+                        if (titleEl) titleEl.innerText = newVal;
+                    }
+                } catch(err) {
+                    console.error("Rename err", err);
+                    labelSpan.innerText = oldVal;
+                }
+            } else {
+                // No change or empty, revert to text
+                labelSpan.innerText = oldVal;
             }
-        } catch(err) {
-            console.error("Rename err", err);
+            // Note: Firebase Snapshot will auto-trigger full sidebar re-render immediately if save succeeds!
         }
+
+        input.addEventListener('blur', commitSave);
+        input.addEventListener('keydown', (e) => {
+            e.stopPropagation(); // Prevent list interaction
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                input.blur();
+            } else if (e.key === 'Escape') {
+                finished = true;
+                labelSpan.innerText = oldVal;
+            }
+        });
+        // Prevent link activation on sidebar click while inside input
+        input.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
     });
 
     menu.querySelector('#ctx-delete').addEventListener('click', (evt) => {
@@ -600,6 +733,153 @@ function showCollectionContextMenu(e, collId, collName) {
 }
 
 // Helper: macOS style custom confirm modal with generalized inputs
+// Modal window to add a new Bookmark with custom logic
+function showAddBookmarkModal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-confirm-overlay';
+    
+    overlay.innerHTML = `
+        <div class="confirm-box" style="width: 350px;">
+            <div class="confirm-title" style="margin-bottom: 18px;">
+                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1070e5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                 Добавить закладку
+            </div>
+            
+            <div class="modal-input-group">
+                <label>Ссылка</label>
+                <input type="text" id="modal-bm-url" class="modal-input" placeholder="например, google.com" autocomplete="off">
+            </div>
+            
+            <div class="modal-input-group" style="margin-bottom: 22px;">
+                <label>Название</label>
+                <input type="text" id="modal-bm-title" class="modal-input" placeholder="Имя сайта" autocomplete="off">
+            </div>
+
+            <button class="confirm-btn-primary" id="modal-bm-submit">Сохранить закладку</button>
+            <button class="confirm-btn-secondary" id="modal-bm-cancel">Отмена</button>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    const urlInp = overlay.querySelector('#modal-bm-url');
+    const titleInp = overlay.querySelector('#modal-bm-title');
+    const submitBtn = overlay.querySelector('#modal-bm-submit');
+    const cancelBtn = overlay.querySelector('#modal-bm-cancel');
+    
+    urlInp.focus();
+
+    let manualTitleEdit = false;
+    let titleFetchController = null;
+
+    titleInp.addEventListener('input', () => {
+        manualTitleEdit = true;
+    });
+
+    // Magic Fetch Logic
+    async function triggerTitleFetch(targetUrl) {
+        if (manualTitleEdit) return;
+        
+        if (titleFetchController) titleFetchController.abort();
+        titleFetchController = new AbortController();
+
+        try {
+            // Use Microlink API: free, fast structured link data parser.
+            // Returns perfectly resolved metadata without needing local DOMParser.
+            const endpoint = `https://api.microlink.io?url=${encodeURIComponent(targetUrl)}`;
+            
+            const response = await fetch(endpoint, { signal: titleFetchController.signal });
+            const result = await response.json();
+            
+            if (result && result.status === 'success' && result.data && result.data.title) {
+                if (!manualTitleEdit && result.data.title.trim()) {
+                    // Instantly set the actual human-friendly page title
+                    titleInp.value = result.data.title.trim();
+                }
+            }
+        } catch (e) {
+            if (e.name !== 'AbortError') console.warn("Remote title fetch issue:", e);
+        }
+    }
+
+    let debounceTimer = null;
+    urlInp.addEventListener('input', () => {
+        let val = urlInp.value.trim();
+        if (!val) {
+            if(!manualTitleEdit) titleInp.value = '';
+            return;
+        }
+        
+        let fullUrl = val;
+        if (!/^https?:\/\//i.test(fullUrl)) fullUrl = 'https://' + fullUrl;
+        
+        // 1. INSTANT FALLBACK (Parse domain so field isn't empty)
+        if (!manualTitleEdit) {
+            try {
+                const u = new URL(fullUrl);
+                let name = u.hostname.replace(/^www\./i, '');
+                let p = name.split('.');
+                if (p.length >= 1) {
+                    let core = p[0].charAt(0).toUpperCase() + p[0].slice(1);
+                    titleInp.value = core;
+                }
+            } catch (e) {}
+        }
+
+        // 2. ASYNC MAGIC FETCH (Debounced)
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            // Only trigger if looks like a semi-valid domain to save bandwidth
+            if (fullUrl.includes('.')) {
+                triggerTitleFetch(fullUrl);
+            }
+        }, 700);
+    });
+
+    async function saveAndClose() {
+        let url = urlInp.value.trim();
+        if (!url) return;
+        
+        // Enforce protocol
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        
+        let title = titleInp.value.trim() || url;
+        
+        overlay.remove();
+
+        let currentCollId = null;
+        if (currentFolder && currentFolder.startsWith('coll_')) {
+            currentCollId = currentFolder.replace('coll_', '');
+        }
+
+        try {
+            await addDoc(collection(db, 'users', currentUid, 'bookmarks'), {
+                title,
+                url,
+                collectionId: currentCollId,
+                createdAt: serverTimestamp()
+            });
+        } catch (e) {
+            console.error(e);
+            alert("Ошибка добавления закладки.");
+        }
+    }
+
+    submitBtn.addEventListener('click', saveAndClose);
+    cancelBtn.addEventListener('click', () => overlay.remove());
+    
+    [urlInp, titleInp].forEach(inp => {
+        inp.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') saveAndClose();
+            if (ev.key === 'Escape') overlay.remove();
+        });
+    });
+    
+    overlay.addEventListener('click', (e) => {
+        if(e.target === overlay) overlay.remove();
+    });
+}
+
 function showCustomConfirm(title, message, actionBtnText, onConfirmCallback) {
     const overlay = document.createElement('div');
     overlay.className = 'custom-confirm-overlay';
@@ -607,7 +887,7 @@ function showCustomConfirm(title, message, actionBtnText, onConfirmCallback) {
     overlay.innerHTML = `
         <div class="confirm-box">
             <div class="confirm-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e67e22" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                 ${title}
             </div>
             <div class="confirm-message">
@@ -666,36 +946,12 @@ if (profileTrigger) {
 
 // Add bookmark action
 if (addBookmarkBtn) {
-    addBookmarkBtn.addEventListener('click', async () => {
+    addBookmarkBtn.addEventListener('click', () => {
         if (!currentUid) {
             if (typeof window.openAuthModal === 'function') window.openAuthModal(profileTrigger);
             return;
         }
-
-        let url = prompt("Введите URL ссылки:");
-        if (!url) return;
-        url = url.trim();
-        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-
-        let title = prompt("Название закладки (необязательно):", "");
-        if (title !== null) title = title.trim();
-
-        let currentCollId = null;
-        if (currentFolder.startsWith('coll_')) {
-            currentCollId = currentFolder.replace('coll_', '');
-        }
-
-        try {
-            await addDoc(collection(db, 'users', currentUid, 'bookmarks'), {
-                title: title || url,
-                url,
-                collectionId: currentCollId,
-                createdAt: serverTimestamp()
-            });
-        } catch (e) {
-            console.error('Error adding bookmark:', e);
-            alert('Ошибка добавления закладки.');
-        }
+        showAddBookmarkModal();
     });
 }
 
@@ -753,16 +1009,94 @@ if (createCollectionBtn) {
     });
 }
 
+function initSortables() {
+    // Ensure library is loaded
+    if (typeof Sortable === 'undefined') {
+        console.error("Sortable library not loaded.");
+        return;
+    }
+
+    // 1. Custom Collections Reordering
+    if (collectionsContainer) {
+        Sortable.create(collectionsContainer, {
+            animation: 180,
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            forceFallback: false,
+            onEnd: async function () {
+                if (!currentUid) return;
+                const items = Array.from(collectionsContainer.querySelectorAll('.menu-item'));
+                const batch = writeBatch(db);
+                items.forEach((el, index) => {
+                    const folderId = el.getAttribute('data-folder');
+                    if (!folderId) return;
+                    const cleanId = folderId.replace('coll_', '');
+                    const docRef = doc(db, 'users', currentUid, 'collections', cleanId);
+                    batch.update(docRef, { order: index });
+                });
+                try {
+                    await batch.commit();
+                } catch(err) {
+                    console.error("Failed saving collection order", err);
+                }
+            }
+        });
+    }
+
+    // 2. Bookmarks List Reordering
+    const bookmarksListEl = document.getElementById('bookmarksContainer');
+    if (bookmarksListEl) {
+        Sortable.create(bookmarksListEl, {
+            animation: 180,
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'list-drag-preview',
+            forceFallback: true,
+            fallbackTolerance: 3,
+            fallbackOnBody: true,
+            onEnd: async function () {
+                if (!currentUid) return;
+                // We only persist order changes if there's no search filtering active 
+                // to avoid corrupted global orders based on partial views.
+                const q = searchInput ? searchInput.value.trim() : '';
+                if (q) {
+                     alert("Невозможно переупорядочить список в режиме поиска.");
+                     performSearchAndFilter(); // Revert visual
+                     return;
+                }
+
+                const rows = Array.from(bookmarksListEl.querySelectorAll('.bookmark-row'));
+                const batch = writeBatch(db);
+                rows.forEach((el, index) => {
+                    const bId = el.getAttribute('data-id');
+                    if (!bId) return;
+                    const docRef = doc(db, 'users', currentUid, 'bookmarks', bId);
+                    batch.update(docRef, { order: index });
+                });
+
+                try {
+                    await batch.commit();
+                } catch(err) {
+                    console.error("Failed saving bookmarks order", err);
+                }
+            }
+        });
+    }
+}
+
 // Global Initialization
 document.addEventListener('DOMContentLoaded', () => {
     initSidebarResizer();
     initMobileMenu();
+    initSortables();
 
     // Sidebar static links interactivity
     document.querySelectorAll('.sidebar-menu > a[data-folder], .sidebar-menu > div > a[data-folder]').forEach(item => {
         item.addEventListener('click', (e) => {
             // Ignore dynamic custom collections which live in nested container handle themselves
-            if (item.parentElement.id === 'custom-collections-container') return;
+            if (item.parentElement && item.parentElement.id === 'custom-collections-container') return;
 
             e.preventDefault();
             document.querySelectorAll('.sidebar-menu .menu-item').forEach(el => el.classList.remove('highlighted', 'active'));

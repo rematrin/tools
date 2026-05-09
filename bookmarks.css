@@ -24,7 +24,7 @@
     --btn-blue: #1070e5;
     --btn-blue-hover: #0d5ec4;
     
-    --list-hover-bg-light: #f8f9fa;
+    --list-hover-bg-light: rgba(0, 0, 0, .05);
     --list-hover-bg-dark: #1c1f26;
 }
 
@@ -231,15 +231,63 @@ body.dark .sidebar {
     font-weight: 500;
 }
 
+.menu-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 12px 4px 12px;
+    margin-top: 4px;
+}
+
 .menu-section-title {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     color: var(--sidebar-text-muted);
-    padding: 16px 12px 6px 12px;
     font-weight: 700;
     opacity: 0.6;
 }
+
+.btn-section-add {
+    background: none;
+    border: none;
+    color: var(--sidebar-text-muted);
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    transition: all 0.2s;
+}
+
+.btn-section-add:hover {
+    background: var(--sidebar-hover-bg);
+    color: var(--sidebar-text-primary);
+    opacity: 1;
+}
+
+/* Инлайновое редактирование названия */
+.inline-edit-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.5);
+    color: inherit;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: inherit;
+    padding: 0;
+    width: 100%;
+    outline: none;
+    margin: 0;
+}
+
+body:not(.dark) .inline-edit-input {
+    border-bottom-color: #000;
+}
+
 
 /* Вложенные папки */
 .nested-folders {
@@ -873,6 +921,56 @@ body.dark .ctx-divider {
     to { opacity: 1; }
 }
 
+/* Input Forms inside Modals */
+.modal-input-group {
+    margin-bottom: 14px;
+    text-align: left;
+}
+
+.modal-input-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+body.dark .modal-input-group label {
+    color: #a0a0a0;
+}
+
+.modal-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #ffffff;
+    color: #000;
+    outline: none;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+}
+
+.modal-input:focus {
+    border-color: #1070e5;
+    box-shadow: 0 0 0 3px rgba(16, 112, 229, 0.15);
+}
+
+body.dark .modal-input {
+    background: #2a2a2a;
+    border-color: #3f3f3f;
+    color: #ffffff;
+}
+
+body.dark .modal-input:focus {
+    border-color: #1070e5;
+    background: #333;
+}
+
 .confirm-box {
     background: #f4f4f4;
     width: 320px;
@@ -962,5 +1060,109 @@ body.dark .confirm-btn-secondary {
 
 body.dark .confirm-btn-secondary:hover {
     background: #3a3a3a;
+}
+
+/* === СТИЛИ ДЛЯ ДРАГ-Н-ДРОП И РЕДАКТИРОВАНИЯ ЗАКЛАДОК === */
+.drag-handle {
+    cursor: grab !important;
+    color: var(--sidebar-text-muted);
+    opacity: 0.3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    transition: opacity 0.2s;
+    margin-right: 4px;
+}
+
+.drag-handle:hover {
+    opacity: 0.8;
+}
+
+.drag-handle:active {
+    cursor: grabbing !important;
+}
+
+.bookmark-row .drag-handle {
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 20px;
+    opacity: 0; /* Скрыт по умолчанию */
+    transition: opacity 0.2s ease;
+}
+
+.bookmark-row:hover .drag-handle {
+    opacity: 0.4;
+}
+
+.bookmark-row {
+    padding-left: 28px !important; 
+    position: relative;
+}
+
+.sortable-ghost {
+    opacity: 0.4;
+    background: var(--hover-bg) !important;
+    border: 1px dashed var(--border);
+}
+
+.sortable-chosen {
+    background: var(--hover-bg) !important;
+}
+
+/* === СТИЛИ ДЛЯ ЭКСКЛЮЗИВНОЙ КАРТОЧКИ СПИСКА ЗАКЛАДОК (БЕЗ ВЛИЯНИЯ НА САЙДБАР) === */
+.list-drag-preview {
+    opacity: 1 !important;
+    background: #ffffff !important;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.05) !important;
+    border-radius: 10px !important;
+    pointer-events: none !important;
+    z-index: 999999 !important;
+    width: 220px !important; 
+    height: 52px !important; 
+    overflow: hidden;
+    display: flex !important;
+    align-items: center !important; 
+    padding: 0 0 0 10px !important; 
+    transition: none !important; 
+    animation: none !important;
+}
+
+.list-drag-preview > * {
+    transform: scale(0.8) !important; 
+    transform-origin: left center !important;
+    transition: none !important;
+    padding: 0 !important; 
+    width: 100% !important;
+}
+
+body.dark .list-drag-preview {
+    background: #262626 !important;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1) !important;
+}
+
+.list-drag-preview .bookmark-actions,
+.list-drag-preview .drag-handle,
+.list-drag-preview .menu-dots-trigger {
+    display: none !important;
+}
+
+.nested-folders .menu-item {
+    position: relative;
+}
+.nested-folders .menu-item .drag-handle {
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    opacity: 0;
+    margin: 0 !important;
+}
+
+.nested-folders .menu-item:hover .drag-handle {
+    opacity: 0.5;
 }
 

@@ -582,6 +582,10 @@ function showCollectionContextMenu(e, collId, collName) {
         <div class="ctx-item ctx-item-disabled">
             Сменить иконку
         </div>
+        <div class="ctx-item" id="ctx-import">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            Импорт
+        </div>
         <div class="ctx-item danger" id="ctx-delete">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             Удалить
@@ -689,6 +693,12 @@ function showCollectionContextMenu(e, collId, collName) {
             e.preventDefault();
             e.stopPropagation();
         });
+    });
+
+    menu.querySelector('#ctx-import').addEventListener('click', (evt) => {
+        evt.stopPropagation();
+        menu.remove();
+        triggerCsvImport(collId);
     });
 
     menu.querySelector('#ctx-delete').addEventListener('click', (evt) => {
@@ -954,6 +964,222 @@ if (addBookmarkBtn) {
         showAddBookmarkModal();
     });
 }
+
+// Hook up main header actions button
+const mainActionsBtn = document.getElementById('main-more-actions-btn');
+if (mainActionsBtn) {
+    mainActionsBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        showMainContextMenu(e);
+    });
+}
+
+// Helper: Display the context menu for main header actions
+function showMainContextMenu(e) {
+    if (activeContextMenu) activeContextMenu.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'custom-context-menu';
+    
+    menu.innerHTML = `
+        <div class="ctx-item" id="ctx-import-csv">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            Импорт
+        </div>
+    `;
+
+    document.body.appendChild(menu);
+    activeContextMenu = menu;
+
+    // Auto Positioning
+    let x = e.clientX;
+    let y = e.clientY;
+    const menuRect = menu.getBoundingClientRect();
+    
+    if (x + menuRect.width > window.innerWidth) {
+        x = window.innerWidth - menuRect.width - 10;
+    }
+    if (y + menuRect.height > window.innerHeight) {
+        y = window.innerHeight - menuRect.height - 10;
+    }
+    
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+
+    menu.querySelector('#ctx-import-csv').addEventListener('click', (evt) => {
+        evt.stopPropagation();
+        menu.remove();
+        triggerCsvImport();
+    });
+
+    menu.addEventListener('click', (evt) => evt.stopPropagation());
+}
+
+function triggerCsvImport(targetCollId = undefined) {
+    if (!currentUid) {
+        if (typeof window.openAuthModal === 'function') window.openAuthModal(profileTrigger);
+        return;
+    }
+
+    if (currentFolder === 'trash' && targetCollId === undefined) {
+        alert('Импорт невозможен в корзину. Перейдите в другую папку или коллекцию.');
+        return;
+    }
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.csv';
+    fileInput.style.display = 'none';
+
+    fileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const text = e.target.result;
+            await processCsvImport(text, targetCollId);
+        };
+        reader.readAsText(file);
+    });
+
+    document.body.appendChild(fileInput);
+    fileInput.click();
+    document.body.removeChild(fileInput);
+}
+
+async function processCsvImport(text, targetCollId = undefined) {
+    const lines = parseCSV(text);
+    if (lines.length < 2) {
+        alert('Выбранный файл пуст или содержит недостаточно данных.');
+        return;
+    }
+
+    const headers = lines[0].map(h => h.toLowerCase().trim());
+    const titleIndex = headers.indexOf('title');
+    const urlIndex = headers.indexOf('url');
+
+    if (titleIndex === -1 || urlIndex === -1) {
+        alert('Не удалось найти обязательные колонки "title" и "url" в CSV файле.');
+        return;
+    }
+
+    let currentCollId = null;
+    if (targetCollId !== undefined) {
+        currentCollId = targetCollId;
+    } else if (currentFolder && currentFolder.startsWith('coll_')) {
+        currentCollId = currentFolder.replace('coll_', '');
+    }
+
+    const importedItems = [];
+    for (let i = 1; i < lines.length; i++) {
+        const row = lines[i];
+        if (row.length <= Math.max(titleIndex, urlIndex)) continue;
+        
+        let url = row[urlIndex] ? row[urlIndex].trim() : '';
+        let title = row[titleIndex] ? row[titleIndex].trim() : '';
+
+        if (!url) continue;
+        if (!title) title = url;
+
+        // Enforce protocol
+        if (!/^https?:\/\//i.test(url)) {
+            url = 'https://' + url;
+        }
+
+        importedItems.push({ title, url });
+    }
+
+    if (importedItems.length === 0) {
+        alert('В файле не найдено корректных ссылок для импорта.');
+        return;
+    }
+
+    let successCount = 0;
+    const batchSize = 500;
+    
+    try {
+        for (let i = 0; i < importedItems.length; i += batchSize) {
+            const chunk = importedItems.slice(i, i + batchSize);
+            const batch = writeBatch(db);
+            
+            for (const item of chunk) {
+                const docRef = doc(collection(db, 'users', currentUid, 'bookmarks'));
+                batch.set(docRef, {
+                    title: item.title,
+                    url: item.url,
+                    collectionId: currentCollId,
+                    createdAt: serverTimestamp()
+                });
+            }
+            await batch.commit();
+            successCount += chunk.length;
+        }
+        
+        alert(`Успешно импортировано ${successCount} ${getNoun(successCount, 'закладка', 'закладки', 'закладок')}.`);
+    } catch (err) {
+        console.error('CSV Import failed', err);
+        alert(`Произошла ошибка при импорте. Удалось импортировать: ${successCount}`);
+    }
+}
+
+function parseCSV(text) {
+    const lines = [];
+    let row = [];
+    let inQuotes = false;
+    let currentValue = '';
+    
+    const firstLine = text.split('\n')[0] || '';
+    const separator = firstLine.indexOf(';') !== -1 ? ';' : ',';
+
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i+1];
+        
+        if (inQuotes) {
+            if (char === '"' && nextChar === '"') {
+                currentValue += '"';
+                i++;
+            } else if (char === '"') {
+                inQuotes = false;
+            } else {
+                currentValue += char;
+            }
+        } else {
+            if (char === '"') {
+                inQuotes = true;
+            } else if (char === separator) {
+                row.push(currentValue.trim());
+                currentValue = '';
+            } else if (char === '\r' || char === '\n') {
+                row.push(currentValue.trim());
+                if (row.some(cell => cell !== '')) {
+                    lines.push(row);
+                }
+                row = [];
+                currentValue = '';
+                if (char === '\r' && nextChar === '\n') {
+                    i++;
+                }
+            } else {
+                currentValue += char;
+            }
+        }
+    }
+    if (currentValue || row.length > 0) {
+        row.push(currentValue.trim());
+        if (row.some(cell => cell !== '')) {
+            lines.push(row);
+        }
+    }
+    return lines;
+}
+
 
 // Setup Search live filtering
 if (searchInput) {

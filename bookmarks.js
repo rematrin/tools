@@ -744,39 +744,27 @@ function showCollectionContextMenu(e, collId, collName) {
 
 // Helper: macOS style custom confirm modal with generalized inputs
 // Modal window to add a new Bookmark with custom logic
+// Modal window to add a new Bookmark with custom logic
 function showAddBookmarkModal() {
-    const overlay = document.createElement('div');
-    overlay.className = 'custom-confirm-overlay';
+    const popover = document.getElementById('addBookmarkPopover');
+    if (!popover) return;
     
-    overlay.innerHTML = `
-        <div class="confirm-box" style="width: 350px;">
-            <div class="confirm-title" style="margin-bottom: 18px;">
-                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1070e5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-                 Добавить закладку
-            </div>
-            
-            <div class="modal-input-group">
-                <label>Ссылка</label>
-                <input type="text" id="modal-bm-url" class="modal-input" placeholder="например, google.com" autocomplete="off">
-            </div>
-            
-            <div class="modal-input-group" style="margin-bottom: 22px;">
-                <label>Название</label>
-                <input type="text" id="modal-bm-title" class="modal-input" placeholder="Имя сайта" autocomplete="off">
-            </div>
-
-            <button class="confirm-btn-primary" id="modal-bm-submit">Сохранить закладку</button>
-            <button class="confirm-btn-secondary" id="modal-bm-cancel">Отмена</button>
-        </div>
-    `;
+    // Toggle off if already open
+    if (popover.classList.contains('active')) {
+        popover.classList.remove('active');
+        return;
+    }
     
-    document.body.appendChild(overlay);
+    popover.classList.add('active');
     
-    const urlInp = overlay.querySelector('#modal-bm-url');
-    const titleInp = overlay.querySelector('#modal-bm-title');
-    const submitBtn = overlay.querySelector('#modal-bm-submit');
-    const cancelBtn = overlay.querySelector('#modal-bm-cancel');
+    const urlInp = document.getElementById('popoverBookmarkUrl');
+    const titleInp = document.getElementById('popoverBookmarkTitle');
+    const submitBtn = document.getElementById('popoverSubmitBtn');
+    const cancelBtn = document.getElementById('popoverCancelBtn');
     
+    // Reset values
+    urlInp.value = '';
+    titleInp.value = '';
     urlInp.focus();
 
     let manualTitleEdit = false;
@@ -855,7 +843,7 @@ function showAddBookmarkModal() {
         
         let title = titleInp.value.trim() || url;
         
-        overlay.remove();
+        popover.classList.remove('active');
 
         let currentCollId = null;
         if (currentFolder && currentFolder.startsWith('coll_')) {
@@ -876,18 +864,27 @@ function showAddBookmarkModal() {
     }
 
     submitBtn.addEventListener('click', saveAndClose);
-    cancelBtn.addEventListener('click', () => overlay.remove());
+    cancelBtn.addEventListener('click', () => popover.classList.remove('active'));
     
     [urlInp, titleInp].forEach(inp => {
         inp.addEventListener('keydown', (ev) => {
             if (ev.key === 'Enter') saveAndClose();
-            if (ev.key === 'Escape') overlay.remove();
+            if (ev.key === 'Escape') popover.classList.remove('active');
         });
     });
     
-    overlay.addEventListener('click', (e) => {
-        if(e.target === overlay) overlay.remove();
-    });
+    // Close when clicking outside of the popover
+    const outsideClickListener = (e) => {
+        if (!popover.contains(e.target) && e.target !== document.getElementById('addBookmarkBtn') && !document.getElementById('addBookmarkBtn').contains(e.target)) {
+            popover.classList.remove('active');
+            document.removeEventListener('click', outsideClickListener);
+        }
+    };
+    
+    // Slight delay so the click that opened the popover doesn't immediately close it
+    setTimeout(() => {
+        document.addEventListener('click', outsideClickListener);
+    }, 10);
 }
 
 function showCustomConfirm(title, message, actionBtnText, onConfirmCallback) {

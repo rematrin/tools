@@ -999,6 +999,26 @@ body.dark .modal-input-group label {
     box-sizing: border-box;
 }
 
+/* Collection modal styles */
+.col-modal-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 14px;
+    color: var(--text);
+}
+
+.col-modal-item:hover {
+    background: var(--list-hover-bg-light);
+}
+
+body.dark .col-modal-item:hover {
+    background: var(--list-hover-bg-dark);
+}
+
 .modal-input:focus {
     border-color: #1070e5;
     box-shadow: 0 0 0 3px rgba(16, 112, 229, 0.15);

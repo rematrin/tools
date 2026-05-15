@@ -19,6 +19,9 @@ let unsubscribe = null;
 let allBookmarks = []; 
 let currentFolder = 'all'; 
 
+let selectionMode = false;
+let selectedBookmarks = new Set();
+
 const container = document.getElementById('bookmarksContainer');
 const searchInput = document.getElementById('bookmarkSearch');
 const addBookmarkBtn = document.getElementById('addBookmarkBtn');
@@ -29,6 +32,7 @@ const emptyTrashLink = document.getElementById('empty-trash-link');
 
 let allCollections = [];
 let unsubscribeCollections = null;
+let bookmarksSortable = null;
 const collectionsContainer = document.getElementById('custom-collections-container');
 const createCollectionBtn = document.getElementById('create-collection-btn');
 
@@ -178,53 +182,38 @@ function renderList(items) {
 
         let actionsHtml = '';
         if (isInTrash) {
-            // In Trash actions: Restore & Delete Permanently
             actionsHtml = `
-                <button class="btn-action-round btn-restore-bookmark" title="Восстановить" style="color: #28a745;">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 2v6h6"></path>
-                        <path d="M3 13a9 9 0 1 0 3-7.7L3 8"></path>
-                    </svg>
-                </button>
-                <button class="btn-action-round btn-delete-permanently" title="Удалить навсегда" style="color: #dc3545;">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                    </svg>
+                <button class="btn-action-round btn-restore-bookmark" style="display:none;"></button>
+                <button class="btn-action-round btn-delete-permanently" style="display:none;"></button>
+                <button class="btn-action-round bookmark-dots-btn" title="Действия">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
                 </button>
             `;
         } else {
-            // Active actions: Open & Move to trash
             actionsHtml = `
-                <button class="btn-action-round" title="Перейти на сайт" onclick="window.open('${item.url}', '_blank')">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                        <polyline points="15 3 21 3 21 9"></polyline>
-                        <line x1="10" y1="14" x2="21" y2="3"></line>
-                    </svg>
-                </button>
-                <button class="btn-action-round btn-rename-bookmark" title="Переименовать" style="color: var(--text-secondary);">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                </button>
-                <button class="btn-action-round btn-move-to-trash" title="В корзину" style="color: #ff5e62;">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
+                <button class="btn-action-round btn-rename-bookmark" style="display:none;"></button>
+                <button class="btn-action-round btn-move-to-trash" style="display:none;"></button>
+                <button class="btn-action-round bookmark-dots-btn" title="Действия">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
                 </button>
             `;
         }
 
-        row.innerHTML = `
+        const isDraggable = currentFolder !== 'all' && currentFolder !== 'trash' && !selectionMode;
+        const dragHandleHtml = isDraggable ? `
             <div class="drag-handle" title="Перетащить">
                 <svg width="10" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
             </div>
-            <div class="bookmark-left">
+        ` : '';
+
+        row.innerHTML = `
+            ${dragHandleHtml}
+            ${selectionMode ? `
+            <div style="margin-right: 12px; display:flex; align-items:center;">
+                <input type="checkbox" class="bookmark-select-checkbox" style="width:16px; height:16px; cursor:pointer;" ${selectedBookmarks.has(item.id) ? 'checked' : ''}>
+            </div>
+            ` : ''}
+            <div class="bookmark-left" style="${selectionMode ? 'cursor: default;' : ''}">
                 <div class="favicon-wrapper">
                     <img src="${faviconUrl}" class="favicon-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <span class="favicon-fallback" style="display:none;">${(item.title || 'B')[0].toUpperCase()}</span>
@@ -235,13 +224,47 @@ function renderList(items) {
                 </div>
             </div>
             <div class="bookmark-actions">
-                ${actionsHtml}
+                ${selectionMode ? '' : actionsHtml}
             </div>
         `;
 
         // Handle events
-        row.querySelector('.bookmark-left').addEventListener('click', () => {
+        row.querySelector('.bookmark-left').addEventListener('click', (e) => {
+            if (selectionMode) {
+                e.preventDefault();
+                const chk = row.querySelector('.bookmark-select-checkbox');
+                if (chk) {
+                    chk.checked = !chk.checked;
+                    chk.dispatchEvent(new Event('change'));
+                }
+                return;
+            }
             window.open(item.url, '_blank');
+        });
+
+        const chk = row.querySelector('.bookmark-select-checkbox');
+        if (chk) {
+            chk.addEventListener('change', (e) => {
+                if (e.target.checked) selectedBookmarks.add(item.id);
+                else selectedBookmarks.delete(item.id);
+                if (typeof updateSelectionTopBar === 'function') updateSelectionTopBar();
+            });
+        }
+
+        const dotsBtn = row.querySelector('.bookmark-dots-btn');
+        if (dotsBtn) {
+            dotsBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                showBookmarkContextMenu(e, item, row);
+            });
+        }
+
+        // Right click context menu for bookmark
+        row.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showBookmarkContextMenu(e, item, row);
         });
 
         // Inline Rename for single bookmark link
@@ -339,15 +362,22 @@ function renderList(items) {
         // Delete Perm
         const deletePermBtn = row.querySelector('.btn-delete-permanently');
         if (deletePermBtn) {
-            deletePermBtn.addEventListener('click', async (e) => {
+            deletePermBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (!currentUid) return;
-                if (!confirm('Удалить эту закладку НАВСЕГДА? Это действие необратимо.')) return;
-                try {
-                    await deleteDoc(doc(db, 'users', currentUid, 'bookmarks', item.id));
-                } catch (err) {
-                    console.error('Delete failed', err);
-                }
+                
+                showCustomConfirm(
+                    "Подтвердите удаление",
+                    "Удалить эту закладку НАВСЕГДА? Это действие необратимо.",
+                    "Удалить навсегда",
+                    async () => {
+                        try {
+                            await deleteDoc(doc(db, 'users', currentUid, 'bookmarks', item.id));
+                        } catch (err) {
+                            console.error('Delete failed', err);
+                        }
+                    }
+                );
             });
         }
 
@@ -408,6 +438,20 @@ function performSearchAndFilter() {
     // Toggle trash notice banner
     if (trashBanner) {
         trashBanner.style.display = currentFolder === 'trash' ? 'flex' : 'none';
+    }
+
+    // Toggle addBookmarkBtn, mainActionsBtn, and drag-and-drop
+    const mainActionsBtn = document.getElementById('main-more-actions-btn');
+    const isSpecialFolder = currentFolder === 'all' || currentFolder === 'trash';
+    
+    if (addBookmarkBtn) {
+        addBookmarkBtn.style.display = isSpecialFolder ? 'none' : 'flex';
+    }
+    if (mainActionsBtn) {
+        mainActionsBtn.style.display = isSpecialFolder ? 'none' : 'flex';
+    }
+    if (bookmarksSortable) {
+        bookmarksSortable.option("disabled", isSpecialFolder);
     }
 
     // Filter by current tab view
@@ -540,6 +584,13 @@ function renderCollections() {
             showCollectionContextMenu(e, collId, coll.name);
         });
 
+        // Open Context Menu on right click
+        a.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showCollectionContextMenu(e, collId, coll.name);
+        });
+
         a.addEventListener('click', (e) => {
             e.preventDefault();
             
@@ -618,7 +669,7 @@ function showCollectionContextMenu(e, collId, collName) {
         menu.remove();
         const children = allBookmarks.filter(b => !b.inTrash && b.collectionId === collId);
         if (children.length === 0) {
-            alert('В этой коллекции пока нет закладок.');
+            showCustomAlert('Пустая коллекция', 'В этой коллекции пока нет закладок.');
             return;
         }
         
@@ -742,6 +793,106 @@ function showCollectionContextMenu(e, collId, collName) {
     menu.addEventListener('click', (evt) => evt.stopPropagation());
 }
 
+// Helper: Display the context menu for bookmarks
+function showBookmarkContextMenu(e, item, row) {
+    // Close any existing menu
+    if (activeContextMenu) activeContextMenu.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'custom-context-menu';
+    
+    // Construct menu items
+    if (item.inTrash) {
+        menu.innerHTML = `
+            <div class="ctx-item" id="ctx-restore-bookmark" style="color: #28a745;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"></path><path d="M3 13a9 9 0 1 0 3-7.7L3 8"></path></svg>
+                Восстановить
+            </div>
+            <div class="ctx-item danger" id="ctx-delete-permanently">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                Удалить навсегда
+            </div>
+        `;
+    } else {
+        menu.innerHTML = `
+            <div class="ctx-item" id="ctx-open-tab">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                Открыть в новой вкладке
+            </div>
+            <div class="ctx-item" id="ctx-edit-bookmark">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                Редактировать
+            </div>
+            <div class="ctx-item danger" id="ctx-delete-bookmark">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                Удалить
+            </div>
+        `;
+    }
+
+    document.body.appendChild(menu);
+    activeContextMenu = menu;
+
+    // Auto Positioning
+    let x = e.clientX;
+    let y = e.clientY;
+    const menuRect = menu.getBoundingClientRect();
+    
+    // Keep inside window right bounds
+    if (x + menuRect.width > window.innerWidth) {
+        x = window.innerWidth - menuRect.width - 10;
+    }
+    // Keep inside window bottom bounds
+    if (y + menuRect.height > window.innerHeight) {
+        y = window.innerHeight - menuRect.height - 10;
+    }
+    
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+
+    if (item.inTrash) {
+        menu.querySelector('#ctx-restore-bookmark').addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            menu.remove();
+            const restoreBtn = row.querySelector('.btn-restore-bookmark');
+            if (restoreBtn) restoreBtn.click();
+        });
+
+        menu.querySelector('#ctx-delete-permanently').addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            menu.remove();
+            const deletePermBtn = row.querySelector('.btn-delete-permanently');
+            if (deletePermBtn) deletePermBtn.click();
+        });
+    } else {
+        // 1. Open in new tab
+        menu.querySelector('#ctx-open-tab').addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            menu.remove();
+            window.open(item.url, '_blank');
+        });
+
+        // 2. Edit
+        menu.querySelector('#ctx-edit-bookmark').addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            menu.remove();
+            const renameBtn = row.querySelector('.btn-rename-bookmark');
+            if (renameBtn) renameBtn.click();
+        });
+
+        // 3. Delete
+        menu.querySelector('#ctx-delete-bookmark').addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            menu.remove();
+            const moveTrashBtn = row.querySelector('.btn-move-to-trash');
+            if (moveTrashBtn) moveTrashBtn.click();
+        });
+    }
+
+    // Prevent closing when clicking inside items that are purely disabled
+    menu.addEventListener('click', (evt) => evt.stopPropagation());
+}
+
 // Helper: macOS style custom confirm modal with generalized inputs
 // Modal window to add a new Bookmark with custom logic
 // Modal window to add a new Bookmark with custom logic
@@ -770,9 +921,9 @@ function showAddBookmarkModal() {
     let manualTitleEdit = false;
     let titleFetchController = null;
 
-    titleInp.addEventListener('input', () => {
+    titleInp.oninput = () => {
         manualTitleEdit = true;
-    });
+    };
 
     // Magic Fetch Logic
     async function triggerTitleFetch(targetUrl) {
@@ -801,7 +952,7 @@ function showAddBookmarkModal() {
     }
 
     let debounceTimer = null;
-    urlInp.addEventListener('input', () => {
+    urlInp.oninput = () => {
         let val = urlInp.value.trim();
         if (!val) {
             if(!manualTitleEdit) titleInp.value = '';
@@ -832,7 +983,7 @@ function showAddBookmarkModal() {
                 triggerTitleFetch(fullUrl);
             }
         }, 700);
-    });
+    };
 
     async function saveAndClose() {
         let url = urlInp.value.trim();
@@ -857,21 +1008,22 @@ function showAddBookmarkModal() {
                 collectionId: currentCollId,
                 createdAt: serverTimestamp()
             });
-        } catch (e) {
-            console.error(e);
-            alert("Ошибка добавления закладки.");
+        } catch (error) {
+            console.error("Error adding bookmark:", error);
+            showCustomAlert("Ошибка", "Ошибка добавления закладки.");
         }
     }
 
-    submitBtn.addEventListener('click', saveAndClose);
-    cancelBtn.addEventListener('click', () => popover.classList.remove('active'));
+    submitBtn.onclick = saveAndClose;
+    cancelBtn.onclick = () => popover.classList.remove('active');
     
-    [urlInp, titleInp].forEach(inp => {
-        inp.addEventListener('keydown', (ev) => {
-            if (ev.key === 'Enter') saveAndClose();
-            if (ev.key === 'Escape') popover.classList.remove('active');
-        });
-    });
+    const handleKeydown = (ev) => {
+        if (ev.key === 'Enter') saveAndClose();
+        if (ev.key === 'Escape') popover.classList.remove('active');
+    };
+    
+    urlInp.onkeydown = handleKeydown;
+    titleInp.onkeydown = handleKeydown;
     
     // Close when clicking outside of the popover
     const outsideClickListener = (e) => {
@@ -918,6 +1070,101 @@ function showCustomConfirm(title, message, actionBtnText, onConfirmCallback) {
     
     overlay.addEventListener('click', (e) => {
         if(e.target === overlay) overlay.remove();
+    });
+}
+
+function showCustomAlert(title, message, btnText = "ОК") {
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-confirm-overlay';
+    
+    overlay.innerHTML = `
+        <div class="confirm-box">
+            <div class="confirm-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                ${title}
+            </div>
+            <div class="confirm-message">
+                ${message}
+            </div>
+            <button class="confirm-btn-primary" id="btn-ok-alert" style="width: 100%; margin-top: 10px;">${btnText}</button>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#btn-ok-alert').addEventListener('click', () => {
+        overlay.remove();
+    });
+    
+    overlay.addEventListener('click', (e) => {
+        if(e.target === overlay) overlay.remove();
+    });
+}
+
+function showCollectionSelectModal(onSelectCallback) {
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-confirm-overlay';
+
+    let html = `
+        <div class="confirm-box" style="width: 340px; max-height: 85vh; display: flex; flex-direction: column; padding: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border);">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text);">Выберите коллекцию</h3>
+                <button class="btn-action-round" id="close-col-modal" style="margin-right: -8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div style="overflow-y: auto; padding: 8px 0; display: flex; flex-direction: column; flex: 1;">
+    `;
+
+    const allCount = allBookmarks.filter(b => !b.inTrash && !b.collectionId).length;
+    html += `
+        <div class="col-modal-item" data-id="all">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-secondary);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                <span>Несортированные</span>
+            </div>
+            <span style="color: var(--text-secondary); font-size: 12px;">${allCount}</span>
+        </div>
+    `;
+
+    if (allCollections.length > 0) {
+        html += `<div style="padding: 12px 20px 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary);">Коллекции</div>`;
+        allCollections.forEach(coll => {
+            const count = allBookmarks.filter(b => !b.inTrash && b.collectionId === coll.id).length;
+            html += `
+                <div class="col-modal-item" data-id="${coll.id}">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 16px;">📁</span>
+                        <span>${coll.name}</span>
+                    </div>
+                    <span style="color: var(--text-secondary); font-size: 12px;">${count}</span>
+                </div>
+            `;
+        });
+    }
+
+    html += `
+            </div>
+        </div>
+    `;
+
+    overlay.innerHTML = html;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#close-col-modal').addEventListener('click', () => {
+        overlay.remove();
+    });
+
+    overlay.querySelectorAll('.col-modal-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const targetId = item.getAttribute('data-id') === 'all' ? null : item.getAttribute('data-id');
+            overlay.remove();
+            if (onSelectCallback) onSelectCallback(targetId);
+        });
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.remove();
     });
 }
 
@@ -980,6 +1227,13 @@ function showMainContextMenu(e) {
     menu.className = 'custom-context-menu';
     
     menu.innerHTML = `
+        <div class="ctx-item" id="ctx-select-mode">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 11 12 14 22 4"></polyline>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+            Выбрать
+        </div>
         <div class="ctx-item" id="ctx-import-csv">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -1008,6 +1262,18 @@ function showMainContextMenu(e) {
     menu.style.left = `${x}px`;
     menu.style.top = `${y}px`;
 
+    const selectBtn = menu.querySelector('#ctx-select-mode');
+    if (selectBtn) {
+        selectBtn.addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            menu.remove();
+            selectionMode = true;
+            selectedBookmarks.clear();
+            performSearchAndFilter();
+            if (typeof updateSelectionTopBar === 'function') updateSelectionTopBar();
+        });
+    }
+
     menu.querySelector('#ctx-import-csv').addEventListener('click', (evt) => {
         evt.stopPropagation();
         menu.remove();
@@ -1017,6 +1283,30 @@ function showMainContextMenu(e) {
     menu.addEventListener('click', (evt) => evt.stopPropagation());
 }
 
+function updateSelectionTopBar() {
+    const normalRow = document.getElementById('normal-title-row');
+    const selectionRow = document.getElementById('selection-title-row');
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const countText = document.getElementById('selectionCountText');
+
+    if (!selectionMode) {
+        if (normalRow) normalRow.style.display = 'flex';
+        if (selectionRow) selectionRow.style.display = 'none';
+        return;
+    }
+
+    if (normalRow) normalRow.style.display = 'none';
+    if (selectionRow) selectionRow.style.display = 'flex';
+    
+    const visibleRows = container.querySelectorAll('.bookmark-row');
+    if (countText) {
+        countText.innerText = `${selectedBookmarks.size} выбрано`;
+    }
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = visibleRows.length > 0 && selectedBookmarks.size === visibleRows.length;
+    }
+}
+
 function triggerCsvImport(targetCollId = undefined) {
     if (!currentUid) {
         if (typeof window.openAuthModal === 'function') window.openAuthModal(profileTrigger);
@@ -1024,7 +1314,7 @@ function triggerCsvImport(targetCollId = undefined) {
     }
 
     if (currentFolder === 'trash' && targetCollId === undefined) {
-        alert('Импорт невозможен в корзину. Перейдите в другую папку или коллекцию.');
+        showCustomAlert('Внимание', 'Импорт невозможен в корзину. Перейдите в другую папку или коллекцию.');
         return;
     }
 
@@ -1053,7 +1343,7 @@ function triggerCsvImport(targetCollId = undefined) {
 async function processCsvImport(text, targetCollId = undefined) {
     const lines = parseCSV(text);
     if (lines.length < 2) {
-        alert('Выбранный файл пуст или содержит недостаточно данных.');
+        showCustomAlert('Ошибка', 'Выбранный файл пуст или содержит недостаточно данных.');
         return;
     }
 
@@ -1062,7 +1352,7 @@ async function processCsvImport(text, targetCollId = undefined) {
     const urlIndex = headers.indexOf('url');
 
     if (titleIndex === -1 || urlIndex === -1) {
-        alert('Не удалось найти обязательные колонки "title" и "url" в CSV файле.');
+        showCustomAlert('Ошибка', 'Не удалось найти обязательные колонки "title" и "url" в CSV файле.');
         return;
     }
 
@@ -1093,7 +1383,7 @@ async function processCsvImport(text, targetCollId = undefined) {
     }
 
     if (importedItems.length === 0) {
-        alert('В файле не найдено корректных ссылок для импорта.');
+        showCustomAlert('Внимание', 'В файле не найдено корректных ссылок для импорта.');
         return;
     }
 
@@ -1118,10 +1408,10 @@ async function processCsvImport(text, targetCollId = undefined) {
             successCount += chunk.length;
         }
         
-        alert(`Успешно импортировано ${successCount} ${getNoun(successCount, 'закладка', 'закладки', 'закладок')}.`);
+        showCustomAlert('Готово', `Успешно импортировано ${successCount} ${getNoun(successCount, 'закладка', 'закладки', 'закладок')}.`);
     } catch (err) {
         console.error('CSV Import failed', err);
-        alert(`Произошла ошибка при импорте. Удалось импортировать: ${successCount}`);
+        showCustomAlert('Ошибка', `Произошла ошибка при импорте. Удалось импортировать: ${successCount}`);
     }
 }
 
@@ -1190,45 +1480,98 @@ if (emptyTrashLink) {
         const trashItems = allBookmarks.filter(b => !!b.inTrash);
         if (trashItems.length === 0) return;
         
-        if (!confirm(`Вы уверены, что хотите навсегда удалить ${trashItems.length} ${getNoun(trashItems.length, 'объект', 'объекта', 'объектов')}?`)) {
-            return;
-        }
-
         if (!currentUid) return;
 
-        // Issue parallel delete requests
-        try {
-            await Promise.all(
-                trashItems.map(item => deleteDoc(doc(db, 'users', currentUid, 'bookmarks', item.id)))
-            );
-        } catch (err) {
-            console.error("Empty trash error", err);
-            alert("Ошибка при очистке корзины.");
-        }
+        showCustomConfirm(
+            "Очистка корзины",
+            `Вы уверены, что хотите навсегда удалить ${trashItems.length} ${getNoun(trashItems.length, 'объект', 'объекта', 'объектов')}?`,
+            "Очистить",
+            async () => {
+                try {
+                    await Promise.all(
+                        trashItems.map(item => deleteDoc(doc(db, 'users', currentUid, 'bookmarks', item.id)))
+                    );
+                } catch (err) {
+                    console.error("Empty trash error", err);
+                    showCustomAlert("Ошибка", "Ошибка при очистке корзины.");
+                }
+            }
+        );
     });
 }
 
 // Create custom collection
 if (createCollectionBtn) {
-    createCollectionBtn.addEventListener('click', async (e) => {
+    createCollectionBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         if (!currentUid) {
             if (typeof window.openAuthModal === 'function') window.openAuthModal(profileTrigger);
             return;
         }
         
-        const name = prompt("Введите название новой коллекции:");
-        if (!name || !name.trim()) return;
+        document.querySelectorAll('.sidebar-menu .menu-item').forEach(el => el.classList.remove('highlighted', 'active'));
 
-        try {
-            await addDoc(collection(db, 'users', currentUid, 'collections'), {
-                name: name.trim(),
-                createdAt: serverTimestamp()
-            });
-        } catch (err) {
-            console.error("Error creating collection", err);
-            alert("Не удалось создать коллекцию.");
+        const a = document.createElement('a');
+        a.href = '#';
+        a.className = `menu-item highlighted`;
+        
+        a.innerHTML = `
+            <div class="menu-item-left">
+                <div class="drag-handle" title="Перетащить">
+                    <svg width="10" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+                </div>
+                <span class="menu-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </span>
+                <span style="flex: 1; min-width: 0;"><input type="text" class="inline-edit-input" placeholder="Новая коллекция"></span>
+            </div>
+            <div class="menu-item-right">
+                <span class="menu-count">0</span>
+            </div>
+        `;
+
+        collectionsContainer.appendChild(a);
+        
+        const input = a.querySelector('input');
+        input.focus();
+        
+        let finished = false;
+        async function saveCollection() {
+            if (finished) return;
+            finished = true;
+            const val = input.value.trim();
+            if (val) {
+                try {
+                    await addDoc(collection(db, 'users', currentUid, 'collections'), {
+                        name: val,
+                        createdAt: serverTimestamp()
+                    });
+                } catch (err) {
+                    console.error("Failed to create collection", err);
+                    a.remove();
+                }
+            } else {
+                a.remove();
+            }
         }
+
+        input.addEventListener('blur', saveCollection);
+        input.addEventListener('keydown', (ev) => {
+            ev.stopPropagation();
+            if (ev.key === 'Enter') {
+                ev.preventDefault();
+                input.blur();
+            } else if (ev.key === 'Escape') {
+                finished = true;
+                a.remove();
+            }
+        });
+        input.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+        });
     });
 }
 
@@ -1270,7 +1613,7 @@ function initSortables() {
     // 2. Bookmarks List Reordering
     const bookmarksListEl = document.getElementById('bookmarksContainer');
     if (bookmarksListEl) {
-        Sortable.create(bookmarksListEl, {
+        bookmarksSortable = Sortable.create(bookmarksListEl, {
             animation: 180,
             handle: '.drag-handle',
             ghostClass: 'sortable-ghost',
@@ -1283,11 +1626,10 @@ function initSortables() {
                 if (!currentUid) return;
                 // We only persist order changes if there's no search filtering active 
                 // to avoid corrupted global orders based on partial views.
-                const q = searchInput ? searchInput.value.trim() : '';
-                if (q) {
-                     alert("Невозможно переупорядочить список в режиме поиска.");
-                     performSearchAndFilter(); // Revert visual
-                     return;
+                if (currentFolder === 'all' && searchInput && searchInput.value.trim() !== '') {
+                     showCustomAlert("Внимание", "Невозможно переупорядочить список в режиме поиска.");
+                     performSearchAndFilter();
+                     return false; 
                 }
 
                 const rows = Array.from(bookmarksListEl.querySelectorAll('.bookmark-row'));
@@ -1342,5 +1684,137 @@ document.addEventListener('DOMContentLoaded', () => {
         startForUser(currentUid);
     } else {
         updateProfileUI(null);
+    }
+
+    // Mass Action Listeners
+    const cancelSelectionBtn = document.getElementById('cancelSelectionBtn');
+    if (cancelSelectionBtn) {
+        cancelSelectionBtn.addEventListener('click', () => {
+            selectionMode = false;
+            selectedBookmarks.clear();
+            performSearchAndFilter();
+            updateSelectionTopBar();
+        });
+    }
+
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            selectedBookmarks.clear();
+            if (isChecked) {
+                const visibleRows = container.querySelectorAll('.bookmark-row');
+                visibleRows.forEach(row => {
+                    const bId = row.getAttribute('data-id');
+                    if (bId) selectedBookmarks.add(bId);
+                });
+            }
+            performSearchAndFilter(); // Re-render to update checkboxes
+            updateSelectionTopBar();
+        });
+    }
+
+    const massDeleteBtn = document.getElementById('massDeleteBtn');
+    if (massDeleteBtn) {
+        massDeleteBtn.addEventListener('click', async () => {
+            if (selectedBookmarks.size === 0 || !currentUid) return;
+            
+            if (currentFolder === 'trash') {
+                showCustomConfirm(
+                    "Удаление навсегда",
+                    `Удалить ${selectedBookmarks.size} закладок НАВСЕГДА? Это действие необратимо.`,
+                    "Удалить",
+                    async () => {
+                        const batch = writeBatch(db);
+                        selectedBookmarks.forEach(bId => {
+                            const docRef = doc(db, 'users', currentUid, 'bookmarks', bId);
+                            batch.delete(docRef);
+                        });
+                        try {
+                            await batch.commit();
+                            selectionMode = false;
+                            selectedBookmarks.clear();
+                            performSearchAndFilter();
+                            updateSelectionTopBar();
+                        } catch (err) {
+                            console.error('Mass delete failed', err);
+                        }
+                    }
+                );
+            } else {
+                showCustomConfirm(
+                    "Вы уверены?",
+                    `Вы действительно хотите переместить в корзину ${selectedBookmarks.size} закладок?`,
+                    "Переместить в корзину",
+                    async () => {
+                        const batch = writeBatch(db);
+                        selectedBookmarks.forEach(bId => {
+                            const docRef = doc(db, 'users', currentUid, 'bookmarks', bId);
+                            batch.update(docRef, { 
+                                inTrash: true,
+                                deletedAt: serverTimestamp()
+                            });
+                        });
+                        try {
+                            await batch.commit();
+                            selectionMode = false;
+                            selectedBookmarks.clear();
+                            performSearchAndFilter();
+                            updateSelectionTopBar();
+                        } catch (err) {
+                            console.error('Mass move to trash failed', err);
+                        }
+                    }
+                );
+            }
+        });
+    }
+
+    const massMoveBtn = document.getElementById('massMoveBtn');
+    if (massMoveBtn) {
+        massMoveBtn.addEventListener('click', () => {
+            if (selectedBookmarks.size === 0 || !currentUid) return;
+            
+            showCollectionSelectModal(async (targetCollId) => {
+                const batch = writeBatch(db);
+                selectedBookmarks.forEach(bId => {
+                    const docRef = doc(db, 'users', currentUid, 'bookmarks', bId);
+                    batch.update(docRef, { collectionId: targetCollId });
+                });
+                
+                try {
+                    await batch.commit();
+                    selectionMode = false;
+                    selectedBookmarks.clear();
+                    performSearchAndFilter();
+                    updateSelectionTopBar();
+                } catch (err) {
+                    console.error('Mass move failed', err);
+                }
+            });
+        });
+    }
+
+    const massOpenBtn = document.getElementById('massOpenBtn');
+    if (massOpenBtn) {
+        massOpenBtn.addEventListener('click', () => {
+            if (selectedBookmarks.size === 0) return;
+            
+            if (selectedBookmarks.size > 1) {
+                showCustomAlert("Внимание", "Браузер может заблокировать открытие нескольких вкладок одновременно. Пожалуйста, обратите внимание на иконку блокировки в адресной строке и разрешите всплывающие окна.");
+            }
+            
+            selectedBookmarks.forEach(bId => {
+                const bookmark = allBookmarks.find(b => b.id === bId);
+                if (bookmark && bookmark.url) {
+                    window.open(bookmark.url, '_blank');
+                }
+            });
+            
+            selectionMode = false;
+            selectedBookmarks.clear();
+            performSearchAndFilter();
+            updateSelectionTopBar();
+        });
     }
 });

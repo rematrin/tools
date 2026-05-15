@@ -4,8 +4,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Закладки — Rematrin</title>
-    <link rel="icon" href="favicon.png">
+    <title>Все закладки</title>
+    <link rel="icon" href="cloud.png">
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -137,12 +137,13 @@
                         </svg>
                         <span>Добавить</span>
                     </button>
-                    
+
                     <!-- Popover добавления -->
                     <div class="add-popover" id="addBookmarkPopover">
                         <div class="popover-field">
                             <label>Название</label>
-                            <input type="text" id="popoverBookmarkTitle" class="popover-input" placeholder="Название закладки">
+                            <input type="text" id="popoverBookmarkTitle" class="popover-input"
+                                placeholder="Название закладки">
                         </div>
                         <div class="popover-field">
                             <label>URL</label>
@@ -194,27 +195,38 @@
             </div>
 
             <!-- Режим массового выбора (Selection mode) -->
-            <div class="title-row" id="selection-title-row" style="display: none; background: var(--list-hover-bg-light); align-items: center; justify-content: space-between;">
+            <div class="title-row" id="selection-title-row"
+                style="display: none; background: var(--list-hover-bg-light); align-items: center; justify-content: space-between;">
                 <div style="display:flex; align-items:center; gap: 12px;">
                     <input type="checkbox" id="selectAllCheckbox" style="width: 16px; height: 16px; cursor: pointer;">
                     <strong id="selectionCountText" style="font-size: 14px;">0 выбрано</strong>
                 </div>
                 <div style="display:flex; align-items:center; gap: 8px;">
                     <button class="btn-secondary" id="massMoveBtn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                            </path>
+                        </svg>
                         Переместить
                     </button>
-                    <button class="btn-secondary" id="massDeleteBtn" style="color: #dc3545; border-color: rgba(220, 53, 69, 0.3);">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <button class="btn-secondary" id="massDeleteBtn"
+                        style="color: #dc3545; border-color: rgba(220, 53, 69, 0.3);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                            </path>
+                        </svg>
                         Удалить
                     </button>
-                    <button class="btn-secondary" id="massOpenBtn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                        Открыть
-                    </button>
+
                 </div>
                 <button class="btn-secondary" id="cancelSelectionBtn" style="border: none;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
                     Отмена
                 </button>
             </div>
@@ -242,6 +254,65 @@
             </div>
 
         </main>
+
+        <aside class="edit-panel" id="editPanel">
+            <div class="edit-panel-header">
+                <button class="btn-action-round" id="closeEditPanelBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="edit-panel-content">
+                <div class="edit-field-row">
+                    <label class="edit-field-label">Название</label>
+                    <div class="edit-field-value">
+                        <input type="text" id="editTitleInput" class="edit-url-input" placeholder="Название закладки" autocomplete="off" spellcheck="false">
+                    </div>
+                </div>
+
+                <div class="edit-field-row">
+                    <label class="edit-field-label">Иконка</label>
+                    <div class="edit-field-value" style="display: flex; align-items: center; gap: 12px;">
+                        <div class="edit-favicon" style="width: 32px; height: 32px; border-radius: 6px;">
+                            <img id="editFavicon" src="" alt="">
+                        </div>
+                        <span id="editChangeIconBtn" class="edit-change-icon-btn">Изменить</span>
+                        <input type="file" id="editIconFileInput" accept="image/*" style="display: none;">
+                    </div>
+                </div>
+
+                <div class="edit-field-row">
+                    <label class="edit-field-label">Коллекция</label>
+                    <div class="edit-field-value">
+                        <button id="editCollectionBtn" class="collection-select-btn">
+                            <span id="editCollectionName">Все закладки</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="edit-field-row">
+                    <label class="edit-field-label">URL</label>
+                    <div class="edit-field-value">
+                        <textarea id="editUrlInput" class="edit-url-input" autocomplete="off" spellcheck="false" rows="1"></textarea>
+                    </div>
+                </div>
+
+                <div class="edit-field-row" style="margin-top: 8px;">
+                    <label class="edit-field-label"></label>
+                    <div class="edit-field-value">
+                        <button id="editDeleteBtn" class="edit-delete-btn">Удалить</button>
+                    </div>
+                </div>
+
+                <div style="flex: 1;"></div>
+            </div>
+        </aside>
 
     </div>
 

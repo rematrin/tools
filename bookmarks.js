@@ -176,7 +176,7 @@ function renderList(items) {
             domain = item.url;
         }
 
-        const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+        const faviconUrl = item.iconUrl || `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
         
         const isInTrash = !!item.inTrash;
 
@@ -229,7 +229,9 @@ function renderList(items) {
         `;
 
         // Handle events
-        row.querySelector('.bookmark-left').addEventListener('click', (e) => {
+        const bookmarkLeft = row.querySelector('.bookmark-left');
+        
+        bookmarkLeft.addEventListener('click', (e) => {
             if (selectionMode) {
                 e.preventDefault();
                 const chk = row.querySelector('.bookmark-select-checkbox');
@@ -240,6 +242,13 @@ function renderList(items) {
                 return;
             }
             window.open(item.url, '_blank');
+        });
+
+        bookmarkLeft.addEventListener('auxclick', (e) => {
+            if (e.button === 1 && !selectionMode) { // Middle click
+                e.preventDefault();
+                window.open(item.url, '_blank');
+            }
         });
 
         const chk = row.querySelector('.bookmark-select-checkbox');
@@ -272,49 +281,9 @@ function renderList(items) {
         if (renameBtn) {
             renameBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const titleEl = row.querySelector('.bookmark-title');
-                if (!titleEl || titleEl.querySelector('input')) return;
-
-                const oldTitle = item.title;
-                titleEl.innerHTML = `<input type="text" class="inline-edit-input" style="color:var(--text); border-bottom-color:var(--accent);" value="${oldTitle}">`;
-                const input = titleEl.querySelector('input');
-                input.focus();
-                input.select();
-
-                let fin = false;
-                async function saveBookmarkName() {
-                    if (fin) return;
-                    fin = true;
-                    const newVal = input.value.trim();
-                    if (newVal && newVal !== oldTitle) {
-                        try {
-                            await updateDoc(doc(db, 'users', currentUid, 'bookmarks', item.id), {
-                                title: newVal
-                            });
-                        } catch(err) {
-                            console.error(err);
-                            titleEl.innerText = oldTitle;
-                        }
-                    } else {
-                        titleEl.innerText = oldTitle;
-                    }
+                if (window.openEditPanel) {
+                    window.openEditPanel(item);
                 }
-
-                input.addEventListener('blur', saveBookmarkName);
-                input.addEventListener('keydown', (ev) => {
-                    ev.stopPropagation();
-                    if (ev.key === 'Enter') {
-                        ev.preventDefault();
-                        input.blur();
-                    } else if (ev.key === 'Escape') {
-                        fin = true;
-                        titleEl.innerText = oldTitle;
-                    }
-                });
-                input.addEventListener('click', ev => {
-                    ev.stopPropagation();
-                    ev.preventDefault();
-                });
             });
         }
 
@@ -601,7 +570,10 @@ function renderCollections() {
             currentFolder = `coll_${collId}`;
             
             const currentFolderTitle = document.getElementById('currentFolderTitle');
-            if (currentFolderTitle) currentFolderTitle.innerText = coll.name;
+            if (currentFolderTitle) {
+                currentFolderTitle.innerText = coll.name;
+                document.title = coll.name;
+            }
             
             performSearchAndFilter();
         });
@@ -1115,18 +1087,6 @@ function showCollectionSelectModal(onSelectCallback) {
             </div>
             <div style="overflow-y: auto; padding: 8px 0; display: flex; flex-direction: column; flex: 1;">
     `;
-
-    const allCount = allBookmarks.filter(b => !b.inTrash && !b.collectionId).length;
-    html += `
-        <div class="col-modal-item" data-id="all">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-secondary);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-                <span>Несортированные</span>
-            </div>
-            <span style="color: var(--text-secondary); font-size: 12px;">${allCount}</span>
-        </div>
-    `;
-
     if (allCollections.length > 0) {
         html += `<div style="padding: 12px 20px 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary);">Коллекции</div>`;
         allCollections.forEach(coll => {
@@ -1671,7 +1631,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const folderTitle = item.querySelector('span:not(.menu-icon)').innerText;
             const currentFolderTitle = document.getElementById('currentFolderTitle');
-            if (currentFolderTitle) currentFolderTitle.innerText = folderTitle;
+            if (currentFolderTitle) {
+                currentFolderTitle.innerText = folderTitle;
+                document.title = folderTitle;
+            }
             
             performSearchAndFilter();
         });
@@ -1795,26 +1758,209 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const massOpenBtn = document.getElementById('massOpenBtn');
-    if (massOpenBtn) {
-        massOpenBtn.addEventListener('click', () => {
-            if (selectedBookmarks.size === 0) return;
-            
-            if (selectedBookmarks.size > 1) {
-                showCustomAlert("Внимание", "Браузер может заблокировать открытие нескольких вкладок одновременно. Пожалуйста, обратите внимание на иконку блокировки в адресной строке и разрешите всплывающие окна.");
+    // --- Edit Panel Logic ---
+    let currentEditingBookmarkId = null;
+
+    window.openEditPanel = function(item) {
+        const editPanel = document.getElementById('editPanel');
+        const bookmarkApp = document.querySelector('.bookmark-app');
+        
+        if (!editPanel || !bookmarkApp) return;
+
+        currentEditingBookmarkId = item.id;
+        
+        bookmarkApp.classList.add('editing-mode');
+        editPanel.classList.add('active');
+        
+        let domain = '';
+        try { domain = new URL(item.url).hostname; } catch(e) {}
+        const faviconUrl = item.iconUrl || (domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64` : '');
+        
+        const favImg = document.getElementById('editFavicon');
+        if (favImg) {
+            favImg.src = faviconUrl;
+            favImg.style.display = faviconUrl ? 'block' : 'none';
+        }
+        
+        document.getElementById('editTitleInput').value = item.title || item.url || '';
+        document.getElementById('editUrlInput').value = item.url || '';
+        
+        const collNameSpan = document.getElementById('editCollectionName');
+        if (item.collectionId) {
+            const coll = allCollections.find(c => c.id === item.collectionId);
+            collNameSpan.innerText = coll ? `📁 ${coll.name}` : 'Выберите коллекцию';
+        } else {
+            collNameSpan.innerText = 'Выберите коллекцию';
+        }
+
+        // Auto-resize URL textarea
+        setTimeout(() => {
+            const urlArea = document.getElementById('editUrlInput');
+            if (urlArea) {
+                urlArea.style.height = 'auto';
+                urlArea.style.height = urlArea.scrollHeight + 'px';
             }
-            
-            selectedBookmarks.forEach(bId => {
-                const bookmark = allBookmarks.find(b => b.id === bId);
-                if (bookmark && bookmark.url) {
-                    window.open(bookmark.url, '_blank');
-                }
-            });
-            
-            selectionMode = false;
-            selectedBookmarks.clear();
-            performSearchAndFilter();
-            updateSelectionTopBar();
+        }, 0);
+    };
+
+    const closeEditPanelBtn = document.getElementById('closeEditPanelBtn');
+    if (closeEditPanelBtn) {
+        closeEditPanelBtn.addEventListener('click', () => {
+            const bookmarkApp = document.querySelector('.bookmark-app');
+            const editPanel = document.getElementById('editPanel');
+            if (bookmarkApp) bookmarkApp.classList.remove('editing-mode');
+            if (editPanel) editPanel.classList.remove('active');
+            currentEditingBookmarkId = null;
         });
     }
+    
+
+
+    // Auto-save logic
+    async function saveEditField(field, value) {
+        if (!currentEditingBookmarkId || !currentUid) return;
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'bookmarks', currentEditingBookmarkId), {
+                [field]: value
+            });
+        } catch (err) {
+            console.error(`Failed to save ${field}:`, err);
+        }
+    }
+
+    const editTitleInput = document.getElementById('editTitleInput');
+    if (editTitleInput) {
+        editTitleInput.addEventListener('blur', () => saveEditField('title', editTitleInput.value.trim()));
+    }
+
+    const editUrlInput = document.getElementById('editUrlInput');
+    if (editUrlInput) {
+        editUrlInput.addEventListener('blur', () => saveEditField('url', editUrlInput.value.trim()));
+        editUrlInput.addEventListener('input', () => {
+            editUrlInput.style.height = 'auto';
+            editUrlInput.style.height = editUrlInput.scrollHeight + 'px';
+        });
+    }
+
+    // Icon Upload Logic
+    const editChangeIconBtn = document.getElementById('editChangeIconBtn');
+    const editIconFileInput = document.getElementById('editIconFileInput');
+    
+    if (editChangeIconBtn && editIconFileInput) {
+        editChangeIconBtn.addEventListener('click', () => {
+            if (!currentEditingBookmarkId) return;
+            editIconFileInput.click();
+        });
+        
+        editIconFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            editChangeIconBtn.innerText = 'Загрузка...';
+            editChangeIconBtn.style.pointerEvents = 'none';
+            
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = new Image();
+                img.onload = function() {
+                    let width = img.width;
+                    let height = img.height;
+                    const maxSide = 128;
+                    
+                    if (width > height) {
+                        if (width > maxSide) {
+                            height = Math.round(height * (maxSide / width));
+                            width = maxSide;
+                        }
+                    } else {
+                        if (height > maxSide) {
+                            width = Math.round(width * (maxSide / height));
+                            height = maxSide;
+                        }
+                    }
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    canvas.toBlob(async (blob) => {
+                        const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee';
+                        const formData = new FormData();
+                        formData.append('image', blob);
+                        
+                        try {
+                            const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const data = await response.json();
+                            if (data && data.data && data.data.url) {
+                                const url = data.data.url;
+                                await saveEditField('iconUrl', url);
+                                document.getElementById('editFavicon').src = url;
+                                performSearchAndFilter(); // refresh list
+                            } else {
+                                throw new Error('Upload failed');
+                            }
+                        } catch (err) {
+                            console.error('Error uploading icon:', err);
+                            showCustomAlert('Ошибка', 'Не удалось загрузить иконку. Попробуйте еще раз.');
+                        } finally {
+                            editChangeIconBtn.innerText = 'Изменить иконку';
+                            editChangeIconBtn.style.pointerEvents = 'auto';
+                            editIconFileInput.value = '';
+                        }
+                    }, file.type || 'image/png');
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Edit Panel Collection Button
+    const editCollectionBtn = document.getElementById('editCollectionBtn');
+    if (editCollectionBtn) {
+        editCollectionBtn.addEventListener('click', () => {
+            if (!currentEditingBookmarkId || !currentUid) return;
+            showCollectionSelectModal(async (targetCollId) => {
+                await saveEditField('collectionId', targetCollId);
+                // Update UI visually
+                const collNameSpan = document.getElementById('editCollectionName');
+                if (targetCollId) {
+                    const coll = allCollections.find(c => c.id === targetCollId);
+                    collNameSpan.innerText = coll ? `📁 ${coll.name}` : 'Выберите коллекцию';
+                } else {
+                    collNameSpan.innerText = 'Выберите коллекцию';
+                }
+            });
+        });
+    }
+
+    const editDeleteBtn = document.getElementById('editDeleteBtn');
+    if (editDeleteBtn) {
+        editDeleteBtn.addEventListener('click', () => {
+            if (!currentEditingBookmarkId || !currentUid) return;
+            showCustomConfirm(
+                "Удалить закладку?",
+                "Вы действительно хотите переместить эту закладку в корзину?",
+                "Переместить",
+                async () => {
+                    try {
+                        await updateDoc(doc(db, 'users', currentUid, 'bookmarks', currentEditingBookmarkId), {
+                            inTrash: true,
+                            deletedAt: serverTimestamp()
+                        });
+                        // Close panel
+                        closeEditPanelBtn.click();
+                    } catch (err) {
+                        console.error('Delete failed', err);
+                    }
+                }
+            );
+        });
+    }
+
 });

@@ -710,13 +710,10 @@ body.dark .favicon-wrapper {
     align-items: center;
     gap: 4px;
     opacity: 0;
-    transform: translateX(10px);
-    transition: all 0.2s ease;
 }
 
 .bookmark-row:hover .bookmark-actions {
     opacity: 1;
-    transform: translateX(0);
 }
 
 .btn-action-round {
@@ -874,7 +871,6 @@ body.dark .favicon-wrapper {
     display: flex;
     flex-direction: column;
     font-family: 'Inter', sans-serif;
-    animation: fadeInScale 0.15s ease-out;
 }
 
 body.dark .custom-context-menu {
@@ -952,7 +948,6 @@ body.dark .ctx-divider {
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: fadeInFade 0.2s ease;
 }
 
 @keyframes fadeInFade {
@@ -1104,7 +1099,182 @@ body.dark .confirm-message {
 }
 
 .confirm-btn-primary:hover {
-    background: #2b66c4;
+    background: #0d5ec4;
+}
+
+/* === EDIT PANEL === */
+.edit-panel {
+    width: 0;
+    display: none;
+    flex-direction: column;
+    background: var(--card-bg);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.edit-panel.active {
+    display: flex;
+    flex: 0 0 35%;
+    width: 35%;
+    min-width: 200px;
+}
+
+.bookmark-app.editing-mode .main-content {
+    flex: 1;
+    border-right: 1px solid var(--border);
+}
+
+.edit-panel-header {
+    height: 52px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+}
+
+.edit-panel-content {
+    padding: 32px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    flex: 1;
+}
+
+.edit-favicon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: var(--search-bg-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+body.dark .edit-favicon {
+    background: var(--search-bg-dark);
+}
+
+.edit-favicon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.edit-change-icon-btn {
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.edit-change-icon-btn:hover {
+    color: var(--text);
+}
+
+.edit-field-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.edit-field-label {
+    width: 80px;
+    flex-shrink: 0;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+    padding-top: 8px;
+}
+
+.edit-field-value {
+    flex: 1;
+}
+
+.edit-url-input {
+    width: 100%;
+    background: var(--search-bg-light);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    resize: none;
+    line-height: 1.4;
+    font-family: inherit;
+    display: block;
+    overflow: hidden;
+}
+
+body.dark .edit-url-input {
+    background: var(--search-bg-dark);
+}
+
+.collection-select-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--search-bg-light);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+body.dark .collection-select-btn {
+    background: var(--search-bg-dark);
+}
+
+.collection-select-btn:hover {
+    filter: brightness(0.95);
+}
+
+body.dark .collection-select-btn:hover {
+    filter: brightness(1.1);
+}
+
+.edit-delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--search-bg-light);
+    border: none;
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    transition: filter 0.2s, color 0.2s;
+}
+
+body.dark .edit-delete-btn {
+    background: var(--search-bg-dark);
+}
+
+.edit-delete-btn:hover {
+    filter: brightness(0.95);
+    color: #dc3545;
+}
+
+body.dark .edit-delete-btn:hover {
+    filter: brightness(1.1);
+    color: #ff4b5c;
+}
+
+.edit-panel-footer {
+    margin-top: auto;
+    padding-top: 24px;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .confirm-btn-secondary {
@@ -1246,7 +1416,8 @@ body.dark .list-drag-preview {
 
 /* === ДОБАВЛЕНИЕ ЗАКЛАДОК (POPOVER) === */
 .add-popover {
-    display: none; /* по умолчанию скрыто, будет переключаться через JS */
+    display: none;
+    /* по умолчанию скрыто, будет переключаться через JS */
     position: absolute;
     top: calc(100% + 8px);
     right: 0;

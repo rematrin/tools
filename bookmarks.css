@@ -878,6 +878,11 @@ body.dark .custom-context-menu {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 @keyframes fadeInScale {
     from {
         opacity: 0;
@@ -1028,6 +1033,33 @@ body.dark .modal-input {
 body.dark .modal-input:focus {
     border-color: #1070e5;
     background: #333;
+}
+
+.icon-dropzone {
+    border: 2px dashed rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.2s ease;
+    background: rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: #444;
+}
+
+body.dark .icon-dropzone {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.02);
+    color: #aaa;
+}
+
+.icon-dropzone:hover {
+    border-color: #1070e5;
+    background: rgba(16, 112, 229, 0.05);
 }
 
 .confirm-box {

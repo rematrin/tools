@@ -404,6 +404,37 @@ function handleSnapshot(snap) {
 function performSearchAndFilter() {
     const queryStr = searchInput ? searchInput.value.toLowerCase().trim() : '';
     
+    // Update folder large icon dynamically based on the active folder/collection
+    const largeIconSpan = document.querySelector('.folder-large-icon');
+    if (largeIconSpan) {
+        if (currentFolder === 'all') {
+            largeIconSpan.innerHTML = `
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+                </svg>
+            `;
+        } else if (currentFolder === 'trash') {
+            largeIconSpan.innerHTML = `
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            `;
+        } else if (currentFolder.startsWith('coll_')) {
+            const targetCollId = currentFolder.replace('coll_', '');
+            const coll = allCollections.find(c => c.id === targetCollId);
+            if (coll && coll.iconUrl) {
+                largeIconSpan.innerHTML = `<img src="${coll.iconUrl}" style="width: 22px; height: 22px; object-fit: contain; border-radius: 4px;">`;
+            } else {
+                largeIconSpan.innerHTML = `
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                `;
+            }
+        }
+    }
+
     // Toggle trash notice banner
     if (trashBanner) {
         trashBanner.style.display = currentFolder === 'trash' ? 'flex' : 'none';
@@ -479,6 +510,7 @@ async function startForUser(uid) {
             allCollections.push({ id: docSnap.id, ...docSnap.data() });
         });
         renderCollections();
+        performSearchAndFilter(); // dynamically updates the main header icon and lists!
     }, (err) => console.error('Collections error', err));
 }
 
@@ -525,15 +557,19 @@ function renderCollections() {
         a.className = `menu-item ${isActive ? 'highlighted' : ''}`;
         a.setAttribute('data-folder', `coll_${collId}`);
         
+        const iconHtml = coll.iconUrl ? 
+            `<img src="${coll.iconUrl}" class="menu-icon-img" style="width: 16px; height: 16px; object-fit: contain; border-radius: 4px;">` :
+            `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>`;
+
         a.innerHTML = `
             <div class="menu-item-left">
                 <div class="drag-handle" title="Перетащить">
                     <svg width="10" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
                 </div>
                 <span class="menu-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                    </svg>
+                    ${iconHtml}
                 </span>
                 <span>${coll.name}</span>
             </div>
@@ -602,7 +638,8 @@ function showCollectionContextMenu(e, collId, collName) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             Переименовать
         </div>
-        <div class="ctx-item ctx-item-disabled">
+        <div class="ctx-item" id="ctx-change-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
             Сменить иконку
         </div>
         <div class="ctx-item" id="ctx-import">
@@ -761,8 +798,260 @@ function showCollectionContextMenu(e, collId, collName) {
         );
     });
 
+    const changeIconBtn = menu.querySelector('#ctx-change-icon');
+    if (changeIconBtn) {
+        changeIconBtn.addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            menu.remove();
+            showCollectionIconModal(collId, collName);
+        });
+    }
+
     // Prevent closing when clicking inside items that are purely disabled
     menu.addEventListener('click', (evt) => evt.stopPropagation());
+}
+
+function showCollectionIconModal(collId, collName) {
+    const coll = allCollections.find(c => c.id === collId);
+    const currentIconUrl = coll ? coll.iconUrl : null;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-confirm-overlay';
+
+    overlay.innerHTML = `
+        <div class="confirm-box" style="width: 360px; padding: 24px;">
+            <div class="confirm-title" style="font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                Иконка коллекции
+            </div>
+            
+            <div class="confirm-message" style="margin-bottom: 16px; font-size: 13px; opacity: 0.85; line-height: 1.4;">
+                Загрузите изображение, вставьте из буфера обмена (Ctrl + V) или перетащите файл в область ниже.
+            </div>
+
+            <!-- Drag and Drop / Paste Area -->
+            <div id="icon-dropzone" class="icon-dropzone">
+                <div class="dropzone-preview" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                    ${currentIconUrl ? 
+                        `<img src="${currentIconUrl}" style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;">` :
+                        `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5;">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>`
+                    }
+                </div>
+                <div class="dropzone-text" style="font-size: 13px; font-weight: 500;">
+                    Кликните для выбора файла или перетащите его сюда
+                </div>
+            </div>
+
+            <!-- Upload Hidden Input -->
+            <input type="file" id="modalIconFileInput" accept="image/*" style="display: none;">
+
+            <!-- Actions -->
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="confirm-btn-primary" id="btn-select-file" style="margin: 0; padding: 10px; border-radius: 8px;">Выбрать файл...</button>
+                
+                ${currentIconUrl ? 
+                    `<button class="confirm-btn-secondary" id="btn-delete-icon" style="margin: 0; padding: 10px; border-radius: 8px; color: #ff5f56; border-color: rgba(255, 95, 86, 0.2);">Удалить иконку</button>` : 
+                    ''
+                }
+                
+                <button class="confirm-btn-secondary" id="btn-close-icon-modal" style="margin: 0; padding: 10px; border-radius: 8px;">Отмена</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const dropzone = overlay.querySelector('#icon-dropzone');
+    const fileInput = overlay.querySelector('#modalIconFileInput');
+    const selectFileBtn = overlay.querySelector('#btn-select-file');
+    const deleteIconBtn = overlay.querySelector('#btn-delete-icon');
+    const closeBtn = overlay.querySelector('#btn-close-icon-modal');
+
+    // 1. Paste handler (Ctrl + V)
+    function handlePaste(e) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (const item of items) {
+            if (item.type.indexOf("image") === 0) {
+                const file = item.getAsFile();
+                processAndUpload(file);
+                break;
+            }
+        }
+    }
+    document.addEventListener('paste', handlePaste);
+
+    // 2. Drag & Drop handler
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#1070e5';
+        dropzone.style.background = 'rgba(16, 112, 229, 0.05)';
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.borderColor = '';
+        dropzone.style.background = '';
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '';
+        dropzone.style.background = '';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            processAndUpload(file);
+        }
+    });
+
+    // 3. Selection
+    dropzone.addEventListener('click', () => fileInput.click());
+    selectFileBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) processAndUpload(file);
+    });
+
+    // 4. Delete Icon
+    if (deleteIconBtn) {
+        deleteIconBtn.addEventListener('click', async () => {
+            overlay.remove();
+            document.removeEventListener('paste', handlePaste);
+            try {
+                // Save null to remove the custom icon in Firestore
+                await updateDoc(doc(db, 'users', currentUid, 'collections', collId), {
+                    iconUrl: null
+                });
+
+                // Update folder large icon dynamically if active
+                if (currentFolder === `coll_${collId}`) {
+                    const largeIconSpan = document.querySelector('.folder-large-icon');
+                    if (largeIconSpan) {
+                        largeIconSpan.innerHTML = `
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        `;
+                    }
+                }
+            } catch (err) {
+                console.error("Error removing icon:", err);
+                showCustomAlert("Ошибка", "Не удалось удалить иконку.");
+            }
+        });
+    }
+
+    // 5. Cancel / Close
+    closeBtn.addEventListener('click', () => {
+        overlay.remove();
+        document.removeEventListener('paste', handlePaste);
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+            document.removeEventListener('paste', handlePaste);
+        }
+    });
+
+    // Core Processing & Upload logic inside the Modal
+    async function processAndUpload(file) {
+        // Change text/preview to Loading
+        dropzone.style.pointerEvents = 'none';
+        selectFileBtn.style.pointerEvents = 'none';
+        selectFileBtn.innerText = 'Загрузка...';
+        if (deleteIconBtn) deleteIconBtn.style.display = 'none';
+        
+        dropzone.querySelector('.dropzone-preview').innerHTML = `
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation: spin 1s linear infinite;">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="8" fill="none" opacity="0.3"></circle>
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+            </svg>
+        `;
+        dropzone.querySelector('.dropzone-text').innerText = 'Загрузка изображения...';
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const img = new Image();
+            img.onload = function() {
+                let width = img.width;
+                let height = img.height;
+                const maxSide = 128;
+
+                if (width > height) {
+                    if (width > maxSide) {
+                        height = Math.round(height * (maxSide / width));
+                        width = maxSide;
+                    }
+                } else {
+                    if (height > maxSide) {
+                        width = Math.round(width * (maxSide / height));
+                        height = maxSide;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(async (blob) => {
+                    const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee';
+                    const formData = new FormData();
+                    formData.append('image', blob);
+
+                    try {
+                        const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await response.json();
+                        if (data && data.data && data.data.url) {
+                            const url = data.data.url;
+                            // Save in Firestore
+                            await updateDoc(doc(db, 'users', currentUid, 'collections', collId), {
+                                iconUrl: url
+                            });
+
+                            // Update folder large icon dynamically if active
+                            if (currentFolder === `coll_${collId}`) {
+                                const largeIconSpan = document.querySelector('.folder-large-icon');
+                                if (largeIconSpan) {
+                                    largeIconSpan.innerHTML = `<img src="${url}" style="width: 22px; height: 22px; object-fit: contain; border-radius: 4px;">`;
+                                }
+                            }
+                            
+                            // Close modal successfully
+                            overlay.remove();
+                            document.removeEventListener('paste', handlePaste);
+                        } else {
+                            throw new Error('Upload failed');
+                        }
+                    } catch (err) {
+                        console.error('Error uploading collection icon:', err);
+                        showCustomAlert('Ошибка', 'Не удалось загрузить иконку. Попробуйте еще раз.');
+                        
+                        // Reset Dropzone UI
+                        dropzone.style.pointerEvents = 'auto';
+                        selectFileBtn.style.pointerEvents = 'auto';
+                        selectFileBtn.innerText = 'Выбрать файл...';
+                        if (deleteIconBtn) deleteIconBtn.style.display = 'block';
+                        
+                        dropzone.querySelector('.dropzone-preview').innerHTML = currentIconUrl ? 
+                            `<img src="${currentIconUrl}" style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;">` :
+                            `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5;">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>`;
+                        dropzone.querySelector('.dropzone-text').innerText = 'Кликните для выбора файла или перетащите его сюда';
+                    }
+                }, file.type || 'image/png');
+            };
+            img.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
 }
 
 // Helper: Display the context menu for bookmarks
@@ -1091,10 +1380,14 @@ function showCollectionSelectModal(onSelectCallback) {
         html += `<div style="padding: 12px 20px 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary);">Коллекции</div>`;
         allCollections.forEach(coll => {
             const count = allBookmarks.filter(b => !b.inTrash && b.collectionId === coll.id).length;
+            const collIconHtml = coll.iconUrl ?
+                `<img src="${coll.iconUrl}" style="width: 16px; height: 16px; object-fit: contain; border-radius: 4px;">` :
+                `<span style="font-size: 16px;">📁</span>`;
+
             html += `
                 <div class="col-modal-item" data-id="${coll.id}">
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <span style="font-size: 16px;">📁</span>
+                        ${collIconHtml}
                         <span>${coll.name}</span>
                     </div>
                     <span style="color: var(--text-secondary); font-size: 12px;">${count}</span>
@@ -1788,9 +2081,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const collNameSpan = document.getElementById('editCollectionName');
         if (item.collectionId) {
             const coll = allCollections.find(c => c.id === item.collectionId);
-            collNameSpan.innerText = coll ? `📁 ${coll.name}` : 'Выберите коллекцию';
+            if (coll) {
+                const iconPrefix = coll.iconUrl ? 
+                    `<img src="${coll.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 2px; vertical-align: middle; margin-right: 6px;">` :
+                    `<span style="margin-right: 6px; vertical-align: middle;">📁</span>`;
+                collNameSpan.innerHTML = `${iconPrefix}<span style="vertical-align: middle;">${coll.name}</span>`;
+            } else {
+                collNameSpan.innerHTML = 'Выберите коллекцию';
+            }
         } else {
-            collNameSpan.innerText = 'Выберите коллекцию';
+            collNameSpan.innerHTML = 'Выберите коллекцию';
         }
 
         // Auto-resize URL textarea
@@ -1931,9 +2231,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const collNameSpan = document.getElementById('editCollectionName');
                 if (targetCollId) {
                     const coll = allCollections.find(c => c.id === targetCollId);
-                    collNameSpan.innerText = coll ? `📁 ${coll.name}` : 'Выберите коллекцию';
+                    if (coll) {
+                        const iconPrefix = coll.iconUrl ? 
+                            `<img src="${coll.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 2px; vertical-align: middle; margin-right: 6px;">` :
+                            `<span style="margin-right: 6px; vertical-align: middle;">📁</span>`;
+                        collNameSpan.innerHTML = `${iconPrefix}<span style="vertical-align: middle;">${coll.name}</span>`;
+                    } else {
+                        collNameSpan.innerHTML = 'Выберите коллекцию';
+                    }
                 } else {
-                    collNameSpan.innerText = 'Выберите коллекцию';
+                    collNameSpan.innerHTML = 'Выберите коллекцию';
                 }
             });
         });

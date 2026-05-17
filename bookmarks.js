@@ -642,10 +642,6 @@ function showCollectionContextMenu(e, collId, collName) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
             Сменить иконку
         </div>
-        <div class="ctx-item" id="ctx-import">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-            Импорт
-        </div>
         <div class="ctx-item danger" id="ctx-delete">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             Удалить
@@ -753,12 +749,6 @@ function showCollectionContextMenu(e, collId, collName) {
             e.preventDefault();
             e.stopPropagation();
         });
-    });
-
-    menu.querySelector('#ctx-import').addEventListener('click', (evt) => {
-        evt.stopPropagation();
-        menu.remove();
-        triggerCsvImport(collId);
     });
 
     menu.querySelector('#ctx-delete').addEventListener('click', (evt) => {
@@ -1495,6 +1485,14 @@ function showMainContextMenu(e) {
             </svg>
             Импорт
         </div>
+        <div class="ctx-item" id="ctx-export-csv">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Экспорт
+        </div>
     `;
 
     document.body.appendChild(menu);
@@ -1530,7 +1528,23 @@ function showMainContextMenu(e) {
     menu.querySelector('#ctx-import-csv').addEventListener('click', (evt) => {
         evt.stopPropagation();
         menu.remove();
-        triggerCsvImport();
+        
+        let targetCollId = undefined;
+        if (currentFolder && currentFolder.startsWith('coll_')) {
+            targetCollId = currentFolder.replace('coll_', '');
+        }
+        triggerCsvImport(targetCollId);
+    });
+
+    menu.querySelector('#ctx-export-csv').addEventListener('click', (evt) => {
+        evt.stopPropagation();
+        menu.remove();
+        
+        let targetCollId = null;
+        if (currentFolder && currentFolder.startsWith('coll_')) {
+            targetCollId = currentFolder.replace('coll_', '');
+        }
+        triggerCsvExport(targetCollId);
     });
 
     menu.addEventListener('click', (evt) => evt.stopPropagation());
@@ -1558,6 +1572,56 @@ function updateSelectionTopBar() {
     if (selectAllCheckbox) {
         selectAllCheckbox.checked = visibleRows.length > 0 && selectedBookmarks.size === visibleRows.length;
     }
+}
+
+function triggerCsvExport(targetCollectionId = null) {
+    if (!currentUid) {
+        if (typeof window.openAuthModal === 'function') window.openAuthModal(profileTrigger);
+        return;
+    }
+
+    let list = [];
+    if (targetCollectionId) {
+        list = allBookmarks.filter(b => !b.inTrash && b.collectionId === targetCollectionId);
+    } else {
+        list = allBookmarks.filter(b => !b.inTrash);
+    }
+
+    if (list.length === 0) {
+        showCustomAlert('Внимание', 'Нет закладок для экспорта.');
+        return;
+    }
+
+    const headers = ['Title', 'URL'];
+    const rows = list.map(b => {
+        const escapeValue = (val) => {
+            if (val === null || val === undefined) return '""';
+            const escaped = val.toString().replace(/"/g, '""');
+            return `"${escaped}"`;
+        };
+        return [escapeValue(b.title), escapeValue(b.url)].join(',');
+    });
+
+    const csvContent = "\ufeff" + [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+
+    let filename = 'bookmarks_export.csv';
+    if (targetCollectionId) {
+        const coll = allCollections.find(c => c.id === targetCollectionId);
+        if (coll) {
+            filename = `bookmarks_${coll.name.toLowerCase().replace(/[^a-z0-9а-яё]/gi, '_')}.csv`;
+        }
+    }
+
+    link.setAttribute("download", filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
 
 function triggerCsvImport(targetCollId = undefined) {

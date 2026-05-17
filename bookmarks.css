@@ -203,6 +203,7 @@ body.dark .sidebar {
     font-style: normal;
     text-decoration: none;
     box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 .menu-item:hover {
@@ -253,6 +254,7 @@ body.dark .sidebar {
     justify-content: space-between;
     padding: 12px 12px 4px 12px;
     margin-top: 4px;
+    flex-shrink: 0;
 }
 
 .menu-section-title {
@@ -316,6 +318,7 @@ body:not(.dark) .inline-edit-input {
     gap: 1px;
     padding-left: 0;
     /* Убран отступ чтобы коллекции были на одном уровне */
+    flex-shrink: 0;
 }
 
 /* --- PRO БАННЕР В SIDEBAR --- */
@@ -329,6 +332,7 @@ body:not(.dark) .inline-edit-input {
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
+    flex-shrink: 0;
 }
 
 .pro-banner:hover {

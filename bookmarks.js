@@ -630,10 +630,6 @@ function showCollectionContextMenu(e, collId, collName) {
     
     // Construct simplified menu items
     menu.innerHTML = `
-        <div class="ctx-item" id="ctx-open-all">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-            Открыть все закладки
-        </div>
         <div class="ctx-item" id="ctx-rename">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             Переименовать
@@ -667,22 +663,6 @@ function showCollectionContextMenu(e, collId, collName) {
     
     menu.style.left = `${x}px`;
     menu.style.top = `${y}px`;
-
-    // 1. Handle "Open all"
-    menu.querySelector('#ctx-open-all').addEventListener('click', (evt) => {
-        evt.stopPropagation();
-        menu.remove();
-        const children = allBookmarks.filter(b => !b.inTrash && b.collectionId === collId);
-        if (children.length === 0) {
-            showCustomAlert('Пустая коллекция', 'В этой коллекции пока нет закладок.');
-            return;
-        }
-        
-        // Note: browsers may require explicit user consent (popup alert) to open multiple tabs
-        children.forEach(item => {
-            window.open(item.url, '_blank');
-        });
-    });
 
     // 2. Add operational listener logic for functional items
     menu.querySelector('#ctx-rename').addEventListener('click', (evt) => {

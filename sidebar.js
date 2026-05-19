@@ -375,6 +375,7 @@ export function initSidebarManager(context) {
         const currentRows = localStorage.getItem('gridRows') || '6';
         const isGlassEnabled = localStorage.getItem('glassEffect') === 'true';
         const openInNewTab = localStorage.getItem('openInNewTab') === 'true';
+        const expandedFolders = localStorage.getItem('expandedFolders') === 'true';
 
         const glassSettingsHTML = `
             <div class="profile-card" style="gap: 8px; padding: 12px 16px;">
@@ -390,6 +391,13 @@ export function initSidebarManager(context) {
                     <span style="font-size: 14px; flex: 1; padding-right: 10px;">Открывать сайты в новой вкладке</span>
                     <label class="switch" style="transform: scale(0.85); transform-origin: right;">
                         <input type="checkbox" id="openNewTabToggle" ${openInNewTab ? 'checked' : ''}>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
+                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Расширенные папки</span>
+                    <label class="switch" style="transform: scale(0.85); transform-origin: right;">
+                        <input type="checkbox" id="expandedFoldersToggle" ${expandedFolders ? 'checked' : ''}>
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
@@ -505,6 +513,18 @@ export function initSidebarManager(context) {
             };
         }
 
+        // Расширенные папки
+        const expandedFoldersToggle = document.getElementById('expandedFoldersToggle');
+        if (expandedFoldersToggle) {
+            expandedFoldersToggle.onchange = (e) => {
+                const isEnabled = e.target.checked;
+                if (isEnabled) document.body.classList.add('expanded-folders');
+                else document.body.classList.remove('expanded-folders');
+                localStorage.setItem('expandedFolders', isEnabled.toString());
+                if (auth.currentUser) window.dbApi.saveSettings({ expandedFolders: isEnabled });
+            };
+        }
+
         // Колонки
         const colSlider = document.getElementById('colCountSlider');
         const colValue = document.getElementById('colCountValue');
@@ -554,6 +574,7 @@ export function initSidebarManager(context) {
                     gridRows: localStorage.getItem('gridRows') || '6',
                     glassEffect: localStorage.getItem('glassEffect') === 'true',
                     openInNewTab: localStorage.getItem('openInNewTab') === 'true',
+                    expandedFolders: localStorage.getItem('expandedFolders') === 'true',
                     wallpaper: JSON.parse(localStorage.getItem('user_wallpaper_settings_v1') || '{}')
                 };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -646,6 +667,13 @@ export function initSidebarManager(context) {
                             // Импорт настройки открытия в новой вкладке
                             if (typeof data.openInNewTab !== 'undefined') {
                                 localStorage.setItem('openInNewTab', data.openInNewTab.toString());
+                            }
+
+                            // Импорт расширенных папок
+                            if (typeof data.expandedFolders !== 'undefined') {
+                                localStorage.setItem('expandedFolders', data.expandedFolders.toString());
+                                if (data.expandedFolders) document.body.classList.add('expanded-folders');
+                                else document.body.classList.remove('expanded-folders');
                             }
 
                             // Импорт обоев

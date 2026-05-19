@@ -95,6 +95,7 @@ export class FolderManager {
 
         this.overlay.classList.remove('active');
         document.body.classList.remove('folder-open');
+        document.body.classList.remove('folder-large');
 
         this.mainGrid.style.opacity = '1';
         this.mainGrid.style.transform = 'scale(1)';
@@ -112,6 +113,13 @@ export class FolderManager {
         this.gridEl.innerHTML = '';
 
         const items = this.currentFolderData.items || [];
+
+        // Добавляем класс, если в папке больше 12 элементов (13 и более)
+        if (items.length > 12) {
+            document.body.classList.add('folder-large');
+        } else {
+            document.body.classList.remove('folder-large');
+        }
 
         items.forEach((app, idx) => {
             const item = document.createElement('div');

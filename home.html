@@ -1583,7 +1583,7 @@
             /* Начальное состояние контента: чуть меньше и прозрачный */
             opacity: 0;
             transform: scale(0.9);
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .folder-overlay.active .folder-content {
@@ -1672,6 +1672,15 @@
             max-height: 65vh;
             overflow-y: auto;
             align-content: start;
+        }
+
+        @media (min-width: 601px) {
+            body.expanded-folders.folder-large .folder-content {
+                max-width: 650px;
+            }
+            body.expanded-folders.folder-large .folder-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
         }
 
         .folder-grid::-webkit-scrollbar {
@@ -2062,6 +2071,11 @@
         const savedGlass = localStorage.getItem('glassEffect') === 'true';
         if (savedGlass) {
             document.body.classList.add('glass-mode');
+        }
+
+        const savedExpandedFolders = localStorage.getItem('expandedFolders') === 'true';
+        if (savedExpandedFolders) {
+            document.body.classList.add('expanded-folders');
         }
 
         const savedCols = localStorage.getItem('gridColumns') || '4';
@@ -2848,6 +2862,18 @@
                                     // Обновляем UI чекбокса, если он сейчас отрендерен
                                     const toggle = document.getElementById('globalGlassToggle');
                                     if (toggle) toggle.checked = isGlass;
+                                }
+
+                                // Загрузка Расширенных папок
+                                if (typeof cloudSettings.expandedFolders !== 'undefined') {
+                                    const isExpanded = cloudSettings.expandedFolders;
+                                    if (isExpanded) document.body.classList.add('expanded-folders');
+                                    else document.body.classList.remove('expanded-folders');
+                                    localStorage.setItem('expandedFolders', isExpanded.toString());
+
+                                    // Обновляем UI чекбокса, если он сейчас отрендерен
+                                    const toggle = document.getElementById('expandedFoldersToggle');
+                                    if (toggle) toggle.checked = isExpanded;
                                 }
 
                                 // Загрузка Колонок

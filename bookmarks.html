@@ -18,6 +18,14 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script src="theme-loader.js"></script>
+    <script>
+        if (window.location.search.includes('embedded=true')) {
+            document.documentElement.classList.add('embedded');
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.classList.add('embedded');
+            });
+        }
+    </script>
 </head>
 
 <body>

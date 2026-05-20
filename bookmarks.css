@@ -1511,3 +1511,362 @@ body.dark .add-popover {
     gap: 8px;
     margin-top: 16px;
 }
+
+/* === EMBEDDED MODE STYLES FOR INTEGRATION INTO HOME === */
+html.embedded, html.embedded body {
+    background: transparent !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100vh !important;
+    width: 100% !important;
+}
+
+html.embedded .bookmark-app {
+    height: 100% !important;
+    width: 100% !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-radius: 24px !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    gap: 10px !important;
+    padding: 0 !important;
+}
+
+html.embedded .sidebar {
+    background: rgba(15, 15, 20, 0.5) !important;
+    backdrop-filter: blur(40px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+    border-right: none !important;
+    border-radius: 22px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+    overflow: hidden !important;
+}
+
+html.embedded .sidebar-header {
+    display: none !important;
+}
+
+html.embedded .sidebar-overlay {
+    display: none !important;
+}
+
+html.embedded .sidebar-resize-handle {
+    display: none !important;
+}
+
+/* Minimal scrollbars for embedded mode */
+html.embedded .sidebar-menu::-webkit-scrollbar,
+html.embedded .bookmarks-list-container::-webkit-scrollbar {
+    width: 4px !important;
+}
+
+html.embedded .sidebar-menu::-webkit-scrollbar-track,
+html.embedded .bookmarks-list-container::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+html.embedded .sidebar-menu::-webkit-scrollbar-thumb,
+html.embedded .bookmarks-list-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 4px !important;
+}
+
+html.embedded .sidebar-menu::-webkit-scrollbar-thumb:hover,
+html.embedded .bookmarks-list-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+html.embedded .sidebar-menu {
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent !important;
+}
+
+html.embedded .bookmarks-list-container {
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent !important;
+}
+
+html.embedded .main-content {
+    background: rgba(15, 15, 20, 0.45) !important;
+    backdrop-filter: blur(40px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+    border-radius: 22px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+    overflow: hidden !important;
+}
+
+html.embedded .content-header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+html.embedded .search-input {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 10px !important;
+    color: #fff !important;
+}
+
+html.embedded .search-input:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+html.embedded .bookmark-row {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.03) !important;
+    border-radius: 12px !important;
+    transition: all 0.2s ease !important;
+}
+
+html.embedded .bookmark-row:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    transform: translateY(-1px) !important;
+}
+
+html.embedded .btn-add-primary {
+    background: #fff !important;
+    color: #000 !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+}
+
+html.embedded .btn-add-primary:hover {
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+html.embedded .btn-secondary {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    border-radius: 10px !important;
+}
+
+html.embedded .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #fff !important;
+}
+
+html.embedded .menu-item {
+    border-radius: 10px !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: 13.5px !important;
+}
+
+html.embedded .menu-item:hover, html.embedded .menu-item.highlighted {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #fff !important;
+}
+
+html.embedded .menu-item.highlighted {
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+
+html.embedded .modal-box {
+    background: rgba(25, 25, 30, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+html.embedded .modal-input {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 10px !important;
+    color: #fff !important;
+}
+
+html.embedded .modal-input:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+html.embedded .modal-btn {
+    border-radius: 10px !important;
+}
+
+html.embedded .modal-btn-confirm {
+    background: #fff !important;
+    color: #000 !important;
+}
+
+html.embedded .modal-btn-confirm:hover {
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+html.embedded .modal-btn-cancel {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html.embedded .modal-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #fff !important;
+}
+
+/* Force all text white in embedded mode */
+html.embedded .bookmark-app,
+html.embedded .main-content,
+html.embedded .sidebar,
+html.embedded .sidebar-menu {
+    color: #fff !important;
+}
+
+html.embedded .bookmark-title,
+html.embedded .bookmark-row .bookmark-title,
+html.embedded .folder-title,
+html.embedded .content-title,
+html.embedded h2,
+html.embedded h3 {
+    color: #fff !important;
+}
+
+html.embedded .bookmark-url,
+html.embedded .bookmark-meta,
+html.embedded .menu-count,
+html.embedded .menu-section-title,
+html.embedded .search-input::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+html.embedded .menu-item span,
+html.embedded .menu-item-left span,
+html.embedded .menu-item .menu-icon,
+html.embedded .nested-folders .menu-item {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+html.embedded .menu-item.highlighted span,
+html.embedded .menu-item.highlighted .menu-count {
+    color: #fff !important;
+}
+
+html.embedded .bookmark-row *,
+html.embedded .content-header * {
+    color: inherit !important;
+}
+
+html.embedded .bookmark-row {
+    color: #fff !important;
+}
+
+html.embedded .content-header {
+    color: #fff !important;
+}
+
+html.embedded .search-icon-left {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+html.embedded .btn-secondary span {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+html.embedded .empty-state,
+html.embedded .empty-state p {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+html.embedded .sidebar-resize-handle {
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+html.embedded .custom-context-menu {
+    background: rgba(25, 25, 30, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(20px) !important;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+html.embedded .ctx-item {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html.embedded .ctx-item:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #fff !important;
+}
+
+html.embedded .ctx-item.danger {
+    color: #FF453A !important;
+}
+
+html.embedded .ctx-divider {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.embedded .confirm-box {
+    background: rgba(25, 25, 30, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+html.embedded .confirm-title {
+    color: #fff !important;
+}
+
+html.embedded .confirm-message {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+html.embedded .add-popover {
+    background: rgba(25, 25, 30, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(20px) !important;
+    color: #fff !important;
+}
+
+html.embedded .popover-field label {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+html.embedded .popover-input {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #fff !important;
+}
+
+html.embedded .edit-panel {
+    background: rgba(15, 15, 20, 0.8) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.06) !important;
+    color: #fff !important;
+}
+
+html.embedded .edit-panel * {
+    color: inherit !important;
+}
+
+html.embedded .edit-panel label {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+html.embedded .edit-url-input,
+html.embedded .inline-edit-input {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #fff !important;
+}
+
+html.embedded .collection-select-btn {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+html.embedded .edit-delete-btn {
+    color: #FF453A !important;
+    border: 1px solid rgba(255, 69, 58, 0.3) !important;
+    background: rgba(255, 69, 58, 0.1) !important;
+}

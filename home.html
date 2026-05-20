@@ -264,7 +264,6 @@
             display: none;
         }
 
-        /* --- CATEGORIES BAR --- */
         .category-bar {
             display: flex;
             overflow-x: auto;
@@ -277,9 +276,35 @@
             /* Отступ вверх относительно сетки */
             left: 50%;
             transform: translateX(-50%);
-            z-index: 10;
+            z-index: 1000;
             -ms-overflow-style: none;
             scrollbar-width: none;
+        }
+
+        .home-bookmarks-panel {
+            position: fixed;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90vw;
+            max-width: 1100px;
+            height: 78vh;
+            max-height: 750px;
+            overflow: hidden;
+            display: none;
+            border-radius: 24px;
+            z-index: 500;
+        }
+
+        .category-bar.category-bar-fixed {
+            position: fixed;
+            top: calc(55% - 39vh - 45px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90vw;
+            max-width: 1100px;
+            justify-content: flex-start;
+            padding: 0 0 8px 0;
         }
 
         .category-bar::-webkit-scrollbar {
@@ -1678,6 +1703,7 @@
             body.expanded-folders.folder-large .folder-content {
                 max-width: 650px;
             }
+
             body.expanded-folders.folder-large .folder-grid {
                 grid-template-columns: repeat(6, 1fr);
             }
@@ -1985,6 +2011,11 @@
             <div id="categoryBar" class="category-bar" style="display: none;"></div>
             <div id="pagesContainer" class="pages-container"></div>
             <div id="paginationDots" class="pagination-dots"></div>
+            <!-- Embedded Bookmarks Panel (IFrame) -->
+            <div id="homeBookmarksPanel" class="home-bookmarks-panel" style="display: none;">
+                <iframe id="hbIframe" src=""
+                    style="width: 100%; height: 100%; border: none; background: transparent; border-radius: 24px;"></iframe>
+            </div>
         </div>
         <div id="pageNavLeft" class="page-nav-zone left">
             <svg viewBox="0 0 24 24">
@@ -2102,23 +2133,65 @@
         window.userCategories = [];
         let currentCategoryFilter = null;
 
+        window.bookmarksActive = false;
+
+        window.toggleBookmarksView = function (active) {
+            window.bookmarksActive = active;
+            const panel = document.getElementById('homeBookmarksPanel');
+            const pagesContainer = document.getElementById('pagesContainer');
+            const paginationDots = document.getElementById('paginationDots');
+            const categoryBar = document.getElementById('categoryBar');
+            const iframe = document.getElementById('hbIframe');
+
+            if (active) {
+                pagesContainer.style.display = 'none';
+                if (paginationDots) paginationDots.style.display = 'none';
+                panel.style.display = 'flex';
+                if (categoryBar) {
+                    categoryBar.style.display = 'flex';
+                    categoryBar.classList.add('category-bar-fixed');
+                }
+
+                const navLeft = document.getElementById('pageNavLeft');
+                const navRight = document.getElementById('pageNavRight');
+                if (navLeft) navLeft.style.display = 'none';
+                if (navRight) navRight.style.display = 'none';
+
+                if (iframe && (!iframe.getAttribute('src') || iframe.getAttribute('src') === '')) {
+                    iframe.src = 'bookmarks.html?embedded=true';
+                }
+            } else {
+                pagesContainer.style.display = '';
+                if (paginationDots) paginationDots.style.display = 'flex';
+                panel.style.display = 'none';
+                if (categoryBar) categoryBar.classList.remove('category-bar-fixed');
+
+                const navLeft = document.getElementById('pageNavLeft');
+                const navRight = document.getElementById('pageNavRight');
+                if (navLeft) navLeft.style.display = '';
+                if (navRight) navRight.style.display = '';
+
+                if (window.renderCategoryBar) window.renderCategoryBar();
+            }
+        };
+
         window.renderCategoryBar = function () {
             const bar = document.getElementById('categoryBar');
             if (!bar) return;
-            if (!window.userCategories || window.userCategories.length === 0) {
-                bar.style.display = 'none';
-                return;
-            }
+
             bar.style.display = 'flex';
             bar.innerHTML = '';
 
             window.userCategories.forEach(cat => {
                 const capsule = document.createElement('div');
-                capsule.className = 'category-capsule' + (currentCategoryFilter === cat ? ' active' : '');
+                capsule.className = 'category-capsule' + (currentCategoryFilter === cat && !window.bookmarksActive ? ' active' : '');
                 capsule.innerText = cat;
                 capsule.onclick = () => {
+                    if (window.bookmarksActive) {
+                        window.toggleBookmarksView(false);
+                    }
                     if (currentCategoryFilter === cat) {
-                        currentCategoryFilter = null; // deactivate
+                        currentCategoryFilter = null;
                     } else {
                         currentCategoryFilter = cat;
                     }
@@ -2127,6 +2200,22 @@
                 };
                 bar.appendChild(capsule);
             });
+
+            // Dedicated static Bookmarks category capsule
+            const bmarkCapsule = document.createElement('div');
+            bmarkCapsule.className = 'category-capsule' + (window.bookmarksActive ? ' active' : '');
+            bmarkCapsule.innerText = 'Закладки (beta)';
+            bmarkCapsule.onclick = () => {
+                if (window.bookmarksActive) {
+                    window.toggleBookmarksView(false);
+                } else {
+                    currentCategoryFilter = null;
+                    window.toggleBookmarksView(true);
+                }
+                renderCategoryBar();
+                renderAppsToDOM(currentApps);
+            };
+            bar.appendChild(bmarkCapsule);
         };
 
         // --- КОНФИГУРАЦИЯ ---
@@ -2925,14 +3014,24 @@
                                 const cloudCategories = await window.dbApi.loadCategories();
                                 if (cloudCategories && cloudCategories.length > 0) {
                                     window.userCategories = cloudCategories;
-                                    if (window.renderCategoryBar) window.renderCategoryBar();
                                 }
+                                if (window.renderCategoryBar) window.renderCategoryBar();
+                            }
+
+                            const iframe = document.getElementById('hbIframe');
+                            if (iframe && iframe.src) {
+                                iframe.src = 'bookmarks.html?embedded=true';
                             }
                         }
                     } else {
                         console.log("User logged out");
                         renderAppsToDOM(DEFAULT_APPS);
                         localStorage.removeItem(STORAGE_KEY);
+
+                        const iframe = document.getElementById('hbIframe');
+                        if (iframe) iframe.src = '';
+
+                        if (window.renderCategoryBar) window.renderCategoryBar();
                     }
                 });
             }

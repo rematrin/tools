@@ -1580,6 +1580,7 @@ html.embedded .bookmarks-list-container::-webkit-scrollbar-thumb:hover {
 html.embedded .sidebar-menu {
     scrollbar-width: thin !important;
     scrollbar-color: rgba(255, 255, 255, 0.1) transparent !important;
+    padding-top: 0px !important;
 }
 
 html.embedded .bookmarks-list-container {
@@ -1698,7 +1699,7 @@ html.embedded .btn-action-round {
     width: 32px !important;
     height: 28px !important;
     box-sizing: border-box !important;
-    display: inline-flex !important;
+    display: inline-flex;
     align-items: center !important;
     justify-content: center !important;
 }
@@ -2100,4 +2101,15 @@ html.embedded .main-content {
 html.embedded .bookmarks-footer {
     color: rgba(255, 255, 255, 0.6) !important;
     border-top: 1px dashed rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Premium readability overrides for empty placeholders in embedded mode */
+html.embedded .empty-placeholder-title {
+    color: #ffffff !important;
+}
+html.embedded .empty-placeholder-text {
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+html.embedded .empty-placeholder-icon {
+    color: rgba(255, 255, 255, 0.7) !important;
 }

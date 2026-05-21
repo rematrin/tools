@@ -152,13 +152,12 @@ function renderList(items) {
 
     if (!items || items.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; margin-top: 60px; color: var(--text-secondary);">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.4; margin-bottom: 12px;">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="15" y1="9" x2="9" y2="15"></line>
-                    <line x1="9" y1="9" x2="15" y2="15"></line>
+            <div style="text-align: center; margin-top: 80px; color: var(--text-secondary); padding: 0 20px;">
+                <svg class="empty-placeholder-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 24 24" style="opacity: 0.5; margin-bottom: 16px; color: var(--text-secondary);">
+                    <path d="M7.833 2c-.507 0-.98.216-1.318.576A1.92 1.92 0 0 0 6 3.89V21a1 1 0 0 0 1.625.78L12 18.28l4.375 3.5A1 1 0 0 0 18 21V3.889c0-.481-.178-.954-.515-1.313A1.808 1.808 0 0 0 16.167 2H7.833Z"/>
                 </svg>
-                <p style="font-weight: 500;">Нет закладок</p>
+                <p class="empty-placeholder-title" style="font-weight: 500; font-size: 15px; margin: 0 0 8px 0; color: var(--text-primary);">Нет закладок</p>
+                <p class="empty-placeholder-text" style="font-size: 13px; opacity: 0.7; max-width: 280px; margin: 0 auto; line-height: 1.4; color: var(--text-secondary);">Добавьте или импортируйте свою первую закладку</p>
             </div>
         `;
         return;
@@ -437,16 +436,37 @@ function performSearchAndFilter() {
     const isSpecialFolder = currentFolder === 'all' || currentFolder === 'trash';
     
     if (addBookmarkBtn) {
-        addBookmarkBtn.style.display = isSpecialFolder ? 'none' : 'flex';
+        if (isSpecialFolder) {
+            addBookmarkBtn.style.setProperty('display', 'none', 'important');
+        } else {
+            addBookmarkBtn.style.display = '';
+        }
     }
     if (mainActionsBtn) {
-        mainActionsBtn.style.display = isSpecialFolder ? 'none' : 'flex';
+        if (isSpecialFolder) {
+            mainActionsBtn.style.setProperty('display', 'none', 'important');
+        } else {
+            mainActionsBtn.style.display = '';
+        }
     }
     if (bookmarksSortable) {
         bookmarksSortable.option("disabled", isSpecialFolder);
     }
 
     // Filter by current tab view
+    if (currentFolder === 'all' && queryStr === '') {
+        container.innerHTML = `
+            <div style="text-align: center; margin-top: 80px; color: var(--text-secondary); padding: 0 20px;">
+                <svg class="empty-placeholder-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 24 24" style="opacity: 0.5; margin-bottom: 16px; color: var(--text-secondary);">
+                    <path fill-rule="evenodd" d="M5.024 3.783A1 1 0 0 1 6 3h12a1 1 0 0 1 .976.783L20.802 12h-4.244a1.99 1.99 0 0 0-1.824 1.205 2.978 2.978 0 0 1-5.468 0A1.991 1.991 0 0 0 7.442 12H3.198l1.826-8.217ZM3 14v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5h-4.43a4.978 4.978 0 0 1-9.14 0H3Zm5-7a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1Zm0 2a1 1 0 0 0 0 2h8a1 1 0 1 0 0-2H8Z" clip-rule="evenodd"/>
+                </svg>
+                <p class="empty-placeholder-title" style="font-weight: 500; font-size: 15px; margin: 0 0 8px 0; color: var(--text-primary);">Коллекция не выбрана</p>
+                <p class="empty-placeholder-text" style="font-size: 13px; opacity: 0.7; max-width: 280px; margin: 0 auto; line-height: 1.4; color: var(--text-secondary);">Выберите коллекцию из меню слева или создайте новую</p>
+            </div>
+        `;
+        return;
+    }
+
     let filtered = [];
     if (currentFolder === 'trash') {
         filtered = allBookmarks.filter(b => !!b.inTrash);
@@ -748,7 +768,18 @@ function showCollectionContextMenu(e, collId, collName) {
 
                     // Switch view back to all if current was the deleted folder
                     if (currentFolder === `coll_${collId}`) {
-                        document.querySelector('[data-folder="all"]').click();
+                        const allFolderEl = document.querySelector('[data-folder="all"]');
+                        if (allFolderEl) {
+                            allFolderEl.click();
+                        } else {
+                            currentFolder = 'all';
+                            const currentFolderTitle = document.getElementById('currentFolderTitle');
+                            if (currentFolderTitle) {
+                                currentFolderTitle.innerText = 'Все закладки';
+                                document.title = 'Все закладки';
+                            }
+                            performSearchAndFilter();
+                        }
                     }
                 } catch(err) {
                     console.error("Delete cascade error", err);

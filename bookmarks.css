@@ -32,6 +32,13 @@ body.dark {
     /* Variables already handle dark mode for sidebar */
 }
 
+img {
+    -webkit-user-drag: none !important;
+    user-drag: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     margin: 0;
@@ -236,6 +243,13 @@ body.dark .sidebar {
     width: 18px;
     height: 18px;
     flex-shrink: 0;
+    cursor: grab !important;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.menu-icon:active {
+    cursor: grabbing !important;
+    transform: scale(0.92);
 }
 
 .menu-count {
@@ -436,6 +450,13 @@ body.dark .content-header {
     background: var(--content-header-bg-dark);
 }
 
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
 /* Блок поиска */
 .search-container {
     position: relative;
@@ -549,6 +570,10 @@ body.dark .btn-secondary:hover {
     box-sizing: border-box;
 }
 
+#addBookmarkBtn {
+    height: 32px;
+}
+
 .btn-add-primary:hover {
     background: var(--btn-blue-hover);
     transform: translateY(-1px);
@@ -601,7 +626,7 @@ body.dark .btn-secondary:hover {
 .view-controls {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
 }
 
 /* Список закладок */
@@ -664,6 +689,13 @@ body.dark .bookmark-row:hover {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    cursor: grab !important;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.favicon-wrapper:active {
+    cursor: grabbing !important;
+    transform: scale(0.92);
 }
 
 body.dark .favicon-wrapper {
@@ -738,6 +770,16 @@ body.dark .favicon-wrapper {
     background: var(--hover-bg);
     color: var(--text);
     transform: scale(1.08);
+}
+
+#main-more-actions-btn {
+    height: 32px;
+    width: 44px;
+    border-radius: 6px;
+}
+
+#main-more-actions-btn:hover {
+    transform: translateY(-1px);
 }
 
 /* Итоговый счетчик внизу списка */
@@ -883,8 +925,13 @@ body.dark .custom-context-menu {
 }
 
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @keyframes fadeInScale {
@@ -1340,48 +1387,7 @@ body.dark .confirm-btn-secondary:hover {
 }
 
 /* === СТИЛИ ДЛЯ ДРАГ-Н-ДРОП И РЕДАКТИРОВАНИЯ ЗАКЛАДОК === */
-.drag-handle {
-    cursor: grab !important;
-    color: var(--sidebar-text-muted);
-    opacity: 0.3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    transition: opacity 0.2s;
-    margin-right: 4px;
-}
-
-.drag-handle:hover {
-    opacity: 0.8;
-}
-
-.drag-handle:active {
-    cursor: grabbing !important;
-}
-
-.bookmark-row .drag-handle {
-    position: absolute;
-    left: 2px;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 20px;
-    opacity: 0;
-    /* Скрыт по умолчанию */
-    transition: opacity 0.2s ease;
-    color: var(--text-secondary);
-}
-
-.bookmark-row:hover .drag-handle {
-    opacity: 0.4;
-}
-
-.bookmark-row .drag-handle:hover {
-    opacity: 0.8;
-}
-
 .bookmark-row {
-    padding-left: 28px !important;
     position: relative;
 }
 
@@ -1427,27 +1433,12 @@ body.dark .list-drag-preview {
 }
 
 .list-drag-preview .bookmark-actions,
-.list-drag-preview .drag-handle,
 .list-drag-preview .menu-dots-trigger {
     display: none !important;
 }
 
 .nested-folders .menu-item {
     position: relative;
-}
-
-.nested-folders .menu-item .drag-handle {
-    position: absolute;
-    left: 2px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 12px;
-    opacity: 0;
-    margin: 0 !important;
-}
-
-.nested-folders .menu-item:hover .drag-handle {
-    opacity: 0.5;
 }
 
 /* === ДОБАВЛЕНИЕ ЗАКЛАДОК (POPOVER) === */
@@ -1513,7 +1504,8 @@ body.dark .add-popover {
 }
 
 /* === EMBEDDED MODE STYLES FOR INTEGRATION INTO HOME === */
-html.embedded, html.embedded body {
+html.embedded,
+html.embedded body {
     background: transparent !important;
     overflow: hidden !important;
     padding: 0 !important;
@@ -1533,7 +1525,7 @@ html.embedded .bookmark-app {
     box-shadow: none !important;
     overflow: visible !important;
     box-sizing: border-box !important;
-    gap: 10px !important;
+    gap: 0 !important;
     padding: 0 !important;
 }
 
@@ -1546,6 +1538,7 @@ html.embedded .sidebar {
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
     margin: 0 !important;
+    margin-right: 10px !important;
     flex-shrink: 0 !important;
     overflow: hidden !important;
 }
@@ -1602,11 +1595,36 @@ html.embedded .main-content {
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
     overflow: hidden !important;
+    transition: border-radius 0.15s ease-out, border 0.15s ease-out !important;
+}
+
+html.embedded .bookmark-app.editing-mode .main-content {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-right: none !important;
+}
+
+html.embedded .title-row {
+    padding: 20px 24px 10px 24px !important;
+    border-bottom: none !important;
 }
 
 html.embedded .content-header {
+    height: auto !important;
+    padding: 16px 24px 16px 24px !important;
     background: transparent !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-bottom: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+}
+
+html.embedded .search-container {
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 html.embedded .search-input {
@@ -1614,6 +1632,9 @@ html.embedded .search-input {
     border: 1px solid rgba(255, 255, 255, 0.06) !important;
     border-radius: 10px !important;
     color: #fff !important;
+    height: 36px !important;
+    font-size: 14px !important;
+    padding-left: 36px !important;
 }
 
 html.embedded .search-input:focus {
@@ -1626,6 +1647,20 @@ html.embedded .bookmark-row {
     border: 1px solid rgba(255, 255, 255, 0.03) !important;
     border-radius: 12px !important;
     transition: all 0.2s ease !important;
+    margin: 0 16px 8px 16px !important;
+    padding: 12px 16px !important;
+}
+
+html.embedded .bookmark-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    opacity: 0 !important;
+    transition: opacity 0.2s ease !important;
+}
+
+html.embedded .bookmark-row:hover .bookmark-actions {
+    opacity: 1 !important;
 }
 
 html.embedded .bookmark-row:hover {
@@ -1635,14 +1670,52 @@ html.embedded .bookmark-row:hover {
 }
 
 html.embedded .btn-add-primary {
-    background: #fff !important;
-    color: #000 !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: #e6f7ed !important;
+    border: 1px solid rgba(82, 196, 26, 0.35) !important;
     border-radius: 10px !important;
-    font-weight: 600 !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+}
+
+html.embedded #addBookmarkBtn {
+    height: 36px !important;
+    border-radius: 10px !important;
 }
 
 html.embedded .btn-add-primary:hover {
-    background: rgba(255, 255, 255, 0.9) !important;
+    background: rgba(82, 196, 26, 0.12) !important;
+    border-color: rgba(82, 196, 26, 0.6) !important;
+    color: #fff !important;
+    box-shadow: 0 0 12px rgba(82, 196, 26, 0.2) !important;
+}
+
+html.embedded .btn-action-round {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    border-radius: 10px !important;
+    width: 32px !important;
+    height: 28px !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+html.embedded #main-more-actions-btn {
+    height: 36px !important;
+    width: 44px !important;
+    border-radius: 10px !important;
+}
+
+html.embedded .btn-action-round:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #fff !important;
+}
+
+html.embedded #main-more-actions-btn:hover {
+    transform: translateY(-1px) !important;
 }
 
 html.embedded .btn-secondary {
@@ -1663,7 +1736,8 @@ html.embedded .menu-item {
     font-size: 13.5px !important;
 }
 
-html.embedded .menu-item:hover, html.embedded .menu-item.highlighted {
+html.embedded .menu-item:hover,
+html.embedded .menu-item.highlighted {
     background: rgba(255, 255, 255, 0.08) !important;
     color: #fff !important;
 }
@@ -1673,23 +1747,23 @@ html.embedded .menu-item.highlighted {
 }
 
 html.embedded .modal-box {
-    background: rgba(25, 25, 30, 0.85) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
     border-radius: 20px !important;
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6) !important;
-    backdrop-filter: blur(20px) !important;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15) !important;
+    backdrop-filter: none !important;
 }
 
 html.embedded .modal-input {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
     border-radius: 10px !important;
-    color: #fff !important;
+    color: #000000 !important;
 }
 
 html.embedded .modal-input:focus {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border-color: rgba(255, 255, 255, 0.25) !important;
+    background: #ffffff !important;
+    border-color: var(--btn-blue) !important;
 }
 
 html.embedded .modal-btn {
@@ -1697,23 +1771,23 @@ html.embedded .modal-btn {
 }
 
 html.embedded .modal-btn-confirm {
-    background: #fff !important;
-    color: #000 !important;
+    background: var(--btn-blue) !important;
+    color: #ffffff !important;
 }
 
 html.embedded .modal-btn-confirm:hover {
-    background: rgba(255, 255, 255, 0.9) !important;
+    background: var(--btn-blue-hover) !important;
 }
 
 html.embedded .modal-btn-cancel {
-    background: rgba(255, 255, 255, 0.06) !important;
-    color: rgba(255, 255, 255, 0.8) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: #f5f5f7 !important;
+    color: #333333 !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
 html.embedded .modal-btn-cancel:hover {
-    background: rgba(255, 255, 255, 0.12) !important;
-    color: #fff !important;
+    background: #e8e8ea !important;
+    color: #000000 !important;
 }
 
 /* Force all text white in embedded mode */
@@ -1727,6 +1801,8 @@ html.embedded .sidebar-menu {
 html.embedded .bookmark-title,
 html.embedded .bookmark-row .bookmark-title,
 html.embedded .folder-title,
+html.embedded .folder-large-title,
+html.embedded .folder-large-icon,
 html.embedded .content-title,
 html.embedded h2,
 html.embedded h3 {
@@ -1768,6 +1844,7 @@ html.embedded .content-header {
 
 html.embedded .search-icon-left {
     color: rgba(255, 255, 255, 0.4) !important;
+    left: 12px !important;
 }
 
 html.embedded .btn-secondary span {
@@ -1784,89 +1861,243 @@ html.embedded .sidebar-resize-handle {
 }
 
 html.embedded .custom-context-menu {
-    background: rgba(25, 25, 30, 0.9) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(20px) !important;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5) !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+    backdrop-filter: none !important;
 }
 
 html.embedded .ctx-item {
-    color: rgba(255, 255, 255, 0.85) !important;
+    color: #1a1a1a !important;
 }
 
 html.embedded .ctx-item:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
-    color: #fff !important;
+    background: #f0f0f0 !important;
+    color: #1a1a1a !important;
 }
 
 html.embedded .ctx-item.danger {
-    color: #FF453A !important;
+    color: #ff4d4f !important;
 }
 
 html.embedded .ctx-divider {
-    border-color: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
 }
 
 html.embedded .confirm-box {
-    background: rgba(25, 25, 30, 0.9) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(20px) !important;
+    background: rgba(15, 15, 20, 0.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(40px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
+    border-radius: 16px !important;
+    color: #ffffff !important;
 }
 
 html.embedded .confirm-title {
-    color: #fff !important;
+    color: #ffffff !important;
 }
 
 html.embedded .confirm-message {
-    color: rgba(255, 255, 255, 0.6) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+html.embedded .col-modal-item {
+    color: #ffffff !important;
+    transition: background 0.2s !important;
+}
+
+html.embedded .col-modal-item:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.embedded .confirm-btn-primary {
+    background: var(--btn-blue) !important;
+    color: #ffffff !important;
+}
+
+html.embedded .confirm-btn-primary:hover {
+    background: var(--btn-blue-hover) !important;
+}
+
+html.embedded .confirm-btn-secondary {
+    background: #f5f5f7 !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    color: #333333 !important;
+}
+
+html.embedded .confirm-btn-secondary:hover {
+    background: #e8e8ea !important;
+    color: #000000 !important;
 }
 
 html.embedded .add-popover {
-    background: rgba(25, 25, 30, 0.9) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(20px) !important;
-    color: #fff !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+    backdrop-filter: none !important;
+    color: #0b0d12 !important;
 }
 
 html.embedded .popover-field label {
-    color: rgba(255, 255, 255, 0.6) !important;
+    color: #555555 !important;
 }
 
 html.embedded .popover-input {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    color: #fff !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    color: #000000 !important;
+}
+
+html.embedded .popover-input:focus {
+    border-color: var(--btn-blue) !important;
+}
+
+html.embedded .add-popover .btn-secondary {
+    background: #f5f5f7 !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    color: #333333 !important;
+}
+
+html.embedded .add-popover .btn-secondary:hover {
+    background: #e8e8ea !important;
+    color: #000000 !important;
+}
+
+html.embedded .add-popover .btn-add-primary {
+    background: var(--btn-blue) !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+html.embedded .add-popover .btn-add-primary:hover {
+    background: var(--btn-blue-hover) !important;
 }
 
 html.embedded .edit-panel {
-    background: rgba(15, 15, 20, 0.8) !important;
-    border-left: 1px solid rgba(255, 255, 255, 0.06) !important;
-    color: #fff !important;
+    background: rgba(15, 15, 20, 0.45) !important;
+    backdrop-filter: blur(40px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 0 22px 22px 0 !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+    color: #ffffff !important;
+    box-sizing: border-box !important;
+}
+
+html.embedded .edit-panel-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
 html.embedded .edit-panel * {
-    color: inherit !important;
+    color: inherit;
 }
 
 html.embedded .edit-panel label {
     color: rgba(255, 255, 255, 0.5) !important;
+    font-weight: 500 !important;
 }
 
 html.embedded .edit-url-input,
 html.embedded .inline-edit-input {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    color: #fff !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    transition: background 0.2s, border-color 0.2s !important;
+}
+
+html.embedded .edit-url-input:focus,
+html.embedded .inline-edit-input:focus {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 html.embedded .collection-select-btn {
     background: rgba(255, 255, 255, 0.06) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    color: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    transition: background 0.2s, border-color 0.2s !important;
+}
+
+html.embedded .collection-select-btn:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+
+html.embedded .edit-change-icon-btn {
+    color: #1070e5 !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: color 0.2s !important;
+}
+
+html.embedded .edit-change-icon-btn:hover {
+    color: #38bdf8 !important;
 }
 
 html.embedded .edit-delete-btn {
-    color: #FF453A !important;
-    border: 1px solid rgba(255, 69, 58, 0.3) !important;
-    background: rgba(255, 69, 58, 0.1) !important;
+    color: #ff5252 !important;
+    border: 1px solid rgba(255, 82, 82, 0.25) !important;
+    background: rgba(255, 82, 82, 0.1) !important;
+    border-radius: 10px !important;
+    padding: 10px 20px !important;
+    font-weight: 500 !important;
+    transition: background 0.2s, border-color 0.2s !important;
+}
+
+html.embedded .edit-delete-btn:hover {
+    background: rgba(255, 82, 82, 0.2) !important;
+    border-color: rgba(255, 82, 82, 0.4) !important;
+}
+
+html.embedded .edit-panel .btn-action-round {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    border-radius: 50% !important;
+    transition: background 0.2s !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+html.embedded .edit-panel .btn-action-round:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+}
+
+/* Скрытие кнопок редактирования/удаления и драг-хэндлов при наведении */
+html.embedded .btn-rename-bookmark,
+html.embedded .btn-move-to-trash {
+    display: none !important;
+}
+
+/* Отключение анимаций переходов для предотвращения мигания во встроенном режиме */
+html.embedded,
+html.embedded body,
+html.embedded .bookmark-app,
+html.embedded .main-content,
+html.embedded .sidebar,
+html.embedded .bookmark-row,
+html.embedded .search-input {
+    transition: none !important;
+    animation: none !important;
+}
+
+/* GPU layer promotion to prevent backdrop-filter flashing */
+html.embedded .sidebar,
+html.embedded .main-content {
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+    transform: translate3d(0, 0, 0) !important;
+    -webkit-transform: translate3d(0, 0, 0) !important;
+}
+
+html.embedded .bookmarks-footer {
+    color: rgba(255, 255, 255, 0.6) !important;
+    border-top: 1px dashed rgba(255, 255, 255, 0.15) !important;
 }

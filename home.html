@@ -2202,20 +2202,27 @@
             });
 
             // Dedicated static Bookmarks category capsule
-            const bmarkCapsule = document.createElement('div');
-            bmarkCapsule.className = 'category-capsule' + (window.bookmarksActive ? ' active' : '');
-            bmarkCapsule.innerText = 'Закладки (beta)';
-            bmarkCapsule.onclick = () => {
+            const showBookmarksBeta = localStorage.getItem('showBookmarksBeta') === 'true';
+            if (showBookmarksBeta) {
+                const bmarkCapsule = document.createElement('div');
+                bmarkCapsule.className = 'category-capsule' + (window.bookmarksActive ? ' active' : '');
+                bmarkCapsule.innerText = 'Закладки (beta)';
+                bmarkCapsule.onclick = () => {
+                    if (window.bookmarksActive) {
+                        window.toggleBookmarksView(false);
+                    } else {
+                        currentCategoryFilter = null;
+                        window.toggleBookmarksView(true);
+                    }
+                    renderCategoryBar();
+                    renderAppsToDOM(currentApps);
+                };
+                bar.appendChild(bmarkCapsule);
+            } else {
                 if (window.bookmarksActive) {
                     window.toggleBookmarksView(false);
-                } else {
-                    currentCategoryFilter = null;
-                    window.toggleBookmarksView(true);
                 }
-                renderCategoryBar();
-                renderAppsToDOM(currentApps);
-            };
-            bar.appendChild(bmarkCapsule);
+            }
         };
 
         // --- КОНФИГУРАЦИЯ ---
@@ -2951,6 +2958,17 @@
                                     // Обновляем UI чекбокса, если он сейчас отрендерен
                                     const toggle = document.getElementById('globalGlassToggle');
                                     if (toggle) toggle.checked = isGlass;
+                                }
+
+                                // Загрузка Использовать закладки (beta)
+                                if (typeof cloudSettings.showBookmarksBeta !== 'undefined') {
+                                    const isBmark = cloudSettings.showBookmarksBeta;
+                                    localStorage.setItem('showBookmarksBeta', isBmark.toString());
+
+                                    // Обновляем UI чекбокса, если он сейчас отрендерен
+                                    const toggle = document.getElementById('showBookmarksBetaToggle');
+                                    if (toggle) toggle.checked = isBmark;
+                                    if (window.renderCategoryBar) window.renderCategoryBar();
                                 }
 
                                 // Загрузка Расширенных папок

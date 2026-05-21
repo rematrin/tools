@@ -199,15 +199,7 @@ function renderList(items) {
             `;
         }
 
-        const isDraggable = currentFolder !== 'all' && currentFolder !== 'trash' && !selectionMode;
-        const dragHandleHtml = isDraggable ? `
-            <div class="drag-handle" title="Перетащить">
-                <svg width="10" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
-            </div>
-        ` : '';
-
         row.innerHTML = `
-            ${dragHandleHtml}
             ${selectionMode ? `
             <div style="margin-right: 12px; display:flex; align-items:center;">
                 <input type="checkbox" class="bookmark-select-checkbox" style="width:16px; height:16px; cursor:pointer;" ${selectedBookmarks.has(item.id) ? 'checked' : ''}>
@@ -215,7 +207,7 @@ function renderList(items) {
             ` : ''}
             <div class="bookmark-left" style="${selectionMode ? 'cursor: default;' : ''}">
                 <div class="favicon-wrapper">
-                    <img src="${faviconUrl}" class="favicon-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <img src="${faviconUrl}" class="favicon-img" draggable="false" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <span class="favicon-fallback" style="display:none;">${(item.title || 'B')[0].toUpperCase()}</span>
                 </div>
                 <div class="bookmark-info">
@@ -558,16 +550,13 @@ function renderCollections() {
         a.setAttribute('data-folder', `coll_${collId}`);
         
         const iconHtml = coll.iconUrl ? 
-            `<img src="${coll.iconUrl}" class="menu-icon-img" style="width: 16px; height: 16px; object-fit: contain; border-radius: 4px;">` :
+            `<img src="${coll.iconUrl}" class="menu-icon-img" draggable="false" style="width: 16px; height: 16px; object-fit: contain; border-radius: 4px;">` :
             `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
             </svg>`;
 
         a.innerHTML = `
             <div class="menu-item-left">
-                <div class="drag-handle" title="Перетащить">
-                    <svg width="10" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
-                </div>
                 <span class="menu-icon">
                     ${iconHtml}
                 </span>
@@ -1814,9 +1803,6 @@ if (createCollectionBtn) {
         
         a.innerHTML = `
             <div class="menu-item-left">
-                <div class="drag-handle" title="Перетащить">
-                    <svg width="10" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
-                </div>
                 <span class="menu-icon">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
@@ -1883,7 +1869,7 @@ function initSortables() {
     if (collectionsContainer) {
         Sortable.create(collectionsContainer, {
             animation: 180,
-            handle: '.drag-handle',
+            handle: '.menu-icon',
             ghostClass: 'sortable-ghost',
             chosenClass: 'sortable-chosen',
             forceFallback: false,
@@ -1912,7 +1898,7 @@ function initSortables() {
     if (bookmarksListEl) {
         bookmarksSortable = Sortable.create(bookmarksListEl, {
             animation: 180,
-            handle: '.drag-handle',
+            handle: '.favicon-wrapper',
             ghostClass: 'sortable-ghost',
             chosenClass: 'sortable-chosen',
             dragClass: 'list-drag-preview',

@@ -3037,7 +3037,7 @@
                             }
 
                             const iframe = document.getElementById('hbIframe');
-                            if (iframe && iframe.src) {
+                            if (iframe && iframe.getAttribute('src') !== 'bookmarks.html?embedded=true') {
                                 iframe.src = 'bookmarks.html?embedded=true';
                             }
                         }
@@ -3063,6 +3063,14 @@
             }
             lastWidth = window.innerWidth;
         });
+
+        // Закрытие меню во фрейме закладок при клике вне его
+        document.addEventListener('click', () => {
+            const iframe = document.getElementById('hbIframe');
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({ type: 'closeMenus' }, '*');
+            }
+        }, true);
 
     </script>
 </body>

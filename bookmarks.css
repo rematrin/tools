@@ -1733,14 +1733,15 @@ html.embedded .btn-secondary:hover {
 
 html.embedded .menu-item {
     border-radius: 10px !important;
-    color: rgba(255, 255, 255, 0.7) !important;
+    color: var(--sidebar-text-muted) !important;
     font-size: 13.5px !important;
 }
 
 html.embedded .menu-item:hover,
+html.embedded .menu-item.active,
 html.embedded .menu-item.highlighted {
     background: rgba(255, 255, 255, 0.08) !important;
-    color: #fff !important;
+    color: var(--sidebar-text-primary) !important;
 }
 
 html.embedded .menu-item.highlighted {
@@ -1812,22 +1813,41 @@ html.embedded h3 {
 
 html.embedded .bookmark-url,
 html.embedded .bookmark-meta,
-html.embedded .menu-count,
-html.embedded .menu-section-title,
 html.embedded .search-input::placeholder {
     color: rgba(255, 255, 255, 0.5) !important;
+}
+
+html.embedded .menu-section-title {
+    color: var(--sidebar-text-muted) !important;
+    opacity: 0.6 !important;
+}
+
+html.embedded .menu-count {
+    color: var(--sidebar-text-muted) !important;
+    opacity: 0.7 !important;
 }
 
 html.embedded .menu-item span,
 html.embedded .menu-item-left span,
 html.embedded .menu-item .menu-icon,
 html.embedded .nested-folders .menu-item {
-    color: rgba(255, 255, 255, 0.7) !important;
+    color: var(--sidebar-text-muted) !important;
 }
 
+html.embedded .menu-item:hover span,
+html.embedded .menu-item.active span,
 html.embedded .menu-item.highlighted span,
+html.embedded .menu-item:hover .menu-icon,
+html.embedded .menu-item.active .menu-icon,
+html.embedded .menu-item.highlighted .menu-icon {
+    color: var(--sidebar-text-primary) !important;
+}
+
+html.embedded .menu-item:hover .menu-count,
+html.embedded .menu-item.active .menu-count,
 html.embedded .menu-item.highlighted .menu-count {
-    color: #fff !important;
+    color: var(--sidebar-text-primary) !important;
+    opacity: 1 !important;
 }
 
 html.embedded .bookmark-row *,
@@ -2112,4 +2132,248 @@ html.embedded .empty-placeholder-text {
 }
 html.embedded .empty-placeholder-icon {
     color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* === VISUAL MODE SWITCHER STYLES === */
+.visual-mode-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    margin: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.visual-mode-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sidebar-text-muted);
+}
+
+.visual-mode-control {
+    display: flex;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 3px;
+    border-radius: 10px;
+    gap: 2px;
+}
+
+.visual-mode-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--sidebar-text-muted);
+    opacity: 0.6;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.visual-mode-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.visual-mode-btn.active {
+    background: var(--active-folder-bg, #36373a) !important;
+    color: #fff !important;
+    opacity: 1 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.visual-mode-btn:hover:not(.active) {
+    opacity: 0.9;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* === SOLID MODE OVERRIDES IN EMBEDDED VIEW === */
+html.embedded.solid-mode,
+html.embedded.solid-mode body {
+    background: transparent !important;
+}
+
+html.embedded.solid-mode .sidebar {
+    background: var(--sidebar-bg-light) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid var(--sidebar-border) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+body.dark html.embedded.solid-mode .sidebar {
+    background: var(--sidebar-bg-dark) !important;
+}
+
+html.embedded.solid-mode .main-content {
+    background: var(--card-bg) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+    color: var(--text) !important;
+}
+
+html.embedded.solid-mode .bookmark-title,
+html.embedded.solid-mode .bookmark-row .bookmark-title,
+html.embedded.solid-mode .folder-title,
+html.embedded.solid-mode .folder-large-title,
+html.embedded.solid-mode .folder-large-icon,
+html.embedded.solid-mode .content-title,
+html.embedded.solid-mode h2,
+html.embedded.solid-mode h3 {
+    color: var(--text) !important;
+}
+
+html.embedded.solid-mode .bookmark-url,
+html.embedded.solid-mode .bookmark-meta,
+html.embedded.solid-mode .search-input::placeholder {
+    color: var(--text-secondary) !important;
+}
+
+html.embedded.solid-mode .bookmark-row {
+    color: var(--text) !important;
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border) !important;
+}
+
+html.embedded.solid-mode .bookmark-row:hover {
+    background: var(--hover-bg) !important;
+}
+
+html.embedded.solid-mode .search-input {
+    background: var(--hover-bg) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+}
+
+html.embedded.solid-mode .search-icon-left {
+    color: var(--text-secondary) !important;
+}
+
+html.embedded.solid-mode .btn-secondary {
+    background: var(--hover-bg) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+}
+
+html.embedded.solid-mode .btn-secondary span {
+    color: var(--text) !important;
+}
+
+html.embedded.solid-mode .btn-secondary:hover {
+    background: var(--active-bg) !important;
+}
+
+html.embedded.solid-mode .btn-add-primary {
+    background: var(--btn-blue) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+html.embedded.solid-mode .btn-add-primary:hover {
+    background: var(--btn-blue-hover) !important;
+    box-shadow: 0 4px 12px rgba(16, 112, 229, 0.3) !important;
+}
+
+html.embedded.solid-mode .btn-action-round {
+    background: var(--hover-bg) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+}
+
+html.embedded.solid-mode .btn-action-round:hover {
+    background: var(--active-bg) !important;
+}
+
+html.embedded.solid-mode .empty-state,
+html.embedded.solid-mode .empty-state p {
+    color: var(--text-secondary) !important;
+}
+
+html.embedded.solid-mode .confirm-box {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+html.embedded.solid-mode .confirm-title {
+    color: var(--text) !important;
+}
+
+html.embedded.solid-mode .add-popover {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+}
+
+html.embedded.solid-mode .popover-field label {
+    color: var(--text-secondary) !important;
+}
+
+html.embedded.solid-mode .popover-input {
+    background: var(--hover-bg) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+}
+
+html.embedded.solid-mode .edit-panel {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border) !important;
+    border-left: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    box-shadow: none !important;
+}
+
+html.embedded.solid-mode .edit-panel-header {
+    border-bottom: 1px solid var(--border) !important;
+}
+
+html.embedded.solid-mode .edit-panel label {
+    color: var(--text-secondary) !important;
+}
+
+html.embedded.solid-mode .edit-url-input,
+html.embedded.solid-mode .inline-edit-input {
+    background: var(--hover-bg) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+}
+
+html.embedded.solid-mode .edit-url-input:focus,
+html.embedded.solid-mode .inline-edit-input:focus {
+    background: var(--card-bg) !important;
+    border-color: var(--btn-blue) !important;
+}
+
+html.embedded.solid-mode .collection-select-btn {
+    background: var(--hover-bg) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+}
+
+html.embedded.solid-mode .collection-select-btn:hover {
+    background: var(--active-bg) !important;
+}
+
+html.embedded.solid-mode .empty-placeholder-title {
+    color: var(--text) !important;
+}
+html.embedded.solid-mode .empty-placeholder-text {
+    color: var(--text-secondary) !important;
+}
+html.embedded.solid-mode .empty-placeholder-icon {
+    color: var(--text-secondary) !important;
+}
+html.embedded.solid-mode .bookmarks-footer {
+    color: var(--text-secondary) !important;
+    border-top: 1px dashed var(--border) !important;
 }

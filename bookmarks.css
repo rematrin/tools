@@ -579,8 +579,7 @@ body.dark .btn-secondary:hover {
     box-shadow: 0 4px 12px rgba(16, 112, 229, 0.3);
 }
 
-.btn-add-primary:active {
-}
+.btn-add-primary:active {}
 
 .add-dropdown-arrow {
     border-left: 1px solid rgba(255, 255, 255, 0.2);
@@ -775,8 +774,7 @@ body.dark .favicon-wrapper {
     border-radius: 6px;
 }
 
-#main-more-actions-btn:hover {
-}
+#main-more-actions-btn:hover {}
 
 /* Итоговый счетчик внизу списка */
 .bookmarks-footer {
@@ -909,7 +907,7 @@ body.dark .favicon-wrapper {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
     min-width: 210px;
     z-index: 9999;
-    padding: 6px;
+    padding: 6px 0 !important;
     display: flex;
     flex-direction: column;
     font-family: 'Inter', sans-serif;
@@ -946,11 +944,11 @@ body.dark .custom-context-menu {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 12px;
+    padding: 8px 16px !important;
     font-size: 14px;
     color: #1a1a1a;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 0 !important;
     transition: background 0.1s;
     font-weight: 500;
     user-select: none;
@@ -961,15 +959,23 @@ body.dark .ctx-item {
 }
 
 .ctx-item:hover {
-    background: #f0f0f0;
+    background: #1987e1;
+    color: #ffffff;
 }
 
 body.dark .ctx-item:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: #1987e1;
+    color: #ffffff;
 }
 
 .ctx-item.danger {
     color: #ff4d4f;
+}
+
+.ctx-item.danger:hover,
+body.dark .ctx-item.danger:hover,
+html.embedded .ctx-item.danger:hover {
+    color: #ffffff !important;
 }
 
 .ctx-divider {
@@ -1902,19 +1908,26 @@ html.embedded .custom-context-menu {
     border: 1px solid rgba(0, 0, 0, 0.08) !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
     backdrop-filter: none !important;
+    padding: 6px 0 !important;
 }
 
 html.embedded .ctx-item {
     color: #1a1a1a !important;
+    border-radius: 0 !important;
+    padding: 8px 16px !important;
 }
 
 html.embedded .ctx-item:hover {
-    background: #f0f0f0 !important;
-    color: #1a1a1a !important;
+    background: #1987e1 !important;
+    color: #ffffff !important;
 }
 
 html.embedded .ctx-item.danger {
     color: #ff4d4f !important;
+}
+
+html.embedded .ctx-item.danger:hover {
+    color: #ffffff !important;
 }
 
 html.embedded .ctx-divider {
@@ -2161,9 +2174,11 @@ html.embedded .bookmarks-footer {
 html.embedded .empty-placeholder-title {
     color: #ffffff !important;
 }
+
 html.embedded .empty-placeholder-text {
     color: rgba(255, 255, 255, 0.65) !important;
 }
+
 html.embedded .empty-placeholder-icon {
     color: rgba(255, 255, 255, 0.7) !important;
 }
@@ -2468,16 +2483,31 @@ html.embedded.solid-mode .collection-select-btn:hover {
 html.embedded.solid-mode .empty-placeholder-title {
     color: var(--text) !important;
 }
+
 html.embedded.solid-mode .empty-placeholder-text {
     color: var(--text-secondary) !important;
 }
+
 html.embedded.solid-mode .empty-placeholder-icon {
     color: var(--text-secondary) !important;
 }
+
 html.embedded.solid-mode .bookmarks-footer {
     color: var(--text-secondary) !important;
     border-top: 1px solid var(--border) !important;
     margin: 24px 0 0 0 !important;
     width: 100% !important;
     box-sizing: border-box !important;
+}
+
+html.embedded.solid-mode .col-modal-item {
+    color: var(--text) !important;
+}
+
+html.embedded.solid-mode .col-modal-item:hover {
+    background: var(--list-hover-bg-light) !important;
+}
+
+body.dark html.embedded.solid-mode .col-modal-item:hover {
+    background: var(--list-hover-bg-dark) !important;
 }

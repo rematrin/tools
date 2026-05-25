@@ -785,7 +785,7 @@ body.dark .favicon-wrapper {
     color: var(--text-secondary);
     font-weight: 500;
     opacity: 0.8;
-    border-top: 1px solid var(--border);
+    border-top: none;
 }
 
 /* Мобильная кнопка меню */
@@ -907,7 +907,7 @@ body.dark .favicon-wrapper {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
     min-width: 210px;
     z-index: 9999;
-    padding: 6px 0 !important;
+    padding: 6px;
     display: flex;
     flex-direction: column;
     font-family: 'Inter', sans-serif;
@@ -944,11 +944,11 @@ body.dark .custom-context-menu {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 16px !important;
+    padding: 8px 12px;
     font-size: 14px;
     color: #1a1a1a;
     cursor: pointer;
-    border-radius: 0 !important;
+    border-radius: 6px;
     transition: background 0.1s;
     font-weight: 500;
     user-select: none;
@@ -959,23 +959,15 @@ body.dark .ctx-item {
 }
 
 .ctx-item:hover {
-    background: #1987e1;
-    color: #ffffff;
+    background: #f0f0f0;
 }
 
 body.dark .ctx-item:hover {
-    background: #1987e1;
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .ctx-item.danger {
     color: #ff4d4f;
-}
-
-.ctx-item.danger:hover,
-body.dark .ctx-item.danger:hover,
-html.embedded .ctx-item.danger:hover {
-    color: #ffffff !important;
 }
 
 .ctx-divider {
@@ -1908,26 +1900,19 @@ html.embedded .custom-context-menu {
     border: 1px solid rgba(0, 0, 0, 0.08) !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
     backdrop-filter: none !important;
-    padding: 6px 0 !important;
 }
 
 html.embedded .ctx-item {
     color: #1a1a1a !important;
-    border-radius: 0 !important;
-    padding: 8px 16px !important;
 }
 
 html.embedded .ctx-item:hover {
-    background: #1987e1 !important;
-    color: #ffffff !important;
+    background: #f0f0f0 !important;
+    color: #1a1a1a !important;
 }
 
 html.embedded .ctx-item.danger {
     color: #ff4d4f !important;
-}
-
-html.embedded .ctx-item.danger:hover {
-    color: #ffffff !important;
 }
 
 html.embedded .ctx-divider {
@@ -2164,7 +2149,7 @@ html.embedded .main-content {
 
 html.embedded .bookmarks-footer {
     color: rgba(255, 255, 255, 0.6) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-top: none !important;
     margin: 24px 0 0 0 !important;
     width: 100% !important;
     box-sizing: border-box !important;
@@ -2494,7 +2479,7 @@ html.embedded.solid-mode .empty-placeholder-icon {
 
 html.embedded.solid-mode .bookmarks-footer {
     color: var(--text-secondary) !important;
-    border-top: 1px solid var(--border) !important;
+    border-top: none !important;
     margin: 24px 0 0 0 !important;
     width: 100% !important;
     box-sizing: border-box !important;

@@ -39,6 +39,7 @@
 
         if (window.location.search.includes('embedded=true')) {
             document.documentElement.classList.add('embedded');
+            document.documentElement.classList.add('solid-mode');
             document.addEventListener('DOMContentLoaded', () => {
                 document.body.classList.add('embedded');
                 document.body.classList.remove('dark');
@@ -49,7 +50,7 @@
             });
         }
         // Раннее считывание визуального режима
-        const savedVisualMode = localStorage.getItem('bookmarksVisualMode') || 'glass';
+        const savedVisualMode = window.location.search.includes('embedded=true') ? 'solid' : (localStorage.getItem('bookmarksVisualMode') || 'glass');
         if (savedVisualMode === 'solid') {
             document.documentElement.classList.add('solid-mode');
         }

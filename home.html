@@ -339,6 +339,28 @@
             background: rgba(255, 255, 255, 0.9);
         }
 
+        /* Disable backdrop-filter and glass transparency on bookmarks view to eliminate GPU flickering */
+        body.bookmarks-view-active .category-capsule {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            background: #48484a !important;
+            color: #ffffff !important;
+            border-color: rgba(255, 255, 255, 0.15) !important;
+        }
+
+        body.bookmarks-view-active .category-capsule:hover {
+            background: #545456 !important;
+        }
+
+        body.bookmarks-view-active .category-capsule.active {
+            background: #ffffff !important;
+            color: #000000 !important;
+        }
+
+        body.bookmarks-view-active .category-capsule.active:hover {
+            background: #f2f2f7 !important;
+        }
+
         .app-page {
             flex: 0 0 100%;
             width: 100%;
@@ -2144,6 +2166,7 @@
             const iframe = document.getElementById('hbIframe');
 
             if (active) {
+                document.body.classList.add('bookmarks-view-active');
                 pagesContainer.style.display = 'none';
                 if (paginationDots) paginationDots.style.display = 'none';
                 panel.style.display = 'flex';
@@ -2161,6 +2184,7 @@
                     iframe.src = 'bookmarks.html?embedded=true';
                 }
             } else {
+                document.body.classList.remove('bookmarks-view-active');
                 pagesContainer.style.display = '';
                 if (paginationDots) paginationDots.style.display = 'flex';
                 panel.style.display = 'none';
@@ -2201,7 +2225,7 @@
                 bar.appendChild(capsule);
             });
 
-            // Dedicated static Bookmarks category capsule
+            // Dedicated static Bookmarks category capsule always remains
             const showBookmarksBeta = localStorage.getItem('showBookmarksBeta') === 'true';
             if (showBookmarksBeta) {
                 const bmarkCapsule = document.createElement('div');

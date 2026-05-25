@@ -576,12 +576,10 @@ body.dark .btn-secondary:hover {
 
 .btn-add-primary:hover {
     background: var(--btn-blue-hover);
-    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(16, 112, 229, 0.3);
 }
 
 .btn-add-primary:active {
-    transform: translateY(0);
 }
 
 .add-dropdown-arrow {
@@ -769,7 +767,6 @@ body.dark .favicon-wrapper {
 .btn-action-round:hover {
     background: var(--hover-bg);
     color: var(--text);
-    transform: scale(1.08);
 }
 
 #main-more-actions-btn {
@@ -779,7 +776,6 @@ body.dark .favicon-wrapper {
 }
 
 #main-more-actions-btn:hover {
-    transform: translateY(-1px);
 }
 
 /* Итоговый счетчик внизу списка */
@@ -1629,18 +1625,25 @@ html.embedded .search-container {
 }
 
 html.embedded .search-input {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    background: var(--search-bg-light) !important;
+    border: 1px solid var(--search-border) !important;
     border-radius: 10px !important;
-    color: #fff !important;
+    color: var(--text) !important;
     height: 36px !important;
     font-size: 14px !important;
     padding-left: 36px !important;
 }
 
+body.dark html.embedded .search-input {
+    background: var(--search-bg-dark) !important;
+    border-color: var(--search-border) !important;
+    color: var(--text) !important;
+}
+
 html.embedded .search-input:focus {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border-color: rgba(255, 255, 255, 0.25) !important;
+    background: var(--card-bg) !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(122, 162, 255, 0.15) !important;
 }
 
 html.embedded .bookmark-row {
@@ -1667,7 +1670,7 @@ html.embedded .bookmark-row:hover .bookmark-actions {
 html.embedded .bookmark-row:hover {
     background: rgba(255, 255, 255, 0.06) !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
-    transform: translateY(-1px) !important;
+    transform: none !important;
 }
 
 html.embedded .btn-add-primary {
@@ -1716,7 +1719,7 @@ html.embedded .btn-action-round:hover {
 }
 
 html.embedded #main-more-actions-btn:hover {
-    transform: translateY(-1px) !important;
+    transform: none !important;
 }
 
 html.embedded .btn-secondary {
@@ -1812,8 +1815,15 @@ html.embedded h3 {
 }
 
 html.embedded .bookmark-url,
-html.embedded .bookmark-meta,
+html.embedded .bookmark-meta {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
 html.embedded .search-input::placeholder {
+    color: var(--text-secondary) !important;
+}
+
+body.dark html.embedded .search-input::placeholder {
     color: rgba(255, 255, 255, 0.5) !important;
 }
 
@@ -1864,8 +1874,12 @@ html.embedded .content-header {
 }
 
 html.embedded .search-icon-left {
-    color: rgba(255, 255, 255, 0.4) !important;
+    color: var(--text-secondary) !important;
     left: 12px !important;
+}
+
+body.dark html.embedded .search-icon-left {
+    color: rgba(255, 255, 255, 0.4) !important;
 }
 
 html.embedded .btn-secondary span {
@@ -2134,6 +2148,11 @@ html.embedded .empty-placeholder-icon {
     color: rgba(255, 255, 255, 0.7) !important;
 }
 
+html.embedded .visual-mode-section,
+html.embedded .visual-mode-divider {
+    display: none !important;
+}
+
 /* === VISUAL MODE SWITCHER STYLES === */
 .visual-mode-section {
     display: flex;
@@ -2244,13 +2263,29 @@ html.embedded.solid-mode .bookmark-row {
 }
 
 html.embedded.solid-mode .bookmark-row:hover {
-    background: var(--hover-bg) !important;
+    background: var(--list-hover-bg-light) !important;
+    border-color: transparent !important;
+}
+
+body.dark html.embedded.solid-mode .bookmark-row:hover {
+    background: var(--list-hover-bg-dark) !important;
 }
 
 html.embedded.solid-mode .search-input {
-    background: var(--hover-bg) !important;
-    border: 1px solid var(--border) !important;
+    background: var(--search-bg-light) !important;
+    border: 1px solid var(--search-border) !important;
     color: var(--text) !important;
+}
+
+body.dark html.embedded.solid-mode .search-input {
+    background: var(--search-bg-dark) !important;
+    border: 1px solid var(--search-border) !important;
+}
+
+html.embedded.solid-mode .search-input:focus {
+    background: var(--card-bg) !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(122, 162, 255, 0.15) !important;
 }
 
 html.embedded.solid-mode .search-icon-left {
@@ -2258,9 +2293,13 @@ html.embedded.solid-mode .search-icon-left {
 }
 
 html.embedded.solid-mode .btn-secondary {
-    background: var(--hover-bg) !important;
+    background: var(--list-hover-bg-light) !important;
     border: 1px solid var(--border) !important;
     color: var(--text) !important;
+}
+
+body.dark html.embedded.solid-mode .btn-secondary {
+    background: var(--list-hover-bg-dark) !important;
 }
 
 html.embedded.solid-mode .btn-secondary span {
@@ -2268,7 +2307,11 @@ html.embedded.solid-mode .btn-secondary span {
 }
 
 html.embedded.solid-mode .btn-secondary:hover {
-    background: var(--active-bg) !important;
+    background: rgba(0, 0, 0, 0.06) !important;
+}
+
+body.dark html.embedded.solid-mode .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
 }
 
 html.embedded.solid-mode .btn-add-primary {
@@ -2284,13 +2327,21 @@ html.embedded.solid-mode .btn-add-primary:hover {
 }
 
 html.embedded.solid-mode .btn-action-round {
-    background: var(--hover-bg) !important;
+    background: var(--list-hover-bg-light) !important;
     border: 1px solid var(--border) !important;
     color: var(--text) !important;
 }
 
+body.dark html.embedded.solid-mode .btn-action-round {
+    background: var(--list-hover-bg-dark) !important;
+}
+
 html.embedded.solid-mode .btn-action-round:hover {
-    background: var(--active-bg) !important;
+    background: rgba(0, 0, 0, 0.06) !important;
+}
+
+body.dark html.embedded.solid-mode .btn-action-round:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
 }
 
 html.embedded.solid-mode .empty-state,

@@ -787,7 +787,7 @@ body.dark .favicon-wrapper {
     color: var(--text-secondary);
     font-weight: 500;
     opacity: 0.8;
-    border-top: 1px dashed var(--border);
+    border-top: 1px solid var(--border);
 }
 
 /* Мобильная кнопка меню */
@@ -1582,6 +1582,8 @@ html.embedded .sidebar-menu {
 html.embedded .bookmarks-list-container {
     scrollbar-width: thin !important;
     scrollbar-color: rgba(255, 255, 255, 0.1) transparent !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
 }
 
 html.embedded .main-content {
@@ -2034,8 +2036,7 @@ html.embedded .edit-panel label {
     font-weight: 500 !important;
 }
 
-html.embedded .edit-url-input,
-html.embedded .inline-edit-input {
+html.embedded .edit-url-input {
     background: rgba(255, 255, 255, 0.06) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     color: #ffffff !important;
@@ -2044,10 +2045,26 @@ html.embedded .inline-edit-input {
     transition: background 0.2s, border-color 0.2s !important;
 }
 
-html.embedded .edit-url-input:focus,
-html.embedded .inline-edit-input:focus {
+html.embedded .edit-url-input:focus {
     background: rgba(255, 255, 255, 0.12) !important;
     border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+html.embedded .inline-edit-input {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.4) !important;
+    color: inherit !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+}
+
+html.embedded .inline-edit-input:focus {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid #ffffff !important;
+    box-shadow: none !important;
 }
 
 html.embedded .collection-select-btn {
@@ -2134,7 +2151,10 @@ html.embedded .main-content {
 
 html.embedded .bookmarks-footer {
     color: rgba(255, 255, 255, 0.6) !important;
-    border-top: 1px dashed rgba(255, 255, 255, 0.15) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+    margin: 24px 0 0 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 /* Premium readability overrides for empty placeholders in embedded mode */
@@ -2360,6 +2380,10 @@ html.embedded.solid-mode .confirm-title {
     color: var(--text) !important;
 }
 
+html.embedded.solid-mode .confirm-message {
+    color: var(--text-secondary) !important;
+}
+
 html.embedded.solid-mode .add-popover {
     background: var(--card-bg) !important;
     border: 1px solid var(--border) !important;
@@ -2371,9 +2395,20 @@ html.embedded.solid-mode .popover-field label {
 }
 
 html.embedded.solid-mode .popover-input {
-    background: var(--hover-bg) !important;
+    background: var(--search-bg-light) !important;
     border: 1px solid var(--border) !important;
     color: var(--text) !important;
+}
+
+body.dark html.embedded.solid-mode .popover-input {
+    background: var(--search-bg-dark) !important;
+    border: 1px solid var(--search-border) !important;
+}
+
+html.embedded.solid-mode .popover-input:focus {
+    background: var(--card-bg) !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(122, 162, 255, 0.15) !important;
 }
 
 html.embedded.solid-mode .edit-panel {
@@ -2392,17 +2427,32 @@ html.embedded.solid-mode .edit-panel label {
     color: var(--text-secondary) !important;
 }
 
-html.embedded.solid-mode .edit-url-input,
-html.embedded.solid-mode .inline-edit-input {
+html.embedded.solid-mode .edit-url-input {
     background: var(--hover-bg) !important;
     border: 1px solid var(--border) !important;
     color: var(--text) !important;
 }
 
-html.embedded.solid-mode .edit-url-input:focus,
-html.embedded.solid-mode .inline-edit-input:focus {
+html.embedded.solid-mode .edit-url-input:focus {
     background: var(--card-bg) !important;
     border-color: var(--btn-blue) !important;
+}
+
+html.embedded.solid-mode .inline-edit-input {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.4) !important;
+    color: inherit !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+}
+
+html.embedded.solid-mode .inline-edit-input:focus {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid #ffffff !important;
+    box-shadow: none !important;
 }
 
 html.embedded.solid-mode .collection-select-btn {
@@ -2426,5 +2476,8 @@ html.embedded.solid-mode .empty-placeholder-icon {
 }
 html.embedded.solid-mode .bookmarks-footer {
     color: var(--text-secondary) !important;
-    border-top: 1px dashed var(--border) !important;
+    border-top: 1px solid var(--border) !important;
+    margin: 24px 0 0 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }

@@ -157,9 +157,32 @@ function renderList(items) {
                     <path d="M7.833 2c-.507 0-.98.216-1.318.576A1.92 1.92 0 0 0 6 3.89V21a1 1 0 0 0 1.625.78L12 18.28l4.375 3.5A1 1 0 0 0 18 21V3.889c0-.481-.178-.954-.515-1.313A1.808 1.808 0 0 0 16.167 2H7.833Z"/>
                 </svg>
                 <p class="empty-placeholder-title" style="font-weight: 500; font-size: 15px; margin: 0 0 8px 0; color: var(--text-primary);">Нет закладок</p>
-                <p class="empty-placeholder-text" style="font-size: 13px; opacity: 0.7; max-width: 280px; margin: 0 auto; line-height: 1.4; color: var(--text-secondary);">Добавьте или импортируйте свою первую закладку</p>
+                <p class="empty-placeholder-text" style="font-size: 13px; opacity: 0.8; max-width: 280px; margin: 0 auto; line-height: 1.4; color: var(--text-secondary);">
+                    <span id="empty-add-link" style="color: var(--btn-blue); text-decoration: underline; font-weight: 500; cursor: pointer;">Добавьте</span> или 
+                    <span id="empty-import-link" style="color: var(--btn-blue); text-decoration: underline; font-weight: 500; cursor: pointer;">импортируйте</span> свою первую закладку
+                </p>
             </div>
         `;
+
+        const emptyAddLink = container.querySelector('#empty-add-link');
+        if (emptyAddLink) {
+            emptyAddLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                showAddBookmarkModal();
+            });
+        }
+
+        const emptyImportLink = container.querySelector('#empty-import-link');
+        if (emptyImportLink) {
+            emptyImportLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                let targetCollId = undefined;
+                if (currentFolder && currentFolder.startsWith('coll_')) {
+                    targetCollId = currentFolder.replace('coll_', '');
+                }
+                triggerCsvImport(targetCollId);
+            });
+        }
         return;
     }
 
@@ -1151,6 +1174,12 @@ function showAddBookmarkModal() {
     const popover = document.getElementById('addBookmarkPopover');
     if (!popover) return;
     
+    // Close main actions popover if open
+    const mainActionsPopover = document.getElementById('mainActionsPopover');
+    if (mainActionsPopover) {
+        mainActionsPopover.classList.remove('active');
+    }
+    
     // Toggle off if already open
     if (popover.classList.contains('active')) {
         popover.classList.remove('active');
@@ -1430,6 +1459,10 @@ window.addEventListener('message', (e) => {
         if (popover && popover.classList.contains('active')) {
             popover.classList.remove('active');
         }
+        const mainActionsPopover = document.getElementById('mainActionsPopover');
+        if (mainActionsPopover && mainActionsPopover.classList.contains('active')) {
+            mainActionsPopover.classList.remove('active');
+        }
     }
 });
 
@@ -1468,70 +1501,45 @@ if (addBookmarkBtn) {
 
 // Hook up main header actions button
 const mainActionsBtn = document.getElementById('main-more-actions-btn');
-if (mainActionsBtn) {
+const mainActionsPopover = document.getElementById('mainActionsPopover');
+const addBookmarkPopover = document.getElementById('addBookmarkPopover');
+
+if (mainActionsBtn && mainActionsPopover) {
     mainActionsBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        showMainContextMenu(e);
+
+        // Close add bookmark popover if open
+        if (addBookmarkPopover) {
+            addBookmarkPopover.classList.remove('active');
+        }
+
+        // Toggle main actions popover
+        if (mainActionsPopover.classList.contains('active')) {
+            mainActionsPopover.classList.remove('active');
+        } else {
+            mainActionsPopover.classList.add('active');
+
+            // Close popover when clicking outside of it
+            const outsideClickListener = (evt) => {
+                if (!mainActionsPopover.contains(evt.target) && evt.target !== mainActionsBtn) {
+                    mainActionsPopover.classList.remove('active');
+                    document.removeEventListener('click', outsideClickListener);
+                }
+            };
+            // Slight delay so the click that opened the popover doesn't immediately close it
+            setTimeout(() => {
+                document.addEventListener('click', outsideClickListener);
+            }, 0);
+        }
     });
-}
 
-// Helper: Display the context menu for main header actions
-function showMainContextMenu(e) {
-    if (activeContextMenu) activeContextMenu.remove();
-
-    const menu = document.createElement('div');
-    menu.className = 'custom-context-menu';
-    
-    menu.innerHTML = `
-        <div class="ctx-item" id="ctx-select-mode">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 11 12 14 22 4"></polyline>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-            </svg>
-            Выбрать
-        </div>
-        <div class="ctx-item" id="ctx-import-csv">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            Импорт
-        </div>
-        <div class="ctx-item" id="ctx-export-csv">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Экспорт
-        </div>
-    `;
-
-    document.body.appendChild(menu);
-    activeContextMenu = menu;
-
-    // Auto Positioning
-    let x = e.clientX;
-    let y = e.clientY;
-    const menuRect = menu.getBoundingClientRect();
-    
-    if (x + menuRect.width > window.innerWidth) {
-        x = window.innerWidth - menuRect.width - 10;
-    }
-    if (y + menuRect.height > window.innerHeight) {
-        y = window.innerHeight - menuRect.height - 10;
-    }
-    
-    menu.style.left = `${x}px`;
-    menu.style.top = `${y}px`;
-
-    const selectBtn = menu.querySelector('#ctx-select-mode');
+    // Hook up menu items inside mainActionsPopover
+    const selectBtn = mainActionsPopover.querySelector('#ctx-select-mode');
     if (selectBtn) {
         selectBtn.addEventListener('click', (evt) => {
             evt.stopPropagation();
-            menu.remove();
+            mainActionsPopover.classList.remove('active');
             selectionMode = true;
             selectedBookmarks.clear();
             performSearchAndFilter();
@@ -1539,29 +1547,33 @@ function showMainContextMenu(e) {
         });
     }
 
-    menu.querySelector('#ctx-import-csv').addEventListener('click', (evt) => {
-        evt.stopPropagation();
-        menu.remove();
-        
-        let targetCollId = undefined;
-        if (currentFolder && currentFolder.startsWith('coll_')) {
-            targetCollId = currentFolder.replace('coll_', '');
-        }
-        triggerCsvImport(targetCollId);
-    });
+    const importBtn = mainActionsPopover.querySelector('#ctx-import-csv');
+    if (importBtn) {
+        importBtn.addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            mainActionsPopover.classList.remove('active');
+            
+            let targetCollId = undefined;
+            if (currentFolder && currentFolder.startsWith('coll_')) {
+                targetCollId = currentFolder.replace('coll_', '');
+            }
+            triggerCsvImport(targetCollId);
+        });
+    }
 
-    menu.querySelector('#ctx-export-csv').addEventListener('click', (evt) => {
-        evt.stopPropagation();
-        menu.remove();
-        
-        let targetCollId = null;
-        if (currentFolder && currentFolder.startsWith('coll_')) {
-            targetCollId = currentFolder.replace('coll_', '');
-        }
-        triggerCsvExport(targetCollId);
-    });
-
-    menu.addEventListener('click', (evt) => evt.stopPropagation());
+    const exportBtn = mainActionsPopover.querySelector('#ctx-export-csv');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            mainActionsPopover.classList.remove('active');
+            
+            let targetCollId = null;
+            if (currentFolder && currentFolder.startsWith('coll_')) {
+                targetCollId = currentFolder.replace('coll_', '');
+            }
+            triggerCsvExport(targetCollId);
+        });
+    }
 }
 
 function updateSelectionTopBar() {

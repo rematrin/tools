@@ -22,7 +22,11 @@ export class FolderManager {
         this.initSortable();
 
         this.overlay.addEventListener('click', (e) => {
-            if (e.target === this.overlay || e.target.classList.contains('folder-overlay-bg')) {
+            if (e.target === this.overlay || 
+                e.target.classList.contains('fake-blur-bg') || 
+                e.target.classList.contains('real-backdrop-layer') || 
+                e.target.classList.contains('glass-tint') || 
+                !e.target.closest('.folder-content')) {
                 this.close();
             }
         });

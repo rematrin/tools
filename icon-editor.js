@@ -974,6 +974,9 @@ export class IconEditor {
                 if (!modal) {
                     const modalHTML = `
                         <div class="wp-modal-overlay" id="iconEditorUrlModal" style="z-index: 3000;">
+                            <div class="fake-blur-bg"></div>
+                            <div class="real-backdrop-layer"></div>
+                            <div class="glass-tint"></div>
                             <div class="wp-modal-card">
                                 <h3>Ссылка на изображение</h3>
                                 <input type="text" id="iconEditorUrlInput" class="form-input" placeholder="https://site.com/image.png" autocomplete="off">

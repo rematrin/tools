@@ -1524,9 +1524,7 @@ html.embedded .bookmark-app {
 }
 
 html.embedded .sidebar {
-    background: rgba(15, 15, 20, 0.5) !important;
-    backdrop-filter: blur(40px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+    background: rgba(15, 15, 20, 0.9) !important;
     border-right: none !important;
     border-radius: 22px !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -1585,9 +1583,7 @@ html.embedded .bookmarks-list-container {
 }
 
 html.embedded .main-content {
-    background: rgba(15, 15, 20, 0.45) !important;
-    backdrop-filter: blur(40px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+    background: rgba(15, 15, 20, 0.88) !important;
     border-radius: 22px !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
@@ -1920,10 +1916,8 @@ html.embedded .ctx-divider {
 }
 
 html.embedded .confirm-box {
-    background: rgba(15, 15, 20, 0.75) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    backdrop-filter: blur(40px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+    background: rgba(15, 15, 20, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
     border-radius: 16px !important;
     color: #ffffff !important;
@@ -2010,9 +2004,7 @@ html.embedded .add-popover .btn-add-primary:hover {
 }
 
 html.embedded .edit-panel {
-    background: rgba(15, 15, 20, 0.45) !important;
-    backdrop-filter: blur(40px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+    background: rgba(15, 15, 20, 0.9) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-left: 1px solid rgba(255, 255, 255, 0.12) !important;
     border-radius: 0 22px 22px 0 !important;
@@ -2140,11 +2132,14 @@ html.embedded .search-input {
 
 /* GPU layer promotion to prevent backdrop-filter flashing */
 html.embedded .sidebar,
-html.embedded .main-content {
+html.embedded .main-content,
+html.embedded .confirm-box,
+html.embedded .edit-panel {
     backface-visibility: hidden !important;
     -webkit-backface-visibility: hidden !important;
     transform: translate3d(0, 0, 0) !important;
     -webkit-transform: translate3d(0, 0, 0) !important;
+    isolation: isolate !important;
 }
 
 html.embedded .bookmarks-footer {

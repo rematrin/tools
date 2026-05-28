@@ -49,11 +49,8 @@
                 document.body.classList.remove('dark');
             });
         }
-        // Раннее считывание визуального режима
-        const savedVisualMode = window.location.search.includes('embedded=true') ? 'solid' : (localStorage.getItem('bookmarksVisualMode') || 'glass');
-        if (savedVisualMode === 'solid') {
-            document.documentElement.classList.add('solid-mode');
-        }
+        // Всегда использовать solid-mode для стабильного отображения без блюра
+        document.documentElement.classList.add('solid-mode');
     </script>
 </head>
 
@@ -121,27 +118,6 @@
                     </div>
                     <span class="menu-count" id="count-trash">0</span>
                 </a>
-
-                <!-- Разделитель и переключатель визуального режима -->
-                <div class="sidebar-divider visual-mode-divider"
-                    style="margin: 16px 12px 12px 12px; border-top: 1px solid var(--border); opacity: 0.2;"></div>
-
-                <div class="visual-mode-section">
-                    <span class="visual-mode-label">Интерфейс:</span>
-                    <div class="theme-control visual-mode-control">
-                        <button class="theme-btn visual-mode-btn" data-mode="glass" title="Стекло">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="3" width="12" height="12" rx="2" stroke-dasharray="3 3"/>
-                                <rect x="9" y="9" width="12" height="12" rx="2" fill="currentColor" fill-opacity="0.15"/>
-                            </svg>
-                        </button>
-                        <button class="theme-btn visual-mode-btn" data-mode="solid" title="Классика">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" fill-opacity="0.8"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
             </div>
         </aside>
 

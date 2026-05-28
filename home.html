@@ -51,6 +51,9 @@
                 const dimOpacity = settings.dim / 100;
 
                 style.innerHTML = `
+                    :root {
+                        --current-wallpaper: url('${settings.url}');
+                    }
                     .global-wallpaper-blurred {
                         background-image: url('${settings.url}') !important;
                         filter: blur(${blurPx}px) !important;
@@ -222,15 +225,13 @@
             cursor: pointer;
             gap: 6px;
             /* Чуть больше расстояние между линиями */
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.24);
             border-radius: 50%;
             padding: 10px;
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
             z-index: 1000;
             /* Чтобы была поверх всего */
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.18);
         }
 
         .menu-btn:active {
@@ -312,9 +313,7 @@
         }
 
         .category-capsule {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.24);
             padding: 6px 14px;
             border-radius: 10px;
             font-size: 14px;
@@ -322,7 +321,7 @@
             white-space: nowrap;
             cursor: pointer;
             transition: all 0.2s;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.18);
             user-select: none;
         }
 
@@ -478,11 +477,9 @@
             width: 100%;
             height: 100%;
             /* Фон папки (стекло) */
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            background: rgba(255, 255, 255, 0.28);
             border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
 
             /* Сетка 3x3 */
             display: grid;
@@ -610,15 +607,69 @@
         .sidebar.widget-sidebar {
             left: 0;
             right: auto;
-            transform: translateX(-100%);
+            transform: translateX(-100%) translateZ(0);
+            -webkit-transform: translateX(-100%) translateZ(0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
             width: 370px;
             max-width: 90vw;
             box-shadow: 5px 0 25px rgba(0, 0, 0, 0.3);
             transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-            background: rgba(20, 20, 20, 0.4) !important;
+            background: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            border-right: none;
+            overflow: hidden;
+        }
+
+        .sidebar.widget-sidebar .fake-blur-bg {
+            position: absolute;
+            inset: -30px;
+            background-image: var(--current-wallpaper);
+            background-size: cover;
+            background-position: center;
+            filter: blur(24px);
+            -webkit-filter: blur(24px);
+            transform: scale(1.08) translateZ(0);
+            -webkit-transform: scale(1.08) translateZ(0);
+            z-index: -2;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            display: none;
+        }
+
+        .sidebar.widget-sidebar .real-backdrop-layer {
+            position: absolute;
+            inset: 0;
+            background: rgba(20, 20, 20, 0.22);
             backdrop-filter: blur(26px) saturate(160%);
             -webkit-backdrop-filter: blur(26px) saturate(160%);
-            border-right: none;
+            z-index: -2;
+            -webkit-transform: translate3d(0, 0, 0);
+            transform: translate3d(0, 0, 0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            will-change: opacity, transform, backdrop-filter;
+            pointer-events: none;
+            display: none;
+        }
+
+        html.fake-blur .sidebar.widget-sidebar .fake-blur-bg {
+            display: block;
+        }
+        html.real-blur .sidebar.widget-sidebar .real-backdrop-layer {
+            display: block;
+        }
+
+        .sidebar.widget-sidebar .glass-tint {
+            position: absolute;
+            inset: 0;
+            background: rgba(20, 20, 20, 0.45);
+            z-index: -1;
+        }
+
+        html.real-blur .sidebar.widget-sidebar .glass-tint {
+            background: rgba(20, 20, 20, 0.25);
         }
 
         @media (max-width: 600px) {
@@ -629,7 +680,8 @@
         }
 
         .sidebar.widget-sidebar.active {
-            transform: translateX(0);
+            transform: translateX(0) translateZ(0);
+            -webkit-transform: translateX(0) translateZ(0);
         }
 
         .widget-btn {
@@ -1255,10 +1307,8 @@
             left: -11px;
             display: none;
             align-items: center;
-            background: rgba(30, 30, 30, 0.9);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 0.5px solid rgba(255, 255, 255, 0.15);
+            background: rgba(30, 30, 30, 0.95);
+            border: 0.5px solid rgba(255, 255, 255, 0.2);
             border-radius: 10px;
             padding: 1px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -1409,11 +1459,9 @@
             position: absolute;
             bottom: 10px;
             right: 10px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.72);
             color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.25);
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 12px;
@@ -1488,20 +1536,83 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.4);
+            background: transparent;
             z-index: 2000;
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
             visibility: hidden;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(3px);
+            transition: opacity 0.2s ease, visibility 0.2s ease;
         }
 
-        .wp-modal-overlay.active {
+        .wp-modal-overlay {
+            overflow: hidden;
+        }
+
+        .wp-modal-overlay .fake-blur-bg {
+            position: absolute;
+            inset: -30px;
+            background-image: var(--current-wallpaper);
+            background-size: cover;
+            background-position: center;
+            filter: blur(24px);
+            -webkit-filter: blur(24px);
+            transform: scale(1.08) translateZ(0);
+            -webkit-transform: scale(1.08) translateZ(0);
+            z-index: -2;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            display: none;
+        }
+
+        .wp-modal-overlay .real-backdrop-layer {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.22);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            z-index: -2;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            -webkit-transform: translate3d(0, 0, 0);
+            transform: translate3d(0, 0, 0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            will-change: opacity, transform, backdrop-filter;
+            pointer-events: none;
+            display: none;
+        }
+
+        html.fake-blur .wp-modal-overlay .fake-blur-bg {
+            display: block;
+        }
+        html.real-blur .wp-modal-overlay .real-backdrop-layer {
+            display: block;
+        }
+
+        .wp-modal-overlay.active .fake-blur-bg,
+        .wp-modal-overlay.active .real-backdrop-layer {
             opacity: 1;
-            visibility: visible;
+        }
+
+        .wp-modal-overlay .glass-tint {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        html.real-blur .wp-modal-overlay .glass-tint {
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        .wp-modal-overlay.active .glass-tint {
+            opacity: 1;
         }
 
         .wp-modal-card {
@@ -1596,27 +1707,70 @@
             transition-delay: 0s;
         }
 
-        .folder-overlay-bg {
+        .folder-overlay .fake-blur-bg {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: -30px;
+            background-image: var(--current-wallpaper);
+            background-size: cover;
+            background-position: center;
+            filter: blur(24px);
+            -webkit-filter: blur(24px);
+            transform: scale(1.08) translateZ(0);
+            -webkit-transform: scale(1.08) translateZ(0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            opacity: 0;
+            z-index: -2;
+            transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: opacity;
+            display: none;
+        }
 
-            /* Сразу ставим финальный блюр, но скрываем слой полностью */
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(30px) saturate(180%);
-            -webkit-backdrop-filter: blur(30px) saturate(180%);
+        .folder-overlay .real-backdrop-layer {
+            position: absolute;
+            inset: 0;
+            background: rgba(20, 20, 20, 0.22);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            opacity: 0;
+            z-index: -2;
+            transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            -webkit-transform: translate3d(0, 0, 0);
+            transform: translate3d(0, 0, 0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            will-change: opacity, transform, backdrop-filter;
+            pointer-events: none;
+            display: none;
+        }
 
+        html.fake-blur .folder-overlay .fake-blur-bg {
+            display: block;
+        }
+        html.real-blur .folder-overlay .real-backdrop-layer {
+            display: block;
+        }
+
+        .folder-overlay.active .fake-blur-bg,
+        .folder-overlay.active .real-backdrop-layer {
+            opacity: 1;
+        }
+
+        .folder-overlay .glass-tint {
+            position: absolute;
+            inset: 0;
+            background: rgba(20, 20, 20, 0.45);
             opacity: 0;
             z-index: -1;
-
-            /* Плавная анимация только прозрачности */
             transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1);
             will-change: opacity;
         }
 
-        .folder-overlay.active .folder-overlay-bg {
+        html.real-blur .folder-overlay .glass-tint {
+            background: rgba(20, 20, 20, 0.25);
+        }
+
+        .folder-overlay.active .glass-tint {
             opacity: 1;
         }
 
@@ -1771,26 +1925,99 @@
 
         .ios-modal {
             width: 280px;
-            /* Темное меню с высокой прозрачностью и сильным блюром внутри */
-            background: rgba(28, 28, 30, 0.7);
-            backdrop-filter: blur(25px) saturate(160%);
-            -webkit-backdrop-filter: blur(25px) saturate(160%);
-
+            position: relative;
+            background: transparent;
             border-radius: 30px;
-            /* Очень круглые края */
             overflow: hidden;
             display: flex;
             flex-direction: column;
             text-align: center;
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
-
-            transform: scale(1.1);
-            opacity: 0;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .ios-modal-overlay.active .ios-modal {
-            transform: scale(1);
+        .ios-modal .fake-blur-bg {
+            position: absolute;
+            inset: -30px;
+            background-image: var(--current-wallpaper);
+            background-size: cover;
+            background-position: center;
+            filter: blur(24px);
+            -webkit-filter: blur(24px);
+            transform: scale(1.08) translateZ(0);
+            -webkit-transform: scale(1.08) translateZ(0);
+            z-index: 1;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: none;
+        }
+
+        .ios-modal .real-backdrop-layer {
+            position: absolute;
+            inset: 0;
+            background: rgba(28, 28, 30, 0.22);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-transform: translate3d(0, 0, 0);
+            transform: translate3d(0, 0, 0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            will-change: opacity, transform, backdrop-filter;
+            pointer-events: none;
+            display: none;
+        }
+
+        html.fake-blur .ios-modal .fake-blur-bg {
+            display: block;
+        }
+        html.real-blur .ios-modal .real-backdrop-layer {
+            display: block;
+        }
+
+        .ios-modal-overlay.active .ios-modal .fake-blur-bg,
+        .ios-modal-overlay.active .ios-modal .real-backdrop-layer {
+            opacity: 1;
+        }
+
+        .ios-modal .glass-tint {
+            position: absolute;
+            inset: 0;
+            background: rgba(28, 28, 30, 0.7);
+            z-index: 2;
+            opacity: 0;
+            transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html.real-blur .ios-modal .glass-tint {
+            background: rgba(28, 28, 30, 0.45);
+        }
+
+        .ios-modal-overlay.active .ios-modal .glass-tint {
+            opacity: 1;
+        }
+
+        .ios-modal-content {
+            position: relative;
+            z-index: 3;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            
+            transform: scale(1.1) translateZ(0);
+            -webkit-transform: scale(1.1) translateZ(0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            opacity: 0;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ios-modal-overlay.active .ios-modal-content {
+            transform: scale(1) translateZ(0);
+            -webkit-transform: scale(1) translateZ(0);
             opacity: 1;
         }
 
@@ -1870,10 +2097,8 @@
             color: rgba(255, 255, 255, 0.6);
             font-size: 15px;
             font-weight: 500;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(40, 40, 40, 0.85);
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
@@ -1910,9 +2135,7 @@
             visibility: hidden;
             pointer-events: none;
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: rgba(20, 20, 20, 0.65);
             color: rgba(255, 255, 255, 0.4);
             font-size: 24px;
         }
@@ -1968,9 +2191,7 @@
         }
 
         .toast {
-            background: rgba(25, 25, 25, 0.85);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            background: rgba(25, 25, 25, 0.95);
             border: 1px solid rgba(255, 255, 255, 0.15);
             padding: 12px 20px;
             border-radius: 24px;
@@ -2054,20 +2275,27 @@
 
     <div id="iosModalOverlay" class="ios-modal-overlay">
         <div class="ios-modal">
-            <div class="ios-modal-text">
-                <h3 id="iosModalTitle">Удалить приложение?</h3>
-                <p id="iosModalDesc">Приложение будет удалено с главного экрана.</p>
-            </div>
-            <div class="ios-modal-actions">
-                <button id="iosModalUngroup" class="ios-btn ungroup">Разгрупировать папку</button>
-                <button id="iosModalConfirm" class="ios-btn delete">Удалить папку</button>
-                <button id="iosModalCancel" class="ios-btn cancel">Отменить</button>
+            <div class="fake-blur-bg"></div>
+            <div class="real-backdrop-layer"></div>
+            <div class="glass-tint"></div>
+            <div class="ios-modal-content">
+                <div class="ios-modal-text">
+                    <h3 id="iosModalTitle">Удалить приложение?</h3>
+                    <p id="iosModalDesc">Приложение будет удалено с главного экрана.</p>
+                </div>
+                <div class="ios-modal-actions">
+                    <button id="iosModalUngroup" class="ios-btn ungroup">Разгрупировать папку</button>
+                    <button id="iosModalConfirm" class="ios-btn delete">Удалить папку</button>
+                    <button id="iosModalCancel" class="ios-btn cancel">Отменить</button>
+                </div>
             </div>
         </div>
     </div>
 
     <div id="folderOverlay" class="folder-overlay">
-        <div class="folder-overlay-bg"></div>
+        <div class="fake-blur-bg"></div>
+        <div class="real-backdrop-layer"></div>
+        <div class="glass-tint"></div>
         <div class="folder-content">
             <div id="removeFromFolderZone" class="remove-from-folder-zone">
                 <span>Вынести из папки</span>
@@ -2095,6 +2323,9 @@
 
     <div class="sidebar-overlay" id="widgetSidebarOverlay"></div>
     <aside class="sidebar widget-sidebar" id="widgetSidebar">
+        <div class="fake-blur-bg"></div>
+        <div class="real-backdrop-layer"></div>
+        <div class="glass-tint"></div>
         <div class="sidebar-header" style="background: transparent; border-bottom: none; position: relative;">
             <div class="sidebar-top-row" style="justify-content: center; padding: 20px 10px 10px 10px;">
                 <div class="close-menu-btn" onclick="closeWidgetMenu()"
@@ -2113,6 +2344,14 @@
     </aside>
 
     <script type="module">
+        // --- BLUR MODE CONFIGURATION ---
+        window.USE_REAL_BLUR = true; // Set to false to use stable Fake Blur fallback
+        
+        (function() {
+            const useReal = window.USE_REAL_BLUR !== false;
+            document.documentElement.classList.add(useReal ? 'real-blur' : 'fake-blur');
+        })();
+
         import autoAnimate from 'https://cdn.jsdelivr.net/npm/@formkit/auto-animate/index.min.js';
         import { IconEditor } from './icon-editor.js';
         import { WallpaperManager } from './wallpaper-manager.js';

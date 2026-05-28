@@ -1991,47 +1991,14 @@ function initSortables() {
     }
 }
 
-function initVisualMode() {
-    const modeBtns = document.querySelectorAll('.visual-mode-btn');
-    if (modeBtns.length === 0) return;
-
-    const savedMode = localStorage.getItem('bookmarksVisualMode') || 'glass';
-
-    // Highlight active button at startup
-    modeBtns.forEach(btn => {
-        if (btn.getAttribute('data-mode') === savedMode) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
-    });
-
-    // Click listeners
-    modeBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const mode = btn.getAttribute('data-mode');
-            
-            // Update UI buttons
-            modeBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            // Save and apply class
-            localStorage.setItem('bookmarksVisualMode', mode);
-            if (mode === 'solid') {
-                document.documentElement.classList.add('solid-mode');
-            } else {
-                document.documentElement.classList.remove('solid-mode');
-            }
-        });
-    });
-}
-
 // Global Initialization
 document.addEventListener('DOMContentLoaded', () => {
+    // Enforce solid-mode for bookmarks
+    document.documentElement.classList.add('solid-mode');
+    
     initSidebarResizer();
     initMobileMenu();
     initSortables();
-    initVisualMode();
 
     // Sidebar static links interactivity
     document.querySelectorAll('.sidebar-menu > a[data-folder], .sidebar-menu > div > a[data-folder]').forEach(item => {

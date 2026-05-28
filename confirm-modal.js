@@ -76,14 +76,12 @@ export class ConfirmModal {
     }
 
     openWithAnimation() {
-        this.overlay.classList.add('active');
         const card = this.overlay.querySelector('.ios-modal');
-        card.style.transform = 'scale(1.1)';
-        card.style.opacity = '0';
-        setTimeout(() => {
-            card.style.transform = 'scale(1)';
-            card.style.opacity = '1';
-        }, 10);
+        if (card) {
+            card.style.transform = '';
+            card.style.opacity = '';
+        }
+        this.overlay.classList.add('active');
     }
 
     close() {

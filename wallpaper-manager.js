@@ -44,6 +44,7 @@ export class WallpaperManager {
 
         if (bgElement) {
             bgElement.style.backgroundImage = `url('${this.settings.url}')`;
+            document.documentElement.style.setProperty('--current-wallpaper', `url('${this.settings.url}')`);
             
             // --- КОНВЕРТАЦИЯ % В PX ---
             // Интерфейс: 0-100% -> Реальность: 0-50px
@@ -161,6 +162,9 @@ export class WallpaperManager {
         if (!modal) {
             const modalHTML = `
                 <div class="wp-modal-overlay" id="wpModal">
+                    <div class="fake-blur-bg"></div>
+                    <div class="real-backdrop-layer"></div>
+                    <div class="glass-tint"></div>
                     <div class="wp-modal-card">
                         <h3>Ссылка на изображение</h3>
                         <input type="text" id="wpUrlInput" class="form-input" placeholder="https://site.com/image.png" autocomplete="off">

@@ -645,11 +645,7 @@
             backdrop-filter: blur(26px) saturate(160%);
             -webkit-backdrop-filter: blur(26px) saturate(160%);
             z-index: -2;
-            -webkit-transform: translate3d(0, 0, 0);
-            transform: translate3d(0, 0, 0);
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            will-change: opacity, transform, backdrop-filter;
+            will-change: opacity;
             pointer-events: none;
             display: none;
         }
@@ -1577,11 +1573,7 @@
             z-index: -2;
             opacity: 0;
             transition: opacity 0.2s ease;
-            -webkit-transform: translate3d(0, 0, 0);
-            transform: translate3d(0, 0, 0);
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            will-change: opacity, transform, backdrop-filter;
+            will-change: opacity;
             pointer-events: none;
             display: none;
         }
@@ -1735,11 +1727,7 @@
             opacity: 0;
             z-index: -2;
             transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-            -webkit-transform: translate3d(0, 0, 0);
-            transform: translate3d(0, 0, 0);
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            will-change: opacity, transform, backdrop-filter;
+            will-change: opacity;
             pointer-events: none;
             display: none;
         }
@@ -1933,6 +1921,8 @@
             flex-direction: column;
             text-align: center;
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            -webkit-mask-image: -webkit-radial-gradient(white, black);
+            isolation: isolate;
         }
 
         .ios-modal .fake-blur-bg {
@@ -1962,11 +1952,7 @@
             z-index: 1;
             opacity: 0;
             transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            -webkit-transform: translate3d(0, 0, 0);
-            transform: translate3d(0, 0, 0);
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            will-change: opacity, transform, backdrop-filter;
+            will-change: opacity;
             pointer-events: none;
             display: none;
         }
@@ -2419,7 +2405,7 @@
                 if (navLeft) navLeft.style.display = 'none';
                 if (navRight) navRight.style.display = 'none';
 
-                if (iframe && (!iframe.getAttribute('src') || iframe.getAttribute('src') === '')) {
+                if (iframe && iframe.getAttribute('src') !== 'bookmarks.html?embedded=true') {
                     iframe.src = 'bookmarks.html?embedded=true';
                 }
             } else {

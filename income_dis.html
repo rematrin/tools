@@ -727,12 +727,39 @@ const tg = document.getElementById('tgShare');
 const wa = document.getElementById('waShare');
 const fb = document.getElementById('fbShare');
 
+function shortenUrlJSONP(url) {
+  return new Promise((resolve, reject) => {
+    const callbackName = 'isgd_callback_' + Math.round(Math.random() * 1000000);
+    const script = document.createElement('script');
+    
+    window[callbackName] = (data) => {
+      delete window[callbackName];
+      document.body.removeChild(script);
+      if (data && data.shorturl) {
+        resolve(data.shorturl);
+      } else {
+        reject(new Error(data.errormessage || 'Failed to shorten'));
+      }
+    };
+
+    script.onerror = () => {
+      delete window[callbackName];
+      document.body.removeChild(script);
+      reject(new Error('Network error'));
+    };
+
+    script.src = `https://is.gd/create.php?format=jsonp&callback=${callbackName}&url=${encodeURIComponent(url)}`;
+    document.body.appendChild(script);
+  });
+}
+
 async function shorten(url) {
   try {
-    const r = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`);
-    const data = await r.json();
-    return data.shorturl || url;
-  } catch (e) { return url; }
+    return await shortenUrlJSONP(url);
+  } catch (e) {
+    console.error("JSONP shortening failed:", e);
+    return url;
+  }
 }
 
 async function showSharePopup() {

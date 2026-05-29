@@ -1031,16 +1031,42 @@
     const copyLinkBtn = document.getElementById('copyLinkBtn');
     const tooltipEl = document.getElementById('customTooltip');
 
+    function shortenUrlJSONP(url) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'isgd_callback_' + Math.round(Math.random() * 1000000);
+        const script = document.createElement('script');
+        
+        window[callbackName] = (data) => {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          if (data && data.shorturl) {
+            resolve(data.shorturl);
+          } else {
+            reject(new Error(data.errormessage || 'Failed to shorten'));
+          }
+        };
+
+        script.onerror = () => {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          reject(new Error('Network error'));
+        };
+
+        script.src = `https://is.gd/create.php?format=jsonp&callback=${callbackName}&url=${encodeURIComponent(url)}`;
+        document.body.appendChild(script);
+      });
+    }
+
     async function showSharePopup() {
       tooltipEl.classList.remove('visible');
 
       let longUrl = window.location.href;
       let shortUrl = longUrl;
       try {
-        const r = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`);
-        const data = await r.json();
-        if (data.shorturl) shortUrl = data.shorturl;
-      } catch (e) { }
+        shortUrl = await shortenUrlJSONP(longUrl);
+      } catch (e) {
+        console.error("JSONP shortening failed:", e);
+      }
 
       shareUrlInput.value = shortUrl;
 

@@ -448,6 +448,34 @@
       opacity: 1;
       transform: translateY(0);
     }
+
+    /* === DRAG AND DROP === */
+    .drag-handle {
+      cursor: grab;
+      opacity: 0.4;
+      margin-right: 8px;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+    }
+    .drag-handle:hover {
+      opacity: 0.8;
+      transform: scale(1.1);
+    }
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+    .row {
+      transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .row.dragging {
+      opacity: 0.3;
+      border: 1px dashed var(--accent) !important;
+      background: var(--hover-bg) !important;
+      transform: scale(0.98);
+    }
   </style>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
   <script>
@@ -549,22 +577,86 @@
     const mainControls = document.getElementById('mainControls');
     const editControls = document.getElementById('editControls');
 
+    let draggedIndex = null;
+    let canDrag = false;
+    document.addEventListener('mouseup', () => { canDrag = false; });
+    document.addEventListener('touchend', () => { canDrag = false; });
+
+    const hasUrlParams = params.has('tz');
+
+    // === Синхронизация с Firebase ===
+    async function saveCitiesToFirebase() {
+      if (!window.currentUser || !window.db) return;
+      try {
+        const userDoc = window.doc(window.db, "users", window.currentUser.uid);
+        await window.updateDoc(userDoc, {
+          tz_list: cities,
+          tz_last_updated: window.serverTimestamp ? window.serverTimestamp() : new Date()
+        });
+        console.log("Список городов сохранен в Firebase");
+      } catch (e) {
+        console.error("Ошибка сохранения в Firebase:", e);
+      }
+    }
+
+    async function loadCitiesFromFirebase(uid) {
+      if (!window.db) return;
+      try {
+        const userDoc = window.doc(window.db, "users", uid);
+        const docSnap = await window.getDoc(userDoc);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.tz_list && Array.isArray(data.tz_list) && data.tz_list.length > 0) {
+            cities = data.tz_list;
+            render();
+            tick();
+            updateURL();
+            console.log("Список городов загружен из Firebase");
+          } else {
+            await saveCitiesToFirebase();
+          }
+        } else {
+          await saveCitiesToFirebase();
+        }
+      } catch (e) {
+        console.error("Ошибка загрузки из Firebase:", e);
+      }
+    }
+
+    window.addEventListener('authChanged', async (e) => {
+      const user = e.detail.user;
+      window.currentUser = user;
+      if (user && !hasUrlParams) {
+        await loadCitiesFromFirebase(user.uid);
+      }
+    });
+
     function render() {
       box.innerHTML = '';
       const now = new Date();
+      const showRemove = editControls.style.display !== 'none';
 
-      for (const { name, tz, flag } of cities) {
+      cities.forEach(({ name, tz, flag }, index) => {
         const id = toId(tz);
         const row = document.createElement('div');
         row.className = 'row';
+        row.setAttribute('draggable', showRemove ? 'true' : 'false');
 
         row.innerHTML = `
         <div class="code">
+          <svg class="drag-handle" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+            <circle cx="9" cy="5" r="2"></circle>
+            <circle cx="9" cy="12" r="2"></circle>
+            <circle cx="9" cy="19" r="2"></circle>
+            <circle cx="15" cy="5" r="2"></circle>
+            <circle cx="15" cy="12" r="2"></circle>
+            <circle cx="15" cy="19" r="2"></circle>
+          </svg>
           <img class="flag" src="${flagURL(flag)}" alt="${name}">
           <span>${name}</span>
         </div>
         <div class="time" id="${id}"></div>
-        <button class="delBtn" data-tip="Удалить">✕</button>
+        <button class="delBtn" data-tip="Удалить" style="display:none;">✕</button>
       `;
 
         const delBtn = row.querySelector('.delBtn');
@@ -572,11 +664,71 @@
           cities = cities.filter(c => c.tz !== tz);
           render();
           updateURL();
+          saveCitiesToFirebase();
         };
+
+        const handle = row.querySelector('.drag-handle');
+        handle.addEventListener('mousedown', () => { canDrag = true; });
+        handle.addEventListener('touchstart', () => { canDrag = true; });
+
+        row.addEventListener('dragstart', (e) => {
+          if (!canDrag) {
+            e.preventDefault();
+            return;
+          }
+          draggedIndex = index;
+          row.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        row.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          const draggingRow = box.querySelector('.dragging');
+          if (!draggingRow || draggingRow === row) return;
+
+          const bounding = row.getBoundingClientRect();
+          const offset = e.clientY - bounding.top - bounding.height / 2;
+
+          if (offset < 0) {
+            box.insertBefore(draggingRow, row);
+          } else {
+            box.insertBefore(draggingRow, row.nextSibling);
+          }
+        });
+
+        row.addEventListener('dragend', () => {
+          row.classList.remove('dragging');
+
+          const newCities = [];
+          box.querySelectorAll('.row').forEach(rowEl => {
+            const timeEl = rowEl.querySelector('.time');
+            const id = timeEl.id;
+            const originalItem = cities.find(item => toId(item.tz) === id);
+            if (originalItem) {
+              newCities.push(originalItem);
+            }
+          });
+          cities = newCities;
+
+          render();
+          updateURL();
+          saveCitiesToFirebase();
+
+          draggedIndex = null;
+          canDrag = false;
+        });
 
         box.appendChild(row);
         setTime(id, tz, now);
-      }
+      });
+
+      box.querySelectorAll('.delBtn').forEach(btn => {
+        btn.style.display = showRemove ? 'block' : 'none';
+      });
+
+      box.querySelectorAll('.drag-handle').forEach(h => {
+        h.style.display = showRemove ? 'flex' : 'none';
+      });
     }
 
     function setTime(id, tz, now = new Date()) {
@@ -603,12 +755,14 @@
       mainControls.style.display = 'none';
       editControls.style.display = 'block';
       document.body.classList.add('edit-mode');
+      render();
     };
 
     document.getElementById('saveBtn').onclick = () => {
       editControls.style.display = 'none';
       mainControls.style.display = 'flex';
       document.body.classList.remove('edit-mode');
+      render();
       updateURL();
     };
 
@@ -705,6 +859,7 @@
             cities.push(it);
             render();
             updateURL();
+            saveCitiesToFirebase();
           }
           input.value = '';
           hideSuggest();

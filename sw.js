@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tools-pwa-v6';
+const CACHE_NAME = 'tools-pwa-v7';
 const DYNAMIC_CACHE = 'tools-dynamic-image-cache-v1';
 const ASSETS = [
     './fx_converter.html',
@@ -47,7 +47,7 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    if (url.hostname === 'open.er-api.com') {
+    if (url.hostname === 'open.er-api.com' || url.hostname === 'is.gd') {
         // Bypass ServiceWorker totally so fetch() fails natively when offline
         return;
     }

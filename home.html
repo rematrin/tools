@@ -72,9 +72,7 @@
                 if (window.innerWidth <= 600) {
                     savedCols = Math.min(parseInt(savedCols), 4).toString();
                     const h = window.innerHeight;
-                    if (h < 640) {
-                        savedRows = Math.min(parseInt(savedRows), 3).toString();
-                    } else if (h < 740) {
+                    if (h < 740) {
                         savedRows = Math.min(parseInt(savedRows), 4).toString();
                     } else if (h < 850) {
                         savedRows = Math.min(parseInt(savedRows), 5).toString();
@@ -2387,9 +2385,7 @@
                 cols = Math.min(cols, 4);
                 // Динамически подбираем строки в зависимости от высоты экрана телефона
                 const h = window.innerHeight;
-                if (h < 640) {
-                    rows = Math.min(rows, 3);
-                } else if (h < 740) {
+                if (h < 740) {
                     rows = Math.min(rows, 4);
                 } else if (h < 850) {
                     rows = Math.min(rows, 5);

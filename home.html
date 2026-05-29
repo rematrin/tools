@@ -2538,7 +2538,7 @@
             }
 
             // Dedicated static Todoist category capsule always remains
-            const showTodoist = localStorage.getItem('showTodoist') !== 'false';
+            const showTodoist = localStorage.getItem('showTodoist') === 'true';
             if (showTodoist) {
                 const todoistCapsule = document.createElement('div');
                 todoistCapsule.className = 'category-capsule' + (window.todoistActive ? ' active' : '');

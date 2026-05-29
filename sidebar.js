@@ -377,7 +377,7 @@ export function initSidebarManager(context) {
         const openInNewTab = localStorage.getItem('openInNewTab') === 'true';
         const expandedFolders = localStorage.getItem('expandedFolders') === 'true';
         const showBookmarksBeta = localStorage.getItem('showBookmarksBeta') === 'true';
-        const showTodoist = localStorage.getItem('showTodoist') !== 'false';
+        const showTodoist = localStorage.getItem('showTodoist') === 'true';
 
         const glassSettingsHTML = `
             <div class="profile-card" style="gap: 8px; padding: 12px 16px;">
@@ -614,7 +614,7 @@ export function initSidebarManager(context) {
                     openInNewTab: localStorage.getItem('openInNewTab') === 'true',
                     expandedFolders: localStorage.getItem('expandedFolders') === 'true',
                     showBookmarksBeta: localStorage.getItem('showBookmarksBeta') === 'true',
-                    showTodoist: localStorage.getItem('showTodoist') !== 'false',
+                    showTodoist: localStorage.getItem('showTodoist') === 'true',
                     wallpaper: JSON.parse(localStorage.getItem('user_wallpaper_settings_v1') || '{}')
                 };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });

@@ -560,6 +560,30 @@
       right: 16px;
       transform: none;
     }
+
+    @media (max-width: 480px) {
+      .topbar-row {
+        align-items: center;
+      }
+      .topbar-row span.muted {
+        font-size: 0.8rem;
+      }
+      #editBtn span {
+        display: none;
+      }
+      #editBtn svg {
+        margin-right: 0 !important;
+      }
+      .topbar-row button {
+        padding: 0 !important;
+        width: 27px !important;
+        height: 27px !important;
+        justify-content: center;
+      }
+      .topbar-row button svg, .topbar-row button img {
+        margin: 0 !important;
+      }
+    }
   </style>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
   <script>

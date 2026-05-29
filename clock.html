@@ -591,6 +591,26 @@
       transform: none;
     }
 
+    @media (max-width: 480px) {
+      .topbar {
+        align-items: center;
+      }
+      .topbar h1 {
+        font-size: 1.15rem;
+      }
+      .header-btn span {
+        display: none;
+      }
+      .header-btn {
+        padding: 0 !important;
+        width: 28px !important;
+        height: 28px !important;
+        justify-content: center;
+      }
+      .header-btn svg, .header-btn img {
+        margin: 0 !important;
+      }
+    }
   </style>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
   <script>
@@ -619,11 +639,11 @@
           <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor">
             <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
           </svg>
-          Редактировать
+          <span>Редактировать</span>
         </button>
         <button id="shareBtn" class="header-btn" data-tip="Поделиться списком">
           <img src="https://cdn-icons-png.flaticon.com/512/1828/1828954.png" alt="">
-          Поделиться
+          <span>Поделиться</span>
         </button>
       </div>
     </div>

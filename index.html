@@ -7,39 +7,59 @@
     <title>Все сервисы</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
         /* === БАЗОВЫЕ НАСТРОЙКИ И ТЕМА === */
         :root {
             --bg: #f4f6fb;
-            --text: #0b0d12;
+            /* Premium soft background matching screenshot */
+            --text: #111827;
+            /* Dark slate text */
+            --text-secondary: #6b7280;
+            /* Neutral gray */
+            --text-muted: #9ca3af;
+            /* Light gray */
             --card-bg: #ffffff;
-            --border: #e6e9f2;
-            --accent: #7aa2ff;
-            --hover-bg: #f4f6fb;
+            --border: #f3f4f6;
+            /* Very soft border matching mockup */
+            --accent: #2563eb;
+            --hover-bg: #f9fafb;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.01);
 
             /* Цвета подсказки */
-            --tooltip-bg: #2a2c33;
+            --tooltip-bg: #1f2937;
             --tooltip-text: #ffffff;
 
-            /* Цвет кнопки доната */
-            --donate-bg: #ffdd00;
-            --donate-text: #3e2d00;
+            /* Coffee banner background */
+            --banner-bg: #fffbeb;
+            --banner-border: #fef3c7;
+            --donate-btn-bg: #facc15;
+            --donate-btn-text: #1e1b4b;
         }
 
         body.dark {
-            --bg: #0f1115;
-            --text: #f3f3f3;
-            --card-bg: #1a1d22;
-            --border: #292c33;
-            --accent: #5b8af0;
-            --hover-bg: #23262b;
+            --bg: #0b0f19;
+            --text: #f9fafb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --card-bg: #111827;
+            --border: #1f2937;
+            --accent: #3b82f6;
+            --hover-bg: #1f2937;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
 
-            --tooltip-bg: #e6e9f2;
-            --tooltip-text: #0f1115;
+            --tooltip-bg: #e5e7eb;
+            --tooltip-text: #111827;
 
-            /* Донат в темной теме */
-            --donate-bg: #ffd500;
-            --donate-text: #000000;
+            --banner-bg: #1e1b4b;
+            --banner-border: #312e81;
+            --donate-btn-bg: #fbbf24;
+            --donate-btn-text: #1e1b4b;
         }
 
         /* Системные иконки в темной теме */
@@ -52,7 +72,7 @@
         }
 
         body {
-            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
             margin: 0;
             background: var(--bg);
             padding-top: 60px;
@@ -64,144 +84,331 @@
         }
 
         .wrap {
-            max-width: 800px;
+            max-width: 980px;
+            /* Exact size to match mockup aspect ratio */
             margin: 0 auto;
-            padding: 40px 20px;
+            padding: 24px 20px;
             width: 100%;
             flex: 1;
             display: flex;
             flex-direction: column;
         }
 
-        /* === ЗАГОЛОВОК СЕРВИСОВ (ШАПКА) === */
-        .section-header {
+        /* === ШАПКА === */
+        .header-section {
             display: flex;
             align-items: center;
-            justify-content: center;
-            position: relative;
-            margin-bottom: 30px;
-            height: 40px;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 20px;
         }
 
-        .section-title {
+        @media (max-width: 600px) {
+            .header-section {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .header-right {
+                width: 100%;
+            }
+
+            .favorites-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        .main-header-left {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .main-title {
             font-size: 1.5rem;
             font-weight: 600;
             margin: 0;
-            opacity: 0.9;
+            color: var(--text);
+            letter-spacing: -0.01em;
             display: flex;
             align-items: center;
-            gap: 10px;
         }
 
-        .section-icon {
+        .main-subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .favorites-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+
+        .favorites-btn:hover {
             color: var(--text);
-            opacity: 0.8;
+            background: var(--hover-bg);
+            border-color: var(--text-muted);
+            transform: translateY(-1px);
         }
-
-        /* Кнопка темы УДАЛЕНА отсюда */
 
         /* === СЕТКА КАРТОЧЕК === */
         .services-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 0px;
+        }
+
+        @media (max-width: 900px) {
+            .services-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .tool-card {
             display: flex;
             align-items: center;
-            gap: 14px;
-            padding: 18px 20px;
+            gap: 12px;
+            padding: 14px 16px;
             background: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 16px;
+            /* Smooth card corners */
             text-decoration: none;
             color: var(--text);
-            font-size: 1rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow);
+            position: relative;
         }
 
         .tool-card:hover {
-            background: var(--hover-bg);
-            border-color: var(--accent);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.04);
+            border-color: var(--icon-color);
+        }
+
+        body.dark .tool-card:hover {
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .tool-icon-wrapper {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--icon-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: transform 0.2s ease;
+        }
+
+        .tool-card:hover .tool-icon-wrapper {
+            transform: scale(1.05);
         }
 
         .tool-icon {
-            width: 24px;
-            height: 24px;
-            flex-shrink: 0;
-            color: var(--text);
-            opacity: 0.6;
-            transition: all 0.2s;
+            width: 20px;
+            height: 20px;
+            color: var(--icon-color);
+            transition: transform 0.2s ease;
         }
 
-        .tool-card:hover .tool-icon {
+        .tool-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .tool-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            /* Matching mockup heavy titles */
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tool-description {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.35;
+            height: 2.7em;
+        }
+
+        .tool-arrow {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+            transition: all 0.2s ease;
+            margin-right: 4px;
+            font-weight: 400;
+        }
+
+        .tool-card:hover .tool-arrow {
             opacity: 1;
-            color: var(--accent);
-            transform: scale(1.1);
+            color: var(--icon-color);
+            transform: translateX(4px);
         }
 
         .fade-in {
-            animation: fadeIn 0.5s ease forwards;
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            opacity: 1;
         }
 
         /* === МИНИ ФУТЕР (ДОНАТ) === */
         .main-footer {
             margin-top: auto;
-            padding-top: 60px;
-            padding-bottom: 30px;
-            text-align: center;
+            padding-top: 40px;
+            padding-bottom: 20px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 15px;
+            gap: 25px;
         }
 
-        .footer-desc {
-            font-size: 0.9rem;
-            opacity: 0.6;
+        .support-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--banner-bg);
+            border: 1px solid var(--banner-border);
+            border-radius: 20px;
+            padding: 24px 32px;
+            gap: 24px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+        }
+
+        @media (max-width: 768px) {
+            .support-banner {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 20px;
+            }
+
+            .support-right {
+                width: 100%;
+            }
+
+            .donate-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        .support-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        @media (max-width: 480px) {
+            .support-left {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+        }
+
+        .coffee-wrapper {
+            width: 64px;
+            height: 64px;
+            background: transparent;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #d97706;
+        }
+
+        body.dark .coffee-wrapper {
+            background: transparent;
+        }
+
+        .coffee-icon {
+            width: 32px;
+            height: 32px;
+        }
+
+        .support-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .support-title {
+            font-size: 1.15rem;
+            font-weight: 700;
             margin: 0;
+            color: var(--text);
+        }
+
+        .support-desc {
+            font-size: 0.9rem;
+            margin: 0;
+            color: var(--text-secondary);
+            line-height: 1.4;
         }
 
         .donate-btn {
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            background: var(--donate-bg);
-            color: var(--donate-text);
+            background: var(--donate-btn-bg);
+            color: var(--donate-btn-text);
             padding: 12px 24px;
-            border-radius: 30px;
+            border-radius: 12px;
             text-decoration: none;
             font-weight: 600;
-            font-size: 1rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 15px rgba(255, 220, 0, 0.15);
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            box-shadow: 0 4px 10px rgba(250, 204, 21, 0.2);
+            white-space: nowrap;
         }
 
         .donate-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(255, 220, 0, 0.3);
+            box-shadow: 0 6px 15px rgba(250, 204, 21, 0.3);
+            filter: brightness(1.05);
         }
 
-        body.dark .donate-btn {
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        .donate-btn:active {
+            transform: translateY(0);
         }
 
-        body.dark .donate-btn:hover {
-            box-shadow: 0 6px 20px rgba(255, 230, 0, 0.15);
+        .footer-copyright {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin: 0;
         }
 
         /* === TOOLTIP (ПОДСКАЗКА) === */
@@ -243,193 +450,290 @@
 
     <div class="wrap">
 
-        <div class="section-header">
-            <div class="section-title">
-                <svg class="section-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-                <span>Все сервисы</span>
+        <div class="header-section">
+            <div class="main-header-left">
+                <h1 class="main-title">
+                    <svg class="main-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round"
+                        style="width: 24px; height: 24px; color: var(--text-secondary); margin-right: 10px; flex-shrink: 0;">
+                        <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                    </svg>
+                    <span>Все сервисы</span>
+                </h1>
+                <p class="main-subtitle">Полезные онлайн-инструменты на каждый день</p>
             </div>
         </div>
 
         <div class="services-grid">
 
-            <a href="calc.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="4" y="2" width="16" height="20" rx="2" />
-                    <line x1="8" y1="6" x2="16" y2="6" />
-                    <line x1="16" y1="14" x2="16" y2="18" />
-                    <path d="M16 10h.01" />
-                    <path d="M12 10h.01" />
-                    <path d="M8 10h.01" />
-                    <path d="M12 14h.01" />
-                    <path d="M8 14h.01" />
-                    <path d="M12 18h.01" />
-                    <path d="M8 18h.01" />
-                </svg>
-                Калькулятор процентов
+            <a href="calc.html" class="tool-card fade-in" style="--icon-bg: #faf5ff; --icon-color: #7c3aed;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="5" x2="5" y2="19"></line>
+                        <circle cx="6.5" cy="6.5" r="2.5"></circle>
+                        <circle cx="17.5" cy="17.5" r="2.5"></circle>
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Калькулятор процентов</div>
+                    <div class="tool-description">Расчеты процентов и значений</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
-            <a href="fx_converter.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="1" x2="12" y2="23" />
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
-                Конвертер валют
+            <a href="fx_converter.html" class="tool-card fade-in" style="--icon-bg: #f0fdf4; --icon-color: #16a34a;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Конвертер валют</div>
+                    <div class="tool-description">Конвертация между валютами</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
-            <a href="clock.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                </svg>
-                Мировые часы
+            <a href="clock.html" class="tool-card fade-in" style="--icon-bg: #faf5ff; --icon-color: #7c3aed;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Мировые часы</div>
+                    <div class="tool-description">Время в разных часовых поясах</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
-            <a href="thumbnail.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <polyline points="21 15 16 10 5 21" />
-                </svg>
-                Скачать YouTube превью
+            <a href="thumbnail.html" class="tool-card fade-in" style="--icon-bg: #fef2f2; --icon-color: #dc2626;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                        <path
+                            d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.517 3.545 12 3.545 12 3.545s-7.517 0-9.388.508a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.871.508 9.388.508 9.388.508s7.517 0 9.388-.508a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Скачать YouTube превью</div>
+                    <div class="tool-description">Скачивание превью высокого качества</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
-            <a href="time_convert.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 22h14" />
-                    <path d="M5 2h14" />
-                    <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
-                    <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
-                </svg>
-                Конвертер времени
+            <a href="time_convert.html" class="tool-card fade-in" style="--icon-bg: #eef2ff; --icon-color: #4f46e5;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 22h14"></path>
+                        <path d="M5 2h14"></path>
+                        <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"></path>
+                        <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"></path>
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Конвертер времени</div>
+                    <div class="tool-description">Преобразование единиц времени</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
-            <a href="case_converter.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 7V4h16v3" />
-                    <path d="M9 20h6" />
-                    <path d="M12 4v16" />
-                </svg>
-                Конвертер регистров
+            <a href="case_converter.html" class="tool-card fade-in" style="--icon-bg: #eff6ff; --icon-color: #2563eb;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 7V4h16v3"></path>
+                        <path d="M9 20h6"></path>
+                        <path d="M12 4v16"></path>
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Конвертер регистров</div>
+                    <div class="tool-description">Преобразование текста в нужный регистр</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
-            <a href="income_dis.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-                    <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-                </svg>
-                Распределитель дохода
+            <a href="income_dis.html" class="tool-card fade-in" style="--icon-bg: #f0f9ff; --icon-color: #0284c7;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                        <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Распределитель дохода</div>
+                    <div class="tool-description">Делите доходы справедливо</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
-            <a href="mp3_cover.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 18V5l12-2v13"></path>
-                    <circle cx="6" cy="18" r="3"></circle>
-                    <circle cx="18" cy="16" r="3"></circle>
-                </svg>
-                Скачать обложку из MP3
+            <a href="mp3_cover.html" class="tool-card fade-in" style="--icon-bg: #f0fdfa; --icon-color: #0d9488;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 18V5l12-2v13"></path>
+                        <circle cx="6" cy="18" r="3"></circle>
+                        <circle cx="18" cy="16" r="3"></circle>
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Скачать обложку из MP3</div>
+                    <div class="tool-description">Извлечение обложки из аудиофайла</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
-            <a href="music.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-                    <path
-                        d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z">
-                    </path>
-                </svg>
-                Lofi Плеер
+            <a href="music.html" class="tool-card fade-in" style="--icon-bg: #fff7ed; --icon-color: #ea580c;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                        <path
+                            d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Lofi Плеер</div>
+                    <div class="tool-description">Фоновая музыка для концентрации</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
-            <a href="home.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                    <path
-                        d="M10.875 3.375H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969V4.969h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688V4.969h4.688v4.688zM10.875 12.75H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969v-4.688h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688v-4.688h4.688v4.688z" />
-                </svg>
-                Home
+            <a href="home.html" class="tool-card fade-in" style="--icon-bg: #faf5ff; --icon-color: #7c3aed;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Home</div>
+                    <div class="tool-description">Домашняя страница сервисов</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
-            <a href="crossfade.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                    <path
-                        d="M10.875 3.375H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969V4.969h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688V4.969h4.688v4.688zM10.875 12.75H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969v-4.688h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688v-4.688h4.688v4.688z" />
-                </svg>
-                Crossfade
+            <a href="crossfade.html" class="tool-card fade-in" style="--icon-bg: #eff6ff; --icon-color: #2563eb;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Crossfade</div>
+                    <div class="tool-description">Плавные переходы между треками</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
-            <a href="folderico.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                </svg>
-                Folder Icon Maker
+            <a href="folderico.html" class="tool-card fade-in" style="--icon-bg: #f0fdf4; --icon-color: #16a34a;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Folder Icon Maker</div>
+                    <div class="tool-description">Создание иконок для папок</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
-
-
-            <a href="soulver.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
-                    <line x1="8" y1="6" x2="16" y2="6"></line>
-                    <line x1="12" y1="14" x2="16" y2="14"></line>
-                    <line x1="12" y1="18" x2="16" y2="18"></line>
-                    <circle cx="9" cy="14" r="1"></circle>
-                    <circle cx="9" cy="18" r="1"></circle>
-                </svg>
-                Умный блокнот
+            <a href="soulver.html" class="tool-card fade-in" style="--icon-bg: #fffbeb; --icon-color: #d97706;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                        <line x1="8" y1="6" x2="16" y2="6"></line>
+                        <line x1="12" y1="14" x2="16" y2="14"></line>
+                        <line x1="12" y1="18" x2="16" y2="18"></line>
+                        <circle cx="9" cy="14" r="1"></circle>
+                        <circle cx="9" cy="18" r="1"></circle>
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Умный блокнот</div>
+                    <div class="tool-description">Заметки и идеи под рукой</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
-            <a href="eleven_reader.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                    <line x1="12" y1="19" x2="12" y2="23"></line>
-                    <line x1="8" y1="23" x2="16" y2="23"></line>
-                </svg>
-                Eleven Reader
+            <a href="eleven_reader.html" class="tool-card fade-in" style="--icon-bg: #fff1f2; --icon-color: #e11d48;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Eleven Reader</div>
+                    <div class="tool-description">Чтение текста голосом</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
-            <a href="bookmarks.html" class="tool-card fade-in">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                </svg>
-                Закладки
+            <a href="bookmarks.html" class="tool-card fade-in" style="--icon-bg: #f0fdfa; --icon-color: #0d9488;">
+                <div class="tool-icon-wrapper">
+                    <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
+                <div class="tool-content">
+                    <div class="tool-title">Закладки</div>
+                    <div class="tool-description">Сохраняйте важное и возвращайтесь</div>
+                </div>
+                <span class="tool-arrow">&rarr;</span>
             </a>
 
         </div>
 
         <div class="main-footer">
-            <a href="https://t.me/tribute/app?startapp=dAvG" target="_blank" class="donate-btn">
-                <span>Угостить автора кофе</span>
-                <span>☕</span>
-            </a>
-            <p class="footer-desc">Поддержите автора, угостив чашкой кофе</p>
+            <div class="support-banner">
+                <div class="support-left">
+                    <div class="coffee-wrapper">
+                        <img src="coffee.png" alt="Coffee" style="width: 48px; height: 48px; object-fit: contain;">
+                    </div>
+                    <div class="support-text">
+                        <h3 class="support-title">Поддержите проект</h3>
+                        <p class="support-desc">Ваша поддержка помогает развивать и добавлять новые полезные сервисы.
+                        </p>
+                    </div>
+                </div>
+                <div class="support-right">
+                    <a href="https://t.me/tribute/app?startapp=dAvG" target="_blank" class="donate-btn">
+                        <span>Угостить автора кофе ☕</span>
+                    </a>
+                </div>
+            </div>
+            <p class="footer-copyright">&copy; 2026 Все сервисы. Сделано с &hearts; для вашего удобства.</p>
         </div>
 
     </div>
 
     <script>
-        // ==== 0. АНИМАЦИЯ ====
-        document.querySelectorAll('.tool-card').forEach((el, index) => {
-            el.style.animationDelay = `${index * 0.05}s`;
-        });
-
         // ==== 1. УЛУЧШЕННАЯ СИСТЕМА ТЕМ (3 РЕЖИМА) ====
         const themeModes = ['system', 'light', 'dark']; // Возможные режимы
         let currentThemeMode = localStorage.getItem('themeMode') || 'system';

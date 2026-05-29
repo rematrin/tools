@@ -67,8 +67,19 @@
                 document.head.appendChild(style);
 
                 // --- CRITICAL GRID LOADER ---
-                const savedCols = localStorage.getItem('gridColumns') || '4';
-                const savedRows = localStorage.getItem('gridRows') || '6';
+                let savedCols = localStorage.getItem('gridColumns') || '4';
+                let savedRows = localStorage.getItem('gridRows') || '6';
+                if (window.innerWidth <= 600) {
+                    savedCols = Math.min(parseInt(savedCols), 4).toString();
+                    const h = window.innerHeight;
+                    if (h < 640) {
+                        savedRows = Math.min(parseInt(savedRows), 3).toString();
+                    } else if (h < 740) {
+                        savedRows = Math.min(parseInt(savedRows), 4).toString();
+                    } else if (h < 850) {
+                        savedRows = Math.min(parseInt(savedRows), 5).toString();
+                    }
+                }
                 document.documentElement.style.setProperty('--grid-cols', savedCols);
                 document.documentElement.style.setProperty('--grid-rows', savedRows);
             } catch (e) {
@@ -379,6 +390,9 @@
         @media (max-width: 600px) {
             .app-page {
                 grid-template-columns: repeat(min(var(--grid-cols, 4), 4), 1fr) !important;
+            }
+            .category-bar {
+                display: none !important;
             }
         }
 
@@ -2368,10 +2382,22 @@
 
         function getAppsPerPage() {
             let cols = parseInt(localStorage.getItem('gridColumns') || '4');
-            const rows = parseInt(localStorage.getItem('gridRows') || '6');
+            let rows = parseInt(localStorage.getItem('gridRows') || '6');
             if (window.innerWidth <= 600) {
                 cols = Math.min(cols, 4);
+                // Динамически подбираем строки в зависимости от высоты экрана телефона
+                const h = window.innerHeight;
+                if (h < 640) {
+                    rows = Math.min(rows, 3);
+                } else if (h < 740) {
+                    rows = Math.min(rows, 4);
+                } else if (h < 850) {
+                    rows = Math.min(rows, 5);
+                }
             }
+            // Синхронизируем CSS переменные с реально вычисленными для корректного отображения
+            document.documentElement.style.setProperty('--grid-cols', cols.toString());
+            document.documentElement.style.setProperty('--grid-rows', rows.toString());
             return cols * rows;
         }
 
@@ -3410,11 +3436,17 @@
 
         // Пересчет сетки при изменении размера экрана (для адаптивности)
         let lastWidth = window.innerWidth;
+        let lastHeight = window.innerHeight;
         window.addEventListener('resize', () => {
-            if ((lastWidth > 600 && window.innerWidth <= 600) || (lastWidth <= 600 && window.innerWidth > 600)) {
+            if (
+                (lastWidth > 600 && window.innerWidth <= 600) ||
+                (lastWidth <= 600 && window.innerWidth > 600) ||
+                (window.innerWidth <= 600 && Math.abs(window.innerHeight - lastHeight) > 30)
+            ) {
                 renderAppsToDOM(getAppsFromStorage());
             }
             lastWidth = window.innerWidth;
+            lastHeight = window.innerHeight;
         });
 
         // Закрытие меню во фрейме закладок при клике вне его

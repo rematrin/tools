@@ -377,7 +377,7 @@ export function initSidebarManager(context) {
         const openInNewTab = localStorage.getItem('openInNewTab') === 'true';
         const expandedFolders = localStorage.getItem('expandedFolders') === 'true';
         const showBookmarksBeta = localStorage.getItem('showBookmarksBeta') === 'true';
-        const showTickTick = localStorage.getItem('showTickTick') !== 'false';
+        const showTodoist = localStorage.getItem('showTodoist') !== 'false';
 
         const glassSettingsHTML = `
             <div class="profile-card" style="gap: 8px; padding: 12px 16px;">
@@ -411,9 +411,9 @@ export function initSidebarManager(context) {
                     </label>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
-                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Использовать TickTick</span>
+                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Использовать Todoist</span>
                     <label class="switch" style="transform: scale(0.85); transform-origin: right;">
-                        <input type="checkbox" id="showTickTickToggle" ${showTickTick ? 'checked' : ''}>
+                        <input type="checkbox" id="showTodoistToggle" ${showTodoist ? 'checked' : ''}>
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
@@ -552,13 +552,13 @@ export function initSidebarManager(context) {
             };
         }
 
-        // Использовать TickTick
-        const showTickTickToggle = document.getElementById('showTickTickToggle');
-        if (showTickTickToggle) {
-            showTickTickToggle.onchange = (e) => {
+        // Использовать Todoist
+        const showTodoistToggle = document.getElementById('showTodoistToggle');
+        if (showTodoistToggle) {
+            showTodoistToggle.onchange = (e) => {
                 const isEnabled = e.target.checked;
-                localStorage.setItem('showTickTick', isEnabled.toString());
-                if (auth.currentUser) window.dbApi.saveSettings({ showTickTick: isEnabled });
+                localStorage.setItem('showTodoist', isEnabled.toString());
+                if (auth.currentUser) window.dbApi.saveSettings({ showTodoist: isEnabled });
                 if (window.renderCategoryBar) window.renderCategoryBar();
             };
         }
@@ -614,7 +614,7 @@ export function initSidebarManager(context) {
                     openInNewTab: localStorage.getItem('openInNewTab') === 'true',
                     expandedFolders: localStorage.getItem('expandedFolders') === 'true',
                     showBookmarksBeta: localStorage.getItem('showBookmarksBeta') === 'true',
-                    showTickTick: localStorage.getItem('showTickTick') !== 'false',
+                    showTodoist: localStorage.getItem('showTodoist') !== 'false',
                     wallpaper: JSON.parse(localStorage.getItem('user_wallpaper_settings_v1') || '{}')
                 };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -722,9 +722,9 @@ export function initSidebarManager(context) {
                                 if (window.renderCategoryBar) window.renderCategoryBar();
                             }
 
-                            // Импорт настройки использования TickTick
-                            if (typeof data.showTickTick !== 'undefined') {
-                                localStorage.setItem('showTickTick', data.showTickTick.toString());
+                            // Импорт настройки использования Todoist
+                            if (typeof data.showTodoist !== 'undefined') {
+                                localStorage.setItem('showTodoist', data.showTodoist.toString());
                                 if (window.renderCategoryBar) window.renderCategoryBar();
                             }
 

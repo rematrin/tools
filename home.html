@@ -2245,9 +2245,9 @@
                 <iframe id="hbIframe" src=""
                     style="width: 100%; height: 100%; border: none; background: transparent; border-radius: 24px;"></iframe>
             </div>
-            <!-- Embedded TickTick Panel (IFrame) -->
-            <div id="homeTickTickPanel" class="home-bookmarks-panel" style="display: none;">
-                <iframe id="ticktickIframe" src=""
+            <!-- Embedded Todoist Panel (IFrame) -->
+            <div id="homeTodoistPanel" class="home-bookmarks-panel" style="display: none;">
+                <iframe id="todoistIframe" src=""
                     style="width: 100%; height: 100%; border: none; background: white; border-radius: 24px;"></iframe>
             </div>
         </div>
@@ -2386,12 +2386,12 @@
         let currentCategoryFilter = null;
 
         window.bookmarksActive = false;
-        window.ticktickActive = false;
+        window.todoistActive = false;
 
         window.toggleBookmarksView = function (active) {
             window.bookmarksActive = active;
-            if (active && window.ticktickActive) {
-                window.toggleTickTickView(false);
+            if (active && window.todoistActive) {
+                window.toggleTodoistView(false);
             }
             const panel = document.getElementById('homeBookmarksPanel');
             const pagesContainer = document.getElementById('pagesContainer');
@@ -2419,7 +2419,7 @@
                 }
             } else {
                 panel.style.display = 'none';
-                if (!window.ticktickActive) {
+                if (!window.todoistActive) {
                     document.body.classList.remove('bookmarks-view-active');
                     pagesContainer.style.display = '';
                     if (paginationDots) paginationDots.style.display = 'flex';
@@ -2435,16 +2435,16 @@
             }
         };
 
-        window.toggleTickTickView = function (active) {
-            window.ticktickActive = active;
+        window.toggleTodoistView = function (active) {
+            window.todoistActive = active;
             if (active && window.bookmarksActive) {
                 window.toggleBookmarksView(false);
             }
-            const panel = document.getElementById('homeTickTickPanel');
+            const panel = document.getElementById('homeTodoistPanel');
             const pagesContainer = document.getElementById('pagesContainer');
             const paginationDots = document.getElementById('paginationDots');
             const categoryBar = document.getElementById('categoryBar');
-            const iframe = document.getElementById('ticktickIframe');
+            const iframe = document.getElementById('todoistIframe');
 
             if (active) {
                 document.body.classList.add('bookmarks-view-active');
@@ -2461,8 +2461,8 @@
                 if (navLeft) navLeft.style.display = 'none';
                 if (navRight) navRight.style.display = 'none';
 
-                if (iframe && iframe.getAttribute('src') !== 'https://ticktick.com/webapp/#q/today/tasks') {
-                    iframe.src = 'https://ticktick.com/webapp/#q/today/tasks';
+                if (iframe && iframe.getAttribute('src') !== 'https://app.todoist.com/app/today') {
+                    iframe.src = 'https://app.todoist.com/app/today';
                 }
             } else {
                 panel.style.display = 'none';
@@ -2491,14 +2491,14 @@
 
             window.userCategories.forEach(cat => {
                 const capsule = document.createElement('div');
-                capsule.className = 'category-capsule' + (currentCategoryFilter === cat && !window.bookmarksActive && !window.ticktickActive ? ' active' : '');
+                capsule.className = 'category-capsule' + (currentCategoryFilter === cat && !window.bookmarksActive && !window.todoistActive ? ' active' : '');
                 capsule.innerText = cat;
                 capsule.onclick = () => {
                     if (window.bookmarksActive) {
                         window.toggleBookmarksView(false);
                     }
-                    if (window.ticktickActive) {
-                        window.toggleTickTickView(false);
+                    if (window.todoistActive) {
+                        window.toggleTodoistView(false);
                     }
                     if (currentCategoryFilter === cat) {
                         currentCategoryFilter = null;
@@ -2522,8 +2522,8 @@
                         window.toggleBookmarksView(false);
                     } else {
                         currentCategoryFilter = null;
-                        if (window.ticktickActive) {
-                            window.toggleTickTickView(false);
+                        if (window.todoistActive) {
+                            window.toggleTodoistView(false);
                         }
                         window.toggleBookmarksView(true);
                     }
@@ -2537,29 +2537,29 @@
                 }
             }
 
-            // Dedicated static TickTick category capsule always remains
-            const showTickTick = localStorage.getItem('showTickTick') !== 'false';
-            if (showTickTick) {
-                const ticktickCapsule = document.createElement('div');
-                ticktickCapsule.className = 'category-capsule' + (window.ticktickActive ? ' active' : '');
-                ticktickCapsule.innerText = 'TickTick';
-                ticktickCapsule.onclick = () => {
-                    if (window.ticktickActive) {
-                        window.toggleTickTickView(false);
+            // Dedicated static Todoist category capsule always remains
+            const showTodoist = localStorage.getItem('showTodoist') !== 'false';
+            if (showTodoist) {
+                const todoistCapsule = document.createElement('div');
+                todoistCapsule.className = 'category-capsule' + (window.todoistActive ? ' active' : '');
+                todoistCapsule.innerText = 'Todoist';
+                todoistCapsule.onclick = () => {
+                    if (window.todoistActive) {
+                        window.toggleTodoistView(false);
                     } else {
                         currentCategoryFilter = null;
                         if (window.bookmarksActive) {
                             window.toggleBookmarksView(false);
                         }
-                        window.toggleTickTickView(true);
+                        window.toggleTodoistView(true);
                     }
                     renderCategoryBar();
                     renderAppsToDOM(currentApps);
                 };
-                bar.appendChild(ticktickCapsule);
+                bar.appendChild(todoistCapsule);
             } else {
-                if (window.ticktickActive) {
-                    window.toggleTickTickView(false);
+                if (window.todoistActive) {
+                    window.toggleTodoistView(false);
                 }
             }
         };
@@ -3310,14 +3310,14 @@
                                     if (window.renderCategoryBar) window.renderCategoryBar();
                                 }
 
-                                // Загрузка Использовать TickTick
-                                if (typeof cloudSettings.showTickTick !== 'undefined') {
-                                    const isTickTick = cloudSettings.showTickTick;
-                                    localStorage.setItem('showTickTick', isTickTick.toString());
+                                // Загрузка Использовать Todoist
+                                if (typeof cloudSettings.showTodoist !== 'undefined') {
+                                    const isTodoist = cloudSettings.showTodoist;
+                                    localStorage.setItem('showTodoist', isTodoist.toString());
 
                                     // Обновляем UI чекбокса, если он сейчас отрендерен
-                                    const toggle = document.getElementById('showTickTickToggle');
-                                    if (toggle) toggle.checked = isTickTick;
+                                    const toggle = document.getElementById('showTodoistToggle');
+                                    if (toggle) toggle.checked = isTodoist;
                                     if (window.renderCategoryBar) window.renderCategoryBar();
                                 }
 
@@ -3399,8 +3399,8 @@
                         const iframe = document.getElementById('hbIframe');
                         if (iframe) iframe.src = '';
 
-                        const ticktickIframe = document.getElementById('ticktickIframe');
-                        if (ticktickIframe) ticktickIframe.src = '';
+                        const todoistIframe = document.getElementById('todoistIframe');
+                        if (todoistIframe) todoistIframe.src = '';
 
                         if (window.renderCategoryBar) window.renderCategoryBar();
                     }

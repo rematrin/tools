@@ -377,6 +377,7 @@ export function initSidebarManager(context) {
         const openInNewTab = localStorage.getItem('openInNewTab') === 'true';
         const expandedFolders = localStorage.getItem('expandedFolders') === 'true';
         const showBookmarksBeta = localStorage.getItem('showBookmarksBeta') === 'true';
+        const showTickTick = localStorage.getItem('showTickTick') !== 'false';
 
         const glassSettingsHTML = `
             <div class="profile-card" style="gap: 8px; padding: 12px 16px;">
@@ -406,6 +407,13 @@ export function initSidebarManager(context) {
                     <span style="font-size: 14px; flex: 1; padding-right: 10px;">Использовать закладки (beta)</span>
                     <label class="switch" style="transform: scale(0.85); transform-origin: right;">
                         <input type="checkbox" id="showBookmarksBetaToggle" ${showBookmarksBeta ? 'checked' : ''}>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
+                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Использовать TickTick</span>
+                    <label class="switch" style="transform: scale(0.85); transform-origin: right;">
+                        <input type="checkbox" id="showTickTickToggle" ${showTickTick ? 'checked' : ''}>
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
@@ -544,6 +552,17 @@ export function initSidebarManager(context) {
             };
         }
 
+        // Использовать TickTick
+        const showTickTickToggle = document.getElementById('showTickTickToggle');
+        if (showTickTickToggle) {
+            showTickTickToggle.onchange = (e) => {
+                const isEnabled = e.target.checked;
+                localStorage.setItem('showTickTick', isEnabled.toString());
+                if (auth.currentUser) window.dbApi.saveSettings({ showTickTick: isEnabled });
+                if (window.renderCategoryBar) window.renderCategoryBar();
+            };
+        }
+
         // Колонки
         const colSlider = document.getElementById('colCountSlider');
         const colValue = document.getElementById('colCountValue');
@@ -595,6 +614,7 @@ export function initSidebarManager(context) {
                     openInNewTab: localStorage.getItem('openInNewTab') === 'true',
                     expandedFolders: localStorage.getItem('expandedFolders') === 'true',
                     showBookmarksBeta: localStorage.getItem('showBookmarksBeta') === 'true',
+                    showTickTick: localStorage.getItem('showTickTick') !== 'false',
                     wallpaper: JSON.parse(localStorage.getItem('user_wallpaper_settings_v1') || '{}')
                 };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -699,6 +719,12 @@ export function initSidebarManager(context) {
                             // Импорт настройки использования закладок (beta)
                             if (typeof data.showBookmarksBeta !== 'undefined') {
                                 localStorage.setItem('showBookmarksBeta', data.showBookmarksBeta.toString());
+                                if (window.renderCategoryBar) window.renderCategoryBar();
+                            }
+
+                            // Импорт настройки использования TickTick
+                            if (typeof data.showTickTick !== 'undefined') {
+                                localStorage.setItem('showTickTick', data.showTickTick.toString());
                                 if (window.renderCategoryBar) window.renderCategoryBar();
                             }
 

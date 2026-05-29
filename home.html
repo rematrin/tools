@@ -2245,6 +2245,11 @@
                 <iframe id="hbIframe" src=""
                     style="width: 100%; height: 100%; border: none; background: transparent; border-radius: 24px;"></iframe>
             </div>
+            <!-- Embedded TickTick Panel (IFrame) -->
+            <div id="homeTickTickPanel" class="home-bookmarks-panel" style="display: none;">
+                <iframe id="ticktickIframe" src=""
+                    style="width: 100%; height: 100%; border: none; background: white; border-radius: 24px;"></iframe>
+            </div>
         </div>
         <div id="pageNavLeft" class="page-nav-zone left">
             <svg viewBox="0 0 24 24">
@@ -2381,9 +2386,13 @@
         let currentCategoryFilter = null;
 
         window.bookmarksActive = false;
+        window.ticktickActive = false;
 
         window.toggleBookmarksView = function (active) {
             window.bookmarksActive = active;
+            if (active && window.ticktickActive) {
+                window.toggleTickTickView(false);
+            }
             const panel = document.getElementById('homeBookmarksPanel');
             const pagesContainer = document.getElementById('pagesContainer');
             const paginationDots = document.getElementById('paginationDots');
@@ -2409,18 +2418,67 @@
                     iframe.src = 'bookmarks.html?embedded=true';
                 }
             } else {
-                document.body.classList.remove('bookmarks-view-active');
-                pagesContainer.style.display = '';
-                if (paginationDots) paginationDots.style.display = 'flex';
                 panel.style.display = 'none';
-                if (categoryBar) categoryBar.classList.remove('category-bar-fixed');
+                if (!window.ticktickActive) {
+                    document.body.classList.remove('bookmarks-view-active');
+                    pagesContainer.style.display = '';
+                    if (paginationDots) paginationDots.style.display = 'flex';
+                    if (categoryBar) categoryBar.classList.remove('category-bar-fixed');
+
+                    const navLeft = document.getElementById('pageNavLeft');
+                    const navRight = document.getElementById('pageNavRight');
+                    if (navLeft) navLeft.style.display = '';
+                    if (navRight) navRight.style.display = '';
+
+                    if (window.renderCategoryBar) window.renderCategoryBar();
+                }
+            }
+        };
+
+        window.toggleTickTickView = function (active) {
+            window.ticktickActive = active;
+            if (active && window.bookmarksActive) {
+                window.toggleBookmarksView(false);
+            }
+            const panel = document.getElementById('homeTickTickPanel');
+            const pagesContainer = document.getElementById('pagesContainer');
+            const paginationDots = document.getElementById('paginationDots');
+            const categoryBar = document.getElementById('categoryBar');
+            const iframe = document.getElementById('ticktickIframe');
+
+            if (active) {
+                document.body.classList.add('bookmarks-view-active');
+                pagesContainer.style.display = 'none';
+                if (paginationDots) paginationDots.style.display = 'none';
+                panel.style.display = 'flex';
+                if (categoryBar) {
+                    categoryBar.style.display = 'flex';
+                    categoryBar.classList.add('category-bar-fixed');
+                }
 
                 const navLeft = document.getElementById('pageNavLeft');
                 const navRight = document.getElementById('pageNavRight');
-                if (navLeft) navLeft.style.display = '';
-                if (navRight) navRight.style.display = '';
+                if (navLeft) navLeft.style.display = 'none';
+                if (navRight) navRight.style.display = 'none';
 
-                if (window.renderCategoryBar) window.renderCategoryBar();
+                if (iframe && iframe.getAttribute('src') !== 'https://ticktick.com/webapp/#q/today/tasks') {
+                    iframe.src = 'https://ticktick.com/webapp/#q/today/tasks';
+                }
+            } else {
+                panel.style.display = 'none';
+                if (!window.bookmarksActive) {
+                    document.body.classList.remove('bookmarks-view-active');
+                    pagesContainer.style.display = '';
+                    if (paginationDots) paginationDots.style.display = 'flex';
+                    if (categoryBar) categoryBar.classList.remove('category-bar-fixed');
+
+                    const navLeft = document.getElementById('pageNavLeft');
+                    const navRight = document.getElementById('pageNavRight');
+                    if (navLeft) navLeft.style.display = '';
+                    if (navRight) navRight.style.display = '';
+
+                    if (window.renderCategoryBar) window.renderCategoryBar();
+                }
             }
         };
 
@@ -2433,11 +2491,14 @@
 
             window.userCategories.forEach(cat => {
                 const capsule = document.createElement('div');
-                capsule.className = 'category-capsule' + (currentCategoryFilter === cat && !window.bookmarksActive ? ' active' : '');
+                capsule.className = 'category-capsule' + (currentCategoryFilter === cat && !window.bookmarksActive && !window.ticktickActive ? ' active' : '');
                 capsule.innerText = cat;
                 capsule.onclick = () => {
                     if (window.bookmarksActive) {
                         window.toggleBookmarksView(false);
+                    }
+                    if (window.ticktickActive) {
+                        window.toggleTickTickView(false);
                     }
                     if (currentCategoryFilter === cat) {
                         currentCategoryFilter = null;
@@ -2461,6 +2522,9 @@
                         window.toggleBookmarksView(false);
                     } else {
                         currentCategoryFilter = null;
+                        if (window.ticktickActive) {
+                            window.toggleTickTickView(false);
+                        }
                         window.toggleBookmarksView(true);
                     }
                     renderCategoryBar();
@@ -2470,6 +2534,32 @@
             } else {
                 if (window.bookmarksActive) {
                     window.toggleBookmarksView(false);
+                }
+            }
+
+            // Dedicated static TickTick category capsule always remains
+            const showTickTick = localStorage.getItem('showTickTick') !== 'false';
+            if (showTickTick) {
+                const ticktickCapsule = document.createElement('div');
+                ticktickCapsule.className = 'category-capsule' + (window.ticktickActive ? ' active' : '');
+                ticktickCapsule.innerText = 'TickTick';
+                ticktickCapsule.onclick = () => {
+                    if (window.ticktickActive) {
+                        window.toggleTickTickView(false);
+                    } else {
+                        currentCategoryFilter = null;
+                        if (window.bookmarksActive) {
+                            window.toggleBookmarksView(false);
+                        }
+                        window.toggleTickTickView(true);
+                    }
+                    renderCategoryBar();
+                    renderAppsToDOM(currentApps);
+                };
+                bar.appendChild(ticktickCapsule);
+            } else {
+                if (window.ticktickActive) {
+                    window.toggleTickTickView(false);
                 }
             }
         };
@@ -3220,6 +3310,17 @@
                                     if (window.renderCategoryBar) window.renderCategoryBar();
                                 }
 
+                                // Загрузка Использовать TickTick
+                                if (typeof cloudSettings.showTickTick !== 'undefined') {
+                                    const isTickTick = cloudSettings.showTickTick;
+                                    localStorage.setItem('showTickTick', isTickTick.toString());
+
+                                    // Обновляем UI чекбокса, если он сейчас отрендерен
+                                    const toggle = document.getElementById('showTickTickToggle');
+                                    if (toggle) toggle.checked = isTickTick;
+                                    if (window.renderCategoryBar) window.renderCategoryBar();
+                                }
+
                                 // Загрузка Расширенных папок
                                 if (typeof cloudSettings.expandedFolders !== 'undefined') {
                                     const isExpanded = cloudSettings.expandedFolders;
@@ -3297,6 +3398,9 @@
 
                         const iframe = document.getElementById('hbIframe');
                         if (iframe) iframe.src = '';
+
+                        const ticktickIframe = document.getElementById('ticktickIframe');
+                        if (ticktickIframe) ticktickIframe.src = '';
 
                         if (window.renderCategoryBar) window.renderCategoryBar();
                     }

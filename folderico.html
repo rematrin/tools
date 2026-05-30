@@ -44,7 +44,7 @@
         /* --- 1. Базовые стили и Переменные --- */
         :root {
             --bg-body: #f3f4f6;
-            --bg-sidebar: #ffffff;
+            --bg-sidebar: #f2f2f7; /* Grey background matching home.html style */
             --text-main: #1f2937;
             --text-secondary: #6b7280;
             --border-color: #e5e7eb;
@@ -81,29 +81,34 @@
             display: flex;
             flex-direction: column;
             border-right: 1px solid var(--border-color);
-            padding: 24px;
-            gap: 24px;
+            padding: 16px;
+            gap: 16px;
             overflow-y: auto;
             box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02);
         }
 
+        .sidebar hr {
+            display: none !important;
+        }
+
+        .sidebar > div {
+            background-color: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+            width: 100%;
+        }
+
         h3 {
-            margin: 0 0 12px 0;
-            font-size: 0.95rem;
+            margin: 0 0 16px 0;
+            font-size: 1.05rem;
             font-weight: 700;
             color: var(--text-main);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            display: block;
         }
 
         h3::before {
-            content: '';
-            display: block;
-            width: 8px;
-            height: 8px;
-            background: var(--accent);
-            border-radius: 50%;
+            display: none !important;
         }
 
         /* --- 3. Переключатель стиля папки (macOS / Windows) --- */
@@ -268,6 +273,44 @@
         }
 
         .search-box input:focus {
+            background: #fff;
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .sidebar input[type="text"]:not(#iconSearch) {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: #f9fafb;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+
+        .sidebar input[type="text"]:not(#iconSearch):focus {
+            background: #fff;
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .sidebar textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: #f9fafb;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+            transition: all 0.2s;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .sidebar textarea:focus {
             background: #fff;
             border-color: var(--accent);
             outline: none;
@@ -462,7 +505,7 @@
 
         <div class="sidebar">
             <div>
-                <h3>Folder Style</h3>
+                <h3>Icon Style</h3>
                 <div class="style-toggle-container">
                     <button class="style-btn active" id="btnMac" onclick="setFolderStyle('mac')">
                         <svg viewBox="0 0 1024 1024" fill="currentColor" width="16" height="16">
@@ -472,11 +515,16 @@
                         macOS
                     </button>
                     <button class="style-btn" id="btnWin" onclick="setFolderStyle('win')">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                             <path
                                 d="m3 5.557l7.357-1.002l.004 7.097l-7.354.042zm7.354 6.913l.006 7.103l-7.354-1.011v-6.14zm.892-8.046L21.001 3v8.562l-9.755.077zm9.758 8.113l-.003 8.523l-9.755-1.378l-.014-7.161z" />
                         </svg>
                         Windows
+                    </button>
+                    <button class="style-btn" id="btnDeck" onclick="setFolderStyle('deck')">
+                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwYAAACWUlEQVR4nO2aTUgVURSAP60spIJQJCgsjCh04SKMCoIC3SgEIRYtIorAVraQQkJcKAQFBW1aBUFEYgXu1KxAN/1QQZsWUVESWGjaIujHyhcXrjALe+/NmTfnHuF9cDbv3YH7zZ2Ze86ZgSJFiiwl1gHPgdk8ox+j3AIyMeIlBjkSU8JFK8bYAMzElHgGlGAIN5khwWo0YowOgcQYxtgOfBeI7MIQy4GnAom7GKNXIPEHqMUQO4A5gcg1DFEOvBZI/ACqMcRVgUQGuIQhmoB5gcQ3oApDCeFH4Wr0YIgBocQ0sBYjHBVKZIDTGEoIZ4USH4CVGKAUeJhgNY5hhD0JJF4By0Kn5Zsjj1upyMFQAhXABWACeON/qxSmIk9CFU0nF7mh6/x/1wUi+7UF3Fm7+J/J3Iys1EQMiXsE4EyWCblU5IAftwl4m4fEvM+MVdkJ/M4xsa9AvR+/0Zeo2cbfDnFJPcrzUvkC7I0c1w58WmScOynbtEVaYt687sl1Hljljy8DDgODwHtgEjhHAEaEe4MrqNqAFRjJnf4m2OhcfPZ7TpOv+tYslT5UJkf0hRAZT0HEbaiqVPmWTKFF9mmLnEpBwp2Y1doioymIvNCWqMhjJ5dEt7bIiRQkXG5Voy3yOAWRO9oSDSlIzIVoSI+mIHJWW6I1BYkB32FRoyZBTypbzaGaNG6JWaLmil9Ap3ZT4RAwVcBHrKs7tmpNvhRoBu4XSMBVgVf8C09VHiSc+Ix/X+5eAezWvpmJsLASPyMfrbjL650PlxMNAzeAy0AXcNz3oNaHmvQC/wC87wLrBIJmIgAAAABJRU5ErkJggg=="
+                            alt="paint">
+                        Custom
                     </button>
                 </div>
             </div>
@@ -486,21 +534,37 @@
             <div>
                 <h3>Color</h3>
 
-                <div class="slider-group">
-                    <div class="slider-header">
-                        <span>Hue Shift</span>
-                        <span id="hueValue">0°</span>
+                <!-- Folder Colors -->
+                <div id="folderColorGroup">
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <span>Hue Shift</span>
+                            <span id="hueValue">0°</span>
+                        </div>
+                        <!-- Default 0 -->
+                        <input type="range" id="hueRange" min="0" max="360" value="0">
                     </div>
-                    <!-- Default 0 -->
-                    <input type="range" id="hueRange" min="0" max="360" value="0">
+
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <span>Brightness</span>
+                            <span id="brightValue">100%</span>
+                        </div>
+                        <input type="range" id="brightnessRange" min="0" max="200" value="100">
+                    </div>
                 </div>
 
-                <div class="slider-group">
-                    <div class="slider-header">
-                        <span>Brightness</span>
-                        <span id="brightValue">100%</span>
+                <!-- Stream Deck Background Color Picker -->
+                <div id="deckColorGroup" style="display: none;">
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+                        <div
+                            style="position: relative; width: 42px; height: 42px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); flex-shrink: 0;">
+                            <input type="color" id="deckColor" value="#000000"
+                                style="position: absolute; top: -5px; left: -5px; width: 52px; height: 52px; padding: 0; margin: 0; border: none; cursor: pointer;">
+                        </div>
+                        <input type="text" id="deckColorHex" value="#000000"
+                            style="flex-grow: 1; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9rem; font-family: monospace; text-transform: uppercase;">
                     </div>
-                    <input type="range" id="brightnessRange" min="0" max="200" value="100">
                 </div>
             </div>
 
@@ -535,7 +599,7 @@
                     <input type="range" id="iconY" min="-100" max="100" value="0">
                 </div>
 
-                <div class="slider-group" style="margin-bottom:0;">
+                <div class="slider-group" style="margin-bottom: 15px;">
                     <div class="slider-header">
                         <span>Blend Mode</span>
                     </div>
@@ -546,6 +610,32 @@
                             Light</button>
                         <button class="blend-btn" data-mode="source-over"
                             onclick="setBlendMode('source-over')">Normal</button>
+                    </div>
+                </div>
+
+                <!-- New Icon Color Customizer -->
+                <div class="slider-group" style="margin-bottom:0;">
+                    <div class="slider-header">
+                        <span>Icon Color</span>
+                    </div>
+                    <div class="blend-mode-container" style="grid-template-columns: repeat(3, 1fr);">
+                        <button class="blend-btn active" id="btnIconBlack"
+                            onclick="setIconColorMode('black')">Black</button>
+                        <button class="blend-btn" id="btnIconWhite"
+                            onclick="setIconColorMode('white')">White</button>
+                        <button class="blend-btn" id="btnIconCustom"
+                            onclick="setIconColorMode('custom')">Custom</button>
+                    </div>
+                    <div id="iconCustomColorPicker" style="display: none; margin-top: 8px;">
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div
+                                style="position: relative; width: 32px; height: 32px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color); cursor: pointer;">
+                                <input type="color" id="iconColor" value="#ffffff"
+                                    style="position: absolute; top: -5px; left: -5px; width: 42px; height: 42px; padding: 0; margin: 0; border: none; cursor: pointer;">
+                            </div>
+                            <input type="text" id="iconColorHex" value="#FFFFFF"
+                                style="flex-grow: 1; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.85rem; font-family: monospace; text-transform: uppercase;">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -571,6 +661,101 @@
                     </div>
                 </div>
             </div>
+
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; width: 100%; margin: 0;">
+
+            <!-- Text Overlay Settings Section -->
+            <div>
+                <h3>Text Overlay Settings</h3>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>Text</span>
+                    </div>
+                    <textarea id="textInput" placeholder="Enter text (e.g. WORK, CODE)..." autocomplete="off"
+                        rows="3"></textarea>
+                </div>
+
+                <div class="slider-group" style="margin-bottom: 15px;">
+                    <div class="slider-header">
+                        <span>Text Alignment</span>
+                    </div>
+                    <div class="blend-mode-container">
+                        <button class="blend-btn" id="btnTextAlignLeft" data-align="left"
+                            onclick="setTextAlign('left')">Left</button>
+                        <button class="blend-btn active" id="btnTextAlignCenter" data-align="center"
+                            onclick="setTextAlign('center')">Center</button>
+                        <button class="blend-btn" id="btnTextAlignRight" data-align="right"
+                            onclick="setTextAlign('right')">Right</button>
+                    </div>
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>Size</span>
+                        <span id="textSizeValue">0.12</span>
+                    </div>
+                    <input type="range" id="textSize" min="0.05" max="0.3" step="0.01" value="0.12">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>Position X</span>
+                        <span id="textXValue">0</span>
+                    </div>
+                    <input type="range" id="textX" min="-100" max="100" value="0">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>Position Y</span>
+                        <span id="textYValue">50</span>
+                    </div>
+                    <input type="range" id="textY" min="-100" max="100" value="50">
+                </div>
+
+                <div class="slider-group" style="margin-bottom: 15px;">
+                    <div class="slider-header">
+                        <span>Text Blend Mode</span>
+                    </div>
+                    <div class="blend-mode-container">
+                        <button class="blend-btn active" id="btnTextBlendOverlay" data-mode="overlay"
+                            onclick="setTextBlendMode('overlay')">Overlay</button>
+                        <button class="blend-btn" id="btnTextBlendSoft" data-mode="soft-light"
+                            onclick="setTextBlendMode('soft-light')">Soft
+                            Light</button>
+                        <button class="blend-btn" id="btnTextBlendNormal" data-mode="source-over"
+                            onclick="setTextBlendMode('source-over')">Normal</button>
+                    </div>
+                </div>
+
+                <div class="slider-group" style="margin-bottom:0;">
+                    <div class="slider-header">
+                        <span>Text Color</span>
+                    </div>
+                    <div class="blend-mode-container" style="grid-template-columns: repeat(3, 1fr);">
+                        <button class="blend-btn active" id="btnTextColorBlack"
+                            onclick="setTextColorMode('black')">Black</button>
+                        <button class="blend-btn" id="btnTextColorWhite"
+                            onclick="setTextColorMode('white')">White</button>
+                        <button class="blend-btn" id="btnTextColorCustom"
+                            onclick="setTextColorMode('custom')">Custom</button>
+                    </div>
+                    <div id="textCustomColorPicker" style="display: none; margin-top: 8px;">
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div
+                                style="position: relative; width: 32px; height: 32px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color); cursor: pointer;">
+                                <input type="color" id="textColor" value="#ffffff"
+                                    style="position: absolute; top: -5px; left: -5px; width: 42px; height: 42px; padding: 0; margin: 0; border: none; cursor: pointer;">
+                            </div>
+                            <input type="text" id="textColorHex" value="#FFFFFF"
+                                style="flex-grow: 1; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.85rem; font-family: monospace; text-transform: uppercase;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; width: 100%; margin: 0;">
 
             <button class="download-btn" id="downloadBtn">Download Folder Icon</button>
         </div>
@@ -621,8 +806,15 @@
 
         let currentFolderImg = new Image();
         let loadedIconImg = null; // Caching loaded icon to prevent flickering
-        let activeStyle = 'mac'; // 'mac' или 'win'
+        let activeStyle = 'mac'; // 'mac', 'win', 'deck'
         let currentBlendMode = 'overlay';
+        let deckBgColor = '#000000';
+        let iconColorMode = 'black'; // 'white', 'black', 'custom'
+        let customIconColor = '#ffffff';
+        let currentTextBlendMode = 'overlay';
+        let textColorMode = 'black'; // 'white', 'black', 'custom'
+        let customTextColor = '#ffffff';
+        let currentTextAlign = 'center';
 
         // Download Settings
         let downloadRes = 256;
@@ -677,24 +869,156 @@
             img.src = url;
         }
 
-        // --- Переключение стилей (macOS / Windows) ---
+        // --- Переключение стилей (macOS / Windows / Stream Deck) ---
         function setFolderStyle(style) {
             activeStyle = style;
 
             // UI переключение кнопок
             document.getElementById('btnMac').className = style === 'mac' ? 'style-btn active' : 'style-btn';
             document.getElementById('btnWin').className = style === 'win' ? 'style-btn active' : 'style-btn';
+            document.getElementById('btnDeck').className = style === 'deck' ? 'style-btn active' : 'style-btn';
 
-            // Загрузка картинки
-            const img = new Image();
-            img.onload = () => {
-                currentFolderImg = img;
-                draw(); // Рисуем как только загрузилась
-            };
-            img.onerror = () => {
-                alert(`Не удалось загрузить файл ${FOLDER_SOURCES[style]}. Проверь, лежит ли он рядом с файлом index.html`);
-            };
-            img.src = FOLDER_SOURCES[style];
+            if (style === 'deck') {
+                // Show Stream Deck background color controls, hide folder controls
+                ui.folderColorGroup.style.display = 'none';
+                ui.deckColorGroup.style.display = 'block';
+                ui.download.textContent = 'Download Custom Icon';
+
+                // Automatically set icon overlay & text to White if they are Black (since black would be invisible on default black bg)
+                // And automatically set BOTH Icon & Text Blend Modes to Normal ('source-over') by default in Custom mode
+                let needsDraw = false;
+                if (iconColorMode === 'black') {
+                    setIconColorMode('white');
+                    needsDraw = true;
+                }
+                if (textColorMode === 'black') {
+                    setTextColorMode('white');
+                    needsDraw = true;
+                }
+                if (currentTextBlendMode !== 'source-over') {
+                    setTextBlendMode('source-over');
+                    needsDraw = true;
+                }
+                if (currentBlendMode !== 'source-over') {
+                    setBlendMode('source-over');
+                    needsDraw = true;
+                }
+                if (!needsDraw) {
+                    draw();
+                }
+            } else {
+                // Show folder controls, hide Stream Deck background controls
+                ui.folderColorGroup.style.display = 'block';
+                ui.deckColorGroup.style.display = 'none';
+                ui.download.textContent = 'Download Folder Icon';
+
+                // Automatically restore 'black' icon overlay & text for folder style, and revert BOTH Icon & Text Blend Modes to 'overlay' if they were 'source-over'
+                if (iconColorMode === 'white') {
+                    setIconColorMode('black');
+                }
+                if (textColorMode === 'white') {
+                    setTextColorMode('black');
+                }
+                if (currentTextBlendMode === 'source-over') {
+                    setTextBlendMode('overlay');
+                }
+                if (currentBlendMode === 'source-over') {
+                    setBlendMode('overlay');
+                } else {
+                    // Загрузка картинки
+                    const img = new Image();
+                    img.onload = () => {
+                        currentFolderImg = img;
+                        draw(); // Рисуем как только загрузилась
+                    };
+                    img.onerror = () => {
+                        alert(`Не удалось загрузить файл ${FOLDER_SOURCES[style]}. Проверь, лежит ли он рядом с файлом index.html`);
+                    };
+                    img.src = FOLDER_SOURCES[style];
+                }
+            }
+        }
+
+        function setIconColorMode(mode) {
+            iconColorMode = mode;
+
+            // Toggle active classes on buttons
+            document.getElementById('btnIconWhite').classList.toggle('active', mode === 'white');
+            document.getElementById('btnIconBlack').classList.toggle('active', mode === 'black');
+            document.getElementById('btnIconCustom').classList.toggle('active', mode === 'custom');
+
+            // Show or hide the custom color picker for the icon overlay
+            if (mode === 'custom') {
+                ui.iconCustomColorPicker.style.display = 'block';
+            } else {
+                ui.iconCustomColorPicker.style.display = 'none';
+            }
+
+            // Trigger folder image loading if we just returned to a folder mode
+            if (activeStyle !== 'deck' && !currentFolderImg.src.includes(FOLDER_SOURCES[activeStyle])) {
+                const img = new Image();
+                img.onload = () => {
+                    currentFolderImg = img;
+                    draw();
+                };
+                img.onerror = () => {
+                    alert(`Не удалось загрузить файл ${FOLDER_SOURCES[activeStyle]}. Проверь, лежит ли он рядом с файлом index.html`);
+                };
+                img.src = FOLDER_SOURCES[activeStyle];
+            } else {
+                draw();
+            }
+        }
+
+        // --- Установка режима смешивания текста ---
+        function setTextBlendMode(mode) {
+            currentTextBlendMode = mode;
+            document.querySelectorAll('#btnTextBlendOverlay, #btnTextBlendSoft, #btnTextBlendNormal').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+
+            // Trigger folder image loading if we just returned to a folder mode
+            if (activeStyle !== 'deck' && !currentFolderImg.src.includes(FOLDER_SOURCES[activeStyle])) {
+                const img = new Image();
+                img.onload = () => {
+                    currentFolderImg = img;
+                    draw();
+                };
+                img.onerror = () => {
+                    alert(`Не удалось загрузить файл ${FOLDER_SOURCES[activeStyle]}. Проверь, лежит ли он рядом с файлом index.html`);
+                };
+                img.src = FOLDER_SOURCES[activeStyle];
+            } else {
+                draw();
+            }
+        }
+
+        // --- Установка режима цвета наложенного текста ---
+        function setTextColorMode(mode) {
+            textColorMode = mode;
+
+            // Toggle active classes on buttons
+            document.getElementById('btnTextColorWhite').classList.toggle('active', mode === 'white');
+            document.getElementById('btnTextColorBlack').classList.toggle('active', mode === 'black');
+            document.getElementById('btnTextColorCustom').classList.toggle('active', mode === 'custom');
+
+            // Show or hide the custom color picker for the text overlay
+            if (mode === 'custom') {
+                ui.textCustomColorPicker.style.display = 'block';
+            } else {
+                ui.textCustomColorPicker.style.display = 'none';
+            }
+
+            draw();
+        }
+
+        // --- Установка выравнивания текста ---
+        function setTextAlign(align) {
+            currentTextAlign = align;
+            document.querySelectorAll('#btnTextAlignLeft, #btnTextAlignCenter, #btnTextAlignRight').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.align === align);
+            });
+            draw();
         }
 
 
@@ -715,15 +1039,50 @@
 
             search: document.getElementById('iconSearch'),
             grid: document.getElementById('iconsGrid'),
-            download: document.getElementById('downloadBtn')
+            download: document.getElementById('downloadBtn'),
+
+            // Stream Deck & Icon Color UI elements
+            deckColor: document.getElementById('deckColor'),
+            deckColorHex: document.getElementById('deckColorHex'),
+            folderColorGroup: document.getElementById('folderColorGroup'),
+            deckColorGroup: document.getElementById('deckColorGroup'),
+            iconColor: document.getElementById('iconColor'),
+            iconColorHex: document.getElementById('iconColorHex'),
+            iconCustomColorPicker: document.getElementById('iconCustomColorPicker'),
+
+            // Text Overlay UI elements
+            textInput: document.getElementById('textInput'),
+            textColor: document.getElementById('textColor'),
+            textColorHex: document.getElementById('textColorHex'),
+            textSize: document.getElementById('textSize'),
+            textSizeVal: document.getElementById('textSizeValue'),
+            textX: document.getElementById('textX'),
+            textXVal: document.getElementById('textXValue'),
+            textY: document.getElementById('textY'),
+            textYVal: document.getElementById('textYValue'),
+            textCustomColorPicker: document.getElementById('textCustomColorPicker')
         };
 
         function setBlendMode(mode) {
             currentBlendMode = mode;
-            document.querySelectorAll('.blend-btn').forEach(btn => {
+            document.querySelectorAll('button[onclick^="setBlendMode"]').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.mode === mode);
             });
-            draw();
+
+            // Trigger folder image loading if we just returned to a folder mode
+            if (activeStyle !== 'deck' && !currentFolderImg.src.includes(FOLDER_SOURCES[activeStyle])) {
+                const img = new Image();
+                img.onload = () => {
+                    currentFolderImg = img;
+                    draw();
+                };
+                img.onerror = () => {
+                    alert(`Не удалось загрузить файл ${FOLDER_SOURCES[activeStyle]}. Проверь, лежит ли он рядом с файлом index.html`);
+                };
+                img.src = FOLDER_SOURCES[activeStyle];
+            } else {
+                draw();
+            }
         }
 
         function draw() {
@@ -736,17 +1095,24 @@
         function renderTo(targetCtx, size) {
             targetCtx.clearRect(0, 0, size, size);
 
-            // 1. Рисуем папку с Hue/Brightness фильтрами
-            if (currentFolderImg.complete && currentFolderImg.naturalWidth !== 0) {
+            // 1. Рисуем фон
+            if (activeStyle === 'deck') {
                 targetCtx.save();
-
-                const h = ui.hue.value;
-                const b = ui.bright.value;
-
-                targetCtx.filter = `hue-rotate(${h}deg) brightness(${b}%)`;
-                targetCtx.drawImage(currentFolderImg, 0, 0, size, size);
-
+                targetCtx.fillStyle = deckBgColor;
+                targetCtx.fillRect(0, 0, size, size);
                 targetCtx.restore();
+            } else {
+                if (currentFolderImg.complete && currentFolderImg.naturalWidth !== 0) {
+                    targetCtx.save();
+
+                    const h = ui.hue.value;
+                    const b = ui.bright.value;
+
+                    targetCtx.filter = `hue-rotate(${h}deg) brightness(${b}%)`;
+                    targetCtx.drawImage(currentFolderImg, 0, 0, size, size);
+
+                    targetCtx.restore();
+                }
             }
 
             // 2. Рисуем Иконку
@@ -762,7 +1128,7 @@
                 const x = (size - iconSize) / 2;
                 const userY = (parseInt(ui.iconY.value) / 100) * (size / 4); // Adaptive Y scaling
 
-                const baseOffset = (activeStyle === 'win' ? 0 : (size * 0.04));
+                const baseOffset = (activeStyle === 'win' ? 0 : (activeStyle === 'deck' ? 0 : (size * 0.04)));
 
                 const y = ((size - iconSize) / 2) + baseOffset + userY;
 
@@ -772,7 +1138,83 @@
                     targetCtx.shadowOffsetY = size * 0.008;
                 }
 
-                targetCtx.drawImage(loadedIconImg, x, y, iconSize, iconSize);
+                if (iconColorMode === 'original') {
+                    targetCtx.drawImage(loadedIconImg, x, y, iconSize, iconSize);
+                } else {
+                    // Draw using offscreen canvas to change color dynamically
+                    let overlayColor = '#ffffff';
+                    if (iconColorMode === 'white') overlayColor = '#ffffff';
+                    else if (iconColorMode === 'black') overlayColor = '#000000';
+                    else if (iconColorMode === 'custom') overlayColor = customIconColor;
+
+                    const offscreen = document.createElement('canvas');
+                    offscreen.width = iconSize;
+                    offscreen.height = iconSize;
+                    const oCtx = offscreen.getContext('2d');
+
+                    // Draw image first
+                    oCtx.drawImage(loadedIconImg, 0, 0, iconSize, iconSize);
+
+                    // Composite solid color over image pixels
+                    oCtx.globalCompositeOperation = 'source-in';
+                    oCtx.fillStyle = overlayColor;
+                    oCtx.fillRect(0, 0, iconSize, iconSize);
+
+                    targetCtx.drawImage(offscreen, x, y);
+                }
+
+                targetCtx.restore();
+            }
+
+            // 3. Рисуем Текст
+            const textStr = ui.textInput.value;
+            if (textStr.trim()) {
+                const lines = textStr.split('\n');
+                const lineCount = lines.length;
+
+                targetCtx.save();
+
+                const textScale = parseFloat(ui.textSize.value);
+                const fontSize = size * textScale;
+
+                targetCtx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+
+                // Determine text fill style
+                let textFillColor = '#ffffff';
+                if (textColorMode === 'white') textFillColor = '#ffffff';
+                else if (textColorMode === 'black') textFillColor = '#000000';
+                else if (textColorMode === 'custom') textFillColor = customTextColor;
+
+                targetCtx.fillStyle = textFillColor;
+                targetCtx.textAlign = currentTextAlign; // 'left', 'center', 'right'
+                targetCtx.textBaseline = 'middle';
+
+                // Apply Text Blend Mode
+                targetCtx.globalCompositeOperation = currentTextBlendMode;
+
+                if (currentTextBlendMode === 'source-over') {
+                    targetCtx.shadowColor = "rgba(0,0,0,0.3)";
+                    targetCtx.shadowBlur = size * 0.01;
+                    targetCtx.shadowOffsetY = size * 0.005;
+                }
+
+                const textXOffset = (parseInt(ui.textX.value) / 100) * (size / 2);
+                const textYOffset = (parseInt(ui.textY.value) / 100) * (size / 2);
+
+                const baseCenterX = (size / 2) + textXOffset;
+                const baseCenterY = (size / 2) + textYOffset;
+
+                const lineHeight = fontSize * 0.95; // Decreased from 1.05 to 0.9 for tighter multiline spacing
+
+                // Calculate the total block height to vertically center the lines around baseCenterY
+                const totalBlockHeight = (lineCount - 1) * lineHeight;
+                const startY = baseCenterY - (totalBlockHeight / 2);
+
+                lines.forEach((line, index) => {
+                    const y = startY + (index * lineHeight);
+                    targetCtx.fillText(line, baseCenterX, y);
+                });
+
                 targetCtx.restore();
             }
         }
@@ -846,8 +1288,72 @@
             });
         });
 
+        // Background Color for Stream Deck Events
+        ui.deckColor.addEventListener('input', (e) => {
+            deckBgColor = e.target.value;
+            ui.deckColorHex.value = e.target.value;
+            draw();
+        });
 
+        ui.deckColorHex.addEventListener('input', (e) => {
+            let val = e.target.value.trim();
+            if (val.length > 0 && !val.startsWith('#')) val = '#' + val;
+            ui.deckColorHex.value = val;
+            if (/^#[0-9A-F]{6}$/i.test(val)) {
+                deckBgColor = val;
+                ui.deckColor.value = val;
+                draw();
+            }
+        });
 
+        // Icon Overlay Custom Color Events
+        ui.iconColor.addEventListener('input', (e) => {
+            customIconColor = e.target.value;
+            ui.iconColorHex.value = e.target.value;
+            draw();
+        });
+
+        ui.iconColorHex.addEventListener('input', (e) => {
+            let val = e.target.value.trim();
+            if (val.length > 0 && !val.startsWith('#')) val = '#' + val;
+            ui.iconColorHex.value = val;
+            if (/^#[0-9A-F]{6}$/i.test(val)) {
+                customIconColor = val;
+                ui.iconColor.value = val;
+                draw();
+            }
+        });
+
+        // Text Overlay Events
+        ui.textInput.addEventListener('input', () => {
+            draw();
+        });
+
+        ui.textColor.addEventListener('input', (e) => {
+            customTextColor = e.target.value;
+            ui.textColorHex.value = e.target.value;
+            draw();
+        });
+
+        ui.textColorHex.addEventListener('input', (e) => {
+            let val = e.target.value.trim();
+            if (val.length > 0 && !val.startsWith('#')) val = '#' + val;
+            ui.textColorHex.value = val;
+            if (/^#[0-9A-F]{6}$/i.test(val)) {
+                customTextColor = val;
+                ui.textColor.value = val;
+                draw();
+            }
+        });
+
+        [ui.textSize, ui.textX, ui.textY].forEach(el => {
+            el.addEventListener('input', () => {
+                ui.textSizeVal.textContent = ui.textSize.value;
+                ui.textXVal.textContent = ui.textX.value;
+                ui.textYVal.textContent = ui.textY.value;
+                draw();
+            });
+        });
         const processSearch = debounce((e) => {
             const val = e.target.value.trim();
             if (val.length === 0) {
@@ -896,7 +1402,8 @@
             renderTo(exportCtx, downloadRes);
 
             const randomId = generateRandomId();
-            const filename = `folder-${randomId}.${downloadFmt}`;
+            const prefix = activeStyle === 'deck' ? 'custom' : 'folder';
+            const filename = `${prefix}-${randomId}.${downloadFmt}`;
             const link = document.createElement('a');
             link.download = filename;
 

@@ -44,7 +44,8 @@
         /* --- 1. Базовые стили и Переменные --- */
         :root {
             --bg-body: #f3f4f6;
-            --bg-sidebar: #f2f2f7; /* Grey background matching home.html style */
+            --bg-sidebar: #f2f2f7;
+            /* Grey background matching home.html style */
             --text-main: #1f2937;
             --text-secondary: #6b7280;
             --border-color: #e5e7eb;
@@ -91,12 +92,21 @@
             display: none !important;
         }
 
-        .sidebar > div {
+        .sidebar>div {
             background-color: #ffffff;
             border-radius: 16px;
             padding: 20px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
             width: 100%;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar>div.collapsed {
+            padding-bottom: 20px;
+        }
+
+        .sidebar>div.collapsed > *:not(h3) {
+            display: none !important;
         }
 
         h3 {
@@ -107,7 +117,56 @@
             display: block;
         }
 
-        h3::before {
+        .sidebar>div h3 {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+            margin-bottom: 16px;
+            cursor: default;
+        }
+
+        .sidebar>div.collapsed h3 {
+            margin-bottom: 0;
+        }
+
+        /* Кнопка переключения сворачивания (стрелочка в квадрате) */
+        .toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background-color: transparent; /* Transparent by default */
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .toggle-btn:hover {
+            background-color: #e5e7eb; /* Soft light-grey on hover */
+        }
+
+        .toggle-btn::before {
+            content: '▶';
+            font-size: 0.62rem;
+            color: #374151; /* Dark grey arrow */
+            display: inline-block;
+            transition: transform 0.2s ease-in-out;
+            transform: rotate(90deg); /* Points down when open */
+        }
+
+        .sidebar>div.collapsed .toggle-btn::before {
+            transform: rotate(0deg); /* Points right when collapsed */
+        }
+
+        .sidebar>div h3::before {
+            display: none !important;
+        }
+
+        .sidebar>div h3::after {
             display: none !important;
         }
 
@@ -574,6 +633,9 @@
             <div>
                 <h3>Icon Overlay Settings</h3>
 
+                <!-- Active Icon Layers Manager -->
+                <div id="iconLayersContainer" style="margin-bottom: 16px;"></div>
+
                 <div class="slider-group">
                     <div class="slider-header">
                         <span>Opacity</span>
@@ -588,6 +650,14 @@
                         <span id="sizeValue">0.5</span>
                     </div>
                     <input type="range" id="iconSize" min="0.2" max="0.9" step="0.05" value="0.5">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>Position X</span>
+                        <span id="posXValue">0</span>
+                    </div>
+                    <input type="range" id="iconX" min="-100" max="100" value="0">
                 </div>
 
                 <div class="slider-group">
@@ -621,8 +691,7 @@
                     <div class="blend-mode-container" style="grid-template-columns: repeat(3, 1fr);">
                         <button class="blend-btn active" id="btnIconBlack"
                             onclick="setIconColorMode('black')">Black</button>
-                        <button class="blend-btn" id="btnIconWhite"
-                            onclick="setIconColorMode('white')">White</button>
+                        <button class="blend-btn" id="btnIconWhite" onclick="setIconColorMode('white')">White</button>
                         <button class="blend-btn" id="btnIconCustom"
                             onclick="setIconColorMode('custom')">Custom</button>
                     </div>
@@ -665,8 +734,8 @@
             <hr style="border: 0; border-top: 1px solid #e5e7eb; width: 100%; margin: 0;">
 
             <!-- Text Overlay Settings Section -->
-            <div>
-                <h3>Text Overlay Settings</h3>
+            <div class="collapsed">
+                <h3>Text Settings</h3>
 
                 <div class="slider-group">
                     <div class="slider-header">
@@ -805,7 +874,7 @@
         };
 
         let currentFolderImg = new Image();
-        let loadedIconImg = null; // Caching loaded icon to prevent flickering
+        let loadedIconImg = null; // Caching loaded icon to prevent flickering (deprecated: using iconLayers instead)
         let activeStyle = 'mac'; // 'mac', 'win', 'deck'
         let currentBlendMode = 'overlay';
         let deckBgColor = '#000000';
@@ -816,6 +885,22 @@
         let customTextColor = '#ffffff';
         let currentTextAlign = 'center';
 
+        // Multi-Layer Overlay Icon State
+        let iconLayers = [
+            {
+                img: null,
+                name: 'Empty',
+                opacity: 0.8,
+                size: 0.5,
+                x: 0,
+                y: 0,
+                colorMode: 'black',
+                customColor: '#ffffff',
+                blendMode: 'overlay'
+            }
+        ];
+        let activeLayerIndex = 0;
+
         // Download Settings
         let downloadRes = 256;
         let downloadFmt = 'png';
@@ -824,6 +909,19 @@
         function init() {
             setFolderStyle('mac'); // Загружаем мак по умолчанию
             loadStarterIcons(); // Показываем микс популярных иконок
+            syncSidebarToActiveLayer(); // Синхронизируем панель управления с активным слоем
+
+            // Добавляем переключатели сворачивания для карточек настроек (стрелочка-кнопка)
+            document.querySelectorAll('.sidebar > div h3').forEach(header => {
+                const toggleBtn = document.createElement('span');
+                toggleBtn.className = 'toggle-btn';
+                header.prepend(toggleBtn);
+
+                toggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    header.parentElement.classList.toggle('collapsed');
+                });
+            });
         }
 
         // --- Загрузка стартовых иконок (чтобы не было скучных папок) ---
@@ -848,19 +946,232 @@
                     const url = `https://api.iconify.design/${iconStr}.svg?color=black`;
                     document.querySelectorAll('.icon-item').forEach(i => i.style.borderColor = '#e5e7eb');
                     btn.style.borderColor = '#3b82f6';
-                    loadIcon(url);
+                    const friendlyName = iconStr.includes(':') ? iconStr.split(':')[1] : iconStr;
+                    loadIcon(url, friendlyName);
                 };
                 ui.grid.appendChild(btn);
             });
         }
 
+        // --- Active Layer Sidebar Sync and UI List Rendering ---
+        function syncSidebarToActiveLayer() {
+            const layer = iconLayers[activeLayerIndex];
+            if (!layer) return;
+
+            // Sync sliders
+            ui.iconOpacity.value = layer.opacity;
+            ui.iconOpacityVal.textContent = layer.opacity;
+
+            ui.iconSize.value = layer.size;
+            ui.iconSizeVal.textContent = layer.size;
+
+            ui.iconY.value = layer.y;
+            ui.iconYVal.textContent = layer.y;
+
+            if (ui.iconX) {
+                ui.iconX.value = layer.x;
+                ui.iconXVal.textContent = layer.x;
+            }
+
+            // Sync blend mode buttons
+            document.querySelectorAll('button[onclick^="setBlendMode"]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === layer.blendMode);
+            });
+
+            // Sync icon color mode buttons
+            document.getElementById('btnIconWhite').classList.toggle('active', layer.colorMode === 'white');
+            document.getElementById('btnIconBlack').classList.toggle('active', layer.colorMode === 'black');
+            document.getElementById('btnIconCustom').classList.toggle('active', layer.colorMode === 'custom');
+
+            // Sync custom color pickers
+            ui.iconColor.value = layer.customColor;
+            ui.iconColorHex.value = layer.customColor;
+            ui.iconCustomColorPicker.style.display = layer.colorMode === 'custom' ? 'block' : 'none';
+
+            // Rerender the layers list in sidebar
+            renderLayersListUI();
+        }
+
+        function renderLayersListUI() {
+            const container = document.getElementById('iconLayersContainer');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            // Render active layers in REVERSE order so the first item in the list is the top-most layer on the canvas
+            for (let index = iconLayers.length - 1; index >= 0; index--) {
+                const layer = iconLayers[index];
+                const item = document.createElement('div');
+                item.className = `layer-item ${index === activeLayerIndex ? 'active' : ''}`;
+                item.setAttribute('draggable', 'true');
+                item.style = `
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 10px 12px;
+                    background: ${index === activeLayerIndex ? 'rgba(59, 130, 246, 0.08)' : '#f9fafb'};
+                    border: 1px solid ${index === activeLayerIndex ? 'var(--accent)' : 'var(--border-color)'};
+                    border-radius: 8px;
+                    margin-bottom: 8px;
+                    cursor: grab;
+                    font-size: 0.85rem;
+                    font-weight: 500;
+                    transition: all 0.2s;
+                    user-select: none;
+                `;
+
+                // Drag and Drop Event Listeners
+                item.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', index);
+                    item.style.opacity = '0.4';
+                    item.style.cursor = 'grabbing';
+                });
+
+                item.addEventListener('dragend', () => {
+                    item.style.opacity = '1';
+                    item.style.cursor = 'grab';
+                });
+
+                item.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+
+                item.addEventListener('dragenter', () => {
+                    item.style.borderColor = 'var(--accent)';
+                    item.style.backgroundColor = 'rgba(59, 130, 246, 0.12)';
+                });
+
+                item.addEventListener('dragleave', () => {
+                    item.style.borderColor = index === activeLayerIndex ? 'var(--accent)' : 'var(--border-color)';
+                    item.style.backgroundColor = index === activeLayerIndex ? 'rgba(59, 130, 246, 0.08)' : '#f9fafb';
+                });
+
+                item.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                    const toIndex = index;
+                    if (fromIndex !== toIndex) {
+                        const draggedLayer = iconLayers[fromIndex];
+                        // Remove from original position
+                        iconLayers.splice(fromIndex, 1);
+                        // Insert at new position
+                        iconLayers.splice(toIndex, 0, draggedLayer);
+
+                        // Adjust activeLayerIndex so focus follows the dragged layer
+                        if (activeLayerIndex === fromIndex) {
+                            activeLayerIndex = toIndex;
+                        } else if (activeLayerIndex > fromIndex && activeLayerIndex <= toIndex) {
+                            activeLayerIndex--;
+                        } else if (activeLayerIndex < fromIndex && activeLayerIndex >= toIndex) {
+                            activeLayerIndex++;
+                        }
+
+                        syncSidebarToActiveLayer();
+                        draw();
+                    }
+                });
+
+                item.addEventListener('click', () => {
+                    activeLayerIndex = index;
+                    syncSidebarToActiveLayer();
+                });
+
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = `Layer ${index + 1}: ${layer.name || 'Empty'}`;
+                item.appendChild(nameSpan);
+
+                // Right-aligned controls container
+                const rightControls = document.createElement('div');
+                rightControls.style = `
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                `;
+
+                // Delete button (only show if more than one layer)
+                if (iconLayers.length > 1) {
+                    const delBtn = document.createElement('button');
+                    delBtn.innerHTML = `&times;`;
+                    delBtn.style = `
+                        border: none;
+                        background: transparent;
+                        color: #ef4444;
+                        font-size: 1.1rem;
+                        cursor: pointer;
+                        padding: 0 4px;
+                        line-height: 1;
+                        font-weight: bold;
+                    `;
+                    delBtn.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent selection trigger
+                        iconLayers.splice(index, 1);
+                        if (activeLayerIndex >= iconLayers.length) {
+                            activeLayerIndex = iconLayers.length - 1;
+                        }
+                        syncSidebarToActiveLayer();
+                        draw();
+                    });
+                    rightControls.appendChild(delBtn);
+                }
+
+                item.appendChild(rightControls);
+                container.appendChild(item);
+            }
+
+            // Add Layer Button
+            const addLayerBtn = document.createElement('button');
+            addLayerBtn.textContent = '+ Add Icon Layer';
+            addLayerBtn.style = `
+                width: 100%;
+                margin-top: 4px;
+                padding: 8px;
+                font-size: 0.8rem;
+                border: 1px dashed var(--border-color);
+                border-radius: 8px;
+                cursor: pointer;
+                background: transparent;
+                font-weight: 600;
+                transition: all 0.2s;
+                color: var(--accent);
+            `;
+            addLayerBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                iconLayers.push({
+                    img: null,
+                    name: 'Empty',
+                    opacity: 0.8,
+                    size: 0.4,
+                    x: 0,
+                    y: 0,
+                    colorMode: activeStyle === 'deck' ? 'white' : 'black',
+                    customColor: '#ffffff',
+                    blendMode: activeStyle === 'deck' ? 'source-over' : 'overlay'
+                });
+                activeLayerIndex = iconLayers.length - 1;
+                syncSidebarToActiveLayer();
+                draw();
+            });
+            container.appendChild(addLayerBtn);
+        }
+
         // --- Load Icon Helper ---
-        function loadIcon(url) {
-            // Only load if different or force reload
+        function loadIcon(url, displayName = '') {
             const img = new Image();
             img.crossOrigin = "Anonymous";
             img.onload = () => {
-                loadedIconImg = img;
+                const layer = iconLayers[activeLayerIndex];
+                if (layer) {
+                    layer.img = img;
+                    let name = displayName;
+                    if (!name) {
+                        const parts = url.split('/');
+                        const last = parts[parts.length - 1];
+                        const match = last.match(/([^.]+)/);
+                        name = match ? match[1] : 'Icon';
+                    }
+                    layer.name = name.charAt(0).toUpperCase() + name.slice(1);
+                }
+                syncSidebarToActiveLayer();
                 draw();
             };
             img.onerror = () => {
@@ -887,9 +1198,17 @@
                 // Automatically set icon overlay & text to White if they are Black (since black would be invisible on default black bg)
                 // And automatically set BOTH Icon & Text Blend Modes to Normal ('source-over') by default in Custom mode
                 let needsDraw = false;
-                if (iconColorMode === 'black') {
-                    setIconColorMode('white');
-                    needsDraw = true;
+
+                const activeLayer = iconLayers[activeLayerIndex];
+                if (activeLayer) {
+                    if (activeLayer.colorMode === 'black') {
+                        setIconColorMode('white');
+                        needsDraw = true;
+                    }
+                    if (activeLayer.blendMode !== 'source-over') {
+                        setBlendMode('source-over');
+                        needsDraw = true;
+                    }
                 }
                 if (textColorMode === 'black') {
                     setTextColorMode('white');
@@ -897,10 +1216,6 @@
                 }
                 if (currentTextBlendMode !== 'source-over') {
                     setTextBlendMode('source-over');
-                    needsDraw = true;
-                }
-                if (currentBlendMode !== 'source-over') {
-                    setBlendMode('source-over');
                     needsDraw = true;
                 }
                 if (!needsDraw) {
@@ -913,17 +1228,20 @@
                 ui.download.textContent = 'Download Folder Icon';
 
                 // Automatically restore 'black' icon overlay & text for folder style, and revert BOTH Icon & Text Blend Modes to 'overlay' if they were 'source-over'
-                if (iconColorMode === 'white') {
-                    setIconColorMode('black');
+                const activeLayer = iconLayers[activeLayerIndex];
+                if (activeLayer) {
+                    if (activeLayer.colorMode === 'white') {
+                        setIconColorMode('black');
+                    }
+                    if (activeLayer.blendMode === 'source-over') {
+                        setBlendMode('overlay');
+                    }
                 }
                 if (textColorMode === 'white') {
                     setTextColorMode('black');
                 }
                 if (currentTextBlendMode === 'source-over') {
                     setTextBlendMode('overlay');
-                }
-                if (currentBlendMode === 'source-over') {
-                    setBlendMode('overlay');
                 } else {
                     // Загрузка картинки
                     const img = new Image();
@@ -940,7 +1258,10 @@
         }
 
         function setIconColorMode(mode) {
-            iconColorMode = mode;
+            const layer = iconLayers[activeLayerIndex];
+            if (layer) {
+                layer.colorMode = mode;
+            }
 
             // Toggle active classes on buttons
             document.getElementById('btnIconWhite').classList.toggle('active', mode === 'white');
@@ -1034,6 +1355,8 @@
             iconOpacityVal: document.getElementById('opacityValue'),
             iconSize: document.getElementById('iconSize'),
             iconSizeVal: document.getElementById('sizeValue'),
+            iconX: document.getElementById('iconX'),
+            iconXVal: document.getElementById('posXValue'),
             iconY: document.getElementById('iconY'),
             iconYVal: document.getElementById('posValue'),
 
@@ -1064,7 +1387,10 @@
         };
 
         function setBlendMode(mode) {
-            currentBlendMode = mode;
+            const layer = iconLayers[activeLayerIndex];
+            if (layer) {
+                layer.blendMode = mode;
+            }
             document.querySelectorAll('button[onclick^="setBlendMode"]').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.mode === mode);
             });
@@ -1115,56 +1441,59 @@
                 }
             }
 
-            // 2. Рисуем Иконку
-            if (loadedIconImg) {
-                targetCtx.save();
+            // 2. Рисуем Иконку слоями
+            iconLayers.forEach(layer => {
+                if (layer.img && layer.img.complete && layer.img.naturalWidth !== 0) {
+                    targetCtx.save();
 
-                targetCtx.globalAlpha = parseFloat(ui.iconOpacity.value);
-                targetCtx.globalCompositeOperation = currentBlendMode;
+                    targetCtx.globalAlpha = parseFloat(layer.opacity);
+                    targetCtx.globalCompositeOperation = layer.blendMode;
 
-                const scale = parseFloat(ui.iconSize.value);
-                const iconSize = size * scale;
+                    const iconSize = size * parseFloat(layer.size);
 
-                const x = (size - iconSize) / 2;
-                const userY = (parseInt(ui.iconY.value) / 100) * (size / 4); // Adaptive Y scaling
+                    // X centering + X percent offset
+                    const userX = (parseInt(layer.x || 0) / 100) * (size / 2);
+                    const x = ((size - iconSize) / 2) + userX;
 
-                const baseOffset = (activeStyle === 'win' ? 0 : (activeStyle === 'deck' ? 0 : (size * 0.04)));
+                    // Y position
+                    const userY = (parseInt(layer.y || 0) / 100) * (size / 4); // Adaptive Y scaling
+                    const baseOffset = (activeStyle === 'win' ? 0 : (activeStyle === 'deck' ? 0 : (size * 0.04)));
+                    const y = ((size - iconSize) / 2) + baseOffset + userY;
 
-                const y = ((size - iconSize) / 2) + baseOffset + userY;
+                    if (layer.blendMode === 'source-over') {
+                        targetCtx.shadowColor = "rgba(0,0,0,0.3)";
+                        targetCtx.shadowBlur = size * 0.015;
+                        targetCtx.shadowOffsetY = size * 0.008;
+                    }
 
-                if (currentBlendMode === 'source-over') {
-                    targetCtx.shadowColor = "rgba(0,0,0,0.3)";
-                    targetCtx.shadowBlur = size * 0.015;
-                    targetCtx.shadowOffsetY = size * 0.008;
+                    if (layer.colorMode === 'original') {
+                        targetCtx.drawImage(layer.img, x, y, iconSize, iconSize);
+                    } else {
+                        // Draw using offscreen canvas to change color dynamically
+                        let overlayColor = '#ffffff';
+                        if (layer.colorMode === 'white') overlayColor = '#ffffff';
+                        else if (layer.colorMode === 'black') overlayColor = '#000000';
+                        else if (layer.colorMode === 'custom') overlayColor = layer.customColor;
+
+                        const offscreen = document.createElement('canvas');
+                        offscreen.width = iconSize;
+                        offscreen.height = iconSize;
+                        const oCtx = offscreen.getContext('2d');
+
+                        // Draw image first
+                        oCtx.drawImage(layer.img, 0, 0, iconSize, iconSize);
+
+                        // Composite solid color over image pixels
+                        oCtx.globalCompositeOperation = 'source-in';
+                        oCtx.fillStyle = overlayColor;
+                        oCtx.fillRect(0, 0, iconSize, iconSize);
+
+                        targetCtx.drawImage(offscreen, x, y);
+                    }
+
+                    targetCtx.restore();
                 }
-
-                if (iconColorMode === 'original') {
-                    targetCtx.drawImage(loadedIconImg, x, y, iconSize, iconSize);
-                } else {
-                    // Draw using offscreen canvas to change color dynamically
-                    let overlayColor = '#ffffff';
-                    if (iconColorMode === 'white') overlayColor = '#ffffff';
-                    else if (iconColorMode === 'black') overlayColor = '#000000';
-                    else if (iconColorMode === 'custom') overlayColor = customIconColor;
-
-                    const offscreen = document.createElement('canvas');
-                    offscreen.width = iconSize;
-                    offscreen.height = iconSize;
-                    const oCtx = offscreen.getContext('2d');
-
-                    // Draw image first
-                    oCtx.drawImage(loadedIconImg, 0, 0, iconSize, iconSize);
-
-                    // Composite solid color over image pixels
-                    oCtx.globalCompositeOperation = 'source-in';
-                    oCtx.fillStyle = overlayColor;
-                    oCtx.fillRect(0, 0, iconSize, iconSize);
-
-                    targetCtx.drawImage(offscreen, x, y);
-                }
-
-                targetCtx.restore();
-            }
+            });
 
             // 3. Рисуем Текст
             const textStr = ui.textInput.value;
@@ -1279,11 +1608,24 @@
         });
 
         // Icon Customization Events
-        [ui.iconOpacity, ui.iconSize, ui.iconY].forEach(el => {
+        [ui.iconOpacity, ui.iconSize, ui.iconY, ui.iconX].forEach(el => {
             el.addEventListener('input', () => {
-                ui.iconOpacityVal.textContent = ui.iconOpacity.value;
-                ui.iconSizeVal.textContent = ui.iconSize.value;
-                ui.iconYVal.textContent = ui.iconY.value;
+                const layer = iconLayers[activeLayerIndex];
+                if (layer) {
+                    layer.opacity = parseFloat(ui.iconOpacity.value);
+                    layer.size = parseFloat(ui.iconSize.value);
+                    layer.y = parseInt(ui.iconY.value);
+                    if (ui.iconX) {
+                        layer.x = parseInt(ui.iconX.value);
+                    }
+
+                    ui.iconOpacityVal.textContent = layer.opacity;
+                    ui.iconSizeVal.textContent = layer.size;
+                    ui.iconYVal.textContent = layer.y;
+                    if (ui.iconX && ui.iconXVal) {
+                        ui.iconXVal.textContent = layer.x;
+                    }
+                }
                 draw();
             });
         });
@@ -1308,7 +1650,10 @@
 
         // Icon Overlay Custom Color Events
         ui.iconColor.addEventListener('input', (e) => {
-            customIconColor = e.target.value;
+            const layer = iconLayers[activeLayerIndex];
+            if (layer) {
+                layer.customColor = e.target.value;
+            }
             ui.iconColorHex.value = e.target.value;
             draw();
         });
@@ -1318,7 +1663,10 @@
             if (val.length > 0 && !val.startsWith('#')) val = '#' + val;
             ui.iconColorHex.value = val;
             if (/^#[0-9A-F]{6}$/i.test(val)) {
-                customIconColor = val;
+                const layer = iconLayers[activeLayerIndex];
+                if (layer) {
+                    layer.customColor = val;
+                }
                 ui.iconColor.value = val;
                 draw();
             }

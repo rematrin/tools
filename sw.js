@@ -1,9 +1,13 @@
-const CACHE_NAME = 'tools-pwa-v7';
+const CACHE_NAME = 'tools-pwa-v8';
 const DYNAMIC_CACHE = 'tools-dynamic-image-cache-v1';
 const ASSETS = [
     './fx_converter.html',
     './clock.html',
     './home.html',
+    './todo.html',
+    './todo.js',
+    './todo.css',
+    './todo_manifest.json',
     './theme.css',
     './theme-loader.js',
     './footer.css',

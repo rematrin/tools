@@ -1,0 +1,15 @@
+{
+    "name": "Туду лист",
+    "short_name": "Туду",
+    "start_url": "./todo.html",
+    "display": "standalone",
+    "background_color": "#0b0f19",
+    "theme_color": "#0b0f19",
+    "icons": [
+        {
+            "src": "favicon.png",
+            "sizes": "any",
+            "type": "image/png"
+        }
+    ]
+}

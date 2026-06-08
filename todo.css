@@ -225,7 +225,7 @@ body.dark .add-task-form.expanded {
     background: transparent;
     color: var(--text);
     font-size: 1.05rem;
-    font-weight: 500;
+    font-weight: 400;
     font-family: inherit;
     outline: none;
     width: 100%;
@@ -381,7 +381,7 @@ body.dark .task-item:hover {
 
 .task-title-text {
     font-size: 1.05rem;
-    font-weight: 500;
+    font-weight: 400;
     color: var(--text);
     word-break: break-word;
     outline: none;
@@ -401,7 +401,7 @@ body.dark .task-item:hover {
 .edit-title-input {
     width: 100%;
     font-size: 1.05rem;
-    font-weight: 500;
+    font-weight: 400;
     color: var(--text);
     border: none;
     background: transparent;

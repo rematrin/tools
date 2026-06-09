@@ -295,6 +295,17 @@ function initAuthWidget() {
             }
         } catch (e) {
             console.error("Ошибка при обновлении токена:", e);
+            let errMsg = e.message;
+            if (e.code === 'auth/unauthorized-domain') {
+                errMsg = "Этот домен (например, 127.0.0.1) не авторизован в настройках Firebase. Пожалуйста, используйте адрес http://localhost:5500 вместо IP-адреса, либо добавьте 127.0.0.1 в список Authorized Domains в консоли Firebase.";
+            } else if (e.code === 'auth/popup-blocked') {
+                errMsg = "Окно входа заблокировано браузером. Пожалуйста, разрешите всплывающие окна для этого сайта.";
+            }
+            if (typeof showToast === 'function') {
+                showToast("Ошибка: " + errMsg, 'error');
+            } else {
+                alert("Ошибка авторизации: " + errMsg);
+            }
             throw e;
         }
     };

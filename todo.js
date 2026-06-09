@@ -505,6 +505,8 @@ window.addEventListener('authChanged', (e) => {
         // Скрываем интерфейс
         if (todoMainLayout) todoMainLayout.style.setProperty('display', 'none', 'important');
         if (authRequiredState) authRequiredState.style.display = 'block';
+        if (sidebarName) sidebarName.textContent = "Войти";
+        if (sidebarAvatar) sidebarAvatar.style.display = 'none';
         
         stopTodoForUser();
     }
@@ -665,6 +667,10 @@ if (confirmDeleteModal) {
 async function toggleTaskCompleted(taskId, currentStatus) {
     if (!currentUid || !taskId) return;
     try {
+        if (!currentStatus) {
+            const completedSound = new Audio('completed.mp3');
+            completedSound.play().catch(err => console.log('Audio playback failed:', err));
+        }
         await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
             completed: !currentStatus
         });

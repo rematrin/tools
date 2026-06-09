@@ -21,6 +21,16 @@ let allTasks = [];
 let currentRoute = 'inbox'; // 'inbox' или 'today'
 let isCompletedSectionCollapsed = localStorage.getItem('todo_completed_collapsed') === 'true';
 
+let projectsList = [];
+let unsubscribeProjects = null;
+
+const btnAddProject = document.getElementById('btnAddProject');
+const projectAddForm = document.getElementById('projectAddForm');
+const projectNewNameInput = document.getElementById('projectNewNameInput');
+const btnCancelProject = document.getElementById('btnCancelProject');
+const btnSaveProject = document.getElementById('btnSaveProject');
+const projectsListContainer = document.getElementById('projectsList');
+
 // Функция проверки, создана ли задача сегодня
 const isToday = (timestamp) => {
     if (!timestamp) return false;
@@ -435,6 +445,16 @@ function handleRoute() {
     const hash = window.location.hash.replace('#', '');
     if (hash === 'today') {
         currentRoute = 'today';
+    } else if (hash === 'trash') {
+        currentRoute = 'trash';
+    } else if (hash.startsWith('project/')) {
+        const projectId = hash.split('/')[1];
+        if (!projectId) {
+            currentRoute = 'inbox';
+            history.replaceState(null, null, '#inbox');
+        } else {
+            currentRoute = hash;
+        }
     } else {
         currentRoute = 'inbox';
         // Если хэш пустой или некорректный, устанавливаем дефолтный #inbox
@@ -446,6 +466,7 @@ function handleRoute() {
     // Обновляем подсветку пунктов меню в сайдбаре
     const menuInbox = document.getElementById('menuInbox');
     const menuToday = document.getElementById('menuToday');
+    const menuTrash = document.getElementById('menuTrash');
     
     if (menuInbox) {
         if (currentRoute === 'inbox') menuInbox.classList.add('active');
@@ -455,11 +476,24 @@ function handleRoute() {
         if (currentRoute === 'today') menuToday.classList.add('active');
         else menuToday.classList.remove('active');
     }
+    if (menuTrash) {
+        if (currentRoute === 'trash') menuTrash.classList.add('active');
+        else menuTrash.classList.remove('active');
+    }
+
+    // Обновляем подсветку для проектов
+    renderProjects();
 
     const titleEl = document.querySelector('.list-title');
 
     if (currentRoute === 'today') {
         if (titleEl) titleEl.textContent = 'Сегодня';
+    } else if (currentRoute === 'trash') {
+        if (titleEl) titleEl.textContent = 'Корзина';
+    } else if (currentRoute.startsWith('project/')) {
+        const projectId = currentRoute.split('/')[1];
+        const proj = projectsList.find(p => p.id === projectId);
+        if (titleEl) titleEl.textContent = proj ? proj.name : 'Проект';
     } else {
         if (titleEl) titleEl.textContent = 'Входящие';
     }
@@ -500,6 +534,7 @@ window.addEventListener('authChanged', (e) => {
         if (todoMainLayout) todoMainLayout.style.display = 'flex';
         
         startTodoForUser(currentUid);
+        startProjectsForUser(currentUid);
         handleRoute();
     } else {
         // Скрываем интерфейс
@@ -509,6 +544,7 @@ window.addEventListener('authChanged', (e) => {
         if (sidebarAvatar) sidebarAvatar.style.display = 'none';
         
         stopTodoForUser();
+        stopProjectsForUser();
     }
 });
 
@@ -520,10 +556,28 @@ function startTodoForUser(uid) {
     
     unsubscribeTasks = onSnapshot(q, (snapshot) => {
         allTasks = [];
+        const now = Date.now();
+        const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+        
         snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            
+            // Автоматическое удаление навсегда через 30 дней
+            if (data.deleted === true && data.deletedAt) {
+                try {
+                    const delTime = data.deletedAt.toDate().getTime();
+                    if (now - delTime > THIRTY_DAYS_MS) {
+                        deleteDoc(doc(db, 'users', uid, 'tasks', docSnap.id));
+                        return; // Пропускаем добавление в локальный список
+                    }
+                } catch (e) {
+                    console.error("Ошибка автоудаления из корзины:", e);
+                }
+            }
+            
             allTasks.push({
                 id: docSnap.id,
-                ...docSnap.data()
+                ...data
             });
         });
         
@@ -565,11 +619,17 @@ async function handleAddTask() {
     // Блокируем кнопку на время добавления
     btnAddTask.disabled = true;
     
+    let targetProjectId = null;
+    if (currentRoute.startsWith('project/')) {
+        targetProjectId = currentRoute.split('/')[1];
+    }
+    
     try {
         await addDoc(collection(db, 'users', currentUid, 'tasks'), {
             title: titleText,
             completed: false,
             dueDate: selectedDueDate,
+            projectId: targetProjectId,
             createdAt: serverTimestamp()
         });
         taskTitleInput.value = '';
@@ -614,51 +674,98 @@ if (taskTitleInput) {
     });
 }
 
-// Удаление задачи
+// Удаление задачи (перемещение в Корзину)
 async function deleteTask(taskId) {
+    if (!currentUid || !taskId) return;
+    try {
+        await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
+            deleted: true,
+            deletedAt: serverTimestamp()
+        });
+    } catch (err) {
+        console.error("Ошибка перемещения задачи в корзину:", err);
+    }
+}
+
+// Восстановление задачи из Корзины
+async function restoreTask(taskId) {
+    if (!currentUid || !taskId) return;
+    try {
+        await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
+            deleted: false,
+            deletedAt: null
+        });
+    } catch (err) {
+        console.error("Ошибка восстановления задачи:", err);
+    }
+}
+
+// Удаление задачи навсегда
+async function deleteTaskPermanently(taskId) {
     if (!currentUid || !taskId) return;
     try {
         await deleteDoc(doc(db, 'users', currentUid, 'tasks', taskId));
     } catch (err) {
-        console.error("Ошибка удаления задачи:", err);
+        console.error("Ошибка удаления задачи навсегда:", err);
     }
 }
 
-// Логика модального окна подтверждения удаления
-function showDeleteConfirmation(taskId, taskTitle) {
-    taskIdToDelete = taskId;
-    if (confirmDeleteTaskTitle) {
-        confirmDeleteTaskTitle.textContent = taskTitle;
-    }
-    if (confirmDeleteModal) {
-        confirmDeleteModal.style.display = 'flex';
-    }
+// Очистить корзину полностью
+function emptyTrash() {
+    if (!currentUid) return;
+    showCustomConfirm(
+        "Очистить корзину?",
+        "Все задачи в корзине будут удалены безвозвратно. Это действие нельзя отменить.",
+        "Очистить",
+        async () => {
+            const deletedTasks = allTasks.filter(t => t.deleted);
+            for (const task of deletedTasks) {
+                await deleteDoc(doc(db, 'users', currentUid, 'tasks', task.id));
+            }
+        }
+    );
 }
 
-function hideDeleteConfirmation() {
-    taskIdToDelete = null;
-    if (confirmDeleteModal) {
-        confirmDeleteModal.style.display = 'none';
-    }
+let customConfirmCallback = null;
+
+// Универсальная логика модального окна подтверждения
+function showCustomConfirm(title, desc, actionText, onConfirm) {
+    const modal = document.getElementById('confirmDeleteModal');
+    const titleEl = modal.querySelector('.confirm-modal-title');
+    const descEl = modal.querySelector('.confirm-modal-desc');
+    const btnConfirm = document.getElementById('btnConfirmDeleteCoform');
+    
+    if (titleEl) titleEl.textContent = title;
+    if (descEl) descEl.innerHTML = desc;
+    if (btnConfirm) btnConfirm.textContent = actionText;
+    
+    customConfirmCallback = onConfirm;
+    if (modal) modal.style.display = 'flex';
+}
+
+function hideCustomConfirm() {
+    customConfirmCallback = null;
+    const modal = document.getElementById('confirmDeleteModal');
+    if (modal) modal.style.display = 'none';
 }
 
 if (btnConfirmDeleteCancel) {
-    btnConfirmDeleteCancel.addEventListener('click', hideDeleteConfirmation);
+    btnConfirmDeleteCancel.addEventListener('click', hideCustomConfirm);
 }
 
 if (btnConfirmDeleteCoform) {
     btnConfirmDeleteCoform.addEventListener('click', () => {
-        if (taskIdToDelete) {
-            deleteTask(taskIdToDelete);
+        if (customConfirmCallback) {
+            customConfirmCallback();
         }
-        hideDeleteConfirmation();
+        hideCustomConfirm();
     });
 }
 
 if (confirmDeleteModal) {
     confirmDeleteModal.addEventListener('click', (e) => {
         if (e.target === confirmDeleteModal) {
-            hideDeleteConfirmation();
+            hideCustomConfirm();
         }
     });
 }
@@ -1069,8 +1176,10 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
 
 // Отрендерить задачи в UI
 function renderTasks() {
-    const activeTasks = allTasks.filter(t => !t.completed);
-    const completedTasks = allTasks.filter(t => t.completed);
+    const nonDeletedTasks = allTasks.filter(t => !t.deleted);
+    const activeTasks = nonDeletedTasks.filter(t => !t.completed);
+    const completedTasks = nonDeletedTasks.filter(t => t.completed);
+    const trashTasks = allTasks.filter(t => t.deleted);
     
     // Вычисляем счетчики для сайдбара
     const todayObj = new Date();
@@ -1080,7 +1189,7 @@ function renderTasks() {
         return t.dueDate === todayStr;
     };
 
-    const inboxActiveCount = activeTasks.length;
+    const inboxActiveCount = activeTasks.filter(t => !t.projectId).length;
     const todayActiveCount = activeTasks.filter(isTodayTask).length;
     
     if (inboxCounter) {
@@ -1091,6 +1200,24 @@ function renderTasks() {
         todayCounter.textContent = todayActiveCount;
         todayCounter.style.display = todayActiveCount > 0 ? 'inline-block' : 'none';
     }
+
+    const trashCounter = document.getElementById('trashCounter');
+    const trashActiveCount = trashTasks.length;
+    if (trashCounter) {
+        trashCounter.textContent = trashActiveCount;
+        trashCounter.style.display = trashActiveCount > 0 ? 'inline-block' : 'none';
+    }
+    
+    // Переключаем отображение баннера Корзины и формы быстрого добавления
+    const trashNoticeBanner = document.getElementById('trashNoticeBanner');
+    const addTaskFormEl = document.querySelector('.add-task-form');
+    
+    if (trashNoticeBanner) {
+        trashNoticeBanner.style.display = currentRoute === 'trash' ? 'flex' : 'none';
+    }
+    if (addTaskFormEl) {
+        addTaskFormEl.style.display = currentRoute === 'trash' ? 'none' : 'flex';
+    }
     
     // Фильтруем задачи для отображения в зависимости от текущей вкладки (роута)
     let displayActiveTasks = [];
@@ -1099,30 +1226,62 @@ function renderTasks() {
     if (currentRoute === 'today') {
         displayActiveTasks = activeTasks.filter(isTodayTask);
         displayCompletedTasks = completedTasks.filter(isTodayTask);
+    } else if (currentRoute.startsWith('project/')) {
+        const projectId = currentRoute.split('/')[1];
+        displayActiveTasks = activeTasks.filter(t => t.projectId === projectId);
+        displayCompletedTasks = completedTasks.filter(t => t.projectId === projectId);
+    } else if (currentRoute === 'trash') {
+        displayActiveTasks = trashTasks;
+        displayCompletedTasks = [];
     } else { // inbox
-        displayActiveTasks = activeTasks;
-        displayCompletedTasks = completedTasks;
+        displayActiveTasks = activeTasks.filter(t => !t.projectId);
+        displayCompletedTasks = completedTasks.filter(t => !t.projectId);
     }
     
     // 1. РЕНДЕРИМ АКТИВНЫЕ ЗАДАЧИ
     activeTasksContainer.innerHTML = '';
     
     if (displayActiveTasks.length === 0) {
-        activeTasksContainer.innerHTML = `
-            <div class="empty-state">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 14 14"></polyline>
-                </svg>
-                <h3 class="empty-title">Все дела сделаны!</h3>
-                <p class="empty-text">Добавьте новую задачу выше, чтобы спланировать свой день.</p>
-            </div>
-        `;
+        if (currentRoute === 'trash') {
+            activeTasksContainer.innerHTML = `
+                <div class="empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <h3 class="empty-title">Корзина пуста</h3>
+                    <p class="empty-text">Здесь будут отображаться удаленные задачи.</p>
+                </div>
+            `;
+        } else {
+            activeTasksContainer.innerHTML = `
+                <div class="empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 14 14"></polyline>
+                    </svg>
+                    <h3 class="empty-title">Все дела сделаны!</h3>
+                    <p class="empty-text">Добавьте новую задачу выше, чтобы спланировать свой день.</p>
+                </div>
+            `;
+        }
     } else {
         displayActiveTasks.forEach(task => {
             const el = createTaskRowElement(task);
             activeTasksContainer.appendChild(el);
         });
+
+        // Добавляем футер с количеством элементов в Корзине
+        if (currentRoute === 'trash') {
+            const footerDiv = document.createElement('div');
+            footerDiv.style.textAlign = 'center';
+            footerDiv.style.marginTop = '24px';
+            footerDiv.style.color = 'var(--text-secondary)';
+            footerDiv.style.fontSize = '0.9rem';
+            footerDiv.style.fontWeight = '500';
+            footerDiv.textContent = `${displayActiveTasks.length} в корзине`;
+            activeTasksContainer.appendChild(footerDiv);
+        }
     }
     
     // 2. РЕНДЕРИМ ВЫПОЛНЕННЫЕ ЗАДАЧИ
@@ -1148,6 +1307,67 @@ function createTaskRowElement(task) {
     const item = document.createElement('div');
     item.className = `task-item ${task.completed ? 'completed' : ''}`;
     item.setAttribute('data-id', task.id);
+    
+    if (task.deleted) {
+        item.innerHTML = `
+            <div class="checkbox-wrapper" style="opacity: 0.5; pointer-events: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="color: var(--text-secondary);">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </div>
+            <div class="task-content" style="min-width: 0; flex: 1;">
+                <span class="task-title-text" style="color: var(--text-secondary); pointer-events: none; text-decoration: ${task.completed ? 'line-through' : 'none'};">${escapeHtml(task.title)}</span>
+                ${task.dueDate ? `
+                    <span class="task-due-badge" style="opacity: 0.6;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span style="vertical-align: middle;">${formatDueDateDisplay(task.dueDate)}</span>
+                    </span>
+                ` : ''}
+            </div>
+            <div class="task-actions" style="opacity: 1; display: flex; gap: 4px;">
+                <button class="action-btn btn-restore" title="Восстановить">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                        <polyline points="1 4 1 10 7 10"></polyline>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                    </svg>
+                </button>
+                <button class="action-btn btn-delete-perm" title="Удалить навсегда">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        const btnRestore = item.querySelector('.btn-restore');
+        const btnDeletePerm = item.querySelector('.btn-delete-perm');
+        
+        btnRestore.addEventListener('click', (e) => {
+            e.stopPropagation();
+            restoreTask(task.id);
+        });
+        
+        btnDeletePerm.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showCustomConfirm(
+                "Удалить навсегда?",
+                `Задача <strong>${escapeHtml(task.title)}</strong> будет удалена безвозвратно. Это действие нельзя отменить.`,
+                "Удалить навсегда",
+                () => {
+                    deleteTaskPermanently(task.id);
+                }
+            );
+        });
+        
+        return item;
+    }
     
     item.innerHTML = `
         <div class="checkbox-wrapper">
@@ -1253,7 +1473,14 @@ function createTaskRowElement(task) {
         e.stopPropagation();
         actionsDropdown.style.display = 'none';
         item.classList.remove('menu-open');
-        showDeleteConfirmation(task.id, task.title);
+        showCustomConfirm(
+            "Переместить в корзину?",
+            `Задача <strong>${escapeHtml(task.title)}</strong> будет перемещена в корзину.`,
+            "Удалить",
+            () => {
+                deleteTask(task.id);
+            }
+        );
     });
     
     return item;
@@ -1282,3 +1509,225 @@ window.addEventListener('resize', () => {
         el.style.height = el.scrollHeight + 'px';
     });
 });
+
+// === ЛОГИКА ПРОЕКТОВ ===
+
+function startProjectsForUser(uid) {
+    if (unsubscribeProjects) unsubscribeProjects();
+    
+    const qProjects = query(collection(db, 'users', uid, 'projects'), orderBy('createdAt', 'asc'));
+    
+    unsubscribeProjects = onSnapshot(qProjects, (snapshot) => {
+        projectsList = [];
+        snapshot.forEach((docSnap) => {
+            projectsList.push({
+                id: docSnap.id,
+                ...docSnap.data()
+            });
+        });
+        
+        // Проверяем существование проекта на текущем роуте
+        if (currentRoute.startsWith('project/')) {
+            const projectId = currentRoute.split('/')[1];
+            const exists = projectsList.some(p => p.id === projectId);
+            if (!exists) {
+                currentRoute = 'inbox';
+                history.replaceState(null, null, '#inbox');
+            }
+        }
+        
+        renderProjects();
+        renderTasks(); // Re-render to update counters in sidebar!
+    }, (error) => {
+        console.error("Ошибка при получении списка проектов:", error);
+    });
+}
+
+function stopProjectsForUser() {
+    if (unsubscribeProjects) {
+        unsubscribeProjects();
+        unsubscribeProjects = null;
+    }
+    projectsList = [];
+    if (projectsListContainer) projectsListContainer.innerHTML = '';
+}
+
+function renderProjects() {
+    if (!projectsListContainer) return;
+    projectsListContainer.innerHTML = '';
+    
+    projectsList.forEach(project => {
+        const itemContainer = document.createElement('div');
+        itemContainer.className = 'project-item-container';
+        
+        const projectHash = `project/${project.id}`;
+        const isActive = currentRoute === projectHash;
+        
+        // Calculate task count for this project
+        const projectTaskCount = allTasks.filter(t => !t.completed && t.projectId === project.id).length;
+        
+        itemContainer.innerHTML = `
+            <a href="#${projectHash}" class="menu-item ${isActive ? 'active' : ''}">
+                <span class="menu-item-left">
+                    <span class="menu-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="4" y1="9" x2="20" y2="9"></line>
+                            <line x1="4" y1="15" x2="20" y2="15"></line>
+                            <line x1="10" y1="3" x2="8" y2="21"></line>
+                            <line x1="16" y1="3" x2="14" y2="21"></line>
+                        </svg>
+                    </span>
+                    <span>${escapeHtml(project.name)}</span>
+                </span>
+                <span class="menu-counter" style="${projectTaskCount > 0 ? '' : 'display:none'}">${projectTaskCount}</span>
+            </a>
+            <button class="project-delete-btn" data-id="${project.id}" title="Удалить проект">&times;</button>
+        `;
+        
+        // Add delete project listener
+        const deleteBtn = itemContainer.querySelector('.project-delete-btn');
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            showCustomConfirm(
+                "Удалить проект?",
+                `Вы действительно хотите удалить проект <strong>${escapeHtml(project.name)}</strong>? Все входящие в него задачи будут перемещены в корзину.`,
+                "Удалить",
+                () => {
+                    deleteProject(project.id);
+                }
+            );
+        });
+        
+        projectsListContainer.appendChild(itemContainer);
+    });
+}
+
+async function deleteProject(projectId) {
+    if (!currentUid || !projectId) return;
+    try {
+        await deleteDoc(doc(db, 'users', currentUid, 'projects', projectId));
+        
+        // Перемещаем задачи этого проекта в Корзину
+        const tasksToTrash = allTasks.filter(t => t.projectId === projectId);
+        for (const task of tasksToTrash) {
+            await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                deleted: true,
+                deletedAt: serverTimestamp(),
+                projectId: null // Сбрасываем ID проекта, чтобы при восстановлении они попадали во Входящие
+            });
+        }
+        
+        // Redirect to Inbox if viewing the deleted project
+        if (currentRoute === `project/${projectId}`) {
+            window.location.hash = '#inbox';
+        }
+    } catch (err) {
+        console.error("Ошибка при удалении проекта:", err);
+    }
+}
+
+async function handleAddProject() {
+    const nameText = projectNewNameInput.value.trim();
+    if (!nameText || nameText.length > 50 || !currentUid) return;
+    
+    btnSaveProject.disabled = true;
+    try {
+        await addDoc(collection(db, 'users', currentUid, 'projects'), {
+            name: nameText,
+            createdAt: serverTimestamp()
+        });
+        projectNewNameInput.value = '';
+        projectAddForm.style.display = 'none';
+    } catch (err) {
+        console.error("Не удалось добавить проект:", err);
+    } finally {
+        btnSaveProject.disabled = false;
+    }
+}
+
+// Привязка событий проектов
+if (btnAddProject) {
+    btnAddProject.addEventListener('click', (e) => {
+        e.stopPropagation();
+        projectAddForm.style.display = projectAddForm.style.display === 'none' ? 'block' : 'none';
+        if (projectAddForm.style.display === 'block') {
+            projectNewNameInput.focus();
+        }
+    });
+}
+
+if (btnCancelProject) {
+    btnCancelProject.addEventListener('click', (e) => {
+        e.stopPropagation();
+        projectNewNameInput.value = '';
+        projectAddForm.style.display = 'none';
+    });
+}
+
+if (btnSaveProject) {
+    btnSaveProject.addEventListener('click', handleAddProject);
+}
+
+if (projectNewNameInput) {
+    projectNewNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAddProject();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            projectNewNameInput.value = '';
+            projectAddForm.style.display = 'none';
+        }
+    });
+}
+
+// Ресайзер боковой панели
+function initSidebarResizer() {
+    const resizer = document.getElementById('sidebarResizer');
+    const sidebar = document.getElementById('todoSidebar');
+    if (!resizer || !sidebar) return;
+
+    let isResizing = false;
+    let currentWidth = 240;
+
+    const savedWidth = localStorage.getItem('todo_sidebar_width');
+    if (savedWidth) {
+        currentWidth = parseInt(savedWidth, 10);
+        document.documentElement.style.setProperty('--sidebar-width', currentWidth + 'px');
+    }
+
+    resizer.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        resizer.classList.add('resizing');
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        let newWidth = e.clientX;
+        if (newWidth < 200) newWidth = 200;
+        if (newWidth > 450) newWidth = 450;
+        currentWidth = newWidth;
+        document.documentElement.style.setProperty('--sidebar-width', currentWidth + 'px');
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isResizing) {
+            isResizing = false;
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            resizer.classList.remove('resizing');
+            localStorage.setItem('todo_sidebar_width', currentWidth + 'px');
+        }
+    });
+}
+
+// Привязка событий Корзины и Инициализация ресайзера
+const btnEmptyTrash = document.getElementById('btnEmptyTrash');
+if (btnEmptyTrash) {
+    btnEmptyTrash.addEventListener('click', emptyTrash);
+}
+
+initSidebarResizer();

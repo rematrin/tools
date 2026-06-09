@@ -34,12 +34,47 @@ body {
 .sidebar-header {
     padding: 16px 20px;
     border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sidebar-close-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    padding: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.sidebar-close-toggle:hover {
+    background-color: var(--hover-bg);
+    color: var(--text);
+}
+
+.sidebar-close-toggle svg {
+    display: block;
+    width: 20px;
+    height: 20px;
 }
 
 .sidebar-user {
     display: flex;
     align-items: center;
     gap: 12px;
+    padding: 6px 8px;
+    margin: -6px -8px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-user:hover {
+    background-color: var(--hover-bg);
 }
 
 .sidebar-avatar {
@@ -87,7 +122,7 @@ body {
     border-radius: 12px;
     color: var(--text);
     text-decoration: none;
-    font-weight: 500;
+    font-weight: 400;
     font-size: 0.9rem;
     transition: background-color 0.2s ease, color 0.2s ease;
     cursor: pointer;
@@ -104,7 +139,7 @@ body {
 .menu-item.active {
     background-color: var(--active-bg);
     color: var(--accent);
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .menu-item-left {
@@ -153,15 +188,43 @@ body {
 
 /* Шапка списка */
 .list-header {
+    display: flex;
+    align-items: center;
     margin-bottom: 28px;
+}
+
+.content-nav-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    padding: 6px;
+    margin-right: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.content-nav-toggle:hover {
+    background-color: var(--hover-bg);
+    color: var(--text);
+}
+
+.content-nav-toggle svg {
+    display: block;
+    width: 20px;
+    height: 20px;
 }
 
 .list-title {
     font-size: 1.45rem;
     font-weight: 700;
-    margin: 0 0 4px 0;
+    margin: 0;
     color: var(--text);
     letter-spacing: -0.02em;
+    line-height: 1;
 }
 
 .list-subtitle {
@@ -772,10 +835,15 @@ body.dark .task-actions-dropdown {
 @media (max-width: 768px) {
     .todo-sidebar {
         transform: translateX(-100%);
+        width: 100% !important;
     }
 
     .todo-sidebar.mobile-open {
         transform: translateX(0);
+    }
+
+    .sidebar-resizer {
+        display: none !important;
     }
 
     .todo-content {
@@ -783,8 +851,12 @@ body.dark .task-actions-dropdown {
         padding: 20px 16px;
     }
 
-    .mobile-nav-toggle {
-        display: flex;
+    .content-nav-toggle {
+        display: inline-flex;
+    }
+
+    .sidebar-close-toggle {
+        display: inline-flex;
     }
 
     .sidebar-overlay.active {
@@ -1194,11 +1266,9 @@ body.dark .task-due-badge.overdue {
     align-items: center;
     justify-content: space-between;
     padding: 14px 16px 6px 16px;
-    font-size: 0.72rem;
-    font-weight: 700;
+    font-size: 0.82rem;
+    font-weight: 500;
     color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     margin-top: 10px;
     border-top: 1px solid var(--border);
 }
@@ -1242,19 +1312,16 @@ body.dark .task-due-badge.overdue {
 }
 
 .project-item-container .menu-item {
-    padding-right: 32px; /* Оставляем место для кнопки удаления */
+    padding-right: 14px;
 }
 
-.project-delete-btn {
+.project-actions-btn {
     position: absolute;
-    right: 12px;
+    right: 14px;
     background: transparent;
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    font-size: 1.1rem;
-    padding: 0;
-    line-height: 1;
     display: none;
     align-items: center;
     justify-content: center;
@@ -1263,19 +1330,91 @@ body.dark .task-due-badge.overdue {
     border-radius: 4px;
     transition: background-color 0.2s, color 0.2s;
     z-index: 5;
+    padding: 0;
 }
 
-.project-delete-btn:hover {
+.project-actions-btn:hover {
     background-color: var(--hover-bg);
-    color: #ef4444;
+    color: var(--text);
 }
 
-.project-item-container:hover .project-delete-btn {
+.project-actions-btn svg {
+    display: block;
+    width: 14px;
+    height: 14px;
+}
+
+.project-item-container:hover .project-actions-btn {
     display: flex;
 }
 
 .project-item-container:hover .menu-counter {
-    display: none; /* Скрываем счетчик при наведении для показа крестика */
+    display: none !important;
+}
+
+/* Контекстное меню для проектов */
+.custom-context-menu {
+    position: absolute;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    padding: 4px;
+    z-index: 2000;
+    min-width: 150px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+body.dark .custom-context-menu {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.ctx-item {
+    padding: 8px 12px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ctx-item:hover {
+    background-color: var(--hover-bg);
+}
+
+.ctx-item svg {
+    color: var(--text-secondary);
+}
+
+.ctx-item.danger {
+    color: #ef4444;
+}
+
+.ctx-item.danger svg {
+    color: #ef4444;
+}
+
+.ctx-item.danger:hover {
+    background-color: rgba(239, 68, 68, 0.08);
+}
+
+.inline-project-edit-input {
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: inherit;
+    padding: 2px 6px;
+    width: 100%;
+    outline: none;
+    box-sizing: border-box;
 }
 
 /* Форма добавления проекта */
@@ -1433,11 +1572,205 @@ body.dark .btn-empty-trash:hover {
     color: #1a1d22;
 }
 
-/* Действия над удаленными задачами */
 .action-btn.btn-restore:hover {
     color: #22c55e;
 }
 
 .action-btn.btn-delete-perm:hover {
     color: #ef4444;
+}
+
+/* --- DRAG & DROP ДЛЯ ЗАДАЧ --- */
+.task-item {
+    position: relative;
+}
+
+/* Кнопка-иконка перетаскивания */
+.task-drag-handle {
+    position: absolute;
+    left: -27px;
+    top: 0;
+    bottom: 0;
+    width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    opacity: 0;
+    pointer-events: none;
+    cursor: grab;
+    transition: opacity 0.2s ease, color 0.2s ease;
+    background: transparent;
+    border: none;
+    padding: 0;
+    z-index: 5;
+}
+
+.task-drag-handle:active {
+    cursor: grabbing;
+}
+
+.task-drag-handle svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
+
+/* Появление иконки при наведении */
+@media (hover: hover) {
+    .task-item:hover .task-drag-handle {
+        opacity: 0.6;
+        pointer-events: auto;
+    }
+
+    .task-item:hover .task-drag-handle:hover {
+        opacity: 1;
+        color: var(--text);
+    }
+}
+
+/* На мобильных (тач) хэндл виден всегда */
+@media (hover: none) {
+    .task-drag-handle {
+        opacity: 0.5;
+        pointer-events: auto;
+        left: -28px;
+        width: 28px;
+    }
+}
+
+/* Элемент в процессе перетаскивания */
+.task-item.dragging {
+    opacity: 0.4;
+    border-style: dashed;
+    background-color: var(--hover-bg);
+}
+
+/* Индикаторы направления вставки (линия с кружочком, как на референсе) */
+.task-item.drag-over-above {
+    position: relative;
+}
+
+.task-item.drag-over-above::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--accent);
+    z-index: 10;
+}
+
+.task-item.drag-over-above::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background-color: var(--card-bg);
+    z-index: 11;
+}
+
+.task-item.drag-over-below {
+    position: relative;
+}
+
+.task-item.drag-over-below::before {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--accent);
+    z-index: 10;
+}
+
+.task-item.drag-over-below::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: -4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background-color: var(--card-bg);
+    z-index: 11;
+}
+
+/* --- DRAG & DROP ДЛЯ ПРОЕКТОВ --- */
+.project-item-container .menu-icon {
+    cursor: grab;
+}
+
+.project-item-container .menu-icon:active {
+    cursor: grabbing;
+}
+
+.project-item-container.dragging {
+    opacity: 0.4;
+    border-style: dashed;
+    background-color: var(--hover-bg);
+    border-radius: 12px;
+}
+
+.project-item-container.drag-over-above {
+    position: relative;
+}
+
+.project-item-container.drag-over-above::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    background-color: var(--accent);
+    z-index: 10;
+}
+
+.project-item-container.drag-over-above::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background-color: var(--card-bg);
+    z-index: 11;
+}
+
+.project-item-container.drag-over-below {
+    position: relative;
+}
+
+.project-item-container.drag-over-below::before {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    background-color: var(--accent);
+    z-index: 10;
+}
+
+.project-item-container.drag-over-below::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background-color: var(--card-bg);
+    z-index: 11;
 }

@@ -20,6 +20,7 @@ let unsubscribeTasks = null;
 let allTasks = [];
 let currentRoute = 'inbox'; // 'inbox' или 'today'
 let isCompletedSectionCollapsed = localStorage.getItem('todo_completed_collapsed') === 'true';
+let activeContextMenu = null;
 
 let projectsList = [];
 let unsubscribeProjects = null;
@@ -85,7 +86,8 @@ const completedToggle = document.getElementById('completedToggle');
 const completedToggleText = document.getElementById('completedToggleText');
 const completedTasksContainer = document.getElementById('completedTasksContainer');
 
-const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+const contentSidebarToggle = document.getElementById('contentSidebarToggle');
+const sidebarCloseToggle = document.getElementById('sidebarCloseToggle');
 const todoSidebar = document.getElementById('todoSidebar');
 const sidebarOverlay = document.getElementById('sidebarOverlay');
 
@@ -147,6 +149,12 @@ document.addEventListener('click', (e) => {
             }
         }
     });
+    
+    // 4. Закрытие контекстного меню проектов при клике вне
+    if (activeContextMenu && !e.target.closest('.project-actions-btn') && !e.target.closest('.custom-context-menu')) {
+        activeContextMenu.remove();
+        activeContextMenu = null;
+    }
 });
 
 // Разворачивание формы ввода при клике на нее
@@ -411,13 +419,16 @@ if (sidebarUser) {
 }
 
 // Мобильное меню управление
-if (mobileSidebarToggle && todoSidebar && sidebarOverlay) {
+if (contentSidebarToggle && todoSidebar && sidebarOverlay) {
     const toggleSidebar = () => {
         todoSidebar.classList.toggle('mobile-open');
         sidebarOverlay.classList.toggle('active');
     };
 
-    mobileSidebarToggle.addEventListener('click', toggleSidebar);
+    contentSidebarToggle.addEventListener('click', toggleSidebar);
+    if (sidebarCloseToggle) {
+        sidebarCloseToggle.addEventListener('click', toggleSidebar);
+    }
     sidebarOverlay.addEventListener('click', toggleSidebar);
 }
 
@@ -1238,6 +1249,24 @@ function renderTasks() {
         displayCompletedTasks = completedTasks.filter(t => !t.projectId);
     }
     
+    // Сортируем задачи по полю 'order', а при равенстве или его отсутствии — по 'createdAt'
+    const sortTasksByOrder = (tasks) => {
+        tasks.sort((a, b) => {
+            const orderA = a.order !== undefined ? a.order : 0;
+            const orderB = b.order !== undefined ? b.order : 0;
+            if (orderA !== orderB) return orderA - orderB;
+            
+            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
+            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+            return timeB - timeA; // Новые вверху
+        });
+    };
+
+    if (currentRoute !== 'trash') {
+        sortTasksByOrder(displayActiveTasks);
+        sortTasksByOrder(displayCompletedTasks);
+    }
+    
     // 1. РЕНДЕРИМ АКТИВНЫЕ ЗАДАЧИ
     activeTasksContainer.innerHTML = '';
     
@@ -1370,6 +1399,11 @@ function createTaskRowElement(task) {
     }
     
     item.innerHTML = `
+        <button class="task-drag-handle" aria-label="Перетащить задачу" title="Перетащить">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+                <path d="M288 104C288 81.9 270.1 64 248 64L200 64C177.9 64 160 81.9 160 104L160 152C160 174.1 177.9 192 200 192L248 192C270.1 192 288 174.1 288 152L288 104zM288 296C288 273.9 270.1 256 248 256L200 256C177.9 256 160 273.9 160 296L160 344C160 366.1 177.9 384 200 384L248 384C270.1 384 288 366.1 288 344L288 296zM160 488L160 536C160 558.1 177.9 576 200 576L248 576C270.1 576 288 558.1 288 536L288 488C288 465.9 270.1 448 248 448L200 448C177.9 448 160 465.9 160 488zM480 104C480 81.9 462.1 64 440 64L392 64C369.9 64 352 81.9 352 104L352 152C352 174.1 369.9 192 392 192L440 192C462.1 192 480 174.1 480 152L480 104zM352 296L352 344C352 366.1 369.9 384 392 384L440 384C462.1 384 480 366.1 480 344L480 296C480 273.9 462.1 256 440 256L392 256C369.9 256 352 273.9 352 296zM480 488C480 465.9 462.1 448 440 448L392 448C369.9 448 352 465.9 352 488L352 536C352 558.1 369.9 576 392 576L440 576C462.1 576 480 558.1 480 536L480 488z"/>
+            </svg>
+        </button>
         <div class="checkbox-wrapper">
             <button class="custom-checkbox" aria-label="${task.completed ? 'Отметить невыполненной' : 'Отметить выполненной'}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -1483,6 +1517,23 @@ function createTaskRowElement(task) {
         );
     });
     
+    // Настройка активации draggable только при взаимодействии с drag-handle
+    const dragHandle = item.querySelector('.task-drag-handle');
+    if (dragHandle) {
+        dragHandle.addEventListener('mousedown', () => {
+            item.setAttribute('draggable', 'true');
+        });
+        dragHandle.addEventListener('mouseup', () => {
+            item.removeAttribute('draggable');
+        });
+        dragHandle.addEventListener('touchstart', () => {
+            item.setAttribute('draggable', 'true');
+        });
+        dragHandle.addEventListener('touchend', () => {
+            item.removeAttribute('draggable');
+        });
+    }
+    
     return item;
 }
 
@@ -1515,7 +1566,7 @@ window.addEventListener('resize', () => {
 function startProjectsForUser(uid) {
     if (unsubscribeProjects) unsubscribeProjects();
     
-    const qProjects = query(collection(db, 'users', uid, 'projects'), orderBy('createdAt', 'asc'));
+    const qProjects = query(collection(db, 'users', uid, 'projects'));
     
     unsubscribeProjects = onSnapshot(qProjects, (snapshot) => {
         projectsList = [];
@@ -1524,6 +1575,17 @@ function startProjectsForUser(uid) {
                 id: docSnap.id,
                 ...docSnap.data()
             });
+        });
+        
+        // Сортируем проекты по order, а при равенстве или отсутствии — по createdAt
+        projectsList.sort((a, b) => {
+            const orderA = a.order !== undefined ? a.order : 0;
+            const orderB = b.order !== undefined ? b.order : 0;
+            if (orderA !== orderB) return orderA - orderB;
+            
+            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
+            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+            return timeA - timeB; // Старые вверху (по возрастанию)
         });
         
         // Проверяем существование проекта на текущем роуте
@@ -1581,23 +1643,37 @@ function renderProjects() {
                 </span>
                 <span class="menu-counter" style="${projectTaskCount > 0 ? '' : 'display:none'}">${projectTaskCount}</span>
             </a>
-            <button class="project-delete-btn" data-id="${project.id}" title="Удалить проект">&times;</button>
+            <button class="project-actions-btn" data-id="${project.id}" title="Действия">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3"/>
+                </svg>
+            </button>
         `;
         
-        // Add delete project listener
-        const deleteBtn = itemContainer.querySelector('.project-delete-btn');
-        deleteBtn.addEventListener('click', (e) => {
+        // Add project actions listener
+        const actionsBtn = itemContainer.querySelector('.project-actions-btn');
+        actionsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             e.preventDefault();
-            showCustomConfirm(
-                "Удалить проект?",
-                `Вы действительно хотите удалить проект <strong>${escapeHtml(project.name)}</strong>? Все входящие в него задачи будут перемещены в корзину.`,
-                "Удалить",
-                () => {
-                    deleteProject(project.id);
-                }
-            );
+            showProjectContextMenu(e, project.id, project.name, itemContainer);
         });
+        
+        // Drag and Drop активация через иконку
+        const menuIcon = itemContainer.querySelector('.menu-icon');
+        if (menuIcon) {
+            menuIcon.addEventListener('mousedown', () => {
+                itemContainer.setAttribute('draggable', 'true');
+            });
+            menuIcon.addEventListener('mouseup', () => {
+                itemContainer.removeAttribute('draggable');
+            });
+            menuIcon.addEventListener('touchstart', () => {
+                itemContainer.setAttribute('draggable', 'true');
+            });
+            menuIcon.addEventListener('touchend', () => {
+                itemContainer.removeAttribute('draggable');
+            });
+        }
         
         projectsListContainer.appendChild(itemContainer);
     });
@@ -1731,3 +1807,412 @@ if (btnEmptyTrash) {
 }
 
 initSidebarResizer();
+
+// Функция инициализации Drag and Drop для сортировки задач
+function initDragAndDrop() {
+    let draggingElement = null;
+
+    const containers = [activeTasksContainer, completedTasksContainer];
+
+    containers.forEach(container => {
+        if (!container) return;
+
+        container.addEventListener('dragstart', (e) => {
+            const taskItem = e.target.closest('.task-item');
+            if (!taskItem || taskItem.classList.contains('editing') || currentRoute === 'trash') {
+                e.preventDefault();
+                return;
+            }
+            draggingElement = taskItem;
+            taskItem.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', taskItem.getAttribute('data-id'));
+        });
+
+        container.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (!draggingElement) return;
+
+            const taskItem = e.target.closest('.task-item');
+            if (!taskItem || taskItem === draggingElement) return;
+
+            // Разрешаем перетаскивание только внутри одного и того же контейнера
+            if (taskItem.parentNode !== draggingElement.parentNode) return;
+
+            const rect = taskItem.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+
+            // Сбрасываем старые индикаторы
+            container.querySelectorAll('.task-item').forEach(item => {
+                item.classList.remove('drag-over-above', 'drag-over-below');
+            });
+
+            if (e.clientY < midpoint) {
+                taskItem.classList.add('drag-over-above');
+            } else {
+                taskItem.classList.add('drag-over-below');
+            }
+        });
+
+        container.addEventListener('dragleave', (e) => {
+            const taskItem = e.target.closest('.task-item');
+            if (taskItem) {
+                taskItem.classList.remove('drag-over-above', 'drag-over-below');
+            }
+        });
+
+        container.addEventListener('dragend', (e) => {
+            if (draggingElement) {
+                draggingElement.classList.remove('dragging');
+            }
+            container.querySelectorAll('.task-item').forEach(item => {
+                item.classList.remove('drag-over-above', 'drag-over-below');
+            });
+            draggingElement = null;
+        });
+
+        container.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            if (!draggingElement) return;
+
+            const targetItem = e.target.closest('.task-item');
+            if (!targetItem || targetItem === draggingElement) return;
+
+            const isAbove = targetItem.classList.contains('drag-over-above');
+            
+            // Очищаем индикаторы
+            targetItem.classList.remove('drag-over-above', 'drag-over-below');
+            draggingElement.classList.remove('dragging');
+
+            const taskId = draggingElement.getAttribute('data-id');
+            
+            // Вычисляем новый порядок на основе текущих отрендеренных элементов
+            const taskItems = Array.from(container.querySelectorAll('.task-item'));
+            const draggingIndex = taskItems.indexOf(draggingElement);
+            let targetIndex = taskItems.indexOf(targetItem);
+
+            taskItems.splice(draggingIndex, 1);
+            
+            if (!isAbove) {
+                targetIndex = taskItems.indexOf(targetItem) + 1;
+            } else {
+                targetIndex = taskItems.indexOf(targetItem);
+            }
+
+            // Получаем задачи текущего списка, чтобы рассчитать их order
+            let currentTasks = [];
+            
+            const activeTasks = allTasks.filter(t => !t.deleted && !t.completed);
+            const completedTasks = allTasks.filter(t => !t.deleted && t.completed);
+            const isCompletedContainer = container === completedTasksContainer;
+            const targetTasksList = isCompletedContainer ? completedTasks : activeTasks;
+
+            if (currentRoute === 'today') {
+                const todayObj = new Date();
+                const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+                currentTasks = targetTasksList.filter(t => t.dueDate === todayStr);
+            } else if (currentRoute.startsWith('project/')) {
+                const projectId = currentRoute.split('/')[1];
+                currentTasks = targetTasksList.filter(t => t.projectId === projectId);
+            } else { // inbox
+                currentTasks = targetTasksList.filter(t => !t.projectId);
+            }
+
+            // Сортируем текущие задачи так же, как они отрендерены на экране
+            currentTasks.sort((a, b) => {
+                const orderA = a.order !== undefined ? a.order : 0;
+                const orderB = b.order !== undefined ? b.order : 0;
+                if (orderA !== orderB) return orderA - orderB;
+                const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
+                const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+                return timeB - timeA;
+            });
+
+            // Находим перемещаемую задачу в массиве данных
+            const movingTask = currentTasks.find(t => t.id === taskId);
+            if (!movingTask) return;
+
+            const movingTaskIndex = currentTasks.indexOf(movingTask);
+            currentTasks.splice(movingTaskIndex, 1);
+            currentTasks.splice(targetIndex, 0, movingTask);
+
+            // Вычисляем новый order
+            let newOrder = 0;
+            if (currentTasks.length === 1) {
+                newOrder = 0;
+            } else if (targetIndex === 0) {
+                const nextTask = currentTasks[1];
+                const nextOrder = nextTask.order !== undefined ? nextTask.order : 0;
+                newOrder = nextOrder - 1000;
+            } else if (targetIndex === currentTasks.length - 1) {
+                const prevTask = currentTasks[currentTasks.length - 2];
+                const prevOrder = prevTask.order !== undefined ? prevTask.order : 0;
+                newOrder = prevOrder + 1000;
+            } else {
+                const prevTask = currentTasks[targetIndex - 1];
+                const nextTask = currentTasks[targetIndex + 1];
+                const prevOrder = prevTask.order !== undefined ? prevTask.order : 0;
+                const nextOrder = nextTask.order !== undefined ? nextTask.order : 0;
+                newOrder = (prevOrder + nextOrder) / 2;
+            }
+
+            // Обновляем в Firebase
+            if (currentUid && taskId) {
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
+                        order: newOrder
+                    });
+                } catch (err) {
+                    console.error("Ошибка обновления порядка задач:", err);
+                }
+            }
+            draggingElement = null;
+        });
+    });
+}
+
+initDragAndDrop();
+
+// Отображение контекстного меню проекта
+function showProjectContextMenu(e, projectId, projectName, itemContainer) {
+    if (activeContextMenu) activeContextMenu.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'custom-context-menu';
+    menu.innerHTML = `
+        <div class="ctx-item" id="ctx-rename-project">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            <span>Переименовать</span>
+        </div>
+        <div class="ctx-item danger" id="ctx-delete-project">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            <span>Удалить</span>
+        </div>
+    `;
+    
+    document.body.appendChild(menu);
+    activeContextMenu = menu;
+
+    // Автоматическое позиционирование меню относительно кнопки действий
+    const rect = e.currentTarget.getBoundingClientRect();
+    let x = rect.left - 130;
+    let y = rect.bottom + window.scrollY + 4;
+    
+    // Предотвращение выхода за границы окна
+    if (x + 150 > window.innerWidth) {
+        x = window.innerWidth - 160;
+    }
+    if (x < 10) x = 10;
+
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+
+    // Обработчик удаления проекта
+    menu.querySelector('#ctx-delete-project').addEventListener('click', (evt) => {
+        evt.stopPropagation();
+        menu.remove();
+        activeContextMenu = null;
+        showCustomConfirm(
+            "Удалить проект?",
+            `Вы действительно хотите удалить проект <strong>${escapeHtml(projectName)}</strong>? Все входящие в него задачи будут перемещены в корзину.`,
+            "Удалить",
+            () => {
+                deleteProject(projectId);
+            }
+        );
+    });
+
+    // Обработчик переименования проекта
+    menu.querySelector('#ctx-rename-project').addEventListener('click', (evt) => {
+        evt.stopPropagation();
+        menu.remove();
+        activeContextMenu = null;
+        enableProjectInlineEdit(itemContainer, projectId, projectName);
+    });
+}
+
+// Inline-редактирование имени проекта в боковой панели
+function enableProjectInlineEdit(itemContainer, projectId, oldName) {
+    const labelSpan = itemContainer.querySelector('.menu-item span.menu-item-left span:not(.menu-icon)');
+    if (!labelSpan) return;
+
+    // Сохраняем имя во избежание сбросов
+    const oldVal = oldName;
+
+    labelSpan.innerHTML = `<input type="text" class="inline-project-edit-input" value="${escapeHtml(oldVal)}" maxlength="50">`;
+    const input = labelSpan.querySelector('input');
+    input.focus();
+    input.select();
+
+    let finished = false;
+
+    async function commitSave() {
+        if (finished) return;
+        finished = true;
+        const newVal = input.value.trim();
+
+        if (newVal && newVal !== oldVal) {
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                    name: newVal
+                });
+                
+                // Динамически меняем заголовок списка, если он открыт сейчас
+                if (currentRoute === `project/${projectId}`) {
+                    const titleEl = document.querySelector('.list-title');
+                    if (titleEl) titleEl.textContent = newVal;
+                }
+            } catch (err) {
+                console.error("Ошибка при изменении названия проекта:", err);
+                labelSpan.textContent = oldVal;
+            }
+        } else {
+            labelSpan.textContent = oldVal;
+        }
+    }
+
+    input.addEventListener('blur', commitSave);
+    input.addEventListener('keydown', (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+            commitSave();
+        } else if (e.key === 'Escape') {
+            finished = true;
+            labelSpan.textContent = oldVal;
+        }
+    });
+}
+
+// Инициализация Drag and Drop для проектов в боковой панели
+function initProjectsDragAndDrop() {
+    let draggingProject = null;
+
+    if (!projectsListContainer) return;
+
+    projectsListContainer.addEventListener('dragstart', (e) => {
+        const projectItem = e.target.closest('.project-item-container');
+        if (!projectItem) {
+            e.preventDefault();
+            return;
+        }
+        draggingProject = projectItem;
+        projectItem.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        // Передаем ID проекта
+        const actionsBtn = projectItem.querySelector('.project-actions-btn');
+        if (actionsBtn) {
+            e.dataTransfer.setData('text/plain', actionsBtn.getAttribute('data-id'));
+        }
+    });
+
+    projectsListContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (!draggingProject) return;
+
+        const projectItem = e.target.closest('.project-item-container');
+        if (!projectItem || projectItem === draggingProject) return;
+
+        const rect = projectItem.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+
+        projectsListContainer.querySelectorAll('.project-item-container').forEach(item => {
+            item.classList.remove('drag-over-above', 'drag-over-below');
+        });
+
+        if (e.clientY < midpoint) {
+            projectItem.classList.add('drag-over-above');
+        } else {
+            projectItem.classList.add('drag-over-below');
+        }
+    });
+
+    projectsListContainer.addEventListener('dragleave', (e) => {
+        const projectItem = e.target.closest('.project-item-container');
+        if (projectItem) {
+            projectItem.classList.remove('drag-over-above', 'drag-over-below');
+        }
+    });
+
+    projectsListContainer.addEventListener('dragend', (e) => {
+        if (draggingProject) {
+            draggingProject.classList.remove('dragging');
+        }
+        projectsListContainer.querySelectorAll('.project-item-container').forEach(item => {
+            item.classList.remove('drag-over-above', 'drag-over-below');
+        });
+        draggingProject = null;
+    });
+
+    projectsListContainer.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        if (!draggingProject) return;
+
+        const targetItem = e.target.closest('.project-item-container');
+        if (!targetItem || targetItem === draggingProject) return;
+
+        const isAbove = targetItem.classList.contains('drag-over-above');
+        
+        targetItem.classList.remove('drag-over-above', 'drag-over-below');
+        draggingProject.classList.remove('dragging');
+
+        const actionsBtn = draggingProject.querySelector('.project-actions-btn');
+        if (!actionsBtn) return;
+        const projectId = actionsBtn.getAttribute('data-id');
+        
+        const projectItems = Array.from(projectsListContainer.querySelectorAll('.project-item-container'));
+        const draggingIndex = projectItems.indexOf(draggingProject);
+        let targetIndex = projectItems.indexOf(targetItem);
+
+        projectItems.splice(draggingIndex, 1);
+        
+        if (!isAbove) {
+            targetIndex = projectItems.indexOf(targetItem) + 1;
+        } else {
+            targetIndex = projectItems.indexOf(targetItem);
+        }
+
+        // Копируем текущий список для расчета order
+        let currentProjects = [...projectsList];
+        
+        const movingProj = currentProjects.find(p => p.id === projectId);
+        if (!movingProj) return;
+
+        const movingProjIndex = currentProjects.indexOf(movingProj);
+        currentProjects.splice(movingProjIndex, 1);
+        currentProjects.splice(targetIndex, 0, movingProj);
+
+        // Вычисляем новый order
+        let newOrder = 0;
+        if (currentProjects.length === 1) {
+            newOrder = 0;
+        } else if (targetIndex === 0) {
+            const nextProj = currentProjects[1];
+            const nextOrder = nextProj.order !== undefined ? nextProj.order : 0;
+            newOrder = nextOrder - 1000;
+        } else if (targetIndex === currentProjects.length - 1) {
+            const prevProj = currentProjects[currentProjects.length - 2];
+            const prevOrder = prevProj.order !== undefined ? prevProj.order : 0;
+            newOrder = prevOrder + 1000;
+        } else {
+            const prevProj = currentProjects[targetIndex - 1];
+            const nextProj = currentProjects[targetIndex + 1];
+            const prevOrder = prevProj.order !== undefined ? prevProj.order : 0;
+            const nextOrder = nextProj.order !== undefined ? nextProj.order : 0;
+            newOrder = (prevOrder + nextOrder) / 2;
+        }
+
+        // Обновляем в Firebase
+        if (currentUid && projectId) {
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                    order: newOrder
+                });
+            } catch (err) {
+                console.error("Ошибка обновления порядка проектов:", err);
+            }
+        }
+        draggingProject = null;
+    });
+}
+
+initProjectsDragAndDrop();

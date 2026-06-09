@@ -39,6 +39,11 @@
                         <span class="sidebar-name" id="sidebarName">Загрузка...</span>
                     </div>
                 </div>
+                <button class="sidebar-close-toggle" id="sidebarCloseToggle" aria-label="Закрыть меню">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm5-1v12h9a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM4 2H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h2z"/>
+                    </svg>
+                </button>
             </div>
             <nav class="sidebar-menu">
                 <a href="#inbox" class="menu-item active" id="menuInbox">
@@ -103,7 +108,6 @@
                             </span>
                             <span>Корзина</span>
                         </span>
-                        <span class="menu-counter" id="trashCounter" style="display:none">0</span>
                     </a>
                 </div>
             </nav>
@@ -146,6 +150,16 @@
 
             <!-- Состояние: Пользователь вошел (Основной экран списка задач) -->
             <div class="todo-main-layout" id="todoMainLayout" style="display:none; flex-direction:column;">
+                
+                <div class="list-header">
+                    <button class="content-nav-toggle" id="contentSidebarToggle" aria-label="Меню навигации">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm5-1v12h9a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM4 2H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h2z"/>
+                        </svg>
+                    </button>
+                    <h1 class="list-title">Мои задачи</h1>
+                </div>
+
                 <!-- Баннер Корзины -->
                 <div class="trash-notice-banner" id="trashNoticeBanner" style="display: none;">
                     <span>Объекты в корзине хранятся 30 дней — потом удаляются навсегда.</span>
@@ -158,9 +172,6 @@
                     </button>
                 </div>
 
-                <div class="list-header">
-                    <h1 class="list-title">Мои задачи</h1>
-                </div>
 
                 <!-- Панель быстрого добавления -->
                 <div class="add-task-form">
@@ -309,15 +320,7 @@
         </main>
     </div>
 
-    <!-- Мобильная кнопка переключения меню -->
-    <button class="mobile-nav-toggle" id="mobileSidebarToggle" aria-label="Меню навигации">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-    </button>
+
 
     <!-- Модальное окно подтверждения удаления -->
     <div class="confirm-modal-overlay" id="confirmDeleteModal" style="display: none;">

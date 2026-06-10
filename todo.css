@@ -15,7 +15,7 @@ body {
     position: relative;
 }
 
-/* --- БОКОВОЕ МЕНЮ (SIDEBAR) --- */
+/* --- БОКОВОЕ МЕНЮ (SIDEBAR)--- */
 .todo-sidebar {
     width: var(--sidebar-width, 240px);
     background-color: var(--card-bg);
@@ -231,7 +231,7 @@ body {
 }
 
 @media (min-width: 769px) {
-    .todo-sidebar:not(.collapsed) ~ .todo-content .content-nav-toggle {
+    .todo-sidebar:not(.collapsed)~.todo-content .content-nav-toggle {
         display: none;
     }
 }

@@ -42,7 +42,15 @@ const isToday = (timestamp) => {
         date.getFullYear() === today.getFullYear();
 };
 
-let selectedDueDate = null; // Хранит выбранную дату в формате YYYY-MM-DD
+const getDefaultDueDate = () => {
+    if (currentRoute === 'today') {
+        const today = new Date();
+        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    }
+    return null;
+};
+
+let selectedDueDate = getDefaultDueDate(); // Хранит выбранную дату в формате YYYY-MM-DD
 let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth(); // 0-11
 
@@ -134,7 +142,7 @@ document.addEventListener('click', (e) => {
         if (!isClickInsideForm && taskTitleInput.value.trim() === '') {
             addTaskForm.classList.remove('expanded');
             taskTitleInput.placeholder = '+ Добавить задачу';
-            setDueDate(null); // сбрасываем выбранную дату
+            setDueDate(getDefaultDueDate()); // сбрасываем выбранную дату к дефолтной для текущего раздела
             taskTitleInput.style.height = 'auto'; // Reset height
             updateAddFormCharCount(); // Reset counter
         }
@@ -154,6 +162,12 @@ document.addEventListener('click', (e) => {
     if (activeContextMenu && !e.target.closest('.project-actions-btn') && !e.target.closest('.custom-context-menu')) {
         activeContextMenu.remove();
         activeContextMenu = null;
+    }
+
+    // 5. Закрытие меню пользователя при клике вне
+    const userProfileMenuEl = document.getElementById('userProfileMenu');
+    if (userProfileMenuEl && userProfileMenuEl.style.display !== 'none' && !e.target.closest('.sidebar-user') && !userProfileMenuEl.contains(e.target)) {
+        userProfileMenuEl.style.display = 'none';
     }
 });
 
@@ -406,16 +420,68 @@ if (btnLoginLarge) {
     });
 }
 
-// Клик на имя/аватар пользователя для открытия профиля
+// Клик на имя/аватар пользователя для открытия простого меню
 const sidebarUser = document.querySelector('.sidebar-user');
-if (sidebarUser) {
+const sidebarHeader = document.querySelector('.sidebar-header');
+if (sidebarHeader && !document.getElementById('userProfileMenu')) {
+    const userMenuHtml = `
+        <div class="user-profile-menu" id="userProfileMenu" style="display: none;">
+            <button class="user-menu-item" id="btnUserMenuSettings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                <span>Настройки</span>
+            </button>
+            <button class="user-menu-item item-danger" id="btnUserMenuLogout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Выйти</span>
+            </button>
+        </div>
+    `;
+    sidebarHeader.insertAdjacentHTML('beforeend', userMenuHtml);
+}
+
+const userProfileMenu = document.getElementById('userProfileMenu');
+const btnUserMenuSettings = document.getElementById('btnUserMenuSettings');
+const btnUserMenuLogout = document.getElementById('btnUserMenuLogout');
+
+if (sidebarUser && userProfileMenu) {
     sidebarUser.style.cursor = 'pointer';
     sidebarUser.addEventListener('click', (e) => {
         e.preventDefault();
-        if (typeof window.openAuthModal === 'function') {
-            window.openAuthModal(sidebarUser);
+        e.stopPropagation();
+        if (userProfileMenu.style.display === 'none' || userProfileMenu.style.display === '') {
+            userProfileMenu.style.display = 'flex';
+        } else {
+            userProfileMenu.style.display = 'none';
         }
     });
+
+    if (btnUserMenuSettings) {
+        btnUserMenuSettings.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userProfileMenu.style.display = 'none';
+            if (typeof window.openAuthModal === 'function') {
+                window.openAuthModal(sidebarUser);
+            }
+        });
+    }
+
+    if (btnUserMenuLogout) {
+        btnUserMenuLogout.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userProfileMenu.style.display = 'none';
+            if (window.firebaseAuth) {
+                window.firebaseAuth.signOut();
+                localStorage.removeItem('google_access_token');
+            }
+        });
+    }
 }
 
 // Сайдбар: восстановление свернутого состояния на ПК
@@ -545,6 +611,7 @@ function handleRoute() {
         if (sidebarOverlay) sidebarOverlay.classList.remove('active');
     }
 
+    setDueDate(getDefaultDueDate());
     renderTasks();
 }
 
@@ -674,7 +741,7 @@ async function handleAddTask() {
             createdAt: serverTimestamp()
         });
         taskTitleInput.value = '';
-        setDueDate(null);
+        setDueDate(getDefaultDueDate());
         taskTitleInput.style.height = 'auto'; // Reset height
         updateAddFormCharCount(); // Reset counter
     } catch (err) {
@@ -702,7 +769,7 @@ if (taskTitleInput) {
                 form.classList.remove('expanded');
             }
             taskTitleInput.placeholder = '+ Добавить задачу';
-            setDueDate(null);
+            setDueDate(getDefaultDueDate());
             taskTitleInput.style.height = 'auto'; // Reset height
             updateAddFormCharCount(); // Reset counter
         }
@@ -1678,22 +1745,26 @@ function createTaskRowElement(task) {
         });
     });
 
-    // Настройка активации draggable только при взаимодействии с drag-handle
-    const dragHandle = item.querySelector('.task-drag-handle');
-    if (dragHandle) {
-        dragHandle.addEventListener('mousedown', () => {
-            item.setAttribute('draggable', 'true');
-        });
-        dragHandle.addEventListener('mouseup', () => {
-            item.removeAttribute('draggable');
-        });
-        dragHandle.addEventListener('touchstart', () => {
-            item.setAttribute('draggable', 'true');
-        });
-        dragHandle.addEventListener('touchend', () => {
-            item.removeAttribute('draggable');
-        });
-    }
+    // Настройка активации draggable при взаимодействии с карточкой (drag-and-drop по всей площади)
+    item.addEventListener('mousedown', (e) => {
+        // Исключаем интерактивные элементы (за исключением самой иконки перетаскивания)
+        if (e.target.closest('button:not(.task-drag-handle), input, textarea, a, .checkbox-wrapper, .custom-checkbox, .task-actions-dropdown')) {
+            return;
+        }
+        item.setAttribute('draggable', 'true');
+    });
+    item.addEventListener('mouseup', () => {
+        item.removeAttribute('draggable');
+    });
+    item.addEventListener('touchstart', (e) => {
+        if (e.target.closest('button:not(.task-drag-handle), input, textarea, a, .checkbox-wrapper, .custom-checkbox, .task-actions-dropdown')) {
+            return;
+        }
+        item.setAttribute('draggable', 'true');
+    }, { passive: true });
+    item.addEventListener('touchend', () => {
+        item.removeAttribute('draggable');
+    });
 
     return item;
 }
@@ -1995,6 +2066,7 @@ function initDragAndDrop() {
             }
             draggingElement = taskItem;
             taskItem.classList.add('dragging');
+            container.classList.add('drag-active');
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', taskItem.getAttribute('data-id'));
         });
@@ -2034,10 +2106,13 @@ function initDragAndDrop() {
         container.addEventListener('dragend', (e) => {
             if (draggingElement) {
                 draggingElement.classList.remove('dragging');
+                draggingElement.removeAttribute('draggable');
             }
             container.querySelectorAll('.task-item').forEach(item => {
                 item.classList.remove('drag-over-above', 'drag-over-below');
+                item.removeAttribute('draggable');
             });
+            container.classList.remove('drag-active');
             draggingElement = null;
         });
 

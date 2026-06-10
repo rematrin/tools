@@ -2290,7 +2290,7 @@ function initTouchDragAndDrop() {
             evt.preventDefault();
         };
 
-        // Таймер для Long Press (500 мс)
+        // Таймер для Long Press (300 мс для более быстрого отклика)
         touchStartTimer = setTimeout(() => {
             touchDraggingElement = targetEl;
             touchDragType = type;
@@ -2306,7 +2306,7 @@ function initTouchDragAndDrop() {
             if (navigator.vibrate) {
                 navigator.vibrate(50);
             }
-        }, 500);
+        }, 300);
     };
 
     const handleTouchMove = (e) => {
@@ -2325,8 +2325,17 @@ function initTouchDragAndDrop() {
         // Предотвращаем скролл экрана во время переноса
         e.preventDefault();
 
+        // Временно отключаем pointer-events на перетаскиваемом элементе, 
+        // чтобы elementFromPoint возвращал элемент, находящийся ПОД ним.
+        const originalPointerEvents = touchDraggingElement.style.pointerEvents;
+        touchDraggingElement.style.pointerEvents = 'none';
+
         const touch = e.touches[0];
         const elemUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+        
+        // Восстанавливаем pointer-events
+        touchDraggingElement.style.pointerEvents = originalPointerEvents;
+        
         if (!elemUnder) return;
 
         const selector = touchDragType === 'task' ? '.task-item' : '.project-item-container';

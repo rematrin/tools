@@ -418,11 +418,41 @@ if (sidebarUser) {
     });
 }
 
-// Мобильное меню управление
+// Сайдбар: восстановление свернутого состояния на ПК
+const todoContentEl = document.querySelector('.todo-content');
+let isSidebarCollapsed = localStorage.getItem('todo_sidebar_collapsed') === 'true';
+
+const applySidebarCollapsedState = () => {
+    if (window.innerWidth > 768) {
+        if (isSidebarCollapsed) {
+            todoSidebar.classList.add('collapsed');
+            if (todoContentEl) todoContentEl.classList.add('sidebar-collapsed');
+        } else {
+            todoSidebar.classList.remove('collapsed');
+            if (todoContentEl) todoContentEl.classList.remove('sidebar-collapsed');
+        }
+        todoSidebar.classList.remove('mobile-open');
+        sidebarOverlay.classList.remove('active');
+    } else {
+        todoSidebar.classList.remove('collapsed');
+        if (todoContentEl) todoContentEl.classList.remove('sidebar-collapsed');
+    }
+};
+
+applySidebarCollapsedState();
+window.addEventListener('resize', applySidebarCollapsedState);
+
+// Управление сайдбаром (мобильное и десктопное)
 if (contentSidebarToggle && todoSidebar && sidebarOverlay) {
     const toggleSidebar = () => {
-        todoSidebar.classList.toggle('mobile-open');
-        sidebarOverlay.classList.toggle('active');
+        if (window.innerWidth <= 768) {
+            todoSidebar.classList.toggle('mobile-open');
+            sidebarOverlay.classList.toggle('active');
+        } else {
+            isSidebarCollapsed = !isSidebarCollapsed;
+            localStorage.setItem('todo_sidebar_collapsed', isSidebarCollapsed);
+            applySidebarCollapsedState();
+        }
     };
 
     contentSidebarToggle.addEventListener('click', toggleSidebar);
@@ -2216,3 +2246,273 @@ function initProjectsDragAndDrop() {
 }
 
 initProjectsDragAndDrop();
+
+// Инициализация Long Press Touch перетаскивания для мобильных
+function initTouchDragAndDrop() {
+    let touchStartTimer = null;
+    let touchDraggingElement = null;
+    let touchDragType = null; // 'task' или 'project'
+    let startY = 0;
+    let lastElementUnderTouch = null;
+
+    const resetTouchState = () => {
+        if (touchStartTimer) {
+            clearTimeout(touchStartTimer);
+            touchStartTimer = null;
+        }
+        if (touchDraggingElement) {
+            touchDraggingElement.classList.remove('dragging');
+            touchDraggingElement.removeAttribute('draggable');
+        }
+        document.querySelectorAll('.task-item, .project-item-container').forEach(item => {
+            item.classList.remove('drag-over-above', 'drag-over-below');
+        });
+        touchDraggingElement = null;
+        touchDragType = null;
+        lastElementUnderTouch = null;
+    };
+
+    const handleTouchStart = (e, type) => {
+        if (e.touches.length > 1) return;
+        const touch = e.touches[0];
+        startY = touch.clientY;
+
+        const targetEl = e.target.closest(type === 'task' ? '.task-item' : '.project-item-container');
+        if (!targetEl || targetEl.classList.contains('editing') || currentRoute === 'trash') return;
+
+        // Таймер для Long Press (500 мс)
+        touchStartTimer = setTimeout(() => {
+            touchDraggingElement = targetEl;
+            touchDragType = type;
+            touchDraggingElement.classList.add('dragging');
+            touchDraggingElement.setAttribute('draggable', 'true');
+            
+            // Легкая вибрация, если поддерживается устройством
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }, 500);
+    };
+
+    const handleTouchMove = (e) => {
+        if (!touchDraggingElement) {
+            // Если палец сдвинулся до истечения 500мс, отменяем Long Press
+            const touch = e.touches[0];
+            if (Math.abs(touch.clientY - startY) > 10) {
+                if (touchStartTimer) {
+                    clearTimeout(touchStartTimer);
+                    touchStartTimer = null;
+                }
+            }
+            return;
+        }
+
+        // Предотвращаем скролл экрана во время переноса
+        e.preventDefault();
+
+        const touch = e.touches[0];
+        const elemUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (!elemUnder) return;
+
+        const selector = touchDragType === 'task' ? '.task-item' : '.project-item-container';
+        const targetItem = elemUnder.closest(selector);
+
+        // Сбрасываем старые классы подсветки
+        document.querySelectorAll(selector).forEach(item => {
+            if (item !== targetItem) {
+                item.classList.remove('drag-over-above', 'drag-over-below');
+            }
+        });
+
+        if (!targetItem || targetItem === touchDraggingElement) {
+            lastElementUnderTouch = null;
+            return;
+        }
+
+        // В рамках тасков разрешаем перетаскивание только внутри одного контейнера (активные/выполненные)
+        if (touchDragType === 'task' && targetItem.parentNode !== touchDraggingElement.parentNode) {
+            lastElementUnderTouch = null;
+            return;
+        }
+
+        lastElementUnderTouch = targetItem;
+        const rect = targetItem.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+
+        if (touch.clientY < midpoint) {
+            targetItem.classList.add('drag-over-above');
+            targetItem.classList.remove('drag-over-below');
+        } else {
+            targetItem.classList.add('drag-over-below');
+            targetItem.classList.remove('drag-over-above');
+        }
+    };
+
+    const handleTouchEnd = async (e) => {
+        if (touchStartTimer) {
+            clearTimeout(touchStartTimer);
+            touchStartTimer = null;
+        }
+
+        if (!touchDraggingElement || !lastElementUnderTouch) {
+            resetTouchState();
+            return;
+        }
+
+        const targetItem = lastElementUnderTouch;
+        const isAbove = targetItem.classList.contains('drag-over-above');
+        const draggingEl = touchDraggingElement;
+        const dragType = touchDragType;
+
+        resetTouchState();
+
+        if (dragType === 'task') {
+            const container = draggingEl.parentNode;
+            const taskId = draggingEl.getAttribute('data-id');
+            const taskItems = Array.from(container.querySelectorAll('.task-item'));
+            const draggingIndex = taskItems.indexOf(draggingEl);
+            let targetIndex = taskItems.indexOf(targetItem);
+
+            taskItems.splice(draggingIndex, 1);
+            if (!isAbove) {
+                targetIndex = taskItems.indexOf(targetItem) + 1;
+            } else {
+                targetIndex = taskItems.indexOf(targetItem);
+            }
+
+            let currentTasks = [];
+            const activeTasks = allTasks.filter(t => !t.deleted && !t.completed);
+            const completedTasks = allTasks.filter(t => !t.deleted && t.completed);
+            const isCompletedContainer = container === completedTasksContainer;
+            const targetTasksList = isCompletedContainer ? completedTasks : activeTasks;
+
+            if (currentRoute === 'today') {
+                const todayObj = new Date();
+                const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+                currentTasks = targetTasksList.filter(t => t.dueDate === todayStr);
+            } else if (currentRoute.startsWith('project/')) {
+                const projectId = currentRoute.split('/')[1];
+                currentTasks = targetTasksList.filter(t => t.projectId === projectId);
+            } else {
+                currentTasks = targetTasksList.filter(t => !t.projectId);
+            }
+
+            currentTasks.sort((a, b) => {
+                const orderA = a.order !== undefined ? a.order : 0;
+                const orderB = b.order !== undefined ? b.order : 0;
+                if (orderA !== orderB) return orderA - orderB;
+                const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
+                const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+                return timeB - timeA;
+            });
+
+            const movingTask = currentTasks.find(t => t.id === taskId);
+            if (!movingTask) return;
+
+            const movingTaskIndex = currentTasks.indexOf(movingTask);
+            currentTasks.splice(movingTaskIndex, 1);
+            currentTasks.splice(targetIndex, 0, movingTask);
+
+            let newOrder = 0;
+            if (currentTasks.length === 1) {
+                newOrder = 0;
+            } else if (targetIndex === 0) {
+                const nextTask = currentTasks[1];
+                const nextOrder = nextTask.order !== undefined ? nextTask.order : 0;
+                newOrder = nextOrder - 1000;
+            } else if (targetIndex === currentTasks.length - 1) {
+                const prevTask = currentTasks[currentTasks.length - 2];
+                const prevOrder = prevTask.order !== undefined ? prevTask.order : 0;
+                newOrder = prevOrder + 1000;
+            } else {
+                const prevTask = currentTasks[targetIndex - 1];
+                const nextTask = currentTasks[targetIndex + 1];
+                const prevOrder = prevTask.order !== undefined ? prevTask.order : 0;
+                const nextOrder = nextTask.order !== undefined ? nextTask.order : 0;
+                newOrder = (prevOrder + nextOrder) / 2;
+            }
+
+            if (currentUid && taskId) {
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
+                        order: newOrder
+                    });
+                } catch (err) {
+                    console.error("Ошибка при touch-обновлении порядка задач:", err);
+                }
+            }
+        } else if (dragType === 'project') {
+            const actionsBtn = draggingEl.querySelector('.project-actions-btn');
+            if (!actionsBtn) return;
+            const projectId = actionsBtn.getAttribute('data-id');
+
+            const projectItems = Array.from(projectsListContainer.querySelectorAll('.project-item-container'));
+            const draggingIndex = projectItems.indexOf(draggingEl);
+            let targetIndex = projectItems.indexOf(targetItem);
+
+            projectItems.splice(draggingIndex, 1);
+            if (!isAbove) {
+                targetIndex = projectItems.indexOf(targetItem) + 1;
+            } else {
+                targetIndex = projectItems.indexOf(targetItem);
+            }
+
+            let currentProjects = [...projectsList];
+            const movingProj = currentProjects.find(p => p.id === projectId);
+            if (!movingProj) return;
+
+            const movingProjIndex = currentProjects.indexOf(movingProj);
+            currentProjects.splice(movingProjIndex, 1);
+            currentProjects.splice(targetIndex, 0, movingProj);
+
+            let newOrder = 0;
+            if (currentProjects.length === 1) {
+                newOrder = 0;
+            } else if (targetIndex === 0) {
+                const nextProj = currentProjects[1];
+                const nextOrder = nextProj.order !== undefined ? nextProj.order : 0;
+                newOrder = nextOrder - 1000;
+            } else if (targetIndex === currentProjects.length - 1) {
+                const prevProj = currentProjects[currentProjects.length - 2];
+                const prevOrder = prevProj.order !== undefined ? prevProj.order : 0;
+                newOrder = prevOrder + 1000;
+            } else {
+                const prevProj = currentProjects[targetIndex - 1];
+                const nextProj = currentProjects[targetIndex + 1];
+                const prevOrder = prevProj.order !== undefined ? prevProj.order : 0;
+                const nextOrder = nextProj.order !== undefined ? nextProj.order : 0;
+                newOrder = (prevOrder + nextOrder) / 2;
+            }
+
+            if (currentUid && projectId) {
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                        order: newOrder
+                    });
+                } catch (err) {
+                    console.error("Ошибка при touch-обновлении порядка проектов:", err);
+                }
+            }
+        }
+    };
+
+    // Слушатели событий на контейнеры для тасков
+    [activeTasksContainer, completedTasksContainer].forEach(container => {
+        if (!container) return;
+        container.addEventListener('touchstart', (e) => handleTouchStart(e, 'task'), { passive: true });
+        container.addEventListener('touchmove', handleTouchMove, { passive: false });
+        container.addEventListener('touchend', handleTouchEnd, { passive: true });
+        container.addEventListener('touchcancel', resetTouchState, { passive: true });
+    });
+
+    // Слушатели для проектов в боковой панели
+    if (projectsListContainer) {
+        projectsListContainer.addEventListener('touchstart', (e) => handleTouchStart(e, 'project'), { passive: true });
+        projectsListContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
+        projectsListContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
+        projectsListContainer.addEventListener('touchcancel', resetTouchState, { passive: true });
+    }
+}
+
+initTouchDragAndDrop();
+

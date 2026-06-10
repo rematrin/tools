@@ -27,7 +27,13 @@ body {
     z-index: 100;
     display: flex;
     flex-direction: column;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease, left 0.3s ease;
+}
+
+@media (min-width: 769px) {
+    .todo-sidebar.collapsed {
+        left: calc(-1 * var(--sidebar-width, 240px));
+    }
 }
 
 /* Элементы бокового меню */
@@ -40,7 +46,7 @@ body {
 }
 
 .sidebar-close-toggle {
-    display: none;
+    display: inline-flex;
     background: transparent;
     border: none;
     padding: 6px;
@@ -73,8 +79,10 @@ body {
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.sidebar-user:hover {
-    background-color: var(--hover-bg);
+@media (hover: hover) {
+    .sidebar-user:hover {
+        background-color: var(--hover-bg);
+    }
 }
 
 .sidebar-avatar {
@@ -132,8 +140,10 @@ body {
     text-align: left;
 }
 
-.menu-item:hover {
-    background-color: var(--hover-bg);
+@media (hover: hover) {
+    .menu-item:hover {
+        background-color: var(--hover-bg);
+    }
 }
 
 .menu-item.active {
@@ -156,6 +166,13 @@ body {
     height: 20px;
     color: currentColor;
     opacity: 0.85;
+}
+
+.menu-icon svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+    flex-shrink: 0;
 }
 
 .menu-counter {
@@ -186,6 +203,12 @@ body {
     transition: margin-left 0.3s ease;
 }
 
+@media (min-width: 769px) {
+    .todo-content.sidebar-collapsed {
+        margin-left: 0;
+    }
+}
+
 /* Шапка списка */
 .list-header {
     display: flex;
@@ -194,7 +217,7 @@ body {
 }
 
 .content-nav-toggle {
-    display: none;
+    display: inline-flex;
     background: transparent;
     border: none;
     padding: 6px;
@@ -205,6 +228,12 @@ body {
     justify-content: center;
     border-radius: 8px;
     transition: background-color 0.2s, color 0.2s;
+}
+
+@media (min-width: 769px) {
+    .todo-sidebar:not(.collapsed) ~ .todo-content .content-nav-toggle {
+        display: none;
+    }
 }
 
 .content-nav-toggle:hover {
@@ -1333,23 +1362,34 @@ body.dark .task-due-badge.overdue {
     padding: 0;
 }
 
-.project-actions-btn:hover {
-    background-color: var(--hover-bg);
-    color: var(--text);
+@media (hover: hover) {
+    .project-actions-btn:hover {
+        background-color: var(--hover-bg);
+        color: var(--text);
+    }
+
+    .project-item-container:hover .project-actions-btn {
+        display: flex;
+    }
+
+    .project-item-container:hover .menu-counter {
+        display: none !important;
+    }
 }
 
-.project-actions-btn svg {
-    display: block;
-    width: 14px;
-    height: 14px;
-}
+@media (hover: none) {
+    .project-actions-btn {
+        display: flex;
+        right: 10px;
+    }
 
-.project-item-container:hover .project-actions-btn {
-    display: flex;
-}
+    .project-item-container .menu-item {
+        padding-right: 36px;
+    }
 
-.project-item-container:hover .menu-counter {
-    display: none !important;
+    .project-item-container .menu-counter {
+        margin-right: 20px;
+    }
 }
 
 /* Контекстное меню для проектов */
@@ -1629,13 +1669,10 @@ body.dark .btn-empty-trash:hover {
     }
 }
 
-/* На мобильных (тач) хэндл виден всегда */
+/* На мобильных (тач) хэндл скрыт */
 @media (hover: none) {
     .task-drag-handle {
-        opacity: 0.5;
-        pointer-events: auto;
-        left: -28px;
-        width: 28px;
+        display: none !important;
     }
 }
 

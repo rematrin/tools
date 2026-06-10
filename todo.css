@@ -406,6 +406,9 @@ body.dark .add-task-form.expanded {
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     position: relative;
     /* Убрано overflow: hidden для отображения меню действий вне границ */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .task-item.menu-open {
@@ -1338,6 +1341,9 @@ body.dark .task-due-badge.overdue {
     display: flex;
     align-items: center;
     width: 100%;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .project-item-container .menu-item {

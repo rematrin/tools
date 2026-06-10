@@ -2263,6 +2263,11 @@ function initTouchDragAndDrop() {
         if (touchDraggingElement) {
             touchDraggingElement.classList.remove('dragging');
             touchDraggingElement.removeAttribute('draggable');
+            if (touchDraggingElement._preventSelection) {
+                window.removeEventListener('selectstart', touchDraggingElement._preventSelection, { capture: true });
+                window.removeEventListener('contextmenu', touchDraggingElement._preventSelection, { capture: true });
+                delete touchDraggingElement._preventSelection;
+            }
         }
         document.querySelectorAll('.task-item, .project-item-container').forEach(item => {
             item.classList.remove('drag-over-above', 'drag-over-below');
@@ -2280,6 +2285,11 @@ function initTouchDragAndDrop() {
         const targetEl = e.target.closest(type === 'task' ? '.task-item' : '.project-item-container');
         if (!targetEl || targetEl.classList.contains('editing') || currentRoute === 'trash') return;
 
+        // Отключаем выделение текста при длительном тапе
+        const preventSelection = (evt) => {
+            evt.preventDefault();
+        };
+
         // Таймер для Long Press (500 мс)
         touchStartTimer = setTimeout(() => {
             touchDraggingElement = targetEl;
@@ -2287,6 +2297,11 @@ function initTouchDragAndDrop() {
             touchDraggingElement.classList.add('dragging');
             touchDraggingElement.setAttribute('draggable', 'true');
             
+            // Добавляем временный слушатель для отмены выделения текста и контекстного меню
+            window.addEventListener('selectstart', preventSelection, { capture: true });
+            window.addEventListener('contextmenu', preventSelection, { capture: true });
+            touchDraggingElement._preventSelection = preventSelection;
+
             // Легкая вибрация, если поддерживается устройством
             if (navigator.vibrate) {
                 navigator.vibrate(50);

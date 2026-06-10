@@ -302,6 +302,7 @@ body.dark .add-task-form.expanded {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
 }
 
 /* Моментальное переключение панели действий */
@@ -312,6 +313,37 @@ body.dark .add-task-form.expanded {
 .add-task-form.expanded .form-actions {
     display: flex;
     margin-top: 14px;
+}
+
+/* Адаптивность кнопок в режиме редактирования */
+@media (max-width: 480px) {
+    .task-item.editing .form-actions {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .task-item.editing .due-date-wrapper {
+        width: 100%;
+    }
+    
+    .task-item.editing .btn-due-date {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .task-item.editing .edit-actions-right {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    
+    .task-item.editing .edit-actions-right .btn-cancel,
+    .task-item.editing .edit-actions-right .btn-save {
+        flex: 1;
+        justify-content: center;
+        text-align: center;
+        padding: 10px 12px;
+    }
 }
 
 .task-input {
@@ -403,7 +435,7 @@ body.dark .add-task-form.expanded {
     border-radius: 14px;
     padding: 10px 14px;
     gap: 12px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
     position: relative;
     /* Убрано overflow: hidden для отображения меню действий вне границ */
     -webkit-touch-callout: none;
@@ -417,7 +449,6 @@ body.dark .add-task-form.expanded {
 }
 
 .task-item:hover {
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
     border-color: var(--accent);
 }
@@ -621,9 +652,10 @@ body.dark .task-item.completed .custom-checkbox svg {
     /* Добавлено для абсолютного позиционирования меню */
 }
 
-/* На десктопе показываем при наведении */
+/* На десктопе показываем при наведении или если открыто меню действий */
 @media (hover: hover) {
-    .task-item:hover .task-actions {
+    .task-item:hover .task-actions,
+    .task-item.menu-open .task-actions {
         opacity: 1;
     }
 }
@@ -665,7 +697,8 @@ body.dark .task-item.completed .custom-checkbox svg {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     padding: 4px;
     z-index: 100;
-    min-width: 150px;
+    width: 195px;
+    box-sizing: border-box;
     display: none;
     flex-direction: column;
     gap: 2px;
@@ -690,6 +723,7 @@ body.dark .task-actions-dropdown {
     border-radius: 6px;
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease;
+    box-sizing: border-box;
 }
 
 .dropdown-item:hover {
@@ -710,6 +744,60 @@ body.dark .task-actions-dropdown {
 
 .dropdown-item.btn-delete:hover {
     background-color: rgba(239, 68, 68, 0.08);
+}
+
+.dropdown-submenu-container {
+    position: relative;
+    width: 100%;
+}
+
+.dropdown-submenu {
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 4px;
+    min-width: 160px;
+    z-index: 110;
+}
+
+body.dark .dropdown-submenu {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* На десктопе раскрываем подменю сбоку при наведении */
+@media (hover: hover) {
+    .dropdown-submenu-container:hover .dropdown-submenu {
+        display: flex;
+        position: absolute;
+        left: calc(100% + 4px);
+        top: -4px;
+    }
+}
+
+/* На мобильных (тач) раскрываем подменю вниз под пунктом при клике */
+@media (hover: none) {
+    .dropdown-submenu {
+        display: none;
+        position: relative;
+        left: 0;
+        top: 0;
+        box-shadow: none;
+        border: none;
+        border-left: 2px solid var(--border);
+        border-radius: 0;
+        padding-left: 8px;
+        margin: 4px 0;
+        background-color: transparent;
+    }
+}
+
+.dropdown-item.btn-select-project.selected {
+    color: var(--accent);
+    font-weight: 600;
 }
 
 /* --- СЕКЦИЯ ВЫПОЛНЕННЫХ --- */

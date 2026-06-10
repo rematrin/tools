@@ -38,8 +38,8 @@ const isToday = (timestamp) => {
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     const today = new Date();
     return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear();
 };
 
 let selectedDueDate = null; // Хранит выбранную дату в формате YYYY-MM-DD
@@ -126,7 +126,7 @@ document.addEventListener('click', (e) => {
             }
         }
     });
-    
+
     // 2. Сворачивание формы добавления задачи при клике вне
     const addTaskForm = document.querySelector('.add-task-form');
     if (addTaskForm && addTaskForm.classList.contains('expanded')) {
@@ -149,7 +149,7 @@ document.addEventListener('click', (e) => {
             }
         }
     });
-    
+
     // 4. Закрытие контекстного меню проектов при клике вне
     if (activeContextMenu && !e.target.closest('.project-actions-btn') && !e.target.closest('.custom-context-menu')) {
         activeContextMenu.remove();
@@ -183,11 +183,11 @@ function closeDueDateDropdown() {
 // Заполнить дни недели для быстрых опций
 function initQuickOptionsText() {
     const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-    
+
     // Сегодня
     const today = new Date();
     if (quickDayToday) quickDayToday.textContent = dayNames[today.getDay()];
-    
+
     // Завтра
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -199,9 +199,9 @@ document.querySelectorAll('.quick-opt-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const type = btn.getAttribute('data-date');
         const today = new Date();
-        
+
         let targetDate = null;
-        
+
         if (type === 'today') {
             targetDate = today;
         } else if (type === 'tomorrow') {
@@ -223,14 +223,14 @@ document.querySelectorAll('.quick-opt-btn').forEach(btn => {
         } else if (type === 'none') {
             targetDate = null;
         }
-        
+
         if (targetDate) {
             const formatted = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
             setDueDate(formatted);
         } else {
             setDueDate(null);
         }
-        
+
         closeDueDateDropdown();
     });
 });
@@ -238,7 +238,7 @@ document.querySelectorAll('.quick-opt-btn').forEach(btn => {
 // Установка выбранного срока
 function setDueDate(dateStr) {
     selectedDueDate = dateStr;
-    
+
     if (!selectedDueDate) {
         if (dueDateBtnText) dueDateBtnText.textContent = 'Срок';
         if (btnClearDueDate) btnClearDueDate.style.display = 'none';
@@ -254,17 +254,17 @@ function setDueDate(dateStr) {
 // Форматирование даты для кнопки и карточек
 function formatDueDateDisplay(dateStr) {
     if (!dateStr) return 'Срок';
-    
+
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    
+
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
-    
+
     if (dateStr === todayStr) return 'Сегодня';
     if (dateStr === tomorrowStr) return 'Завтра';
-    
+
     const [year, month, day] = dateStr.split('-');
     const monthsRuShort = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
     return `${parseInt(day, 10)} ${monthsRuShort[parseInt(month, 10) - 1]}`;
@@ -274,7 +274,7 @@ function formatDueDateDisplay(dateStr) {
 function isDateOverdue(dueDateStr) {
     if (!dueDateStr) return false;
     const today = new Date();
-    today.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
     const [year, month, day] = dueDateStr.split('-');
     const dueDate = new Date(year, month - 1, day);
     return dueDate < today;
@@ -289,30 +289,30 @@ function renderCalendarGrid() {
     if (calendarMonthYear) {
         calendarMonthYear.textContent = `${monthsRu[calendarMonth]} ${calendarYear}`;
     }
-    
+
     const firstDay = new Date(calendarYear, calendarMonth, 1);
     let startDayOfWeek = firstDay.getDay() - 1;
     if (startDayOfWeek < 0) startDayOfWeek = 6; // Воскресенье -> 6
-    
+
     const totalDays = new Date(calendarYear, calendarMonth + 1, 0).getDate();
     const prevMonthTotalDays = new Date(calendarYear, calendarMonth, 0).getDate();
-    
+
     if (calendarDaysGrid) {
         calendarDaysGrid.innerHTML = '';
-        
+
         // Предыдущий месяц (заглушка)
         for (let i = startDayOfWeek - 1; i >= 0; i--) {
             const dayNum = prevMonthTotalDays - i;
             const cell = createCalendarCell(dayNum, false, calendarMonth - 1, calendarYear);
             calendarDaysGrid.appendChild(cell);
         }
-        
+
         // Текущий месяц
         for (let i = 1; i <= totalDays; i++) {
             const cell = createCalendarCell(i, true, calendarMonth, calendarYear);
             calendarDaysGrid.appendChild(cell);
         }
-        
+
         // Следующий месяц (заглушка для получения ровно 6 строк / 42 ячеек)
         const totalCells = startDayOfWeek + totalDays;
         const remainingCells = 42 - totalCells;
@@ -326,7 +326,7 @@ function renderCalendarGrid() {
 function createCalendarCell(dayNum, isCurrentMonth, month, year) {
     let cellMonth = month;
     let cellYear = year;
-    
+
     if (cellMonth < 0) {
         cellMonth = 11;
         cellYear--;
@@ -334,33 +334,33 @@ function createCalendarCell(dayNum, isCurrentMonth, month, year) {
         cellMonth = 0;
         cellYear++;
     }
-    
+
     const cell = document.createElement('span');
     cell.className = 'calendar-day-cell';
     cell.textContent = dayNum;
-    
+
     if (!isCurrentMonth) {
         cell.classList.add('other-month');
     }
-    
+
     const dateStr = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-    
+
     if (selectedDueDate === dateStr) {
         cell.classList.add('selected');
     }
-    
+
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     if (todayStr === dateStr) {
         cell.classList.add('today');
     }
-    
+
     cell.addEventListener('click', (e) => {
         e.stopPropagation();
         setDueDate(dateStr);
         renderCalendarGrid();
     });
-    
+
     return cell;
 }
 
@@ -508,7 +508,7 @@ function handleRoute() {
     const menuInbox = document.getElementById('menuInbox');
     const menuToday = document.getElementById('menuToday');
     const menuTrash = document.getElementById('menuTrash');
-    
+
     if (menuInbox) {
         if (currentRoute === 'inbox') menuInbox.classList.add('active');
         else menuInbox.classList.remove('active');
@@ -555,7 +555,7 @@ window.addEventListener('hashchange', handleRoute);
 window.addEventListener('authChanged', (e) => {
     const user = e.detail.user;
     currentUid = user ? user.uid : null;
-    
+
     if (user) {
         // Заполняем профиль в боковом меню
         if (sidebarName) sidebarName.textContent = user.displayName || "Пользователь";
@@ -569,11 +569,11 @@ window.addEventListener('authChanged', (e) => {
                 sidebarAvatar.style.display = 'block';
             }
         }
-        
+
         // Показываем интерфейс
         if (authRequiredState) authRequiredState.style.setProperty('display', 'none', 'important');
         if (todoMainLayout) todoMainLayout.style.display = 'flex';
-        
+
         startTodoForUser(currentUid);
         startProjectsForUser(currentUid);
         handleRoute();
@@ -583,7 +583,7 @@ window.addEventListener('authChanged', (e) => {
         if (authRequiredState) authRequiredState.style.display = 'block';
         if (sidebarName) sidebarName.textContent = "Войти";
         if (sidebarAvatar) sidebarAvatar.style.display = 'none';
-        
+
         stopTodoForUser();
         stopProjectsForUser();
     }
@@ -592,17 +592,17 @@ window.addEventListener('authChanged', (e) => {
 // Загрузка данных пользователя
 function startTodoForUser(uid) {
     if (unsubscribeTasks) unsubscribeTasks();
-    
+
     const q = query(collection(db, 'users', uid, 'tasks'), orderBy('createdAt', 'desc'));
-    
+
     unsubscribeTasks = onSnapshot(q, (snapshot) => {
         allTasks = [];
         const now = Date.now();
         const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-        
+
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            
+
             // Автоматическое удаление навсегда через 30 дней
             if (data.deleted === true && data.deletedAt) {
                 try {
@@ -615,13 +615,13 @@ function startTodoForUser(uid) {
                     console.error("Ошибка автоудаления из корзины:", e);
                 }
             }
-            
+
             allTasks.push({
                 id: docSnap.id,
                 ...data
             });
         });
-        
+
         renderTasks();
     }, (error) => {
         console.error("Ошибка при получении списка задач:", error);
@@ -656,15 +656,15 @@ function updateAddFormCharCount() {
 async function handleAddTask() {
     const titleText = taskTitleInput.value.trim();
     if (!titleText || titleText.length > 500 || !currentUid) return;
-    
+
     // Блокируем кнопку на время добавления
     btnAddTask.disabled = true;
-    
+
     let targetProjectId = null;
     if (currentRoute.startsWith('project/')) {
         targetProjectId = currentRoute.split('/')[1];
     }
-    
+
     try {
         await addDoc(collection(db, 'users', currentUid, 'tasks'), {
             title: titleText,
@@ -775,11 +775,11 @@ function showCustomConfirm(title, desc, actionText, onConfirm) {
     const titleEl = modal.querySelector('.confirm-modal-title');
     const descEl = modal.querySelector('.confirm-modal-desc');
     const btnConfirm = document.getElementById('btnConfirmDeleteCoform');
-    
+
     if (titleEl) titleEl.textContent = title;
     if (descEl) descEl.innerHTML = desc;
     if (btnConfirm) btnConfirm.textContent = actionText;
-    
+
     customConfirmCallback = onConfirm;
     if (modal) modal.style.display = 'flex';
 }
@@ -904,38 +904,38 @@ function initCalendarForWrapper(wrapperEl, activeDate, onSelect) {
     let localSelectedDate = activeDate;
     let localYear = activeDate ? parseInt(activeDate.split('-')[0], 10) : new Date().getFullYear();
     let localMonth = activeDate ? parseInt(activeDate.split('-')[1], 10) - 1 : new Date().getMonth();
-    
+
     const btn = wrapperEl.querySelector('.btn-due-date');
     const textLabel = wrapperEl.querySelector('.due-date-text');
     const clearIcon = wrapperEl.querySelector('.clear-due-icon');
-    
+
     // Вставляем меню, если его еще нет
     let dropdown = wrapperEl.querySelector('.due-date-dropdown');
     if (!dropdown) {
         wrapperEl.insertAdjacentHTML('beforeend', createDropdownHtml());
         dropdown = wrapperEl.querySelector('.due-date-dropdown');
     }
-    
+
     // Заполняем названия дней для быстрых опций
     const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
     const today = new Date();
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     const todayNameEl = dropdown.querySelector('.due-quick-options button[data-date="today"] .quick-opt-day-name');
     if (todayNameEl) todayNameEl.textContent = dayNames[today.getDay()];
     const tomorrowNameEl = dropdown.querySelector('.due-quick-options button[data-date="tomorrow"] .quick-opt-day-name');
     if (tomorrowNameEl) tomorrowNameEl.textContent = dayNames[tomorrow.getDay()];
-    
+
     const openDropdown = () => {
         dropdown.style.display = 'flex';
         renderGrid();
     };
-    
+
     const closeDropdown = () => {
         dropdown.style.display = 'none';
     };
-    
+
     btn.addEventListener('click', (e) => {
         e.stopPropagation();
         if (dropdown.style.display === 'none') {
@@ -944,7 +944,7 @@ function initCalendarForWrapper(wrapperEl, activeDate, onSelect) {
             closeDropdown();
         }
     });
-    
+
     if (clearIcon) {
         clearIcon.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -952,20 +952,20 @@ function initCalendarForWrapper(wrapperEl, activeDate, onSelect) {
             closeDropdown();
         });
     }
-    
+
     // Клик по быстрым кнопкам
     dropdown.querySelectorAll('.quick-opt-btn').forEach(optBtn => {
         optBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const type = optBtn.getAttribute('data-date');
             let targetDate = null;
-            
+
             if (type === 'today') {
                 targetDate = today;
             } else if (type === 'tomorrow') {
                 targetDate = tomorrow;
             }
-            
+
             if (targetDate) {
                 const formatted = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
                 updateDate(formatted);
@@ -975,7 +975,7 @@ function initCalendarForWrapper(wrapperEl, activeDate, onSelect) {
             closeDropdown();
         });
     });
-    
+
     // Навигация
     dropdown.querySelector('.cal-prev-month').addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1001,24 +1001,24 @@ function initCalendarForWrapper(wrapperEl, activeDate, onSelect) {
         localMonth = new Date().getMonth();
         renderGrid();
     });
-    
+
     function renderGrid() {
         const monthsRu = [
             'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
             'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'
         ];
         dropdown.querySelector('.calendar-month-year').textContent = `${monthsRu[localMonth]} ${localYear}`;
-        
+
         const firstDay = new Date(localYear, localMonth, 1);
         let startDayOfWeek = firstDay.getDay() - 1;
         if (startDayOfWeek < 0) startDayOfWeek = 6;
-        
+
         const totalDays = new Date(localYear, localMonth + 1, 0).getDate();
         const prevMonthTotalDays = new Date(localYear, localMonth, 0).getDate();
-        
+
         const daysGrid = dropdown.querySelector('.calendar-days');
         daysGrid.innerHTML = '';
-        
+
         // Предыдущий месяц
         for (let i = startDayOfWeek - 1; i >= 0; i--) {
             const dayNum = prevMonthTotalDays - i;
@@ -1035,7 +1035,7 @@ function initCalendarForWrapper(wrapperEl, activeDate, onSelect) {
             daysGrid.appendChild(createCell(i, false, localMonth + 1, localYear));
         }
     }
-    
+
     function createCell(dayNum, isCurrentMonth, month, year) {
         let cellMonth = month;
         let cellYear = year;
@@ -1046,19 +1046,19 @@ function initCalendarForWrapper(wrapperEl, activeDate, onSelect) {
             cellMonth = 0;
             cellYear++;
         }
-        
+
         const cell = document.createElement('span');
         cell.className = 'calendar-day-cell';
         cell.textContent = dayNum;
         if (!isCurrentMonth) cell.classList.add('other-month');
-        
+
         const dateStr = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
         if (localSelectedDate === dateStr) cell.classList.add('selected');
-        
+
         const tdy = new Date();
         const tdyStr = `${tdy.getFullYear()}-${String(tdy.getMonth() + 1).padStart(2, '0')}-${String(tdy.getDate()).padStart(2, '0')}`;
         if (tdyStr === dateStr) cell.classList.add('today');
-        
+
         cell.addEventListener('click', (e) => {
             e.stopPropagation();
             updateDate(dateStr);
@@ -1066,11 +1066,11 @@ function initCalendarForWrapper(wrapperEl, activeDate, onSelect) {
         });
         return cell;
     }
-    
+
     function updateDate(dateStr) {
         localSelectedDate = dateStr;
         onSelect(dateStr);
-        
+
         if (!localSelectedDate) {
             textLabel.textContent = 'Срок';
             if (clearIcon) clearIcon.style.display = 'none';
@@ -1086,14 +1086,14 @@ function initCalendarForWrapper(wrapperEl, activeDate, onSelect) {
 // Переименование задачи (Карточка редактирования)
 function enableInlineEdit(taskItemEl, task, titleSpan) {
     if (taskItemEl.classList.contains('editing')) return;
-    
+
     taskItemEl.classList.add('editing');
-    
+
     let editSelectedDueDate = task.dueDate;
-    
+
     const editContainer = document.createElement('div');
     editContainer.className = 'edit-task-container';
-    
+
     editContainer.innerHTML = `
         <textarea class="task-input edit-title-input" placeholder="Что бы вы хотели сделать?" rows="1" style="height: auto;"></textarea>
         <div class="char-limit-warning edit-char-limit">Лимит названия задачи: 0 / 500</div>
@@ -1116,13 +1116,13 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
             </div>
         </div>
     `;
-    
+
     taskItemEl.appendChild(editContainer);
-    
+
     const input = editContainer.querySelector('.edit-title-input');
     const warning = editContainer.querySelector('.edit-char-limit');
     const btnSave = editContainer.querySelector('.btn-save');
-    
+
     const updateEditCharCount = () => {
         const len = input.value.length;
         warning.textContent = `Лимит названия задачи: ${len} / 500`;
@@ -1134,13 +1134,13 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
             btnSave.disabled = false;
         }
     };
-    
+
     input.value = task.title;
-    
+
     // Auto-resize textarea height immediately based on initial content
     input.style.height = 'auto';
     input.style.height = input.scrollHeight + 'px';
-    
+
     updateEditCharCount();
 
     input.focus();
@@ -1148,31 +1148,31 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
     const val = input.value;
     input.value = '';
     input.value = val;
-    
+
     input.addEventListener('input', () => {
         input.style.height = 'auto';
         input.style.height = input.scrollHeight + 'px';
         updateEditCharCount();
     });
-    
+
     const btnCancel = editContainer.querySelector('.btn-cancel');
     const wrapper = editContainer.querySelector('.due-date-wrapper');
-    
+
     // Инициализируем календарь
     initCalendarForWrapper(wrapper, editSelectedDueDate, (dateStr) => {
         editSelectedDueDate = dateStr;
     });
-    
+
     const finishEdit = async () => {
         const newTitle = input.value.trim();
         if (!newTitle || newTitle.length > 500) return;
-        
+
         taskItemEl.classList.remove('editing');
         editContainer.remove();
-        
+
         const titleChanged = newTitle !== task.title;
         const dateChanged = editSelectedDueDate !== task.dueDate;
-        
+
         if (titleChanged || dateChanged) {
             try {
                 await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
@@ -1187,23 +1187,23 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
             renderTasks();
         }
     };
-    
+
     const cancelEdit = () => {
         taskItemEl.classList.remove('editing');
         editContainer.remove();
         renderTasks();
     };
-    
+
     btnSave.addEventListener('click', (e) => {
         e.stopPropagation();
         finishEdit();
     });
-    
+
     btnCancel.addEventListener('click', (e) => {
         e.stopPropagation();
         cancelEdit();
     });
-    
+
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -1221,18 +1221,18 @@ function renderTasks() {
     const activeTasks = nonDeletedTasks.filter(t => !t.completed);
     const completedTasks = nonDeletedTasks.filter(t => t.completed);
     const trashTasks = allTasks.filter(t => t.deleted);
-    
+
     // Вычисляем счетчики для сайдбара
     const todayObj = new Date();
     const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
-    
+
     const isTodayTask = (t) => {
         return t.dueDate === todayStr;
     };
 
     const inboxActiveCount = activeTasks.filter(t => !t.projectId).length;
     const todayActiveCount = activeTasks.filter(isTodayTask).length;
-    
+
     if (inboxCounter) {
         inboxCounter.textContent = inboxActiveCount;
         inboxCounter.style.display = inboxActiveCount > 0 ? 'inline-block' : 'none';
@@ -1248,22 +1248,22 @@ function renderTasks() {
         trashCounter.textContent = trashActiveCount;
         trashCounter.style.display = trashActiveCount > 0 ? 'inline-block' : 'none';
     }
-    
+
     // Переключаем отображение баннера Корзины и формы быстрого добавления
     const trashNoticeBanner = document.getElementById('trashNoticeBanner');
     const addTaskFormEl = document.querySelector('.add-task-form');
-    
+
     if (trashNoticeBanner) {
         trashNoticeBanner.style.display = currentRoute === 'trash' ? 'flex' : 'none';
     }
     if (addTaskFormEl) {
         addTaskFormEl.style.display = currentRoute === 'trash' ? 'none' : 'flex';
     }
-    
+
     // Фильтруем задачи для отображения в зависимости от текущей вкладки (роута)
     let displayActiveTasks = [];
     let displayCompletedTasks = [];
-    
+
     if (currentRoute === 'today') {
         displayActiveTasks = activeTasks.filter(isTodayTask);
         displayCompletedTasks = completedTasks.filter(isTodayTask);
@@ -1278,14 +1278,14 @@ function renderTasks() {
         displayActiveTasks = activeTasks.filter(t => !t.projectId);
         displayCompletedTasks = completedTasks.filter(t => !t.projectId);
     }
-    
+
     // Сортируем задачи по полю 'order', а при равенстве или его отсутствии — по 'createdAt'
     const sortTasksByOrder = (tasks) => {
         tasks.sort((a, b) => {
             const orderA = a.order !== undefined ? a.order : 0;
             const orderB = b.order !== undefined ? b.order : 0;
             if (orderA !== orderB) return orderA - orderB;
-            
+
             const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
             const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
             return timeB - timeA; // Новые вверху
@@ -1296,10 +1296,10 @@ function renderTasks() {
         sortTasksByOrder(displayActiveTasks);
         sortTasksByOrder(displayCompletedTasks);
     }
-    
+
     // 1. РЕНДЕРИМ АКТИВНЫЕ ЗАДАЧИ
     activeTasksContainer.innerHTML = '';
-    
+
     if (displayActiveTasks.length === 0) {
         if (currentRoute === 'trash') {
             activeTasksContainer.innerHTML = `
@@ -1342,21 +1342,21 @@ function renderTasks() {
             activeTasksContainer.appendChild(footerDiv);
         }
     }
-    
+
     // 2. РЕНДЕРИМ ВЫПОЛНЕННЫЕ ЗАДАЧИ
     completedTasksContainer.innerHTML = '';
-    
+
     if (displayCompletedTasks.length === 0) {
         if (completedSection) completedSection.style.display = 'none';
     } else {
         if (completedSection) completedSection.style.display = 'block';
         if (completedToggleText) completedToggleText.textContent = `Выполненные (${displayCompletedTasks.length})`;
-        
+
         displayCompletedTasks.forEach(task => {
             const el = createTaskRowElement(task);
             completedTasksContainer.appendChild(el);
         });
-        
+
         updateCompletedToggleUI();
     }
 }
@@ -1366,7 +1366,7 @@ function createTaskRowElement(task) {
     const item = document.createElement('div');
     item.className = `task-item ${task.completed ? 'completed' : ''}`;
     item.setAttribute('data-id', task.id);
-    
+
     if (task.deleted) {
         item.innerHTML = `
             <div class="checkbox-wrapper" style="opacity: 0.5; pointer-events: none;">
@@ -1404,15 +1404,15 @@ function createTaskRowElement(task) {
                 </button>
             </div>
         `;
-        
+
         const btnRestore = item.querySelector('.btn-restore');
         const btnDeletePerm = item.querySelector('.btn-delete-perm');
-        
+
         btnRestore.addEventListener('click', (e) => {
             e.stopPropagation();
             restoreTask(task.id);
         });
-        
+
         btnDeletePerm.addEventListener('click', (e) => {
             e.stopPropagation();
             showCustomConfirm(
@@ -1424,10 +1424,10 @@ function createTaskRowElement(task) {
                 }
             );
         });
-        
+
         return item;
     }
-    
+
     item.innerHTML = `
         <button class="task-drag-handle" aria-label="Перетащить задачу" title="Перетащить">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
@@ -1471,6 +1471,50 @@ function createTaskRowElement(task) {
                     </svg>
                     <span>Редактировать</span>
                 </button>
+                <div class="dropdown-submenu-container">
+                    <button class="dropdown-item btn-move-project">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; width: 14px; height: 14px;">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span>Переместить в..</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left: auto; color: var(--text-secondary); flex-shrink: 0;">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                    <div class="dropdown-submenu">
+                        <button class="dropdown-item btn-select-project ${!task.projectId ? 'selected' : ''}" data-project-id="">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                                <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                            </svg>
+                            <span>Входящие</span>
+                            ${!task.projectId ? `
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="3" style="margin-left: auto;">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            ` : ''}
+                        </button>
+                        ${projectsList.map(proj => {
+        const isCurrent = task.projectId === proj.id;
+        return `
+                                <button class="dropdown-item btn-select-project ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <line x1="4" y1="9" x2="20" y2="9"></line>
+                                        <line x1="4" y1="15" x2="20" y2="15"></line>
+                                        <line x1="10" y1="3" x2="8" y2="21"></line>
+                                        <line x1="16" y1="3" x2="14" y2="21"></line>
+                                    </svg>
+                                    <span>${escapeHtml(proj.name)}</span>
+                                    ${isCurrent ? `
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="3" style="margin-left: auto;">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    ` : ''}
+                                </button>
+                            `;
+    }).join('')}
+                    </div>
+                </div>
                 <button class="dropdown-item btn-delete">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
                         <polyline points="3 6 5 6 21 6"></polyline>
@@ -1481,43 +1525,84 @@ function createTaskRowElement(task) {
             </div>
         </div>
     `;
-    
+
     const checkbox = item.querySelector('.custom-checkbox');
     const titleSpan = item.querySelector('.task-title-text');
     const btnMore = item.querySelector('.btn-more');
     const actionsDropdown = item.querySelector('.task-actions-dropdown');
     const btnEdit = item.querySelector('.btn-edit');
     const btnDelete = item.querySelector('.btn-delete');
-    
+
     // Клик на чекбокс
     checkbox.addEventListener('click', (e) => {
         e.stopPropagation();
         toggleTaskCompleted(task.id, task.completed);
     });
-    
+
     // Клик на три точки
-    btnMore.addEventListener('click', (e) => {
-        e.stopPropagation();
-        
+    const openActionsDropdown = (clickEvent = null) => {
         // Закрываем другие открытые меню действий перед тем, как открыть это
         document.querySelectorAll('.task-item').forEach(taskItem => {
             if (taskItem !== item) {
                 taskItem.classList.remove('menu-open');
                 const dropdown = taskItem.querySelector('.task-actions-dropdown');
-                if (dropdown) dropdown.style.display = 'none';
+                if (dropdown) {
+                    dropdown.style.display = 'none';
+                    dropdown.style.position = '';
+                    dropdown.style.left = '';
+                    dropdown.style.top = '';
+                }
             }
         });
-        
+
         const isHidden = actionsDropdown.style.display === 'none';
         if (isHidden) {
             actionsDropdown.style.display = 'flex';
             item.classList.add('menu-open');
+
+            // Если передан клик ПКМ, позиционируем меню на месте курсора
+            if (clickEvent) {
+                actionsDropdown.style.position = 'fixed';
+                let x = clickEvent.clientX;
+                let y = clickEvent.clientY;
+
+                // Проверяем, чтобы меню не вылезало за пределы экрана
+                const menuWidth = 170;
+                const menuHeight = 120;
+                if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+                if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+
+                actionsDropdown.style.left = `${x}px`;
+                actionsDropdown.style.top = `${y}px`;
+            } else {
+                // Возвращаем дефолтное позиционирование от кнопки
+                actionsDropdown.style.position = 'absolute';
+                actionsDropdown.style.left = '';
+                actionsDropdown.style.top = 'calc(100% + 4px)';
+            }
         } else {
             actionsDropdown.style.display = 'none';
             item.classList.remove('menu-open');
+            actionsDropdown.style.position = '';
+            actionsDropdown.style.left = '';
+            actionsDropdown.style.top = '';
+        }
+    };
+
+    btnMore.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openActionsDropdown();
+    });
+
+    // Открытие меню по правому клику мыши (contextmenu) на десктопе
+    item.addEventListener('contextmenu', (e) => {
+        if (window.matchMedia('(hover: hover)').matches) {
+            e.preventDefault();
+            e.stopPropagation();
+            openActionsDropdown(e);
         }
     });
-    
+
     // Клик на кнопку редактирования из меню
     btnEdit.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1525,13 +1610,13 @@ function createTaskRowElement(task) {
         item.classList.remove('menu-open');
         enableInlineEdit(item, task, titleSpan);
     });
-    
+
     // Двойной клик на текст задачи также переводит в режим редактирования
     titleSpan.addEventListener('dblclick', (e) => {
         e.stopPropagation();
         enableInlineEdit(item, task, titleSpan);
     });
-    
+
     // Клик на удаление из меню
     btnDelete.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1546,7 +1631,53 @@ function createTaskRowElement(task) {
             }
         );
     });
-    
+
+    // Обработчик для раскрытия подменю "Переместить в"
+    // Обработчик для раскрытия подменю "Переместить в" (только для тач-устройств по клику)
+    const btnMoveProject = item.querySelector('.btn-move-project');
+    const submenu = item.querySelector('.dropdown-submenu');
+
+    if (btnMoveProject && submenu) {
+        btnMoveProject.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (window.matchMedia('(hover: none)').matches) {
+                const isHidden = submenu.style.display === 'none';
+                submenu.style.display = isHidden ? 'flex' : 'none';
+            }
+        });
+    }
+
+    // Обработчик выбора проекта в подменю
+    item.querySelectorAll('.btn-select-project').forEach(projBtn => {
+        projBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const targetProjId = projBtn.getAttribute('data-project-id') || null;
+
+            actionsDropdown.style.display = 'none';
+            item.classList.remove('menu-open');
+
+            if (targetProjId !== task.projectId) {
+                // Локально обновляем проект у задачи в allTasks, чтобы рендер произошел мгновенно
+                const localTask = allTasks.find(t => t.id === task.id);
+                if (localTask) {
+                    localTask.projectId = targetProjId;
+                    localTask.order = 0;
+                }
+                renderProjects();
+                renderTasks();
+
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                        projectId: targetProjId,
+                        order: 0 // Сбрасываем order, чтобы задача встала в начало нового списка
+                    });
+                } catch (err) {
+                    console.error("Ошибка при переносе задачи в другой проект:", err);
+                }
+            }
+        });
+    });
+
     // Настройка активации draggable только при взаимодействии с drag-handle
     const dragHandle = item.querySelector('.task-drag-handle');
     if (dragHandle) {
@@ -1563,7 +1694,7 @@ function createTaskRowElement(task) {
             item.removeAttribute('draggable');
         });
     }
-    
+
     return item;
 }
 
@@ -1576,7 +1707,7 @@ function escapeHtml(text) {
         '"': '&quot;',
         "'": '&#039;'
     };
-    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    return text.replace(/[&<>"']/g, function (m) { return map[m]; });
 }
 
 // Обработчик изменения размера окна для корректной высоты всех textarea
@@ -1595,9 +1726,9 @@ window.addEventListener('resize', () => {
 
 function startProjectsForUser(uid) {
     if (unsubscribeProjects) unsubscribeProjects();
-    
+
     const qProjects = query(collection(db, 'users', uid, 'projects'));
-    
+
     unsubscribeProjects = onSnapshot(qProjects, (snapshot) => {
         projectsList = [];
         snapshot.forEach((docSnap) => {
@@ -1606,18 +1737,18 @@ function startProjectsForUser(uid) {
                 ...docSnap.data()
             });
         });
-        
+
         // Сортируем проекты по order, а при равенстве или отсутствии — по createdAt
         projectsList.sort((a, b) => {
             const orderA = a.order !== undefined ? a.order : 0;
             const orderB = b.order !== undefined ? b.order : 0;
             if (orderA !== orderB) return orderA - orderB;
-            
+
             const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
             const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
             return timeA - timeB; // Старые вверху (по возрастанию)
         });
-        
+
         // Проверяем существование проекта на текущем роуте
         if (currentRoute.startsWith('project/')) {
             const projectId = currentRoute.split('/')[1];
@@ -1627,7 +1758,7 @@ function startProjectsForUser(uid) {
                 history.replaceState(null, null, '#inbox');
             }
         }
-        
+
         renderProjects();
         renderTasks(); // Re-render to update counters in sidebar!
     }, (error) => {
@@ -1647,17 +1778,17 @@ function stopProjectsForUser() {
 function renderProjects() {
     if (!projectsListContainer) return;
     projectsListContainer.innerHTML = '';
-    
+
     projectsList.forEach(project => {
         const itemContainer = document.createElement('div');
         itemContainer.className = 'project-item-container';
-        
+
         const projectHash = `project/${project.id}`;
         const isActive = currentRoute === projectHash;
-        
+
         // Calculate task count for this project
         const projectTaskCount = allTasks.filter(t => !t.completed && t.projectId === project.id).length;
-        
+
         itemContainer.innerHTML = `
             <a href="#${projectHash}" class="menu-item ${isActive ? 'active' : ''}">
                 <span class="menu-item-left">
@@ -1679,7 +1810,7 @@ function renderProjects() {
                 </svg>
             </button>
         `;
-        
+
         // Add project actions listener
         const actionsBtn = itemContainer.querySelector('.project-actions-btn');
         actionsBtn.addEventListener('click', (e) => {
@@ -1687,7 +1818,16 @@ function renderProjects() {
             e.preventDefault();
             showProjectContextMenu(e, project.id, project.name, itemContainer);
         });
-        
+
+        // Открытие меню проектов по правому клику (ПКМ) на десктопе
+        itemContainer.addEventListener('contextmenu', (e) => {
+            if (window.matchMedia('(hover: hover)').matches) {
+                e.preventDefault();
+                e.stopPropagation();
+                showProjectContextMenu(e, project.id, project.name, itemContainer);
+            }
+        });
+
         // Drag and Drop активация через иконку
         const menuIcon = itemContainer.querySelector('.menu-icon');
         if (menuIcon) {
@@ -1704,7 +1844,7 @@ function renderProjects() {
                 itemContainer.removeAttribute('draggable');
             });
         }
-        
+
         projectsListContainer.appendChild(itemContainer);
     });
 }
@@ -1713,7 +1853,7 @@ async function deleteProject(projectId) {
     if (!currentUid || !projectId) return;
     try {
         await deleteDoc(doc(db, 'users', currentUid, 'projects', projectId));
-        
+
         // Перемещаем задачи этого проекта в Корзину
         const tasksToTrash = allTasks.filter(t => t.projectId === projectId);
         for (const task of tasksToTrash) {
@@ -1723,7 +1863,7 @@ async function deleteProject(projectId) {
                 projectId: null // Сбрасываем ID проекта, чтобы при восстановлении они попадали во Входящие
             });
         }
-        
+
         // Redirect to Inbox if viewing the deleted project
         if (currentRoute === `project/${projectId}`) {
             window.location.hash = '#inbox';
@@ -1736,7 +1876,7 @@ async function deleteProject(projectId) {
 async function handleAddProject() {
     const nameText = projectNewNameInput.value.trim();
     if (!nameText || nameText.length > 50 || !currentUid) return;
-    
+
     btnSaveProject.disabled = true;
     try {
         await addDoc(collection(db, 'users', currentUid, 'projects'), {
@@ -1909,20 +2049,20 @@ function initDragAndDrop() {
             if (!targetItem || targetItem === draggingElement) return;
 
             const isAbove = targetItem.classList.contains('drag-over-above');
-            
+
             // Очищаем индикаторы
             targetItem.classList.remove('drag-over-above', 'drag-over-below');
             draggingElement.classList.remove('dragging');
 
             const taskId = draggingElement.getAttribute('data-id');
-            
+
             // Вычисляем новый порядок на основе текущих отрендеренных элементов
             const taskItems = Array.from(container.querySelectorAll('.task-item'));
             const draggingIndex = taskItems.indexOf(draggingElement);
             let targetIndex = taskItems.indexOf(targetItem);
 
             taskItems.splice(draggingIndex, 1);
-            
+
             if (!isAbove) {
                 targetIndex = taskItems.indexOf(targetItem) + 1;
             } else {
@@ -1931,7 +2071,7 @@ function initDragAndDrop() {
 
             // Получаем задачи текущего списка, чтобы рассчитать их order
             let currentTasks = [];
-            
+
             const activeTasks = allTasks.filter(t => !t.deleted && !t.completed);
             const completedTasks = allTasks.filter(t => !t.deleted && t.completed);
             const isCompletedContainer = container === completedTasksContainer;
@@ -2019,20 +2159,34 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
             <span>Удалить</span>
         </div>
     `;
-    
+
     document.body.appendChild(menu);
     activeContextMenu = menu;
 
-    // Автоматическое позиционирование меню относительно кнопки действий
-    const rect = e.currentTarget.getBoundingClientRect();
-    let x = rect.left - 130;
-    let y = rect.bottom + window.scrollY + 4;
-    
-    // Предотвращение выхода за границы окна
-    if (x + 150 > window.innerWidth) {
-        x = window.innerWidth - 160;
+    // Позиционирование меню. Если событие contextmenu (ПКМ), позиционируем на месте курсора
+    let x = 0;
+    let y = 0;
+
+    if (e.clientX && e.clientY && e.type === 'contextmenu') {
+        x = e.clientX;
+        y = e.clientY + window.scrollY;
+
+        // Предотвращение выхода за границы окна
+        if (x + 150 > window.innerWidth) {
+            x = window.innerWidth - 160;
+        }
+        if (x < 10) x = 10;
+    } else {
+        // Позиционирование относительно кнопки трех точек
+        const rect = e.currentTarget.getBoundingClientRect();
+        x = rect.left - 130;
+        y = rect.bottom + window.scrollY + 4;
+
+        if (x + 150 > window.innerWidth) {
+            x = window.innerWidth - 160;
+        }
+        if (x < 10) x = 10;
     }
-    if (x < 10) x = 10;
 
     menu.style.left = `${x}px`;
     menu.style.top = `${y}px`;
@@ -2086,7 +2240,7 @@ function enableProjectInlineEdit(itemContainer, projectId, oldName) {
                 await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
                     name: newVal
                 });
-                
+
                 // Динамически меняем заголовок списка, если он открыт сейчас
                 if (currentRoute === `project/${projectId}`) {
                     const titleEl = document.querySelector('.list-title');
@@ -2181,20 +2335,20 @@ function initProjectsDragAndDrop() {
         if (!targetItem || targetItem === draggingProject) return;
 
         const isAbove = targetItem.classList.contains('drag-over-above');
-        
+
         targetItem.classList.remove('drag-over-above', 'drag-over-below');
         draggingProject.classList.remove('dragging');
 
         const actionsBtn = draggingProject.querySelector('.project-actions-btn');
         if (!actionsBtn) return;
         const projectId = actionsBtn.getAttribute('data-id');
-        
+
         const projectItems = Array.from(projectsListContainer.querySelectorAll('.project-item-container'));
         const draggingIndex = projectItems.indexOf(draggingProject);
         let targetIndex = projectItems.indexOf(targetItem);
 
         projectItems.splice(draggingIndex, 1);
-        
+
         if (!isAbove) {
             targetIndex = projectItems.indexOf(targetItem) + 1;
         } else {
@@ -2203,7 +2357,7 @@ function initProjectsDragAndDrop() {
 
         // Копируем текущий список для расчета order
         let currentProjects = [...projectsList];
-        
+
         const movingProj = currentProjects.find(p => p.id === projectId);
         if (!movingProj) return;
 
@@ -2296,7 +2450,7 @@ function initTouchDragAndDrop() {
             touchDragType = type;
             touchDraggingElement.classList.add('dragging');
             touchDraggingElement.setAttribute('draggable', 'true');
-            
+
             // Добавляем временный слушатель для отмены выделения текста и контекстного меню
             window.addEventListener('selectstart', preventSelection, { capture: true });
             window.addEventListener('contextmenu', preventSelection, { capture: true });
@@ -2332,10 +2486,10 @@ function initTouchDragAndDrop() {
 
         const touch = e.touches[0];
         const elemUnder = document.elementFromPoint(touch.clientX, touch.clientY);
-        
+
         // Восстанавливаем pointer-events
         touchDraggingElement.style.pointerEvents = originalPointerEvents;
-        
+
         if (!elemUnder) return;
 
         const selector = touchDragType === 'task' ? '.task-item' : '.project-item-container';

@@ -88,13 +88,7 @@
                 </div>
                 <div class="projects-list-wrapper">
                     <div class="projects-list" id="projectsList"></div>
-                    <div class="project-add-form" id="projectAddForm" style="display: none;">
-                        <input type="text" class="project-add-input" id="projectNewNameInput" placeholder="Название..." maxlength="50">
-                        <div class="project-add-buttons">
-                            <button class="btn-project-cancel" id="btnCancelProject" type="button">Отмена</button>
-                            <button class="btn-project-save" id="btnSaveProject" type="button">Создать</button>
-                        </div>
-                    </div>
+
                 </div>
                 
                 <div class="sidebar-footer-menu" style="margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border);">
@@ -323,6 +317,111 @@
 
 
     <!-- Модальное окно подтверждения удаления -->
+    <!-- Модальное окно настроек -->
+    <div class="settings-modal-overlay" id="settingsModal" style="display: none;">
+        <div class="settings-modal-card">
+            <!-- Сайдбар настроек (левая сторона) -->
+            <div class="settings-modal-sidebar">
+                <h2 class="settings-sidebar-title">Настройки</h2>
+                <nav class="settings-sidebar-menu">
+                    <button class="settings-menu-item active" data-tab="account">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span>Аккаунт</span>
+                    </button>
+                    <!-- Заглушки других пунктов для вида, как на скриншоте -->
+                    <button class="settings-menu-item" disabled style="opacity: 0.5; cursor: not-allowed;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                        <span>Премиум</span>
+                    </button>
+                    <button class="settings-menu-item" disabled style="opacity: 0.5; cursor: not-allowed;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Функциональные модули</span>
+                    </button>
+                    <button class="settings-menu-item" disabled style="opacity: 0.5; cursor: not-allowed;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span>О приложении</span>
+                    </button>
+                </nav>
+            </div>
+            
+            <!-- Основной контент настроек (правая сторона) -->
+            <div class="settings-modal-content">
+                <button class="settings-close-btn" id="btnSettingsClose" aria-label="Закрыть настройки">&times;</button>
+                
+                <div class="settings-tab-pane active" id="tab-account">
+                    <!-- Заголовок аккаунта -->
+                    <div class="settings-profile-header">
+                        <div class="settings-avatar-wrapper">
+                            <img src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" alt="Avatar" class="settings-profile-avatar" id="settingsProfileAvatar">
+                        </div>
+                        <div class="settings-profile-info">
+                            <h3 class="settings-profile-name" id="settingsProfileName">Martin Radin</h3>
+                            <span class="settings-profile-sub">Закончится: 14/01/2027</span>
+                        </div>
+                    </div>
+
+                    <!-- Группа полей настроек -->
+                    <div class="settings-section">
+                        <div class="settings-field">
+                            <div class="settings-field-info">
+                                <label>Электронная почта</label>
+                                <span id="settingsEmailText">rematrin@gmail.com</span>
+                            </div>
+                        </div>
+                        <div class="settings-field">
+                            <div class="settings-field-info">
+                                <label>Пароль</label>
+                                <span>••••••••</span>
+                            </div>
+                            <button class="settings-field-action-btn" id="btnSettingsChangePassword">Изменить пароль</button>
+                        </div>
+                        <div class="settings-field">
+                            <div class="settings-field-info">
+                                <label>Двухфакторная аутентификация</label>
+                                <span>Отключена</span>
+                            </div>
+                            <button class="settings-field-action-btn" disabled style="opacity: 0.5;">Настройка</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <div class="settings-field">
+                            <div class="settings-field-info">
+                                <label>Google</label>
+                                <span id="settingsGoogleName">Martin Radin</span>
+                            </div>
+                            <span class="settings-connected-badge">Связано</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <div class="settings-field danger">
+                            <div class="settings-field-info">
+                                <label style="color: #ff4d4f; font-weight: 600;">Управление учетной записью</label>
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);">Безвозвратное удаление вашего профиля и всех накопленных данных.</span>
+                            </div>
+                            <button class="settings-field-action-btn danger-btn" id="btnSettingsDeleteAccount">Удалить аккаунт</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="confirm-modal-overlay" id="confirmDeleteModal" style="display: none;">
         <div class="confirm-modal-card">
             <h3 class="confirm-modal-title">Удалить задачу?</h3>

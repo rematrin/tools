@@ -26,10 +26,6 @@ let projectsList = [];
 let unsubscribeProjects = null;
 
 const btnAddProject = document.getElementById('btnAddProject');
-const projectAddForm = document.getElementById('projectAddForm');
-const projectNewNameInput = document.getElementById('projectNewNameInput');
-const btnCancelProject = document.getElementById('btnCancelProject');
-const btnSaveProject = document.getElementById('btnSaveProject');
 const projectsListContainer = document.getElementById('projectsList');
 
 // Функция проверки, создана ли задача сегодня
@@ -455,6 +451,12 @@ if (sidebarUser && userProfileMenu) {
     sidebarUser.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (!currentUid) {
+            if (typeof window.openAuthModal === 'function') {
+                window.openAuthModal(sidebarUser);
+            }
+            return;
+        }
         if (userProfileMenu.style.display === 'none' || userProfileMenu.style.display === '') {
             userProfileMenu.style.display = 'flex';
         } else {
@@ -466,9 +468,7 @@ if (sidebarUser && userProfileMenu) {
         btnUserMenuSettings.addEventListener('click', (e) => {
             e.stopPropagation();
             userProfileMenu.style.display = 'none';
-            if (typeof window.openAuthModal === 'function') {
-                window.openAuthModal(sidebarUser);
-            }
+            openSettingsModal();
         });
     }
 
@@ -482,6 +482,69 @@ if (sidebarUser && userProfileMenu) {
             }
         });
     }
+}
+
+// === ЛОГИКА ОКНА НАСТРОЕК ===
+const settingsModal = document.getElementById('settingsModal');
+const btnSettingsClose = document.getElementById('btnSettingsClose');
+const settingsProfileAvatar = document.getElementById('settingsProfileAvatar');
+const settingsProfileName = document.getElementById('settingsProfileName');
+const settingsEmailText = document.getElementById('settingsEmailText');
+const settingsGoogleName = document.getElementById('settingsGoogleName');
+const btnSettingsChangePassword = document.getElementById('btnSettingsChangePassword');
+const btnSettingsDeleteAccount = document.getElementById('btnSettingsDeleteAccount');
+
+function openSettingsModal() {
+    if (!settingsModal) return;
+    settingsModal.style.display = 'flex';
+
+    // Подставляем реальные данные текущего пользователя
+    if (window.currentUser) {
+        if (settingsProfileName) settingsProfileName.textContent = window.currentUser.displayName || 'Пользователь';
+        if (settingsEmailText) settingsEmailText.textContent = window.currentUser.email || '—';
+        if (settingsGoogleName) settingsGoogleName.textContent = window.currentUser.displayName || '—';
+        if (settingsProfileAvatar) {
+            settingsProfileAvatar.src = window.currentUser.photoURL || 'https://i.ibb.co/Z6vRKK9x/0000000.jpg';
+        }
+    }
+}
+
+function closeSettingsModal() {
+    if (settingsModal) {
+        settingsModal.style.display = 'none';
+    }
+}
+
+if (btnSettingsClose) {
+    btnSettingsClose.addEventListener('click', closeSettingsModal);
+}
+
+if (settingsModal) {
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+            closeSettingsModal();
+        }
+    });
+}
+
+// Добавим обработку клавиши Escape для закрытия настроек
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeSettingsModal();
+    }
+});
+
+// Клик по заглушкам изменения пароля или удаления аккаунта
+if (btnSettingsChangePassword) {
+    btnSettingsChangePassword.addEventListener('click', () => {
+        alert("Функция изменения пароля находится в разработке.");
+    });
+}
+
+if (btnSettingsDeleteAccount) {
+    btnSettingsDeleteAccount.addEventListener('click', () => {
+        alert("Функция удаления аккаунта находится в разработке.");
+    });
 }
 
 // Сайдбар: восстановление свернутого состояния на ПК
@@ -1426,6 +1489,12 @@ function renderTasks() {
 
         updateCompletedToggleUI();
     }
+
+    // Снимаем блокировку ховера после перестроения списка в DOM
+    setTimeout(() => {
+        if (activeTasksContainer) activeTasksContainer.classList.remove('disable-hover');
+        if (completedTasksContainer) completedTasksContainer.classList.remove('disable-hover');
+    }, 50);
 }
 
 // Создать DOM элемент для строки задачи
@@ -1860,16 +1929,20 @@ function renderProjects() {
         // Calculate task count for this project
         const projectTaskCount = allTasks.filter(t => !t.completed && t.projectId === project.id).length;
 
+        const iconHtml = project.iconUrl ?
+            `<img src="${project.iconUrl}" style="width: 16px; height: 16px; object-fit: contain; border-radius: 4px; flex-shrink: 0;">` :
+            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="9" x2="20" y2="9"></line>
+                <line x1="4" y1="15" x2="20" y2="15"></line>
+                <line x1="10" y1="3" x2="8" y2="21"></line>
+                <line x1="16" y1="3" x2="14" y2="21"></line>
+            </svg>`;
+
         itemContainer.innerHTML = `
             <a href="#${projectHash}" class="menu-item ${isActive ? 'active' : ''}">
                 <span class="menu-item-left">
                     <span class="menu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="4" y1="9" x2="20" y2="9"></line>
-                            <line x1="4" y1="15" x2="20" y2="15"></line>
-                            <line x1="10" y1="3" x2="8" y2="21"></line>
-                            <line x1="16" y1="3" x2="14" y2="21"></line>
-                        </svg>
+                        ${iconHtml}
                     </span>
                     <span>${escapeHtml(project.name)}</span>
                 </span>
@@ -1944,58 +2017,84 @@ async function deleteProject(projectId) {
     }
 }
 
-async function handleAddProject() {
-    const nameText = projectNewNameInput.value.trim();
-    if (!nameText || nameText.length > 50 || !currentUid) return;
-
-    btnSaveProject.disabled = true;
-    try {
-        await addDoc(collection(db, 'users', currentUid, 'projects'), {
-            name: nameText,
-            createdAt: serverTimestamp()
-        });
-        projectNewNameInput.value = '';
-        projectAddForm.style.display = 'none';
-    } catch (err) {
-        console.error("Не удалось добавить проект:", err);
-    } finally {
-        btnSaveProject.disabled = false;
-    }
-}
-
-// Привязка событий проектов
+// Привязка событий проектов (создание нового проекта без кнопок, как в bookmarks.html)
 if (btnAddProject) {
     btnAddProject.addEventListener('click', (e) => {
         e.stopPropagation();
-        projectAddForm.style.display = projectAddForm.style.display === 'none' ? 'block' : 'none';
-        if (projectAddForm.style.display === 'block') {
-            projectNewNameInput.focus();
+        if (!currentUid) {
+            const sidebarUser = document.querySelector('.sidebar-user');
+            if (sidebarUser && typeof window.openAuthModal === 'function') {
+                window.openAuthModal(sidebarUser);
+            }
+            return;
         }
-    });
-}
 
-if (btnCancelProject) {
-    btnCancelProject.addEventListener('click', (e) => {
-        e.stopPropagation();
-        projectNewNameInput.value = '';
-        projectAddForm.style.display = 'none';
-    });
-}
-
-if (btnSaveProject) {
-    btnSaveProject.addEventListener('click', handleAddProject);
-}
-
-if (projectNewNameInput) {
-    projectNewNameInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleAddProject();
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            projectNewNameInput.value = '';
-            projectAddForm.style.display = 'none';
+        // Если уже открыто поле ввода, не создаем еще одно
+        if (projectsListContainer.querySelector('.new-project-temp')) {
+            const tempInput = projectsListContainer.querySelector('.project-inline-input');
+            if (tempInput) tempInput.focus();
+            return;
         }
+
+        const itemContainer = document.createElement('div');
+        itemContainer.className = 'project-item-container new-project-temp';
+
+        itemContainer.innerHTML = `
+            <div class="menu-item active" style="padding: 8px 12px; margin: 2px 0; border-radius: 8px; display: flex; align-items: center; width: 100%; box-sizing: border-box;">
+                <span class="menu-item-left" style="width: 100%; display: flex; align-items: center; gap: 8px; min-width: 0;">
+                    <span class="menu-icon" style="opacity: 0.85; flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="flex-shrink: 0;">
+                            <line x1="4" y1="9" x2="20" y2="9"></line>
+                            <line x1="4" y1="15" x2="20" y2="15"></line>
+                            <line x1="10" y1="3" x2="8" y2="21"></line>
+                            <line x1="16" y1="3" x2="14" y2="21"></line>
+                        </svg>
+                    </span>
+                    <input type="text" class="project-inline-input" placeholder="Новый проект..." maxlength="50" style="background: transparent; border: none; outline: none; color: var(--text); font-family: inherit; font-size: 0.9rem; width: 100%; padding: 0;">
+                </span>
+            </div>
+        `;
+
+        projectsListContainer.appendChild(itemContainer);
+
+        const input = itemContainer.querySelector('.project-inline-input');
+        input.focus();
+
+        let finished = false;
+        async function saveProject() {
+            if (finished) return;
+            finished = true;
+            const nameText = input.value.trim();
+            if (nameText && nameText.length <= 50) {
+                try {
+                    await addDoc(collection(db, 'users', currentUid, 'projects'), {
+                        name: nameText,
+                        createdAt: serverTimestamp()
+                    });
+                } catch (err) {
+                    console.error("Не удалось добавить проект:", err);
+                    itemContainer.remove();
+                }
+            } else {
+                itemContainer.remove();
+            }
+        }
+
+        input.addEventListener('blur', saveProject);
+        input.addEventListener('keydown', (ev) => {
+            ev.stopPropagation();
+            if (ev.key === 'Enter') {
+                ev.preventDefault();
+                input.blur();
+            } else if (ev.key === 'Escape') {
+                finished = true;
+                itemContainer.remove();
+            }
+        });
+        input.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+        });
     });
 }
 
@@ -2052,6 +2151,7 @@ initSidebarResizer();
 // Функция инициализации Drag and Drop для сортировки задач
 function initDragAndDrop() {
     let draggingElement = null;
+    let placeholder = null;
 
     const containers = [activeTasksContainer, completedTasksContainer];
 
@@ -2067,81 +2167,81 @@ function initDragAndDrop() {
             draggingElement = taskItem;
             taskItem.classList.add('dragging');
             container.classList.add('drag-active');
+            
+            // Создаем плейсхолдер
+            placeholder = document.createElement('div');
+            placeholder.className = 'drag-placeholder';
+            placeholder.style.height = `${draggingElement.offsetHeight}px`;
+
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', taskItem.getAttribute('data-id'));
+
+            // Скрываем исходный элемент, чтобы он не дублировался в списке
+            setTimeout(() => {
+                if (draggingElement) {
+                    draggingElement.style.display = 'none';
+                }
+            }, 0);
         });
 
         container.addEventListener('dragover', (e) => {
             e.preventDefault();
-            if (!draggingElement) return;
+            if (!draggingElement || !placeholder) return;
 
-            const taskItem = e.target.closest('.task-item');
-            if (!taskItem || taskItem === draggingElement) return;
-
-            // Разрешаем перетаскивание только внутри одного и того же контейнера
-            if (taskItem.parentNode !== draggingElement.parentNode) return;
-
-            const rect = taskItem.getBoundingClientRect();
-            const midpoint = rect.top + rect.height / 2;
-
-            // Сбрасываем старые индикаторы
-            container.querySelectorAll('.task-item').forEach(item => {
-                item.classList.remove('drag-over-above', 'drag-over-below');
-            });
-
-            if (e.clientY < midpoint) {
-                taskItem.classList.add('drag-over-above');
+            const afterElement = getDragAfterElement(container, e.clientY);
+            if (afterElement) {
+                container.insertBefore(placeholder, afterElement);
             } else {
-                taskItem.classList.add('drag-over-below');
+                container.appendChild(placeholder);
             }
         });
 
         container.addEventListener('dragleave', (e) => {
-            const taskItem = e.target.closest('.task-item');
-            if (taskItem) {
-                taskItem.classList.remove('drag-over-above', 'drag-over-below');
-            }
+            // Больше не нужно сбрасывать индикаторы
         });
 
         container.addEventListener('dragend', (e) => {
             if (draggingElement) {
+                draggingElement.style.display = '';
                 draggingElement.classList.remove('dragging');
                 draggingElement.removeAttribute('draggable');
             }
-            container.querySelectorAll('.task-item').forEach(item => {
-                item.classList.remove('drag-over-above', 'drag-over-below');
-                item.removeAttribute('draggable');
-            });
+            if (placeholder && placeholder.parentNode) {
+                placeholder.remove();
+            }
+            placeholder = null;
             container.classList.remove('drag-active');
             draggingElement = null;
         });
 
         container.addEventListener('drop', async (e) => {
             e.preventDefault();
-            if (!draggingElement) return;
+            if (!draggingElement || !placeholder) return;
 
-            const targetItem = e.target.closest('.task-item');
-            if (!targetItem || targetItem === draggingElement) return;
-
-            const isAbove = targetItem.classList.contains('drag-over-above');
-
-            // Очищаем индикаторы
-            targetItem.classList.remove('drag-over-above', 'drag-over-below');
-            draggingElement.classList.remove('dragging');
+            const nextElement = placeholder.nextElementSibling;
+            placeholder.remove();
+            placeholder = null;
+            
+            if (draggingElement) {
+                draggingElement.style.display = '';
+                draggingElement.classList.remove('dragging');
+            }
 
             const taskId = draggingElement.getAttribute('data-id');
 
-            // Вычисляем новый порядок на основе текущих отрендеренных элементов
             const taskItems = Array.from(container.querySelectorAll('.task-item'));
             const draggingIndex = taskItems.indexOf(draggingElement);
-            let targetIndex = taskItems.indexOf(targetItem);
-
-            taskItems.splice(draggingIndex, 1);
-
-            if (!isAbove) {
-                targetIndex = taskItems.indexOf(targetItem) + 1;
+            
+            let targetIndex;
+            if (!nextElement) {
+                targetIndex = taskItems.length - 1;
             } else {
-                targetIndex = taskItems.indexOf(targetItem);
+                let nextIndex = taskItems.indexOf(nextElement);
+                if (draggingIndex < nextIndex) {
+                    targetIndex = nextIndex - 1;
+                } else {
+                    targetIndex = nextIndex;
+                }
             }
 
             // Получаем задачи текущего списка, чтобы рассчитать их order
@@ -2216,6 +2316,20 @@ function initDragAndDrop() {
     });
 }
 
+function getDragAfterElement(container, y) {
+    const dragElements = [...container.querySelectorAll('.task-item:not(.dragging)')];
+
+    return dragElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - (box.top + box.height / 2);
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
 initDragAndDrop();
 
 // Отображение контекстного меню проекта
@@ -2225,6 +2339,10 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
     const menu = document.createElement('div');
     menu.className = 'custom-context-menu';
     menu.innerHTML = `
+        <div class="ctx-item" id="ctx-change-icon-project">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            <span>Сменить иконку</span>
+        </div>
         <div class="ctx-item" id="ctx-rename-project">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             <span>Переименовать</span>
@@ -2288,6 +2406,244 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
         activeContextMenu = null;
         enableProjectInlineEdit(itemContainer, projectId, projectName);
     });
+
+    // Обработчик изменения иконки проекта
+    menu.querySelector('#ctx-change-icon-project').addEventListener('click', (evt) => {
+        evt.stopPropagation();
+        menu.remove();
+        activeContextMenu = null;
+        showProjectIconModal(projectId, projectName);
+    });
+}
+
+// Модальное окно для выбора и загрузки кастомной иконки проекта
+function showProjectIconModal(projectId, projectName) {
+    const project = projectsList.find(p => p.id === projectId);
+    const currentIconUrl = project ? project.iconUrl : null;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-confirm-overlay';
+
+    overlay.innerHTML = `
+        <div class="confirm-box" style="width: 360px; padding: 24px;">
+            <div class="confirm-title" style="font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                Иконка проекта
+            </div>
+            
+            <div class="confirm-message" style="margin-bottom: 16px; font-size: 13px; opacity: 0.85; line-height: 1.4;">
+                Загрузите изображение, вставьте из буфера обмена (Ctrl + V) или перетащите файл в область ниже.
+            </div>
+
+            <!-- Drag and Drop / Paste Area -->
+            <div id="icon-dropzone" class="icon-dropzone">
+                <div class="dropzone-preview" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                    ${currentIconUrl ? 
+                        `<img src="${currentIconUrl}" style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;">` :
+                        `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5;">
+                            <line x1="4" y1="9" x2="20" y2="9"></line>
+                            <line x1="4" y1="15" x2="20" y2="15"></line>
+                            <line x1="10" y1="3" x2="8" y2="21"></line>
+                            <line x1="16" y1="3" x2="14" y2="21"></line>
+                        </svg>`
+                    }
+                </div>
+                <div class="dropzone-text" style="font-size: 13px; font-weight: 500;">
+                    Кликните для выбора файла или перетащите его сюда
+                </div>
+            </div>
+
+            <!-- Upload Hidden Input -->
+            <input type="file" id="modalIconFileInput" accept="image/*" style="display: none;">
+
+            <!-- Actions -->
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="confirm-btn-primary" id="btn-select-file" style="margin: 0; padding: 10px; border-radius: 8px;">Выбрать файл...</button>
+                
+                ${currentIconUrl ? 
+                    `<button class="confirm-btn-secondary" id="btn-delete-icon" style="margin: 0; padding: 10px; border-radius: 8px; color: #ff5f56; border-color: rgba(255, 95, 86, 0.2);">Удалить иконку</button>` : 
+                    ''
+                }
+                
+                <button class="confirm-btn-secondary" id="btn-close-icon-modal" style="margin: 0; padding: 10px; border-radius: 8px;">Отмена</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const dropzone = overlay.querySelector('#icon-dropzone');
+    const fileInput = overlay.querySelector('#modalIconFileInput');
+    const selectFileBtn = overlay.querySelector('#btn-select-file');
+    const deleteIconBtn = overlay.querySelector('#btn-delete-icon');
+    const closeBtn = overlay.querySelector('#btn-close-icon-modal');
+
+    // 1. Paste handler (Ctrl + V)
+    function handlePaste(e) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (const item of items) {
+            if (item.type.indexOf("image") === 0) {
+                const file = item.getAsFile();
+                processAndUpload(file);
+                break;
+            }
+        }
+    }
+    document.addEventListener('paste', handlePaste);
+
+    // 2. Drag & Drop handler
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#1070e5';
+        dropzone.style.background = 'rgba(16, 112, 229, 0.05)';
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.borderColor = '';
+        dropzone.style.background = '';
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '';
+        dropzone.style.background = '';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            processAndUpload(file);
+        }
+    });
+
+    // 3. Selection
+    dropzone.addEventListener('click', () => fileInput.click());
+    selectFileBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) processAndUpload(file);
+    });
+
+    // 4. Delete Icon
+    if (deleteIconBtn) {
+        deleteIconBtn.addEventListener('click', async () => {
+            overlay.remove();
+            document.removeEventListener('paste', handlePaste);
+            try {
+                // Save null to remove the custom icon in Firestore
+                await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                    iconUrl: null
+                });
+            } catch (err) {
+                console.error("Error removing icon:", err);
+                alert("Не удалось удалить иконку.");
+            }
+        });
+    }
+
+    // 5. Cancel / Close
+    closeBtn.addEventListener('click', () => {
+        overlay.remove();
+        document.removeEventListener('paste', handlePaste);
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+            document.removeEventListener('paste', handlePaste);
+        }
+    });
+
+    // Core Processing & Upload logic inside the Modal
+    async function processAndUpload(file) {
+        // Change text/preview to Loading
+        dropzone.style.pointerEvents = 'none';
+        selectFileBtn.style.pointerEvents = 'none';
+        selectFileBtn.innerText = 'Загрузка...';
+        if (deleteIconBtn) deleteIconBtn.style.display = 'none';
+        
+        dropzone.querySelector('.dropzone-preview').innerHTML = `
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation: spin 1s linear infinite;">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="8" fill="none" opacity="0.3"></circle>
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+            </svg>
+        `;
+        dropzone.querySelector('.dropzone-text').innerText = 'Загрузка изображения...';
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const img = new Image();
+            img.onload = function() {
+                let width = img.width;
+                let height = img.height;
+                const maxSide = 128;
+
+                if (width > height) {
+                    if (width > maxSide) {
+                        height = Math.round(height * (maxSide / width));
+                        width = maxSide;
+                    }
+                } else {
+                    if (height > maxSide) {
+                        width = Math.round(width * (maxSide / height));
+                        height = maxSide;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(async (blob) => {
+                    const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee';
+                    const formData = new FormData();
+                    formData.append('image', blob);
+
+                    try {
+                        const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await response.json();
+                        if (data && data.data && data.data.url) {
+                            const url = data.data.url;
+                            // Save in Firestore
+                            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                                iconUrl: url
+                            });
+                            
+                            // Close modal successfully
+                            overlay.remove();
+                            document.removeEventListener('paste', handlePaste);
+                        } else {
+                            throw new Error('Upload failed');
+                        }
+                    } catch (err) {
+                        console.error('Error uploading project icon:', err);
+                        alert('Не удалось загрузить иконку. Попробуйте еще раз.');
+                        
+                        // Reset Dropzone UI
+                        dropzone.style.pointerEvents = 'auto';
+                        selectFileBtn.style.pointerEvents = 'auto';
+                        selectFileBtn.innerText = 'Выбрать файл...';
+                        if (deleteIconBtn) deleteIconBtn.style.display = 'block';
+                        
+                        dropzone.querySelector('.dropzone-preview').innerHTML = currentIconUrl ? 
+                            `<img src="${currentIconUrl}" style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;">` :
+                            `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5;">
+                                <line x1="4" y1="9" x2="20" y2="9"></line>
+                                <line x1="4" y1="15" x2="20" y2="15"></line>
+                                <line x1="10" y1="3" x2="8" y2="21"></line>
+                                <line x1="16" y1="3" x2="14" y2="21"></line>
+                            </svg>`;
+                        dropzone.querySelector('.dropzone-text').innerText = 'Кликните для выбора файла или перетащите его сюда';
+                    }
+                }, 'image/png');
+            };
+            img.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
 }
 
 // Inline-редактирование имени проекта в боковой панели
@@ -2345,6 +2701,7 @@ function enableProjectInlineEdit(itemContainer, projectId, oldName) {
 // Инициализация Drag and Drop для проектов в боковой панели
 function initProjectsDragAndDrop() {
     let draggingProject = null;
+    let placeholder = null;
 
     if (!projectsListContainer) return;
 
@@ -2356,63 +2713,66 @@ function initProjectsDragAndDrop() {
         }
         draggingProject = projectItem;
         projectItem.classList.add('dragging');
+        
+        // Создаем плейсхолдер
+        placeholder = document.createElement('div');
+        placeholder.className = 'project-drag-placeholder';
+        placeholder.style.height = `${draggingProject.offsetHeight}px`;
+
         e.dataTransfer.effectAllowed = 'move';
-        // Передаем ID проекта
         const actionsBtn = projectItem.querySelector('.project-actions-btn');
         if (actionsBtn) {
             e.dataTransfer.setData('text/plain', actionsBtn.getAttribute('data-id'));
         }
+
+        // Скрываем исходный элемент, чтобы он не дублировался в списке
+        setTimeout(() => {
+            if (draggingProject) {
+                draggingProject.style.display = 'none';
+            }
+        }, 0);
     });
 
     projectsListContainer.addEventListener('dragover', (e) => {
         e.preventDefault();
-        if (!draggingProject) return;
+        if (!draggingProject || !placeholder) return;
 
-        const projectItem = e.target.closest('.project-item-container');
-        if (!projectItem || projectItem === draggingProject) return;
-
-        const rect = projectItem.getBoundingClientRect();
-        const midpoint = rect.top + rect.height / 2;
-
-        projectsListContainer.querySelectorAll('.project-item-container').forEach(item => {
-            item.classList.remove('drag-over-above', 'drag-over-below');
-        });
-
-        if (e.clientY < midpoint) {
-            projectItem.classList.add('drag-over-above');
+        const afterElement = getDragAfterProject(projectsListContainer, e.clientY);
+        if (afterElement) {
+            projectsListContainer.insertBefore(placeholder, afterElement);
         } else {
-            projectItem.classList.add('drag-over-below');
+            projectsListContainer.appendChild(placeholder);
         }
     });
 
     projectsListContainer.addEventListener('dragleave', (e) => {
-        const projectItem = e.target.closest('.project-item-container');
-        if (projectItem) {
-            projectItem.classList.remove('drag-over-above', 'drag-over-below');
-        }
+        // Больше не нужно сбрасывать классы
     });
 
     projectsListContainer.addEventListener('dragend', (e) => {
         if (draggingProject) {
+            draggingProject.style.display = '';
             draggingProject.classList.remove('dragging');
         }
-        projectsListContainer.querySelectorAll('.project-item-container').forEach(item => {
-            item.classList.remove('drag-over-above', 'drag-over-below');
-        });
+        if (placeholder && placeholder.parentNode) {
+            placeholder.remove();
+        }
+        placeholder = null;
         draggingProject = null;
     });
 
     projectsListContainer.addEventListener('drop', async (e) => {
         e.preventDefault();
-        if (!draggingProject) return;
+        if (!draggingProject || !placeholder) return;
 
-        const targetItem = e.target.closest('.project-item-container');
-        if (!targetItem || targetItem === draggingProject) return;
-
-        const isAbove = targetItem.classList.contains('drag-over-above');
-
-        targetItem.classList.remove('drag-over-above', 'drag-over-below');
-        draggingProject.classList.remove('dragging');
+        const nextElement = placeholder.nextElementSibling;
+        placeholder.remove();
+        placeholder = null;
+        
+        if (draggingProject) {
+            draggingProject.style.display = '';
+            draggingProject.classList.remove('dragging');
+        }
 
         const actionsBtn = draggingProject.querySelector('.project-actions-btn');
         if (!actionsBtn) return;
@@ -2420,14 +2780,17 @@ function initProjectsDragAndDrop() {
 
         const projectItems = Array.from(projectsListContainer.querySelectorAll('.project-item-container'));
         const draggingIndex = projectItems.indexOf(draggingProject);
-        let targetIndex = projectItems.indexOf(targetItem);
-
-        projectItems.splice(draggingIndex, 1);
-
-        if (!isAbove) {
-            targetIndex = projectItems.indexOf(targetItem) + 1;
+        
+        let targetIndex;
+        if (!nextElement) {
+            targetIndex = projectItems.length - 1;
         } else {
-            targetIndex = projectItems.indexOf(targetItem);
+            let nextIndex = projectItems.indexOf(nextElement);
+            if (draggingIndex < nextIndex) {
+                targetIndex = nextIndex - 1;
+            } else {
+                targetIndex = nextIndex;
+            }
         }
 
         // Копируем текущий список для расчета order
@@ -2474,6 +2837,20 @@ function initProjectsDragAndDrop() {
     });
 }
 
+function getDragAfterProject(container, y) {
+    const dragElements = [...container.querySelectorAll('.project-item-container:not(.dragging)')];
+
+    return dragElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - (box.top + box.height / 2);
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
 initProjectsDragAndDrop();
 
 // Инициализация Long Press Touch перетаскивания для мобильных
@@ -2482,7 +2859,7 @@ function initTouchDragAndDrop() {
     let touchDraggingElement = null;
     let touchDragType = null; // 'task' или 'project'
     let startY = 0;
-    let lastElementUnderTouch = null;
+    let placeholder = null;
 
     const resetTouchState = () => {
         if (touchStartTimer) {
@@ -2498,12 +2875,12 @@ function initTouchDragAndDrop() {
                 delete touchDraggingElement._preventSelection;
             }
         }
-        document.querySelectorAll('.task-item, .project-item-container').forEach(item => {
-            item.classList.remove('drag-over-above', 'drag-over-below');
-        });
+        if (placeholder && placeholder.parentNode) {
+            placeholder.remove();
+        }
+        placeholder = null;
         touchDraggingElement = null;
         touchDragType = null;
-        lastElementUnderTouch = null;
     };
 
     const handleTouchStart = (e, type) => {
@@ -2540,7 +2917,7 @@ function initTouchDragAndDrop() {
 
     const handleTouchMove = (e) => {
         if (!touchDraggingElement) {
-            // Если палец сдвинулся до истечения 500мс, отменяем Long Press
+            // Если палец сдвинулся до истечения 300мс, отменяем Long Press
             const touch = e.touches[0];
             if (Math.abs(touch.clientY - startY) > 10) {
                 if (touchStartTimer) {
@@ -2554,50 +2931,29 @@ function initTouchDragAndDrop() {
         // Предотвращаем скролл экрана во время переноса
         e.preventDefault();
 
-        // Временно отключаем pointer-events на перетаскиваемом элементе, 
-        // чтобы elementFromPoint возвращал элемент, находящийся ПОД ним.
-        const originalPointerEvents = touchDraggingElement.style.pointerEvents;
-        touchDraggingElement.style.pointerEvents = 'none';
-
         const touch = e.touches[0];
-        const elemUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+        const container = touchDraggingElement.parentNode;
 
-        // Восстанавливаем pointer-events
-        touchDraggingElement.style.pointerEvents = originalPointerEvents;
+        if (!placeholder) {
+            placeholder = document.createElement('div');
+            placeholder.className = touchDragType === 'task' ? 'drag-placeholder' : 'project-drag-placeholder';
+            placeholder.style.height = `${touchDraggingElement.offsetHeight}px`;
+        }
 
-        if (!elemUnder) return;
-
-        const selector = touchDragType === 'task' ? '.task-item' : '.project-item-container';
-        const targetItem = elemUnder.closest(selector);
-
-        // Сбрасываем старые классы подсветки
-        document.querySelectorAll(selector).forEach(item => {
-            if (item !== targetItem) {
-                item.classList.remove('drag-over-above', 'drag-over-below');
+        if (touchDragType === 'task') {
+            const afterElement = getDragAfterElement(container, touch.clientY);
+            if (afterElement) {
+                container.insertBefore(placeholder, afterElement);
+            } else {
+                container.appendChild(placeholder);
             }
-        });
-
-        if (!targetItem || targetItem === touchDraggingElement) {
-            lastElementUnderTouch = null;
-            return;
-        }
-
-        // В рамках тасков разрешаем перетаскивание только внутри одного контейнера (активные/выполненные)
-        if (touchDragType === 'task' && targetItem.parentNode !== touchDraggingElement.parentNode) {
-            lastElementUnderTouch = null;
-            return;
-        }
-
-        lastElementUnderTouch = targetItem;
-        const rect = targetItem.getBoundingClientRect();
-        const midpoint = rect.top + rect.height / 2;
-
-        if (touch.clientY < midpoint) {
-            targetItem.classList.add('drag-over-above');
-            targetItem.classList.remove('drag-over-below');
         } else {
-            targetItem.classList.add('drag-over-below');
-            targetItem.classList.remove('drag-over-above');
+            const afterElement = getDragAfterProject(container, touch.clientY);
+            if (afterElement) {
+                container.insertBefore(placeholder, afterElement);
+            } else {
+                container.appendChild(placeholder);
+            }
         }
     };
 
@@ -2607,13 +2963,12 @@ function initTouchDragAndDrop() {
             touchStartTimer = null;
         }
 
-        if (!touchDraggingElement || !lastElementUnderTouch) {
+        if (!touchDraggingElement || !placeholder) {
             resetTouchState();
             return;
         }
 
-        const targetItem = lastElementUnderTouch;
-        const isAbove = targetItem.classList.contains('drag-over-above');
+        const nextElement = placeholder.nextElementSibling;
         const draggingEl = touchDraggingElement;
         const dragType = touchDragType;
 
@@ -2624,13 +2979,17 @@ function initTouchDragAndDrop() {
             const taskId = draggingEl.getAttribute('data-id');
             const taskItems = Array.from(container.querySelectorAll('.task-item'));
             const draggingIndex = taskItems.indexOf(draggingEl);
-            let targetIndex = taskItems.indexOf(targetItem);
-
-            taskItems.splice(draggingIndex, 1);
-            if (!isAbove) {
-                targetIndex = taskItems.indexOf(targetItem) + 1;
+            
+            let targetIndex;
+            if (!nextElement) {
+                targetIndex = taskItems.length - 1;
             } else {
-                targetIndex = taskItems.indexOf(targetItem);
+                let nextIndex = taskItems.indexOf(nextElement);
+                if (draggingIndex < nextIndex) {
+                    targetIndex = nextIndex - 1;
+                } else {
+                    targetIndex = nextIndex;
+                }
             }
 
             let currentTasks = [];
@@ -2701,13 +3060,17 @@ function initTouchDragAndDrop() {
 
             const projectItems = Array.from(projectsListContainer.querySelectorAll('.project-item-container'));
             const draggingIndex = projectItems.indexOf(draggingEl);
-            let targetIndex = projectItems.indexOf(targetItem);
-
-            projectItems.splice(draggingIndex, 1);
-            if (!isAbove) {
-                targetIndex = projectItems.indexOf(targetItem) + 1;
+            
+            let targetIndex;
+            if (!nextElement) {
+                targetIndex = projectItems.length - 1;
             } else {
-                targetIndex = projectItems.indexOf(targetItem);
+                let nextIndex = projectItems.indexOf(nextElement);
+                if (draggingIndex < nextIndex) {
+                    targetIndex = nextIndex - 1;
+                } else {
+                    targetIndex = nextIndex;
+                }
             }
 
             let currentProjects = [...projectsList];

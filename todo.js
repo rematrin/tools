@@ -2295,7 +2295,7 @@ if (btnAddProject) {
                             <line x1="16" y1="3" x2="14" y2="21"></line>
                         </svg>
                     </span>
-                    <input type="text" class="project-inline-input" placeholder="Новый проект..." maxlength="50" style="background: transparent; border: none; outline: none; color: var(--text); font-family: inherit; font-size: 0.9rem; width: 100%; padding: 0;">
+                    <input type="text" class="project-inline-input" placeholder="Новый проект..." maxlength="50" style="background: transparent; border: none; outline: none; color: var(--text); font-family: inherit; font-size: 16px; width: 100%; padding: 0;">
                 </span>
             </div>
         `;

@@ -2421,3 +2421,200 @@ body.dark .settings-field-action-btn {
     padding: 4px 8px;
     border-radius: 6px;
 }
+
+/* --- НАСТРОЙКИ ВНЕШНЕГО ВИДА (КАРТОЧКИ) --- */
+.appearance-settings-grid {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.appearance-card {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 200px;
+    padding: 14px;
+    background: var(--card-bg);
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    user-select: none;
+}
+
+.appearance-card:hover {
+    border-color: var(--accent);
+}
+
+.appearance-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(16, 112, 229, 0.15);
+}
+
+.appearance-card-preview {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+}
+
+body.dark .appearance-card-preview {
+    background: #252525;
+}
+
+.preview-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--text);
+    gap: 8px;
+}
+
+.preview-icon {
+    font-size: 0.82rem;
+    opacity: 0.8;
+}
+
+.preview-text {
+    flex: 1;
+    font-weight: 500;
+}
+
+.preview-counter {
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.appearance-card-label {
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.appearance-card-check {
+    position: absolute;
+    bottom: -6px;
+    right: -6px;
+    background: #1070e5;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.appearance-card.selected .appearance-card-check {
+    display: flex;
+}
+
+/* --- ВСПЛЫВАЮЩЕЕ УВЕДОМЛЕНИЕ О ВЫПОЛНЕНИИ --- */
+.toast-notification {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background-color: #2b2d31;
+    color: #ffffff;
+    padding: 12px 18px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    z-index: 11000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+    transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+    opacity: 0;
+}
+
+.toast-notification.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.toast-undo-btn {
+    background: transparent;
+    border: none;
+    color: #f59e0b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    transition: color 0.15s, transform 0.1s;
+}
+
+.toast-undo-btn:hover {
+    color: #d97706;
+    transform: scale(1.1);
+}
+
+.toast-undo-btn:active {
+    transform: scale(0.95);
+}
+
+/* --- АДАПТИВНОСТЬ ДЛЯ ОКНА НАСТРОЕК --- */
+@media (max-width: 768px) {
+    .settings-modal-card {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        flex-direction: column !important;
+    }
+    
+    .settings-modal-sidebar {
+        width: 100% !important;
+        border-right: none !important;
+        border-bottom: 1px solid var(--border) !important;
+        padding: 16px !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-shrink: 0 !important;
+    }
+    
+    .settings-sidebar-title {
+        margin: 0 !important;
+        font-size: 1rem !important;
+    }
+    
+    .settings-sidebar-menu {
+        flex-direction: row !important;
+        gap: 8px !important;
+    }
+    
+    .settings-menu-item {
+        padding: 6px 10px !important;
+        font-size: 0.85rem !important;
+    }
+    
+    .settings-modal-content {
+        padding: 24px 20px !important;
+    }
+    
+    .settings-close-btn {
+        top: 14px !important;
+        right: 16px !important;
+    }
+    
+    .appearance-settings-grid {
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+    
+    .appearance-card {
+        width: 100% !important;
+    }
+}

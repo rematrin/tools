@@ -490,9 +490,60 @@ const btnSettingsClose = document.getElementById('btnSettingsClose');
 const settingsProfileAvatar = document.getElementById('settingsProfileAvatar');
 const settingsProfileName = document.getElementById('settingsProfileName');
 const settingsEmailText = document.getElementById('settingsEmailText');
-const settingsGoogleName = document.getElementById('settingsGoogleName');
 const btnSettingsChangePassword = document.getElementById('btnSettingsChangePassword');
-const btnSettingsDeleteAccount = document.getElementById('btnSettingsDeleteAccount');
+
+// Всплывающее уведомление о выполнении задачи (Toast)
+let lastCompletedTaskId = null;
+let toastTimeout = null;
+
+function showCompletionToast(taskId) {
+    lastCompletedTaskId = taskId;
+    const toast = document.getElementById('taskCompletionToast');
+    if (!toast) return;
+
+    if (toastTimeout) {
+        clearTimeout(toastTimeout);
+    }
+
+    toast.style.display = 'flex';
+    // Принудительный reflow для плавной анимации
+    toast.offsetHeight;
+    toast.classList.add('show');
+
+    toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (!toast.classList.contains('show')) {
+                toast.style.display = 'none';
+            }
+        }, 350);
+    }, 5000);
+}
+
+// Кнопка отмены выполнения в уведомлении (Undo)
+const btnToastUndo = document.getElementById('btnToastUndo');
+if (btnToastUndo) {
+    btnToastUndo.addEventListener('click', async () => {
+        if (lastCompletedTaskId && currentUid) {
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'tasks', lastCompletedTaskId), {
+                    completed: false
+                });
+                const toast = document.getElementById('taskCompletionToast');
+                if (toast) {
+                    toast.classList.remove('show');
+                    setTimeout(() => {
+                        if (!toast.classList.contains('show')) {
+                            toast.style.display = 'none';
+                        }
+                    }, 350);
+                }
+            } catch (err) {
+                console.error("Ошибка при отмене выполнения задачи:", err);
+            }
+        }
+    });
+}
 
 function openSettingsModal() {
     if (!settingsModal) return;
@@ -502,9 +553,22 @@ function openSettingsModal() {
     if (window.currentUser) {
         if (settingsProfileName) settingsProfileName.textContent = window.currentUser.displayName || 'Пользователь';
         if (settingsEmailText) settingsEmailText.textContent = window.currentUser.email || '—';
-        if (settingsGoogleName) settingsGoogleName.textContent = window.currentUser.displayName || '—';
         if (settingsProfileAvatar) {
             settingsProfileAvatar.src = window.currentUser.photoURL || 'https://i.ibb.co/Z6vRKK9x/0000000.jpg';
+        }
+    }
+
+    // Подсвечиваем сохраненную карточку настройки счетчиков
+    const currentCountersPref = localStorage.getItem('todo_show_sidebar_counters') || 'show';
+    const cardShow = document.getElementById('pref-counters-show');
+    const cardHide = document.getElementById('pref-counters-hide');
+    if (cardShow && cardHide) {
+        cardShow.classList.remove('selected');
+        cardHide.classList.remove('selected');
+        if (currentCountersPref === 'hide') {
+            cardHide.classList.add('selected');
+        } else {
+            cardShow.classList.add('selected');
         }
     }
 }
@@ -534,17 +598,62 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// Клик по заглушкам изменения пароля или удаления аккаунта
+// Клик по заглушке изменения пароля
 if (btnSettingsChangePassword) {
     btnSettingsChangePassword.addEventListener('click', () => {
         alert("Функция изменения пароля находится в разработке.");
     });
 }
 
-if (btnSettingsDeleteAccount) {
-    btnSettingsDeleteAccount.addEventListener('click', () => {
-        alert("Функция удаления аккаунта находится в разработке.");
+// Переключение вкладок в настройках
+const settingsMenuItems = document.querySelectorAll('.settings-menu-item');
+settingsMenuItems.forEach(item => {
+    item.addEventListener('click', () => {
+        const tab = item.getAttribute('data-tab');
+        if (!tab) return;
+
+        settingsMenuItems.forEach(btn => btn.classList.remove('active'));
+        item.classList.add('active');
+
+        const tabPanes = document.querySelectorAll('.settings-tab-pane');
+        tabPanes.forEach(pane => {
+            pane.style.display = 'none';
+            pane.classList.remove('active');
+        });
+
+        const targetPane = document.getElementById(`tab-${tab}`);
+        if (targetPane) {
+            targetPane.style.display = 'block';
+            targetPane.classList.add('active');
+        }
     });
+});
+
+// Управление настройкой отображения счетчиков
+const prefCountersShow = document.getElementById('pref-counters-show');
+const prefCountersHide = document.getElementById('pref-counters-hide');
+
+function updateCountersPreference(value) {
+    localStorage.setItem('todo_show_sidebar_counters', value);
+    if (prefCountersShow && prefCountersHide) {
+        prefCountersShow.classList.remove('selected');
+        prefCountersHide.classList.remove('selected');
+        if (value === 'hide') {
+            prefCountersHide.classList.add('selected');
+        } else {
+            prefCountersShow.classList.add('selected');
+        }
+    }
+    // Перерендериваем списки, чтобы скрыть/показать счетчики
+    if (typeof renderTasks === 'function') renderTasks();
+    if (typeof renderProjects === 'function') renderProjects();
+}
+
+if (prefCountersShow) {
+    prefCountersShow.addEventListener('click', () => updateCountersPreference('show'));
+}
+if (prefCountersHide) {
+    prefCountersHide.addEventListener('click', () => updateCountersPreference('hide'));
 }
 
 // Сайдбар: восстановление свернутого состояния на ПК
@@ -948,6 +1057,7 @@ async function toggleTaskCompleted(taskId, currentStatus) {
         if (!currentStatus) {
             const completedSound = new Audio('completed.mp3');
             completedSound.play().catch(err => console.log('Audio playback failed:', err));
+            showCompletionToast(taskId);
         }
         await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
             completed: !currentStatus
@@ -1363,13 +1473,15 @@ function renderTasks() {
     const inboxActiveCount = activeTasks.filter(t => !t.projectId).length;
     const todayActiveCount = activeTasks.filter(isTodayTask).length;
 
+    const showCounters = localStorage.getItem('todo_show_sidebar_counters') !== 'hide';
+
     if (inboxCounter) {
         inboxCounter.textContent = inboxActiveCount;
-        inboxCounter.style.display = inboxActiveCount > 0 ? 'inline-block' : 'none';
+        inboxCounter.style.display = (showCounters && inboxActiveCount > 0) ? 'inline-block' : 'none';
     }
     if (todayCounter) {
         todayCounter.textContent = todayActiveCount;
-        todayCounter.style.display = todayActiveCount > 0 ? 'inline-block' : 'none';
+        todayCounter.style.display = (showCounters && todayActiveCount > 0) ? 'inline-block' : 'none';
     }
 
     const trashCounter = document.getElementById('trashCounter');
@@ -1941,6 +2053,8 @@ function renderProjects() {
                 <line x1="16" y1="3" x2="14" y2="21"></line>
             </svg>`;
 
+        const showCounters = localStorage.getItem('todo_show_sidebar_counters') !== 'hide';
+
         itemContainer.innerHTML = `
             <a href="#${projectHash}" class="menu-item ${isActive ? 'active' : ''}">
                 <span class="menu-item-left">
@@ -1949,7 +2063,7 @@ function renderProjects() {
                     </span>
                     <span>${escapeHtml(project.name)}</span>
                 </span>
-                <span class="menu-counter" style="${projectTaskCount > 0 ? '' : 'display:none'}">${projectTaskCount}</span>
+                <span class="menu-counter" style="${(showCounters && projectTaskCount > 0) ? '' : 'display:none'}">${projectTaskCount}</span>
             </a>
             <button class="project-actions-btn" data-id="${project.id}" title="Действия">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">

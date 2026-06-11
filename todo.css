@@ -486,6 +486,8 @@ body.dark .add-task-form.expanded {
     user-select: none;
 }
 
+
+
 .task-item.menu-open {
     z-index: 50;
     /* Поверх остальных задач при открытом меню */
@@ -1311,6 +1313,47 @@ body.dark .due-date-dropdown {
     background-color: var(--hover-bg);
     border-color: var(--text-secondary);
     color: var(--text);
+}
+
+/* Стили для выбора времени и повтора в календаре */
+.time-picker-list, .repeat-picker-list {
+    scrollbar-width: none; /* Firefox */
+}
+.time-picker-list::-webkit-scrollbar, .repeat-picker-list::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.time-select-item, .repeat-select-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: transparent;
+    border: none;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.15s ease;
+    box-sizing: border-box;
+}
+
+.time-select-item:hover, .repeat-select-item:hover {
+    background-color: var(--hover-bg);
+}
+
+.time-select-item.selected, .repeat-select-item.selected {
+    color: var(--accent);
+    background-color: var(--active-bg);
+}
+
+.time-select-item-checkmark, .repeat-select-item-checkmark {
+    display: flex;
+    align-items: center;
+    color: var(--accent);
 }
 
 /* Кастомный бэдж срока у задачи */
@@ -2738,4 +2781,52 @@ body.dark .appearance-card-preview {
     justify-content: center;
     flex-shrink: 0;
     margin-left: 8px;
+}
+
+/* Переключатель (тумблер) для настроек */
+.switch-container {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.switch-container input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border);
+    transition: .3s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: var(--card-bg);
+    transition: .3s;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.switch-container input:checked + .slider {
+    background-color: var(--accent);
+}
+
+.switch-container input:checked + .slider:before {
+    transform: translateX(20px);
 }

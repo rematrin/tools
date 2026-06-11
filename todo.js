@@ -47,6 +47,8 @@ const getDefaultDueDate = () => {
 };
 
 let selectedDueDate = getDefaultDueDate(); // Хранит выбранную дату в формате YYYY-MM-DD
+let selectedDueTime = null; // Хранит выбранное время в формате HH:MM
+let selectedDueRepeat = null; // Хранит выбранный повтор: daily, weekly, weekday, monthly, yearly, custom
 let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth(); // 0-11
 
@@ -104,6 +106,27 @@ const sidebarOverlay = document.getElementById('sidebarOverlay');
 
 
 // === ЛОГИКА КАЛЕНДАРЯ И СРОКОВ ===
+
+if (dueDateDropdown) {
+    setupNestedViews(
+        dueDateDropdown,
+        () => selectedDueDate,
+        (dateStr) => {
+            selectedDueDate = dateStr;
+        },
+        () => selectedDueTime,
+        (timeStr) => {
+            selectedDueTime = timeStr;
+        },
+        () => selectedDueRepeat,
+        (repeatStr) => {
+            selectedDueRepeat = repeatStr;
+        },
+        () => {
+            setDueDate(selectedDueDate, selectedDueTime, selectedDueRepeat);
+        }
+    );
+}
 
 // Открыть/закрыть выпадающее меню срока
 if (btnDueDate) {
@@ -206,6 +229,12 @@ if (addTaskForm) {
 
 function openDueDateDropdown() {
     dueDateDropdown.style.display = 'flex';
+    const mainView = dueDateDropdown.querySelector('.due-main-view');
+    const timeView = dueDateDropdown.querySelector('.due-time-view');
+    const repeatView = dueDateDropdown.querySelector('.due-repeat-view');
+    if (mainView) mainView.style.display = 'flex';
+    if (timeView) timeView.style.display = 'none';
+    if (repeatView) repeatView.style.display = 'none';
     initQuickOptionsText();
     renderCalendarGrid();
 }
@@ -346,15 +375,19 @@ document.querySelectorAll('.quick-opt-btn').forEach(btn => {
 });
 
 // Установка выбранного срока
-function setDueDate(dateStr) {
+function setDueDate(dateStr, timeStr = undefined, repeatStr = undefined) {
     selectedDueDate = dateStr;
+    if (timeStr !== undefined) selectedDueTime = timeStr;
+    if (repeatStr !== undefined) selectedDueRepeat = repeatStr;
 
     if (!selectedDueDate) {
+        selectedDueTime = null;
+        selectedDueRepeat = null;
         if (dueDateBtnText) dueDateBtnText.textContent = 'Срок';
         if (btnClearDueDate) btnClearDueDate.style.display = 'none';
         if (btnDueDate) btnDueDate.classList.remove('active');
     } else {
-        const label = formatDueDateDisplay(selectedDueDate);
+        const label = formatDueDateDisplay(selectedDueDate, selectedDueTime, selectedDueRepeat);
         if (dueDateBtnText) dueDateBtnText.textContent = label;
         if (btnClearDueDate) btnClearDueDate.style.display = 'inline-flex';
         if (btnDueDate) btnDueDate.classList.add('active');
@@ -362,7 +395,7 @@ function setDueDate(dateStr) {
 }
 
 // Форматирование даты для кнопки и карточек
-function formatDueDateDisplay(dateStr) {
+function formatDueDateDisplay(dateStr, timeStr = null, repeatStr = null) {
     if (!dateStr) return 'Срок';
 
     const today = new Date();
@@ -372,12 +405,378 @@ function formatDueDateDisplay(dateStr) {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
 
-    if (dateStr === todayStr) return 'Сегодня';
-    if (dateStr === tomorrowStr) return 'Завтра';
+    let label = '';
+    if (dateStr === todayStr) {
+        label = 'Сегодня';
+    } else if (dateStr === tomorrowStr) {
+        label = 'Завтра';
+    } else {
+        const [year, month, day] = dateStr.split('-');
+        const monthsRuShort = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+        label = `${parseInt(day, 10)} ${monthsRuShort[parseInt(month, 10) - 1]}`;
+    }
 
-    const [year, month, day] = dateStr.split('-');
-    const monthsRuShort = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-    return `${parseInt(day, 10)} ${monthsRuShort[parseInt(month, 10) - 1]}`;
+    if (timeStr) {
+        label += ` в ${timeStr}`;
+    }
+
+    if (repeatStr) {
+        const labelRepeat = getRepeatLabel(repeatStr, dateStr);
+        if (labelRepeat) {
+            label += ` (${labelRepeat})`;
+        }
+    }
+
+    return label;
+}
+
+function getDayOfWeekPhrase(dayIndex) {
+    switch(dayIndex) {
+        case 0: return 'в воскресенье';
+        case 1: return 'в понедельник';
+        case 2: return 'во вторник';
+        case 3: return 'в среду';
+        case 4: return 'в четверг';
+        case 5: return 'в пятницу';
+        case 6: return 'в субботу';
+        default: return '';
+    }
+}
+
+function getRepeatOptions(dateStr) {
+    let dayOfWeekName = 'четверг';
+    let dayNum = '11-го';
+    let dayAndMonth = '11-го июня';
+    
+    if (dateStr) {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const dateObj = new Date(year, month - 1, day);
+        
+        const daysRu = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+        dayOfWeekName = daysRu[dateObj.getDay()];
+        
+        dayNum = `${day}-го`;
+        
+        const monthsRuGenitive = [
+            'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+            'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+        ];
+        dayAndMonth = `${day}-го ${monthsRuGenitive[month - 1]}`;
+    } else {
+        const today = new Date();
+        const daysRu = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+        dayOfWeekName = daysRu[today.getDay()];
+        dayNum = `${today.getDate()}-го`;
+        const monthsRuGenitive = [
+            'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+            'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+        ];
+        dayAndMonth = `${today.getDate()}-го ${monthsRuGenitive[today.getMonth()]}`;
+    }
+    
+    // Day of week phrasing correct for Russian
+    const dayOfWeekPhrase = getDayOfWeekPhrase(dateStr ? new Date(dateStr.split('-').map(Number)[0], dateStr.split('-').map(Number)[1]-1, dateStr.split('-').map(Number)[2]).getDay() : new Date().getDay());
+    
+    return [
+        { id: 'daily', text: 'Каждый день' },
+        { id: 'weekly', text: `Каждую неделю ${dayOfWeekPhrase}` },
+        { id: 'weekday', text: 'Каждый будний день (Пн - Пт)' },
+        { id: 'monthly', text: `Каждое ${dayNum} числа` },
+        { id: 'yearly', text: `Каждое ${dayAndMonth}` },
+        { id: 'custom', text: 'Настроить...' }
+    ];
+}
+
+function getRepeatLabel(repeatCode, dateStr) {
+    if (!repeatCode) return '';
+    let dayOfWeekName = 'четверг';
+    let dayNum = '11-го';
+    
+    if (dateStr) {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const dateObj = new Date(year, month - 1, day);
+        const daysRu = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+        dayOfWeekName = daysRu[dateObj.getDay()];
+        dayNum = `${day}-го`;
+    }
+    
+    switch(repeatCode) {
+        case 'daily': return 'каждый день';
+        case 'weekly': return `${dayOfWeekName === 'среда' ? 'каждую среду' : dayOfWeekName === 'пятница' ? 'каждую пятницу' : dayOfWeekName === 'суббота' ? 'каждую субботу' : 'каждый ' + dayOfWeekName}`;
+        case 'weekday': return 'будни';
+        case 'monthly': return `${dayNum} числа`;
+        case 'yearly': return 'ежегодно';
+        case 'custom': return 'повтор';
+        default: return '';
+    }
+}
+
+function calculateNextDueDate(currentDateStr, repeatCode) {
+    if (!currentDateStr) return null;
+    const [year, month, day] = currentDateStr.split('-').map(Number);
+    const dateObj = new Date(year, month - 1, day);
+    
+    switch(repeatCode) {
+        case 'daily':
+            dateObj.setDate(dateObj.getDate() + 1);
+            break;
+        case 'weekly':
+            dateObj.setDate(dateObj.getDate() + 7);
+            break;
+        case 'weekday':
+            dateObj.setDate(dateObj.getDate() + 1);
+            if (dateObj.getDay() === 6) { // Saturday -> Monday
+                dateObj.setDate(dateObj.getDate() + 2);
+            } else if (dateObj.getDay() === 0) { // Sunday -> Monday
+                dateObj.setDate(dateObj.getDate() + 1);
+            }
+            break;
+        case 'monthly':
+            dateObj.setMonth(dateObj.getMonth() + 1);
+            break;
+        case 'yearly':
+            dateObj.setFullYear(dateObj.getFullYear() + 1);
+            break;
+        default:
+            return null;
+    }
+    
+    return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+}
+
+function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelectedTime, setSelectedTime, getSelectedRepeat, setSelectedRepeat, onDone) {
+    const mainView = dropdownEl.querySelector('.due-main-view');
+    const timeView = dropdownEl.querySelector('.due-time-view');
+    const repeatView = dropdownEl.querySelector('.due-repeat-view');
+    
+    const btnTime = dropdownEl.querySelector('.btn-time');
+    const btnRepeat = dropdownEl.querySelector('.btn-repeat');
+    
+    const timeBackBtn = dropdownEl.querySelector('.time-back-btn');
+    const repeatBackBtn = dropdownEl.querySelector('.repeat-back-btn');
+    
+    const timeInput = dropdownEl.querySelector('.time-picker-input');
+    const timeClearBtn = dropdownEl.querySelector('.time-clear-btn');
+    const timePickerList = dropdownEl.querySelector('.time-picker-list');
+    const repeatPickerList = dropdownEl.querySelector('.repeat-picker-list');
+    
+    const ensureDateSelected = () => {
+        if (!getSelectedDate()) {
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            setSelectedDate(todayStr);
+        }
+    };
+    
+    if (btnTime) {
+        btnTime.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mainView.style.display = 'none';
+            timeView.style.display = 'flex';
+            
+            const currentVal = getSelectedTime() || '00:00';
+            timeInput.value = currentVal;
+            renderTimeList(currentVal);
+            setTimeout(() => {
+                timeInput.focus();
+                timeInput.setSelectionRange(0, 5);
+            }, 50);
+        });
+    }
+    
+    if (btnRepeat) {
+        btnRepeat.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mainView.style.display = 'none';
+            repeatView.style.display = 'flex';
+            
+            renderRepeatList();
+        });
+    }
+    
+    if (timeBackBtn) {
+        timeBackBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            timeView.style.display = 'none';
+            mainView.style.display = 'flex';
+        });
+    }
+    
+    if (repeatBackBtn) {
+        repeatBackBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            repeatView.style.display = 'none';
+            mainView.style.display = 'flex';
+        });
+    }
+    
+    if (timeClearBtn) {
+        timeClearBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            timeInput.value = '00:00';
+            setSelectedTime(null);
+            timeView.style.display = 'none';
+            mainView.style.display = 'flex';
+            onDone();
+        });
+    }
+    
+    const validateTimeStr = (str) => {
+        const parts = str.split(':');
+        if (parts.length !== 2) return false;
+        const h = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        return (!isNaN(h) && h >= 0 && h < 24 && !isNaN(m) && m >= 0 && m < 60);
+    };
+    
+    if (timeInput) {
+        timeInput.addEventListener('keydown', (e) => {
+            if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Escape'].includes(e.key)) {
+                if (e.key === 'Backspace') {
+                    e.preventDefault();
+                    let start = timeInput.selectionStart;
+                    let end = timeInput.selectionEnd;
+                    let val = timeInput.value.split('');
+                    
+                    if (start === end) {
+                        if (start > 0) {
+                            let deletePos = start - 1;
+                            if (deletePos === 2) deletePos = 1;
+                            val[deletePos] = '0';
+                            timeInput.value = val.join('');
+                            timeInput.setSelectionRange(deletePos, deletePos);
+                        }
+                    } else {
+                        for (let i = start; i < end; i++) {
+                            if (i !== 2) val[i] = '0';
+                        }
+                        timeInput.value = val.join('');
+                        timeInput.setSelectionRange(start, start);
+                    }
+                    const cur = timeInput.value;
+                    if (validateTimeStr(cur)) {
+                        renderTimeList(cur);
+                    }
+                }
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const val = timeInput.value.trim();
+                    if (validateTimeStr(val)) {
+                        ensureDateSelected();
+                        setSelectedTime(val);
+                        timeView.style.display = 'none';
+                        mainView.style.display = 'flex';
+                        onDone();
+                    }
+                }
+                return;
+            }
+            
+            if (!/[0-9]/.test(e.key)) {
+                e.preventDefault();
+                return;
+            }
+            
+            e.preventDefault();
+            let start = timeInput.selectionStart;
+            let end = timeInput.selectionEnd;
+            let val = timeInput.value.split('');
+            
+            if (start === end) {
+                if (start < 5) {
+                    let pos = start;
+                    if (pos === 2) pos = 3;
+                    val[pos] = e.key;
+                    timeInput.value = val.join('');
+                    timeInput.setSelectionRange(pos + 1, pos + 1);
+                }
+            } else {
+                let pos = start;
+                if (pos === 2) pos = 3;
+                val[pos] = e.key;
+                for (let i = start + 1; i < end; i++) {
+                    if (i !== 2) val[i] = '0';
+                }
+                timeInput.value = val.join('');
+                timeInput.setSelectionRange(pos + 1, pos + 1);
+            }
+            
+            const cur = timeInput.value;
+            if (validateTimeStr(cur)) {
+                renderTimeList(cur);
+            }
+        });
+        
+        timeInput.addEventListener('blur', () => {
+            const val = timeInput.value.trim();
+            if (validateTimeStr(val)) {
+                setSelectedTime(val);
+            } else {
+                timeInput.value = getSelectedTime() || '00:00';
+            }
+        });
+    }
+    
+    function renderTimeList(selectedVal) {
+        if (!timePickerList) return;
+        timePickerList.innerHTML = '';
+        
+        for (let h = 0; h < 24; h++) {
+            for (let m = 0; m < 60; m += 30) {
+                const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                const isSelected = selectedVal === timeStr;
+                
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = `time-select-item ${isSelected ? 'selected' : ''}`;
+                item.innerHTML = `
+                    <span>${timeStr}</span>
+                    ${isSelected ? '<span class="time-select-item-checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10"><polyline points="20 6 9 17 4 12"></polyline></svg></span>' : ''}
+                `;
+                
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    ensureDateSelected();
+                    setSelectedTime(timeStr);
+                    timeView.style.display = 'none';
+                    mainView.style.display = 'flex';
+                    onDone();
+                });
+                
+                timePickerList.appendChild(item);
+            }
+        }
+    }
+    
+    function renderRepeatList() {
+        if (!repeatPickerList) return;
+        repeatPickerList.innerHTML = '';
+        
+        const options = getRepeatOptions(getSelectedDate());
+        const selectedVal = getSelectedRepeat();
+        
+        options.forEach(opt => {
+            const isSelected = selectedVal === opt.id;
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = `repeat-select-item ${isSelected ? 'selected' : ''}`;
+            item.innerHTML = `
+                <span>${opt.text}</span>
+                ${isSelected ? '<span class="repeat-select-item-checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10"><polyline points="20 6 9 17 4 12"></polyline></svg></span>' : ''}
+            `;
+            
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                ensureDateSelected();
+                setSelectedRepeat(opt.id);
+                repeatView.style.display = 'none';
+                mainView.style.display = 'flex';
+                onDone();
+            });
+            
+            repeatPickerList.appendChild(item);
+        });
+    }
 }
 
 // Проверка просроченности даты
@@ -594,10 +993,12 @@ const btnSettingsChangePassword = document.getElementById('btnSettingsChangePass
 
 // Всплывающее уведомление о выполнении задачи (Toast)
 let lastCompletedTaskId = null;
+let lastCreatedRepeatingTaskId = null;
 let toastTimeout = null;
 
-function showCompletionToast(taskId) {
+function showCompletionToast(taskId, createdNewTaskId = null) {
     lastCompletedTaskId = taskId;
+    lastCreatedRepeatingTaskId = createdNewTaskId;
     const toast = document.getElementById('taskCompletionToast');
     if (!toast) return;
 
@@ -626,9 +1027,22 @@ if (btnToastUndo) {
     btnToastUndo.addEventListener('click', async () => {
         if (lastCompletedTaskId && currentUid) {
             try {
-                await updateDoc(doc(db, 'users', currentUid, 'tasks', lastCompletedTaskId), {
-                    completed: false
-                });
+                // Восстанавливаем оригинальную задачу и удаляем следующий повтор параллельно
+                const promises = [
+                    updateDoc(doc(db, 'users', currentUid, 'tasks', lastCompletedTaskId), {
+                        completed: false,
+                        deleted: false,
+                        deletedAt: null
+                    })
+                ];
+
+                if (lastCreatedRepeatingTaskId) {
+                    promises.push(deleteDoc(doc(db, 'users', currentUid, 'tasks', lastCreatedRepeatingTaskId)));
+                    lastCreatedRepeatingTaskId = null;
+                }
+
+                await Promise.all(promises);
+
                 const toast = document.getElementById('taskCompletionToast');
                 if (toast) {
                     toast.classList.remove('show');
@@ -656,6 +1070,13 @@ function openSettingsModal() {
         if (settingsProfileAvatar) {
             settingsProfileAvatar.src = window.currentUser.photoURL || 'https://i.ibb.co/Z6vRKK9x/0000000.jpg';
         }
+    }
+
+    // Подставляем значение настройки удаления выполненных задач
+    const deleteCompletedPref = localStorage.getItem('todo_pref_delete_completed') === 'true';
+    const deleteCompletedCheckbox = document.getElementById('prefDeleteCompleted');
+    if (deleteCompletedCheckbox) {
+        deleteCompletedCheckbox.checked = deleteCompletedPref;
     }
 
     // Подсвечиваем сохраненную карточку настройки счетчиков
@@ -755,6 +1176,14 @@ if (prefCountersShow) {
 if (prefCountersHide) {
     prefCountersHide.addEventListener('click', () => updateCountersPreference('hide'));
 }
+
+const prefDeleteCompleted = document.getElementById('prefDeleteCompleted');
+if (prefDeleteCompleted) {
+    prefDeleteCompleted.addEventListener('change', (e) => {
+        localStorage.setItem('todo_pref_delete_completed', e.target.checked ? 'true' : 'false');
+    });
+}
+
 
 // Сайдбар: восстановление свернутого состояния на ПК
 const todoContentEl = document.querySelector('.todo-content');
@@ -1023,11 +1452,15 @@ async function handleAddTask() {
             title: titleText,
             completed: false,
             dueDate: selectedDueDate,
+            dueTime: selectedDueTime || null,
+            dueRepeat: selectedDueRepeat || null,
             projectId: addTaskSelectedProjectId,
             order: newOrder,
             createdAt: serverTimestamp()
         });
         taskTitleInput.value = '';
+        selectedDueTime = null;
+        selectedDueRepeat = null;
         setDueDate(getDefaultDueDate());
         
         // Сбрасываем выбранный проект к дефолтному для текущей вкладки
@@ -1172,98 +1605,185 @@ if (confirmDeleteModal) {
     });
 }
 
+const pendingCompletions = new Set();
+
 // Переключение выполнения задачи
 async function toggleTaskCompleted(taskId, currentStatus) {
     if (!currentUid || !taskId) return;
+    if (pendingCompletions.has(taskId)) return;
+    
+    pendingCompletions.add(taskId);
     try {
-        if (!currentStatus) {
-            const completedSound = new Audio('completed.mp3');
-            completedSound.play().catch(err => console.log('Audio playback failed:', err));
-            showCompletionToast(taskId);
+        const task = allTasks.find(t => t.id === taskId);
+        const promises = [];
+
+        // 1. Подготавливаем обновление текущей задачи
+        const deleteCompletedPref = localStorage.getItem('todo_pref_delete_completed') === 'true';
+        let updatePromise;
+        if (!currentStatus && deleteCompletedPref) {
+            updatePromise = updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
+                deleted: true,
+                deletedAt: serverTimestamp()
+            });
+        } else {
+            updatePromise = updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
+                completed: !currentStatus
+            });
         }
-        await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
-            completed: !currentStatus
-        });
+        promises.push(updatePromise);
+
+        // 2. Подготавливаем создание следующей повторяющейся задачи
+        let addPromise = null;
+        if (!currentStatus && task && task.dueRepeat && task.dueDate) {
+            const nextDateStr = calculateNextDueDate(task.dueDate, task.dueRepeat);
+            if (nextDateStr) {
+                addPromise = addDoc(collection(db, 'users', currentUid, 'tasks'), {
+                    title: task.title,
+                    completed: false,
+                    dueDate: nextDateStr,
+                    dueTime: task.dueTime || null,
+                    dueRepeat: task.dueRepeat,
+                    projectId: task.projectId || null,
+                    order: task.order !== undefined ? task.order : 0,
+                    createdAt: task.createdAt || new Date()
+                });
+                promises.push(addPromise);
+            }
+        }
+
+        // Выполняем операции параллельно
+        const results = await Promise.all(promises);
+
+        if (!currentStatus) {
+            let createdNewTaskId = null;
+            if (addPromise) {
+                const addResult = results[promises.indexOf(addPromise)];
+                if (addResult && addResult.id) {
+                    createdNewTaskId = addResult.id;
+                }
+            }
+            showCompletionToast(taskId, createdNewTaskId);
+        }
     } catch (err) {
         console.error("Ошибка обновления задачи:", err);
+    } finally {
+        pendingCompletions.delete(taskId);
     }
 }
 
 function createDropdownHtml() {
     return `
         <div class="due-date-dropdown" style="display: none;">
-            <div class="due-quick-options">
-                <button class="quick-opt-btn" type="button" data-date="today">
-                    <span class="quick-opt-left">
-                        <span class="quick-opt-icon" style="color: #22c55e;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <div class="due-main-view" style="display: flex; flex-direction: column; width: 100%;">
+                <div class="due-quick-options">
+                    <button class="quick-opt-btn" type="button" data-date="today">
+                        <span class="quick-opt-left">
+                            <span class="quick-opt-icon" style="color: #22c55e;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            </span>
+                            <span>Сегодня</span>
                         </span>
-                        <span>Сегодня</span>
-                    </span>
-                    <span class="quick-opt-day-name">Пн</span>
-                </button>
-                <button class="quick-opt-btn" type="button" data-date="tomorrow">
-                    <span class="quick-opt-left">
-                        <span class="quick-opt-icon" style="color: #f97316;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                                <circle cx="12" cy="12" r="4"></circle>
-                                <line x1="12" y1="2" x2="12" y2="4"></line>
-                                <line x1="12" y1="20" x2="12" y2="22"></line>
-                                <line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line>
-                                <line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line>
-                                <line x1="2" y1="12" x2="4" y2="12"></line>
-                                <line x1="20" y1="12" x2="22" y2="12"></line>
-                                <line x1="6.34" y1="17.66" x2="4.93" y2="19.07"></line>
-                                <line x1="19.07" y1="4.93" x2="17.66" y2="6.34"></line>
-                            </svg>
+                        <span class="quick-opt-day-name">Пн</span>
+                    </button>
+                    <button class="quick-opt-btn" type="button" data-date="tomorrow">
+                        <span class="quick-opt-left">
+                            <span class="quick-opt-icon" style="color: #f97316;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                    <circle cx="12" cy="12" r="4"></circle>
+                                    <line x1="12" y1="2" x2="12" y2="4"></line>
+                                    <line x1="12" y1="20" x2="12" y2="22"></line>
+                                    <line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line>
+                                    <line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line>
+                                    <line x1="2" y1="12" x2="4" y2="12"></line>
+                                    <line x1="20" y1="12" x2="22" y2="12"></line>
+                                    <line x1="6.34" y1="17.66" x2="4.93" y2="19.07"></line>
+                                    <line x1="19.07" y1="4.93" x2="17.66" y2="6.34"></line>
+                                </svg>
+                            </span>
+                            <span>Завтра</span>
                         </span>
-                        <span>Завтра</span>
-                    </span>
-                    <span class="quick-opt-day-name">Вт</span>
-                </button>
+                        <span class="quick-opt-day-name">Вт</span>
+                    </button>
+                </div>
+                
+                <div class="due-divider"></div>
+                
+                <div class="due-calendar-picker">
+                    <div class="calendar-header">
+                        <span class="calendar-month-year">июнь 2026</span>
+                        <div class="calendar-nav">
+                            <button class="cal-nav-btn cal-prev-month" type="button" title="Предыдущий месяц">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="15 18 9 12 15 6"/></svg>
+                            </button>
+                            <button class="cal-nav-btn cal-current-month" type="button" title="Текущий месяц">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10"><circle cx="12" cy="12" r="6"/></svg>
+                            </button>
+                            <button class="cal-nav-btn cal-next-month" type="button" title="Следующий месяц">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="9 18 15 12 9 6"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <span>ПН</span><span>ВТ</span><span>СР</span><span>ЧТ</span><span>ПТ</span><span>СБ</span><span>ВС</span>
+                    </div>
+                    <div class="calendar-days"></div>
+                </div>
+                
+                <div class="due-divider"></div>
+                
+                <div class="due-footer-actions">
+                    <button class="footer-action-btn btn-time" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        Время
+                    </button>
+                    <button class="footer-action-btn btn-repeat" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                        Повтор
+                    </button>
+                </div>
             </div>
-            
-            <div class="due-divider"></div>
-            
-            <div class="due-calendar-picker">
-                <div class="calendar-header">
-                    <span class="calendar-month-year">июнь 2026</span>
-                    <div class="calendar-nav">
-                        <button class="cal-nav-btn cal-prev-month" type="button" title="Предыдущий месяц">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="15 18 9 12 15 6"/></svg>
-                        </button>
-                        <button class="cal-nav-btn cal-current-month" type="button" title="Текущий месяц">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10"><circle cx="12" cy="12" r="6"/></svg>
-                        </button>
-                        <button class="cal-nav-btn cal-next-month" type="button" title="Следующий месяц">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="9 18 15 12 9 6"/></svg>
-                        </button>
+
+            <!-- Выбор времени -->
+            <div class="due-time-view" style="display: none; flex-direction: column; gap: 10px; width: 100%;">
+                <div class="time-view-header" style="display: flex; align-items: center; gap: 8px;">
+                    <button class="time-back-btn" type="button" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 8px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <div class="time-input-container" style="display: flex; align-items: center; background: var(--hover-bg); border: 1px solid var(--border); border-radius: 10px; padding: 4px 8px; flex: 1; gap: 6px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2.5" width="14" height="14" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        <input type="text" class="time-picker-input" value="00:00" placeholder="00:00" style="background: transparent; border: none; outline: none; color: var(--text); font-family: inherit; font-size: 14px; width: 100%; font-weight: 600; padding: 0;">
+                        <button class="time-clear-btn" type="button" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 16px; padding: 0 2px; line-height: 1;">&times;</button>
                     </div>
                 </div>
-                <div class="calendar-weekdays">
-                    <span>ПН</span><span>ВТ</span><span>СР</span><span>ЧТ</span><span>ПТ</span><span>СБ</span><span>ВС</span>
+                <div class="time-picker-list" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;">
+                    <!-- Будет заполнено динамически -->
                 </div>
-                <div class="calendar-days"></div>
             </div>
-            
-            <div class="due-divider"></div>
-            
-            <div class="due-footer-actions">
-                <button class="footer-action-btn btn-time" type="button">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                    Время
-                </button>
-                <button class="footer-action-btn btn-repeat" type="button">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
-                    Повтор
-                </button>
+
+            <!-- Выбор повтора -->
+            <div class="due-repeat-view" style="display: none; flex-direction: column; gap: 10px; width: 100%;">
+                <div class="repeat-view-header" style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <button class="repeat-back-btn" type="button" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 8px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <span style="font-weight: 700; font-size: 0.95rem; color: var(--text);">Повторять задачу</span>
+                </div>
+                <div class="repeat-picker-list" style="display: flex; flex-direction: column; gap: 2px;">
+                    <!-- Будет заполнено динамически -->
+                </div>
             </div>
         </div>
     `;
 }
 
-function initCalendarForWrapper(wrapperEl, activeDate, onSelect) {
+function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat, onSelect) {
     let localSelectedDate = activeDate;
+    let localSelectedTime = activeTime;
+    let localSelectedRepeat = activeRepeat;
     let localYear = activeDate ? parseInt(activeDate.split('-')[0], 10) : new Date().getFullYear();
     let localMonth = activeDate ? parseInt(activeDate.split('-')[1], 10) - 1 : new Date().getMonth();
 
@@ -1278,6 +1798,26 @@ function initCalendarForWrapper(wrapperEl, activeDate, onSelect) {
         dropdown = wrapperEl.querySelector('.due-date-dropdown');
     }
 
+    // setup nested time / repeat views
+    setupNestedViews(
+        dropdown,
+        () => localSelectedDate,
+        (dateStr) => {
+            localSelectedDate = dateStr;
+        },
+        () => localSelectedTime,
+        (timeStr) => {
+            localSelectedTime = timeStr;
+        },
+        () => localSelectedRepeat,
+        (repeatStr) => {
+            localSelectedRepeat = repeatStr;
+        },
+        () => {
+            updateDate(localSelectedDate);
+        }
+    );
+
     // Заполняем названия дней для быстрых опций
     const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
     const today = new Date();
@@ -1291,6 +1831,12 @@ function initCalendarForWrapper(wrapperEl, activeDate, onSelect) {
 
     const openDropdown = () => {
         dropdown.style.display = 'flex';
+        const mainView = dropdown.querySelector('.due-main-view');
+        const timeView = dropdown.querySelector('.due-time-view');
+        const repeatView = dropdown.querySelector('.due-repeat-view');
+        if (mainView) mainView.style.display = 'flex';
+        if (timeView) timeView.style.display = 'none';
+        if (repeatView) repeatView.style.display = 'none';
         renderGrid();
     };
 
@@ -1310,6 +1856,8 @@ function initCalendarForWrapper(wrapperEl, activeDate, onSelect) {
     if (clearIcon) {
         clearIcon.addEventListener('click', (e) => {
             e.stopPropagation();
+            localSelectedTime = null;
+            localSelectedRepeat = null;
             updateDate(null);
             closeDropdown();
         });
@@ -1431,14 +1979,14 @@ function initCalendarForWrapper(wrapperEl, activeDate, onSelect) {
 
     function updateDate(dateStr) {
         localSelectedDate = dateStr;
-        onSelect(dateStr);
+        onSelect(localSelectedDate, localSelectedTime, localSelectedRepeat);
 
         if (!localSelectedDate) {
             textLabel.textContent = 'Срок';
             if (clearIcon) clearIcon.style.display = 'none';
             btn.classList.remove('active');
         } else {
-            textLabel.textContent = formatDueDateDisplay(dateStr);
+            textLabel.textContent = formatDueDateDisplay(dateStr, localSelectedTime, localSelectedRepeat);
             if (clearIcon) clearIcon.style.display = 'inline-flex';
             btn.classList.add('active');
         }
@@ -1452,6 +2000,9 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
     taskItemEl.classList.add('editing');
 
     let editSelectedDueDate = task.dueDate;
+    let editSelectedDueTime = task.dueTime || null;
+    let editSelectedDueRepeat = task.dueRepeat || null;
+    let editSelectedProjectId = task.projectId || null;
 
     const editContainer = document.createElement('div');
     editContainer.className = 'edit-task-container';
@@ -1460,17 +2011,29 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
         <textarea class="task-input edit-title-input" placeholder="Что бы вы хотели сделать?" rows="1" style="height: auto;"></textarea>
         <div class="char-limit-warning edit-char-limit">Лимит названия задачи: 0 / 500</div>
         <div class="form-actions" style="margin-top: 14px;">
-            <div class="due-date-wrapper">
-                <button class="btn-due-date ${editSelectedDueDate ? 'active' : ''}" type="button">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                    <span class="due-date-text">${formatDueDateDisplay(editSelectedDueDate)}</span>
-                    <span class="clear-due-icon" style="display: ${editSelectedDueDate ? 'inline-flex' : 'none'};" title="Очистить">&times;</span>
-                </button>
+            <div class="form-actions-left" style="display: flex; gap: 8px; align-items: center;">
+                <div class="due-date-wrapper">
+                    <button class="btn-due-date ${editSelectedDueDate ? 'active' : ''}" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span class="due-date-text">${formatDueDateDisplay(editSelectedDueDate, editSelectedDueTime, editSelectedDueRepeat)}</span>
+                        <span class="clear-due-icon" style="display: ${editSelectedDueDate ? 'inline-flex' : 'none'};" title="Очистить">&times;</span>
+                    </button>
+                </div>
+                <div class="edit-task-project-wrapper add-task-project-wrapper" style="position: relative; display: inline-block;">
+                    <button class="btn-due-date" type="button" style="font-weight: 700;">
+                        <span class="project-icon" style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; flex-shrink: 0; margin-right: 4px;">
+                        </span>
+                        <span class="project-text">Входящие</span>
+                    </button>
+                    <div class="due-date-dropdown project-dropdown" style="display: none; width: 220px; max-height: 300px; overflow-y: auto;">
+                        <!-- Сюда будут рендериться проекты динамически -->
+                    </div>
+                </div>
             </div>
             <div class="edit-actions-right" style="display: flex; gap: 8px;">
                 <button class="btn-cancel" type="button">Отмена</button>
@@ -1520,9 +2083,124 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
     const btnCancel = editContainer.querySelector('.btn-cancel');
     const wrapper = editContainer.querySelector('.due-date-wrapper');
 
-    // Инициализируем календарь
-    initCalendarForWrapper(wrapper, editSelectedDueDate, (dateStr) => {
+    // Инициализируем календарь с поддержкой времени и повтора
+    initCalendarForWrapper(wrapper, editSelectedDueDate, editSelectedDueTime, editSelectedDueRepeat, (dateStr, timeStr, repeatStr) => {
         editSelectedDueDate = dateStr;
+        editSelectedDueTime = timeStr;
+        editSelectedDueRepeat = repeatStr;
+    });
+
+    // Инициализируем выбор проекта для редактирования
+    const editProjectWrapper = editContainer.querySelector('.edit-task-project-wrapper');
+    const editProjectBtn = editProjectWrapper.querySelector('.btn-due-date');
+    const editProjectIcon = editProjectWrapper.querySelector('.project-icon');
+    const editProjectText = editProjectWrapper.querySelector('.project-text');
+    const editProjectDropdown = editProjectWrapper.querySelector('.project-dropdown');
+
+    const updateEditProjectDisplay = (projId) => {
+        if (!projId) {
+            editProjectText.textContent = 'Входящие';
+            editProjectIcon.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block;">
+                    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                </svg>
+            `;
+        } else {
+            const project = projectsList.find(p => p.id === projId);
+            if (project) {
+                editProjectText.textContent = project.name;
+                if (project.iconUrl) {
+                    editProjectIcon.innerHTML = `<img src="${project.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 2px;">`;
+                } else {
+                    editProjectIcon.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block;">
+                            <line x1="4" y1="9" x2="20" y2="9"></line>
+                            <line x1="4" y1="15" x2="20" y2="15"></line>
+                            <line x1="10" y1="3" x2="8" y2="21"></line>
+                            <line x1="16" y1="3" x2="14" y2="21"></line>
+                        </svg>
+                    `;
+                }
+            } else {
+                editProjectText.textContent = 'Входящие';
+                editProjectIcon.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block;">
+                        <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                        <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                    </svg>
+                `;
+            }
+        }
+    };
+
+    const renderEditProjectDropdown = () => {
+        editProjectDropdown.innerHTML = '';
+
+        // 1. Входящие (Inbox)
+        const isInboxSelected = editSelectedProjectId === null;
+        const inboxItem = document.createElement('button');
+        inboxItem.className = 'dropdown-item';
+        inboxItem.type = 'button';
+        inboxItem.innerHTML = `
+            <span class="dropdown-item-left">
+                <span class="dropdown-item-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+                </span>
+                <span>Входящие</span>
+            </span>
+            ${isInboxSelected ? '<span class="dropdown-item-checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10"><polyline points="20 6 9 17 4 12"></polyline></svg></span>' : ''}
+        `;
+        inboxItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            editSelectedProjectId = null;
+            updateEditProjectDisplay(null);
+            editProjectDropdown.style.display = 'none';
+        });
+        editProjectDropdown.appendChild(inboxItem);
+
+        // 2. Пользовательские проекты
+        projectsList.forEach(project => {
+            const isSelected = editSelectedProjectId === project.id;
+            const projectItem = document.createElement('button');
+            projectItem.className = 'dropdown-item';
+            projectItem.type = 'button';
+
+            const iconHtml = project.iconUrl ?
+                `<img src="${project.iconUrl}">` :
+                `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+
+            projectItem.innerHTML = `
+                <span class="dropdown-item-left">
+                    <span class="dropdown-item-icon">
+                        ${iconHtml}
+                    </span>
+                    <span>${escapeHtml(project.name)}</span>
+                </span>
+                ${isSelected ? '<span class="dropdown-item-checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10"><polyline points="20 6 9 17 4 12"></polyline></svg></span>' : ''}
+            `;
+            projectItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                editSelectedProjectId = project.id;
+                updateEditProjectDisplay(project.id);
+                editProjectDropdown.style.display = 'none';
+            });
+            editProjectDropdown.appendChild(projectItem);
+        });
+    };
+
+    updateEditProjectDisplay(editSelectedProjectId);
+
+    editProjectBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (editProjectDropdown.style.display === 'none') {
+            const calDropdown = editContainer.querySelector('.due-date-dropdown');
+            if (calDropdown) calDropdown.style.display = 'none';
+            editProjectDropdown.style.display = 'flex';
+            renderEditProjectDropdown();
+        } else {
+            editProjectDropdown.style.display = 'none';
+        }
     });
 
     const finishEdit = async () => {
@@ -1534,12 +2212,18 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
 
         const titleChanged = newTitle !== task.title;
         const dateChanged = editSelectedDueDate !== task.dueDate;
+        const timeChanged = editSelectedDueTime !== (task.dueTime || null);
+        const repeatChanged = editSelectedDueRepeat !== (task.dueRepeat || null);
+        const projectChanged = editSelectedProjectId !== (task.projectId || null);
 
-        if (titleChanged || dateChanged) {
+        if (titleChanged || dateChanged || timeChanged || repeatChanged || projectChanged) {
             try {
                 await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                     title: newTitle,
-                    dueDate: editSelectedDueDate
+                    dueDate: editSelectedDueDate,
+                    dueTime: editSelectedDueTime,
+                    dueRepeat: editSelectedDueRepeat,
+                    projectId: editSelectedProjectId
                 });
             } catch (err) {
                 console.error("Ошибка сохранения задачи:", err);
@@ -1650,8 +2334,8 @@ function renderTasks() {
             const orderB = b.order !== undefined ? b.order : 0;
             if (orderA !== orderB) return orderA - orderB;
 
-            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
-            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
+            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
             return timeB - timeA; // Новые вверху
         });
     };
@@ -1732,7 +2416,6 @@ function renderTasks() {
     renderProjects();
 }
 
-// Создать DOM элемент для строки задачи
 function createTaskRowElement(task) {
     const item = document.createElement('div');
     item.className = `task-item ${task.completed ? 'completed' : ''}`;
@@ -1756,7 +2439,12 @@ function createTaskRowElement(task) {
                             <line x1="8" y1="2" x2="8" y2="6"></line>
                             <line x1="3" y1="10" x2="21" y2="10"></line>
                         </svg>
-                        <span style="vertical-align: middle;">${formatDueDateDisplay(task.dueDate)}</span>
+                        <span style="vertical-align: middle;">${formatDueDateDisplay(task.dueDate, task.dueTime, task.dueRepeat)}</span>
+                        ${task.dueRepeat ? `
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
+                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                            </svg>
+                        ` : ''}
                     </span>
                 ` : ''}
             </div>
@@ -1822,7 +2510,12 @@ function createTaskRowElement(task) {
                         <line x1="8" y1="2" x2="8" y2="6"></line>
                         <line x1="3" y1="10" x2="21" y2="10"></line>
                     </svg>
-                    <span style="vertical-align: middle;">${formatDueDateDisplay(task.dueDate)}</span>
+                    <span style="vertical-align: middle;">${formatDueDateDisplay(task.dueDate, task.dueTime, task.dueRepeat)}</span>
+                    ${task.dueRepeat ? `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                        </svg>
+                    ` : ''}
                 </span>
             ` : ''}
         </div>
@@ -1910,6 +2603,12 @@ function createTaskRowElement(task) {
     // Клик на чекбокс
     checkbox.addEventListener('click', (e) => {
         e.stopPropagation();
+
+        if (!task.completed) {
+            const completedSound = new Audio('completed.mp3');
+            completedSound.play().catch(err => console.log('Audio playback failed:', err));
+        }
+
         toggleTaskCompleted(task.id, task.completed);
     });
 

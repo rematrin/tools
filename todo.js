@@ -996,11 +996,21 @@ let lastCompletedTaskId = null;
 let lastCreatedRepeatingTaskId = null;
 let toastTimeout = null;
 
-function showCompletionToast(taskId, createdNewTaskId = null) {
+function showCompletionToast(taskId, createdNewTaskId = null, nextDateFormatted = null) {
     lastCompletedTaskId = taskId;
     lastCreatedRepeatingTaskId = createdNewTaskId;
     const toast = document.getElementById('taskCompletionToast');
     if (!toast) return;
+
+    const subtextEl = document.getElementById('toastSubtext');
+    if (subtextEl) {
+        if (nextDateFormatted) {
+            subtextEl.textContent = `Следующий раз: ${nextDateFormatted}`;
+            subtextEl.style.display = 'block';
+        } else {
+            subtextEl.style.display = 'none';
+        }
+    }
 
     if (toastTimeout) {
         clearTimeout(toastTimeout);
@@ -1634,9 +1644,11 @@ async function toggleTaskCompleted(taskId, currentStatus) {
 
         // 2. Подготавливаем создание следующей повторяющейся задачи
         let addPromise = null;
+        let nextDateFormatted = null;
         if (!currentStatus && task && task.dueRepeat && task.dueDate) {
             const nextDateStr = calculateNextDueDate(task.dueDate, task.dueRepeat);
             if (nextDateStr) {
+                nextDateFormatted = formatDueDateDisplay(nextDateStr, task.dueTime || null, null);
                 addPromise = addDoc(collection(db, 'users', currentUid, 'tasks'), {
                     title: task.title,
                     completed: false,
@@ -1662,7 +1674,7 @@ async function toggleTaskCompleted(taskId, currentStatus) {
                     createdNewTaskId = addResult.id;
                 }
             }
-            showCompletionToast(taskId, createdNewTaskId);
+            showCompletionToast(taskId, createdNewTaskId, nextDateFormatted);
         }
     } catch (err) {
         console.error("Ошибка обновления задачи:", err);

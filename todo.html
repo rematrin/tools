@@ -519,7 +519,10 @@
 
     <!-- Всплывающее уведомление о выполнении задачи -->
     <div class="toast-notification" id="taskCompletionToast" style="display: none;">
-        <span class="toast-text">Задача выполнена</span>
+        <div class="toast-content-wrapper" style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+            <span class="toast-text" style="font-weight: 700;">Задача выполнена</span>
+            <span class="toast-subtext" id="toastSubtext" style="font-size: 0.82rem; color: #a1a1aa; display: none;">Следующий раз: 11 июл</span>
+        </div>
         <button class="toast-undo-btn" id="btnToastUndo" aria-label="Отменить выполнение">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
                 <path d="M3 7v6h6"></path>

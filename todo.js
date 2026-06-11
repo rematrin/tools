@@ -15,6 +15,50 @@ import {
 
 const db = getFirestore();
 
+// SVG templates for numbers 0-9
+const digitTemplates = {
+    '0': (cx, cy) => `M ${cx-1.5} ${cy-2.5} H ${cx+1.5} V ${cy+2.5} H ${cx-1.5} Z`,
+    '1': (cx, cy) => `M ${cx-1.5} ${cy-1.5} L ${cx} ${cy-2.5} V ${cy+2.5}`,
+    '2': (cx, cy) => `M ${cx-1.5} ${cy-2} C ${cx-1.5} ${cy-3}, ${cx+1.5} ${cy-3}, ${cx+1.5} ${cy-1} C ${cx+1.5} ${cy}, ${cx-1.5} ${cy+1.5}, ${cx-1.5} ${cy+2.5} H ${cx+1.5}`,
+    '3': (cx, cy) => `M ${cx-1.5} ${cy-2.5} H ${cx+1.5} L ${cx} ${cy} L ${cx+1.5} ${cy} C ${cx+1.5} ${cy+1.5}, ${cx} ${cy+2.5}, ${cx-1.5} ${cy+2.5}`,
+    '4': (cx, cy) => `M ${cx-1.5} ${cy-2.5} V ${cy} H ${cx+1.5} M ${cx+1.5} ${cy-2.5} V ${cy+2.5}`,
+    '5': (cx, cy) => `M ${cx+1.5} ${cy-2.5} H ${cx-1.5} V ${cy-0.5} H ${cx+1.5} V ${cy+2.5} H ${cx-1.5}`,
+    '6': (cx, cy) => `M ${cx+1.5} ${cy-2.5} H ${cx-1.5} V ${cy+2.5} H ${cx+1.5} V ${cy} H ${cx-1.5}`,
+    '7': (cx, cy) => `M ${cx-1.5} ${cy-2.5} H ${cx+1.5} L ${cx-0.5} ${cy+2.5}`,
+    '8': (cx, cy) => `M ${cx-1.5} ${cy-2.5} H ${cx+1.5} V ${cy+2.5} H ${cx-1.5} Z M ${cx-1.5} ${cy} H ${cx+1.5}`,
+    '9': (cx, cy) => `M ${cx-1.5} ${cy+2.5} H ${cx+1.5} V ${cy-2.5} H ${cx-1.5} V ${cy} H ${cx+1.5}`
+};
+
+function getCalendarSvg(day) {
+    const dayStr = String(day);
+    let pathD = '';
+    const cy = 15.2; // adjusted for centering
+    if (dayStr.length === 1) {
+        const cx = 12;
+        pathD = digitTemplates[dayStr](cx, cy);
+    } else {
+        const cx1 = 9.3;
+        const cx2 = 14.7;
+        pathD = digitTemplates[dayStr[0]](cx1, cy) + ' ' + digitTemplates[dayStr[1]](cx2, cy);
+    }
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+        <path d="${pathD}"></path>
+    </svg>`;
+}
+
+// Initialize dynamic calendar icon on page load
+const menuTodayEl = document.getElementById('menuToday');
+if (menuTodayEl) {
+    const todayIconEl = menuTodayEl.querySelector('.menu-icon');
+    if (todayIconEl) {
+        todayIconEl.innerHTML = getCalendarSvg(new Date().getDate());
+    }
+}
+
 let currentUid = null;
 let unsubscribeTasks = null;
 let allTasks = [];
@@ -43,12 +87,18 @@ const getDefaultDueDate = () => {
         const today = new Date();
         return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     }
+    if (currentRoute === 'tomorrow') {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        return `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+    }
     return null;
 };
 
 let selectedDueDate = getDefaultDueDate(); // Хранит выбранную дату в формате YYYY-MM-DD
 let selectedDueTime = null; // Хранит выбранное время в формате HH:MM
 let selectedDueRepeat = null; // Хранит выбранный повтор: daily, weekly, weekday, monthly, yearly, custom
+let selectedPriority = 0; // Приоритет новой задачи по умолчанию
 let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth(); // 0-11
 
@@ -61,6 +111,7 @@ const sidebarAvatar = document.getElementById('sidebarAvatar');
 const sidebarName = document.getElementById('sidebarName');
 const inboxCounter = document.getElementById('inboxCounter');
 const todayCounter = document.getElementById('todayCounter');
+const tomorrowCounter = document.getElementById('tomorrowCounter');
 const btnLoginLarge = document.getElementById('btnLoginLarge');
 
 const confirmDeleteModal = document.getElementById('confirmDeleteModal');
@@ -104,6 +155,85 @@ const sidebarCloseToggle = document.getElementById('sidebarCloseToggle');
 const todoSidebar = document.getElementById('todoSidebar');
 const sidebarOverlay = document.getElementById('sidebarOverlay');
 
+// Выбор приоритета
+const btnPriority = document.getElementById('btnPriority');
+const priorityDropdown = document.getElementById('priorityDropdown');
+const priorityBtnIcon = document.getElementById('priorityBtnIcon');
+const priorityBtnText = document.getElementById('priorityBtnText');
+
+function setPriority(val) {
+    selectedPriority = val;
+    if (priorityBtnText && priorityBtnIcon) {
+        if (val === 3) {
+            priorityBtnText.textContent = 'Приоритет 1';
+            priorityBtnIcon.style.color = '#dc2626';
+            priorityBtnIcon.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15" stroke="#dc2626" stroke-width="2"></line>
+                </svg>
+            `;
+        } else if (val === 2) {
+            priorityBtnText.textContent = 'Приоритет 2';
+            priorityBtnIcon.style.color = '#d97706';
+            priorityBtnIcon.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15" stroke="#d97706" stroke-width="2"></line>
+                </svg>
+            `;
+        } else if (val === 1) {
+            priorityBtnText.textContent = 'Приоритет 3';
+            priorityBtnIcon.style.color = '#2563eb';
+            priorityBtnIcon.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15" stroke="#2563eb" stroke-width="2"></line>
+                </svg>
+            `;
+        } else {
+            priorityBtnText.textContent = 'Приоритет';
+            priorityBtnIcon.style.color = '#808080';
+            priorityBtnIcon.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15"></line>
+                </svg>
+            `;
+        }
+    }
+    if (priorityDropdown) {
+        priorityDropdown.querySelectorAll('.priority-opt-btn').forEach(btn => {
+            const btnPrio = parseInt(btn.getAttribute('data-priority'));
+            const check = btn.querySelector('.priority-check');
+            if (check) {
+                check.style.display = (btnPrio === val) ? 'inline' : 'none';
+            }
+        });
+    }
+}
+
+if (btnPriority && priorityDropdown) {
+    btnPriority.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (priorityDropdown.style.display === 'none' || priorityDropdown.style.display === '') {
+            if (addTaskProjectDropdown) addTaskProjectDropdown.style.display = 'none';
+            if (dueDateDropdown) dueDateDropdown.style.display = 'none';
+            priorityDropdown.style.display = 'flex';
+        } else {
+            priorityDropdown.style.display = 'none';
+        }
+    });
+
+    priorityDropdown.querySelectorAll('.priority-opt-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const prio = parseInt(btn.getAttribute('data-priority'));
+            setPriority(prio);
+            priorityDropdown.style.display = 'none';
+        });
+    });
+}
 
 // === ЛОГИКА КАЛЕНДАРЯ И СРОКОВ ===
 
@@ -134,6 +264,7 @@ if (btnDueDate) {
         e.stopPropagation();
         if (dueDateDropdown.style.display === 'none') {
             if (addTaskProjectDropdown) addTaskProjectDropdown.style.display = 'none';
+            if (priorityDropdown) priorityDropdown.style.display = 'none';
             openDueDateDropdown();
         } else {
             closeDueDateDropdown();
@@ -156,6 +287,7 @@ if (btnAddTaskProject) {
         e.stopPropagation();
         if (addTaskProjectDropdown.style.display === 'none') {
             if (dueDateDropdown) dueDateDropdown.style.display = 'none';
+            if (priorityDropdown) priorityDropdown.style.display = 'none';
             addTaskProjectDropdown.style.display = 'flex';
             renderAddTaskProjectDropdown();
         } else {
@@ -169,7 +301,7 @@ document.addEventListener('click', (e) => {
     // 1. Закрытие всех календарей/выпадающих списков при клике вне
     document.querySelectorAll('.due-date-dropdown').forEach(dropdown => {
         if (dropdown.style.display !== 'none') {
-            const wrapper = dropdown.closest('.due-date-wrapper') || dropdown.closest('.add-task-project-wrapper');
+            const wrapper = dropdown.closest('.due-date-wrapper') || dropdown.closest('.add-task-project-wrapper') || dropdown.closest('.priority-wrapper');
             if (wrapper && !wrapper.contains(e.target)) {
                 dropdown.style.display = 'none';
             }
@@ -181,11 +313,13 @@ document.addEventListener('click', (e) => {
     if (addTaskForm && addTaskForm.classList.contains('expanded')) {
         const isClickInsideForm = addTaskForm.contains(e.target) || 
                                   (dueDateDropdown && dueDateDropdown.contains(e.target)) ||
-                                  (addTaskProjectDropdown && addTaskProjectDropdown.contains(e.target));
+                                  (addTaskProjectDropdown && addTaskProjectDropdown.contains(e.target)) ||
+                                  (priorityDropdown && priorityDropdown.contains(e.target));
         if (!isClickInsideForm && taskTitleInput.value.trim() === '') {
             addTaskForm.classList.remove('expanded');
             taskTitleInput.placeholder = '+ Добавить задачу';
             setDueDate(getDefaultDueDate()); // сбрасываем выбранную дату к дефолтной для текущего раздела
+            setPriority(0); // сбрасываем приоритет
             taskTitleInput.style.height = 'auto'; // Reset height
             updateAddFormCharCount(); // Reset counter
         }
@@ -1089,6 +1223,13 @@ function openSettingsModal() {
         deleteCompletedCheckbox.checked = deleteCompletedPref;
     }
 
+    // Подставляем значение настройки добавления новых задач
+    const addTaskPositionPref = localStorage.getItem('todo_pref_add_task_position') || 'top';
+    const addTaskPositionSelect = document.getElementById('prefAddTaskPosition');
+    if (addTaskPositionSelect) {
+        addTaskPositionSelect.value = addTaskPositionPref;
+    }
+
     // Подсвечиваем сохраненную карточку настройки счетчиков
     const currentCountersPref = localStorage.getItem('todo_show_sidebar_counters') || 'show';
     const cardShow = document.getElementById('pref-counters-show');
@@ -1194,6 +1335,13 @@ if (prefDeleteCompleted) {
     });
 }
 
+const prefAddTaskPosition = document.getElementById('prefAddTaskPosition');
+if (prefAddTaskPosition) {
+    prefAddTaskPosition.addEventListener('change', (e) => {
+        localStorage.setItem('todo_pref_add_task_position', e.target.value);
+    });
+}
+
 
 // Сайдбар: восстановление свернутого состояния на ПК
 const todoContentEl = document.querySelector('.todo-content');
@@ -1259,10 +1407,31 @@ function updateCompletedToggleUI() {
 }
 
 // Функция роутинга (обработки URL хэшей)
+function updateBrowserTitle() {
+    let title = 'Все задачи';
+    if (currentRoute === 'inbox') {
+        title = 'Входящие';
+    } else if (currentRoute === 'today') {
+        title = 'Сегодня';
+    } else if (currentRoute === 'tomorrow') {
+        title = 'Завтра';
+    } else if (currentRoute === 'trash') {
+        title = 'Корзина';
+    } else if (currentRoute.startsWith('project/')) {
+        const projectId = currentRoute.split('/')[1];
+        const proj = projectsList.find(p => p.id === projectId);
+        title = proj ? proj.name : 'Проект';
+    }
+    document.title = title;
+}
+
+// Функция роутинга (обработки URL хэшей)
 function handleRoute() {
     const hash = window.location.hash.replace('#', '');
     if (hash === 'today') {
         currentRoute = 'today';
+    } else if (hash === 'tomorrow') {
+        currentRoute = 'tomorrow';
     } else if (hash === 'trash') {
         currentRoute = 'trash';
     } else if (hash.startsWith('project/')) {
@@ -1284,6 +1453,7 @@ function handleRoute() {
     // Обновляем подсветку пунктов меню в сайдбаре
     const menuInbox = document.getElementById('menuInbox');
     const menuToday = document.getElementById('menuToday');
+    const menuTomorrow = document.getElementById('menuTomorrow');
     const menuTrash = document.getElementById('menuTrash');
 
     if (menuInbox) {
@@ -1293,6 +1463,10 @@ function handleRoute() {
     if (menuToday) {
         if (currentRoute === 'today') menuToday.classList.add('active');
         else menuToday.classList.remove('active');
+    }
+    if (menuTomorrow) {
+        if (currentRoute === 'tomorrow') menuTomorrow.classList.add('active');
+        else menuTomorrow.classList.remove('active');
     }
     if (menuTrash) {
         if (currentRoute === 'trash') menuTrash.classList.add('active');
@@ -1306,6 +1480,8 @@ function handleRoute() {
 
     if (currentRoute === 'today') {
         if (titleEl) titleEl.textContent = 'Сегодня';
+    } else if (currentRoute === 'tomorrow') {
+        if (titleEl) titleEl.textContent = 'Завтра';
     } else if (currentRoute === 'trash') {
         if (titleEl) titleEl.textContent = 'Корзина';
     } else if (currentRoute.startsWith('project/')) {
@@ -1315,6 +1491,8 @@ function handleRoute() {
     } else {
         if (titleEl) titleEl.textContent = 'Входящие';
     }
+
+    updateBrowserTitle();
 
     // Закрываем боковое меню на мобильных после клика
     if (todoSidebar && todoSidebar.classList.contains('mobile-open')) {
@@ -1330,6 +1508,7 @@ function handleRoute() {
     }
 
     setDueDate(getDefaultDueDate());
+    setPriority(0); // сброс приоритета при смене вкладки
     renderTasks();
 }
 
@@ -1443,19 +1622,36 @@ async function handleAddTask() {
     // Блокируем кнопку на время добавления
     btnAddTask.disabled = true;
 
-    // Вычисляем order, чтобы новая задача вставала в самое начало списка
-    let minOrder = 0;
-    allTasks.forEach(t => {
-        if (!t.completed && !t.deleted) {
-            const isSameProject = (addTaskSelectedProjectId && t.projectId === addTaskSelectedProjectId) || (!addTaskSelectedProjectId && !t.projectId);
-            if (isSameProject && t.order !== undefined) {
-                if (t.order < minOrder) {
-                    minOrder = t.order;
+    // Вычисляем order, чтобы новая задача вставала в начало или конец списка
+    const addTaskPositionPref = localStorage.getItem('todo_pref_add_task_position') || 'top';
+    let newOrder = 0;
+    if (addTaskPositionPref === 'bottom') {
+        let maxOrder = 0;
+        allTasks.forEach(t => {
+            if (!t.completed && !t.deleted) {
+                const isSameProject = (addTaskSelectedProjectId && t.projectId === addTaskSelectedProjectId) || (!addTaskSelectedProjectId && !t.projectId);
+                if (isSameProject && t.order !== undefined) {
+                    if (t.order > maxOrder) {
+                        maxOrder = t.order;
+                    }
                 }
             }
-        }
-    });
-    const newOrder = minOrder - 1;
+        });
+        newOrder = maxOrder + 1;
+    } else {
+        let minOrder = 0;
+        allTasks.forEach(t => {
+            if (!t.completed && !t.deleted) {
+                const isSameProject = (addTaskSelectedProjectId && t.projectId === addTaskSelectedProjectId) || (!addTaskSelectedProjectId && !t.projectId);
+                if (isSameProject && t.order !== undefined) {
+                    if (t.order < minOrder) {
+                        minOrder = t.order;
+                    }
+                }
+            }
+        });
+        newOrder = minOrder - 1;
+    }
 
     try {
         await addDoc(collection(db, 'users', currentUid, 'tasks'), {
@@ -1465,6 +1661,7 @@ async function handleAddTask() {
             dueTime: selectedDueTime || null,
             dueRepeat: selectedDueRepeat || null,
             projectId: addTaskSelectedProjectId,
+            priority: selectedPriority || 0,
             order: newOrder,
             createdAt: serverTimestamp()
         });
@@ -1472,6 +1669,7 @@ async function handleAddTask() {
         selectedDueTime = null;
         selectedDueRepeat = null;
         setDueDate(getDefaultDueDate());
+        setPriority(0);
         
         // Сбрасываем выбранный проект к дефолтному для текущей вкладки
         if (currentRoute.startsWith('project/')) {
@@ -1507,6 +1705,7 @@ if (taskTitleInput) {
             }
             taskTitleInput.placeholder = '+ Добавить задачу';
             setDueDate(getDefaultDueDate());
+            setPriority(0);
             taskTitleInput.style.height = 'auto'; // Reset height
             updateAddFormCharCount(); // Reset counter
         }
@@ -2015,6 +2214,7 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
     let editSelectedDueTime = task.dueTime || null;
     let editSelectedDueRepeat = task.dueRepeat || null;
     let editSelectedProjectId = task.projectId || null;
+    let editSelectedPriority = task.priority || 0;
 
     const editContainer = document.createElement('div');
     editContainer.className = 'edit-task-container';
@@ -2023,7 +2223,7 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
         <textarea class="task-input edit-title-input" placeholder="Что бы вы хотели сделать?" rows="1" style="height: auto;"></textarea>
         <div class="char-limit-warning edit-char-limit">Лимит названия задачи: 0 / 500</div>
         <div class="form-actions" style="margin-top: 14px;">
-            <div class="form-actions-left" style="display: flex; gap: 8px; align-items: center;">
+            <div class="form-actions-left" style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
                 <div class="due-date-wrapper">
                     <button class="btn-due-date ${editSelectedDueDate ? 'active' : ''}" type="button">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2044,6 +2244,52 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
                     </button>
                     <div class="due-date-dropdown project-dropdown" style="display: none; width: 220px; max-height: 300px; overflow-y: auto;">
                         <!-- Сюда будут рендериться проекты динамически -->
+                    </div>
+                </div>
+                
+                <div class="edit-task-priority-wrapper priority-wrapper" style="position: relative; display: inline-block;">
+                    <button class="btn-due-date" type="button" style="font-weight: 700;">
+                        <span class="priority-icon-wrapper" style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; flex-shrink: 0; margin-right: 4px; color: #808080;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                <line x1="4" y1="22" x2="4" y2="15"></line>
+                            </svg>
+                        </span>
+                        <span class="priority-text">Приоритет</span>
+                    </button>
+                    <div class="due-date-dropdown priority-dropdown" style="display: none; width: 170px; flex-direction: column; gap: 2px; padding: 4px;">
+                        <button class="priority-opt-btn dropdown-item" type="button" data-priority="3">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color: #dc2626;">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                            </svg>
+                            <span style="flex-grow: 1;">Приоритет 1</span>
+                            <span class="priority-check" style="display: none; color: #dc2626; font-weight: bold;">✓</span>
+                        </button>
+                        <button class="priority-opt-btn dropdown-item" type="button" data-priority="2">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color: #d97706;">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                            </svg>
+                            <span style="flex-grow: 1;">Приоритет 2</span>
+                            <span class="priority-check" style="display: none; color: #d97706; font-weight: bold;">✓</span>
+                        </button>
+                        <button class="priority-opt-btn dropdown-item" type="button" data-priority="1">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color: #2563eb;">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                            </svg>
+                            <span style="flex-grow: 1;">Приоритет 3</span>
+                            <span class="priority-check" style="display: none; color: #2563eb; font-weight: bold;">✓</span>
+                        </button>
+                        <button class="priority-opt-btn dropdown-item" type="button" data-priority="0">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #808080;">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                <line x1="4" y1="22" x2="4" y2="15"></line>
+                            </svg>
+                            <span style="flex-grow: 1;">Приоритет 4</span>
+                            <span class="priority-check" style="display: none; color: #dc2626; font-weight: bold;">✓</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2207,12 +2453,93 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
         e.stopPropagation();
         if (editProjectDropdown.style.display === 'none') {
             const calDropdown = editContainer.querySelector('.due-date-dropdown');
+            const prioDropdown = editContainer.querySelector('.priority-dropdown');
             if (calDropdown) calDropdown.style.display = 'none';
+            if (prioDropdown) prioDropdown.style.display = 'none';
             editProjectDropdown.style.display = 'flex';
             renderEditProjectDropdown();
         } else {
             editProjectDropdown.style.display = 'none';
         }
+    });
+
+    // Инициализируем выбор приоритета для редактирования
+    const editPriorityWrapper = editContainer.querySelector('.edit-task-priority-wrapper');
+    const editPriorityBtn = editPriorityWrapper.querySelector('.btn-due-date');
+    const editPriorityIcon = editPriorityWrapper.querySelector('.priority-icon-wrapper');
+    const editPriorityText = editPriorityWrapper.querySelector('.priority-text');
+    const editPriorityDropdown = editPriorityWrapper.querySelector('.priority-dropdown');
+
+    const updateEditPriorityDisplay = (val) => {
+        if (val === 3) {
+            editPriorityText.textContent = 'Приоритет 1';
+            editPriorityIcon.style.color = '#dc2626';
+            editPriorityIcon.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15" stroke="#dc2626" stroke-width="2"></line>
+                </svg>
+            `;
+        } else if (val === 2) {
+            editPriorityText.textContent = 'Приоритет 2';
+            editPriorityIcon.style.color = '#d97706';
+            editPriorityIcon.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15" stroke="#d97706" stroke-width="2"></line>
+                </svg>
+            `;
+        } else if (val === 1) {
+            editPriorityText.textContent = 'Приоритет 3';
+            editPriorityIcon.style.color = '#2563eb';
+            editPriorityIcon.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15" stroke="#2563eb" stroke-width="2"></line>
+                </svg>
+            `;
+        } else {
+            editPriorityText.textContent = 'Приоритет';
+            editPriorityIcon.style.color = '#808080';
+            editPriorityIcon.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15"></line>
+                </svg>
+            `;
+        }
+
+        editPriorityDropdown.querySelectorAll('.priority-opt-btn').forEach(btn => {
+            const btnPrio = parseInt(btn.getAttribute('data-priority'));
+            const check = btn.querySelector('.priority-check');
+            if (check) {
+                check.style.display = (btnPrio === val) ? 'inline' : 'none';
+            }
+        });
+    };
+
+    updateEditPriorityDisplay(editSelectedPriority);
+
+    editPriorityBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (editPriorityDropdown.style.display === 'none') {
+            const calDropdown = editContainer.querySelector('.due-date-dropdown');
+            const projDropdown = editContainer.querySelector('.project-dropdown');
+            if (calDropdown) calDropdown.style.display = 'none';
+            if (projDropdown) projDropdown.style.display = 'none';
+            editPriorityDropdown.style.display = 'flex';
+        } else {
+            editPriorityDropdown.style.display = 'none';
+        }
+    });
+
+    editPriorityDropdown.querySelectorAll('.priority-opt-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            editSelectedPriority = parseInt(btn.getAttribute('data-priority'));
+            updateEditPriorityDisplay(editSelectedPriority);
+            editPriorityDropdown.style.display = 'none';
+        });
     });
 
     const finishEdit = async () => {
@@ -2227,15 +2554,17 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
         const timeChanged = editSelectedDueTime !== (task.dueTime || null);
         const repeatChanged = editSelectedDueRepeat !== (task.dueRepeat || null);
         const projectChanged = editSelectedProjectId !== (task.projectId || null);
+        const priorityChanged = editSelectedPriority !== (task.priority || 0);
 
-        if (titleChanged || dateChanged || timeChanged || repeatChanged || projectChanged) {
+        if (titleChanged || dateChanged || timeChanged || repeatChanged || projectChanged || priorityChanged) {
             try {
                 await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                     title: newTitle,
                     dueDate: editSelectedDueDate,
                     dueTime: editSelectedDueTime,
                     dueRepeat: editSelectedDueRepeat,
-                    projectId: editSelectedProjectId
+                    projectId: editSelectedProjectId,
+                    priority: editSelectedPriority
                 });
             } catch (err) {
                 console.error("Ошибка сохранения задачи:", err);
@@ -2283,13 +2612,20 @@ function renderTasks() {
     // Вычисляем счетчики для сайдбара
     const todayObj = new Date();
     const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+    const tomorrowObj = new Date();
+    tomorrowObj.setDate(tomorrowObj.getDate() + 1);
+    const tomorrowStr = `${tomorrowObj.getFullYear()}-${String(tomorrowObj.getMonth() + 1).padStart(2, '0')}-${String(tomorrowObj.getDate()).padStart(2, '0')}`;
 
     const isTodayTask = (t) => {
         return t.dueDate === todayStr;
     };
+    const isTomorrowTask = (t) => {
+        return t.dueDate === tomorrowStr;
+    };
 
     const inboxActiveCount = activeTasks.filter(t => !t.projectId).length;
     const todayActiveCount = activeTasks.filter(isTodayTask).length;
+    const tomorrowActiveCount = activeTasks.filter(isTomorrowTask).length;
 
     const showCounters = localStorage.getItem('todo_show_sidebar_counters') !== 'hide';
 
@@ -2300,6 +2636,10 @@ function renderTasks() {
     if (todayCounter) {
         todayCounter.textContent = todayActiveCount;
         todayCounter.style.display = (showCounters && todayActiveCount > 0) ? 'inline-block' : 'none';
+    }
+    if (tomorrowCounter) {
+        tomorrowCounter.textContent = tomorrowActiveCount;
+        tomorrowCounter.style.display = (showCounters && tomorrowActiveCount > 0) ? 'inline-block' : 'none';
     }
 
     const trashCounter = document.getElementById('trashCounter');
@@ -2327,6 +2667,9 @@ function renderTasks() {
     if (currentRoute === 'today') {
         displayActiveTasks = activeTasks.filter(isTodayTask);
         displayCompletedTasks = completedTasks.filter(isTodayTask);
+    } else if (currentRoute === 'tomorrow') {
+        displayActiveTasks = activeTasks.filter(isTomorrowTask);
+        displayCompletedTasks = completedTasks.filter(isTomorrowTask);
     } else if (currentRoute.startsWith('project/')) {
         const projectId = currentRoute.split('/')[1];
         displayActiveTasks = activeTasks.filter(t => t.projectId === projectId);
@@ -2430,7 +2773,7 @@ function renderTasks() {
 
 function createTaskRowElement(task) {
     const item = document.createElement('div');
-    item.className = `task-item ${task.completed ? 'completed' : ''}`;
+    item.className = `task-item ${task.completed ? 'completed' : ''} priority-${task.priority || 0}`;
     item.setAttribute('data-id', task.id);
 
     if (task.deleted) {
@@ -2848,6 +3191,13 @@ function startProjectsForUser(uid) {
                 setAddTaskProject(null);
             } else {
                 setAddTaskProject(projectId);
+                // Проект существует, обновляем заголовок в шапке и во вкладке браузера
+                const proj = projectsList.find(p => p.id === projectId);
+                const titleEl = document.querySelector('.list-title');
+                if (titleEl && proj) {
+                    titleEl.textContent = proj.name;
+                }
+                updateBrowserTitle();
             }
         } else {
             setAddTaskProject(addTaskSelectedProjectId);

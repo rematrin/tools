@@ -2830,3 +2830,77 @@ body.dark .appearance-card-preview {
 .switch-container input:checked + .slider:before {
     transform: translateX(20px);
 }
+
+/* Priority System Checkbox Styles */
+.task-item.priority-3 .custom-checkbox {
+    border-color: #dc2626 !important;
+    background-color: rgba(220, 38, 38, 0.08) !important;
+}
+.task-item.priority-3 .custom-checkbox:hover {
+    background-color: rgba(220, 38, 38, 0.15) !important;
+}
+.task-item.priority-3 .custom-checkbox svg {
+    color: #dc2626 !important;
+}
+
+.task-item.priority-2 .custom-checkbox {
+    border-color: #d97706 !important;
+    background-color: rgba(217, 119, 6, 0.08) !important;
+}
+.task-item.priority-2 .custom-checkbox:hover {
+    background-color: rgba(217, 119, 6, 0.15) !important;
+}
+.task-item.priority-2 .custom-checkbox svg {
+    color: #d97706 !important;
+}
+
+.task-item.priority-1 .custom-checkbox {
+    border-color: #2563eb !important;
+    background-color: rgba(37, 99, 235, 0.08) !important;
+}
+.task-item.priority-1 .custom-checkbox:hover {
+    background-color: rgba(37, 99, 235, 0.15) !important;
+}
+.task-item.priority-1 .custom-checkbox svg {
+    color: #2563eb !important;
+}
+
+/* Completed Priority Checkbox Styles */
+.task-item.completed.priority-3 .custom-checkbox {
+    background-color: #dc2626 !important;
+    border-color: #dc2626 !important;
+}
+.task-item.completed.priority-2 .custom-checkbox {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+}
+.task-item.completed.priority-1 .custom-checkbox {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+}
+.task-item.completed.priority-3 .custom-checkbox svg,
+.task-item.completed.priority-2 .custom-checkbox svg,
+.task-item.completed.priority-1 .custom-checkbox svg {
+    color: #ffffff !important;
+}
+
+/* Priority Dropdown Styling */
+.priority-dropdown {
+    padding: 4px;
+}
+.priority-opt-btn {
+    transition: background-color 0.15s ease;
+}
+.priority-opt-btn:hover {
+    background-color: var(--hover-bg) !important;
+}
+body.dark .priority-opt-btn:hover {
+    background-color: var(--hover-bg) !important;
+}
+
+.preview-icon svg {
+    width: 14px;
+    height: 14px;
+    display: block;
+    color: var(--text-secondary);
+}

@@ -1632,14 +1632,17 @@ function createTaskRowElement(task) {
                         </button>
                         ${projectsList.map(proj => {
         const isCurrent = task.projectId === proj.id;
+        const iconHtml = proj.iconUrl ?
+            `<img src="${proj.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 0;">` :
+            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0;">
+                <line x1="4" y1="9" x2="20" y2="9"></line>
+                <line x1="4" y1="15" x2="20" y2="15"></line>
+                <line x1="10" y1="3" x2="8" y2="21"></line>
+                <line x1="16" y1="3" x2="14" y2="21"></line>
+            </svg>`;
         return `
                                 <button class="dropdown-item btn-select-project ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                                        <line x1="4" y1="9" x2="20" y2="9"></line>
-                                        <line x1="4" y1="15" x2="20" y2="15"></line>
-                                        <line x1="10" y1="3" x2="8" y2="21"></line>
-                                        <line x1="16" y1="3" x2="14" y2="21"></line>
-                                    </svg>
+                                    ${iconHtml}
                                     <span>${escapeHtml(proj.name)}</span>
                                     ${isCurrent ? `
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="3" style="margin-left: auto;">

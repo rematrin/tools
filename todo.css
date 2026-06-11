@@ -2618,3 +2618,90 @@ body.dark .appearance-card-preview {
         width: 100% !important;
     }
 }
+
+/* --- ВЫБОР ПРОЕКТА ДЛЯ НОВОЙ ЗАДАЧИ --- */
+.add-task-project-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.project-dropdown {
+    width: 220px !important;
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 6px !important;
+    gap: 2px !important;
+}
+
+.project-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+.project-dropdown::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: 3px;
+}
+
+.project-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    box-sizing: border-box;
+}
+
+.project-dropdown .dropdown-item:hover {
+    background-color: var(--hover-bg);
+}
+
+.project-dropdown .dropdown-item-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.project-dropdown .dropdown-item-left span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.project-dropdown .dropdown-item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.project-dropdown .dropdown-item-icon img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.project-dropdown .dropdown-item-icon svg {
+    width: 16px;
+    height: 16px;
+    color: var(--text-secondary);
+}
+
+.project-dropdown .dropdown-item-checkmark {
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: 8px;
+}

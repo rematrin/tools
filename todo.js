@@ -10,7 +10,8 @@ import {
     deleteDoc,
     updateDoc,
     doc,
-    serverTimestamp
+    serverTimestamp,
+    writeBatch
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const db = getFirestore();
@@ -149,6 +150,9 @@ const completedSection = document.getElementById('completedSection');
 const completedToggle = document.getElementById('completedToggle');
 const completedToggleText = document.getElementById('completedToggleText');
 const completedTasksContainer = document.getElementById('completedTasksContainer');
+const completedClearBtn = document.getElementById('completedClearBtn');
+
+let currentDisplayCompletedTasks = [];
 
 const contentSidebarToggle = document.getElementById('contentSidebarToggle');
 const sidebarCloseToggle = document.getElementById('sidebarCloseToggle');
@@ -923,6 +927,14 @@ function isDateOverdue(dueDateStr) {
     return dueDate < today;
 }
 
+// Проверка, является ли дата сегодняшней
+function isDateToday(dueDateStr) {
+    if (!dueDateStr) return false;
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    return dueDateStr === todayStr;
+}
+
 // Рендеринг календарной сетки
 function renderCalendarGrid() {
     const monthsRu = [
@@ -1400,10 +1412,40 @@ function updateCompletedToggleUI() {
     if (isCompletedSectionCollapsed) {
         completedToggle.classList.add('collapsed');
         completedTasksContainer.classList.add('collapsed');
+        if (completedClearBtn) completedClearBtn.style.display = 'none';
     } else {
         completedToggle.classList.remove('collapsed');
         completedTasksContainer.classList.remove('collapsed');
+        if (completedClearBtn) completedClearBtn.style.display = 'block';
     }
+}
+
+// Обработчик очистки выполненных задач
+if (completedClearBtn) {
+    completedClearBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (currentDisplayCompletedTasks.length === 0) return;
+
+        showCustomConfirm(
+            "Очистить выполненные?",
+            `Вы действительно хотите переместить все выполненные задачи (${currentDisplayCompletedTasks.length}) в корзину?`,
+            "Очистить",
+            async () => {
+                try {
+                    const batch = writeBatch(db);
+                    currentDisplayCompletedTasks.forEach(t => {
+                        batch.update(doc(db, 'users', currentUid, 'tasks', t.id), {
+                            deleted: true,
+                            deletedAt: serverTimestamp()
+                        });
+                    });
+                    await batch.commit();
+                } catch (err) {
+                    console.error("Ошибка при очистке выполненных задач:", err);
+                }
+            }
+        );
+    });
 }
 
 // Функция роутинга (обработки URL хэшей)
@@ -1722,12 +1764,69 @@ if (taskTitleInput) {
 async function deleteTask(taskId) {
     if (!currentUid || !taskId) return;
     try {
-        await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
+        const promises = [];
+        promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
             deleted: true,
             deletedAt: serverTimestamp()
+        }));
+
+        // Каскадное перемещение подзадач в Корзину
+        const subtasks = allTasks.filter(t => t.parentId === taskId && !t.deleted);
+        subtasks.forEach(sub => {
+            promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', sub.id), {
+                deleted: true,
+                deletedAt: serverTimestamp()
+            }));
         });
+
+        await Promise.all(promises);
     } catch (err) {
         console.error("Ошибка перемещения задачи в корзину:", err);
+    }
+}
+
+// Дублирование задачи (копирование со всеми свойствами и подзадачами)
+async function duplicateTask(task) {
+    if (!currentUid || !task) return;
+    try {
+        const dupTask = {
+            title: task.title,
+            completed: false,
+            dueDate: task.dueDate || null,
+            dueTime: task.dueTime || null,
+            dueRepeat: task.dueRepeat || null,
+            projectId: task.projectId || null,
+            priority: task.priority || 0,
+            order: (task.order || 0) + 0.001,
+            createdAt: serverTimestamp()
+        };
+        if (task.parentId) {
+            dupTask.parentId = task.parentId;
+        }
+
+        const docRef = await addDoc(collection(db, 'users', currentUid, 'tasks'), dupTask);
+        const newTaskId = docRef.id;
+
+        // Дублируем подзадачи (только для родительских задач)
+        if (!task.parentId) {
+            const subtasks = allTasks.filter(t => t.parentId === task.id && !t.deleted);
+            for (const sub of subtasks) {
+                await addDoc(collection(db, 'users', currentUid, 'tasks'), {
+                    title: sub.title,
+                    completed: false,
+                    dueDate: sub.dueDate || null,
+                    dueTime: sub.dueTime || null,
+                    dueRepeat: sub.dueRepeat || null,
+                    projectId: sub.projectId || null,
+                    priority: sub.priority || 0,
+                    order: sub.order || 0,
+                    parentId: newTaskId,
+                    createdAt: serverTimestamp()
+                });
+            }
+        }
+    } catch (err) {
+        console.error("Ошибка дублирования задачи:", err);
     }
 }
 
@@ -1735,10 +1834,22 @@ async function deleteTask(taskId) {
 async function restoreTask(taskId) {
     if (!currentUid || !taskId) return;
     try {
-        await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
+        const promises = [];
+        promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
             deleted: false,
             deletedAt: null
+        }));
+
+        // Каскадное восстановление подзадач
+        const subtasks = allTasks.filter(t => t.parentId === taskId && t.deleted);
+        subtasks.forEach(sub => {
+            promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', sub.id), {
+                deleted: false,
+                deletedAt: null
+            }));
         });
+
+        await Promise.all(promises);
     } catch (err) {
         console.error("Ошибка восстановления задачи:", err);
     }
@@ -1748,7 +1859,16 @@ async function restoreTask(taskId) {
 async function deleteTaskPermanently(taskId) {
     if (!currentUid || !taskId) return;
     try {
-        await deleteDoc(doc(db, 'users', currentUid, 'tasks', taskId));
+        const promises = [];
+        promises.push(deleteDoc(doc(db, 'users', currentUid, 'tasks', taskId)));
+
+        // Каскадное удаление подзадач навсегда
+        const subtasks = allTasks.filter(t => t.parentId === taskId);
+        subtasks.forEach(sub => {
+            promises.push(deleteDoc(doc(db, 'users', currentUid, 'tasks', sub.id)));
+        });
+
+        await Promise.all(promises);
     } catch (err) {
         console.error("Ошибка удаления задачи навсегда:", err);
     }
@@ -1763,8 +1883,15 @@ function emptyTrash() {
         "Очистить",
         async () => {
             const deletedTasks = allTasks.filter(t => t.deleted);
-            for (const task of deletedTasks) {
-                await deleteDoc(doc(db, 'users', currentUid, 'tasks', task.id));
+            if (deletedTasks.length === 0) return;
+            try {
+                const batch = writeBatch(db);
+                deletedTasks.forEach(task => {
+                    batch.delete(doc(db, 'users', currentUid, 'tasks', task.id));
+                });
+                await batch.commit();
+            } catch (err) {
+                console.error("Ошибка при очистке корзины:", err);
             }
         }
     );
@@ -1840,6 +1967,25 @@ async function toggleTaskCompleted(taskId, currentStatus) {
             });
         }
         promises.push(updatePromise);
+
+        // 1.1. Каскадное выполнение подзадач при завершении родительской задачи
+        if (!currentStatus) {
+            const subtasksToUpdate = allTasks.filter(t => t.parentId === taskId && !t.deleted && !t.completed);
+            subtasksToUpdate.forEach(subtask => {
+                let subPromise;
+                if (deleteCompletedPref) {
+                    subPromise = updateDoc(doc(db, 'users', currentUid, 'tasks', subtask.id), {
+                        deleted: true,
+                        deletedAt: serverTimestamp()
+                    });
+                } else {
+                    subPromise = updateDoc(doc(db, 'users', currentUid, 'tasks', subtask.id), {
+                        completed: true
+                    });
+                }
+                promises.push(subPromise);
+            });
+        }
 
         // 2. Подготавливаем создание следующей повторяющейся задачи
         let addPromise = null;
@@ -2718,9 +2864,8 @@ function renderTasks() {
         } else {
             activeTasksContainer.innerHTML = `
                 <div class="empty-state">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 14 14"></polyline>
+                    <svg width="48" height="48" viewBox="0 0 640 640" fill="currentColor">
+                        <path d="M155.8 96C123.9 96 96.9 119.4 92.4 150.9L64.6 345.2C64.2 348.2 64 351.2 64 354.3L64 480C64 515.3 92.7 544 128 544L512 544C547.3 544 576 515.3 576 480L576 354.3C576 351.3 575.8 348.2 575.4 345.2L547.6 150.9C543.1 119.4 516.1 96 484.2 96L155.8 96zM155.8 160L484.3 160L511.7 352L451.8 352C439.7 352 428.6 358.8 423.2 369.7L408.9 398.3C403.5 409.1 392.4 416 380.3 416L259.9 416C247.8 416 236.7 409.2 231.3 398.3L217 369.7C211.6 358.9 200.5 352 188.4 352L128.3 352L155.8 160z"/>
                     </svg>
                     <h3 class="empty-title">Все дела сделаны!</h3>
                     <p class="empty-text">Добавьте новую задачу выше, чтобы спланировать свой день.</p>
@@ -2728,13 +2873,13 @@ function renderTasks() {
             `;
         }
     } else {
-        displayActiveTasks.forEach(task => {
-            const el = createTaskRowElement(task);
-            activeTasksContainer.appendChild(el);
-        });
-
-        // Добавляем футер с количеством элементов в Корзине
         if (currentRoute === 'trash') {
+            displayActiveTasks.forEach(task => {
+                const el = createTaskRowElement(task);
+                activeTasksContainer.appendChild(el);
+            });
+
+            // Добавляем футер с количеством элементов в Корзине
             const footerDiv = document.createElement('div');
             footerDiv.style.textAlign = 'center';
             footerDiv.style.marginTop = '24px';
@@ -2743,11 +2888,46 @@ function renderTasks() {
             footerDiv.style.fontWeight = '500';
             footerDiv.textContent = `${displayActiveTasks.length} в корзине`;
             activeTasksContainer.appendChild(footerDiv);
+        } else {
+            // Разделяем на родительские задачи и подзадачи
+            const activeParentTasks = [];
+            displayActiveTasks.forEach(t => {
+                if (!t.parentId) {
+                    if (!activeParentTasks.some(p => p.id === t.id)) {
+                        activeParentTasks.push(t);
+                    }
+                } else {
+                    const parent = allTasks.find(pt => pt.id === t.parentId && !pt.deleted);
+                    if (parent && !activeParentTasks.some(p => p.id === parent.id)) {
+                        activeParentTasks.push(parent);
+                    }
+                }
+            });
+
+            sortTasksByOrder(activeParentTasks);
+
+            activeParentTasks.forEach(task => {
+                const el = createTaskRowElement(task);
+                activeTasksContainer.appendChild(el);
+
+                // Рендерим подзадачи родительской задачи (как активные, так и выполненные)
+                const subtasks = allTasks.filter(t => t.parentId === task.id && !t.deleted);
+                sortTasksByOrder(subtasks);
+
+                const isCollapsed = isParentTaskCollapsed(task.id);
+                if (!isCollapsed) {
+                    subtasks.forEach(subtask => {
+                        const subEl = createTaskRowElement(subtask);
+                        activeTasksContainer.appendChild(subEl);
+                    });
+                }
+            });
         }
     }
 
     // 2. РЕНДЕРИМ ВЫПОЛНЕННЫЕ ЗАДАЧИ
     completedTasksContainer.innerHTML = '';
+    currentDisplayCompletedTasks = displayCompletedTasks;
 
     if (displayCompletedTasks.length === 0) {
         if (completedSection) completedSection.style.display = 'none';
@@ -2755,9 +2935,37 @@ function renderTasks() {
         if (completedSection) completedSection.style.display = 'block';
         if (completedToggleText) completedToggleText.textContent = `Выполненные (${displayCompletedTasks.length})`;
 
-        displayCompletedTasks.forEach(task => {
+        const completedParentTasks = [];
+        displayCompletedTasks.forEach(t => {
+            if (!t.parentId) {
+                if (!completedParentTasks.some(p => p.id === t.id)) {
+                    completedParentTasks.push(t);
+                }
+            } else {
+                const parent = allTasks.find(pt => pt.id === t.parentId && !pt.deleted);
+                if (parent && !completedParentTasks.some(p => p.id === parent.id)) {
+                    completedParentTasks.push(parent);
+                }
+            }
+        });
+
+        sortTasksByOrder(completedParentTasks);
+
+        completedParentTasks.forEach(task => {
             const el = createTaskRowElement(task);
             completedTasksContainer.appendChild(el);
+
+            // Рендерим только выполненные подзадачи для выполненного родителя
+            const subtasks = allTasks.filter(t => t.parentId === task.id && t.completed && !t.deleted);
+            sortTasksByOrder(subtasks);
+
+            const isCollapsed = isParentTaskCollapsed(task.id);
+            if (!isCollapsed) {
+                subtasks.forEach(subtask => {
+                    const subEl = createTaskRowElement(subtask);
+                    completedTasksContainer.appendChild(subEl);
+                });
+            }
         });
 
         updateCompletedToggleUI();
@@ -2771,13 +2979,51 @@ function renderTasks() {
     renderProjects();
 }
 
+// Проверка свернутости родительской задачи
+function isParentTaskCollapsed(taskId) {
+    try {
+        const collapsedIds = JSON.parse(localStorage.getItem('todo_collapsed_parent_tasks') || '[]');
+        return collapsedIds.includes(taskId);
+    } catch (e) {
+        return false;
+    }
+}
+
+// Переключение свернутости родительской задачи
+function toggleParentTaskCollapsed(taskId) {
+    try {
+        let collapsedIds = JSON.parse(localStorage.getItem('todo_collapsed_parent_tasks') || '[]');
+        if (collapsedIds.includes(taskId)) {
+            collapsedIds = collapsedIds.filter(id => id !== taskId);
+        } else {
+            collapsedIds.push(taskId);
+        }
+        localStorage.setItem('todo_collapsed_parent_tasks', JSON.stringify(collapsedIds));
+    } catch (e) {
+        // ignore
+    }
+}
+
 function createTaskRowElement(task) {
+    const isSubtask = !!task.parentId;
+    const hasSubtasks = !isSubtask && allTasks.some(t => t.parentId === task.id && !t.deleted);
+    const isCollapsed = hasSubtasks && isParentTaskCollapsed(task.id);
+
+    const chevronHtml = hasSubtasks ? `
+        <button class="task-collapse-btn ${isCollapsed ? 'collapsed' : ''}" type="button" aria-label="Свернуть/развернуть подзадачи" title="${isCollapsed ? 'Развернуть подзадачи' : 'Свернуть подзадачи'}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+    ` : '';
+
     const item = document.createElement('div');
-    item.className = `task-item ${task.completed ? 'completed' : ''} priority-${task.priority || 0}`;
+    item.className = `task-item ${task.completed ? 'completed' : ''} priority-${task.priority || 0} ${isSubtask ? 'subtask' : ''}`;
     item.setAttribute('data-id', task.id);
 
     if (task.deleted) {
         item.innerHTML = `
+            ${chevronHtml}
             <div class="checkbox-wrapper" style="opacity: 0.5; pointer-events: none;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="color: var(--text-secondary);">
                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -2785,24 +3031,24 @@ function createTaskRowElement(task) {
                 </svg>
             </div>
             <div class="task-content" style="min-width: 0; flex: 1;">
-                <span class="task-title-text" style="color: var(--text-secondary); pointer-events: none; text-decoration: ${task.completed ? 'line-through' : 'none'};">${escapeHtml(task.title)}</span>
-                ${task.dueDate ? `
-                    <span class="task-due-badge" style="opacity: 0.6;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        <span style="vertical-align: middle;">${formatDueDateDisplay(task.dueDate, task.dueTime, task.dueRepeat)}</span>
-                        ${task.dueRepeat ? `
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
-                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
-                            </svg>
-                        ` : ''}
-                    </span>
-                ` : ''}
+                <span class="task-title-text" style="color: var(--text-secondary); pointer-events: none; text-decoration: ${task.completed ? 'line-through' : 'none'};">${formatTaskTitle(task.title)}</span>
             </div>
+            ${task.dueDate ? `
+                <span class="task-due-badge" style="opacity: 0.6; margin-left: auto;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span style="vertical-align: middle;">${formatDueDateDisplay(task.dueDate, task.dueTime, task.dueRepeat)}</span>
+                    ${task.dueRepeat ? `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                        </svg>
+                    ` : ''}
+                </span>
+            ` : ''}
             <div class="task-actions" style="opacity: 1; display: flex; gap: 4px;">
                 <button class="action-btn btn-restore" title="Восстановить">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
@@ -2848,6 +3094,7 @@ function createTaskRowElement(task) {
                 <path d="M288 104C288 81.9 270.1 64 248 64L200 64C177.9 64 160 81.9 160 104L160 152C160 174.1 177.9 192 200 192L248 192C270.1 192 288 174.1 288 152L288 104zM288 296C288 273.9 270.1 256 248 256L200 256C177.9 256 160 273.9 160 296L160 344C160 366.1 177.9 384 200 384L248 384C270.1 384 288 366.1 288 344L288 296zM160 488L160 536C160 558.1 177.9 576 200 576L248 576C270.1 576 288 558.1 288 536L288 488C288 465.9 270.1 448 248 448L200 448C177.9 448 160 465.9 160 488zM480 104C480 81.9 462.1 64 440 64L392 64C369.9 64 352 81.9 352 104L352 152C352 174.1 369.9 192 392 192L440 192C462.1 192 480 174.1 480 152L480 104zM352 296L352 344C352 366.1 369.9 384 392 384L440 384C462.1 384 480 366.1 480 344L480 296C480 273.9 462.1 256 440 256L392 256C369.9 256 352 273.9 352 296zM480 488C480 465.9 462.1 448 440 448L392 448C369.9 448 352 465.9 352 488L352 536C352 558.1 369.9 576 392 576L440 576C462.1 576 480 558.1 480 536L480 488z"/>
             </svg>
         </button>
+        ${chevronHtml}
         <div class="checkbox-wrapper">
             <button class="custom-checkbox" aria-label="${task.completed ? 'Отметить невыполненной' : 'Отметить выполненной'}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -2856,24 +3103,24 @@ function createTaskRowElement(task) {
             </button>
         </div>
         <div class="task-content">
-            <span class="task-title-text">${escapeHtml(task.title)}</span>
-            ${task.dueDate ? `
-                <span class="task-due-badge ${isDateOverdue(task.dueDate) ? 'overdue' : ''}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                    <span style="vertical-align: middle;">${formatDueDateDisplay(task.dueDate, task.dueTime, task.dueRepeat)}</span>
-                    ${task.dueRepeat ? `
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
-                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
-                        </svg>
-                    ` : ''}
-                </span>
-            ` : ''}
+            <span class="task-title-text">${formatTaskTitle(task.title)}</span>
         </div>
+        ${task.dueDate ? `
+            <span class="task-due-badge ${isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '')}" style="margin-left: auto;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span style="vertical-align: middle;">${formatDueDateDisplay(task.dueDate, task.dueTime, task.dueRepeat)}</span>
+                ${task.dueRepeat ? `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                    </svg>
+                ` : ''}
+            </span>
+        ` : ''}
         <div class="task-actions">
             <button class="action-btn btn-more" title="Действия">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -2883,19 +3130,115 @@ function createTaskRowElement(task) {
                 </svg>
             </button>
             <div class="task-actions-dropdown" style="display: none;">
+                ${task.completed ? `
+                <button class="dropdown-item btn-delete">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <span>Удалить</span>
+                </button>
+                ` : `
                 <button class="dropdown-item btn-edit">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
-                    <span>Редактировать</span>
+                    <span>Изменить</span>
                 </button>
+                
+                <div class="dropdown-divider"></div>
+                
+                <div class="dropdown-section dropdown-section-due">
+                    <div class="dropdown-section-title">Срок</div>
+                    <div class="due-options-row">
+                        <button class="due-opt-btn btn-due-today" type="button" data-tooltip="Сегодня">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                                <text x="12" y="19" font-size="8.5" font-family="-apple-system, system-ui, sans-serif" font-weight="bold" fill="currentColor" stroke="none" text-anchor="middle">${new Date().getDate()}</text>
+                            </svg>
+                        </button>
+                        <button class="due-opt-btn btn-due-tomorrow" type="button" data-tooltip="Завтра">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="4"></circle>
+                                <line x1="12" y1="1" x2="12" y2="4"></line>
+                                <line x1="12" y1="20" x2="12" y2="23"></line>
+                                <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"></line>
+                                <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"></line>
+                                <line x1="1" y1="12" x2="4" y2="12"></line>
+                                <line x1="20" y1="12" x2="23" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"></line>
+                                <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"></line>
+                            </svg>
+                        </button>
+                        <button class="due-opt-btn btn-due-select" type="button" data-tooltip="Выбрать">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                                <rect x="6.5" y="12.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
+                                <rect x="11.25" y="12.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
+                                <rect x="16" y="12.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
+                                <rect x="6.5" y="16.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
+                                <rect x="11.25" y="16.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
+                                <rect x="16" y="16.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
+                            </svg>
+                            <input type="date" class="invisible-due-date-input" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
+                        </button>
+                        <button class="due-opt-btn btn-due-none" type="button" data-tooltip="Без срока">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="9"></circle>
+                                <line x1="5.64" y1="5.64" x2="18.36" y2="18.36"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="dropdown-divider"></div>
+                
+                <div class="dropdown-section dropdown-section-priority">
+                    <div class="dropdown-section-title">Приоритет</div>
+                    <div class="priority-options-row">
+                        <button class="prio-opt-btn flag-red ${task.priority === 3 ? 'active' : ''}" type="button" data-priority="3" data-tooltip="Приоритет 1">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                            </svg>
+                        </button>
+                        <button class="prio-opt-btn flag-orange ${task.priority === 2 ? 'active' : ''}" type="button" data-priority="2" data-tooltip="Приоритет 2">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                            </svg>
+                        </button>
+                        <button class="prio-opt-btn flag-blue ${task.priority === 1 ? 'active' : ''}" type="button" data-priority="1" data-tooltip="Приоритет 3">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                            </svg>
+                        </button>
+                        <button class="prio-opt-btn flag-white ${task.priority === 0 || !task.priority ? 'active' : ''}" type="button" data-priority="0" data-tooltip="Приоритет 4">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                <line x1="4" y1="22" x2="4" y2="15"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="dropdown-divider"></div>
+                
+                ${!isSubtask ? `
                 <div class="dropdown-submenu-container">
                     <button class="dropdown-item btn-move-project">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; width: 14px; height: 14px;">
                             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                         </svg>
-                        <span>Переместить в..</span>
+                        <span>Перенести в..</span>
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left: auto; color: var(--text-secondary); flex-shrink: 0;">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
@@ -2914,29 +3257,51 @@ function createTaskRowElement(task) {
                             ` : ''}
                         </button>
                         ${projectsList.map(proj => {
-        const isCurrent = task.projectId === proj.id;
-        const iconHtml = proj.iconUrl ?
-            `<img src="${proj.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 0;">` :
-            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0;">
-                <line x1="4" y1="9" x2="20" y2="9"></line>
-                <line x1="4" y1="15" x2="20" y2="15"></line>
-                <line x1="10" y1="3" x2="8" y2="21"></line>
-                <line x1="16" y1="3" x2="14" y2="21"></line>
-            </svg>`;
-        return `
-                                <button class="dropdown-item btn-select-project ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}">
-                                    ${iconHtml}
-                                    <span>${escapeHtml(proj.name)}</span>
-                                    ${isCurrent ? `
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="3" style="margin-left: auto;">
-                                            <polyline points="20 6 9 17 4 12"></polyline>
-                                        </svg>
-                                    ` : ''}
-                                </button>
-                            `;
-    }).join('')}
+                            const isCurrent = task.projectId === proj.id;
+                            const iconHtml = proj.iconUrl ?
+                                `<img src="${proj.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 0;">` :
+                                `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0;">
+                                    <line x1="4" y1="9" x2="20" y2="9"></line>
+                                    <line x1="4" y1="15" x2="20" y2="15"></line>
+                                    <line x1="10" y1="3" x2="8" y2="21"></line>
+                                    <line x1="16" y1="3" x2="14" y2="21"></line>
+                                </svg>`;
+                            return `
+                                    <button class="dropdown-item btn-select-project ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}">
+                                        ${iconHtml}
+                                        <span>${escapeHtml(proj.name)}</span>
+                                        ${isCurrent ? `
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="3" style="margin-left: auto;">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
+                                        ` : ''}
+                                    </button>
+                                `;
+                        }).join('')}
                     </div>
                 </div>
+                ` : ''}
+                
+                ${!isSubtask ? `
+                <button class="dropdown-item btn-add-subtask">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Добавить подзадачу</span>
+                </button>
+                ` : ''}
+                
+                <button class="dropdown-item btn-duplicate-task">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <span>Дублировать</span>
+                </button>
+                
+                <div class="dropdown-divider"></div>
+                
                 <button class="dropdown-item btn-delete">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
                         <polyline points="3 6 5 6 21 6"></polyline>
@@ -2944,6 +3309,7 @@ function createTaskRowElement(task) {
                     </svg>
                     <span>Удалить</span>
                 </button>
+                `}
             </div>
         </div>
     `;
@@ -2995,8 +3361,8 @@ function createTaskRowElement(task) {
                 let y = clickEvent.clientY;
 
                 // Проверяем, чтобы меню не вылезало за пределы экрана
-                const menuWidth = 170;
-                const menuHeight = 120;
+                const menuWidth = 230;
+                const menuHeight = task.completed ? 80 : 340;
                 if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
                 if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
 
@@ -3031,19 +3397,155 @@ function createTaskRowElement(task) {
         }
     });
 
+    // Навешиваем новые обработчики для Срока и Приоритета
+    if (!task.completed) {
+        const btnDueToday = item.querySelector('.btn-due-today');
+        const btnDueTomorrow = item.querySelector('.btn-due-tomorrow');
+        const btnDueSelect = item.querySelector('.btn-due-select');
+        const btnDueNone = item.querySelector('.btn-due-none');
+
+        const tdyObj = new Date();
+        const todayStr = `${tdyObj.getFullYear()}-${String(tdyObj.getMonth() + 1).padStart(2, '0')}-${String(tdyObj.getDate()).padStart(2, '0')}`;
+
+        const tmwObj = new Date();
+        tmwObj.setDate(tmwObj.getDate() + 1);
+        const tomorrowStr = `${tmwObj.getFullYear()}-${String(tmwObj.getMonth() + 1).padStart(2, '0')}-${String(tmwObj.getDate()).padStart(2, '0')}`;
+
+        if (btnDueToday) {
+            btnDueToday.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                actionsDropdown.style.display = 'none';
+                item.classList.remove('menu-open');
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                        dueDate: todayStr
+                    });
+                } catch (err) {
+                    console.error("Ошибка обновления даты:", err);
+                }
+            });
+        }
+
+        if (btnDueTomorrow) {
+            btnDueTomorrow.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                actionsDropdown.style.display = 'none';
+                item.classList.remove('menu-open');
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                        dueDate: tomorrowStr
+                    });
+                } catch (err) {
+                    console.error("Ошибка обновления даты:", err);
+                }
+            });
+        }
+
+        if (btnDueSelect) {
+            const dateInput = btnDueSelect.querySelector('.invisible-due-date-input');
+            if (dateInput) {
+                btnDueSelect.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (typeof dateInput.showPicker === 'function') {
+                        dateInput.showPicker();
+                    } else {
+                        dateInput.click();
+                    }
+                });
+
+                dateInput.addEventListener('change', async (e) => {
+                    const newDate = e.target.value;
+                    actionsDropdown.style.display = 'none';
+                    item.classList.remove('menu-open');
+                    if (newDate) {
+                        try {
+                            await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                                dueDate: newDate
+                            });
+                        } catch (err) {
+                            console.error("Ошибка обновления даты:", err);
+                        }
+                    }
+                });
+            }
+        }
+
+        if (btnDueNone) {
+            btnDueNone.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                actionsDropdown.style.display = 'none';
+                item.classList.remove('menu-open');
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                        dueDate: null,
+                        dueTime: null,
+                        dueRepeat: null
+                    });
+                } catch (err) {
+                    console.error("Ошибка очистки даты:", err);
+                }
+            });
+        }
+
+        // Приоритеты
+        item.querySelectorAll('.prio-opt-btn').forEach(prioBtn => {
+            prioBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const priorityVal = parseInt(prioBtn.getAttribute('data-priority'), 10);
+                actionsDropdown.style.display = 'none';
+                item.classList.remove('menu-open');
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                        priority: priorityVal
+                    });
+                } catch (err) {
+                    console.error("Ошибка обновления приоритета:", err);
+                }
+            });
+        });
+    }
+
+    // Клик на Дублировать
+    const btnDuplicate = item.querySelector('.btn-duplicate-task');
+    if (btnDuplicate) {
+        btnDuplicate.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            actionsDropdown.style.display = 'none';
+            item.classList.remove('menu-open');
+            await duplicateTask(task);
+        });
+    }
+
+    // Клик на добавление подзадачи
+    if (!isSubtask) {
+        const btnAddSubtask = item.querySelector('.btn-add-subtask');
+        if (btnAddSubtask) {
+            btnAddSubtask.addEventListener('click', (e) => {
+                e.stopPropagation();
+                actionsDropdown.style.display = 'none';
+                item.classList.remove('menu-open');
+                showInlineSubtaskInput(item, task.id, task.projectId);
+            });
+        }
+    }
+
     // Клик на кнопку редактирования из меню
-    btnEdit.addEventListener('click', (e) => {
-        e.stopPropagation();
-        actionsDropdown.style.display = 'none';
-        item.classList.remove('menu-open');
-        enableInlineEdit(item, task, titleSpan);
-    });
+    if (btnEdit) {
+        btnEdit.addEventListener('click', (e) => {
+            e.stopPropagation();
+            actionsDropdown.style.display = 'none';
+            item.classList.remove('menu-open');
+            enableInlineEdit(item, task, titleSpan);
+        });
+    }
 
     // Двойной клик на текст задачи также переводит в режим редактирования
-    titleSpan.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        enableInlineEdit(item, task, titleSpan);
-    });
+    if (!task.completed) {
+        titleSpan.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            enableInlineEdit(item, task, titleSpan);
+        });
+    }
 
     // Клик на удаление из меню
     btnDelete.addEventListener('click', (e) => {
@@ -3059,21 +3561,6 @@ function createTaskRowElement(task) {
             }
         );
     });
-
-    // Обработчик для раскрытия подменю "Переместить в"
-    // Обработчик для раскрытия подменю "Переместить в" (только для тач-устройств по клику)
-    const btnMoveProject = item.querySelector('.btn-move-project');
-    const submenu = item.querySelector('.dropdown-submenu');
-
-    if (btnMoveProject && submenu) {
-        btnMoveProject.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (window.matchMedia('(hover: none)').matches) {
-                const isHidden = submenu.style.display === 'none';
-                submenu.style.display = isHidden ? 'flex' : 'none';
-            }
-        });
-    }
 
     // Обработчик выбора проекта в подменю
     item.querySelectorAll('.btn-select-project').forEach(projBtn => {
@@ -3127,7 +3614,119 @@ function createTaskRowElement(task) {
         item.removeAttribute('draggable');
     });
 
+    // Обработчик кнопки свертывания/развертывания подзадач
+    if (hasSubtasks) {
+        const collapseBtn = item.querySelector('.task-collapse-btn');
+        if (collapseBtn) {
+            collapseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleParentTaskCollapsed(task.id);
+                renderTasks();
+            });
+        }
+    }
+
     return item;
+}
+
+// Функция отображения инпута для создания новой подзадачи
+function showInlineSubtaskInput(parentTaskEl, parentId, projectId) {
+    // Проверяем, не открыт ли уже инпут подзадачи для этой задачи
+    const nextSibling = parentTaskEl.nextSibling;
+    if (nextSibling && nextSibling.classList && nextSibling.classList.contains('new-subtask-temp')) {
+        const existingInput = nextSibling.querySelector('input');
+        if (existingInput) existingInput.focus();
+        return;
+    }
+
+    const tempRow = document.createElement('div');
+    tempRow.className = 'new-subtask-temp';
+    tempRow.innerHTML = `
+        <div class="checkbox-wrapper" style="opacity: 0.5; pointer-events: none;">
+            <div class="custom-checkbox"></div>
+        </div>
+        <input type="text" placeholder="Добавить подзадачу..." maxlength="500">
+    `;
+
+    // Вставляем инпут сразу после строки родительской задачи
+    parentTaskEl.parentNode.insertBefore(tempRow, parentTaskEl.nextSibling);
+
+    // Если родительская задача была свернута, развернем её
+    if (isParentTaskCollapsed(parentId)) {
+        toggleParentTaskCollapsed(parentId);
+        renderTasks();
+        
+        // После перерендера DOM находим новую строку родителя и добавляем инпут
+        setTimeout(() => {
+            const newParentEl = document.querySelector(`.task-item[data-id="${parentId}"]`);
+            if (newParentEl) {
+                showInlineSubtaskInput(newParentEl, parentId, projectId);
+            }
+        }, 50);
+        return;
+    }
+
+    const input = tempRow.querySelector('input');
+    input.focus();
+
+    let finished = false;
+    async function saveSubtask() {
+        if (finished) return;
+        finished = true;
+        
+        const text = input.value.trim();
+        tempRow.remove();
+
+        if (text && text.length <= 500) {
+            // Находим максимальный order среди существующих подзадач этого родителя
+            const siblingSubtasks = allTasks.filter(t => t.parentId === parentId && !t.deleted);
+            let newOrder = 0;
+            if (siblingSubtasks.length > 0) {
+                const maxOrder = Math.max(...siblingSubtasks.map(t => t.order !== undefined ? t.order : 0));
+                newOrder = maxOrder + 1;
+            }
+
+            try {
+                await addDoc(collection(db, 'users', currentUid, 'tasks'), {
+                    title: text,
+                    completed: false,
+                    dueDate: null,
+                    dueTime: null,
+                    dueRepeat: null,
+                    projectId: projectId || null,
+                    priority: 0,
+                    order: newOrder,
+                    parentId: parentId,
+                    createdAt: serverTimestamp()
+                });
+            } catch (err) {
+                console.error("Ошибка при создании подзадачи:", err);
+            }
+        }
+    }
+
+    function cancelSubtask() {
+        if (finished) return;
+        finished = true;
+        tempRow.remove();
+    }
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            saveSubtask();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelSubtask();
+        }
+    });
+
+    input.addEventListener('blur', () => {
+        // Задержка на случай, если фокус ушел из-за нажатия Enter
+        setTimeout(() => {
+            cancelSubtask();
+        }, 150);
+    });
 }
 
 // Вспомогательная функция для экранирования HTML
@@ -3140,6 +3739,16 @@ function escapeHtml(text) {
         "'": '&#039;'
     };
     return text.replace(/[&<>"']/g, function (m) { return map[m]; });
+}
+
+// Функция форматирования названия задачи с поддержкой кликабельных ссылок
+function formatTaskTitle(title) {
+    if (!title) return '';
+    const escaped = escapeHtml(title);
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return escaped.replace(urlRegex, (url) => {
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="task-title-link" onclick="event.stopPropagation();">${url}</a>`;
+    });
 }
 
 // Обработчик изменения размера окна для корректной высоты всех textarea
@@ -3231,7 +3840,7 @@ function renderProjects() {
         const isActive = currentRoute === projectHash;
 
         // Calculate task count for this project
-        const projectTaskCount = allTasks.filter(t => !t.completed && t.projectId === project.id).length;
+        const projectTaskCount = allTasks.filter(t => !t.deleted && !t.completed && t.projectId === project.id).length;
 
         const iconHtml = project.iconUrl ?
             `<img src="${project.iconUrl}" style="width: 16px; height: 16px; object-fit: contain; border-radius: 4px; flex-shrink: 0;">` :
@@ -3243,6 +3852,7 @@ function renderProjects() {
             </svg>`;
 
         const showCounters = localStorage.getItem('todo_show_sidebar_counters') !== 'hide';
+        const hideProjectCount = project.hideCount === true;
 
         itemContainer.innerHTML = `
             <a href="#${projectHash}" class="menu-item ${isActive ? 'active' : ''}">
@@ -3252,7 +3862,7 @@ function renderProjects() {
                     </span>
                     <span>${escapeHtml(project.name)}</span>
                 </span>
-                <span class="menu-counter" style="${(showCounters && projectTaskCount > 0) ? '' : 'display:none'}">${projectTaskCount}</span>
+                <span class="menu-counter" style="${(showCounters && !hideProjectCount && projectTaskCount > 0) ? '' : 'display:none'}">${projectTaskCount}</span>
             </a>
             <button class="project-actions-btn" data-id="${project.id}" title="Действия">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -3524,7 +4134,9 @@ function initDragAndDrop() {
             e.preventDefault();
             if (!draggingElement || !placeholder) return;
 
+            const prevElement = placeholder.previousElementSibling;
             const nextElement = placeholder.nextElementSibling;
+
             placeholder.remove();
             placeholder = null;
             
@@ -3534,87 +4146,118 @@ function initDragAndDrop() {
             }
 
             const taskId = draggingElement.getAttribute('data-id');
+            const task = allTasks.find(t => t.id === taskId);
+            if (!task) {
+                draggingElement = null;
+                return;
+            }
 
-            const taskItems = Array.from(container.querySelectorAll('.task-item'));
-            const draggingIndex = taskItems.indexOf(draggingElement);
-            
-            let targetIndex;
-            if (!nextElement) {
-                targetIndex = taskItems.length - 1;
-            } else {
-                let nextIndex = taskItems.indexOf(nextElement);
-                if (draggingIndex < nextIndex) {
-                    targetIndex = nextIndex - 1;
-                } else {
-                    targetIndex = nextIndex;
+            // 1. Определяем targetParentId на основе окружающих элементов в DOM
+            let targetParentId = null;
+            if (prevElement) {
+                const prevTaskId = prevElement.getAttribute('data-id');
+                const prevTask = allTasks.find(t => t.id === prevTaskId);
+                if (prevTask) {
+                    if (prevElement.classList.contains('subtask')) {
+                        // Если предыдущий элемент подзадача, мы наследуем её родителя
+                        targetParentId = prevTask.parentId || null;
+                    } else {
+                        // Предыдущий элемент — основная задача.
+                        // Если следующий элемент — её подзадача, то мы падаем внутрь её списка подзадач
+                        if (nextElement && nextElement.classList.contains('subtask')) {
+                            const nextTaskId = nextElement.getAttribute('data-id');
+                            const nextTask = allTasks.find(t => t.id === nextTaskId);
+                            if (nextTask && nextTask.parentId === prevTask.id) {
+                                targetParentId = prevTask.id;
+                            }
+                        } else {
+                            targetParentId = null;
+                        }
+                    }
                 }
-            }
-
-            // Получаем задачи текущего списка, чтобы рассчитать их order
-            let currentTasks = [];
-
-            const activeTasks = allTasks.filter(t => !t.deleted && !t.completed);
-            const completedTasks = allTasks.filter(t => !t.deleted && t.completed);
-            const isCompletedContainer = container === completedTasksContainer;
-            const targetTasksList = isCompletedContainer ? completedTasks : activeTasks;
-
-            if (currentRoute === 'today') {
-                const todayObj = new Date();
-                const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
-                currentTasks = targetTasksList.filter(t => t.dueDate === todayStr);
-            } else if (currentRoute.startsWith('project/')) {
-                const projectId = currentRoute.split('/')[1];
-                currentTasks = targetTasksList.filter(t => t.projectId === projectId);
-            } else { // inbox
-                currentTasks = targetTasksList.filter(t => !t.projectId);
-            }
-
-            // Сортируем текущие задачи так же, как они отрендерены на экране
-            currentTasks.sort((a, b) => {
-                const orderA = a.order !== undefined ? a.order : 0;
-                const orderB = b.order !== undefined ? b.order : 0;
-                if (orderA !== orderB) return orderA - orderB;
-                const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
-                const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
-                return timeB - timeA;
-            });
-
-            // Находим перемещаемую задачу в массиве данных
-            const movingTask = currentTasks.find(t => t.id === taskId);
-            if (!movingTask) return;
-
-            const movingTaskIndex = currentTasks.indexOf(movingTask);
-            currentTasks.splice(movingTaskIndex, 1);
-            currentTasks.splice(targetIndex, 0, movingTask);
-
-            // Вычисляем новый order
-            let newOrder = 0;
-            if (currentTasks.length === 1) {
-                newOrder = 0;
-            } else if (targetIndex === 0) {
-                const nextTask = currentTasks[1];
-                const nextOrder = nextTask.order !== undefined ? nextTask.order : 0;
-                newOrder = nextOrder - 1000;
-            } else if (targetIndex === currentTasks.length - 1) {
-                const prevTask = currentTasks[currentTasks.length - 2];
-                const prevOrder = prevTask.order !== undefined ? prevTask.order : 0;
-                newOrder = prevOrder + 1000;
             } else {
-                const prevTask = currentTasks[targetIndex - 1];
-                const nextTask = currentTasks[targetIndex + 1];
-                const prevOrder = prevTask.order !== undefined ? prevTask.order : 0;
-                const nextOrder = nextTask.order !== undefined ? nextTask.order : 0;
+                targetParentId = null;
+            }
+
+            // Поиск соседних элементов с таким же родителем для вычисления порядка
+            const findSiblingTask = (startNode, direction, parentId) => {
+                let curr = direction === 'up' ? startNode.previousElementSibling : startNode.nextElementSibling;
+                while (curr) {
+                    if (curr.classList.contains('task-item') && curr !== draggingElement) {
+                        const id = curr.getAttribute('data-id');
+                        const t = allTasks.find(item => item.id === id);
+                        if (t) {
+                            const pId = t.parentId || null;
+                            if (pId === parentId) {
+                                return t;
+                            }
+                        }
+                    }
+                    curr = direction === 'up' ? curr.previousElementSibling : curr.nextElementSibling;
+                }
+                return null;
+            };
+
+            // Вставляем временную метку на место сброса, чтобы искать от неё
+            const tempNode = document.createElement('div');
+            if (nextElement) {
+                container.insertBefore(tempNode, nextElement);
+            } else {
+                container.appendChild(tempNode);
+            }
+
+            const prevSibling = findSiblingTask(tempNode, 'up', targetParentId);
+            const nextSibling = findSiblingTask(tempNode, 'down', targetParentId);
+            tempNode.remove();
+
+            // 2. Вычисляем новый order
+            let newOrder = 0;
+            if (!prevSibling && !nextSibling) {
+                newOrder = 0;
+            } else if (!prevSibling) {
+                newOrder = (nextSibling.order !== undefined ? nextSibling.order : 0) - 1000;
+            } else if (!nextSibling) {
+                newOrder = (prevSibling.order !== undefined ? prevSibling.order : 0) + 1000;
+            } else {
+                const prevOrder = prevSibling.order !== undefined ? prevSibling.order : 0;
+                const nextOrder = nextSibling.order !== undefined ? nextSibling.order : 0;
                 newOrder = (prevOrder + nextOrder) / 2;
+            }
+
+            // 3. Подготовка полей обновления
+            const updateFields = {
+                order: newOrder,
+                parentId: targetParentId
+            };
+
+            // Синхронизируем проект при перемещении в подзадачи
+            if (targetParentId) {
+                const parentTask = allTasks.find(t => t.id === targetParentId);
+                if (parentTask) {
+                    updateFields.projectId = parentTask.projectId || null;
+                }
             }
 
             // Обновляем в Firebase
             if (currentUid && taskId) {
                 try {
-                    await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
-                        order: newOrder
-                    });
+                    const promises = [];
+                    promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), updateFields));
+
+                    // Если задача стала подзадачей другого таска, то все её подзадачи переносим к новому родителю (поддерживаем 1 уровень)
+                    if (targetParentId) {
+                        const subtasks = allTasks.filter(t => t.parentId === taskId && !t.deleted);
+                        subtasks.forEach(sub => {
+                            promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', sub.id), {
+                                parentId: targetParentId,
+                                projectId: updateFields.projectId || null
+                            }));
+                        });
+                    }
+
+                    await Promise.all(promises);
                 } catch (err) {
-                    console.error("Ошибка обновления порядка задач:", err);
+                    console.error("Ошибка при перетаскивании и переупорядочивании задач:", err);
                 }
             }
             draggingElement = null;
@@ -3642,6 +4285,9 @@ initDragAndDrop();
 function showProjectContextMenu(e, projectId, projectName, itemContainer) {
     if (activeContextMenu) activeContextMenu.remove();
 
+    const project = projectsList.find(p => p.id === projectId);
+    const isCountHidden = project && project.hideCount === true;
+
     const menu = document.createElement('div');
     menu.className = 'custom-context-menu';
     menu.innerHTML = `
@@ -3652,6 +4298,21 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
         <div class="ctx-item" id="ctx-rename-project">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             <span>Переименовать</span>
+        </div>
+        <div class="ctx-item" id="ctx-toggle-count-project">
+            ${isCountHidden ? `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Показать количество</span>
+            ` : `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+                <span>Скрыть количество</span>
+            `}
         </div>
         <div class="ctx-item danger" id="ctx-delete-project">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -3689,6 +4350,20 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
 
     menu.style.left = `${x}px`;
     menu.style.top = `${y}px`;
+
+    // Обработчик переключения видимости счетчика проекта
+    menu.querySelector('#ctx-toggle-count-project').addEventListener('click', async (evt) => {
+        evt.stopPropagation();
+        menu.remove();
+        activeContextMenu = null;
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                hideCount: !isCountHidden
+            });
+        } catch (err) {
+            console.error("Ошибка при переключении видимости счетчика проекта:", err);
+        }
+    });
 
     // Обработчик удаления проекта
     menu.querySelector('#ctx-delete-project').addEventListener('click', (evt) => {

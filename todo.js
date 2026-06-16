@@ -5234,6 +5234,12 @@ if (mobileBottomNavEl) {
 // --- ЛОГИКА ДЛЯ МОБИЛЬНОГО БОТОМ-ШИТа И FAB ---
 let mobileAddTaskSheetScrollY = 0;
 
+function preventMobileSheetScroll() {
+    if (window.scrollY !== 0) {
+        window.scrollTo(0, 0);
+    }
+}
+
 function openMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
@@ -5245,6 +5251,9 @@ function openMobileAddTaskSheet() {
         document.body.style.top = `-${mobileAddTaskSheetScrollY}px`;
         document.body.classList.add('mobile-sheet-open');
 
+        // Фиксируем скролл окна на 0, чтобы Safari не поднимал fixed-элементы над клавиатурой с лишним отступом
+        window.addEventListener('scroll', preventMobileSheetScroll, { passive: false });
+
         addTaskForm.classList.add('mobile-active');
         addTaskForm.classList.add('expanded');
         overlay.classList.add('active');
@@ -5253,6 +5262,13 @@ function openMobileAddTaskSheet() {
         if (taskTitleInput) {
             taskTitleInput.placeholder = 'Что бы вы хотели сделать?';
             taskTitleInput.focus();
+            
+            // Сбрасываем скролл окна в 0 после открытия клавиатуры
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+                document.body.scrollTop = 0;
+            }, 80);
+
             updateAddFormCharCount();
         }
     }
@@ -5262,6 +5278,8 @@ function closeMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
+        window.removeEventListener('scroll', preventMobileSheetScroll);
+
         // Разблокируем скролл страницы на уровне body
         document.body.classList.remove('mobile-sheet-open');
         document.body.style.top = '';

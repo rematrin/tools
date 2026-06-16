@@ -5308,7 +5308,13 @@ function updateVisualViewportOffset() {
 function openMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
+    const todoApp = document.querySelector('.todo-app');
+    
     if (addTaskForm && overlay) {
+        if (todoApp) {
+            todoApp.classList.add('sheet-open');
+        }
+        
         addTaskForm.classList.add('mobile-active');
         addTaskForm.classList.add('expanded');
         overlay.classList.add('active');
@@ -5318,10 +5324,7 @@ function openMobileAddTaskSheet() {
         const taskTitleInput = document.getElementById('taskTitleInput');
         if (taskTitleInput) {
             taskTitleInput.placeholder = 'Что бы вы хотели сделать?';
-            const isMobile = window.matchMedia('(max-width: 768px)').matches;
-            if (!isMobile) {
-                taskTitleInput.focus();
-            }
+            taskTitleInput.focus();
             restoreTaskListScroll();
             updateAddFormCharCount();
         }
@@ -5331,7 +5334,13 @@ function openMobileAddTaskSheet() {
 function closeMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
+    const todoApp = document.querySelector('.todo-app');
+    
     if (addTaskForm && overlay) {
+        if (todoApp) {
+            todoApp.classList.remove('sheet-open');
+        }
+        
         addTaskForm.classList.remove('mobile-active');
         addTaskForm.classList.remove('expanded');
         overlay.classList.remove('active');
@@ -5389,12 +5398,22 @@ function updateMobileFabVisibility() {
     }
 }
 
-// Слушатели для позиционирования
+// Слушатели для позиционирования и скролла
 adjustAddTaskFormLocation();
 window.addEventListener('resize', adjustAddTaskFormLocation);
 
 if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', updateVisualViewportOffset);
     window.visualViewport.addEventListener('scroll', updateVisualViewportOffset);
+}
+
+const todoContentEl = document.querySelector('.todo-content');
+if (todoContentEl) {
+    todoContentEl.addEventListener('scroll', () => {
+        const todoApp = document.querySelector('.todo-app');
+        if (todoApp && todoApp.classList.contains('sheet-open')) {
+            todoContentEl.scrollTop = savedTaskListScrollTop;
+        }
+    }, { passive: true });
 }
 

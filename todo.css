@@ -3474,6 +3474,12 @@ body.dark .priority-opt-btn:hover {
         from { transform: translateY(100%); }
         to { transform: translateY(0); }
     }
+
+    .sheet-open .todo-content {
+        overflow: hidden !important;
+        pointer-events: none !important;
+        transform: translateZ(0);
+    }
 }
 
 /* Убираем полупрозрачность контекстного меню на мобильных, когда оно открыто */

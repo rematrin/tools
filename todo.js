@@ -5266,6 +5266,32 @@ function adjustAddTaskFormLocation() {
     }
 }
 
+let savedTaskListScrollTop = 0;
+
+function saveTaskListScroll() {
+    const content = document.querySelector('.todo-content');
+    if (content) savedTaskListScrollTop = content.scrollTop;
+}
+
+function restoreTaskListScroll() {
+    const content = document.querySelector('.todo-content');
+    if (!content) return;
+
+    content.scrollTop = savedTaskListScrollTop;
+
+    requestAnimationFrame(() => {
+        content.scrollTop = savedTaskListScrollTop;
+    });
+
+    setTimeout(() => {
+        content.scrollTop = savedTaskListScrollTop;
+    }, 100);
+
+    setTimeout(() => {
+        content.scrollTop = savedTaskListScrollTop;
+    }, 300);
+}
+
 function updateVisualViewportOffset() {
     const addTaskForm = document.querySelector('.add-task-form');
     if (!addTaskForm || !addTaskForm.classList.contains('mobile-active')) return;
@@ -5276,15 +5302,13 @@ function updateVisualViewportOffset() {
         const bottomOffset = Math.max(0, offsetFromBottom);
         addTaskForm.style.bottom = `${bottomOffset}px`;
     }
+    restoreTaskListScroll();
 }
 
 function openMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
-        // Прокручиваем страницу наверх к форме
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
         addTaskForm.classList.add('mobile-active');
         addTaskForm.classList.add('expanded');
         overlay.classList.add('active');
@@ -5295,6 +5319,7 @@ function openMobileAddTaskSheet() {
         if (taskTitleInput) {
             taskTitleInput.placeholder = 'Что бы вы хотели сделать?';
             taskTitleInput.focus();
+            restoreTaskListScroll();
             updateAddFormCharCount();
         }
     }
@@ -5331,7 +5356,9 @@ if (mobileFabAdd) {
     mobileFabAdd.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        saveTaskListScroll();
         openMobileAddTaskSheet();
+        restoreTaskListScroll();
     });
 }
 

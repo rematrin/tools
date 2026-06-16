@@ -5233,6 +5233,47 @@ if (mobileBottomNavEl) {
 
 // --- ЛОГИКА ДЛЯ МОБИЛЬНОГО БОТОМ-ШИТа И FAB ---
 let mobileAddTaskSheetScrollY = 0;
+let isTouchActiveInsideForm = false;
+
+document.addEventListener('touchstart', (e) => {
+    const form = document.querySelector('.add-task-form');
+    if (form && (form.contains(e.target) || e.target.closest('.due-date-dropdown') || e.target.closest('.project-dropdown') || e.target.closest('.priority-dropdown'))) {
+        isTouchActiveInsideForm = true;
+    } else {
+        isTouchActiveInsideForm = false;
+    }
+}, { passive: true });
+
+document.addEventListener('touchend', () => {
+    setTimeout(() => {
+        isTouchActiveInsideForm = false;
+    }, 300);
+});
+
+function handleVisualViewportChange() {
+    const visualViewport = window.visualViewport;
+    const addTaskForm = document.querySelector('.add-task-form.mobile-active');
+    if (visualViewport && addTaskForm) {
+        const offsetBottom = window.innerHeight - visualViewport.height;
+        addTaskForm.style.bottom = `${Math.max(0, offsetBottom)}px`;
+    }
+}
+
+function handleMobileInputBlur() {
+    const form = document.querySelector('.add-task-form');
+    if (!form || !form.classList.contains('mobile-active')) return;
+    
+    setTimeout(() => {
+        if (!isTouchActiveInsideForm) {
+            closeMobileAddTaskSheet();
+        } else {
+            const taskTitleInput = document.getElementById('taskTitleInput');
+            if (taskTitleInput) {
+                taskTitleInput.focus({ preventScroll: true });
+            }
+        }
+    }, 150);
+}
 
 function openMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
@@ -5249,11 +5290,18 @@ function openMobileAddTaskSheet() {
         addTaskForm.classList.add('expanded');
         overlay.classList.add('active');
         
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', handleVisualViewportChange);
+            window.visualViewport.addEventListener('scroll', handleVisualViewportChange);
+            handleVisualViewportChange();
+        }
+        
         const taskTitleInput = document.getElementById('taskTitleInput');
         if (taskTitleInput) {
             taskTitleInput.placeholder = 'Что бы вы хотели сделать?';
-            taskTitleInput.focus();
+            taskTitleInput.focus({ preventScroll: true });
             updateAddFormCharCount();
+            taskTitleInput.addEventListener('blur', handleMobileInputBlur);
         }
     }
 }
@@ -5262,6 +5310,12 @@ function closeMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
+        if (window.visualViewport) {
+            window.visualViewport.removeEventListener('resize', handleVisualViewportChange);
+            window.visualViewport.removeEventListener('scroll', handleVisualViewportChange);
+        }
+        addTaskForm.style.bottom = '';
+
         // Разблокируем скролл страницы на уровне body
         document.body.classList.remove('mobile-sheet-open');
         document.body.style.top = '';
@@ -5273,6 +5327,7 @@ function closeMobileAddTaskSheet() {
         
         const taskTitleInput = document.getElementById('taskTitleInput');
         if (taskTitleInput) {
+            taskTitleInput.removeEventListener('blur', handleMobileInputBlur);
             taskTitleInput.value = '';
             taskTitleInput.blur();
             taskTitleInput.placeholder = '+ Добавить задачу';

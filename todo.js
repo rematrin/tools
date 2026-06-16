@@ -5266,50 +5266,6 @@ function adjustAddTaskFormLocation() {
     }
 }
 
-let savedTaskListScrollTop = 0;
-
-function saveTaskListScroll() {
-    const content = document.querySelector('.todo-content');
-    if (content) savedTaskListScrollTop = content.scrollTop;
-}
-
-function restoreTaskListScroll() {
-    const content = document.querySelector('.todo-content');
-    if (!content) return;
-
-    content.scrollTop = savedTaskListScrollTop;
-
-    requestAnimationFrame(() => {
-        content.scrollTop = savedTaskListScrollTop;
-    });
-
-    setTimeout(() => {
-        content.scrollTop = savedTaskListScrollTop;
-    }, 100);
-
-    setTimeout(() => {
-        content.scrollTop = savedTaskListScrollTop;
-    }, 300);
-}
-
-// Заморозка прокрутки контента и окна при открытой форме
-function handleContentScrollFreeze(e) {
-    const todoApp = document.querySelector('.todo-app');
-    if (todoApp && todoApp.classList.contains('sheet-open')) {
-        const content = document.querySelector('.todo-content');
-        if (content && content.scrollTop !== savedTaskListScrollTop) {
-            content.scrollTop = savedTaskListScrollTop;
-        }
-    }
-}
-
-function handleWindowScrollFreeze(e) {
-    const todoApp = document.querySelector('.todo-app');
-    if (todoApp && todoApp.classList.contains('sheet-open')) {
-        window.scrollTo(0, 0);
-    }
-}
-
 function updateVisualViewportOffset() {
     const addTaskForm = document.querySelector('.add-task-form');
     if (!addTaskForm || !addTaskForm.classList.contains('mobile-active')) return;
@@ -5320,17 +5276,14 @@ function updateVisualViewportOffset() {
         const bottomOffset = Math.max(0, offsetFromBottom);
         addTaskForm.style.bottom = `${bottomOffset}px`;
     }
-    restoreTaskListScroll();
 }
 
 function openMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
-        saveTaskListScroll();
-
-        const todoApp = document.querySelector('.todo-app');
-        if (todoApp) todoApp.classList.add('sheet-open');
+        // Прокручиваем страницу наверх к форме
+        window.scrollTo({ top: 0, behavior: 'smooth' });
 
         addTaskForm.classList.add('mobile-active');
         addTaskForm.classList.add('expanded');
@@ -5342,7 +5295,6 @@ function openMobileAddTaskSheet() {
         if (taskTitleInput) {
             taskTitleInput.placeholder = 'Что бы вы хотели сделать?';
             taskTitleInput.focus();
-            restoreTaskListScroll();
             updateAddFormCharCount();
         }
     }
@@ -5352,9 +5304,6 @@ function closeMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
-        const todoApp = document.querySelector('.todo-app');
-        if (todoApp) todoApp.classList.remove('sheet-open');
-
         addTaskForm.classList.remove('mobile-active');
         addTaskForm.classList.remove('expanded');
         overlay.classList.remove('active');
@@ -5370,9 +5319,6 @@ function closeMobileAddTaskSheet() {
             taskTitleInput.style.height = 'auto';
             updateAddFormCharCount();
         }
-
-        restoreTaskListScroll();
-
         if (typeof updateMobileFabVisibility === 'function') {
             updateMobileFabVisibility();
         }
@@ -5385,9 +5331,7 @@ if (mobileFabAdd) {
     mobileFabAdd.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        saveTaskListScroll();
         openMobileAddTaskSheet();
-        restoreTaskListScroll();
     });
 }
 
@@ -5415,18 +5359,9 @@ function updateMobileFabVisibility() {
     }
 }
 
-// Слушатели для позиционирования и предотвращения скролла
+// Слушатели для позиционирования
 adjustAddTaskFormLocation();
-window.addEventListener('resize', () => {
-    adjustAddTaskFormLocation();
-    restoreTaskListScroll();
-});
-
-const contentContainerEl = document.querySelector('.todo-content');
-if (contentContainerEl) {
-    contentContainerEl.addEventListener('scroll', handleContentScrollFreeze, { passive: true });
-}
-window.addEventListener('scroll', handleWindowScrollFreeze, { passive: true });
+window.addEventListener('resize', adjustAddTaskFormLocation);
 
 if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', updateVisualViewportOffset);

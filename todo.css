@@ -1262,7 +1262,7 @@ body.dark .dropdown-submenu {
 
     .todo-content {
         margin-left: 0;
-        padding: 20px 16px calc(80px + env(safe-area-inset-bottom, 0px)) 16px; /* Дополнительный отступ снизу под меню */
+        padding: 32px 16px calc(80px + env(safe-area-inset-bottom, 0px)) 16px; /* Дополнительный отступ снизу под меню и сверху для воздуха */
     }
 
     .content-nav-toggle {
@@ -1280,7 +1280,7 @@ body.dark .dropdown-submenu {
     }
 
     .sidebar-close-toggle {
-        display: inline-flex;
+        display: none !important;
     }
 
     .sidebar-overlay.active {

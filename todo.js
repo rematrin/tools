@@ -16,38 +16,13 @@ import {
 
 const db = getFirestore();
 
-// SVG templates for numbers 0-9
-const digitTemplates = {
-    '0': (cx, cy) => `M ${cx-1.5} ${cy-2.5} H ${cx+1.5} V ${cy+2.5} H ${cx-1.5} Z`,
-    '1': (cx, cy) => `M ${cx-1.5} ${cy-1.5} L ${cx} ${cy-2.5} V ${cy+2.5}`,
-    '2': (cx, cy) => `M ${cx-1.5} ${cy-2} C ${cx-1.5} ${cy-3}, ${cx+1.5} ${cy-3}, ${cx+1.5} ${cy-1} C ${cx+1.5} ${cy}, ${cx-1.5} ${cy+1.5}, ${cx-1.5} ${cy+2.5} H ${cx+1.5}`,
-    '3': (cx, cy) => `M ${cx-1.5} ${cy-2.5} H ${cx+1.5} L ${cx} ${cy} L ${cx+1.5} ${cy} C ${cx+1.5} ${cy+1.5}, ${cx} ${cy+2.5}, ${cx-1.5} ${cy+2.5}`,
-    '4': (cx, cy) => `M ${cx-1.5} ${cy-2.5} V ${cy} H ${cx+1.5} M ${cx+1.5} ${cy-2.5} V ${cy+2.5}`,
-    '5': (cx, cy) => `M ${cx+1.5} ${cy-2.5} H ${cx-1.5} V ${cy-0.5} H ${cx+1.5} V ${cy+2.5} H ${cx-1.5}`,
-    '6': (cx, cy) => `M ${cx+1.5} ${cy-2.5} H ${cx-1.5} V ${cy+2.5} H ${cx+1.5} V ${cy} H ${cx-1.5}`,
-    '7': (cx, cy) => `M ${cx-1.5} ${cy-2.5} H ${cx+1.5} L ${cx-0.5} ${cy+2.5}`,
-    '8': (cx, cy) => `M ${cx-1.5} ${cy-2.5} H ${cx+1.5} V ${cy+2.5} H ${cx-1.5} Z M ${cx-1.5} ${cy} H ${cx+1.5}`,
-    '9': (cx, cy) => `M ${cx-1.5} ${cy+2.5} H ${cx+1.5} V ${cy-2.5} H ${cx-1.5} V ${cy} H ${cx+1.5}`
-};
-
 function getCalendarSvg(day) {
-    const dayStr = String(day);
-    let pathD = '';
-    const cy = 15.2; // adjusted for centering
-    if (dayStr.length === 1) {
-        const cx = 12;
-        pathD = digitTemplates[dayStr](cx, cy);
-    } else {
-        const cx1 = 9.3;
-        const cx2 = 14.7;
-        pathD = digitTemplates[dayStr[0]](cx1, cy) + ' ' + digitTemplates[dayStr[1]](cx2, cy);
-    }
     return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
         <line x1="16" y1="2" x2="16" y2="6"></line>
         <line x1="8" y1="2" x2="8" y2="6"></line>
         <line x1="3" y1="10" x2="21" y2="10"></line>
-        <path d="${pathD}"></path>
+        <text x="12" y="19" font-size="8.5" font-family="-apple-system, system-ui, sans-serif" font-weight="bold" fill="currentColor" stroke="none" text-anchor="middle">${day}</text>
     </svg>`;
 }
 
@@ -55,6 +30,13 @@ function getCalendarSvg(day) {
 const menuTodayEl = document.getElementById('menuToday');
 if (menuTodayEl) {
     const todayIconEl = menuTodayEl.querySelector('.menu-icon');
+    if (todayIconEl) {
+        todayIconEl.innerHTML = getCalendarSvg(new Date().getDate());
+    }
+}
+const mobileNavTodayEl = document.getElementById('mobileNavToday');
+if (mobileNavTodayEl) {
+    const todayIconEl = mobileNavTodayEl.querySelector('.mobile-nav-icon');
     if (todayIconEl) {
         todayIconEl.innerHTML = getCalendarSvg(new Date().getDate());
     }
@@ -1588,7 +1570,7 @@ function handleRoute() {
 function updateBackButtonVisibility() {
     const contentBackBtn = document.getElementById('contentBackBtn');
     if (!contentBackBtn) return;
-    if (window.innerWidth <= 768 && (currentRoute === 'trash' || currentRoute.startsWith('project/'))) {
+    if (window.innerWidth <= 768 && (currentRoute === 'trash' || currentRoute === 'tomorrow' || currentRoute.startsWith('project/'))) {
         contentBackBtn.style.display = 'inline-flex';
     } else {
         contentBackBtn.style.display = 'none';
@@ -5175,4 +5157,37 @@ function initTouchDragAndDrop() {
 }
 
 initTouchDragAndDrop();
+
+// Обработчики кликов по элементам меню для закрытия сайдбара на телефонах (даже если хэш не изменился)
+if (todoSidebar) {
+    todoSidebar.addEventListener('click', (e) => {
+        const menuItem = e.target.closest('.menu-item') || e.target.closest('a');
+        if (menuItem) {
+            if (todoSidebar.classList.contains('mobile-open')) {
+                todoSidebar.classList.remove('mobile-open');
+                if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+                if (typeof updateMobileBottomNavActiveState === 'function') {
+                    updateMobileBottomNavActiveState();
+                }
+            }
+        }
+    });
+}
+
+// Обработчик для нижнего меню на мобильных: закрытие сайдбара при нажатии на активную вкладку
+const mobileBottomNavEl = document.getElementById('mobileBottomNav');
+if (mobileBottomNavEl) {
+    mobileBottomNavEl.addEventListener('click', (e) => {
+        const navItem = e.target.closest('.mobile-nav-item');
+        if (navItem && navItem.id !== 'mobileNavMore') {
+            if (todoSidebar && todoSidebar.classList.contains('mobile-open')) {
+                todoSidebar.classList.remove('mobile-open');
+                if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+                if (typeof updateMobileBottomNavActiveState === 'function') {
+                    updateMobileBottomNavActiveState();
+                }
+            }
+        }
+    });
+}
 

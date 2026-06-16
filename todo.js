@@ -5233,48 +5233,6 @@ if (mobileBottomNavEl) {
 
 // --- ЛОГИКА ДЛЯ МОБИЛЬНОГО БОТОМ-ШИТа И FAB ---
 let mobileAddTaskSheetScrollY = 0;
-let isTouchActiveInsideForm = false;
-
-document.addEventListener('touchstart', (e) => {
-    const form = document.querySelector('.add-task-form');
-    if (form && (form.contains(e.target) || e.target.closest('.due-date-dropdown') || e.target.closest('.project-dropdown') || e.target.closest('.priority-dropdown'))) {
-        isTouchActiveInsideForm = true;
-    } else {
-        isTouchActiveInsideForm = false;
-    }
-}, { passive: true });
-
-document.addEventListener('touchend', () => {
-    setTimeout(() => {
-        isTouchActiveInsideForm = false;
-    }, 300);
-});
-
-function preventTouchScroll(e) {
-    const form = document.querySelector('.add-task-form');
-    if (form) {
-        if (form.contains(e.target) || e.target.closest('.due-date-dropdown') || e.target.closest('.project-dropdown') || e.target.closest('.priority-dropdown')) {
-            return;
-        }
-    }
-    e.preventDefault();
-}
-
-function handleMobileInputBlur() {
-    const form = document.querySelector('.add-task-form');
-    if (!form || !form.classList.contains('mobile-active')) return;
-    
-    setTimeout(() => {
-        if (!isTouchActiveInsideForm) {
-            closeMobileAddTaskSheet();
-        } else {
-            const taskTitleInput = document.getElementById('taskTitleInput');
-            if (taskTitleInput) {
-                taskTitleInput.focus({ preventScroll: true });
-            }
-        }
-    }, 150);
-}
 
 function openMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
@@ -5283,9 +5241,9 @@ function openMobileAddTaskSheet() {
         // Запоминаем текущий скролл перед блокировкой
         mobileAddTaskSheetScrollY = window.scrollY || document.documentElement.scrollTop;
         
-        // Блокируем тач-скролл вокруг формы на мобильных
-        document.body.style.overflow = 'hidden';
-        document.addEventListener('touchmove', preventTouchScroll, { passive: false });
+        // Блокируем скролл страницы на уровне body
+        document.body.style.top = `-${mobileAddTaskSheetScrollY}px`;
+        document.body.classList.add('mobile-sheet-open');
 
         addTaskForm.classList.add('mobile-active');
         addTaskForm.classList.add('expanded');
@@ -5294,9 +5252,8 @@ function openMobileAddTaskSheet() {
         const taskTitleInput = document.getElementById('taskTitleInput');
         if (taskTitleInput) {
             taskTitleInput.placeholder = 'Что бы вы хотели сделать?';
-            taskTitleInput.focus({ preventScroll: true });
+            taskTitleInput.focus();
             updateAddFormCharCount();
-            taskTitleInput.addEventListener('blur', handleMobileInputBlur);
         }
     }
 }
@@ -5305,10 +5262,9 @@ function closeMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
-        document.removeEventListener('touchmove', preventTouchScroll);
-
         // Разблокируем скролл страницы на уровне body
-        document.body.style.overflow = '';
+        document.body.classList.remove('mobile-sheet-open');
+        document.body.style.top = '';
         window.scrollTo(0, mobileAddTaskSheetScrollY);
 
         addTaskForm.classList.remove('mobile-active');
@@ -5317,7 +5273,6 @@ function closeMobileAddTaskSheet() {
         
         const taskTitleInput = document.getElementById('taskTitleInput');
         if (taskTitleInput) {
-            taskTitleInput.removeEventListener('blur', handleMobileInputBlur);
             taskTitleInput.value = '';
             taskTitleInput.blur();
             taskTitleInput.placeholder = '+ Добавить задачу';

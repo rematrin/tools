@@ -3368,7 +3368,7 @@ body.dark .priority-opt-btn:hover {
         border-color: var(--border) !important;
     }
 
-    /* Круглая синяя кнопка отправки */
+    /* Круглая голубоватая кнопка отправки */
     .add-task-form.mobile-active .btn-add-task {
         width: 38px !important;
         height: 38px !important;
@@ -3377,11 +3377,12 @@ body.dark .priority-opt-btn:hover {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        background-color: #2563eb !important; /* Яркий синий цвет как на первом скрине */
+        background-color: var(--accent) !important; /* Наш фирменный голубоватый цвет сайта */
         color: white !important;
         border: none !important;
         flex-shrink: 0 !important;
         box-shadow: none !important; /* Убираем свечение */
+        transition: background-color 0.2s ease, opacity 0.2s ease !important;
     }
 
     body.dark .add-task-form.mobile-active .btn-add-task {
@@ -3394,8 +3395,21 @@ body.dark .priority-opt-btn:hover {
 
     .add-task-form.mobile-active .btn-add-task svg {
         margin: 0 !important;
-        width: 18px !important;
-        height: 18px !important;
+        width: 28px !important; /* Увеличили стрелочку внутри */
+        height: 28px !important;
+    }
+
+    /* Стиль неактивной (серой) кнопки отправки на мобильном, когда поле ввода пустое */
+    .add-task-form.mobile-active .task-input:placeholder-shown ~ .form-actions .btn-add-task {
+        background-color: var(--hover-bg) !important;
+        color: var(--text-secondary) !important;
+        opacity: 0.55 !important;
+        pointer-events: none !important;
+    }
+
+    body.dark .add-task-form.mobile-active .task-input:placeholder-shown ~ .form-actions .btn-add-task {
+        background-color: var(--hover-bg) !important;
+        color: var(--text-secondary) !important;
     }
 
     /* Открываем выпадающие списки календаря, проекта и приоритета вверх на всю ширину мобильного */
@@ -3411,4 +3425,15 @@ body.dark .priority-opt-btn:hover {
         z-index: 1200 !important;
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15) !important;
     }
+}
+
+/* Убираем полупрозрачность контекстного меню на мобильных, когда оно открыто */
+.task-item.menu-open .task-actions {
+    opacity: 1 !important;
+}
+
+.task-actions-dropdown,
+.custom-context-menu {
+    opacity: 1 !important;
+    background-color: var(--card-bg) !important;
 }

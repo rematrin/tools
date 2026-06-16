@@ -1706,8 +1706,21 @@ async function handleAddTask() {
     const titleText = taskTitleInput.value.trim();
     if (!titleText || titleText.length > 500 || !currentUid) return;
 
-    // Блокируем кнопку на время добавления
-    btnAddTask.disabled = true;
+    // Сохраняем значения для БД перед сбросом
+    const dueDateForDb = selectedDueDate;
+    const dueTimeForDb = selectedDueTime || null;
+    const dueRepeatForDb = selectedDueRepeat || null;
+    const projectIdForDb = addTaskSelectedProjectId;
+    const priorityForDb = selectedPriority || 0;
+
+    const addTaskFormEl = document.querySelector('.add-task-form');
+    const isMobile = addTaskFormEl && addTaskFormEl.classList.contains('mobile-active');
+
+    if (isMobile) {
+        closeMobileAddTaskSheet();
+    } else {
+        btnAddTask.disabled = true;
+    }
 
     // Вычисляем order, чтобы новая задача вставала в начало или конец списка
     const addTaskPositionPref = localStorage.getItem('todo_pref_add_task_position') || 'top';
@@ -1716,7 +1729,7 @@ async function handleAddTask() {
         let maxOrder = 0;
         allTasks.forEach(t => {
             if (!t.completed && !t.deleted) {
-                const isSameProject = (addTaskSelectedProjectId && t.projectId === addTaskSelectedProjectId) || (!addTaskSelectedProjectId && !t.projectId);
+                const isSameProject = (projectIdForDb && t.projectId === projectIdForDb) || (!projectIdForDb && !t.projectId);
                 if (isSameProject && t.order !== undefined) {
                     if (t.order > maxOrder) {
                         maxOrder = t.order;
@@ -1729,7 +1742,7 @@ async function handleAddTask() {
         let minOrder = 0;
         allTasks.forEach(t => {
             if (!t.completed && !t.deleted) {
-                const isSameProject = (addTaskSelectedProjectId && t.projectId === addTaskSelectedProjectId) || (!addTaskSelectedProjectId && !t.projectId);
+                const isSameProject = (projectIdForDb && t.projectId === projectIdForDb) || (!projectIdForDb && !t.projectId);
                 if (isSameProject && t.order !== undefined) {
                     if (t.order < minOrder) {
                         minOrder = t.order;
@@ -1744,38 +1757,39 @@ async function handleAddTask() {
         await addDoc(collection(db, 'users', currentUid, 'tasks'), {
             title: titleText,
             completed: false,
-            dueDate: selectedDueDate,
-            dueTime: selectedDueTime || null,
-            dueRepeat: selectedDueRepeat || null,
-            projectId: addTaskSelectedProjectId,
-            priority: selectedPriority || 0,
+            dueDate: dueDateForDb,
+            dueTime: dueTimeForDb,
+            dueRepeat: dueRepeatForDb,
+            projectId: projectIdForDb,
+            priority: priorityForDb,
             order: newOrder,
             createdAt: serverTimestamp()
         });
-        taskTitleInput.value = '';
-        selectedDueTime = null;
-        selectedDueRepeat = null;
-        setDueDate(getDefaultDueDate());
-        setPriority(0);
-        
-        // Сбрасываем выбранный проект к дефолтному для текущей вкладки
-        if (currentRoute.startsWith('project/')) {
-            const projectId = currentRoute.split('/')[1];
-            setAddTaskProject(projectId);
-        } else {
-            setAddTaskProject(null);
-        }
 
-        taskTitleInput.style.height = 'auto'; // Reset height
-        updateAddFormCharCount(); // Reset counter
-        const addTaskFormEl = document.querySelector('.add-task-form');
-        if (addTaskFormEl && addTaskFormEl.classList.contains('mobile-active')) {
-            closeMobileAddTaskSheet();
+        // Если это десктопная форма, сбрасываем поля сейчас
+        if (!isMobile) {
+            taskTitleInput.value = '';
+            selectedDueTime = null;
+            selectedDueRepeat = null;
+            setDueDate(getDefaultDueDate());
+            setPriority(0);
+            
+            if (currentRoute.startsWith('project/')) {
+                const projectId = currentRoute.split('/')[1];
+                setAddTaskProject(projectId);
+            } else {
+                setAddTaskProject(null);
+            }
+
+            taskTitleInput.style.height = 'auto';
+            updateAddFormCharCount();
         }
     } catch (err) {
         console.error("Не удалось добавить задачу:", err);
     } finally {
-        btnAddTask.disabled = false;
+        if (!isMobile) {
+            btnAddTask.disabled = false;
+        }
     }
 }
 if (btnAddTask) {
@@ -5218,10 +5232,19 @@ if (mobileBottomNavEl) {
 }
 
 // --- ЛОГИКА ДЛЯ МОБИЛЬНОГО БОТОМ-ШИТа И FAB ---
+let mobileAddTaskSheetScrollY = 0;
+function preventMobileSheetScroll() {
+    window.scrollTo(window.scrollX, mobileAddTaskSheetScrollY);
+}
+
 function openMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
+        // Запоминаем текущий скролл перед открытием клавиатуры / фокусировкой
+        mobileAddTaskSheetScrollY = window.scrollY || document.documentElement.scrollTop;
+        window.addEventListener('scroll', preventMobileSheetScroll, { passive: false });
+
         addTaskForm.classList.add('mobile-active');
         addTaskForm.classList.add('expanded');
         overlay.classList.add('active');
@@ -5240,6 +5263,8 @@ function closeMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
+        window.removeEventListener('scroll', preventMobileSheetScroll);
+
         addTaskForm.classList.remove('mobile-active');
         addTaskForm.classList.remove('expanded');
         overlay.classList.remove('active');

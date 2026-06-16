@@ -684,6 +684,11 @@ body.dark .task-item.completed .custom-checkbox svg {
     padding: 4px 0;
     cursor: text;
     transition: color 0.2s, text-decoration 0.2s;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .task-item.completed .task-title-text {
@@ -3436,4 +3441,12 @@ body.dark .priority-opt-btn:hover {
 .custom-context-menu {
     opacity: 1 !important;
     background-color: var(--card-bg) !important;
+}
+
+/* Фиксация body на мобильном при открытии шторки ввода задач */
+body.mobile-sheet-open {
+    position: fixed !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
 }

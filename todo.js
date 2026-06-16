@@ -5233,22 +5233,21 @@ if (mobileBottomNavEl) {
 
 // --- ЛОГИКА ДЛЯ МОБИЛЬНОГО БОТОМ-ШИТа И FAB ---
 let mobileAddTaskSheetScrollY = 0;
-function preventMobileSheetScroll() {
-    window.scrollTo(window.scrollX, mobileAddTaskSheetScrollY);
-}
 
 function openMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
-        // Запоминаем текущий скролл перед открытием клавиатуры / фокусировкой
+        // Запоминаем текущий скролл перед блокировкой
         mobileAddTaskSheetScrollY = window.scrollY || document.documentElement.scrollTop;
-        window.addEventListener('scroll', preventMobileSheetScroll, { passive: false });
+        
+        // Блокируем скролл страницы на уровне body
+        document.body.style.top = `-${mobileAddTaskSheetScrollY}px`;
+        document.body.classList.add('mobile-sheet-open');
 
         addTaskForm.classList.add('mobile-active');
         addTaskForm.classList.add('expanded');
         overlay.classList.add('active');
-        document.body.style.overflow = 'hidden'; /* Блокируем скролл страницы */
         
         const taskTitleInput = document.getElementById('taskTitleInput');
         if (taskTitleInput) {
@@ -5263,12 +5262,14 @@ function closeMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
-        window.removeEventListener('scroll', preventMobileSheetScroll);
+        // Разблокируем скролл страницы на уровне body
+        document.body.classList.remove('mobile-sheet-open');
+        document.body.style.top = '';
+        window.scrollTo(0, mobileAddTaskSheetScrollY);
 
         addTaskForm.classList.remove('mobile-active');
         addTaskForm.classList.remove('expanded');
         overlay.classList.remove('active');
-        document.body.style.overflow = ''; /* Восстанавливаем скролл страницы */
         
         const taskTitleInput = document.getElementById('taskTitleInput');
         if (taskTitleInput) {

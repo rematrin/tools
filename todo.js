@@ -1768,6 +1768,10 @@ async function handleAddTask() {
 
         taskTitleInput.style.height = 'auto'; // Reset height
         updateAddFormCharCount(); // Reset counter
+        const addTaskFormEl = document.querySelector('.add-task-form');
+        if (addTaskFormEl && addTaskFormEl.classList.contains('mobile-active')) {
+            closeMobileAddTaskSheet();
+        }
     } catch (err) {
         console.error("Не удалось добавить задачу:", err);
     } finally {
@@ -1784,17 +1788,21 @@ if (taskTitleInput) {
             handleAddTask();
         } else if (e.key === 'Escape') {
             e.preventDefault();
-            taskTitleInput.value = '';
-            taskTitleInput.blur();
             const form = document.querySelector('.add-task-form');
-            if (form) {
-                form.classList.remove('expanded');
+            if (form && form.classList.contains('mobile-active')) {
+                closeMobileAddTaskSheet();
+            } else {
+                taskTitleInput.value = '';
+                taskTitleInput.blur();
+                if (form) {
+                    form.classList.remove('expanded');
+                }
+                taskTitleInput.placeholder = '+ Добавить задачу';
+                setDueDate(getDefaultDueDate());
+                setPriority(0);
+                taskTitleInput.style.height = 'auto'; // Reset height
+                updateAddFormCharCount(); // Reset counter
             }
-            taskTitleInput.placeholder = '+ Добавить задачу';
-            setDueDate(getDefaultDueDate());
-            setPriority(0);
-            taskTitleInput.style.height = 'auto'; // Reset height
-            updateAddFormCharCount(); // Reset counter
         }
     });
 
@@ -5206,6 +5214,64 @@ if (mobileBottomNavEl) {
                 }
             }
         }
+    });
+}
+
+// --- ЛОГИКА ДЛЯ МОБИЛЬНОГО БОТОМ-ШИТа И FAB ---
+function openMobileAddTaskSheet() {
+    const addTaskForm = document.querySelector('.add-task-form');
+    const overlay = document.getElementById('mobileSheetOverlay');
+    if (addTaskForm && overlay) {
+        addTaskForm.classList.add('mobile-active');
+        addTaskForm.classList.add('expanded');
+        overlay.classList.add('active');
+        
+        const taskTitleInput = document.getElementById('taskTitleInput');
+        if (taskTitleInput) {
+            taskTitleInput.placeholder = 'Что бы вы хотели сделать?';
+            taskTitleInput.focus();
+            updateAddFormCharCount();
+        }
+    }
+}
+
+function closeMobileAddTaskSheet() {
+    const addTaskForm = document.querySelector('.add-task-form');
+    const overlay = document.getElementById('mobileSheetOverlay');
+    if (addTaskForm && overlay) {
+        addTaskForm.classList.remove('mobile-active');
+        addTaskForm.classList.remove('expanded');
+        overlay.classList.remove('active');
+        
+        const taskTitleInput = document.getElementById('taskTitleInput');
+        if (taskTitleInput) {
+            taskTitleInput.value = '';
+            taskTitleInput.blur();
+            taskTitleInput.placeholder = '+ Добавить задачу';
+            setDueDate(getDefaultDueDate());
+            setPriority(0);
+            taskTitleInput.style.height = 'auto';
+            updateAddFormCharCount();
+        }
+    }
+}
+
+// Инициализация FAB и оверлея
+const mobileFabAdd = document.getElementById('mobileFabAdd');
+if (mobileFabAdd) {
+    mobileFabAdd.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openMobileAddTaskSheet();
+    });
+}
+
+const mobileSheetOverlay = document.getElementById('mobileSheetOverlay');
+if (mobileSheetOverlay) {
+    mobileSheetOverlay.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMobileAddTaskSheet();
     });
 }
 

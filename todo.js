@@ -1377,14 +1377,21 @@ const applySidebarCollapsedState = () => {
 };
 
 applySidebarCollapsedState();
-window.addEventListener('resize', applySidebarCollapsedState);
+window.addEventListener('resize', () => {
+    applySidebarCollapsedState();
+    updateBackButtonVisibility();
+});
 
 // Управление сайдбаром (мобильное и десктопное)
+let toggleSidebar;
 if (contentSidebarToggle && todoSidebar && sidebarOverlay) {
-    const toggleSidebar = () => {
+    toggleSidebar = () => {
         if (window.innerWidth <= 768) {
             todoSidebar.classList.toggle('mobile-open');
             sidebarOverlay.classList.toggle('active');
+            if (typeof updateMobileBottomNavActiveState === 'function') {
+                updateMobileBottomNavActiveState();
+            }
         } else {
             isSidebarCollapsed = !isSidebarCollapsed;
             localStorage.setItem('todo_sidebar_collapsed', isSidebarCollapsed);
@@ -1397,6 +1404,28 @@ if (contentSidebarToggle && todoSidebar && sidebarOverlay) {
         sidebarCloseToggle.addEventListener('click', toggleSidebar);
     }
     sidebarOverlay.addEventListener('click', toggleSidebar);
+
+    // Добавляем обработчик для мобильной кнопки "Обзор"
+    const mobileNavMore = document.getElementById('mobileNavMore');
+    if (mobileNavMore) {
+        mobileNavMore.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSidebar();
+        });
+    }
+
+    // Добавляем обработчик для кнопки "Назад" у проектов и корзины
+    const contentBackBtn = document.getElementById('contentBackBtn');
+    if (contentBackBtn) {
+        contentBackBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (todoSidebar && !todoSidebar.classList.contains('mobile-open')) {
+                toggleSidebar();
+            }
+        });
+    }
 }
 
 // Переключение секции выполненных задач
@@ -1551,7 +1580,41 @@ function handleRoute() {
 
     setDueDate(getDefaultDueDate());
     setPriority(0); // сброс приоритета при смене вкладки
+    updateMobileBottomNavActiveState();
+    updateBackButtonVisibility();
     renderTasks();
+}
+
+function updateBackButtonVisibility() {
+    const contentBackBtn = document.getElementById('contentBackBtn');
+    if (!contentBackBtn) return;
+    if (window.innerWidth <= 768 && (currentRoute === 'trash' || currentRoute.startsWith('project/'))) {
+        contentBackBtn.style.display = 'inline-flex';
+    } else {
+        contentBackBtn.style.display = 'none';
+    }
+}
+
+function updateMobileBottomNavActiveState() {
+    const mobileNavToday = document.getElementById('mobileNavToday');
+    const mobileNavInbox = document.getElementById('mobileNavInbox');
+    const mobileNavMore = document.getElementById('mobileNavMore');
+
+    if (!mobileNavToday || !mobileNavInbox || !mobileNavMore) return;
+
+    mobileNavToday.classList.remove('active');
+    mobileNavInbox.classList.remove('active');
+    mobileNavMore.classList.remove('active');
+
+    if (todoSidebar && todoSidebar.classList.contains('mobile-open')) {
+        mobileNavMore.classList.add('active');
+    } else if (currentRoute === 'today') {
+        mobileNavToday.classList.add('active');
+    } else if (currentRoute === 'inbox') {
+        mobileNavInbox.classList.add('active');
+    } else {
+        mobileNavMore.classList.add('active');
+    }
 }
 
 // Слушаем изменение URL хэша

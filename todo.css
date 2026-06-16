@@ -1607,7 +1607,9 @@ body.dark .due-date-dropdown {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 32px;
     height: 32px;
+    margin: 0 auto;
     font-size: 0.85rem;
     font-weight: 600;
     border-radius: 50%;
@@ -3465,12 +3467,31 @@ body.dark .priority-opt-btn:hover {
         z-index: 1300 !important; /* Выше формы и оверлея */
         box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15) !important;
         padding: 16px !important;
-        max-height: 430px !important; /* Достаточно высоты для календаря, времени и повтора */
+        max-height: 440px !important; /* Достаточно высоты для календаря, времени и повтора */
         overflow-y: auto !important;
         background-color: var(--card-bg) !important;
         border: 1px solid var(--border) !important;
         box-sizing: border-box !important;
         animation: slideUpMobileMenu 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    }
+
+    /* Уменьшаем отступы и размеры внутри календаря на мобильных, чтобы всё влезало без скролла */
+    .add-task-form.mobile-active .due-date-dropdown {
+        padding: 12px !important;
+    }
+    .add-task-form.mobile-active .due-date-dropdown .due-divider {
+        margin: 6px 0 !important;
+    }
+    .add-task-form.mobile-active .due-date-dropdown .due-calendar-picker {
+        gap: 6px !important;
+    }
+    .add-task-form.mobile-active .due-date-dropdown .calendar-day-cell {
+        width: 28px !important;
+        height: 28px !important;
+        margin: 0 auto !important;
+    }
+    .add-task-form.mobile-active .due-date-dropdown .quick-opt-btn {
+        padding: 6px 8px !important;
     }
 
     @keyframes slideUpMobileMenu {

@@ -5225,6 +5225,7 @@ function openMobileAddTaskSheet() {
         addTaskForm.classList.add('mobile-active');
         addTaskForm.classList.add('expanded');
         overlay.classList.add('active');
+        document.body.style.overflow = 'hidden'; /* Блокируем скролл страницы */
         
         const taskTitleInput = document.getElementById('taskTitleInput');
         if (taskTitleInput) {
@@ -5242,6 +5243,7 @@ function closeMobileAddTaskSheet() {
         addTaskForm.classList.remove('mobile-active');
         addTaskForm.classList.remove('expanded');
         overlay.classList.remove('active');
+        document.body.style.overflow = ''; /* Восстанавливаем скролл страницы */
         
         const taskTitleInput = document.getElementById('taskTitleInput');
         if (taskTitleInput) {

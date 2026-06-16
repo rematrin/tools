@@ -5318,7 +5318,10 @@ function openMobileAddTaskSheet() {
         const taskTitleInput = document.getElementById('taskTitleInput');
         if (taskTitleInput) {
             taskTitleInput.placeholder = 'Что бы вы хотели сделать?';
-            taskTitleInput.focus();
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            if (!isMobile) {
+                taskTitleInput.focus();
+            }
             restoreTaskListScroll();
             updateAddFormCharCount();
         }

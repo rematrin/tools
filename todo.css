@@ -3430,6 +3430,22 @@ body.dark .priority-opt-btn:hover {
         z-index: 1200 !important;
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15) !important;
     }
+
+    /* Стиль для теста inline-отображения формы добавления */
+    .add-task-form.mobile-inline-test {
+        position: relative !important;
+        bottom: auto !important;
+        left: auto !important;
+        right: auto !important;
+        margin: 16px 0 !important;
+        width: 100% !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06) !important;
+        z-index: 1100 !important;
+        animation: none !important;
+        transform: none !important;
+    }
 }
 
 /* Убираем полупрозрачность контекстного меню на мобильных, когда оно открыто */

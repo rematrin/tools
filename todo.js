@@ -5232,29 +5232,32 @@ if (mobileBottomNavEl) {
 }
 
 // --- ЛОГИКА ДЛЯ МОБИЛЬНОГО БОТОМ-ШИТа И FAB ---
-let mobileAddTaskSheetScrollY = 0;
-
-function preventMobileSheetScroll() {
-    if (window.scrollY !== 0) {
-        window.scrollTo(0, 0);
-    }
-}
+let originalFormParent = null;
+let originalFormNextSibling = null;
 
 function openMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
-        // Запоминаем текущий скролл перед блокировкой
-        mobileAddTaskSheetScrollY = window.scrollY || document.documentElement.scrollTop;
-        
-        // Блокируем скролл страницы на уровне body
-        document.body.style.top = `-${mobileAddTaskSheetScrollY}px`;
-        document.body.classList.add('mobile-sheet-open');
+        // Сохраняем исходное положение формы в DOM, чтобы вернуть её назад при закрытии
+        if (!originalFormParent) {
+            originalFormParent = addTaskForm.parentNode;
+            originalFormNextSibling = addTaskForm.nextSibling;
+        }
 
-        // Фиксируем скролл окна на 0, чтобы Safari не поднимал fixed-элементы над клавиатурой с лишним отступом
-        window.addEventListener('scroll', preventMobileSheetScroll, { passive: false });
+        // Находим контейнер и список активных задач
+        const container = document.getElementById('activeTasksContainer');
+        const tasks = container ? container.querySelectorAll('.task-item') : [];
+        
+        // Вставляем форму после 3-й задачи (или в конец списка, если задач меньше 3)
+        if (container && tasks.length >= 3) {
+            tasks[2].after(addTaskForm);
+        } else if (container) {
+            container.appendChild(addTaskForm);
+        }
 
         addTaskForm.classList.add('mobile-active');
+        addTaskForm.classList.add('mobile-inline-test');
         addTaskForm.classList.add('expanded');
         overlay.classList.add('active');
         
@@ -5262,13 +5265,6 @@ function openMobileAddTaskSheet() {
         if (taskTitleInput) {
             taskTitleInput.placeholder = 'Что бы вы хотели сделать?';
             taskTitleInput.focus();
-            
-            // Сбрасываем скролл окна в 0 после открытия клавиатуры
-            setTimeout(() => {
-                window.scrollTo(0, 0);
-                document.body.scrollTop = 0;
-            }, 80);
-
             updateAddFormCharCount();
         }
     }
@@ -5278,14 +5274,13 @@ function closeMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
-        window.removeEventListener('scroll', preventMobileSheetScroll);
-
-        // Разблокируем скролл страницы на уровне body
-        document.body.classList.remove('mobile-sheet-open');
-        document.body.style.top = '';
-        window.scrollTo(0, mobileAddTaskSheetScrollY);
+        // Возвращаем форму на её исходное место над списком задач
+        if (originalFormParent) {
+            originalFormParent.insertBefore(addTaskForm, originalFormNextSibling);
+        }
 
         addTaskForm.classList.remove('mobile-active');
+        addTaskForm.classList.remove('mobile-inline-test');
         addTaskForm.classList.remove('expanded');
         overlay.classList.remove('active');
         

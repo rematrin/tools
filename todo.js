@@ -3192,6 +3192,16 @@ function createTaskRowElement(task) {
                     <span>Изменить</span>
                 </button>
                 
+                ${!isSubtask ? `
+                <button class="dropdown-item btn-add-subtask">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Добавить подзадачу</span>
+                </button>
+                ` : ''}
+                
                 <div class="dropdown-divider"></div>
                 
                 <div class="dropdown-section dropdown-section-due">
@@ -3249,21 +3259,21 @@ function createTaskRowElement(task) {
                     <div class="dropdown-section-title">Приоритет</div>
                     <div class="priority-options-row">
                         <button class="prio-opt-btn flag-red ${task.priority === 3 ? 'active' : ''}" type="button" data-priority="3" data-tooltip="Приоритет 1">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                                <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="currentColor"></path>
+                                <line x1="4" y1="22" x2="4" y2="15"></line>
                             </svg>
                         </button>
                         <button class="prio-opt-btn flag-orange ${task.priority === 2 ? 'active' : ''}" type="button" data-priority="2" data-tooltip="Приоритет 2">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                                <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="currentColor"></path>
+                                <line x1="4" y1="22" x2="4" y2="15"></line>
                             </svg>
                         </button>
                         <button class="prio-opt-btn flag-blue ${task.priority === 1 ? 'active' : ''}" type="button" data-priority="1" data-tooltip="Приоритет 3">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                                <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="currentColor"></path>
+                                <line x1="4" y1="22" x2="4" y2="15"></line>
                             </svg>
                         </button>
                         <button class="prio-opt-btn flag-white ${task.priority === 0 || !task.priority ? 'active' : ''}" type="button" data-priority="0" data-tooltip="Приоритет 4">
@@ -3325,16 +3335,6 @@ function createTaskRowElement(task) {
                         }).join('')}
                     </div>
                 </div>
-                ` : ''}
-                
-                ${!isSubtask ? `
-                <button class="dropdown-item btn-add-subtask">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    <span>Добавить подзадачу</span>
-                </button>
                 ` : ''}
                 
                 <button class="dropdown-item btn-duplicate-task">
@@ -3572,6 +3572,24 @@ function createTaskRowElement(task) {
                 showInlineSubtaskInput(item, task.id, task.projectId);
             });
         }
+    }
+
+    // Обработчик открытия подменю переноса проекта на телефонах
+    const btnMoveProject = item.querySelector('.btn-move-project');
+    if (btnMoveProject) {
+        btnMoveProject.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const submenu = btnMoveProject.nextElementSibling;
+            if (submenu && submenu.classList.contains('dropdown-submenu')) {
+                const isHidden = getComputedStyle(submenu).display === 'none';
+                submenu.style.display = isHidden ? 'flex' : 'none';
+                
+                const arrowIcon = btnMoveProject.querySelector('svg:last-child');
+                if (arrowIcon) {
+                    arrowIcon.style.transform = isHidden ? 'rotate(90deg)' : 'none';
+                }
+            }
+        });
     }
 
     // Клик на кнопку редактирования из меню

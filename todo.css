@@ -3451,28 +3451,31 @@ body.dark .priority-opt-btn:hover {
         color: var(--text-secondary) !important;
     }
 
-    /* Открываем выпадающие списки календаря, проекта и приоритета снизу экрана в виде шторки */
+    /* Открываем выпадающие списки календаря, проекта и приоритета над полем ввода на мобильном */
     .add-task-form.mobile-active .due-date-dropdown,
     .add-task-form.mobile-active .project-dropdown,
     .add-task-form.mobile-active .priority-dropdown {
-        position: fixed !important;
-        bottom: 0 !important;
+        position: absolute !important;
+        bottom: calc(100% + 12px) !important; /* На 12px выше поля ввода */
         top: auto !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-        border-radius: 20px 20px 0 0 !important;
+        left: 12px !important;
+        right: 12px !important;
+        width: calc(100% - 24px) !important;
+        border-radius: 16px !important;
         z-index: 1300 !important; /* Выше формы и оверлея */
-        box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2) !important;
-        padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px !important;
-        max-height: 50vh !important;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15) !important;
+        padding: 16px !important;
+        max-height: 430px !important; /* Достаточно высоты для календаря, времени и повтора */
         overflow-y: auto !important;
-        animation: slideUpMobile 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+        background-color: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        box-sizing: border-box !important;
+        animation: slideUpMobileMenu 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
     }
 
-    @keyframes slideUpMobile {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
+    @keyframes slideUpMobileMenu {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 }
 

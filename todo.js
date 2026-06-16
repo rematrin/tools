@@ -5250,13 +5250,14 @@ document.addEventListener('touchend', () => {
     }, 300);
 });
 
-function handleVisualViewportChange() {
-    const visualViewport = window.visualViewport;
-    const addTaskForm = document.querySelector('.add-task-form.mobile-active');
-    if (visualViewport && addTaskForm) {
-        const offsetBottom = window.innerHeight - visualViewport.height;
-        addTaskForm.style.bottom = `${Math.max(0, offsetBottom)}px`;
+function preventTouchScroll(e) {
+    const form = document.querySelector('.add-task-form');
+    if (form) {
+        if (form.contains(e.target) || e.target.closest('.due-date-dropdown') || e.target.closest('.project-dropdown') || e.target.closest('.priority-dropdown')) {
+            return;
+        }
     }
+    e.preventDefault();
 }
 
 function handleMobileInputBlur() {
@@ -5282,19 +5283,13 @@ function openMobileAddTaskSheet() {
         // Запоминаем текущий скролл перед блокировкой
         mobileAddTaskSheetScrollY = window.scrollY || document.documentElement.scrollTop;
         
-        // Блокируем скролл страницы на уровне body
-        document.body.style.top = `-${mobileAddTaskSheetScrollY}px`;
-        document.body.classList.add('mobile-sheet-open');
+        // Блокируем тач-скролл вокруг формы на мобильных
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('touchmove', preventTouchScroll, { passive: false });
 
         addTaskForm.classList.add('mobile-active');
         addTaskForm.classList.add('expanded');
         overlay.classList.add('active');
-        
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', handleVisualViewportChange);
-            window.visualViewport.addEventListener('scroll', handleVisualViewportChange);
-            handleVisualViewportChange();
-        }
         
         const taskTitleInput = document.getElementById('taskTitleInput');
         if (taskTitleInput) {
@@ -5310,15 +5305,10 @@ function closeMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
-        if (window.visualViewport) {
-            window.visualViewport.removeEventListener('resize', handleVisualViewportChange);
-            window.visualViewport.removeEventListener('scroll', handleVisualViewportChange);
-        }
-        addTaskForm.style.bottom = '';
+        document.removeEventListener('touchmove', preventTouchScroll);
 
         // Разблокируем скролл страницы на уровне body
-        document.body.classList.remove('mobile-sheet-open');
-        document.body.style.top = '';
+        document.body.style.overflow = '';
         window.scrollTo(0, mobileAddTaskSheetScrollY);
 
         addTaskForm.classList.remove('mobile-active');

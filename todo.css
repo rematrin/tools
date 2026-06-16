@@ -3475,10 +3475,10 @@ body.dark .priority-opt-btn:hover {
         to { transform: translateY(0); }
     }
 
-    .sheet-open .todo-content {
+    .todo-app.sheet-open .todo-content {
         overflow: hidden !important;
         pointer-events: none !important;
-        transform: translateZ(0);
+        transform: translateZ(0) !important;
     }
 }
 

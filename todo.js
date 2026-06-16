@@ -5292,6 +5292,24 @@ function restoreTaskListScroll() {
     }, 300);
 }
 
+// Заморозка прокрутки контента и окна при открытой форме
+function handleContentScrollFreeze(e) {
+    const todoApp = document.querySelector('.todo-app');
+    if (todoApp && todoApp.classList.contains('sheet-open')) {
+        const content = document.querySelector('.todo-content');
+        if (content && content.scrollTop !== savedTaskListScrollTop) {
+            content.scrollTop = savedTaskListScrollTop;
+        }
+    }
+}
+
+function handleWindowScrollFreeze(e) {
+    const todoApp = document.querySelector('.todo-app');
+    if (todoApp && todoApp.classList.contains('sheet-open')) {
+        window.scrollTo(0, 0);
+    }
+}
+
 function updateVisualViewportOffset() {
     const addTaskForm = document.querySelector('.add-task-form');
     if (!addTaskForm || !addTaskForm.classList.contains('mobile-active')) return;
@@ -5308,13 +5326,12 @@ function updateVisualViewportOffset() {
 function openMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
-    const todoApp = document.querySelector('.todo-app');
-    
     if (addTaskForm && overlay) {
-        if (todoApp) {
-            todoApp.classList.add('sheet-open');
-        }
-        
+        saveTaskListScroll();
+
+        const todoApp = document.querySelector('.todo-app');
+        if (todoApp) todoApp.classList.add('sheet-open');
+
         addTaskForm.classList.add('mobile-active');
         addTaskForm.classList.add('expanded');
         overlay.classList.add('active');
@@ -5334,13 +5351,10 @@ function openMobileAddTaskSheet() {
 function closeMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
-    const todoApp = document.querySelector('.todo-app');
-    
     if (addTaskForm && overlay) {
-        if (todoApp) {
-            todoApp.classList.remove('sheet-open');
-        }
-        
+        const todoApp = document.querySelector('.todo-app');
+        if (todoApp) todoApp.classList.remove('sheet-open');
+
         addTaskForm.classList.remove('mobile-active');
         addTaskForm.classList.remove('expanded');
         overlay.classList.remove('active');
@@ -5356,6 +5370,9 @@ function closeMobileAddTaskSheet() {
             taskTitleInput.style.height = 'auto';
             updateAddFormCharCount();
         }
+
+        restoreTaskListScroll();
+
         if (typeof updateMobileFabVisibility === 'function') {
             updateMobileFabVisibility();
         }
@@ -5398,22 +5415,21 @@ function updateMobileFabVisibility() {
     }
 }
 
-// Слушатели для позиционирования и скролла
+// Слушатели для позиционирования и предотвращения скролла
 adjustAddTaskFormLocation();
-window.addEventListener('resize', adjustAddTaskFormLocation);
+window.addEventListener('resize', () => {
+    adjustAddTaskFormLocation();
+    restoreTaskListScroll();
+});
+
+const contentContainerEl = document.querySelector('.todo-content');
+if (contentContainerEl) {
+    contentContainerEl.addEventListener('scroll', handleContentScrollFreeze, { passive: true });
+}
+window.addEventListener('scroll', handleWindowScrollFreeze, { passive: true });
 
 if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', updateVisualViewportOffset);
     window.visualViewport.addEventListener('scroll', updateVisualViewportOffset);
-}
-
-const todoContentEl = document.querySelector('.todo-content');
-if (todoContentEl) {
-    todoContentEl.addEventListener('scroll', () => {
-        const todoApp = document.querySelector('.todo-app');
-        if (todoApp && todoApp.classList.contains('sheet-open')) {
-            todoContentEl.scrollTop = savedTaskListScrollTop;
-        }
-    }, { passive: true });
 }
 

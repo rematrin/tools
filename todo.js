@@ -302,12 +302,16 @@ document.addEventListener('click', (e) => {
                                   (addTaskProjectDropdown && addTaskProjectDropdown.contains(e.target)) ||
                                   (priorityDropdown && priorityDropdown.contains(e.target));
         if (!isClickInsideForm && taskTitleInput.value.trim() === '') {
-            addTaskForm.classList.remove('expanded');
-            taskTitleInput.placeholder = '+ Добавить задачу';
-            setDueDate(getDefaultDueDate()); // сбрасываем выбранную дату к дефолтной для текущего раздела
-            setPriority(0); // сбрасываем приоритет
-            taskTitleInput.style.height = 'auto'; // Reset height
-            updateAddFormCharCount(); // Reset counter
+            if (addTaskForm.classList.contains('mobile-active')) {
+                closeMobileAddTaskSheet();
+            } else {
+                addTaskForm.classList.remove('expanded');
+                taskTitleInput.placeholder = '+ Добавить задачу';
+                setDueDate(getDefaultDueDate()); // сбрасываем выбранную дату к дефолтной для текущего раздела
+                setPriority(0); // сбрасываем приоритет
+                taskTitleInput.style.height = 'auto'; // Reset height
+                updateAddFormCharCount(); // Reset counter
+            }
         }
     }
 
@@ -5232,32 +5236,11 @@ if (mobileBottomNavEl) {
 }
 
 // --- ЛОГИКА ДЛЯ МОБИЛЬНОГО БОТОМ-ШИТа И FAB ---
-let originalFormParent = null;
-let originalFormNextSibling = null;
-
 function openMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
-        // Сохраняем исходное положение формы в DOM, чтобы вернуть её назад при закрытии
-        if (!originalFormParent) {
-            originalFormParent = addTaskForm.parentNode;
-            originalFormNextSibling = addTaskForm.nextSibling;
-        }
-
-        // Находим контейнер и список активных задач
-        const container = document.getElementById('activeTasksContainer');
-        const tasks = container ? container.querySelectorAll('.task-item') : [];
-        
-        // Вставляем форму после 3-й задачи (или в конец списка, если задач меньше 3)
-        if (container && tasks.length >= 3) {
-            tasks[2].after(addTaskForm);
-        } else if (container) {
-            container.appendChild(addTaskForm);
-        }
-
         addTaskForm.classList.add('mobile-active');
-        addTaskForm.classList.add('mobile-inline-test');
         addTaskForm.classList.add('expanded');
         overlay.classList.add('active');
         
@@ -5274,13 +5257,7 @@ function closeMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
-        // Возвращаем форму на её исходное место над списком задач
-        if (originalFormParent) {
-            originalFormParent.insertBefore(addTaskForm, originalFormNextSibling);
-        }
-
         addTaskForm.classList.remove('mobile-active');
-        addTaskForm.classList.remove('mobile-inline-test');
         addTaskForm.classList.remove('expanded');
         overlay.classList.remove('active');
         

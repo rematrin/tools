@@ -466,6 +466,14 @@ body.dark .add-task-form.expanded {
     gap: 8px;
 }
 
+.btn-add-task .icon-plus {
+    display: inline-block !important;
+}
+
+.btn-add-task .icon-arrow {
+    display: none !important;
+}
+
 .btn-add-task:hover {
     background-color: var(--accent-hover);
 }
@@ -3313,26 +3321,22 @@ body.dark .priority-opt-btn:hover {
     .add-task-form.mobile-active {
         display: flex !important;
         position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
+        top: 70px !important;
+        left: 16px !important;
+        right: 16px !important;
         background-color: var(--card-bg) !important;
-        border: none !important;
-        border-top: 1px solid var(--border) !important;
-        border-top-left-radius: 20px !important;
-        border-top-right-radius: 20px !important;
-        border-bottom-left-radius: 0 !important; /* Закругление только сверху */
-        border-bottom-right-radius: 0 !important; /* Закругление только сверху */
-        padding: 16px 16px calc(12px + env(safe-area-inset-bottom, 0px)) 16px !important;
-        margin-bottom: 0 !important;
-        z-index: 1100 !important;
-        box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2) !important;
-        animation: slideUpMobile 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        border: 1px solid var(--border) !important;
+        border-radius: 16px !important; /* Красивое скругление со всех сторон */
+        padding: 16px !important;
+        margin: 0 !important;
+        z-index: 1100 !important; /* Поверх оверлея */
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15) !important;
+        animation: slideDownMobile 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
 
-    @keyframes slideUpMobile {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
+    @keyframes slideDownMobile {
+        from { transform: translateY(-30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
     }
 
     .add-task-form.mobile-active .form-actions {
@@ -3398,7 +3402,12 @@ body.dark .priority-opt-btn:hover {
         display: none !important;
     }
 
-    .add-task-form.mobile-active .btn-add-task svg {
+    .add-task-form.mobile-active .btn-add-task .icon-plus {
+        display: none !important;
+    }
+
+    .add-task-form.mobile-active .btn-add-task .icon-arrow {
+        display: block !important;
         margin: 0 !important;
         width: 28px !important; /* Увеличили стрелочку внутри */
         height: 28px !important;
@@ -3429,22 +3438,6 @@ body.dark .priority-opt-btn:hover {
         width: calc(100% - 32px) !important;
         z-index: 1200 !important;
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15) !important;
-    }
-
-    /* Стиль для теста inline-отображения формы добавления */
-    .add-task-form.mobile-inline-test {
-        position: relative !important;
-        bottom: auto !important;
-        left: auto !important;
-        right: auto !important;
-        margin: 16px 0 !important;
-        width: 100% !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 16px !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06) !important;
-        z-index: 1100 !important;
-        animation: none !important;
-        transform: none !important;
     }
 }
 

@@ -1378,6 +1378,9 @@ if (contentSidebarToggle && todoSidebar && sidebarOverlay) {
             if (typeof updateMobileBottomNavActiveState === 'function') {
                 updateMobileBottomNavActiveState();
             }
+            if (typeof updateMobileFabVisibility === 'function') {
+                updateMobileFabVisibility();
+            }
         } else {
             isSidebarCollapsed = !isSidebarCollapsed;
             localStorage.setItem('todo_sidebar_collapsed', isSidebarCollapsed);
@@ -1568,6 +1571,9 @@ function handleRoute() {
     setPriority(0); // сброс приоритета при смене вкладки
     updateMobileBottomNavActiveState();
     updateBackButtonVisibility();
+    if (typeof updateMobileFabVisibility === 'function') {
+        updateMobileFabVisibility();
+    }
     renderTasks();
 }
 
@@ -5213,6 +5219,9 @@ if (todoSidebar) {
                 if (typeof updateMobileBottomNavActiveState === 'function') {
                     updateMobileBottomNavActiveState();
                 }
+                if (typeof updateMobileFabVisibility === 'function') {
+                    updateMobileFabVisibility();
+                }
             }
         }
     });
@@ -5230,6 +5239,9 @@ if (mobileBottomNavEl) {
                 if (typeof updateMobileBottomNavActiveState === 'function') {
                     updateMobileBottomNavActiveState();
                 }
+                if (typeof updateMobileFabVisibility === 'function') {
+                    updateMobileFabVisibility();
+                }
             }
         }
     });
@@ -5240,6 +5252,9 @@ function openMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
     if (addTaskForm && overlay) {
+        // Прокручиваем страницу наверх к форме
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
         addTaskForm.classList.add('mobile-active');
         addTaskForm.classList.add('expanded');
         overlay.classList.add('active');
@@ -5271,6 +5286,9 @@ function closeMobileAddTaskSheet() {
             taskTitleInput.style.height = 'auto';
             updateAddFormCharCount();
         }
+        if (typeof updateMobileFabVisibility === 'function') {
+            updateMobileFabVisibility();
+        }
     }
 }
 
@@ -5291,5 +5309,20 @@ if (mobileSheetOverlay) {
         e.stopPropagation();
         closeMobileAddTaskSheet();
     });
+}
+
+// Управление отображением плавающей кнопки плюса добавления задач
+function updateMobileFabVisibility() {
+    const mobileFabAddEl = document.getElementById('mobileFabAdd');
+    if (!mobileFabAddEl) return;
+    
+    const isSidebarOpen = todoSidebar && todoSidebar.classList.contains('mobile-open');
+    const isTrash = currentRoute === 'trash';
+    
+    if (isSidebarOpen || isTrash) {
+        mobileFabAddEl.style.setProperty('display', 'none', 'important');
+    } else {
+        mobileFabAddEl.style.setProperty('display', '', ''); // Сброс к CSS по умолчанию
+    }
 }
 

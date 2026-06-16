@@ -3320,23 +3320,23 @@ body.dark .priority-opt-btn:hover {
 
     .add-task-form.mobile-active {
         display: flex !important;
-        position: fixed !important;
-        top: 70px !important;
-        left: 16px !important;
-        right: 16px !important;
+        position: relative !important;
         background-color: var(--card-bg) !important;
         border: 1px solid var(--border) !important;
-        border-radius: 16px !important; /* Красивое скругление со всех сторон */
+        border-radius: 14px !important; /* Красивое закругление со всех сторон */
         padding: 16px !important;
-        margin: 0 !important;
+        margin: 12px 0 16px 0 !important;
         z-index: 1100 !important; /* Поверх оверлея */
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
         animation: slideDownMobile 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     @keyframes slideDownMobile {
-        from { transform: translateY(-30px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
+        from { opacity: 0; margin-top: 0px !important; }
+        to { opacity: 1; margin-top: 12px !important; }
     }
 
     .add-task-form.mobile-active .form-actions {
@@ -3344,6 +3344,9 @@ body.dark .priority-opt-btn:hover {
         margin-top: 14px !important;
         gap: 12px !important;
         flex-wrap: nowrap !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        align-items: center !important;
     }
 
     .add-task-form.mobile-active .form-actions-left {
@@ -3354,6 +3357,7 @@ body.dark .priority-opt-btn:hover {
         overflow-x: auto !important;
         padding-bottom: 6px !important;
         flex: 1 !important;
+        min-width: 0 !important; /* Позволяет дочерним элементам сжиматься и скроллиться */
         scrollbar-width: none !important;
     }
 
@@ -3426,18 +3430,28 @@ body.dark .priority-opt-btn:hover {
         color: var(--text-secondary) !important;
     }
 
-    /* Открываем выпадающие списки календаря, проекта и приоритета вверх на всю ширину мобильного */
+    /* Открываем выпадающие списки календаря, проекта и приоритета снизу экрана в виде шторки */
     .add-task-form.mobile-active .due-date-dropdown,
     .add-task-form.mobile-active .project-dropdown,
     .add-task-form.mobile-active .priority-dropdown {
-        position: absolute !important;
-        bottom: calc(100% + 4px) !important;
+        position: fixed !important;
+        bottom: 0 !important;
         top: auto !important;
-        left: 16px !important;
-        right: 16px !important;
-        width: calc(100% - 32px) !important;
-        z-index: 1200 !important;
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15) !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        border-radius: 20px 20px 0 0 !important;
+        z-index: 1300 !important; /* Выше формы и оверлея */
+        box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2) !important;
+        padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px !important;
+        max-height: 50vh !important;
+        overflow-y: auto !important;
+        animation: slideUpMobile 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    }
+
+    @keyframes slideUpMobile {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
     }
 }
 
@@ -3450,12 +3464,4 @@ body.dark .priority-opt-btn:hover {
 .custom-context-menu {
     opacity: 1 !important;
     background-color: var(--card-bg) !important;
-}
-
-/* Фиксация body на мобильном при открытии шторки ввода задач */
-body.mobile-sheet-open {
-    position: fixed !important;
-    width: 100% !important;
-    height: 100% !important;
-    overflow: hidden !important;
 }

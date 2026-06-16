@@ -1258,6 +1258,18 @@ body.dark .dropdown-submenu {
 
 /* Адаптивность */
 @media (max-width: 768px) {
+    html, body {
+        height: 100dvh;
+        overflow: hidden;
+    }
+
+    .todo-app {
+        height: 100dvh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
     .todo-sidebar {
         transform: translateX(-100%);
         width: 100% !important;
@@ -1275,7 +1287,10 @@ body.dark .dropdown-submenu {
 
     .todo-content {
         margin-left: 0;
-        padding: 32px 16px calc(80px + env(safe-area-inset-bottom, 0px)) 16px; /* Дополнительный отступ снизу под меню и сверху для воздуха */
+        padding: 32px 16px 24px 16px;
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 180px;
     }
 
     .content-nav-toggle {
@@ -3320,23 +3335,29 @@ body.dark .priority-opt-btn:hover {
 
     .add-task-form.mobile-active {
         display: flex !important;
-        position: relative !important;
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0; /* Без !important, чтобы JS мог перезаписывать bottom */
         background-color: var(--card-bg) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 14px !important; /* Красивое закругление со всех сторон */
-        padding: 16px !important;
-        margin: 12px 0 16px 0 !important;
+        border-top: 1px solid var(--border) !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: none !important;
+        border-radius: 20px 20px 0 0 !important; /* Красивое закругление сверху */
+        padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px !important;
+        margin: 0 !important;
         z-index: 1100 !important; /* Поверх оверлея */
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
-        animation: slideDownMobile 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+        animation: slideUpMobileForm 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
     }
 
-    @keyframes slideDownMobile {
-        from { opacity: 0; margin-top: 0px !important; }
-        to { opacity: 1; margin-top: 12px !important; }
+    @keyframes slideUpMobileForm {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
     }
 
     .add-task-form.mobile-active .form-actions {

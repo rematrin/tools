@@ -5248,6 +5248,36 @@ if (mobileBottomNavEl) {
 }
 
 // --- ЛОГИКА ДЛЯ МОБИЛЬНОГО БОТОМ-ШИТа И FAB ---
+function adjustAddTaskFormLocation() {
+    const isMobile = window.innerWidth <= 768;
+    const addTaskForm = document.querySelector('.add-task-form');
+    if (!addTaskForm) return;
+
+    if (isMobile) {
+        const todoApp = document.querySelector('.todo-app');
+        if (todoApp && addTaskForm.parentNode !== todoApp) {
+            todoApp.appendChild(addTaskForm);
+        }
+    } else {
+        const activeTasksContainer = document.getElementById('activeTasksContainer');
+        if (activeTasksContainer && addTaskForm.parentNode !== activeTasksContainer.parentNode) {
+            activeTasksContainer.parentNode.insertBefore(addTaskForm, activeTasksContainer);
+        }
+    }
+}
+
+function updateVisualViewportOffset() {
+    const addTaskForm = document.querySelector('.add-task-form');
+    if (!addTaskForm || !addTaskForm.classList.contains('mobile-active')) return;
+    
+    if (window.visualViewport) {
+        const vv = window.visualViewport;
+        const offsetFromBottom = window.innerHeight - vv.height - vv.offsetTop;
+        const bottomOffset = Math.max(0, offsetFromBottom);
+        addTaskForm.style.bottom = `${bottomOffset}px`;
+    }
+}
+
 function openMobileAddTaskSheet() {
     const addTaskForm = document.querySelector('.add-task-form');
     const overlay = document.getElementById('mobileSheetOverlay');
@@ -5259,6 +5289,8 @@ function openMobileAddTaskSheet() {
         addTaskForm.classList.add('expanded');
         overlay.classList.add('active');
         
+        updateVisualViewportOffset();
+
         const taskTitleInput = document.getElementById('taskTitleInput');
         if (taskTitleInput) {
             taskTitleInput.placeholder = 'Что бы вы хотели сделать?';
@@ -5275,6 +5307,7 @@ function closeMobileAddTaskSheet() {
         addTaskForm.classList.remove('mobile-active');
         addTaskForm.classList.remove('expanded');
         overlay.classList.remove('active');
+        addTaskForm.style.bottom = '';
         
         const taskTitleInput = document.getElementById('taskTitleInput');
         if (taskTitleInput) {
@@ -5324,5 +5357,14 @@ function updateMobileFabVisibility() {
     } else {
         mobileFabAddEl.style.setProperty('display', '', ''); // Сброс к CSS по умолчанию
     }
+}
+
+// Слушатели для позиционирования
+adjustAddTaskFormLocation();
+window.addEventListener('resize', adjustAddTaskFormLocation);
+
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', updateVisualViewportOffset);
+    window.visualViewport.addEventListener('scroll', updateVisualViewportOffset);
 }
 

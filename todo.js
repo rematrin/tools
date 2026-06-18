@@ -3289,7 +3289,16 @@ function renderTasks() {
     completedTasksContainer.innerHTML = '';
     currentDisplayCompletedTasks = displayCompletedTasks;
 
-    if (displayCompletedTasks.length === 0) {
+    let isCompletedHiddenForProject = false;
+    if (currentRoute.startsWith('project/')) {
+        const projectId = currentRoute.split('/')[1];
+        const project = projectsList.find(p => p.id === projectId);
+        if (project && project.hideCompleted === true) {
+            isCompletedHiddenForProject = true;
+        }
+    }
+
+    if (displayCompletedTasks.length === 0 || isCompletedHiddenForProject) {
         if (completedSection) completedSection.style.display = 'none';
     } else {
         if (completedSection) completedSection.style.display = 'block';
@@ -4453,6 +4462,7 @@ if (projectHeaderMoreBtn && projectHeaderDropdown) {
     projectHeaderMoreBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         if (projectHeaderDropdown.style.display === 'none' || projectHeaderDropdown.style.display === '') {
+            renderProjectHeaderDropdown();
             projectHeaderDropdown.style.display = 'flex';
         } else {
             projectHeaderDropdown.style.display = 'none';
@@ -4460,77 +4470,217 @@ if (projectHeaderMoreBtn && projectHeaderDropdown) {
     });
 }
 
-const btnProjectAddSection = document.getElementById('btnProjectAddSection');
-if (btnProjectAddSection) {
-    btnProjectAddSection.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        if (projectHeaderDropdown) projectHeaderDropdown.style.display = 'none';
-        
-        if (!currentRoute.startsWith('project/')) return;
-        const projectId = currentRoute.split('/')[1];
+function addSectionForCurrentProject() {
+    if (projectHeaderDropdown) projectHeaderDropdown.style.display = 'none';
+    
+    if (!currentRoute.startsWith('project/')) return;
+    const projectId = currentRoute.split('/')[1];
 
-        // Если уже открыто поле ввода нового раздела, не создаем еще одно
-        if (activeTasksContainer.querySelector('.new-section-temp')) {
-            const tempInput = activeTasksContainer.querySelector('.section-inline-input');
-            if (tempInput) tempInput.focus();
-            return;
+    // Если уже открыто поле ввода нового раздела, не создаем еще одно
+    if (activeTasksContainer.querySelector('.new-section-temp')) {
+        const tempInput = activeTasksContainer.querySelector('.section-inline-input');
+        if (tempInput) tempInput.focus();
+        return;
+    }
+
+    const tempSectionEl = document.createElement('div');
+    tempSectionEl.className = 'project-section new-section-temp';
+    tempSectionEl.innerHTML = `
+        <div class="project-section-header" style="padding-left: 0;">
+            <button class="section-collapse-btn" type="button" style="margin-left: 0;">
+                <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+            <input type="text" class="section-inline-input" placeholder="Название раздела..." maxlength="50" style="background: transparent; border: 1px solid var(--accent); outline: none; color: var(--text); font-family: inherit; font-size: 0.95rem; font-weight: 600; padding: 2px 4px; border-radius: 4px; width: 200px;">
+        </div>
+    `;
+    activeTasksContainer.appendChild(tempSectionEl);
+    const input = tempSectionEl.querySelector('.section-inline-input');
+    input.focus();
+
+    let finished = false;
+    async function saveSection() {
+        if (finished) return;
+        finished = true;
+        const nameText = input.value.trim();
+        if (nameText && nameText.length <= 50) {
+            try {
+                const projectSections = sectionsList.filter(s => s.projectId === projectId);
+                const maxOrder = projectSections.reduce((max, s) => Math.max(max, s.order !== undefined ? s.order : 0), 0);
+                
+                await addDoc(collection(db, 'users', currentUid, 'sections'), {
+                    name: nameText,
+                    projectId: projectId,
+                    order: maxOrder + 1,
+                    createdAt: serverTimestamp()
+                });
+            } catch (err) {
+                console.error("Не удалось добавить раздел:", err);
+                tempSectionEl.remove();
+            }
+        } else {
+            tempSectionEl.remove();
         }
+    }
 
-        const tempSectionEl = document.createElement('div');
-        tempSectionEl.className = 'project-section new-section-temp';
-        tempSectionEl.innerHTML = `
-            <div class="project-section-header" style="padding-left: 0;">
-                <button class="section-collapse-btn" type="button" style="margin-left: 0;">
-                    <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </button>
-                <input type="text" class="section-inline-input" placeholder="Название раздела..." maxlength="50" style="background: transparent; border: 1px solid var(--accent); outline: none; color: var(--text); font-family: inherit; font-size: 0.95rem; font-weight: 600; padding: 2px 4px; border-radius: 4px; width: 200px;">
-            </div>
-        `;
-        activeTasksContainer.appendChild(tempSectionEl);
-        const input = tempSectionEl.querySelector('.section-inline-input');
-        input.focus();
-
-        let finished = false;
-        async function saveSection() {
-            if (finished) return;
+    input.addEventListener('blur', saveSection);
+    input.addEventListener('keydown', (ev) => {
+        ev.stopPropagation();
+        if (ev.key === 'Enter') {
+            ev.preventDefault();
+            input.blur();
+        } else if (ev.key === 'Escape') {
             finished = true;
-            const nameText = input.value.trim();
-            if (nameText && nameText.length <= 50) {
-                try {
-                    const projectSections = sectionsList.filter(s => s.projectId === projectId);
-                    const maxOrder = projectSections.reduce((max, s) => Math.max(max, s.order !== undefined ? s.order : 0), 0);
-                    
-                    await addDoc(collection(db, 'users', currentUid, 'sections'), {
-                        name: nameText,
-                        projectId: projectId,
-                        order: maxOrder + 1,
-                        createdAt: serverTimestamp()
-                    });
-                } catch (err) {
-                    console.error("Не удалось добавить раздел:", err);
-                    tempSectionEl.remove();
-                }
-            } else {
-                tempSectionEl.remove();
+            tempSectionEl.remove();
+        }
+    });
+    input.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+    });
+}
+
+function renderProjectHeaderDropdown() {
+    if (!projectHeaderDropdown) return;
+    if (!currentRoute.startsWith('project/')) return;
+    const projectId = currentRoute.split('/')[1];
+    const project = projectsList.find(p => p.id === projectId);
+    if (!project) return;
+
+    const isCompletedHidden = project.hideCompleted === true;
+    const isCountHidden = project.hideCount === true;
+
+    projectHeaderDropdown.innerHTML = `
+        <button class="dropdown-item" id="btnProjectAddSection" style="display: flex; align-items: center; width: 100%; padding: 8px 12px; border: none; background: transparent; color: var(--text); border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background-color 0.15s;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 6px; flex-shrink: 0;">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Добавить раздел</span>
+        </button>
+        <button class="dropdown-item" id="btnProjectToggleCompleted" style="display: flex; align-items: center; width: 100%; padding: 8px 12px; border: none; background: transparent; color: var(--text); border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background-color 0.15s;">
+            ${isCompletedHidden ? `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Показать выполненные</span>
+            ` : `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+                <span>Скрыть выполненные</span>
+            `}
+        </button>
+        <button class="dropdown-item" id="btnProjectRename" style="display: flex; align-items: center; width: 100%; padding: 8px 12px; border: none; background: transparent; color: var(--text); border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background-color 0.15s;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Переименовать</span>
+        </button>
+        <button class="dropdown-item" id="btnProjectChangeIcon" style="display: flex; align-items: center; width: 100%; padding: 8px 12px; border: none; background: transparent; color: var(--text); border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background-color 0.15s;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span>Сменить иконку</span>
+        </button>
+        <button class="dropdown-item" id="btnProjectToggleCount" style="display: flex; align-items: center; width: 100%; padding: 8px 12px; border: none; background: transparent; color: var(--text); border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background-color 0.15s;">
+            ${isCountHidden ? `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Показать количество</span>
+            ` : `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+                <span>Скрыть количество</span>
+            `}
+        </button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item btn-delete" id="btnProjectDelete" style="display: flex; align-items: center; width: 100%; padding: 8px 12px; border: none; background: transparent; color: #ef4444; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background-color 0.15s;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0; color: #ef4444;">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Удалить проект</span>
+        </button>
+    `;
+
+    // Bind listeners
+    document.getElementById('btnProjectAddSection').addEventListener('click', (e) => {
+        e.stopPropagation();
+        addSectionForCurrentProject();
+    });
+
+    document.getElementById('btnProjectToggleCompleted').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        projectHeaderDropdown.style.display = 'none';
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                hideCompleted: !isCompletedHidden
+            });
+        } catch (err) {
+            console.error("Ошибка при изменении видимости выполненных задач:", err);
+        }
+    });
+
+    document.getElementById('btnProjectRename').addEventListener('click', (e) => {
+        e.stopPropagation();
+        projectHeaderDropdown.style.display = 'none';
+        const itemContainer = document.querySelector(`.project-actions-btn[data-id="${projectId}"]`)?.closest('.project-item-container');
+        if (itemContainer) {
+            enableProjectInlineEdit(itemContainer, projectId, project.name);
+        } else {
+            const newName = prompt("Введите новое название проекта:", project.name);
+            if (newName && newName.trim() && newName.trim() !== project.name) {
+                updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                    name: newName.trim()
+                }).then(() => {
+                    const titleEl = document.querySelector('.list-title');
+                    if (titleEl) titleEl.textContent = newName.trim();
+                }).catch(err => {
+                    console.error("Ошибка переименования проекта:", err);
+                });
             }
         }
+    });
 
-        input.addEventListener('blur', saveSection);
-        input.addEventListener('keydown', (ev) => {
-            ev.stopPropagation();
-            if (ev.key === 'Enter') {
-                ev.preventDefault();
-                input.blur();
-            } else if (ev.key === 'Escape') {
-                finished = true;
-                tempSectionEl.remove();
+    document.getElementById('btnProjectChangeIcon').addEventListener('click', (e) => {
+        e.stopPropagation();
+        projectHeaderDropdown.style.display = 'none';
+        showProjectIconModal(projectId, project.name);
+    });
+
+    document.getElementById('btnProjectToggleCount').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        projectHeaderDropdown.style.display = 'none';
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                hideCount: !isCountHidden
+            });
+        } catch (err) {
+            console.error("Ошибка при изменении видимости счетчика проекта:", err);
+        }
+    });
+
+    document.getElementById('btnProjectDelete').addEventListener('click', (e) => {
+        e.stopPropagation();
+        projectHeaderDropdown.style.display = 'none';
+        showCustomConfirm(
+            "Удалить проект?",
+            `Вы действительно хотите удалить проект <strong>${escapeHtml(project.name)}</strong>? Все входящие в него задачи будут перемещены в корзину.`,
+            "Удалить",
+            () => {
+                deleteProject(projectId);
             }
-        });
-        input.addEventListener('click', (ev) => {
-            ev.stopPropagation();
-        });
+        );
     });
 }
 

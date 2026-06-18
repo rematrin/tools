@@ -387,34 +387,6 @@ body.dark .add-task-form.expanded {
         padding: 10px 12px;
     }
 
-    /* Адаптивность для формы быстрого добавления задачи */
-    .add-task-form .form-actions {
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-    .add-task-form .form-actions-left {
-        flex-wrap: wrap;
-        gap: 8px;
-        width: 100%;
-    }
-
-    .add-task-form .due-date-wrapper,
-    .add-task-form .add-task-project-wrapper {
-        flex: 1;
-        min-width: 120px;
-    }
-
-    .add-task-form .btn-due-date {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .add-task-form .btn-add-task {
-        width: 100%;
-        justify-content: center;
-        padding: 10px;
-    }
 }
 
 .task-input {
@@ -3277,93 +3249,10 @@ body.dark .priority-opt-btn:hover {
     color: var(--text-secondary);
 }
 
-/* --- МОБИЛЬНАЯ КНОПКА (FAB) И ВСПЛЫВАЮЩИЙ ИНПУТ (BOTTOM SHEET) --- */
-.mobile-fab-add {
-    display: none;
-    position: fixed;
-    bottom: calc(76px + env(safe-area-inset-bottom, 0px)); /* Парит над нижним меню */
-    right: 18px;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background-color: var(--accent);
-    color: white;
-    border: none;
-    box-shadow: none !important; /* Убираем свечение */
-    z-index: 900;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s;
-    outline: none;
-}
-
-.mobile-fab-add:active {
-    transform: scale(0.9);
-}
-
-.mobile-fab-add svg {
-    width: 24px;
-    height: 24px;
-}
-
-.mobile-sheet-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.45);
-    z-index: 1050;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    pointer-events: none;
-}
-
-.mobile-sheet-overlay.active {
-    opacity: 1;
-    pointer-events: auto;
-    display: block !important;
-}
-
 @media (max-width: 768px) {
-    .mobile-fab-add {
-        display: flex;
-    }
 
-    .add-task-form {
-        display: none !important; /* Скрываем дефолтную инлайн-форму */
-    }
-
-    .add-task-form.mobile-active {
-        display: flex !important;
-        position: fixed !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0; /* Без !important, чтобы JS мог перезаписывать bottom */
-        background-color: var(--card-bg) !important;
-        border-top: 1px solid var(--border) !important;
-        border-left: none !important;
-        border-right: none !important;
-        border-bottom: none !important;
-        border-radius: 20px 20px 0 0 !important; /* Красивое закругление сверху */
-        padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px !important;
-        margin: 0 !important;
-        z-index: 1100 !important; /* Поверх оверлея */
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
-        animation: slideUpMobileForm 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-    }
-
-    @keyframes slideUpMobileForm {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
-    }
-
-    .add-task-form.mobile-active .form-actions {
-        display: flex !important;
+    .add-task-form .form-actions {
+        display: none !important;
         margin-top: 14px !important;
         gap: 12px !important;
         flex-wrap: nowrap !important;
@@ -3372,7 +3261,12 @@ body.dark .priority-opt-btn:hover {
         align-items: center !important;
     }
 
-    .add-task-form.mobile-active .form-actions-left {
+    .add-task-form.expanded .form-actions,
+    .add-task-form.mobile-active .form-actions {
+        display: flex !important;
+    }
+
+    .add-task-form .form-actions-left {
         display: flex !important;
         flex-direction: row !important;
         gap: 8px !important;
@@ -3384,20 +3278,20 @@ body.dark .priority-opt-btn:hover {
         scrollbar-width: none !important;
     }
 
-    .add-task-form.mobile-active .form-actions-left::-webkit-scrollbar {
+    .add-task-form .form-actions-left::-webkit-scrollbar {
         display: none !important;
     }
 
     /* Ломаем контекст позиционирования для всплывающего меню на мобильном */
-    .add-task-form.mobile-active .due-date-wrapper,
-    .add-task-form.mobile-active .add-task-project-wrapper,
-    .add-task-form.mobile-active .priority-wrapper {
+    .add-task-form .due-date-wrapper,
+    .add-task-form .add-task-project-wrapper,
+    .add-task-form .priority-wrapper {
         position: static !important;
         flex-shrink: 0 !important;
         min-width: auto !important;
     }
 
-    .add-task-form.mobile-active .btn-due-date {
+    .add-task-form .btn-due-date {
         padding: 8px 12px !important;
         font-size: 0.85rem !important;
         background-color: var(--hover-bg) !important;
@@ -3405,7 +3299,7 @@ body.dark .priority-opt-btn:hover {
     }
 
     /* Круглая голубоватая кнопка отправки */
-    .add-task-form.mobile-active .btn-add-task {
+    .add-task-form .btn-add-task {
         width: 38px !important;
         height: 38px !important;
         border-radius: 50% !important;
@@ -3421,19 +3315,19 @@ body.dark .priority-opt-btn:hover {
         transition: background-color 0.2s ease, opacity 0.2s ease !important;
     }
 
-    body.dark .add-task-form.mobile-active .btn-add-task {
+    body.dark .add-task-form .btn-add-task {
         background-color: var(--accent) !important;
     }
 
-    .add-task-form.mobile-active .btn-add-task span {
+    .add-task-form .btn-add-task span {
         display: none !important;
     }
 
-    .add-task-form.mobile-active .btn-add-task .icon-plus {
+    .add-task-form .btn-add-task .icon-plus {
         display: none !important;
     }
 
-    .add-task-form.mobile-active .btn-add-task .icon-arrow {
+    .add-task-form .btn-add-task .icon-arrow {
         display: block !important;
         margin: 0 !important;
         width: 28px !important; /* Увеличили стрелочку внутри */
@@ -3441,22 +3335,22 @@ body.dark .priority-opt-btn:hover {
     }
 
     /* Стиль неактивной (серой) кнопки отправки на мобильном, когда поле ввода пустое */
-    .add-task-form.mobile-active .task-input:placeholder-shown ~ .form-actions .btn-add-task {
+    .add-task-form .task-input:placeholder-shown ~ .form-actions .btn-add-task {
         background-color: var(--hover-bg) !important;
         color: var(--text-secondary) !important;
         opacity: 0.55 !important;
         pointer-events: none !important;
     }
 
-    body.dark .add-task-form.mobile-active .task-input:placeholder-shown ~ .form-actions .btn-add-task {
+    body.dark .add-task-form .task-input:placeholder-shown ~ .form-actions .btn-add-task {
         background-color: var(--hover-bg) !important;
         color: var(--text-secondary) !important;
     }
 
     /* Открываем выпадающие списки календаря, проекта и приоритета над полем ввода на мобильном */
-    .add-task-form.mobile-active .due-date-dropdown,
-    .add-task-form.mobile-active .project-dropdown,
-    .add-task-form.mobile-active .priority-dropdown {
+    .add-task-form .due-date-dropdown,
+    .add-task-form .project-dropdown,
+    .add-task-form .priority-dropdown {
         position: absolute !important;
         bottom: calc(100% + 12px) !important; /* На 12px выше поля ввода */
         top: auto !important;
@@ -3476,21 +3370,21 @@ body.dark .priority-opt-btn:hover {
     }
 
     /* Уменьшаем отступы и размеры внутри календаря на мобильных, чтобы всё влезало без скролла */
-    .add-task-form.mobile-active .due-date-dropdown {
+    .add-task-form .due-date-dropdown {
         padding: 12px !important;
     }
-    .add-task-form.mobile-active .due-date-dropdown .due-divider {
+    .add-task-form .due-date-dropdown .due-divider {
         margin: 6px 0 !important;
     }
-    .add-task-form.mobile-active .due-date-dropdown .due-calendar-picker {
+    .add-task-form .due-date-dropdown .due-calendar-picker {
         gap: 6px !important;
     }
-    .add-task-form.mobile-active .due-date-dropdown .calendar-day-cell {
+    .add-task-form .due-date-dropdown .calendar-day-cell {
         width: 28px !important;
         height: 28px !important;
         margin: 0 auto !important;
     }
-    .add-task-form.mobile-active .due-date-dropdown .quick-opt-btn {
+    .add-task-form .due-date-dropdown .quick-opt-btn {
         padding: 6px 8px !important;
     }
 

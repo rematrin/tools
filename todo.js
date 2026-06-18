@@ -302,16 +302,12 @@ document.addEventListener('click', (e) => {
                                   (addTaskProjectDropdown && addTaskProjectDropdown.contains(e.target)) ||
                                   (priorityDropdown && priorityDropdown.contains(e.target));
         if (!isClickInsideForm && taskTitleInput.value.trim() === '') {
-            if (addTaskForm.classList.contains('mobile-active')) {
-                closeMobileAddTaskSheet();
-            } else {
-                addTaskForm.classList.remove('expanded');
-                taskTitleInput.placeholder = '+ Добавить задачу';
-                setDueDate(getDefaultDueDate()); // сбрасываем выбранную дату к дефолтной для текущего раздела
-                setPriority(0); // сбрасываем приоритет
-                taskTitleInput.style.height = 'auto'; // Reset height
-                updateAddFormCharCount(); // Reset counter
-            }
+            addTaskForm.classList.remove('expanded');
+            taskTitleInput.placeholder = '+ Добавить задачу';
+            setDueDate(getDefaultDueDate()); // сбрасываем выбранную дату к дефолтной для текущего раздела
+            setPriority(0); // сбрасываем приоритет
+            taskTitleInput.style.height = 'auto'; // Reset height
+            updateAddFormCharCount(); // Reset counter
         }
     }
 
@@ -538,6 +534,10 @@ function formatDueDateDisplay(dateStr, timeStr = null, repeatStr = null) {
         const [year, month, day] = dateStr.split('-');
         const monthsRuShort = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
         label = `${parseInt(day, 10)} ${monthsRuShort[parseInt(month, 10) - 1]}`;
+        const currentYear = new Date().getFullYear();
+        if (parseInt(year, 10) !== currentYear) {
+            label += ` ${year}`;
+        }
     }
 
     if (timeStr) {
@@ -1723,14 +1723,7 @@ async function handleAddTask() {
     const projectIdForDb = addTaskSelectedProjectId;
     const priorityForDb = selectedPriority || 0;
 
-    const addTaskFormEl = document.querySelector('.add-task-form');
-    const isMobile = addTaskFormEl && addTaskFormEl.classList.contains('mobile-active');
-
-    if (isMobile) {
-        closeMobileAddTaskSheet();
-    } else {
-        btnAddTask.disabled = true;
-    }
+    btnAddTask.disabled = true;
 
     // Вычисляем order, чтобы новая задача вставала в начало или конец списка
     const addTaskPositionPref = localStorage.getItem('todo_pref_add_task_position') || 'top';
@@ -1776,30 +1769,25 @@ async function handleAddTask() {
             createdAt: serverTimestamp()
         });
 
-        // Если это десктопная форма, сбрасываем поля сейчас
-        if (!isMobile) {
-            taskTitleInput.value = '';
-            selectedDueTime = null;
-            selectedDueRepeat = null;
-            setDueDate(getDefaultDueDate());
-            setPriority(0);
-            
-            if (currentRoute.startsWith('project/')) {
-                const projectId = currentRoute.split('/')[1];
-                setAddTaskProject(projectId);
-            } else {
-                setAddTaskProject(null);
-            }
-
-            taskTitleInput.style.height = 'auto';
-            updateAddFormCharCount();
+        taskTitleInput.value = '';
+        selectedDueTime = null;
+        selectedDueRepeat = null;
+        setDueDate(getDefaultDueDate());
+        setPriority(0);
+        
+        if (currentRoute.startsWith('project/')) {
+            const projectId = currentRoute.split('/')[1];
+            setAddTaskProject(projectId);
+        } else {
+            setAddTaskProject(null);
         }
+
+        taskTitleInput.style.height = 'auto';
+        updateAddFormCharCount();
     } catch (err) {
         console.error("Не удалось добавить задачу:", err);
     } finally {
-        if (!isMobile) {
-            btnAddTask.disabled = false;
-        }
+        btnAddTask.disabled = false;
     }
 }
 if (btnAddTask) {
@@ -1813,20 +1801,16 @@ if (taskTitleInput) {
         } else if (e.key === 'Escape') {
             e.preventDefault();
             const form = document.querySelector('.add-task-form');
-            if (form && form.classList.contains('mobile-active')) {
-                closeMobileAddTaskSheet();
-            } else {
-                taskTitleInput.value = '';
-                taskTitleInput.blur();
-                if (form) {
-                    form.classList.remove('expanded');
-                }
-                taskTitleInput.placeholder = '+ Добавить задачу';
-                setDueDate(getDefaultDueDate());
-                setPriority(0);
-                taskTitleInput.style.height = 'auto'; // Reset height
-                updateAddFormCharCount(); // Reset counter
+            taskTitleInput.value = '';
+            taskTitleInput.blur();
+            if (form) {
+                form.classList.remove('expanded');
             }
+            taskTitleInput.placeholder = '+ Добавить задачу';
+            setDueDate(getDefaultDueDate());
+            setPriority(0);
+            taskTitleInput.style.height = 'auto'; // Reset height
+            updateAddFormCharCount(); // Reset counter
         }
     });
 
@@ -3086,6 +3070,24 @@ function createTaskRowElement(task) {
     const hasSubtasks = !isSubtask && allTasks.some(t => t.parentId === task.id && !t.deleted);
     const isCollapsed = hasSubtasks && isParentTaskCollapsed(task.id);
 
+    let dueLabel = '';
+    if (task.dueDate) {
+        dueLabel = formatDueDateDisplay(task.dueDate, task.dueTime, task.dueRepeat);
+        if (currentRoute === 'today' || currentRoute === 'tomorrow') {
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+            
+            if (task.dueDate === todayStr || task.dueDate === tomorrowStr) {
+                const project = projectsList.find(p => p.id === task.projectId);
+                const projectName = project ? project.name : 'Входящие';
+                dueLabel = dueLabel.replace('Сегодня', projectName).replace('Завтра', projectName);
+            }
+        }
+    }
+
     const chevronHtml = hasSubtasks ? `
         <button class="task-collapse-btn ${isCollapsed ? 'collapsed' : ''}" type="button" aria-label="Свернуть/развернуть подзадачи" title="${isCollapsed ? 'Развернуть подзадачи' : 'Свернуть подзадачи'}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -3118,7 +3120,7 @@ function createTaskRowElement(task) {
                         <line x1="8" y1="2" x2="8" y2="6"></line>
                         <line x1="3" y1="10" x2="21" y2="10"></line>
                     </svg>
-                    <span style="vertical-align: middle;">${formatDueDateDisplay(task.dueDate, task.dueTime, task.dueRepeat)}</span>
+                    <span style="vertical-align: middle;">${dueLabel}</span>
                     ${task.dueRepeat ? `
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
                             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
@@ -3190,7 +3192,7 @@ function createTaskRowElement(task) {
                     <line x1="8" y1="2" x2="8" y2="6"></line>
                     <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
-                <span style="vertical-align: middle;">${formatDueDateDisplay(task.dueDate, task.dueTime, task.dueRepeat)}</span>
+                <span style="vertical-align: middle;">${dueLabel}</span>
                 ${task.dueRepeat ? `
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
                         <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
@@ -5249,122 +5251,13 @@ if (mobileBottomNavEl) {
 
 // --- ЛОГИКА ДЛЯ МОБИЛЬНОГО БОТОМ-ШИТа И FAB ---
 function adjustAddTaskFormLocation() {
-    const isMobile = window.innerWidth <= 768;
     const addTaskForm = document.querySelector('.add-task-form');
-    if (!addTaskForm) return;
-
-    if (isMobile) {
-        const todoApp = document.querySelector('.todo-app');
-        if (todoApp && addTaskForm.parentNode !== todoApp) {
-            todoApp.appendChild(addTaskForm);
-        }
-    } else {
-        const activeTasksContainer = document.getElementById('activeTasksContainer');
-        if (activeTasksContainer && addTaskForm.parentNode !== activeTasksContainer.parentNode) {
-            activeTasksContainer.parentNode.insertBefore(addTaskForm, activeTasksContainer);
-        }
+    const activeTasksContainer = document.getElementById('activeTasksContainer');
+    if (activeTasksContainer && addTaskForm && addTaskForm.parentNode !== activeTasksContainer.parentNode) {
+        activeTasksContainer.parentNode.insertBefore(addTaskForm, activeTasksContainer);
     }
 }
 
-function updateVisualViewportOffset() {
-    const addTaskForm = document.querySelector('.add-task-form');
-    if (!addTaskForm || !addTaskForm.classList.contains('mobile-active')) return;
-    
-    if (window.visualViewport) {
-        const vv = window.visualViewport;
-        const offsetFromBottom = window.innerHeight - vv.height - vv.offsetTop;
-        const bottomOffset = Math.max(0, offsetFromBottom);
-        addTaskForm.style.bottom = `${bottomOffset}px`;
-    }
-}
-
-function openMobileAddTaskSheet() {
-    const addTaskForm = document.querySelector('.add-task-form');
-    const overlay = document.getElementById('mobileSheetOverlay');
-    if (addTaskForm && overlay) {
-        // Прокручиваем страницу наверх к форме
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        addTaskForm.classList.add('mobile-active');
-        addTaskForm.classList.add('expanded');
-        overlay.classList.add('active');
-        
-        updateVisualViewportOffset();
-
-        const taskTitleInput = document.getElementById('taskTitleInput');
-        if (taskTitleInput) {
-            taskTitleInput.placeholder = 'Что бы вы хотели сделать?';
-            taskTitleInput.focus();
-            updateAddFormCharCount();
-        }
-    }
-}
-
-function closeMobileAddTaskSheet() {
-    const addTaskForm = document.querySelector('.add-task-form');
-    const overlay = document.getElementById('mobileSheetOverlay');
-    if (addTaskForm && overlay) {
-        addTaskForm.classList.remove('mobile-active');
-        addTaskForm.classList.remove('expanded');
-        overlay.classList.remove('active');
-        addTaskForm.style.bottom = '';
-        
-        const taskTitleInput = document.getElementById('taskTitleInput');
-        if (taskTitleInput) {
-            taskTitleInput.value = '';
-            taskTitleInput.blur();
-            taskTitleInput.placeholder = '+ Добавить задачу';
-            setDueDate(getDefaultDueDate());
-            setPriority(0);
-            taskTitleInput.style.height = 'auto';
-            updateAddFormCharCount();
-        }
-        if (typeof updateMobileFabVisibility === 'function') {
-            updateMobileFabVisibility();
-        }
-    }
-}
-
-// Инициализация FAB и оверлея
-const mobileFabAdd = document.getElementById('mobileFabAdd');
-if (mobileFabAdd) {
-    mobileFabAdd.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        openMobileAddTaskSheet();
-    });
-}
-
-const mobileSheetOverlay = document.getElementById('mobileSheetOverlay');
-if (mobileSheetOverlay) {
-    mobileSheetOverlay.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        closeMobileAddTaskSheet();
-    });
-}
-
-// Управление отображением плавающей кнопки плюса добавления задач
-function updateMobileFabVisibility() {
-    const mobileFabAddEl = document.getElementById('mobileFabAdd');
-    if (!mobileFabAddEl) return;
-    
-    const isSidebarOpen = todoSidebar && todoSidebar.classList.contains('mobile-open');
-    const isTrash = currentRoute === 'trash';
-    
-    if (isSidebarOpen || isTrash) {
-        mobileFabAddEl.style.setProperty('display', 'none', 'important');
-    } else {
-        mobileFabAddEl.style.setProperty('display', '', ''); // Сброс к CSS по умолчанию
-    }
-}
-
-// Слушатели для позиционирования
 adjustAddTaskFormLocation();
 window.addEventListener('resize', adjustAddTaskFormLocation);
-
-if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', updateVisualViewportOffset);
-    window.visualViewport.addEventListener('scroll', updateVisualViewportOffset);
-}
 

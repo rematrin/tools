@@ -2039,17 +2039,22 @@ async function toggleTaskCompleted(taskId, currentStatus) {
         const task = allTasks.find(t => t.id === taskId);
         const promises = [];
 
+        const todayStr = getLocalDateString(new Date());
+
         // 1. Подготавливаем обновление текущей задачи
         const deleteCompletedPref = localStorage.getItem('todo_pref_delete_completed') === 'true';
         let updatePromise;
         if (!currentStatus && deleteCompletedPref) {
             updatePromise = updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
                 deleted: true,
-                deletedAt: serverTimestamp()
+                deletedAt: serverTimestamp(),
+                completed: true,
+                completedDate: todayStr
             });
         } else {
             updatePromise = updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
-                completed: !currentStatus
+                completed: !currentStatus,
+                completedDate: !currentStatus ? todayStr : null
             });
         }
         promises.push(updatePromise);
@@ -2062,11 +2067,14 @@ async function toggleTaskCompleted(taskId, currentStatus) {
                 if (deleteCompletedPref) {
                     subPromise = updateDoc(doc(db, 'users', currentUid, 'tasks', subtask.id), {
                         deleted: true,
-                        deletedAt: serverTimestamp()
+                        deletedAt: serverTimestamp(),
+                        completed: true,
+                        completedDate: todayStr
                     });
                 } else {
                     subPromise = updateDoc(doc(db, 'users', currentUid, 'tasks', subtask.id), {
-                        completed: true
+                        completed: true,
+                        completedDate: todayStr
                     });
                 }
                 promises.push(subPromise);
@@ -3345,6 +3353,20 @@ function renderTasks() {
         if (completedTasksContainer) completedTasksContainer.classList.remove('disable-hover');
     }, 50);
 
+    // Обновление виджета серии (Streak)
+    if (currentRoute.startsWith('project/')) {
+        const projectId = currentRoute.split('/')[1];
+        const project = projectsList.find(p => p.id === projectId);
+        if (project) {
+            syncProjectStreak(projectId);
+            updateStreakWidget(project);
+        } else {
+            updateStreakWidget(null);
+        }
+    } else {
+        updateStreakWidget(null);
+    }
+
     renderProjects();
 }
 
@@ -4132,6 +4154,35 @@ function showInlineSubtaskInput(parentTaskEl, parentId, projectId) {
             cancelSubtask();
         }, 150);
     });
+}
+
+// Вспомогательные функции для серии дней (Streak)
+function getLocalDateString(date) {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function getYesterdayDateString(date) {
+    const d = new Date(date);
+    d.setDate(d.getDate() - 1);
+    return getLocalDateString(d);
+}
+
+function getISOWeekString(date) {
+    const d = new Date(date);
+    const day = d.getDay() || 7;
+    d.setDate(d.getDate() + 4 - day);
+    const year = d.getFullYear();
+    const startOfYear = new Date(year, 0, 1);
+    const week = Math.ceil((((d - startOfYear) / 86400000) + 1) / 7);
+    return `${year}-W${week}`;
+}
+
+function getDayOfWeek(date) {
+    return date.getDay() || 7;
 }
 
 // Вспомогательная функция для экранирования HTML
@@ -6083,4 +6134,181 @@ function adjustAddTaskFormLocation() {
 
 adjustAddTaskFormLocation();
 window.addEventListener('resize', adjustAddTaskFormLocation);
+
+// === ЛОГИКА СЕРИИ ДНЕЙ (STREAK WIDGET) ===
+
+function calculateProjectStreak(projectId) {
+    const todayStr = getLocalDateString(new Date());
+    const yesterdayStr = getYesterdayDateString(new Date());
+    const currentWeekStr = getISOWeekString(new Date());
+
+    // Выбираем все выполненные задачи проекта (включая удаленные, если у них есть completedDate)
+    const projectCompletedTasks = allTasks.filter(t => 
+        t.projectId === projectId && 
+        t.completed && 
+        t.completedDate
+    );
+
+    // Извлекаем уникальные даты выполнения, сортируем по возрастанию
+    const dates = [...new Set(projectCompletedTasks.map(t => t.completedDate))].sort();
+
+    let streakCount = 0;
+    let lastStreakDate = null;
+
+    if (dates.length > 0) {
+        const hasToday = dates.includes(todayStr);
+        const hasYesterday = dates.includes(yesterdayStr);
+
+        if (hasToday || hasYesterday) {
+            lastStreakDate = hasToday ? todayStr : yesterdayStr;
+            streakCount = 1;
+
+            // Считаем назад от lastStreakDate
+            let checkDate = new Date(lastStreakDate);
+            while (true) {
+                checkDate.setDate(checkDate.getDate() - 1);
+                const checkDateStr = getLocalDateString(checkDate);
+                if (dates.includes(checkDateStr)) {
+                    streakCount++;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    // Рассчитываем дни недели для текущей недели (1 = Пн, ..., 7 = Вс)
+    const completedDaysThisWeek = [];
+    const today = new Date();
+    const dayOfWeek = getDayOfWeek(today);
+
+    // Понедельник текущей недели
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dayOfWeek - 1));
+
+    for (let i = 0; i < 7; i++) {
+        const weekDay = new Date(monday);
+        weekDay.setDate(monday.getDate() + i);
+        const weekDayStr = getLocalDateString(weekDay);
+
+        if (dates.includes(weekDayStr)) {
+            completedDaysThisWeek.push(i + 1);
+        }
+    }
+
+    const completedToday = dates.includes(todayStr);
+
+    return {
+        streakCount,
+        lastStreakDate: lastStreakDate || "",
+        completedDaysThisWeek,
+        completedToday,
+        streakWeek: currentWeekStr
+    };
+}
+
+async function syncProjectStreak(projectId) {
+    if (!currentUid || !projectId) return;
+    const project = projectsList.find(p => p.id === projectId);
+    if (!project) return;
+
+    const calc = calculateProjectStreak(projectId);
+
+    // Сравниваем с текущими данными проекта, чтобы избежать бесконечных записей
+    if (project.streakCount !== calc.streakCount ||
+        project.lastStreakDate !== calc.lastStreakDate ||
+        project.streakWeek !== calc.streakWeek ||
+        project.completedToday !== calc.completedToday ||
+        JSON.stringify(project.completedDaysThisWeek || []) !== JSON.stringify(calc.completedDaysThisWeek)) {
+        
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                streakCount: calc.streakCount,
+                lastStreakDate: calc.lastStreakDate,
+                streakWeek: calc.streakWeek,
+                completedToday: calc.completedToday,
+                completedDaysThisWeek: calc.completedDaysThisWeek
+            });
+        } catch (err) {
+            console.error("Ошибка при синхронизации серии проекта:", err);
+        }
+    }
+}
+
+let currentAnimateRequest = null;
+function animateStreakCounter(target) {
+    const el = document.getElementById('streakNumber');
+    if (!el) return;
+
+    if (currentAnimateRequest) {
+        cancelAnimationFrame(currentAnimateRequest);
+    }
+
+    const currentVal = parseInt(el.textContent, 10) || 0;
+    if (currentVal === target) {
+        el.textContent = target;
+        return;
+    }
+
+    const duration = 800;
+    const startTime = performance.now();
+
+    function animate(time) {
+        const progress = Math.min((time - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(currentVal + eased * (target - currentVal));
+        el.textContent = current;
+
+        if (progress < 1) {
+            currentAnimateRequest = requestAnimationFrame(animate);
+        } else {
+            el.textContent = target;
+        }
+    }
+    currentAnimateRequest = requestAnimationFrame(animate);
+}
+
+function updateStreakWidget(project) {
+    const widget = document.getElementById('streakWidget');
+    const divider = document.getElementById('streakDivider');
+    if (!widget) return;
+
+    if (!project) {
+        widget.style.display = 'none';
+        if (divider) divider.style.display = 'none';
+        return;
+    }
+
+    widget.style.display = 'block';
+    if (divider) divider.style.display = 'block';
+
+    const titleEl = document.getElementById('streakTitle');
+    if (titleEl) {
+        if (project && project.name) {
+            titleEl.innerHTML = `Серия дней <span style="font-weight: 400; opacity: 0.8; font-size: 0.85em;">(${escapeHtml(project.name)})</span>`;
+        } else {
+            titleEl.textContent = 'Серия дней';
+        }
+    }
+
+    const streakCount = project.streakCount || 0;
+    animateStreakCounter(streakCount);
+
+    const completedDays = project.completedDaysThisWeek || [];
+
+    const daysGrid = document.getElementById('streakDaysGrid');
+    if (daysGrid) {
+        const daysLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+        daysGrid.innerHTML = daysLabels.map((label, index) => {
+            const dayNum = index + 1;
+            const isDone = completedDays.includes(dayNum);
+            return `
+                <div class="streak-day">
+                    <span>${label}</span>
+                    <div class="streak-circle ${isDone ? 'done' : 'empty'}"></div>
+                </div>
+            `;
+        }).join('');
+    }
+}
 

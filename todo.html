@@ -115,7 +115,28 @@
                 </div>
 
                 <div class="sidebar-footer-menu"
-                    style="margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border);">
+                    style="margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Streak Widget -->
+                    <div class="streak-widget" id="streakWidget" style="display: none; margin: 12px 12px 8px 12px;">
+                        <div class="streak-title" id="streakTitle">Серия дней</div>
+                        <div class="streak-main">
+                            <div class="streak-fire">🔥</div>
+                            <div class="streak-number" id="streakNumber" data-target="0">0</div>
+                            <div class="streak-text">дней подряд!</div>
+                        </div>
+                        <div class="streak-days" id="streakDaysGrid">
+                            <div class="streak-day"><span>Пн</span><div class="streak-circle empty"></div></div>
+                            <div class="streak-day"><span>Вт</span><div class="streak-circle empty"></div></div>
+                            <div class="streak-day"><span>Ср</span><div class="streak-circle empty"></div></div>
+                            <div class="streak-day"><span>Чт</span><div class="streak-circle empty"></div></div>
+                            <div class="streak-day"><span>Пт</span><div class="streak-circle empty"></div></div>
+                            <div class="streak-day"><span>Сб</span><div class="streak-circle empty"></div></div>
+                            <div class="streak-day"><span>Вс</span><div class="streak-circle empty"></div></div>
+                        </div>
+                    </div>
+                    
+                    <div class="streak-divider" id="streakDivider" style="display: none; border-top: 1px solid var(--border); margin: 4px 8px;"></div>
+
                     <a href="#trash" class="menu-item" id="menuTrash">
                         <span class="menu-item-left">
                             <span class="menu-icon">

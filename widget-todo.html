@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Streak Widget</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #070b14;
+  font-family: Inter, Arial, sans-serif;
+}
+
+.widget {
+  width: 260px;
+  padding: 18px;
+  border-radius: 18px;
+  color: white;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(120, 92, 255, .25), transparent 35%),
+    linear-gradient(160deg, #1b1d44, #10162a);
+  box-shadow: 0 25px 55px rgba(0,0,0,.5);
+  animation: widgetPop .45s ease forwards, widgetBounce .35s ease 1.45s forwards;
+}
+
+.title {
+  font-size: 14px;
+  color: #c3c6df;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.fire {
+  font-size: 31px;
+  animation: firePulse 1s ease-in-out infinite alternate;
+}
+
+.number {
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1;
+  min-width: 32px;
+}
+
+.text {
+  font-size: 14px;
+  color: #c3c6df;
+  margin-top: 12px;
+}
+
+.days {
+  display: flex;
+  justify-content: space-between;
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.day span {
+  color: #8f96b7;
+  font-size: 12px;
+}
+
+.circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.done {
+  background: linear-gradient(180deg, #9278ff, #6645ff);
+  transform: translateY(-14px) scale(0);
+  animation: dayDrop .55s cubic-bezier(.18, 1.55, .35, 1) forwards;
+}
+
+.done::before {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 18px;
+  background: rgba(255,255,255,.45);
+  transform: rotate(35deg) translateX(-18px);
+  animation: shine .45s ease forwards;
+}
+
+.done::after {
+  content: "✓";
+  font-size: 13px;
+  font-weight: 800;
+  opacity: 0;
+  transform: scale(.4);
+  animation: checkPop .25s ease forwards;
+}
+
+.empty {
+  border: 2px solid #313857;
+  background: rgba(255,255,255,.02);
+}
+
+.day:nth-child(1) .done { animation-delay: .05s; }
+.day:nth-child(2) .done { animation-delay: .20s; }
+.day:nth-child(3) .done { animation-delay: .35s; }
+.day:nth-child(4) .done { animation-delay: .50s; }
+.day:nth-child(5) .done { animation-delay: .65s; }
+.day:nth-child(6) .done { animation-delay: .80s; }
+
+.day:nth-child(1) .done::after { animation-delay: .22s; }
+.day:nth-child(2) .done::after { animation-delay: .37s; }
+.day:nth-child(3) .done::after { animation-delay: .52s; }
+.day:nth-child(4) .done::after { animation-delay: .67s; }
+.day:nth-child(5) .done::after { animation-delay: .82s; }
+.day:nth-child(6) .done::after { animation-delay: .97s; }
+
+.day:nth-child(1) .done::before { animation-delay: .30s; }
+.day:nth-child(2) .done::before { animation-delay: .45s; }
+.day:nth-child(3) .done::before { animation-delay: .60s; }
+.day:nth-child(4) .done::before { animation-delay: .75s; }
+.day:nth-child(5) .done::before { animation-delay: .90s; }
+.day:nth-child(6) .done::before { animation-delay: 1.05s; }
+
+@keyframes dayDrop {
+  0% {
+    opacity: 0;
+    transform: translateY(-14px) scale(0);
+    box-shadow: 0 0 0 rgba(116,90,255,0);
+  }
+
+  65% {
+    opacity: 1;
+    transform: translateY(2px) scale(1.25);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 14px rgba(116,90,255,.65);
+  }
+}
+
+@keyframes checkPop {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shine {
+  to {
+    transform: rotate(35deg) translateX(18px);
+  }
+}
+
+@keyframes firePulse {
+  from {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 rgba(255,130,40,0));
+  }
+
+  to {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 8px rgba(255,130,40,.45));
+  }
+}
+
+@keyframes widgetPop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes widgetBounce {
+  50% {
+    transform: scale(1.025);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="widget">
+  <div class="title">Серия дней</div>
+
+  <div class="main">
+    <div class="fire">🔥</div>
+    <div class="number" data-target="7">0</div>
+    <div class="text">дней подряд!</div>
+  </div>
+
+  <div class="days">
+    <div class="day"><span>Пн</span><div class="circle done"></div></div>
+    <div class="day"><span>Вт</span><div class="circle done"></div></div>
+    <div class="day"><span>Ср</span><div class="circle done"></div></div>
+    <div class="day"><span>Чт</span><div class="circle done"></div></div>
+    <div class="day"><span>Пт</span><div class="circle done"></div></div>
+    <div class="day"><span>Сб</span><div class="circle done"></div></div>
+    <div class="day"><span>Вс</span><div class="circle empty"></div></div>
+  </div>
+</div>
+
+<script>
+const number = document.querySelector(".number");
+const target = Number(number.dataset.target);
+
+let current = 0;
+const duration = 1000;
+const startTime = performance.now();
+
+function animateCounter(time) {
+  const progress = Math.min((time - startTime) / duration, 1);
+  const eased = 1 - Math.pow(1 - progress, 3);
+
+  current = Math.round(eased * target);
+  number.textContent = current;
+
+  if (progress < 1) {
+    requestAnimationFrame(animateCounter);
+  } else {
+    number.textContent = target;
+  }
+}
+
+requestAnimationFrame(animateCounter);
+</script>
+
+</body>
+</html>

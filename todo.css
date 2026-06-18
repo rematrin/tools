@@ -3250,6 +3250,9 @@ body.dark .priority-opt-btn:hover {
 }
 
 @media (max-width: 768px) {
+    .add-task-form {
+        position: relative !important;
+    }
 
     .add-task-form .form-actions {
         display: none !important;
@@ -3352,8 +3355,8 @@ body.dark .priority-opt-btn:hover {
     .add-task-form .project-dropdown,
     .add-task-form .priority-dropdown {
         position: absolute !important;
-        bottom: calc(100% + 12px) !important; /* На 12px выше поля ввода */
-        top: auto !important;
+        top: calc(100% + 12px) !important; /* На 12px ниже поля ввода */
+        bottom: auto !important;
         left: 12px !important;
         right: 12px !important;
         width: calc(100% - 24px) !important;

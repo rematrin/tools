@@ -186,6 +186,24 @@
                         </svg>
                     </button>
                     <h1 class="list-title">Мои задачи</h1>
+                    <div class="project-header-actions" id="projectHeaderActions" style="display: none; margin-left: auto; position: relative;">
+                        <button class="project-header-more-btn" id="projectHeaderMoreBtn" aria-label="Действия проекта" title="Действия" style="background: transparent; border: none; color: var(--text-secondary); opacity: 0.5; cursor: pointer; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background-color 0.15s, opacity 0.15s;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="1.5"></circle>
+                                <circle cx="5" cy="12" r="1.5"></circle>
+                                <circle cx="19" cy="12" r="1.5"></circle>
+                            </svg>
+                        </button>
+                        <div class="project-header-dropdown" id="projectHeaderDropdown" style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); z-index: 1000; width: 170px; padding: 4px; box-sizing: border-box; flex-direction: column; gap: 2px;">
+                            <button class="dropdown-item" id="btnProjectAddSection" style="display: flex; align-items: center; width: 100%; padding: 8px 12px; border: none; background: transparent; color: var(--text); border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background-color 0.15s;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 6px; flex-shrink: 0;">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                <span>Добавить раздел</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Баннер Корзины -->

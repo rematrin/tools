@@ -51,6 +51,8 @@ let activeContextMenu = null;
 
 let projectsList = [];
 let unsubscribeProjects = null;
+let sectionsList = [];
+let unsubscribeSections = null;
 
 const btnAddProject = document.getElementById('btnAddProject');
 const projectsListContainer = document.getElementById('projectsList');
@@ -317,17 +319,38 @@ document.addEventListener('click', (e) => {
             const taskActions = dropdown.closest('.task-actions');
             if (taskActions && !taskActions.contains(e.target)) {
                 dropdown.style.display = 'none';
+                taskActions.closest('.task-item')?.classList.remove('menu-open');
             }
         }
     });
 
-    // 4. Закрытие контекстного меню проектов при клике вне
+    // 4. Закрытие меню действий раздела при клике вне его области
+    document.querySelectorAll('.section-actions-dropdown').forEach(dropdown => {
+        if (dropdown.style.display !== 'none') {
+            const wrapper = dropdown.closest('.section-actions-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                dropdown.style.display = 'none';
+                dropdown.closest('.project-section-header')?.classList.remove('menu-open');
+            }
+        }
+    });
+
+    // 5. Закрытие меню действий проекта в шапке при клике вне
+    const projectHeaderDropdown = document.getElementById('projectHeaderDropdown');
+    if (projectHeaderDropdown && projectHeaderDropdown.style.display !== 'none') {
+        const headerActions = document.getElementById('projectHeaderActions');
+        if (headerActions && !headerActions.contains(e.target)) {
+            projectHeaderDropdown.style.display = 'none';
+        }
+    }
+
+    // 6. Закрытие контекстного меню проектов при клике вне
     if (activeContextMenu && !e.target.closest('.project-actions-btn') && !e.target.closest('.custom-context-menu')) {
         activeContextMenu.remove();
         activeContextMenu = null;
     }
 
-    // 5. Закрытие меню пользователя при клике вне
+    // 7. Закрытие меню пользователя при клике вне
     const userProfileMenuEl = document.getElementById('userProfileMenu');
     if (userProfileMenuEl && userProfileMenuEl.style.display !== 'none' && !e.target.closest('.sidebar-user') && !userProfileMenuEl.contains(e.target)) {
         userProfileMenuEl.style.display = 'none';
@@ -1637,6 +1660,7 @@ window.addEventListener('authChanged', (e) => {
 
         startTodoForUser(currentUid);
         startProjectsForUser(currentUid);
+        startSectionsForUser(currentUid);
         handleRoute();
     } else {
         // Скрываем интерфейс
@@ -1647,6 +1671,7 @@ window.addEventListener('authChanged', (e) => {
 
         stopTodoForUser();
         stopProjectsForUser();
+        stopSectionsForUser();
     }
 });
 
@@ -2809,6 +2834,81 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
     });
 }
 
+function isSectionCollapsed(sectionId) {
+    try {
+        const collapsedIds = JSON.parse(localStorage.getItem('todo_collapsed_sections') || '[]');
+        return collapsedIds.includes(sectionId);
+    } catch (e) {
+        return false;
+    }
+}
+
+function toggleSectionCollapsed(sectionId) {
+    try {
+        let collapsedIds = JSON.parse(localStorage.getItem('todo_collapsed_sections') || '[]');
+        if (collapsedIds.includes(sectionId)) {
+            collapsedIds = collapsedIds.filter(id => id !== sectionId);
+        } else {
+            collapsedIds.push(sectionId);
+        }
+        localStorage.setItem('todo_collapsed_sections', JSON.stringify(collapsedIds));
+    } catch (e) {
+        // ignore
+    }
+}
+
+function renderTasksGroup(tasksGroup, containerEl) {
+    const activeParentTasks = [];
+    tasksGroup.forEach(t => {
+        if (!t.parentId) {
+            if (!activeParentTasks.some(p => p.id === t.id)) {
+                activeParentTasks.push(t);
+            }
+        } else {
+            const parent = allTasks.find(pt => pt.id === t.parentId && !pt.deleted);
+            if (parent && !activeParentTasks.some(p => p.id === parent.id)) {
+                activeParentTasks.push(parent);
+            }
+        }
+    });
+
+    // Sort parent tasks
+    activeParentTasks.sort((a, b) => {
+        const orderA = a.order !== undefined ? a.order : 0;
+        const orderB = b.order !== undefined ? b.order : 0;
+        if (orderA !== orderB) return orderA - orderB;
+        const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
+        const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
+        return timeB - timeA;
+    });
+
+    activeParentTasks.forEach(task => {
+        const el = createTaskRowElement(task);
+        containerEl.appendChild(el);
+
+        // Рендерим подзадачи родительской задачи (как активные, так и выполненные)
+        const subtasks = allTasks.filter(t => t.parentId === task.id && !t.deleted);
+        
+        // Sort subtasks
+        subtasks.sort((a, b) => {
+            const orderA = a.order !== undefined ? a.order : 0;
+            const orderB = b.order !== undefined ? b.order : 0;
+            if (orderA !== orderB) return orderA - orderB;
+            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
+            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
+            return timeB - timeA;
+        });
+
+        const isCollapsed = isParentTaskCollapsed(task.id);
+        if (!isCollapsed) {
+            subtasks.forEach(subtask => {
+                const subEl = createTaskRowElement(subtask);
+                containerEl.appendChild(subEl);
+            });
+        }
+    });
+}
+
 // Отрендерить задачи в UI
 function renderTasks() {
     const nonDeletedTasks = allTasks.filter(t => !t.deleted);
@@ -2865,6 +2965,11 @@ function renderTasks() {
     }
     if (addTaskFormEl) {
         addTaskFormEl.style.display = currentRoute === 'trash' ? 'none' : 'flex';
+    }
+
+    const projectHeaderActions = document.getElementById('projectHeaderActions');
+    if (projectHeaderActions) {
+        projectHeaderActions.style.display = currentRoute.startsWith('project/') ? 'block' : 'none';
     }
 
     // Фильтруем задачи для отображения в зависимости от текущей вкладки (роута)
@@ -2950,39 +3055,233 @@ function renderTasks() {
             footerDiv.textContent = `${displayActiveTasks.length} в корзине`;
             activeTasksContainer.appendChild(footerDiv);
         } else {
-            // Разделяем на родительские задачи и подзадачи
-            const activeParentTasks = [];
-            displayActiveTasks.forEach(t => {
-                if (!t.parentId) {
-                    if (!activeParentTasks.some(p => p.id === t.id)) {
-                        activeParentTasks.push(t);
+            if (currentRoute.startsWith('project/')) {
+                const projectId = currentRoute.split('/')[1];
+                const projectSections = sectionsList.filter(s => s.projectId === projectId);
+                
+                const unsectionedTasks = displayActiveTasks.filter(t => !t.sectionId || !projectSections.some(s => s.id === t.sectionId));
+                
+                // Render unsectioned tasks first
+                const unsectionedContainer = document.createElement('div');
+                unsectionedContainer.className = 'unsectioned-tasks-container';
+                unsectionedContainer.style.minHeight = '20px';
+                activeTasksContainer.appendChild(unsectionedContainer);
+                renderTasksGroup(unsectionedTasks, unsectionedContainer);
+                
+                // Render each section
+                projectSections.forEach(section => {
+                    const sectionTasks = displayActiveTasks.filter(t => t.sectionId === section.id);
+                    const isCollapsed = isSectionCollapsed(section.id);
+                    
+                    const sectionEl = document.createElement('div');
+                    sectionEl.className = `project-section ${isCollapsed ? 'collapsed' : ''}`;
+                    sectionEl.setAttribute('data-section-id', section.id);
+                    
+                    sectionEl.innerHTML = `
+                        <div class="project-section-header">
+                            <button class="section-drag-handle-btn" title="Перетащить раздел" type="button">
+                                <svg viewBox="0 0 640 640" width="14" height="14" fill="currentColor">
+                                    <path d="M288 104C288 81.9 270.1 64 248 64L200 64C177.9 64 160 81.9 160 104L160 152C160 174.1 177.9 192 200 192L248 192C270.1 192 288 174.1 288 152L288 104zM288 296C288 273.9 270.1 256 248 256L200 256C177.9 256 160 273.9 160 296L160 344C160 366.1 177.9 384 200 384L248 384C270.1 384 288 366.1 288 344L288 296zM160 488L160 536C160 558.1 177.9 576 200 576L248 576C270.1 576 288 558.1 288 536L288 488C288 465.9 270.1 448 248 448L200 448C177.9 448 160 465.9 160 488zM480 104C480 81.9 462.1 64 440 64L392 64C369.9 64 352 81.9 352 104L352 152C352 174.1 369.9 192 392 192L440 192C462.1 192 480 174.1 480 152L480 104zM352 296L352 344C352 366.1 369.9 384 392 384L440 384C462.1 384 480 366.1 480 344L480 296C480 273.9 462.1 256 440 256L392 256C369.9 256 352 273.9 352 296zM480 488C480 465.9 462.1 448 440 448L392 448C369.9 448 352 465.9 352 488L352 536C352 558.1 369.9 576 392 576L440 576C462.1 576 480 558.1 480 536L480 488z"/>
+                                </svg>
+                            </button>
+                            <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
+                                <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                            <span class="section-title-text">${escapeHtml(section.name)}</span>
+                            <span class="section-count-badge">${sectionTasks.length}</span>
+                            <div class="section-actions-wrapper" style="position: relative; margin-left: auto; display: flex; align-items: center; gap: 4px;">
+                                <button class="section-actions-btn" title="Действия" type="button">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="1.5"></circle>
+                                        <circle cx="12" cy="5" r="1.5"></circle>
+                                        <circle cx="12" cy="19" r="1.5"></circle>
+                                    </svg>
+                                </button>
+                                <div class="section-actions-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); right: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); z-index: 1000; width: 170px; padding: 4px; box-sizing: border-box; flex-direction: column; gap: 2px;">
+                                    <button class="dropdown-item btn-rename-section" type="button">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        </svg>
+                                        <span>Изменить</span>
+                                    </button>
+
+                                    ${(() => {
+                                        if (projectsList.length === 0) return '';
+                                        return `
+                                        <div class="dropdown-submenu-container">
+                                            <button class="dropdown-item btn-move-section-trigger" type="button">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; width: 14px; height: 14px; margin-right: 2px;">
+                                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                                </svg>
+                                                <span>Перенести в..</span>
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left: auto; color: var(--text-secondary); flex-shrink: 0;">
+                                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                                </svg>
+                                            </button>
+                                            <div class="dropdown-submenu">
+                                                ${projectsList.map(proj => {
+                                                    const isCurrent = projectId === proj.id;
+                                                    const iconHtml = proj.iconUrl ?
+                                                        `<img src="${proj.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 0;">` :
+                                                        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0;">
+                                                            <line x1="4" y1="9" x2="20" y2="9"></line>
+                                                            <line x1="4" y1="15" x2="20" y2="15"></line>
+                                                            <line x1="10" y1="3" x2="8" y2="21"></line>
+                                                            <line x1="16" y1="3" x2="14" y2="21"></line>
+                                                        </svg>`;
+                                                    return `
+                                                        <button class="dropdown-item btn-select-project-for-section ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}" type="button">
+                                                            ${iconHtml}
+                                                            <span>${escapeHtml(proj.name)}</span>
+                                                            ${isCurrent ? `
+                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="3" style="margin-left: auto;">
+                                                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                                                </svg>
+                                                            ` : ''}
+                                                        </button>
+                                                    `;
+                                                }).join('')}
+                                            </div>
+                                        </div>
+                                        `;
+                                    })()}
+
+                                    <button class="dropdown-item btn-delete-section btn-delete" type="button" style="color: #ff4d4f;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px; color: #ff4d4f;">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        </svg>
+                                        <span>Удалить</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-tasks-container" style="${isCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
+                    `;
+                    activeTasksContainer.appendChild(sectionEl);
+                    
+                    const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
+                    renderTasksGroup(sectionTasks, sectionTasksContainer);
+                    
+                    const dragHandle = sectionEl.querySelector('.section-drag-handle-btn');
+                    if (dragHandle) {
+                        dragHandle.addEventListener('mousedown', () => {
+                            sectionEl.setAttribute('draggable', 'true');
+                        });
+                        dragHandle.addEventListener('mouseup', () => {
+                            sectionEl.removeAttribute('draggable');
+                        });
+                        dragHandle.addEventListener('touchstart', () => {
+                            sectionEl.setAttribute('draggable', 'true');
+                        });
+                        dragHandle.addEventListener('touchend', () => {
+                            sectionEl.removeAttribute('draggable');
+                        });
                     }
-                } else {
-                    const parent = allTasks.find(pt => pt.id === t.parentId && !pt.deleted);
-                    if (parent && !activeParentTasks.some(p => p.id === parent.id)) {
-                        activeParentTasks.push(parent);
-                    }
-                }
-            });
 
-            sortTasksByOrder(activeParentTasks);
-
-            activeParentTasks.forEach(task => {
-                const el = createTaskRowElement(task);
-                activeTasksContainer.appendChild(el);
-
-                // Рендерим подзадачи родительской задачи (как активные, так и выполненные)
-                const subtasks = allTasks.filter(t => t.parentId === task.id && !t.deleted);
-                sortTasksByOrder(subtasks);
-
-                const isCollapsed = isParentTaskCollapsed(task.id);
-                if (!isCollapsed) {
-                    subtasks.forEach(subtask => {
-                        const subEl = createTaskRowElement(subtask);
-                        activeTasksContainer.appendChild(subEl);
+                    const collapseBtn = sectionEl.querySelector('.section-collapse-btn');
+                    collapseBtn.addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        toggleSectionCollapsed(section.id);
+                        renderTasks();
                     });
-                }
-            });
+                    
+                    const actionsBtn = sectionEl.querySelector('.section-actions-btn');
+                    const dropdown = sectionEl.querySelector('.section-actions-dropdown');
+                    
+                    const openSectionDropdown = (clickEvent = null) => {
+                        const headerEl = sectionEl.querySelector('.project-section-header');
+                        const isHidden = dropdown.style.display === 'none' || dropdown.style.display === '';
+                        
+                        if (isHidden) {
+                            document.querySelectorAll('.section-actions-dropdown').forEach(d => {
+                                d.style.display = 'none';
+                                d.closest('.project-section-header')?.classList.remove('menu-open');
+                            });
+                            dropdown.style.display = 'flex';
+                            headerEl?.classList.add('menu-open');
+                            
+                            if (clickEvent) {
+                                dropdown.style.position = 'fixed';
+                                let x = clickEvent.clientX;
+                                let y = clickEvent.clientY;
+                                
+                                const menuWidth = 170;
+                                const menuHeight = 120;
+                                if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+                                if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+                                
+                                dropdown.style.left = `${x}px`;
+                                dropdown.style.top = `${y}px`;
+                            } else {
+                                dropdown.style.position = 'absolute';
+                                dropdown.style.left = '';
+                                dropdown.style.top = 'calc(100% + 4px)';
+                            }
+                        } else {
+                            dropdown.style.display = 'none';
+                            headerEl?.classList.remove('menu-open');
+                        }
+                    };
+
+                    actionsBtn.addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        openSectionDropdown();
+                    });
+
+                    const headerEl = sectionEl.querySelector('.project-section-header');
+                    headerEl.addEventListener('contextmenu', (ev) => {
+                        if (window.matchMedia('(hover: hover)').matches) {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                            openSectionDropdown(ev);
+                        }
+                    });
+
+                    const btnMoveSectionTrigger = sectionEl.querySelector('.btn-move-section-trigger');
+                    if (btnMoveSectionTrigger) {
+                        btnMoveSectionTrigger.addEventListener('click', (ev) => {
+                            ev.stopPropagation();
+                            const submenu = btnMoveSectionTrigger.nextElementSibling;
+                            if (submenu && submenu.classList.contains('dropdown-submenu')) {
+                                const isHidden = getComputedStyle(submenu).display === 'none';
+                                submenu.style.display = isHidden ? 'flex' : 'none';
+                                const arrowIcon = btnMoveSectionTrigger.querySelector('svg:last-child');
+                                if (arrowIcon) {
+                                    arrowIcon.style.transform = isHidden ? 'rotate(90deg)' : 'none';
+                                }
+                            }
+                        });
+                    }
+
+                    sectionEl.querySelectorAll('.btn-select-project-for-section').forEach(btn => {
+                        btn.addEventListener('click', async (ev) => {
+                            ev.stopPropagation();
+                            dropdown.style.display = 'none';
+                            const targetProjId = btn.getAttribute('data-project-id');
+                            if (targetProjId) {
+                                await moveSectionToProject(section.id, targetProjId);
+                            }
+                        });
+                    });
+                    
+                    sectionEl.querySelector('.btn-rename-section').addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        dropdown.style.display = 'none';
+                        renameSection(section.id);
+                    });
+                    sectionEl.querySelector('.btn-delete-section').addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        dropdown.style.display = 'none';
+                        deleteSection(section.id);
+                    });
+                });
+            } else {
+                renderTasksGroup(displayActiveTasks, activeTasksContainer);
+            }
         }
     }
 
@@ -3925,6 +4224,41 @@ function stopProjectsForUser() {
     if (projectsListContainer) projectsListContainer.innerHTML = '';
 }
 
+function startSectionsForUser(uid) {
+    if (unsubscribeSections) unsubscribeSections();
+
+    const qSections = query(collection(db, 'users', uid, 'sections'));
+
+    unsubscribeSections = onSnapshot(qSections, (snapshot) => {
+        sectionsList = [];
+        snapshot.forEach((docSnap) => {
+            sectionsList.push({
+                id: docSnap.id,
+                ...docSnap.data()
+            });
+        });
+
+        // Sort sections by order
+        sectionsList.sort((a, b) => {
+            const orderA = a.order !== undefined ? a.order : 0;
+            const orderB = b.order !== undefined ? b.order : 0;
+            return orderA - orderB;
+        });
+
+        renderTasks();
+    }, (error) => {
+        console.error("Ошибка при получении списка разделов:", error);
+    });
+}
+
+function stopSectionsForUser() {
+    if (unsubscribeSections) {
+        unsubscribeSections();
+        unsubscribeSections = null;
+    }
+    sectionsList = [];
+}
+
 function renderProjects() {
     if (!projectsListContainer) return;
     projectsListContainer.innerHTML = '';
@@ -4111,6 +4445,187 @@ if (btnAddProject) {
     });
 }
 
+// === ЛОГИКА РАЗДЕЛОВ (ДОБАВЛЕНИЕ, ПЕРЕИМЕНОВАНИЕ, УДАЛЕНИЕ, ПЕРЕНОС) ===
+const projectHeaderMoreBtn = document.getElementById('projectHeaderMoreBtn');
+const projectHeaderDropdown = document.getElementById('projectHeaderDropdown');
+
+if (projectHeaderMoreBtn && projectHeaderDropdown) {
+    projectHeaderMoreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (projectHeaderDropdown.style.display === 'none' || projectHeaderDropdown.style.display === '') {
+            projectHeaderDropdown.style.display = 'flex';
+        } else {
+            projectHeaderDropdown.style.display = 'none';
+        }
+    });
+}
+
+const btnProjectAddSection = document.getElementById('btnProjectAddSection');
+if (btnProjectAddSection) {
+    btnProjectAddSection.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (projectHeaderDropdown) projectHeaderDropdown.style.display = 'none';
+        
+        if (!currentRoute.startsWith('project/')) return;
+        const projectId = currentRoute.split('/')[1];
+
+        // Если уже открыто поле ввода нового раздела, не создаем еще одно
+        if (activeTasksContainer.querySelector('.new-section-temp')) {
+            const tempInput = activeTasksContainer.querySelector('.section-inline-input');
+            if (tempInput) tempInput.focus();
+            return;
+        }
+
+        const tempSectionEl = document.createElement('div');
+        tempSectionEl.className = 'project-section new-section-temp';
+        tempSectionEl.innerHTML = `
+            <div class="project-section-header" style="padding-left: 0;">
+                <button class="section-collapse-btn" type="button" style="margin-left: 0;">
+                    <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <input type="text" class="section-inline-input" placeholder="Название раздела..." maxlength="50" style="background: transparent; border: 1px solid var(--accent); outline: none; color: var(--text); font-family: inherit; font-size: 0.95rem; font-weight: 600; padding: 2px 4px; border-radius: 4px; width: 200px;">
+            </div>
+        `;
+        activeTasksContainer.appendChild(tempSectionEl);
+        const input = tempSectionEl.querySelector('.section-inline-input');
+        input.focus();
+
+        let finished = false;
+        async function saveSection() {
+            if (finished) return;
+            finished = true;
+            const nameText = input.value.trim();
+            if (nameText && nameText.length <= 50) {
+                try {
+                    const projectSections = sectionsList.filter(s => s.projectId === projectId);
+                    const maxOrder = projectSections.reduce((max, s) => Math.max(max, s.order !== undefined ? s.order : 0), 0);
+                    
+                    await addDoc(collection(db, 'users', currentUid, 'sections'), {
+                        name: nameText,
+                        projectId: projectId,
+                        order: maxOrder + 1,
+                        createdAt: serverTimestamp()
+                    });
+                } catch (err) {
+                    console.error("Не удалось добавить раздел:", err);
+                    tempSectionEl.remove();
+                }
+            } else {
+                tempSectionEl.remove();
+            }
+        }
+
+        input.addEventListener('blur', saveSection);
+        input.addEventListener('keydown', (ev) => {
+            ev.stopPropagation();
+            if (ev.key === 'Enter') {
+                ev.preventDefault();
+                input.blur();
+            } else if (ev.key === 'Escape') {
+                finished = true;
+                tempSectionEl.remove();
+            }
+        });
+        input.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+        });
+    });
+}
+
+function renameSection(sectionId) {
+    enableSectionInlineEdit(sectionId);
+}
+
+function enableSectionInlineEdit(sectionId) {
+    const sectionEl = document.querySelector(`.project-section[data-section-id="${sectionId}"]`);
+    if (!sectionEl) return;
+    const titleSpan = sectionEl.querySelector('.section-title-text');
+    if (!titleSpan) return;
+
+    const section = sectionsList.find(s => s.id === sectionId);
+    if (!section) return;
+
+    const oldName = section.name;
+    titleSpan.innerHTML = `<input type="text" class="inline-section-edit-input" value="${escapeHtml(oldName)}" maxlength="50" style="background: transparent; border: 1px solid var(--accent); outline: none; color: var(--text); font-family: inherit; font-size: 0.95rem; font-weight: 600; padding: 2px 4px; border-radius: 4px; width: 100%; box-sizing: border-box;">`;
+    const input = titleSpan.querySelector('input');
+    input.focus();
+    input.select();
+
+    let finished = false;
+
+    async function commitSave() {
+        if (finished) return;
+        finished = true;
+        const newVal = input.value.trim();
+
+        if (newVal && newVal !== oldName) {
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'sections', sectionId), {
+                    name: newVal
+                });
+            } catch (err) {
+                console.error("Ошибка при переименовании раздела:", err);
+                titleSpan.textContent = oldName;
+            }
+        } else {
+            titleSpan.textContent = oldName;
+        }
+    }
+
+    input.addEventListener('blur', commitSave);
+    input.addEventListener('keydown', (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+            commitSave();
+        } else if (e.key === 'Escape') {
+            finished = true;
+            titleSpan.textContent = oldName;
+        }
+    });
+    input.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+}
+
+async function deleteSection(sectionId) {
+    if (!currentUid) return;
+    showCustomConfirm(
+        "Удалить раздел?",
+        "Вы действительно хотите удалить этот раздел? Задачи этого раздела останутся в проекте, но потеряют с ним связь.",
+        "Удалить",
+        async () => {
+            try {
+                const tasksToUpdate = allTasks.filter(t => t.sectionId === sectionId && !t.deleted);
+                const promises = tasksToUpdate.map(t => updateDoc(doc(db, 'users', currentUid, 'tasks', t.id), { sectionId: null }));
+                await Promise.all(promises);
+                
+                await deleteDoc(doc(db, 'users', currentUid, 'sections', sectionId));
+            } catch (err) {
+                console.error("Не удалось удалить раздел:", err);
+            }
+        }
+    );
+}
+
+async function moveSectionToProject(sectionId, targetProjectId) {
+    if (!currentUid || !sectionId || !targetProjectId) return;
+    try {
+        await updateDoc(doc(db, 'users', currentUid, 'sections', sectionId), {
+            projectId: targetProjectId
+        });
+        
+        const tasksToMove = allTasks.filter(t => t.sectionId === sectionId && !t.deleted);
+        const promises = tasksToMove.map(t => updateDoc(doc(db, 'users', currentUid, 'tasks', t.id), {
+            projectId: targetProjectId
+        }));
+        await Promise.all(promises);
+    } catch (err) {
+        console.error("Не удалось перенести раздел:", err);
+    }
+}
+
 // Ресайзер боковой панели
 function initSidebarResizer() {
     const resizer = document.getElementById('sidebarResizer');
@@ -4165,6 +4680,8 @@ initSidebarResizer();
 function initDragAndDrop() {
     let draggingElement = null;
     let placeholder = null;
+    let draggingSection = null;
+    let sectionPlaceholder = null;
 
     const containers = [activeTasksContainer, completedTasksContainer];
 
@@ -4172,6 +4689,29 @@ function initDragAndDrop() {
         if (!container) return;
 
         container.addEventListener('dragstart', (e) => {
+            // Check if we are dragging a section first
+            const sectionItem = e.target.closest('.project-section');
+            if (sectionItem && sectionItem.getAttribute('draggable') === 'true') {
+                draggingSection = sectionItem;
+                draggingSection.classList.add('dragging');
+                
+                // Create section placeholder
+                sectionPlaceholder = document.createElement('div');
+                sectionPlaceholder.className = 'section-drag-placeholder';
+                sectionPlaceholder.style.height = `${draggingSection.offsetHeight}px`;
+
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', draggingSection.getAttribute('data-section-id'));
+
+                setTimeout(() => {
+                    if (draggingSection) {
+                        draggingSection.style.display = 'none';
+                    }
+                }, 0);
+                return;
+            }
+
+            // Otherwise, dragging a task item
             const taskItem = e.target.closest('.task-item');
             if (!taskItem || taskItem.classList.contains('editing') || currentRoute === 'trash') {
                 e.preventDefault();
@@ -4181,7 +4721,7 @@ function initDragAndDrop() {
             taskItem.classList.add('dragging');
             container.classList.add('drag-active');
             
-            // Создаем плейсхолдер
+            // Create task placeholder
             placeholder = document.createElement('div');
             placeholder.className = 'drag-placeholder';
             placeholder.style.height = `${draggingElement.offsetHeight}px`;
@@ -4189,7 +4729,6 @@ function initDragAndDrop() {
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', taskItem.getAttribute('data-id'));
 
-            // Скрываем исходный элемент, чтобы он не дублировался в списке
             setTimeout(() => {
                 if (draggingElement) {
                     draggingElement.style.display = 'none';
@@ -4199,21 +4738,86 @@ function initDragAndDrop() {
 
         container.addEventListener('dragover', (e) => {
             e.preventDefault();
+
+            // Handle Section dragging
+            if (draggingSection && sectionPlaceholder) {
+                const sections = [...container.querySelectorAll('.project-section:not(.dragging)')];
+                const afterSection = sections.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = e.clientY - (box.top + box.height / 2);
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+
+                if (afterSection) {
+                    container.insertBefore(sectionPlaceholder, afterSection);
+                } else {
+                    container.appendChild(sectionPlaceholder);
+                }
+                return;
+            }
+
+            // Handle Task dragging
             if (!draggingElement || !placeholder) return;
 
-            const afterElement = getDragAfterElement(container, e.clientY);
-            if (afterElement) {
-                container.insertBefore(placeholder, afterElement);
-            } else {
-                container.appendChild(placeholder);
+            let targetContainer = container;
+            if (container === activeTasksContainer && currentRoute.startsWith('project/')) {
+                // Determine which section or unsectioned container the cursor is hovering over
+                targetContainer = e.target.closest('.unsectioned-tasks-container, .section-tasks-container');
+                if (!targetContainer) {
+                    const sectHeader = e.target.closest('.project-section-header');
+                    if (sectHeader) {
+                        targetContainer = sectHeader.nextElementSibling;
+                    }
+                }
+                if (!targetContainer) {
+                    // Fallback to closest sub-container by vertical coordinate
+                    const subContainers = [...activeTasksContainer.querySelectorAll('.unsectioned-tasks-container, .section-tasks-container')];
+                    if (subContainers.length > 0) {
+                        let closestContainer = subContainers[0];
+                        let minDistance = Number.MAX_VALUE;
+                        subContainers.forEach(c => {
+                            const rect = c.getBoundingClientRect();
+                            const dist = Math.abs(e.clientY - (rect.top + rect.height / 2));
+                            if (dist < minDistance) {
+                                minDistance = dist;
+                                closestContainer = c;
+                            }
+                        });
+                        targetContainer = closestContainer;
+                    }
+                }
+            }
+
+            if (targetContainer) {
+                const afterElement = getDragAfterElement(targetContainer, e.clientY);
+                if (afterElement) {
+                    targetContainer.insertBefore(placeholder, afterElement);
+                } else {
+                    targetContainer.appendChild(placeholder);
+                }
             }
         });
 
         container.addEventListener('dragleave', (e) => {
-            // Больше не нужно сбрасывать индикаторы
+            // No action needed
         });
 
         container.addEventListener('dragend', (e) => {
+            if (draggingSection) {
+                draggingSection.style.display = '';
+                draggingSection.classList.remove('dragging');
+                draggingSection.removeAttribute('draggable');
+            }
+            if (sectionPlaceholder && sectionPlaceholder.parentNode) {
+                sectionPlaceholder.remove();
+            }
+            sectionPlaceholder = null;
+            draggingSection = null;
+
             if (draggingElement) {
                 draggingElement.style.display = '';
                 draggingElement.classList.remove('dragging');
@@ -4229,8 +4833,75 @@ function initDragAndDrop() {
 
         container.addEventListener('drop', async (e) => {
             e.preventDefault();
+
+            // Handle Section drop
+            if (draggingSection && sectionPlaceholder) {
+                let prevSect = null;
+                let curr = sectionPlaceholder.previousElementSibling;
+                while (curr) {
+                    if (curr.classList.contains('project-section') && curr !== draggingSection) {
+                        prevSect = curr;
+                        break;
+                    }
+                    curr = curr.previousElementSibling;
+                }
+
+                let nextSect = null;
+                curr = sectionPlaceholder.nextElementSibling;
+                while (curr) {
+                    if (curr.classList.contains('project-section') && curr !== draggingSection) {
+                        nextSect = curr;
+                        break;
+                    }
+                    curr = curr.nextElementSibling;
+                }
+
+                sectionPlaceholder.remove();
+                sectionPlaceholder = null;
+
+                if (draggingSection) {
+                    draggingSection.style.display = '';
+                    draggingSection.classList.remove('dragging');
+                    draggingSection.removeAttribute('draggable');
+                }
+
+                const sectionId = draggingSection.getAttribute('data-section-id');
+                const prevSectId = prevSect ? prevSect.getAttribute('data-section-id') : null;
+                const nextSectId = nextSect ? nextSect.getAttribute('data-section-id') : null;
+
+                const prevSectionData = sectionsList.find(s => s.id === prevSectId);
+                const nextSectionData = sectionsList.find(s => s.id === nextSectId);
+
+                let newOrder = 0;
+                if (!prevSectionData && !nextSectionData) {
+                    newOrder = 0;
+                } else if (!prevSectionData) {
+                    newOrder = (nextSectionData.order !== undefined ? nextSectionData.order : 0) - 1000;
+                } else if (!nextSectionData) {
+                    newOrder = (prevSectionData.order !== undefined ? prevSectionData.order : 0) + 1000;
+                } else {
+                    const prevOrder = prevSectionData.order !== undefined ? prevSectionData.order : 0;
+                    const nextOrder = nextSectionData.order !== undefined ? nextSectionData.order : 0;
+                    newOrder = (prevOrder + nextOrder) / 2;
+                }
+
+                if (currentUid && sectionId) {
+                    try {
+                        await updateDoc(doc(db, 'users', currentUid, 'sections', sectionId), {
+                            order: newOrder
+                        });
+                    } catch (err) {
+                        console.error("Ошибка при перемещении раздела:", err);
+                    }
+                }
+                draggingSection = null;
+                return;
+            }
+
+            // Handle Task drop
             if (!draggingElement || !placeholder) return;
 
+            const parentContainer = placeholder.parentNode;
             const prevElement = placeholder.previousElementSibling;
             const nextElement = placeholder.nextElementSibling;
 
@@ -4249,18 +4920,24 @@ function initDragAndDrop() {
                 return;
             }
 
-            // 1. Определяем targetParentId на основе окружающих элементов в DOM
+            // Determine section ID based on parent container
+            let targetSectionId = null;
+            if (parentContainer && parentContainer.classList.contains('section-tasks-container')) {
+                const sectEl = parentContainer.closest('.project-section');
+                if (sectEl) {
+                    targetSectionId = sectEl.getAttribute('data-section-id') || null;
+                }
+            }
+
+            // 1. Determine targetParentId based on adjacent items inside the same parent container
             let targetParentId = null;
             if (prevElement) {
                 const prevTaskId = prevElement.getAttribute('data-id');
                 const prevTask = allTasks.find(t => t.id === prevTaskId);
                 if (prevTask) {
                     if (prevElement.classList.contains('subtask')) {
-                        // Если предыдущий элемент подзадача, мы наследуем её родителя
                         targetParentId = prevTask.parentId || null;
                     } else {
-                        // Предыдущий элемент — основная задача.
-                        // Если следующий элемент — её подзадача, то мы падаем внутрь её списка подзадач
                         if (nextElement && nextElement.classList.contains('subtask')) {
                             const nextTaskId = nextElement.getAttribute('data-id');
                             const nextTask = allTasks.find(t => t.id === nextTaskId);
@@ -4276,7 +4953,6 @@ function initDragAndDrop() {
                 targetParentId = null;
             }
 
-            // Поиск соседних элементов с таким же родителем для вычисления порядка
             const findSiblingTask = (startNode, direction, parentId) => {
                 let curr = direction === 'up' ? startNode.previousElementSibling : startNode.nextElementSibling;
                 while (curr) {
@@ -4295,19 +4971,17 @@ function initDragAndDrop() {
                 return null;
             };
 
-            // Вставляем временную метку на место сброса, чтобы искать от неё
             const tempNode = document.createElement('div');
             if (nextElement) {
-                container.insertBefore(tempNode, nextElement);
+                parentContainer.insertBefore(tempNode, nextElement);
             } else {
-                container.appendChild(tempNode);
+                parentContainer.appendChild(tempNode);
             }
 
             const prevSibling = findSiblingTask(tempNode, 'up', targetParentId);
             const nextSibling = findSiblingTask(tempNode, 'down', targetParentId);
             tempNode.remove();
 
-            // 2. Вычисляем новый order
             let newOrder = 0;
             if (!prevSibling && !nextSibling) {
                 newOrder = 0;
@@ -4321,33 +4995,32 @@ function initDragAndDrop() {
                 newOrder = (prevOrder + nextOrder) / 2;
             }
 
-            // 3. Подготовка полей обновления
             const updateFields = {
                 order: newOrder,
-                parentId: targetParentId
+                parentId: targetParentId,
+                sectionId: targetSectionId
             };
 
-            // Синхронизируем проект при перемещении в подзадачи
             if (targetParentId) {
                 const parentTask = allTasks.find(t => t.id === targetParentId);
                 if (parentTask) {
                     updateFields.projectId = parentTask.projectId || null;
+                    updateFields.sectionId = parentTask.sectionId || null;
                 }
             }
 
-            // Обновляем в Firebase
             if (currentUid && taskId) {
                 try {
                     const promises = [];
                     promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), updateFields));
 
-                    // Если задача стала подзадачей другого таска, то все её подзадачи переносим к новому родителю (поддерживаем 1 уровень)
                     if (targetParentId) {
                         const subtasks = allTasks.filter(t => t.parentId === taskId && !t.deleted);
                         subtasks.forEach(sub => {
                             promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', sub.id), {
                                 parentId: targetParentId,
-                                projectId: updateFields.projectId || null
+                                projectId: updateFields.projectId || null,
+                                sectionId: updateFields.sectionId || null
                             }));
                         });
                     }

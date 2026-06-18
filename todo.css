@@ -130,8 +130,8 @@ body {
     border-radius: 12px;
     color: var(--text);
     text-decoration: none;
-    font-weight: 500;
-    font-size: 0.9rem;
+    font-weight: 400;
+    font-size: 14px;
     transition: background-color 0.2s ease, color 0.2s ease;
     cursor: pointer;
     border: none;
@@ -149,7 +149,7 @@ body {
 .menu-item.active {
     background-color: var(--active-bg);
     color: var(--accent);
-    font-weight: 500;
+    font-weight: 400;
 }
 
 .menu-item-left {
@@ -266,7 +266,8 @@ body.dark .menu-counter {
 
 .content-back-btn {
     z-index: 90;
-    display: none; /* Контролируется через JS */
+    display: none;
+    /* Контролируется через JS */
     background: transparent;
     border: none;
     padding: 4px;
@@ -309,8 +310,8 @@ body.dark .menu-counter {
     background-color: rgba(0, 0, 0, 0.025);
     border: 1.5px solid transparent;
     /* Сохраняем ширину рамки для предотвращения сдвига */
-    border-radius: 16px;
-    padding: 10px 16px;
+    border-radius: 10px;
+    padding: 6px 16px;
     margin-bottom: 16px;
     display: flex;
     flex-direction: column;
@@ -654,7 +655,7 @@ body.dark .task-item.completed .custom-checkbox svg {
 }
 
 .task-title-text {
-    font-size: 0.95rem;
+    font-size: 14px;
     font-weight: 400;
     color: var(--text);
     word-break: break-word;
@@ -863,13 +864,15 @@ body.dark .task-actions-dropdown {
     letter-spacing: 0.03em;
 }
 
-.due-options-row, .priority-options-row {
+.due-options-row,
+.priority-options-row {
     display: flex;
     gap: 8px;
     align-items: center;
 }
 
-.due-opt-btn, .prio-opt-btn {
+.due-opt-btn,
+.prio-opt-btn {
     background: transparent;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -885,16 +888,19 @@ body.dark .task-actions-dropdown {
     padding: 0;
 }
 
-.due-opt-btn:hover, .prio-opt-btn:hover {
+.due-opt-btn:hover,
+.prio-opt-btn:hover {
     background-color: var(--hover-bg);
     border-color: var(--accent);
 }
 
-.due-opt-btn:active, .prio-opt-btn:active {
+.due-opt-btn:active,
+.prio-opt-btn:active {
     transform: scale(0.95);
 }
 
-.due-opt-btn svg, .prio-opt-btn svg {
+.due-opt-btn svg,
+.prio-opt-btn svg {
     width: 22px;
     height: 22px;
     display: block;
@@ -903,12 +909,15 @@ body.dark .task-actions-dropdown {
 .due-opt-btn.btn-due-today {
     color: #16a34a !important;
 }
+
 .due-opt-btn.btn-due-tomorrow {
     color: #d97706 !important;
 }
+
 .due-opt-btn.btn-due-select {
     color: #2563eb !important;
 }
+
 .due-opt-btn.btn-due-none {
     color: var(--text-secondary) !important;
 }
@@ -916,12 +925,15 @@ body.dark .task-actions-dropdown {
 .prio-opt-btn.flag-red {
     color: #dc2626 !important;
 }
+
 .prio-opt-btn.flag-orange {
     color: #d97706 !important;
 }
+
 .prio-opt-btn.flag-blue {
     color: #2563eb !important;
 }
+
 .prio-opt-btn.flag-white {
     color: var(--text-secondary) !important;
 }
@@ -932,7 +944,8 @@ body.dark .task-actions-dropdown {
 }
 
 /* Стилизация всплывающих подсказок (tooltips) */
-.due-opt-btn::after, .prio-opt-btn::after {
+.due-opt-btn::after,
+.prio-opt-btn::after {
     content: attr(data-tooltip);
     position: absolute;
     bottom: calc(100% + 8px);
@@ -952,12 +965,14 @@ body.dark .task-actions-dropdown {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
-body.dark .due-opt-btn::after, body.dark .prio-opt-btn::after {
+body.dark .due-opt-btn::after,
+body.dark .prio-opt-btn::after {
     background-color: #f3f4f6;
     color: #0f1115;
 }
 
-.due-opt-btn:hover::after, .prio-opt-btn:hover::after {
+.due-opt-btn:hover::after,
+.prio-opt-btn:hover::after {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
 }
@@ -1230,7 +1245,9 @@ body.dark .dropdown-submenu {
 
 /* Адаптивность */
 @media (max-width: 768px) {
-    html, body {
+
+    html,
+    body {
         height: 100dvh;
         overflow: hidden;
     }
@@ -1245,8 +1262,10 @@ body.dark .dropdown-submenu {
     .todo-sidebar {
         transform: translateX(-100%);
         width: 100% !important;
-        bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important; /* Ограничиваем снизу, чтобы не перекрывалось нижним меню */
-        transition: none !important; /* Отключаем скольжение, открываем мгновенно как страницу */
+        bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+        /* Ограничиваем снизу, чтобы не перекрывалось нижним меню */
+        transition: none !important;
+        /* Отключаем скольжение, открываем мгновенно как страницу */
     }
 
     .todo-sidebar.mobile-open {
@@ -1266,7 +1285,8 @@ body.dark .dropdown-submenu {
     }
 
     .content-nav-toggle {
-        display: none !important; /* Скрываем кнопку меню у заголовка на телефоне */
+        display: none !important;
+        /* Скрываем кнопку меню у заголовка на телефоне */
     }
 
     /* Предотвращение автоматического приближения (zoom) на iOS при фокусе */
@@ -1284,7 +1304,8 @@ body.dark .dropdown-submenu {
     }
 
     .sidebar-overlay.active {
-        display: none !important; /* Нам больше не нужен полупрозрачный оверлей, так как меню на весь экран */
+        display: none !important;
+        /* Нам больше не нужен полупрозрачный оверлей, так как меню на весь экран */
     }
 }
 
@@ -1643,14 +1664,20 @@ body.dark .due-date-dropdown {
 }
 
 /* Стили для выбора времени и повтора в календаре */
-.time-picker-list, .repeat-picker-list {
-    scrollbar-width: none; /* Firefox */
-}
-.time-picker-list::-webkit-scrollbar, .repeat-picker-list::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+.time-picker-list,
+.repeat-picker-list {
+    scrollbar-width: none;
+    /* Firefox */
 }
 
-.time-select-item, .repeat-select-item {
+.time-picker-list::-webkit-scrollbar,
+.repeat-picker-list::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari, Opera */
+}
+
+.time-select-item,
+.repeat-select-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1668,16 +1695,19 @@ body.dark .due-date-dropdown {
     box-sizing: border-box;
 }
 
-.time-select-item:hover, .repeat-select-item:hover {
+.time-select-item:hover,
+.repeat-select-item:hover {
     background-color: var(--hover-bg);
 }
 
-.time-select-item.selected, .repeat-select-item.selected {
+.time-select-item.selected,
+.repeat-select-item.selected {
     color: var(--accent);
     background-color: var(--active-bg);
 }
 
-.time-select-item-checkmark, .repeat-select-item-checkmark {
+.time-select-item-checkmark,
+.repeat-select-item-checkmark {
     display: flex;
     align-items: center;
     color: var(--accent);
@@ -1826,7 +1856,7 @@ body.dark .task-due-badge.overdue {
     align-items: center;
     justify-content: space-between;
     padding: 14px 16px 6px 16px;
-    font-size: 0.82rem;
+    font-size: 14px;
     font-weight: 500;
     color: var(--text-secondary);
     margin-top: 10px;
@@ -1877,6 +1907,12 @@ body.dark .task-due-badge.overdue {
 
 .project-item-container .menu-item {
     padding-right: 14px;
+    font-weight: 400;
+    font-size: 14px;
+}
+
+.project-item-container .menu-item.active {
+    font-weight: 400;
 }
 
 .project-actions-btn {
@@ -2482,6 +2518,7 @@ body.dark .confirm-box {
         transform: scale(0.9);
         opacity: 0;
     }
+
     to {
         transform: scale(1);
         opacity: 1;
@@ -2589,6 +2626,7 @@ body.dark .icon-dropzone {
     from {
         transform: rotate(0deg);
     }
+
     to {
         transform: rotate(360deg);
     }
@@ -2929,7 +2967,7 @@ body.dark .appearance-card-preview {
     display: none;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .appearance-card.selected .appearance-card-check {
@@ -2994,7 +3032,7 @@ body.dark .appearance-card-preview {
         border-radius: 0 !important;
         flex-direction: column !important;
     }
-    
+
     .settings-modal-sidebar {
         width: 100% !important;
         border-right: none !important;
@@ -3005,36 +3043,36 @@ body.dark .appearance-card-preview {
         justify-content: space-between !important;
         flex-shrink: 0 !important;
     }
-    
+
     .settings-sidebar-title {
         margin: 0 !important;
         font-size: 1rem !important;
     }
-    
+
     .settings-sidebar-menu {
         flex-direction: row !important;
         gap: 8px !important;
     }
-    
+
     .settings-menu-item {
         padding: 6px 10px !important;
         font-size: 0.85rem !important;
     }
-    
+
     .settings-modal-content {
         padding: 24px 20px !important;
     }
-    
+
     .settings-close-btn {
         top: 14px !important;
         right: 16px !important;
     }
-    
+
     .appearance-settings-grid {
         flex-direction: column !important;
         gap: 12px !important;
     }
-    
+
     .appearance-card {
         width: 100% !important;
     }
@@ -3057,6 +3095,7 @@ body.dark .appearance-card-preview {
 .project-dropdown::-webkit-scrollbar {
     width: 6px;
 }
+
 .project-dropdown::-webkit-scrollbar-thumb {
     background-color: var(--border);
     border-radius: 3px;
@@ -3164,14 +3203,14 @@ body.dark .appearance-card-preview {
     background-color: var(--card-bg);
     transition: .3s;
     border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
-.switch-container input:checked + .slider {
+.switch-container input:checked+.slider {
     background-color: var(--accent);
 }
 
-.switch-container input:checked + .slider:before {
+.switch-container input:checked+.slider:before {
     transform: translateX(20px);
 }
 
@@ -3180,9 +3219,11 @@ body.dark .appearance-card-preview {
     border-color: #dc2626 !important;
     background-color: rgba(220, 38, 38, 0.08) !important;
 }
+
 .task-item.priority-3 .custom-checkbox:hover {
     background-color: rgba(220, 38, 38, 0.15) !important;
 }
+
 .task-item.priority-3 .custom-checkbox svg {
     color: #dc2626 !important;
 }
@@ -3191,9 +3232,11 @@ body.dark .appearance-card-preview {
     border-color: #d97706 !important;
     background-color: rgba(217, 119, 6, 0.08) !important;
 }
+
 .task-item.priority-2 .custom-checkbox:hover {
     background-color: rgba(217, 119, 6, 0.15) !important;
 }
+
 .task-item.priority-2 .custom-checkbox svg {
     color: #d97706 !important;
 }
@@ -3202,9 +3245,11 @@ body.dark .appearance-card-preview {
     border-color: #2563eb !important;
     background-color: rgba(37, 99, 235, 0.08) !important;
 }
+
 .task-item.priority-1 .custom-checkbox:hover {
     background-color: rgba(37, 99, 235, 0.15) !important;
 }
+
 .task-item.priority-1 .custom-checkbox svg {
     color: #2563eb !important;
 }
@@ -3214,14 +3259,17 @@ body.dark .appearance-card-preview {
     background-color: #dc2626 !important;
     border-color: #dc2626 !important;
 }
+
 .task-item.completed.priority-2 .custom-checkbox {
     background-color: #d97706 !important;
     border-color: #d97706 !important;
 }
+
 .task-item.completed.priority-1 .custom-checkbox {
     background-color: #2563eb !important;
     border-color: #2563eb !important;
 }
+
 .task-item.completed.priority-3 .custom-checkbox svg,
 .task-item.completed.priority-2 .custom-checkbox svg,
 .task-item.completed.priority-1 .custom-checkbox svg {
@@ -3232,12 +3280,15 @@ body.dark .appearance-card-preview {
 .priority-dropdown {
     padding: 4px;
 }
+
 .priority-opt-btn {
     transition: background-color 0.15s ease;
 }
+
 .priority-opt-btn:hover {
     background-color: var(--hover-bg) !important;
 }
+
 body.dark .priority-opt-btn:hover {
     background-color: var(--hover-bg) !important;
 }
@@ -3277,7 +3328,8 @@ body.dark .priority-opt-btn:hover {
         overflow-x: auto !important;
         padding-bottom: 6px !important;
         flex: 1 !important;
-        min-width: 0 !important; /* Позволяет дочерним элементам сжиматься и скроллиться */
+        min-width: 0 !important;
+        /* Позволяет дочерним элементам сжиматься и скроллиться */
         scrollbar-width: none !important;
     }
 
@@ -3310,11 +3362,13 @@ body.dark .priority-opt-btn:hover {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        background-color: var(--accent) !important; /* Наш фирменный голубоватый цвет сайта */
+        background-color: var(--accent) !important;
+        /* Наш фирменный голубоватый цвет сайта */
         color: white !important;
         border: none !important;
         flex-shrink: 0 !important;
-        box-shadow: none !important; /* Убираем свечение */
+        box-shadow: none !important;
+        /* Убираем свечение */
         transition: background-color 0.2s ease, opacity 0.2s ease !important;
     }
 
@@ -3333,19 +3387,20 @@ body.dark .priority-opt-btn:hover {
     .add-task-form .btn-add-task .icon-arrow {
         display: block !important;
         margin: 0 !important;
-        width: 28px !important; /* Увеличили стрелочку внутри */
+        width: 28px !important;
+        /* Увеличили стрелочку внутри */
         height: 28px !important;
     }
 
     /* Стиль неактивной (серой) кнопки отправки на мобильном, когда поле ввода пустое */
-    .add-task-form .task-input:placeholder-shown ~ .form-actions .btn-add-task {
+    .add-task-form .task-input:placeholder-shown~.form-actions .btn-add-task {
         background-color: var(--hover-bg) !important;
         color: var(--text-secondary) !important;
         opacity: 0.55 !important;
         pointer-events: none !important;
     }
 
-    body.dark .add-task-form .task-input:placeholder-shown ~ .form-actions .btn-add-task {
+    body.dark .add-task-form .task-input:placeholder-shown~.form-actions .btn-add-task {
         background-color: var(--hover-bg) !important;
         color: var(--text-secondary) !important;
     }
@@ -3355,16 +3410,19 @@ body.dark .priority-opt-btn:hover {
     .add-task-form .project-dropdown,
     .add-task-form .priority-dropdown {
         position: absolute !important;
-        top: calc(100% + 12px) !important; /* На 12px ниже поля ввода */
+        top: calc(100% + 12px) !important;
+        /* На 12px ниже поля ввода */
         bottom: auto !important;
         left: 12px !important;
         right: 12px !important;
         width: calc(100% - 24px) !important;
         border-radius: 16px !important;
-        z-index: 1300 !important; /* Выше формы и оверлея */
+        z-index: 1300 !important;
+        /* Выше формы и оверлея */
         box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15) !important;
         padding: 16px !important;
-        max-height: 440px !important; /* Достаточно высоты для календаря, времени и повтора */
+        max-height: 440px !important;
+        /* Достаточно высоты для календаря, времени и повтора */
         overflow-y: auto !important;
         background-color: var(--card-bg) !important;
         border: 1px solid var(--border) !important;
@@ -3376,24 +3434,35 @@ body.dark .priority-opt-btn:hover {
     .add-task-form .due-date-dropdown {
         padding: 12px !important;
     }
+
     .add-task-form .due-date-dropdown .due-divider {
         margin: 6px 0 !important;
     }
+
     .add-task-form .due-date-dropdown .due-calendar-picker {
         gap: 6px !important;
     }
+
     .add-task-form .due-date-dropdown .calendar-day-cell {
         width: 28px !important;
         height: 28px !important;
         margin: 0 auto !important;
     }
+
     .add-task-form .due-date-dropdown .quick-opt-btn {
         padding: 6px 8px !important;
     }
 
     @keyframes slideUpMobileMenu {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 }
 
@@ -3406,4 +3475,205 @@ body.dark .priority-opt-btn:hover {
 .custom-context-menu {
     opacity: 1 !important;
     background-color: var(--card-bg) !important;
+}
+
+/* === PROJECT SECTIONS STYLING === */
+.project-section {
+    margin-top: 35px;
+    margin-bottom: 0px;
+}
+
+.project-section-header {
+    display: flex;
+    align-items: center;
+    padding: 6px 6px 6px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    border-radius: 8px;
+    user-select: none;
+    transition: background-color 0.15s ease;
+    position: relative;
+}
+
+.section-collapse-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    margin-left: -2px;
+    margin-right: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    border-radius: 4px;
+    transition: background-color 0.15s, transform 0.2s ease;
+}
+
+.section-collapse-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--text);
+}
+
+body.dark .section-collapse-btn:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Rotate chevron when collapsed */
+.project-section.collapsed .chevron-icon {
+    transform: rotate(-90deg);
+}
+
+.chevron-icon {
+    transition: transform 0.2s ease;
+    color: var(--text-secondary);
+}
+
+.section-title-text {
+    flex-grow: 0;
+    margin-right: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.section-count-badge {
+    background-color: var(--hover-bg);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.section-actions-wrapper {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.project-section-header:hover .section-actions-wrapper,
+.project-section-header.menu-open .section-actions-wrapper,
+.section-actions-wrapper.active {
+    opacity: 1;
+}
+
+/* For devices without hover support (like touchscreens), make them always visible or show them when active */
+@media (hover: none) {
+    .section-actions-wrapper {
+        opacity: 1;
+    }
+}
+
+.section-actions-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.section-actions-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--text);
+}
+
+body.dark .section-actions-btn:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.section-drag-handle-btn {
+    position: absolute;
+    left: -27px;
+    top: 0;
+    bottom: 0;
+    width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    opacity: 0;
+    pointer-events: none;
+    cursor: grab;
+    transition: opacity 0.2s ease, color 0.2s ease;
+    background: transparent;
+    border: none;
+    padding: 0;
+    z-index: 5;
+}
+
+.section-drag-handle-btn:active {
+    cursor: grabbing;
+}
+
+.section-drag-handle-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
+
+@media (hover: hover) {
+
+    .project-section-header:hover .section-drag-handle-btn,
+    .project-section-header.menu-open .section-drag-handle-btn {
+        opacity: 0.6;
+        pointer-events: auto;
+    }
+
+    .project-section-header:hover .section-drag-handle-btn:hover,
+    .project-section-header.menu-open .section-drag-handle-btn:hover {
+        opacity: 1;
+        color: var(--text);
+    }
+}
+
+@media (hover: none) {
+    .section-drag-handle-btn {
+        display: none !important;
+    }
+}
+
+.section-actions-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    width: 170px;
+    padding: 4px;
+    box-sizing: border-box;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.section-tasks-container {
+    padding-left: 0;
+    min-height: 20px;
+    transition: min-height 0.2s;
+}
+
+.section-drag-placeholder {
+    height: 36px;
+    margin: 8px 0;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    background-color: var(--hover-bg);
+}
+
+.project-header-more-btn:hover {
+    opacity: 1 !important;
+    background-color: var(--hover-bg);
 }

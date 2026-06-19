@@ -5809,7 +5809,7 @@ initProjectsDragAndDrop();
 function initTouchDragAndDrop() {
     let touchStartTimer = null;
     let touchDraggingElement = null;
-    let touchDragType = null; // 'task' или 'project'
+    let touchDragType = null; // 'task', 'section' или 'project'
     let startY = 0;
     let placeholder = null;
 
@@ -5840,7 +5840,18 @@ function initTouchDragAndDrop() {
         const touch = e.touches[0];
         startY = touch.clientY;
 
-        const targetEl = e.target.closest(type === 'task' ? '.task-item' : '.project-item-container');
+        let targetEl = null;
+        if (type === 'task') {
+            targetEl = e.target.closest('.task-item');
+        } else if (type === 'project') {
+            targetEl = e.target.closest('.project-item-container');
+        } else if (type === 'section') {
+            const header = e.target.closest('.project-section-header');
+            if (header) {
+                targetEl = header.closest('.project-section');
+            }
+        }
+
         if (!targetEl || targetEl.classList.contains('editing') || currentRoute === 'trash') return;
 
         // Отключаем выделение текста при длительном тапе
@@ -5884,16 +5895,53 @@ function initTouchDragAndDrop() {
         e.preventDefault();
 
         const touch = e.touches[0];
-        const container = touchDraggingElement.parentNode;
+        let container = touchDraggingElement.parentNode;
 
         if (!placeholder) {
             placeholder = document.createElement('div');
-            placeholder.className = touchDragType === 'task' ? 'drag-placeholder' : 'project-drag-placeholder';
+            placeholder.className = 
+                touchDragType === 'task' ? 'drag-placeholder' : 
+                touchDragType === 'section' ? 'section-drag-placeholder' : 
+                'project-drag-placeholder';
             placeholder.style.height = `${touchDraggingElement.offsetHeight}px`;
         }
 
         if (touchDragType === 'task') {
+            const origDisplay = touchDraggingElement.style.display;
+            touchDraggingElement.style.display = 'none';
+            let origPlacDisplay = '';
+            if (placeholder) {
+                origPlacDisplay = placeholder.style.display;
+                placeholder.style.display = 'none';
+            }
+            
+            const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            touchDraggingElement.style.display = origDisplay;
+            if (placeholder) {
+                placeholder.style.display = origPlacDisplay;
+            }
+
+            if (targetEl) {
+                const subContainer = targetEl.closest('.unsectioned-tasks-container, .section-tasks-container');
+                if (subContainer) {
+                    container = subContainer;
+                } else {
+                    const sectHeader = targetEl.closest('.project-section-header');
+                    if (sectHeader && sectHeader.nextElementSibling) {
+                        container = sectHeader.nextElementSibling;
+                    }
+                }
+            }
+
             const afterElement = getDragAfterElement(container, touch.clientY);
+            if (afterElement) {
+                container.insertBefore(placeholder, afterElement);
+            } else {
+                container.appendChild(placeholder);
+            }
+        } else if (touchDragType === 'section') {
+            const afterElement = getDragAfterSection(container, touch.clientY);
             if (afterElement) {
                 container.insertBefore(placeholder, afterElement);
             } else {
@@ -5909,6 +5957,20 @@ function initTouchDragAndDrop() {
         }
     };
 
+    const getDragAfterSection = (container, y) => {
+        const dragElements = [...container.querySelectorAll('.project-section:not(.dragging)')];
+
+        return dragElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - (box.top + box.height / 2);
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    };
+
     const handleTouchEnd = async (e) => {
         if (touchStartTimer) {
             clearTimeout(touchStartTimer);
@@ -5920,6 +5982,8 @@ function initTouchDragAndDrop() {
             return;
         }
 
+        const parentContainer = placeholder.parentNode;
+        const prevElement = placeholder.previousElementSibling;
         const nextElement = placeholder.nextElementSibling;
         const draggingEl = touchDraggingElement;
         const dragType = touchDragType;
@@ -5927,16 +5991,130 @@ function initTouchDragAndDrop() {
         resetTouchState();
 
         if (dragType === 'task') {
-            const container = draggingEl.parentNode;
             const taskId = draggingEl.getAttribute('data-id');
-            const taskItems = Array.from(container.querySelectorAll('.task-item'));
-            const draggingIndex = taskItems.indexOf(draggingEl);
+            const task = allTasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            // Determine section ID based on parent container
+            let targetSectionId = null;
+            if (parentContainer && parentContainer.classList.contains('section-tasks-container')) {
+                const sectEl = parentContainer.closest('.project-section');
+                if (sectEl) {
+                    targetSectionId = sectEl.getAttribute('data-section-id') || null;
+                }
+            }
+
+            // Determine targetParentId based on adjacent items inside the same parent container
+            let targetParentId = null;
+            if (prevElement) {
+                const prevTaskId = prevElement.getAttribute('data-id');
+                const prevTask = allTasks.find(t => t.id === prevTaskId);
+                if (prevTask) {
+                    if (prevElement.classList.contains('subtask')) {
+                        targetParentId = prevTask.parentId || null;
+                    } else {
+                        if (nextElement && nextElement.classList.contains('subtask')) {
+                            const nextTaskId = nextElement.getAttribute('data-id');
+                            const nextTask = allTasks.find(t => t.id === nextTaskId);
+                            if (nextTask && nextTask.parentId === prevTask.id) {
+                                targetParentId = prevTask.id;
+                            }
+                        } else {
+                            targetParentId = null;
+                        }
+                    }
+                }
+            } else {
+                targetParentId = null;
+            }
+
+            const findSiblingTask = (startNode, direction, parentId) => {
+                let curr = direction === 'up' ? startNode.previousElementSibling : startNode.nextElementSibling;
+                while (curr) {
+                    if (curr.classList.contains('task-item') && curr !== draggingEl) {
+                        const id = curr.getAttribute('data-id');
+                        const t = allTasks.find(item => item.id === id);
+                        if (t) {
+                            const pId = t.parentId || null;
+                            if (pId === parentId) {
+                                return t;
+                            }
+                        }
+                    }
+                    curr = direction === 'up' ? curr.previousElementSibling : curr.nextElementSibling;
+                }
+                return null;
+            };
+
+            const tempNode = document.createElement('div');
+            if (nextElement) {
+                parentContainer.insertBefore(tempNode, nextElement);
+            } else {
+                parentContainer.appendChild(tempNode);
+            }
+
+            const prevSibling = findSiblingTask(tempNode, 'up', targetParentId);
+            const nextSibling = findSiblingTask(tempNode, 'down', targetParentId);
+            tempNode.remove();
+
+            let newOrder = 0;
+            if (!prevSibling && !nextSibling) {
+                newOrder = 0;
+            } else if (!prevSibling) {
+                newOrder = (nextSibling.order !== undefined ? nextSibling.order : 0) - 1000;
+            } else if (!nextSibling) {
+                newOrder = (prevSibling.order !== undefined ? prevSibling.order : 0) + 1000;
+            } else {
+                const prevOrder = prevSibling.order !== undefined ? prevSibling.order : 0;
+                const nextOrder = nextSibling.order !== undefined ? nextSibling.order : 0;
+                newOrder = (prevOrder + nextOrder) / 2;
+            }
+
+            const updateFields = {
+                order: newOrder,
+                parentId: targetParentId,
+                sectionId: targetSectionId
+            };
+
+            if (targetParentId) {
+                const parentTask = allTasks.find(t => t.id === targetParentId);
+                if (parentTask) {
+                    updateFields.projectId = parentTask.projectId || null;
+                    updateFields.sectionId = parentTask.sectionId || null;
+                }
+            }
+
+            if (currentUid && taskId) {
+                try {
+                    const promises = [];
+                    promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), updateFields));
+
+                    if (targetParentId) {
+                        const subtasks = allTasks.filter(t => t.parentId === taskId && !t.deleted);
+                        subtasks.forEach(sub => {
+                            promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', sub.id), {
+                                parentId: targetParentId,
+                                projectId: updateFields.projectId || null,
+                                sectionId: updateFields.sectionId || null
+                            }));
+                        });
+                    }
+
+                    await Promise.all(promises);
+                } catch (err) {
+                    console.error("Ошибка при touch-перетаскивании задач:", err);
+                }
+            }
+        } else if (dragType === 'section') {
+            const sectionId = draggingEl.getAttribute('data-section-id');
+            const sectionItems = Array.from(activeTasksContainer.querySelectorAll('.project-section'));
+            const draggingIndex = sectionItems.indexOf(draggingEl);
             
             let targetIndex;
             if (!nextElement) {
-                targetIndex = taskItems.length - 1;
+                targetIndex = sectionItems.length - 1;
             } else {
-                let nextIndex = taskItems.indexOf(nextElement);
+                let nextIndex = sectionItems.indexOf(nextElement);
                 if (draggingIndex < nextIndex) {
                     targetIndex = nextIndex - 1;
                 } else {
@@ -5944,65 +6122,44 @@ function initTouchDragAndDrop() {
                 }
             }
 
-            let currentTasks = [];
-            const activeTasks = allTasks.filter(t => !t.deleted && !t.completed);
-            const completedTasks = allTasks.filter(t => !t.deleted && t.completed);
-            const isCompletedContainer = container === completedTasksContainer;
-            const targetTasksList = isCompletedContainer ? completedTasks : activeTasks;
+            const projectId = currentRoute.split('/')[1];
+            const currentSections = sectionsList.filter(s => s.projectId === projectId);
+            
+            currentSections.sort((a, b) => (a.order !== undefined ? a.order : 0) - (b.order !== undefined ? b.order : 0));
+            
+            const movingSect = currentSections.find(s => s.id === sectionId);
+            if (!movingSect) return;
 
-            if (currentRoute === 'today') {
-                const todayObj = new Date();
-                const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
-                currentTasks = targetTasksList.filter(t => t.dueDate === todayStr);
-            } else if (currentRoute.startsWith('project/')) {
-                const projectId = currentRoute.split('/')[1];
-                currentTasks = targetTasksList.filter(t => t.projectId === projectId);
-            } else {
-                currentTasks = targetTasksList.filter(t => !t.projectId);
-            }
-
-            currentTasks.sort((a, b) => {
-                const orderA = a.order !== undefined ? a.order : 0;
-                const orderB = b.order !== undefined ? b.order : 0;
-                if (orderA !== orderB) return orderA - orderB;
-                const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
-                const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
-                return timeB - timeA;
-            });
-
-            const movingTask = currentTasks.find(t => t.id === taskId);
-            if (!movingTask) return;
-
-            const movingTaskIndex = currentTasks.indexOf(movingTask);
-            currentTasks.splice(movingTaskIndex, 1);
-            currentTasks.splice(targetIndex, 0, movingTask);
+            const movingSectIndex = currentSections.indexOf(movingSect);
+            currentSections.splice(movingSectIndex, 1);
+            currentSections.splice(targetIndex, 0, movingSect);
 
             let newOrder = 0;
-            if (currentTasks.length === 1) {
+            if (currentSections.length === 1) {
                 newOrder = 0;
             } else if (targetIndex === 0) {
-                const nextTask = currentTasks[1];
-                const nextOrder = nextTask.order !== undefined ? nextTask.order : 0;
+                const nextSect = currentSections[1];
+                const nextOrder = nextSect.order !== undefined ? nextSect.order : 0;
                 newOrder = nextOrder - 1000;
-            } else if (targetIndex === currentTasks.length - 1) {
-                const prevTask = currentTasks[currentTasks.length - 2];
-                const prevOrder = prevTask.order !== undefined ? prevTask.order : 0;
+            } else if (targetIndex === currentSections.length - 1) {
+                const prevSect = currentSections[currentSections.length - 2];
+                const prevOrder = prevSect.order !== undefined ? prevSect.order : 0;
                 newOrder = prevOrder + 1000;
             } else {
-                const prevTask = currentTasks[targetIndex - 1];
-                const nextTask = currentTasks[targetIndex + 1];
-                const prevOrder = prevTask.order !== undefined ? prevTask.order : 0;
-                const nextOrder = nextTask.order !== undefined ? nextTask.order : 0;
+                const prevSect = currentSections[targetIndex - 1];
+                const nextSect = currentSections[targetIndex + 1];
+                const prevOrder = prevSect.order !== undefined ? prevSect.order : 0;
+                const nextOrder = nextSect.order !== undefined ? nextSect.order : 0;
                 newOrder = (prevOrder + nextOrder) / 2;
             }
 
-            if (currentUid && taskId) {
+            if (currentUid && sectionId) {
                 try {
-                    await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
+                    await updateDoc(doc(db, 'users', currentUid, 'sections', sectionId), {
                         order: newOrder
                     });
                 } catch (err) {
-                    console.error("Ошибка при touch-обновлении порядка задач:", err);
+                    console.error("Ошибка при touch-обновлении порядка разделов:", err);
                 }
             }
         } else if (dragType === 'project') {
@@ -6067,7 +6224,13 @@ function initTouchDragAndDrop() {
     // Слушатели событий на контейнеры для тасков
     [activeTasksContainer, completedTasksContainer].forEach(container => {
         if (!container) return;
-        container.addEventListener('touchstart', (e) => handleTouchStart(e, 'task'), { passive: true });
+        container.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.project-section-header')) {
+                handleTouchStart(e, 'section');
+            } else {
+                handleTouchStart(e, 'task');
+            }
+        }, { passive: true });
         container.addEventListener('touchmove', handleTouchMove, { passive: false });
         container.addEventListener('touchend', handleTouchEnd, { passive: true });
         container.addEventListener('touchcancel', resetTouchState, { passive: true });

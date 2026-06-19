@@ -19,6 +19,16 @@
     <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="auth-widget.css">
     <link rel="stylesheet" href="todo.css">
+    
+    <!-- Polyfill for Mobile Drag and Drop -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0/default.css">
+    <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0/index.min.js"></script>
+    <script>
+        window.addEventListener('touchmove', function() {}, {passive: false});
+        MobileDragDrop.polyfill({
+            dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
+        });
+    </script>
 </head>
 
 <body>
@@ -262,6 +272,9 @@
                     </div>
                     <div class="completed-tasks-container" id="completedTasksContainer"></div>
                 </div>
+
+                <!-- Контейнер для виджета серии дней на мобильных -->
+                <div id="mobileStreakWidgetContainer" style="display: none; margin-top: 24px; margin-bottom: 0; padding: 0 4px 120px 4px;"></div>
             </div>
         </main>
 

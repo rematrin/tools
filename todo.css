@@ -1283,6 +1283,12 @@ body.dark .dropdown-submenu {
         flex: 1;
         overflow-y: auto;
         padding-bottom: 180px;
+        display: block;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .todo-main-layout {
+        margin: 0 auto;
     }
 
     .content-nav-toggle {

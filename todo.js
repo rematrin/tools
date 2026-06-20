@@ -621,16 +621,25 @@ function getRepeatOptions(dateStr) {
         dayAndMonth = `${today.getDate()}-го ${monthsRuGenitive[today.getMonth()]}`;
     }
     
-    // Day of week phrasing correct for Russian
-    const dayOfWeekPhrase = getDayOfWeekPhrase(dateStr ? new Date(dateStr.split('-').map(Number)[0], dateStr.split('-').map(Number)[1]-1, dateStr.split('-').map(Number)[2]).getDay() : new Date().getDay());
+    let weeklyText = '';
+    if (dayOfWeekName === 'среда') {
+        weeklyText = 'Каждую среду (еженедельно)';
+    } else if (dayOfWeekName === 'пятница') {
+        weeklyText = 'Каждую пятницу (еженедельно)';
+    } else if (dayOfWeekName === 'суббота') {
+        weeklyText = 'Каждую субботу (еженедельно)';
+    } else if (dayOfWeekName === 'воскресенье') {
+        weeklyText = 'Каждое воскресенье (еженедельно)';
+    } else {
+        weeklyText = `Каждый ${dayOfWeekName} (еженедельно)`;
+    }
     
     return [
         { id: 'daily', text: 'Каждый день' },
-        { id: 'weekly', text: `Каждую неделю ${dayOfWeekPhrase}` },
         { id: 'weekday', text: 'Каждый будний день (Пн - Пт)' },
-        { id: 'monthly', text: `Каждое ${dayNum} числа` },
-        { id: 'yearly', text: `Каждое ${dayAndMonth}` },
-        { id: 'custom', text: 'Настроить...' }
+        { id: 'weekly', text: weeklyText },
+        { id: 'monthly', text: `Каждое ${dayNum} числа (ежемесячно)` },
+        { id: 'yearly', text: `Каждое ${dayAndMonth} (ежегодно)` }
     ];
 }
 
@@ -649,9 +658,9 @@ function getRepeatLabel(repeatCode, dateStr) {
     
     switch(repeatCode) {
         case 'daily': return 'каждый день';
-        case 'weekly': return `${dayOfWeekName === 'среда' ? 'каждую среду' : dayOfWeekName === 'пятница' ? 'каждую пятницу' : dayOfWeekName === 'суббота' ? 'каждую субботу' : 'каждый ' + dayOfWeekName}`;
+        case 'weekly': return 'еженедельно';
         case 'weekday': return 'будни';
-        case 'monthly': return `${dayNum} числа`;
+        case 'monthly': return 'ежемесячно';
         case 'yearly': return 'ежегодно';
         case 'custom': return 'повтор';
         default: return '';
@@ -3182,12 +3191,6 @@ function renderTasks() {
                         dragHandle.addEventListener('mouseup', () => {
                             sectionEl.removeAttribute('draggable');
                         });
-                        dragHandle.addEventListener('touchstart', () => {
-                            sectionEl.setAttribute('draggable', 'true');
-                        });
-                        dragHandle.addEventListener('touchend', () => {
-                            sectionEl.removeAttribute('draggable');
-                        });
                     }
 
                     const collapseBtn = sectionEl.querySelector('.section-collapse-btn');
@@ -4031,15 +4034,6 @@ function createTaskRowElement(task) {
     item.addEventListener('mouseup', () => {
         item.removeAttribute('draggable');
     });
-    item.addEventListener('touchstart', (e) => {
-        if (e.target.closest('button:not(.task-drag-handle), input, textarea, a, .checkbox-wrapper, .custom-checkbox, .task-actions-dropdown')) {
-            return;
-        }
-        item.setAttribute('draggable', 'true');
-    }, { passive: true });
-    item.addEventListener('touchend', () => {
-        item.removeAttribute('draggable');
-    });
 
     // Обработчик кнопки свертывания/развертывания подзадач
     if (hasSubtasks) {
@@ -4386,12 +4380,6 @@ function renderProjects() {
                 itemContainer.setAttribute('draggable', 'true');
             });
             menuIcon.addEventListener('mouseup', () => {
-                itemContainer.removeAttribute('draggable');
-            });
-            menuIcon.addEventListener('touchstart', () => {
-                itemContainer.setAttribute('draggable', 'true');
-            });
-            menuIcon.addEventListener('touchend', () => {
                 itemContainer.removeAttribute('draggable');
             });
         }
@@ -5811,13 +5799,44 @@ function initTouchDragAndDrop() {
     let touchDraggingElement = null;
     let touchDragType = null; // 'task', 'section' или 'project'
     let startY = 0;
+    let startX = 0;
     let placeholder = null;
+
+    const removePassiveListeners = () => {
+        window.removeEventListener('touchmove', handleTouchMovePassive);
+        window.removeEventListener('touchend', handleTouchEndPassive);
+        window.removeEventListener('touchcancel', handleTouchEndPassive);
+    };
+
+    const handleTouchMovePassive = (e) => {
+        const touch = e.touches[0];
+        if (Math.abs(touch.clientY - startY) > 10 || Math.abs(touch.clientX - startX) > 10) {
+            if (touchStartTimer) {
+                clearTimeout(touchStartTimer);
+                touchStartTimer = null;
+            }
+            removePassiveListeners();
+        }
+    };
+
+    const handleTouchEndPassive = () => {
+        if (touchStartTimer) {
+            clearTimeout(touchStartTimer);
+            touchStartTimer = null;
+        }
+        removePassiveListeners();
+    };
 
     const resetTouchState = () => {
         if (touchStartTimer) {
             clearTimeout(touchStartTimer);
             touchStartTimer = null;
         }
+        removePassiveListeners();
+        window.removeEventListener('touchmove', handleTouchMoveActive);
+        window.removeEventListener('touchend', handleTouchEndActive);
+        window.removeEventListener('touchcancel', resetTouchState);
+
         if (touchDraggingElement) {
             touchDraggingElement.classList.remove('dragging');
             touchDraggingElement.removeAttribute('draggable');
@@ -5839,6 +5858,7 @@ function initTouchDragAndDrop() {
         if (e.touches.length > 1) return;
         const touch = e.touches[0];
         startY = touch.clientY;
+        startX = touch.clientX;
 
         let targetEl = null;
         if (type === 'task') {
@@ -5859,8 +5879,15 @@ function initTouchDragAndDrop() {
             evt.preventDefault();
         };
 
+        // Добавляем временные пассивные слушатели для отслеживания сдвига
+        window.addEventListener('touchmove', handleTouchMovePassive, { passive: true });
+        window.addEventListener('touchend', handleTouchEndPassive, { passive: true });
+        window.addEventListener('touchcancel', handleTouchEndPassive, { passive: true });
+
         // Таймер для Long Press (300 мс для более быстрого отклика)
         touchStartTimer = setTimeout(() => {
+            removePassiveListeners();
+
             touchDraggingElement = targetEl;
             touchDragType = type;
             touchDraggingElement.classList.add('dragging');
@@ -5871,6 +5898,11 @@ function initTouchDragAndDrop() {
             window.addEventListener('contextmenu', preventSelection, { capture: true });
             touchDraggingElement._preventSelection = preventSelection;
 
+            // Регистрируем активные слушатели для самого процесса перетаскивания
+            window.addEventListener('touchmove', handleTouchMoveActive, { passive: false });
+            window.addEventListener('touchend', handleTouchEndActive, { passive: true });
+            window.addEventListener('touchcancel', resetTouchState, { passive: true });
+
             // Легкая вибрация, если поддерживается устройством
             if (navigator.vibrate) {
                 navigator.vibrate(50);
@@ -5878,18 +5910,8 @@ function initTouchDragAndDrop() {
         }, 300);
     };
 
-    const handleTouchMove = (e) => {
-        if (!touchDraggingElement) {
-            // Если палец сдвинулся до истечения 300мс, отменяем Long Press
-            const touch = e.touches[0];
-            if (Math.abs(touch.clientY - startY) > 10) {
-                if (touchStartTimer) {
-                    clearTimeout(touchStartTimer);
-                    touchStartTimer = null;
-                }
-            }
-            return;
-        }
+    const handleTouchMoveActive = (e) => {
+        if (!touchDraggingElement) return;
 
         // Предотвращаем скролл экрана во время переноса
         e.preventDefault();
@@ -5971,7 +5993,7 @@ function initTouchDragAndDrop() {
         }, { offset: Number.NEGATIVE_INFINITY }).element;
     };
 
-    const handleTouchEnd = async (e) => {
+    const handleTouchEndActive = async (e) => {
         if (touchStartTimer) {
             clearTimeout(touchStartTimer);
             touchStartTimer = null;
@@ -6037,7 +6059,7 @@ function initTouchDragAndDrop() {
                         if (t) {
                             const pId = t.parentId || null;
                             if (pId === parentId) {
-                                return t;
+                                    return t;
                             }
                         }
                     }
@@ -6221,7 +6243,7 @@ function initTouchDragAndDrop() {
         }
     };
 
-    // Слушатели событий на контейнеры для тасков
+    // Слушатели событий на контейнеры для тасков (только touchstart, который passive по умолчанию)
     [activeTasksContainer, completedTasksContainer].forEach(container => {
         if (!container) return;
         container.addEventListener('touchstart', (e) => {
@@ -6231,17 +6253,11 @@ function initTouchDragAndDrop() {
                 handleTouchStart(e, 'task');
             }
         }, { passive: true });
-        container.addEventListener('touchmove', handleTouchMove, { passive: false });
-        container.addEventListener('touchend', handleTouchEnd, { passive: true });
-        container.addEventListener('touchcancel', resetTouchState, { passive: true });
     });
 
-    // Слушатели для проектов в боковой панели
+    // Слушатели для проектов в боковой панели (только touchstart)
     if (projectsListContainer) {
         projectsListContainer.addEventListener('touchstart', (e) => handleTouchStart(e, 'project'), { passive: true });
-        projectsListContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
-        projectsListContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
-        projectsListContainer.addEventListener('touchcancel', resetTouchState, { passive: true });
     }
 }
 

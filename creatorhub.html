@@ -108,6 +108,16 @@
                     </span>
                     <span class="menu-label">Настройки</span>
                 </a>
+                <div class="sidebar-divider"></div>
+                <a href="#" class="menu-item" id="menuTrash">
+                    <span class="menu-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </span>
+                    <span class="menu-label">Корзина</span>
+                </a>
             </nav>
         </aside>
 
@@ -221,6 +231,18 @@
                     </div>
                 </div>
 
+                <!-- Баннер Корзины -->
+                <div class="trash-notice-banner" id="trashNoticeBanner" style="display: none;">
+                    <span>Объекты в корзисе хранятся 30 дней — потом удаляются навсегда.</span>
+                    <button class="btn-empty-trash" id="btnEmptyTrash" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12" style="vertical-align: middle; margin-right: 4px;">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Очистить корзину
+                    </button>
+                </div>
+
                 <!-- Список видео -->
                 <div class="videos-list" id="videosListContainer">
                     <!-- Будет сгенерировано через JS -->
@@ -231,8 +253,9 @@
         <!-- Правый сайдбар детальной информации -->
         <aside class="detail-sidebar" id="detailSidebar">
             <!-- Превью видео -->
-            <div class="detail-thumbnail-wrapper">
+            <div class="detail-thumbnail-wrapper" style="position: relative;">
                 <img id="detailImage" src="https://placehold.co/600x338?text=Select+Video" alt="Превью" class="detail-thumbnail">
+                <button class="btn-change-thumbnail" id="btnChangeThumbnail" style="display: none;">Изменить</button>
             </div>
 
             <!-- Заголовок и статус -->
@@ -240,7 +263,13 @@
                 <h3 id="detailTitle">Выберите видео из списка</h3>
                 <div class="detail-status-wrapper">
                     <span id="detailStatusDot" class="status-dot"></span>
-                    <span id="detailStatusText">--</span>
+                    <select id="detailStatusSelect" class="status-select">
+                        <option value="idea">Идея</option>
+                        <option value="in_progress">В работе</option>
+                        <option value="editing">На монтаже</option>
+                        <option value="published">Опубликовано</option>
+                        <option value="archive">Архив</option>
+                    </select>
                 </div>
             </div>
 
@@ -264,7 +293,7 @@
                             <p id="infoDescription" class="info-description">Описание видео появится здесь при выборе.</p>
                         </div>
 
-                        <div class="info-group">
+                        <div class="info-group flex-row">
                             <label class="info-label">Теги</label>
                             <div class="tags-container" id="infoTags">
                                 <!-- Теги динамически -->
@@ -478,6 +507,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Скрытые элементы для обложки -->
+    <input type="file" id="thumbnailFileInput" accept="image/*" style="display: none;">
 
     <!-- Общие скрипты -->
     <script type="module" src="nav-widget.js"></script>

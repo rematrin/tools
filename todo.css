@@ -1895,12 +1895,14 @@ body.dark .task-due-badge.overdue {
     flex-direction: column;
     flex: 1;
     overflow-y: auto;
-    scrollbar-width: none; /* Hide scrollbar by default in Firefox */
+    scrollbar-width: none;
+    /* Hide scrollbar by default in Firefox */
     min-height: 0;
 }
 
 .projects-list-wrapper:hover {
-    scrollbar-width: thin; /* Show scrollbar on hover in Firefox */
+    scrollbar-width: thin;
+    /* Show scrollbar on hover in Firefox */
 }
 
 .projects-list-wrapper::-webkit-scrollbar {
@@ -1912,17 +1914,20 @@ body.dark .task-due-badge.overdue {
 }
 
 .projects-list-wrapper::-webkit-scrollbar-thumb {
-    background-color: transparent; /* Invisible by default */
+    background-color: transparent;
+    /* Invisible by default */
     border-radius: 10px;
     transition: background-color 0.2s ease;
 }
 
 .projects-list-wrapper:hover::-webkit-scrollbar-thumb {
-    background-color: rgba(128, 128, 128, 0.25); /* Show minimal thumb on hover */
+    background-color: rgba(128, 128, 128, 0.25);
+    /* Show minimal thumb on hover */
 }
 
 .projects-list-wrapper::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(128, 128, 128, 0.45) !important; /* Slightly darker when thumb is hovered directly */
+    background-color: rgba(128, 128, 128, 0.45) !important;
+    /* Slightly darker when thumb is hovered directly */
 }
 
 .projects-list {
@@ -3717,178 +3722,347 @@ body.dark .section-actions-btn:hover {
 
 /* --- STREAK WIDGET STYLE --- */
 .streak-widget {
-  padding: 18px;
-  border-radius: 18px;
-  color: white;
-  background:
-    radial-gradient(circle at 30% 20%, rgba(120, 92, 255, .25), transparent 35%),
-    linear-gradient(160deg, #1b1d44, #10162a);
-  box-shadow: 0 15px 35px rgba(0,0,0,.3);
-  animation: streakWidgetPop .45s ease forwards;
-  box-sizing: border-box;
+    padding: 18px;
+    border-radius: 18px;
+    color: white;
+    background:
+        radial-gradient(circle at 30% 20%, rgba(120, 92, 255, .25), transparent 35%),
+        linear-gradient(160deg, #1b1d44, #10162a);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, .3);
+    animation: streakWidgetPop .45s ease forwards;
+    box-sizing: border-box;
 }
 
 .streak-title {
-  font-size: 14px;
-  color: #c3c6df;
-  margin-bottom: 16px;
-  font-weight: 600;
+    font-size: 14px;
+    color: #c3c6df;
+    margin-bottom: 16px;
+    font-weight: 600;
 }
 
 .streak-main {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
 .streak-fire {
-  font-size: 31px;
+    font-size: 31px;
 }
 
 .streak-number {
-  font-size: 46px;
-  font-weight: 800;
-  line-height: 1;
-  min-width: 32px;
+    font-size: 46px;
+    font-weight: 800;
+    line-height: 1;
+    min-width: 32px;
 }
 
 .streak-text {
-  font-size: 14px;
-  color: #c3c6df;
-  margin-top: 12px;
+    font-size: 14px;
+    color: #c3c6df;
+    margin-top: 12px;
 }
 
 .streak-days {
-  display: flex;
-  justify-content: space-between;
+    display: flex;
+    justify-content: space-between;
 }
 
 .streak-day {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
 }
 
 .streak-day span {
-  color: #8f96b7;
-  font-size: 12px;
+    color: #8f96b7;
+    font-size: 12px;
 }
 
 .streak-circle {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  position: relative;
-  overflow: hidden;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    position: relative;
+    overflow: hidden;
 }
 
 .streak-circle.done {
-  background: linear-gradient(180deg, #9278ff, #6645ff);
-  transform: translateY(-14px) scale(0);
-  animation: streakDayDrop .55s cubic-bezier(.18, 1.55, .35, 1) forwards;
+    background: linear-gradient(180deg, #9278ff, #6645ff);
+    transform: translateY(-14px) scale(0);
+    animation: streakDayDrop .55s cubic-bezier(.18, 1.55, .35, 1) forwards;
 }
 
 .streak-circle.done::before {
-  content: "";
-  position: absolute;
-  width: 8px;
-  height: 18px;
-  background: rgba(255,255,255,.45);
-  transform: rotate(35deg) translateX(-18px);
-  animation: streakShine .45s ease forwards;
+    content: "";
+    position: absolute;
+    width: 8px;
+    height: 18px;
+    background: rgba(255, 255, 255, .45);
+    transform: rotate(35deg) translateX(-18px);
+    animation: streakShine .45s ease forwards;
 }
 
 .streak-circle.done::after {
-  content: "✓";
-  font-size: 13px;
-  font-weight: 800;
-  opacity: 0;
-  transform: scale(.4);
-  animation: streakCheckPop .25s ease forwards;
+    content: "✓";
+    font-size: 13px;
+    font-weight: 800;
+    opacity: 0;
+    transform: scale(.4);
+    animation: streakCheckPop .25s ease forwards;
 }
 
 .streak-circle.empty {
-  border: 2px solid #313857;
-  background: rgba(255,255,255,.02);
+    border: 2px solid #313857;
+    background: rgba(255, 255, 255, .02);
 }
 
-.streak-day:nth-child(1) .streak-circle.done { animation-delay: .05s; }
-.streak-day:nth-child(2) .streak-circle.done { animation-delay: .20s; }
-.streak-day:nth-child(3) .streak-circle.done { animation-delay: .35s; }
-.streak-day:nth-child(4) .streak-circle.done { animation-delay: .50s; }
-.streak-day:nth-child(5) .streak-circle.done { animation-delay: .65s; }
-.streak-day:nth-child(6) .streak-circle.done { animation-delay: .80s; }
-.streak-day:nth-child(7) .streak-circle.done { animation-delay: .95s; }
+.streak-day:nth-child(1) .streak-circle.done {
+    animation-delay: .05s;
+}
 
-.streak-day:nth-child(1) .streak-circle.done::after { animation-delay: .22s; }
-.streak-day:nth-child(2) .streak-circle.done::after { animation-delay: .37s; }
-.streak-day:nth-child(3) .streak-circle.done::after { animation-delay: .52s; }
-.streak-day:nth-child(4) .streak-circle.done::after { animation-delay: .67s; }
-.streak-day:nth-child(5) .streak-circle.done::after { animation-delay: .82s; }
-.streak-day:nth-child(6) .streak-circle.done::after { animation-delay: .97s; }
-.streak-day:nth-child(7) .streak-circle.done::after { animation-delay: 1.12s; }
+.streak-day:nth-child(2) .streak-circle.done {
+    animation-delay: .20s;
+}
 
-.streak-day:nth-child(1) .streak-circle.done::before { animation-delay: .30s; }
-.streak-day:nth-child(2) .streak-circle.done::before { animation-delay: .45s; }
-.streak-day:nth-child(3) .streak-circle.done::before { animation-delay: .60s; }
-.streak-day:nth-child(4) .streak-circle.done::before { animation-delay: .75s; }
-.streak-day:nth-child(5) .streak-circle.done::before { animation-delay: .90s; }
-.streak-day:nth-child(6) .streak-circle.done::before { animation-delay: 1.05s; }
-.streak-day:nth-child(7) .streak-circle.done::before { animation-delay: 1.20s; }
+.streak-day:nth-child(3) .streak-circle.done {
+    animation-delay: .35s;
+}
+
+.streak-day:nth-child(4) .streak-circle.done {
+    animation-delay: .50s;
+}
+
+.streak-day:nth-child(5) .streak-circle.done {
+    animation-delay: .65s;
+}
+
+.streak-day:nth-child(6) .streak-circle.done {
+    animation-delay: .80s;
+}
+
+.streak-day:nth-child(7) .streak-circle.done {
+    animation-delay: .95s;
+}
+
+.streak-day:nth-child(1) .streak-circle.done::after {
+    animation-delay: .22s;
+}
+
+.streak-day:nth-child(2) .streak-circle.done::after {
+    animation-delay: .37s;
+}
+
+.streak-day:nth-child(3) .streak-circle.done::after {
+    animation-delay: .52s;
+}
+
+.streak-day:nth-child(4) .streak-circle.done::after {
+    animation-delay: .67s;
+}
+
+.streak-day:nth-child(5) .streak-circle.done::after {
+    animation-delay: .82s;
+}
+
+.streak-day:nth-child(6) .streak-circle.done::after {
+    animation-delay: .97s;
+}
+
+.streak-day:nth-child(7) .streak-circle.done::after {
+    animation-delay: 1.12s;
+}
+
+.streak-day:nth-child(1) .streak-circle.done::before {
+    animation-delay: .30s;
+}
+
+.streak-day:nth-child(2) .streak-circle.done::before {
+    animation-delay: .45s;
+}
+
+.streak-day:nth-child(3) .streak-circle.done::before {
+    animation-delay: .60s;
+}
+
+.streak-day:nth-child(4) .streak-circle.done::before {
+    animation-delay: .75s;
+}
+
+.streak-day:nth-child(5) .streak-circle.done::before {
+    animation-delay: .90s;
+}
+
+.streak-day:nth-child(6) .streak-circle.done::before {
+    animation-delay: 1.05s;
+}
+
+.streak-day:nth-child(7) .streak-circle.done::before {
+    animation-delay: 1.20s;
+}
 
 @keyframes streakDayDrop {
-  0% {
-    opacity: 0;
-    transform: translateY(-14px) scale(0);
-    box-shadow: 0 0 0 rgba(116,90,255,0);
-  }
-  65% {
-    opacity: 1;
-    transform: translateY(2px) scale(1.25);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    box-shadow: none;
-  }
+    0% {
+        opacity: 0;
+        transform: translateY(-14px) scale(0);
+        box-shadow: 0 0 0 rgba(116, 90, 255, 0);
+    }
+
+    65% {
+        opacity: 1;
+        transform: translateY(2px) scale(1.25);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        box-shadow: none;
+    }
 }
 
 @keyframes streakCheckPop {
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 @keyframes streakShine {
-  to {
-    transform: rotate(35deg) translateX(18px);
-  }
+    to {
+        transform: rotate(35deg) translateX(18px);
+    }
 }
 
 @keyframes streakFirePulse {
-  from {
-    transform: scale(1);
-    filter: drop-shadow(0 0 0 rgba(255,130,40,0));
-  }
-  to {
-    transform: scale(1.08);
-    filter: drop-shadow(0 0 8px rgba(255,130,40,.45));
-  }
+    from {
+        transform: scale(1);
+        filter: drop-shadow(0 0 0 rgba(255, 130, 40, 0));
+    }
+
+    to {
+        transform: scale(1.08);
+        filter: drop-shadow(0 0 8px rgba(255, 130, 40, .45));
+    }
 }
 
 @keyframes streakWidgetPop {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* --- СТИЛИ ДЛЯ ВИДЖЕТА ПРОГРЕССА СЕГОДНЯ --- */
+.today-progress-widget {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 25px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    box-sizing: border-box;
+}
+
+body.dark .today-progress-widget {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.progress-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.progress-circle-container {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+}
+
+.progress-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.progress-bg-circle {
+    stroke: var(--hover-bg);
+    stroke-width: 3.5;
+}
+
+body.dark .progress-bg-circle {
+    stroke: rgba(255, 255, 255, 0.05);
+}
+
+.progress-fill-circle {
+    stroke: var(--accent);
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.35s ease;
+}
+
+.progress-text-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.progress-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.progress-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.progress-subtitle {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.progress-right {
+    display: flex;
+    align-items: center;
+}
+
+.progress-motivation {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+@media (max-width: 480px) {
+    .today-progress-widget {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .progress-right {
+        align-self: flex-end;
+    }
 }

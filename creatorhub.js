@@ -1,4 +1,16 @@
 // creatorhub.js
+import {
+    getFirestore,
+    collection,
+    query,
+    orderBy,
+    onSnapshot,
+    addDoc,
+    deleteDoc,
+    doc,
+    updateDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // Изначальные данные видео
 const initialVideos = [
@@ -183,6 +195,15 @@ document.addEventListener("DOMContentLoaded", () => {
         selectVideoItem(videos[0].id);
     }
 
+    // Слушатель добавления видео
+    const btnAddVideo = document.querySelector(".btn-add-video");
+    if (btnAddVideo) {
+        btnAddVideo.addEventListener("click", (e) => {
+            e.stopPropagation();
+            addVideo();
+        });
+    }
+
     // Слушатели поиска и фильтров
     videoSearch.addEventListener("input", (e) => {
         searchQuery = e.target.value.toLowerCase();
@@ -280,6 +301,26 @@ function renderVideosList() {
             }
             selectVideoItem(v.id);
         });
+
+        // Двойной клик для переименования
+        card.addEventListener("dblclick", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            enableInlineRename(card, v.id, v.title);
+        });
+
+        // Правый клик (контекстное меню)
+        card.addEventListener("contextmenu", (e) => {
+            showVideoMenu(e, v.id);
+        });
+
+        // Кнопка опций (три точки)
+        const optionsBtn = card.querySelector(".video-options-btn");
+        if (optionsBtn) {
+            optionsBtn.addEventListener("click", (e) => {
+                showVideoMenu(e, v.id, optionsBtn);
+            });
+        }
 
         videosListContainer.appendChild(card);
     });
@@ -408,3 +449,417 @@ function renderChecklist() {
         prog.textContent = `${checkedCount}/${selectedVideo.checklist.length}`;
     });
 }
+
+// === Firebase Auth & Firestore Sync ===
+let currentUid = null;
+let unsubscribeVideos = null;
+let db = null;
+
+window.addEventListener('authChanged', (e) => {
+    const user = e.detail.user;
+    currentUid = user ? user.uid : null;
+    db = window.db || getFirestore();
+
+    if (currentUid) {
+        // Подписка на коллекцию видео в Firestore
+        const q = query(collection(db, "users", currentUid, "videos"), orderBy("createdAt", "asc"));
+        if (unsubscribeVideos) unsubscribeVideos();
+        unsubscribeVideos = onSnapshot(q, (snapshot) => {
+            videos = [];
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                videos.push({
+                    id: docSnap.id,
+                    ...data
+                });
+            });
+            
+            renderVideosList();
+            
+            // Выбираем первое видео по умолчанию или восстанавливаем выбранное
+            if (videos.length > 0) {
+                if (!selectedVideo || !videos.some(v => v.id === selectedVideo.id)) {
+                    selectVideoItem(videos[0].id);
+                } else {
+                    selectVideoItem(selectedVideo.id);
+                }
+            } else {
+                selectedVideo = null;
+                clearDetailSidebar();
+            }
+        });
+    } else {
+        if (unsubscribeVideos) {
+            unsubscribeVideos();
+            unsubscribeVideos = null;
+        }
+        // Загрузка локальных данных
+        videos = JSON.parse(localStorage.getItem("local_videos")) || [];
+        if (videos.length === 0) {
+            videos = [...initialVideos];
+        }
+        renderVideosList();
+        if (videos.length > 0) {
+            selectVideoItem(videos[0].id);
+        } else {
+            clearDetailSidebar();
+        }
+    }
+    
+    // Welcome Greeting Name
+    const welcomeUserName = document.getElementById('welcomeUserName');
+    if (welcomeUserName) {
+        welcomeUserName.textContent = user ? (user.displayName || "Пользователь") : "Max";
+    }
+
+    // Settings Profile Card
+    const settingsProfileAvatar = document.getElementById('settingsProfileAvatar');
+    const settingsProfileName = document.getElementById('settingsProfileName');
+    const settingsEmailText = document.getElementById('settingsEmailText');
+
+    if (settingsProfileName) {
+        settingsProfileName.textContent = user ? (user.displayName || "Пользователь") : "Max";
+    }
+    if (settingsEmailText) {
+        settingsEmailText.textContent = user ? user.email : "--";
+    }
+    if (settingsProfileAvatar) {
+        if (user && user.photoURL) {
+            settingsProfileAvatar.src = user.photoURL;
+        } else {
+            const letter = (user && user.displayName) ? user.displayName[0] : "U";
+            settingsProfileAvatar.src = `https://via.placeholder.com/64/CCCCCC/FFFFFF?text=${letter}`;
+        }
+    }
+});
+
+// Click on logo to open profile menu (AuthModal)
+const sidebarLogo = document.getElementById('sidebarLogo');
+if (sidebarLogo) {
+    sidebarLogo.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window.openAuthModal === 'function') {
+            window.openAuthModal(sidebarLogo);
+        } else {
+            console.warn("Auth widget not loaded yet");
+        }
+    });
+}
+
+// === Settings Modal Logic ===
+const settingsModal = document.getElementById('settingsModal');
+const menuSettings = document.getElementById('menuSettings');
+const btnSettingsClose = document.getElementById('btnSettingsClose');
+
+function openSettingsModal() {
+    if (settingsModal) {
+        settingsModal.style.display = 'flex';
+        switchSettingsTab('account');
+    }
+}
+
+function closeSettingsModal() {
+    if (settingsModal) {
+        settingsModal.style.display = 'none';
+    }
+}
+
+function switchSettingsTab(tabName) {
+    const tabs = document.querySelectorAll('#settingsModal .settings-menu-item');
+    const panes = document.querySelectorAll('#settingsModal .settings-tab-pane');
+    
+    tabs.forEach(tab => {
+        if (tab.getAttribute('data-tab') === tabName) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+
+    panes.forEach(pane => {
+        if (pane.id === `tab-${tabName}`) {
+            pane.style.display = 'block';
+        } else {
+            pane.style.display = 'none';
+        }
+    });
+}
+
+if (menuSettings) {
+    menuSettings.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openSettingsModal();
+    });
+}
+
+if (btnSettingsClose) {
+    btnSettingsClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeSettingsModal();
+    });
+}
+
+if (settingsModal) {
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+            closeSettingsModal();
+        }
+    });
+
+    // Tab buttons click handling
+    const tabBtns = settingsModal.querySelectorAll('.settings-menu-item');
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const tabName = btn.getAttribute('data-tab');
+            switchSettingsTab(tabName);
+        });
+    });
+}
+
+// === Очистка сайдбара деталей ===
+function clearDetailSidebar() {
+    detailImage.src = "https://placehold.co/600x338?text=Select+Video";
+    detailTitle.textContent = "Выберите видео из списка";
+    detailStatusText.textContent = "--";
+    detailStatusDot.className = "status-dot";
+    infoDescription.textContent = "Описание видео появится здесь при выборе.";
+    infoTags.innerHTML = "";
+    infoDate.textContent = "--";
+    infoLink.href = "#";
+    infoLink.querySelector("span").textContent = "ссылка";
+    infoPlaylist.textContent = "--";
+    notesTextareas.forEach(textarea => {
+        textarea.value = "";
+    });
+    filesList.innerHTML = `<div class="empty-state-tab">Файлы отсутствуют</div>`;
+    checklistContainers.forEach(container => {
+        container.innerHTML = `<div class="empty-state-tab">Задачи отсутствуют</div>`;
+    });
+    checklistProgresses.forEach(prog => {
+        prog.textContent = "0/0";
+    });
+}
+
+// === Создание нового видео ===
+async function addVideo() {
+    const newVideoData = {
+        title: "Новое видео",
+        status: "idea",
+        statusText: "Идея",
+        tags: ["Проект"],
+        date: "Создано сегодня",
+        dateLabel: "Создано сегодня",
+        thumbnail: "https://placehold.co/600x338/e2e8f0/475569?text=New+Video",
+        description: "",
+        playlist: "",
+        link: "",
+        notes: "",
+        checklist: [],
+        files: []
+    };
+
+    if (currentUid) {
+        try {
+            const docRef = await addDoc(collection(db, "users", currentUid, "videos"), {
+                ...newVideoData,
+                createdAt: serverTimestamp()
+            });
+            // Выбираем созданное видео
+            selectVideoItem(docRef.id);
+            // Активируем инлайн-переименование
+            setTimeout(() => {
+                const card = document.querySelector(`.video-card[data-id="${docRef.id}"]`);
+                if (card) {
+                    enableInlineRename(card, docRef.id, newVideoData.title);
+                }
+            }, 100);
+        } catch (err) {
+            console.error("Ошибка при создании видео в Firestore:", err);
+        }
+    } else {
+        // Локальный режим
+        const id = "local_" + Date.now();
+        const localVideo = { id, ...newVideoData, createdAt: Date.now() };
+        videos.push(localVideo);
+        localStorage.setItem("local_videos", JSON.stringify(videos));
+        renderVideosList();
+        selectVideoItem(id);
+        setTimeout(() => {
+            const card = document.querySelector(`.video-card[data-id="${id}"]`);
+            if (card) {
+                enableInlineRename(card, id, localVideo.title);
+            }
+        }, 100);
+    }
+}
+
+// === Инлайн переименование видео ===
+function enableInlineRename(cardEl, id, oldTitle) {
+    if (cardEl.classList.contains("editing")) return;
+    cardEl.classList.add("editing");
+
+    const infoBlock = cardEl.querySelector(".video-info-block");
+    if (!infoBlock) return;
+
+    infoBlock.innerHTML = `<input type="text" class="video-title-input" value="${oldTitle.replace(/"/g, '&quot;')}" maxlength="100">`;
+    const input = infoBlock.querySelector(".video-title-input");
+    input.focus();
+    input.select();
+
+    let committed = false;
+
+    async function commitRename() {
+        if (committed) return;
+        committed = true;
+        
+        const newTitle = input.value.trim() || oldTitle;
+        cardEl.classList.remove("editing");
+
+        // Восстанавливаем нормальный вид списка
+        renderVideosList();
+
+        if (newTitle !== oldTitle) {
+            if (currentUid) {
+                try {
+                    await updateDoc(doc(db, "users", currentUid, "videos", id), {
+                        title: newTitle
+                    });
+                } catch (err) {
+                    console.error("Ошибка при обновлении названия в Firestore:", err);
+                }
+            } else {
+                const v = videos.find(video => video.id === id);
+                if (v) {
+                    v.title = newTitle;
+                    localStorage.setItem("local_videos", JSON.stringify(videos));
+                    renderVideosList();
+                    if (selectedVideo && selectedVideo.id === id) {
+                        selectVideoItem(id);
+                    }
+                }
+            }
+        }
+    }
+
+    input.addEventListener("blur", commitRename);
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            commitRename();
+        } else if (e.key === "Escape") {
+            input.value = oldTitle;
+            commitRename();
+        }
+    });
+}
+
+// === Управление меню действий видео ===
+const videoActionsDropdown = document.getElementById("videoActionsDropdown");
+let activeMenuVideoId = null;
+
+function showVideoMenu(e, videoId, triggerEl = null) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    activeMenuVideoId = videoId;
+    videoActionsDropdown.style.display = "flex";
+
+    // Позиционируем меню
+    if (triggerEl && (!e.clientX || e.type !== "contextmenu")) {
+        const rect = triggerEl.getBoundingClientRect();
+        videoActionsDropdown.style.position = "fixed";
+        videoActionsDropdown.style.left = `${rect.left - 150}px`;
+        videoActionsDropdown.style.top = `${rect.bottom + 6}px`;
+    } else {
+        videoActionsDropdown.style.position = "fixed";
+        let x = e.clientX;
+        let y = e.clientY;
+        
+        const menuWidth = 180;
+        const menuHeight = 100;
+        if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+        if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+
+        videoActionsDropdown.style.left = `${x}px`;
+        videoActionsDropdown.style.top = `${y}px`;
+    }
+}
+
+// Закрытие меню по клику в любом месте
+document.addEventListener("click", (e) => {
+    if (videoActionsDropdown && !e.target.closest(".video-options-btn") && !videoActionsDropdown.contains(e.target)) {
+        videoActionsDropdown.style.display = "none";
+    }
+});
+
+document.addEventListener("contextmenu", (e) => {
+    if (videoActionsDropdown && !e.target.closest(".video-card") && !videoActionsDropdown.contains(e.target)) {
+        videoActionsDropdown.style.display = "none";
+    }
+});
+
+// Слушатели меню действий
+document.getElementById("btnVideoRename").addEventListener("click", (e) => {
+    e.stopPropagation();
+    videoActionsDropdown.style.display = "none";
+    if (activeMenuVideoId) {
+        const card = document.querySelector(`.video-card[data-id="${activeMenuVideoId}"]`);
+        const video = videos.find(v => v.id === activeMenuVideoId);
+        if (card && video) {
+            enableInlineRename(card, activeMenuVideoId, video.title);
+        }
+    }
+});
+
+const confirmDeleteVideoModal = document.getElementById("confirmDeleteVideoModal");
+const confirmDeleteVideoTitle = document.getElementById("confirmDeleteVideoTitle");
+const btnConfirmDeleteVideoCancel = document.getElementById("btnConfirmDeleteVideoCancel");
+const btnConfirmDeleteVideoConfirm = document.getElementById("btnConfirmDeleteVideoConfirm");
+
+document.getElementById("btnVideoDelete").addEventListener("click", (e) => {
+    e.stopPropagation();
+    videoActionsDropdown.style.display = "none";
+    if (activeMenuVideoId) {
+        const video = videos.find(v => v.id === activeMenuVideoId);
+        if (video) {
+            confirmDeleteVideoTitle.textContent = video.title;
+            confirmDeleteVideoModal.style.display = "flex";
+        }
+    }
+});
+
+btnConfirmDeleteVideoCancel.addEventListener("click", () => {
+    confirmDeleteVideoModal.style.display = "none";
+});
+
+btnConfirmDeleteVideoConfirm.addEventListener("click", async () => {
+    confirmDeleteVideoModal.style.display = "none";
+    if (activeMenuVideoId) {
+        if (currentUid) {
+            try {
+                await deleteDoc(doc(db, "users", currentUid, "videos", activeMenuVideoId));
+            } catch (err) {
+                console.error("Ошибка при удалении видео из Firestore:", err);
+            }
+        } else {
+            videos = videos.filter(v => v.id !== activeMenuVideoId);
+            localStorage.setItem("local_videos", JSON.stringify(videos));
+            renderVideosList();
+            if (videos.length > 0) {
+                selectVideoItem(videos[0].id);
+            } else {
+                selectedVideo = null;
+                clearDetailSidebar();
+            }
+        }
+    }
+});
+
+confirmDeleteVideoModal.addEventListener("click", (e) => {
+    if (e.target === confirmDeleteVideoModal) {
+        confirmDeleteVideoModal.style.display = "none";
+    }
+});
+

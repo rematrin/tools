@@ -16,6 +16,7 @@
 
     <!-- CSS Стили -->
     <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="auth-widget.css">
     <link rel="stylesheet" href="creatorhub.css">
 </head>
 
@@ -24,7 +25,7 @@
     <div class="creatorhub-app">
         <!-- Левое боковое меню -->
         <aside class="sidebar">
-            <div class="sidebar-logo">
+            <div class="sidebar-logo" id="sidebarLogo" style="cursor: pointer;">
                 <span class="logo-icon">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M8 5v14l11-7z"/>
@@ -114,7 +115,7 @@
         <main class="main-content">
             <!-- Заголовок приветствия -->
             <div class="welcome-header">
-                <h1>Привет, Max! 👋</h1>
+                <h1>Привет, <span id="welcomeUserName">Max</span>! 👋</h1>
                 <p id="welcomeSubtitle">Давай сделаем сегодня что-то крутое.</p>
             </div>
 
@@ -358,9 +359,129 @@
             </div>
         </aside>
     </div>
+    <!-- Меню действий видео -->
+    <div class="video-actions-dropdown" id="videoActionsDropdown" style="display: none;">
+        <button class="dropdown-item btn-rename" id="btnVideoRename">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Переименовать</span>
+        </button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item btn-delete" id="btnVideoDelete">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Удалить</span>
+        </button>
+    </div>
+
+    <!-- Модальное окно подтверждения удаления видео -->
+    <div class="confirm-modal-overlay" id="confirmDeleteVideoModal" style="display: none;">
+        <div class="confirm-modal-card">
+            <h3 class="confirm-modal-title">Удалить видео?</h3>
+            <p class="confirm-modal-desc">Видео <strong id="confirmDeleteVideoTitle">Название видео</strong> будет удалено безвозвратно.</p>
+            <div class="confirm-modal-actions">
+                <button class="confirm-btn-cancel" id="btnConfirmDeleteVideoCancel">Отмена</button>
+                <button class="confirm-btn-danger" id="btnConfirmDeleteVideoConfirm">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно настроек -->
+    <div class="settings-modal-overlay" id="settingsModal" style="display: none;">
+        <div class="settings-modal-card">
+            <!-- Сайдбар настроек (левая сторона) -->
+            <div class="settings-modal-sidebar">
+                <h2 class="settings-sidebar-title">Настройки</h2>
+                <nav class="settings-sidebar-menu">
+                    <button class="settings-menu-item active" data-tab="account">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span>Аккаунт</span>
+                    </button>
+                    <button class="settings-menu-item" data-tab="general">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                        <span>Основное</span>
+                    </button>
+                    <button class="settings-menu-item" data-tab="appearance">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="9" y1="3" x2="9" y2="21"></line>
+                        </svg>
+                        <span>Боковая панель</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Основной контент настроек (правая сторона) -->
+            <div class="settings-modal-content">
+                <button class="settings-close-btn" id="btnSettingsClose" aria-label="Закрыть настройки">&times;</button>
+
+                <!-- Вкладка: Основное -->
+                <div class="settings-tab-pane" id="tab-general" style="display: none;">
+                    <h3 style="margin-top: 0; font-size: 1.1rem; font-weight: 600; color: var(--ch-text-dark);">Общие настройки</h3>
+                    <div class="settings-section">
+                        <div class="settings-field" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0;">
+                            <div class="settings-field-info">
+                                <label style="display: block; font-weight: 600; font-size: 0.95rem; color: var(--ch-text-dark); margin-bottom: 2px;">Уведомления</label>
+                                <span style="font-size: 0.82rem; color: var(--ch-text-gray);">Включить системные уведомления</span>
+                            </div>
+                            <label class="switch-container">
+                                <input type="checkbox" id="prefNotifications">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка: Аккаунт -->
+                <div class="settings-tab-pane active" id="tab-account">
+                    <div class="settings-profile-header">
+                        <div class="settings-avatar-wrapper">
+                            <img src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" alt="Avatar" class="settings-profile-avatar" id="settingsProfileAvatar">
+                        </div>
+                        <div class="settings-profile-info">
+                            <h3 class="settings-profile-name" id="settingsProfileName">Max</h3>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <div class="settings-field">
+                            <div class="settings-field-info">
+                                <label>Электронная почта</label>
+                                <span id="settingsEmailText">--</span>
+                            </div>
+                        </div>
+                        <div class="settings-field">
+                            <div class="settings-field-info">
+                                <label>Пароль</label>
+                                <span>••••••••</span>
+                            </div>
+                            <button class="settings-field-action-btn" id="btnSettingsChangePassword">Изменить пароль</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка: Боковая панель -->
+                <div class="settings-tab-pane" id="tab-appearance" style="display: none;">
+                    <h3 style="margin-top: 0; font-size: 1.1rem; font-weight: 600; color: var(--ch-text-dark);">Настройки боковой панели</h3>
+                    <p style="font-size: 0.92rem; color: var(--ch-text-gray);">Настройки отображения меню появятся здесь.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Общие скрипты -->
     <script type="module" src="nav-widget.js"></script>
+    <script type="module" src="auth-widget.js"></script>
     <script type="module" src="creatorhub.js"></script>
 
 </body>

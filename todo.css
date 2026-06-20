@@ -300,6 +300,24 @@ body.dark .menu-counter {
     line-height: 1;
 }
 
+.inline-header-project-edit-input {
+    font-size: 1.45rem;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--hover-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    margin: -7px -13px;
+    width: 100%;
+    outline: none;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    box-sizing: border-box;
+    display: inline-block;
+}
+
 .list-subtitle {
     font-size: 0.9rem;
     color: var(--text-secondary);

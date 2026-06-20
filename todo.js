@@ -3043,16 +3043,18 @@ function renderTasks() {
             if (!widgetContent) {
                 todayProgressWidget.innerHTML = `
                     <div class="today-progress-widget">
-                        <div class="progress-circle-container">
-                            <svg class="progress-svg" viewBox="0 0 36 36">
-                                <path class="progress-bg-circle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" />
-                                <path class="progress-fill-circle" id="todayProgressFillCircle" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" />
-                            </svg>
-                            <div class="progress-text-center" id="todayProgressText">0%</div>
-                        </div>
-                        <div class="progress-info">
-                            <div class="progress-title">Прогресс на сегодня</div>
-                            <div class="progress-subtitle" id="todayProgressSubtitle">Нет задач на сегодня</div>
+                        <div class="progress-left">
+                            <div class="progress-circle-container">
+                                <svg class="progress-svg" viewBox="0 0 36 36">
+                                    <path class="progress-bg-circle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" />
+                                    <path class="progress-fill-circle" id="todayProgressFillCircle" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" />
+                                </svg>
+                                <div class="progress-text-center" id="todayProgressText">0%</div>
+                            </div>
+                            <div class="progress-info">
+                                <div class="progress-title">Прогресс на сегодня</div>
+                                <div class="progress-subtitle" id="todayProgressSubtitle">Нет задач на сегодня</div>
+                            </div>
                         </div>
                         <div class="progress-right">
                             <span class="progress-motivation" id="todayProgressMotivation">Начните день! 🚀</span>
@@ -4671,7 +4673,7 @@ function renderProjectHeaderDropdown() {
         const isCompletedHidden = localStorage.getItem(key) === 'true';
 
         projectHeaderDropdown.innerHTML = `
-            <button class="dropdown-item" id="btnProjectToggleCompleted" style="display: flex; align-items: center; width: 100%; padding: 8px 12px; border: none; background: transparent; color: var(--text); border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background-color 0.15s;">
+            <button class="dropdown-item" id="btnProjectToggleCompleted">
                 ${isCompletedHidden ? `
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -4705,14 +4707,21 @@ function renderProjectHeaderDropdown() {
     const isCompletedHidden = project.hideCompleted === true;
 
     projectHeaderDropdown.innerHTML = `
-        <button class="dropdown-item" id="btnProjectAddSection" style="display: flex; align-items: center; width: 100%; padding: 8px 12px; border: none; background: transparent; color: var(--text); border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background-color 0.15s;">
+        <button class="dropdown-item" id="btnProjectAddSection">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 6px; flex-shrink: 0;">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
             <span>Добавить раздел</span>
         </button>
-        <button class="dropdown-item" id="btnProjectToggleCompleted" style="display: flex; align-items: center; width: 100%; padding: 8px 12px; border: none; background: transparent; color: var(--text); border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background-color 0.15s;">
+        <button class="dropdown-item" id="btnProjectRename">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Переименовать</span>
+        </button>
+        <button class="dropdown-item" id="btnProjectToggleCompleted">
             ${isCompletedHidden ? `
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -4727,15 +4736,8 @@ function renderProjectHeaderDropdown() {
                 <span>Скрыть выполненные</span>
             `}
         </button>
-        <button class="dropdown-item" id="btnProjectRename" style="display: flex; align-items: center; width: 100%; padding: 8px 12px; border: none; background: transparent; color: var(--text); border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background-color 0.15s;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            <span>Переименовать</span>
-        </button>
         <div class="dropdown-divider"></div>
-        <button class="dropdown-item btn-delete" id="btnProjectDelete" style="display: flex; align-items: center; width: 100%; padding: 8px 12px; border: none; background: transparent; color: #ef4444; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background-color 0.15s;">
+        <button class="dropdown-item btn-delete" id="btnProjectDelete">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0; color: #ef4444;">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -4750,6 +4752,12 @@ function renderProjectHeaderDropdown() {
         addSectionForCurrentProject();
     });
 
+    document.getElementById('btnProjectRename').addEventListener('click', (e) => {
+        e.stopPropagation();
+        projectHeaderDropdown.style.display = 'none';
+        enableHeaderProjectInlineEdit(projectId, project.name);
+    });
+
     document.getElementById('btnProjectToggleCompleted').addEventListener('click', async (e) => {
         e.stopPropagation();
         projectHeaderDropdown.style.display = 'none';
@@ -4759,27 +4767,6 @@ function renderProjectHeaderDropdown() {
             });
         } catch (err) {
             console.error("Ошибка при изменении видимости выполненных задач:", err);
-        }
-    });
-
-    document.getElementById('btnProjectRename').addEventListener('click', (e) => {
-        e.stopPropagation();
-        projectHeaderDropdown.style.display = 'none';
-        const itemContainer = document.querySelector(`.project-actions-btn[data-id="${projectId}"]`)?.closest('.project-item-container');
-        if (itemContainer) {
-            enableProjectInlineEdit(itemContainer, projectId, project.name);
-        } else {
-            const newName = prompt("Введите новое название проекта:", project.name);
-            if (newName && newName.trim() && newName.trim() !== project.name) {
-                updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
-                    name: newName.trim()
-                }).then(() => {
-                    const titleEl = document.querySelector('.list-title');
-                    if (titleEl) titleEl.textContent = newName.trim();
-                }).catch(err => {
-                    console.error("Ошибка переименования проекта:", err);
-                });
-            }
         }
     });
 
@@ -4794,6 +4781,51 @@ function renderProjectHeaderDropdown() {
                 deleteProject(projectId);
             }
         );
+    });
+}
+
+function enableHeaderProjectInlineEdit(projectId, oldName) {
+    const titleEl = document.querySelector('.list-title');
+    if (!titleEl) return;
+
+    const oldVal = oldName;
+    titleEl.innerHTML = `<input type="text" class="inline-header-project-edit-input" value="${escapeHtml(oldVal)}" maxlength="50">`;
+    const input = titleEl.querySelector('input');
+    input.focus();
+    input.select();
+
+    let finished = false;
+
+    async function commitSave() {
+        if (finished) return;
+        finished = true;
+        const newVal = input.value.trim();
+
+        if (newVal && newVal !== oldVal) {
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                    name: newVal
+                });
+                titleEl.textContent = newVal;
+                updateBrowserTitle();
+            } catch (err) {
+                console.error("Ошибка при изменении названия проекта:", err);
+                titleEl.textContent = oldVal;
+            }
+        } else {
+            titleEl.textContent = oldVal;
+        }
+    }
+
+    input.addEventListener('blur', commitSave);
+    input.addEventListener('keydown', (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+            commitSave();
+        } else if (e.key === 'Escape') {
+            finished = true;
+            titleEl.textContent = oldVal;
+        }
     });
 }
 

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CreatorHub</title>
+
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS Стили -->
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="creatorhub.css">
+</head>
+
+<body>
+
+    <div class="creatorhub-app">
+        <!-- Левое боковое меню -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <span class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                </span>
+                <span class="logo-text">CreatorHub</span>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="#" class="menu-item active" id="menuHome">
+                    <span class="menu-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                    </span>
+                    <span class="menu-label">Главная</span>
+                </a>
+                <a href="#" class="menu-item" id="menuVideo">
+                    <span class="menu-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+                            <line x1="7" y1="2" x2="7" y2="22"></line>
+                            <line x1="17" y1="2" x2="17" y2="22"></line>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <line x1="2" y1="7" x2="7" y2="7"></line>
+                            <line x1="2" y1="17" x2="7" y2="17"></line>
+                            <line x1="17" y1="17" x2="22" y2="17"></line>
+                            <line x1="17" y1="7" x2="22" y2="7"></line>
+                        </svg>
+                    </span>
+                    <span class="menu-label">Видео</span>
+                </a>
+                <a href="#" class="menu-item" id="menuTasks">
+                    <span class="menu-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 11 12 14 22 4"></polyline>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                    </span>
+                    <span class="menu-label">Задачи</span>
+                </a>
+                <a href="#" class="menu-item" id="menuCalendar">
+                    <span class="menu-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </span>
+                    <span class="menu-label">Календарь</span>
+                </a>
+                <a href="#" class="menu-item" id="menuStats">
+                    <span class="menu-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                    </span>
+                    <span class="menu-label">Статистика</span>
+                </a>
+                <a href="#" class="menu-item" id="menuTemplates">
+                    <span class="menu-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                            <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                            <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                            <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                        </svg>
+                    </span>
+                    <span class="menu-label">Шаблоны</span>
+                </a>
+                <a href="#" class="menu-item" id="menuSettings">
+                    <span class="menu-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </span>
+                    <span class="menu-label">Настройки</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Центральный контент -->
+        <main class="main-content">
+            <!-- Заголовок приветствия -->
+            <div class="welcome-header">
+                <h1>Привет, Max! 👋</h1>
+                <p id="welcomeSubtitle">Давай сделаем сегодня что-то крутое.</p>
+            </div>
+
+            <!-- Сетка статистики -->
+            <section class="stats-grid" aria-label="Статистика видео">
+
+                <article class="stat-card ideas">
+                    <div class="stat-main">
+                        <div class="icon" aria-hidden="true">
+                            <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                                <path d="M16,7a8.36,8.36,0,0,0-8,8,8.4,8.4,0,0,0,2.29,5.7A4.56,4.56,0,0,1,12,24a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1,4.46,4.46,0,0,1,1.69-3.28A7.87,7.87,0,0,0,24,15a8.17,8.17,0,0,0-2.44-5.83A7.67,7.67,0,0,0,16,7Zm4.34,12.28A6.87,6.87,0,0,0,18.09,23H13.91a7,7,0,0,0-2.2-3.71A6.41,6.41,0,0,1,10,15a6.29,6.29,0,0,1,6-6,5.63,5.63,0,0,1,4.13,1.6A6.16,6.16,0,0,1,22,15,5.93,5.93,0,0,1,20.31,19.28Z"></path>
+                                <path d="M19,26H13a1,1,0,0,0,0,2h6a1,1,0,0,0,0-2Z"></path>
+                                <path d="M18,29H14a1,1,0,0,0,0,2h4a1,1,0,0,0,0-2Z"></path>
+                                <path d="M16,5a1,1,0,0,0,1-1V2a1,1,0,0,0-2,0V4A1,1,0,0,0,16,5Z"></path>
+                                <path d="M5,14H3a1,1,0,0,0,0,2H5a1,1,0,0,0,0-2Z"></path>
+                                <path d="M29,14H27a1,1,0,0,0,0,2h2a1,1,0,0,0,0-2Z"></path>
+                                <path d="M25.9,5.1a1,1,0,0,0-1.41,0L23.07,6.51a1,1,0,0,0,0,1.42,1,1,0,0,0,.71.29,1,1,0,0,0,.71-.29L25.9,6.51A1,1,0,0,0,25.9,5.1Z"></path>
+                                <path d="M8.93,7.93a1,1,0,0,0,0-1.42L7.51,5.1A1,1,0,0,0,6.1,6.51L7.51,7.93a1,1,0,0,0,.71.29A1,1,0,0,0,8.93,7.93Z"></path>
+                            </svg>
+                        </div>
+                        <div class="content">
+                            <div class="number">32</div>
+                            <div class="label">Идей</div>
+                        </div>
+                    </div>
+                    <div class="change">+5 за неделю</div>
+                </article>
+
+                <article class="stat-card work">
+                    <div class="stat-main">
+                        <div class="icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                            </svg>
+                        </div>
+                        <div class="content">
+                            <div class="number">6</div>
+                            <div class="label">В работе</div>
+                        </div>
+                    </div>
+                    <div class="change">+1 за неделю</div>
+                </article>
+
+                <article class="stat-card edit">
+                    <div class="stat-main">
+                        <div class="icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m12.296 3.464 3.02 3.956"></path>
+                                <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"></path>
+                                <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <path d="m6.18 5.276 3.1 3.899"></path>
+                            </svg>
+                        </div>
+                        <div class="content">
+                            <div class="number">3</div>
+                            <div class="label">На монтаже</div>
+                        </div>
+                    </div>
+                    <div class="change">без изменений</div>
+                </article>
+
+                <article class="stat-card published">
+                    <div class="stat-main">
+                        <div class="icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                                <path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05"/>
+                            </svg>
+                        </div>
+                        <div class="content">
+                            <div class="number">47</div>
+                            <div class="label">Опубликовано</div>
+                        </div>
+                    </div>
+                    <div class="change">+3 за неделю</div>
+                </article>
+
+            </section>
+
+            <!-- Раздел "Мои видео" -->
+            <div class="videos-section">
+                <div class="section-title-wrapper">
+                    <h2>Мои видео <button class="btn-add-video" title="Добавить видео">+</button></h2>
+                </div>
+
+                <!-- Панель управления (фильтры и поиск) -->
+                <div class="controls-panel">
+                    <div class="filters-tabs">
+                        <button class="tab-btn active" data-filter="all">Все</button>
+                        <button class="tab-btn" data-filter="idea">Идеи</button>
+                        <button class="tab-btn" data-filter="in_progress">В работе</button>
+                        <button class="tab-btn" data-filter="editing">На монтаже</button>
+                        <button class="tab-btn" data-filter="published">Опубликовано</button>
+                        <button class="tab-btn" data-filter="archive">Архив</button>
+                    </div>
+                    <div class="search-wrapper">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="videoSearch" class="search-input" placeholder="Поиск видео..." autocomplete="off">
+                    </div>
+                </div>
+
+                <!-- Список видео -->
+                <div class="videos-list" id="videosListContainer">
+                    <!-- Будет сгенерировано через JS -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Правый сайдбар детальной информации -->
+        <aside class="detail-sidebar" id="detailSidebar">
+            <!-- Превью видео -->
+            <div class="detail-thumbnail-wrapper">
+                <img id="detailImage" src="https://placehold.co/600x338?text=Select+Video" alt="Превью" class="detail-thumbnail">
+            </div>
+
+            <!-- Заголовок и статус -->
+            <div class="detail-title-block">
+                <h3 id="detailTitle">Выберите видео из списка</h3>
+                <div class="detail-status-wrapper">
+                    <span id="detailStatusDot" class="status-dot"></span>
+                    <span id="detailStatusText">--</span>
+                </div>
+            </div>
+
+            <!-- Вкладки деталей -->
+            <div class="detail-tabs">
+                <button class="detail-tab-btn active" data-tab="info">Информация</button>
+                <button class="detail-tab-btn" data-tab="notes">Заметки</button>
+                <button class="detail-tab-btn" data-tab="files">Файлы</button>
+                <button class="detail-tab-btn" data-tab="tasks">Задачи</button>
+                <button class="detail-tab-btn" data-tab="stats">Статистика</button>
+            </div>
+
+            <!-- Контент вкладок -->
+            <div class="detail-tabs-content">
+                <!-- Вкладка: Информация -->
+                <div class="tab-pane active" id="pane-info">
+                    <!-- Блок: Описание и свойства -->
+                    <div class="detail-card">
+                        <div class="info-group">
+                            <label class="info-label">Описание</label>
+                            <p id="infoDescription" class="info-description">Описание видео появится здесь при выборе.</p>
+                        </div>
+
+                        <div class="info-group">
+                            <label class="info-label">Теги</label>
+                            <div class="tags-container" id="infoTags">
+                                <!-- Теги динамически -->
+                            </div>
+                        </div>
+
+                        <div class="info-group flex-row">
+                            <span class="info-label">Дата публикации</span>
+                            <span id="infoDate" class="info-value">--</span>
+                        </div>
+
+                        <div class="info-group flex-row">
+                            <span class="info-label">Ссылка</span>
+                            <a id="infoLink" href="#" target="_blank" class="info-link">
+                                <span>ссылка</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
+                        </div>
+
+                        <div class="info-group flex-row">
+                            <span class="info-label">Плейлист</span>
+                            <span id="infoPlaylist" class="info-value">--</span>
+                        </div>
+                    </div>
+
+                    <!-- Блок: Чек-лист (также отображается на вкладке Информации по макету) -->
+                    <div class="detail-card">
+                        <div class="checklist-header">
+                            <span>Чек-лист</span>
+                            <span class="checklist-progress">0/0</span>
+                        </div>
+                        <div class="checklist-items">
+                            <!-- Будет дублироваться динамически -->
+                        </div>
+                    </div>
+
+                    <!-- Блок: Заметки (также отображается на вкладке Информации по макету) -->
+                    <div class="detail-card">
+                        <label class="info-label" style="margin-bottom: 12px; font-weight: 700;">Заметки</label>
+                        <div class="notes-content">
+                            <textarea class="notes-textarea" placeholder="Напишите здесь свои заметки о видео..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка: Заметки (отдельная вкладка) -->
+                <div class="tab-pane" id="pane-notes">
+                    <div class="detail-card">
+                        <label class="info-label" style="margin-bottom: 12px; font-weight: 700;">Заметки</label>
+                        <div class="notes-content">
+                            <textarea class="notes-textarea" placeholder="Напишите здесь свои заметки о видео..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка: Файлы -->
+                <div class="tab-pane" id="pane-files">
+                    <div class="detail-card">
+                        <label class="info-label" style="margin-bottom: 12px; font-weight: 700;">Файлы проекта</label>
+                        <div class="files-list" id="filesList">
+                            <div class="empty-state-tab">Файлы отсутствуют</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка: Задачи (отдельная вкладка) -->
+                <div class="tab-pane" id="pane-tasks">
+                    <div class="detail-card">
+                        <div class="checklist-header">
+                            <span>Чек-лист задач</span>
+                            <span class="checklist-progress">0/0</span>
+                        </div>
+                        <div class="checklist-items">
+                            <!-- Будет рендериться динамически -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка: Статистика -->
+                <div class="tab-pane" id="pane-stats">
+                    <div class="detail-card">
+                        <label class="info-label" style="margin-bottom: 12px; font-weight: 700;">Статистика просмотров</label>
+                        <div class="stats-tab-content">
+                            <div class="empty-state-tab">Статистика будет доступна после публикации</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Общие скрипты -->
+    <script type="module" src="nav-widget.js"></script>
+    <script type="module" src="creatorhub.js"></script>
+
+</body>
+
+</html>

@@ -173,10 +173,9 @@ const infoTags = document.getElementById("infoTags");
 const infoDate = document.getElementById("infoDate");
 const infoLink = document.getElementById("infoLink");
 const infoPlaylist = document.getElementById("infoPlaylist");
-const notesTextareas = document.querySelectorAll(".notes-textarea");
-const filesList = document.getElementById("filesList");
-const checklistContainers = document.querySelectorAll(".checklist-items");
-const checklistProgresses = document.querySelectorAll(".checklist-progress");
+const referencesContent = document.getElementById("referencesContent");
+const settingNotionLink = document.getElementById("settingNotionLink");
+const btnOpenNotion = document.getElementById("btnOpenNotion");
 
 // Инициализация
 document.addEventListener("DOMContentLoaded", () => {
@@ -273,18 +272,112 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Сохранение заметок при изменении (для всех полей)
-    notesTextareas.forEach(textarea => {
-        textarea.addEventListener("input", (e) => {
-            if (selectedVideo) {
-                selectedVideo.notes = e.target.value;
-                // Синхронизируем все текстовые поля заметок на разных вкладках
-                notesTextareas.forEach(t => {
-                    if (t !== e.target) t.value = e.target.value;
-                });
+    // Сохранение описания при изменении
+    if (infoDescription) {
+        infoDescription.addEventListener("input", async (e) => {
+            if (!selectedVideo) return;
+            const newDesc = e.target.value;
+            selectedVideo.description = newDesc;
+            
+            if (currentUid) {
+                try {
+                    await updateDoc(doc(db, "users", currentUid, "videos", selectedVideo.id), {
+                        description: newDesc
+                    });
+                } catch (err) {
+                    console.error("Ошибка при сохранении описания в Firestore:", err);
+                }
+            } else {
+                localStorage.setItem("local_videos", JSON.stringify(videos));
             }
         });
-    });
+    }
+
+    // Сохранение референсов при изменении
+    if (referencesContent) {
+        referencesContent.addEventListener("input", () => {
+            if (!selectedVideo) return;
+            selectedVideo.references = referencesContent.innerHTML;
+            saveVideoData("references", selectedVideo.references);
+        });
+
+        // Просмотр картинок в полный размер (лайтбокс) при клике
+        referencesContent.addEventListener("click", (e) => {
+            if (e.target.tagName === "IMG") {
+                openImageLightbox(e.target.src);
+            }
+        });
+
+        // Обработка вставки из буфера обмена (картинки + ссылки)
+        referencesContent.addEventListener("paste", async (e) => {
+            e.preventDefault();
+            const clipboardData = e.clipboardData || window.clipboardData;
+
+            // 1. Проверяем файлы (изображения)
+            if (clipboardData.files && clipboardData.files.length > 0) {
+                for (let i = 0; i < clipboardData.files.length; i++) {
+                    const file = clipboardData.files[i];
+                    if (file.type.startsWith("image/")) {
+                        // Показываем индикатор загрузки
+                        const loadingImgId = "loading_" + Date.now();
+                        const placeholderImg = `<img id="${loadingImgId}" src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3h0Y3J1bW05ZWp2MnJrMGgydTh1czZrcTVqN2g3Y3pxbmZkZGs1byZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oEjI6SIIHBdRxXI40/giphy.gif" style="width: 50px; height: 50px; display: block;" alt="Загрузка...">`;
+                        document.execCommand("insertHTML", false, placeholderImg);
+
+                        const reader = new FileReader();
+                        reader.onload = async (evt) => {
+                            try {
+                                const uploadedUrl = await uploadToImgBB(evt.target.result);
+                                const loadingEl = document.getElementById(loadingImgId);
+                                if (loadingEl) {
+                                    loadingEl.src = uploadedUrl;
+                                    loadingEl.removeAttribute("id");
+                                    loadingEl.style.width = "";
+                                    loadingEl.style.height = "";
+                                }
+                                selectedVideo.references = referencesContent.innerHTML;
+                                saveVideoData("references", selectedVideo.references);
+                            } catch (err) {
+                                console.error("Ошибка загрузки картинки референса:", err);
+                                const loadingEl = document.getElementById(loadingImgId);
+                                if (loadingEl) loadingEl.remove();
+                                alert("Не удалось загрузить изображение референса.");
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }
+                return;
+            }
+
+            // 2. Обрабатываем текст и автолинкуем
+            const text = clipboardData.getData("text/plain");
+            if (text) {
+                const urlRegex = /(https?:\/\/[^\s]+)/g;
+                let htmlText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                
+                if (urlRegex.test(text)) {
+                    htmlText = htmlText.replace(urlRegex, (url) => {
+                        return `<a href="${url}" target="_blank">${url}</a>`;
+                    });
+                }
+                
+                document.execCommand("insertHTML", false, htmlText);
+                selectedVideo.references = referencesContent.innerHTML;
+                saveVideoData("references", selectedVideo.references);
+            }
+        });
+    }
+
+    // Сохранение ссылки Notion в настройках
+    if (settingNotionLink) {
+        settingNotionLink.addEventListener("input", (e) => {
+            if (!selectedVideo) return;
+            const newLink = e.target.value;
+            selectedVideo.notionLink = newLink;
+            saveVideoData("notionLink", newLink);
+            updateNotionButtonState();
+        });
+    }
 
     // Логика изменения обложки видео (вызов модального окна)
     const btnChangeThumbnail = document.getElementById("btnChangeThumbnail");
@@ -330,6 +423,9 @@ document.addEventListener("DOMContentLoaded", () => {
             confirmDeleteVideoModal.style.display = "flex";
         });
     }
+
+    // Инициализация ресайзера правого сайдбара
+    initDetailSidebarResizer();
 });
 
 // Функция обновления интерфейса в зависимости от текущего маршрута меню
@@ -914,7 +1010,9 @@ function selectVideoItem(id) {
     detailStatusDot.className = `status-dot ${selectedVideo.status || "idea"}`;
 
     // Вкладка: Информация
-    infoDescription.textContent = selectedVideo.description;
+    if (infoDescription && document.activeElement !== infoDescription) {
+        infoDescription.value = selectedVideo.description || "";
+    }
     
     infoTags.innerHTML = selectedVideo.tags.map(tag => `<span class="tag-badge">${tag}</span>`).join('') + 
                          `<button class="btn-add-tag">+</button>`;
@@ -924,95 +1022,23 @@ function selectVideoItem(id) {
     infoLink.querySelector("span").textContent = selectedVideo.link;
     infoPlaylist.textContent = selectedVideo.playlist;
 
-    // Вкладка: Заметки
-    notesTextareas.forEach(textarea => {
-        textarea.value = selectedVideo.notes;
-    });
-
-    // Вкладка: Файлы
-    renderFiles();
-
-    // Вкладка: Задачи (Чек-лист)
-    renderChecklist();
-}
-
-// Рендер файлов
-function renderFiles() {
-    filesList.innerHTML = "";
-    if (!selectedVideo.files || selectedVideo.files.length === 0) {
-        filesList.innerHTML = `<div class="empty-state-tab">Файлы отсутствуют</div>`;
-        return;
+    // Вкладка: Референсы
+    if (referencesContent && document.activeElement !== referencesContent) {
+        referencesContent.innerHTML = selectedVideo.references || "";
     }
 
-    selectedVideo.files.forEach(f => {
-        const item = document.createElement("div");
-        item.style.display = "flex";
-        item.style.justifyContent = "space-between";
-        item.style.padding = "8px 12px";
-        item.style.border = "1px solid var(--ch-border)";
-        item.style.borderRadius = "8px";
-        item.style.marginBottom = "8px";
-        item.style.fontSize = "0.85rem";
-        item.style.background = "var(--ch-bg)";
-
-        item.innerHTML = `
-            <span style="font-weight: 500;">${f.name}</span>
-            <span style="color: var(--ch-text-gray);">${f.size}</span>
-        `;
-        filesList.appendChild(item);
-    });
-}
-
-// Рендер чек-листа
-function renderChecklist() {
-    checklistContainers.forEach(container => {
-        container.innerHTML = "";
-    });
-
-    if (!selectedVideo.checklist || selectedVideo.checklist.length === 0) {
-        checklistContainers.forEach(container => {
-            container.innerHTML = `<div class="empty-state-tab">Задачи отсутствуют</div>`;
-        });
-        checklistProgresses.forEach(prog => {
-            prog.textContent = "0/0";
-        });
-        return;
+    // Вкладка: Настройки
+    if (settingNotionLink && document.activeElement !== settingNotionLink) {
+        settingNotionLink.value = selectedVideo.notionLink || "";
     }
 
-    let checkedCount = 0;
-    
-    // Создаем элементы чек-листа
-    selectedVideo.checklist.forEach((item, index) => {
-        if (item.checked) checkedCount++;
-    });
-
-    // Рендерим чек-лист во все контейнеры (и в Инфо, и во вкладку Задачи)
-    checklistContainers.forEach(container => {
-        selectedVideo.checklist.forEach((item, index) => {
-            const div = document.createElement("div");
-            div.className = `checklist-item ${item.checked ? 'checked' : ''}`;
-            div.innerHTML = `
-                <div class="checklist-checkbox">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                </div>
-                <span class="checklist-text">${item.text}</span>
-            `;
-
-            div.addEventListener("click", () => {
-                item.checked = !item.checked;
-                renderChecklist();
-            });
-
-            container.appendChild(div);
-        });
-    });
-
-    checklistProgresses.forEach(prog => {
-        prog.textContent = `${checkedCount}/${selectedVideo.checklist.length}`;
-    });
+    // Обновляем состояние кнопки Notion
+    updateNotionButtonState();
 }
+
+// Функция рендера файлов удалена так как вкладка файлы заменена на референсы
+
+// Функция рендера чек-листа удалена, так как чек-лист скрыт/удален по запросу пользователя
 
 // === Firebase Auth & Firestore Sync ===
 let currentUid = null;
@@ -1255,22 +1281,18 @@ function clearDetailSidebar() {
         detailStatusSelect.value = "idea";
     }
     detailStatusDot.className = "status-dot";
-    infoDescription.textContent = "Описание видео появится здесь при выборе.";
+    infoDescription.value = "";
     infoTags.innerHTML = "";
     infoDate.textContent = "--";
     infoLink.href = "#";
     infoLink.querySelector("span").textContent = "ссылка";
     infoPlaylist.textContent = "--";
-    notesTextareas.forEach(textarea => {
-        textarea.value = "";
-    });
-    filesList.innerHTML = `<div class="empty-state-tab">Файлы отсутствуют</div>`;
-    checklistContainers.forEach(container => {
-        container.innerHTML = `<div class="empty-state-tab">Задачи отсутствуют</div>`;
-    });
-    checklistProgresses.forEach(prog => {
-        prog.textContent = "0/0";
-    });
+    if (referencesContent) referencesContent.innerHTML = "";
+    if (settingNotionLink) settingNotionLink.value = "";
+    if (btnOpenNotion) {
+        btnOpenNotion.classList.add("disabled");
+        btnOpenNotion.href = "#";
+    }
 }
 
 // === Создание нового видео ===
@@ -1396,6 +1418,20 @@ function showVideoMenu(e, videoId, triggerEl = null) {
     activeMenuVideoId = videoId;
     videoActionsDropdown.style.display = "flex";
 
+    // Подсвечиваем текущий статус видео в меню
+    const video = videos.find(v => v.id === videoId);
+    if (video) {
+        const currentStatus = video.status || "idea";
+        const statusBtns = videoActionsDropdown.querySelectorAll(".status-opt-btn");
+        statusBtns.forEach(btn => {
+            if (btn.dataset.status === currentStatus) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        });
+    }
+
     // Позиционируем меню
     if (triggerEl && (!e.clientX || e.type !== "contextmenu")) {
         const rect = triggerEl.getBoundingClientRect();
@@ -1407,8 +1443,8 @@ function showVideoMenu(e, videoId, triggerEl = null) {
         let x = e.clientX;
         let y = e.clientY;
         
-        const menuWidth = 180;
-        const menuHeight = 100;
+        const menuWidth = 200;
+        const menuHeight = 180;
         if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
         if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
 
@@ -1569,4 +1605,142 @@ confirmDeleteVideoModal.addEventListener("click", (e) => {
         confirmDeleteVideoModal.style.display = "none";
     }
 });
+
+// === ЛОГИКА РЕЗАЙЗЕРА ПРАВОГО САЙДБАРА ===
+function initDetailSidebarResizer() {
+    const resizer = document.getElementById("detailSidebarResizer");
+    const sidebar = document.getElementById("detailSidebar");
+    if (!resizer || !sidebar) return;
+
+    let isResizing = false;
+    let currentWidth = 380;
+
+    const savedWidth = localStorage.getItem("creatorhub_detail_sidebar_width");
+    if (savedWidth) {
+        currentWidth = parseInt(savedWidth, 10);
+        document.documentElement.style.setProperty("--detail-sidebar-width", currentWidth + "px");
+    }
+
+    resizer.addEventListener("mousedown", (e) => {
+        isResizing = true;
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+        resizer.classList.add("resizing");
+    });
+
+    document.addEventListener("mousemove", (e) => {
+        if (!isResizing) return;
+        let newWidth = window.innerWidth - e.clientX;
+        if (newWidth < 300) newWidth = 300;
+        if (newWidth > 600) newWidth = 600;
+        currentWidth = newWidth;
+        document.documentElement.style.setProperty("--detail-sidebar-width", currentWidth + "px");
+    });
+
+    document.addEventListener("mouseup", () => {
+        if (isResizing) {
+            isResizing = false;
+            document.body.style.cursor = "";
+            document.body.style.userSelect = "";
+            resizer.classList.remove("resizing");
+            localStorage.setItem("creatorhub_detail_sidebar_width", currentWidth + "px");
+        }
+    });
+}
+
+// === ОБРАБОТЧИКИ КНОПОК СТАТУСА В КОНТЕКСТНОМ МЕНЮ ===
+const statusOptButtons = videoActionsDropdown.querySelectorAll(".status-opt-btn");
+statusOptButtons.forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        videoActionsDropdown.style.display = "none";
+        
+        if (!activeMenuVideoId) return;
+        const newStatus = btn.dataset.status;
+        let statusText = "Идея";
+        if (newStatus === "in_progress") statusText = "В работе";
+        else if (newStatus === "editing") statusText = "На монтаже";
+        else if (newStatus === "published") statusText = "Опубликовано";
+        else if (newStatus === "archive") statusText = "Архив";
+        
+        // Обновляем статус в массиве
+        const video = videos.find(v => v.id === activeMenuVideoId);
+        if (video) {
+            video.status = newStatus;
+            video.statusText = statusText;
+        }
+        
+        // Если это выбранное видео, обновляем правую панель
+        if (selectedVideo && selectedVideo.id === activeMenuVideoId) {
+            selectedVideo.status = newStatus;
+            selectedVideo.statusText = statusText;
+            if (detailStatusSelect) {
+                detailStatusSelect.value = newStatus;
+                detailStatusSelect.className = `status-select ${newStatus}`;
+            }
+            detailStatusDot.className = `status-dot ${newStatus}`;
+        }
+        
+        if (currentUid) {
+            try {
+                await updateDoc(doc(db, "users", currentUid, "videos", activeMenuVideoId), {
+                    status: newStatus,
+                    statusText: statusText
+                });
+            } catch (err) {
+                console.error("Ошибка при обновлении статуса из меню в Firestore:", err);
+            }
+        } else {
+            localStorage.setItem("local_videos", JSON.stringify(videos));
+            renderVideosList();
+        }
+    });
+});
+
+// === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ СИНХРОНИЗАЦИИ ДАННЫХ И КНОПОК ===
+async function saveVideoData(field, value) {
+    if (!selectedVideo) return;
+    if (currentUid) {
+        try {
+            await updateDoc(doc(db, "users", currentUid, "videos", selectedVideo.id), {
+                [field]: value
+            });
+        } catch (err) {
+            console.error(`Ошибка при сохранении поля ${field} в Firestore:`, err);
+        }
+    } else {
+        localStorage.setItem("local_videos", JSON.stringify(videos));
+    }
+}
+
+function updateNotionButtonState() {
+    if (!btnOpenNotion) return;
+    if (selectedVideo && selectedVideo.notionLink && selectedVideo.notionLink.trim() !== "") {
+        btnOpenNotion.classList.remove("disabled");
+        btnOpenNotion.href = selectedVideo.notionLink;
+    } else {
+        btnOpenNotion.classList.add("disabled");
+        btnOpenNotion.href = "#";
+    }
+}
+
+function openImageLightbox(src) {
+    const overlay = document.createElement("div");
+    overlay.className = "image-lightbox-overlay";
+    overlay.innerHTML = `<img src="${src}" class="image-lightbox-img">`;
+    document.body.appendChild(overlay);
+    
+    overlay.offsetWidth; // trigger reflow
+    overlay.classList.add("active");
+    
+    const close = () => {
+        overlay.classList.remove("active");
+        setTimeout(() => overlay.remove(), 200);
+    };
+    
+    overlay.addEventListener("click", close);
+    overlay.querySelector(".image-lightbox-img").addEventListener("click", (e) => {
+        e.stopPropagation();
+    });
+}
 

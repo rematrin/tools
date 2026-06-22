@@ -211,6 +211,10 @@ let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth();
 let selectedDueDate = ""; // В формате YYYY-MM-DD
 let currentSort = "manual";
+let statsPeriodDays = localStorage.getItem("creatorhub_stats_period") || "28";
+if (statsPeriodDays !== "all" && statsPeriodDays !== "ytd") {
+    statsPeriodDays = parseInt(statsPeriodDays, 10);
+}
 
 function getSortKey() {
     return `creatorhub_sort_${currentFilter}`;
@@ -265,6 +269,63 @@ document.addEventListener("DOMContentLoaded", () => {
             sortDropdown.style.display = "none";
         }
     });
+
+    // Выбор периода статистики
+    const btnPeriodSelect = document.getElementById("btnPeriodSelect");
+    const periodDropdown = document.getElementById("periodDropdown");
+    const periodSelectText = document.getElementById("periodSelectText");
+    const periodOptYtd = document.getElementById("periodOptYtd");
+
+    if (periodOptYtd) {
+        periodOptYtd.textContent = `С 1 янв. ${new Date().getFullYear()}`;
+    }
+
+    if (btnPeriodSelect) {
+        btnPeriodSelect.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (periodDropdown.style.display === "none" || !periodDropdown.style.display) {
+                periodDropdown.style.display = "flex";
+            } else {
+                periodDropdown.style.display = "none";
+            }
+        });
+    }
+
+    document.addEventListener("click", (e) => {
+        if (periodDropdown && !btnPeriodSelect.contains(e.target) && !periodDropdown.contains(e.target)) {
+            periodDropdown.style.display = "none";
+        }
+    });
+
+    if (periodDropdown) {
+        const items = periodDropdown.querySelectorAll(".period-dropdown-item");
+        items.forEach(item => {
+            const daysVal = item.dataset.days === "all" ? "all" : (item.dataset.days === "ytd" ? "ytd" : parseInt(item.dataset.days, 10));
+            if (daysVal === statsPeriodDays) {
+                item.classList.add("selected");
+                if (periodSelectText) {
+                    periodSelectText.textContent = item.textContent;
+                }
+            } else {
+                item.classList.remove("selected");
+            }
+
+            item.addEventListener("click", (e) => {
+                e.stopPropagation();
+                statsPeriodDays = daysVal;
+                localStorage.setItem("creatorhub_stats_period", statsPeriodDays);
+
+                items.forEach(i => i.classList.remove("selected"));
+                item.classList.add("selected");
+
+                if (periodSelectText) {
+                    periodSelectText.textContent = item.textContent;
+                }
+                periodDropdown.style.display = "none";
+                updateStatsCounters();
+            });
+        });
+    }
 
     loadSortForCurrentFilter();
 
@@ -395,6 +456,20 @@ document.addEventListener("DOMContentLoaded", () => {
             e.stopPropagation();
             if (dueDateDropdown.style.display === "none") {
                 dueDateDropdown.style.display = "block";
+                
+                // Умное позиционирование календаря (сверху/снизу в зависимости от свободного места)
+                const rect = btnDueDate.getBoundingClientRect();
+                const dropdownHeight = 310;
+                const spaceBelow = window.innerHeight - rect.bottom;
+                
+                if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
+                    dueDateDropdown.style.top = "auto";
+                    dueDateDropdown.style.bottom = "calc(100% + 6px)";
+                } else {
+                    dueDateDropdown.style.top = "calc(100% + 6px)";
+                    dueDateDropdown.style.bottom = "auto";
+                }
+                
                 renderCalendarGrid();
             } else {
                 dueDateDropdown.style.display = "none";
@@ -627,19 +702,23 @@ function updateViewForRoute() {
     const sectionTitle = document.querySelector(".videos-section h2");
     const filtersTabs = document.querySelector(".filters-tabs");
 
+    const sortWrapper = document.querySelector(".sort-wrapper");
+
     if (currentMenuRoute === "trash") {
         if (statsGrid) statsGrid.style.display = "none";
         if (welcomeHeader) welcomeHeader.style.display = "none";
         if (trashNoticeBanner) trashNoticeBanner.style.display = "flex";
         if (filtersTabs) filtersTabs.style.display = "none";
+        if (sortWrapper) sortWrapper.style.display = "none";
         if (sectionTitle) {
             sectionTitle.innerHTML = `Корзина`;
         }
     } else {
         if (statsGrid) statsGrid.style.display = "grid";
-        if (welcomeHeader) welcomeHeader.style.display = "block";
+        if (welcomeHeader) welcomeHeader.style.display = "flex";
         if (trashNoticeBanner) trashNoticeBanner.style.display = "none";
         if (filtersTabs) filtersTabs.style.display = "flex";
+        if (sortWrapper) sortWrapper.style.display = "inline-flex";
         if (sectionTitle) {
             sectionTitle.innerHTML = `Мои видео <button class="btn-add-video" title="Добавить видео">+</button>`;
             const btnAddVideo = sectionTitle.querySelector(".btn-add-video");
@@ -692,6 +771,79 @@ function updateStatsCounters() {
     if (workCard) workCard.textContent = countInProgress;
     if (editCard) editCard.textContent = countEditing;
     if (publishedCard) publishedCard.textContent = countPublished;
+
+    // Динамический подсчет изменений на основе периода
+    const now = Date.now();
+    const calculateChange = (status) => {
+        let count = 0;
+        activeVideos.forEach(v => {
+            if (v.status !== status) return;
+            let targetTimestamp = null;
+            if (status === "published") {
+                if (v.publishDate) {
+                    targetTimestamp = new Date(v.publishDate).getTime();
+                } else {
+                    targetTimestamp = null;
+                }
+            } else {
+                if (v.createdTime) {
+                    targetTimestamp = v.createdTime;
+                } else if (v.createdAt) {
+                    if (v.createdAt.toDate && typeof v.createdAt.toDate === "function") {
+                        targetTimestamp = v.createdAt.toDate().getTime();
+                    } else {
+                        targetTimestamp = new Date(v.createdAt).getTime();
+                    }
+                }
+            }
+            if (targetTimestamp) {
+                if (statsPeriodDays === "all") {
+                    if (targetTimestamp <= now) {
+                        count++;
+                    }
+                } else if (statsPeriodDays === "ytd") {
+                    const startOfYear = new Date(new Date().getFullYear(), 0, 1).getTime();
+                    if (targetTimestamp >= startOfYear && targetTimestamp <= now) {
+                        count++;
+                    }
+                } else {
+                    const periodMs = statsPeriodDays * 24 * 60 * 60 * 1000;
+                    if (now - targetTimestamp <= periodMs && targetTimestamp <= now) {
+                        count++;
+                    }
+                }
+            }
+        });
+        return count;
+    };
+
+    const ideasChange = calculateChange("idea");
+    const inProgressChange = calculateChange("in_progress");
+    const editingChange = calculateChange("editing");
+    const publishedChange = calculateChange("published");
+
+    const formatChangeText = (num) => {
+        if (num === 0) return "без изменений";
+        if (statsPeriodDays === "all") {
+            return `+${num} за все время`;
+        } else if (statsPeriodDays === "ytd") {
+            return `+${num} с 1 янв. ${new Date().getFullYear()}`;
+        } else if (statsPeriodDays === 7) {
+            return `+${num} за неделю`;
+        } else {
+            return `+${num} за последние ${statsPeriodDays} дней`;
+        }
+    };
+
+    const ideasChangeEl = document.querySelector(".stat-card.ideas .change");
+    const workChangeEl = document.querySelector(".stat-card.work .change");
+    const editChangeEl = document.querySelector(".stat-card.edit .change");
+    const publishedChangeEl = document.querySelector(".stat-card.published .change");
+
+    if (ideasChangeEl) ideasChangeEl.textContent = formatChangeText(ideasChange);
+    if (workChangeEl) workChangeEl.textContent = formatChangeText(inProgressChange);
+    if (editChangeEl) editChangeEl.textContent = formatChangeText(editingChange);
+    if (publishedChangeEl) publishedChangeEl.textContent = formatChangeText(publishedChange);
 }
 
 // Функция рендеринга списка

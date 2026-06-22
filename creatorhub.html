@@ -134,9 +134,28 @@
         <!-- Центральный контент -->
         <main class="main-content">
             <!-- Заголовок приветствия -->
-            <div class="welcome-header">
-                <h1>Привет, <span id="welcomeUserName">Max</span>! 👋</h1>
-                <p id="welcomeSubtitle">Давай сделаем сегодня что-то крутое.</p>
+            <div class="welcome-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <h1>Привет, <span id="welcomeUserName">Max</span>! 👋</h1>
+                    <p id="welcomeSubtitle">Давай сделаем сегодня что-то крутое.</p>
+                </div>
+                <!-- Выпадающий список выбора дат статистики -->
+                <div class="stats-period-wrapper">
+                    <button class="btn-period-select" id="btnPeriodSelect" type="button">
+                        <span id="periodSelectText">Последние 28 дней</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="period-dropdown" id="periodDropdown">
+                        <button class="period-dropdown-item" data-days="7">Последние 7 дней</button>
+                        <button class="period-dropdown-item selected" data-days="28">Последние 28 дней</button>
+                        <button class="period-dropdown-item" data-days="90">Последние 90 дней</button>
+                        <button class="period-dropdown-item" data-days="365">Последние 365 дней</button>
+                        <button class="period-dropdown-item" data-days="ytd" id="periodOptYtd">С 1 янв. 2026</button>
+                        <button class="period-dropdown-item" data-days="all">Все время</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Сетка статистики -->
@@ -366,7 +385,6 @@
                         <div class="settings-row">
                             <div class="settings-row-left">
                                 <span class="settings-row-label">Notion</span>
-                                <span class="settings-row-desc">Ссылка на проект Notion</span>
                             </div>
                             <input type="text" id="settingNotionLink" class="settings-row-input" placeholder="https://notion.so/...">
                         </div>
@@ -374,7 +392,6 @@
                         <div class="settings-row" style="position: relative; align-items: flex-start; margin-top: 16px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
                             <div class="settings-row-left">
                                 <span class="settings-row-label">Дата публикации</span>
-                                <span class="settings-row-desc">Запланировать дату выхода</span>
                             </div>
                             <div class="due-date-wrapper" style="position: relative;">
                                 <button class="btn-due-date" id="btnDueDate" type="button" style="display: flex; align-items: center; gap: 8px; background: var(--ch-card-bg); border: 1px solid var(--ch-border); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-size: 0.9rem; color: var(--ch-text-dark); cursor: pointer; transition: border-color 0.2s;">

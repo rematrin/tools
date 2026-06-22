@@ -2513,3 +2513,83 @@ body.dark .video-drag-placeholder {
     background-color: rgba(255, 255, 255, 0.2);
     color: #ffffff;
 }
+
+/* === СТИЛИ ДЛЯ ВЫБОРА ПЕРИОДА СТАТИСТИКИ === */
+.stats-period-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.btn-period-select {
+    background: var(--ch-card-bg);
+    border: 1px solid var(--ch-border);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--ch-text-dark);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    transition: border-color 0.2s, background-color 0.2s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.btn-period-select:hover {
+    border-color: var(--ch-text-gray);
+    background-color: var(--ch-border);
+}
+
+.period-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background-color: var(--ch-card-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: 12px;
+    width: 200px;
+    box-shadow: var(--ch-shadow);
+    padding: 6px;
+    z-index: 1000;
+    box-sizing: border-box;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.period-dropdown-item {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ch-text-dark);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background-color 0.15s, color 0.15s;
+    font-family: inherit;
+}
+
+.period-dropdown-item:hover {
+    background-color: var(--ch-border);
+}
+
+.period-dropdown-item.selected {
+    background-color: rgba(99, 102, 241, 0.1);
+    color: var(--ch-purple);
+    font-weight: 600;
+}
+
+.period-dropdown-item.selected::after {
+    content: "✓";
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--ch-purple);
+}

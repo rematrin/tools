@@ -18,6 +18,16 @@
     <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="auth-widget.css">
     <link rel="stylesheet" href="creatorhub.css">
+
+    <!-- Polyfill for Mobile Drag and Drop -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0/default.css">
+    <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0/index.min.js"></script>
+    <script>
+        window.addEventListener('touchmove', function() {}, {passive: false});
+        MobileDragDrop.polyfill({
+            dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
+        });
+    </script>
 </head>
 
 <body>
@@ -164,7 +174,7 @@
                         </div>
                         <div class="content">
                             <div class="number">6</div>
-                            <div class="label">В работе</div>
+                            <div class="label">Черновик</div>
                         </div>
                     </div>
                     <div class="change">+1 за неделю</div>
@@ -182,7 +192,7 @@
                         </div>
                         <div class="content">
                             <div class="number">3</div>
-                            <div class="label">На монтаже</div>
+                            <div class="label">В процессе</div>
                         </div>
                     </div>
                     <div class="change">без изменений</div>
@@ -215,19 +225,38 @@
                 <!-- Панель управления (фильтры и поиск) -->
                 <div class="controls-panel">
                     <div class="filters-tabs">
-                        <button class="tab-btn active" data-filter="all">Все</button>
                         <button class="tab-btn" data-filter="idea">Идеи</button>
-                        <button class="tab-btn" data-filter="in_progress">В работе</button>
-                        <button class="tab-btn" data-filter="editing">На монтаже</button>
+                        <button class="tab-btn" data-filter="in_progress">Черновик</button>
+                        <button class="tab-btn" data-filter="editing">В процессе</button>
                         <button class="tab-btn" data-filter="published">Опубликовано</button>
-                        <button class="tab-btn" data-filter="archive">Архив</button>
                     </div>
-                    <div class="search-wrapper">
-                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                        <input type="text" id="videoSearch" class="search-input" placeholder="Поиск видео..." autocomplete="off">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="sort-wrapper">
+                            <button class="btn-sort" id="btnSortList" type="button" title="Сортировка">
+                                <svg class="sort-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M8 20V10m0 10-3-3m3 3 3-3m5-13v10m0-10 3 3m-3-3-3 3"/>
+                                </svg>
+                            </button>
+                            <div class="sort-dropdown" id="sortDropdown">
+                                <button class="sort-dropdown-item selected" data-sort="manual">Вручную (перетаскивание)</button>
+                                <div class="sort-dropdown-divider"></div>
+                                <button class="sort-dropdown-item" data-sort="pubDateNew">Сначала новые (публикация)</button>
+                                <button class="sort-dropdown-item" data-sort="pubDateOld">Сначала старые (публикация)</button>
+                                <div class="sort-dropdown-divider"></div>
+                                <button class="sort-dropdown-item" data-sort="createdDateNew">Сначала новые (создание)</button>
+                                <button class="sort-dropdown-item" data-sort="createdDateOld">Сначала старые (создание)</button>
+                                <div class="sort-dropdown-divider"></div>
+                                <button class="sort-dropdown-item" data-sort="alphabeticalAZ">По алфавиту А-Я</button>
+                                <button class="sort-dropdown-item" data-sort="alphabeticalZA">По алфавиту Я-А</button>
+                            </div>
+                        </div>
+                        <div class="search-wrapper">
+                            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <input type="text" id="videoSearch" class="search-input" placeholder="Поиск видео..." autocomplete="off">
+                        </div>
                     </div>
                 </div>
 
@@ -268,10 +297,9 @@
                     <span id="detailStatusDot" class="status-dot"></span>
                     <select id="detailStatusSelect" class="status-select">
                         <option value="idea">Идея</option>
-                        <option value="in_progress">В работе</option>
-                        <option value="editing">На монтаже</option>
+                        <option value="in_progress">Черновик</option>
+                        <option value="editing">В процессе</option>
                         <option value="published">Опубликовано</option>
-                        <option value="archive">Архив</option>
                     </select>
                 </div>
             </div>
@@ -289,9 +317,10 @@
                 <div class="tab-pane active" id="pane-info">
                     <!-- Блок: Описание и свойства -->
                     <div class="detail-card">
-                        <div class="info-group">
+                        <div class="info-group" style="position: relative;">
                             <label class="info-label">Описание</label>
-                            <textarea id="infoDescription" class="info-description-textarea" placeholder="Напишите здесь описание видео..."></textarea>
+                            <textarea id="infoDescription" class="info-description-textarea" placeholder="Напишите здесь описание видео..." style="display: none;"></textarea>
+                            <div id="infoDescriptionViewer" class="info-description-textarea info-description-viewer" style="min-height: 100px; cursor: pointer; white-space: pre-wrap; overflow-y: auto;"></div>
                         </div>
 
                         <div class="info-group flex-row">
@@ -307,20 +336,8 @@
                         </div>
 
                         <div class="info-group flex-row">
-                            <span class="info-label">Ссылка</span>
-                            <a id="infoLink" href="#" target="_blank" class="info-link">
-                                <span>ссылка</span>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                            </a>
-                        </div>
-
-                        <div class="info-group flex-row">
-                            <span class="info-label">Плейлист</span>
-                            <span id="infoPlaylist" class="info-value">--</span>
+                            <span class="info-label">Создано</span>
+                            <span id="infoCreatedDate" class="info-value">--</span>
                         </div>
 
                         <div class="info-group" style="margin-top: 20px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
@@ -345,12 +362,48 @@
                 <div class="tab-pane" id="pane-settings">
                     <div class="detail-card">
                         <label class="info-label" style="margin-bottom: 16px; font-weight: 700;">Настройки видео</label>
+                        
                         <div class="settings-row">
                             <div class="settings-row-left">
                                 <span class="settings-row-label">Notion</span>
                                 <span class="settings-row-desc">Ссылка на проект Notion</span>
                             </div>
                             <input type="text" id="settingNotionLink" class="settings-row-input" placeholder="https://notion.so/...">
+                        </div>
+
+                        <div class="settings-row" style="position: relative; align-items: flex-start; margin-top: 16px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
+                            <div class="settings-row-left">
+                                <span class="settings-row-label">Дата публикации</span>
+                                <span class="settings-row-desc">Запланировать дату выхода</span>
+                            </div>
+                            <div class="due-date-wrapper" style="position: relative;">
+                                <button class="btn-due-date" id="btnDueDate" type="button" style="display: flex; align-items: center; gap: 8px; background: var(--ch-card-bg); border: 1px solid var(--ch-border); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-size: 0.9rem; color: var(--ch-text-dark); cursor: pointer; transition: border-color 0.2s;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    <span id="dueDateBtnText">Выбрать дату</span>
+                                </button>
+                                <!-- Выпадающее меню календаря -->
+                                <div class="due-date-dropdown" id="dueDateDropdown" style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background-color: var(--ch-card-bg); border: 1px solid var(--ch-border); border-radius: 12px; width: 280px; box-shadow: var(--ch-shadow); padding: 12px; z-index: 1000; box-sizing: border-box;">
+                                    <div class="due-calendar-picker" style="display: flex; flex-direction: column; gap: 10px;">
+                                        <div class="calendar-header" style="display: flex; align-items: center; justify-content: space-between;">
+                                            <span class="calendar-month-year" id="calendarMonthYear" style="font-size: 0.95rem; font-weight: 700; color: var(--ch-text-dark); text-transform: capitalize;">июнь 2026</span>
+                                            <div class="calendar-nav" style="display: flex; gap: 4px;">
+                                                <button class="cal-nav-btn" id="calPrevMonth" type="button" style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">&lt;</button>
+                                                <button class="cal-nav-btn" id="calCurrentMonth" type="button" style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">●</button>
+                                                <button class="cal-nav-btn" id="calNextMonth" type="button" style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">&gt;</button>
+                                            </div>
+                                        </div>
+                                        <div class="calendar-weekdays" style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--ch-text-gray); opacity: 0.7;">
+                                            <span>ПН</span><span>ВТ</span><span>СР</span><span>ЧТ</span><span>ПТ</span><span>СБ</span><span>ВС</span>
+                                        </div>
+                                        <div class="calendar-days" id="calendarDaysGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -384,13 +437,13 @@
                         <path d="M8.93,7.93a1,1,0,0,0,0-1.42L7.51,5.1A1,1,0,0,0,6.1,6.51L7.51,7.93a1,1,0,0,0,.71.29A1,1,0,0,0,8.93,7.93Z"></path>
                     </svg>
                 </button>
-                <button class="status-opt-btn status-btn-in_progress" type="button" data-status="in_progress" data-tooltip="В работе">
+                <button class="status-opt-btn status-btn-in_progress" type="button" data-status="in_progress" data-tooltip="Черновик">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 20h9"></path>
                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                     </svg>
                 </button>
-                <button class="status-opt-btn status-btn-editing" type="button" data-status="editing" data-tooltip="На монтаже">
+                <button class="status-opt-btn status-btn-editing" type="button" data-status="editing" data-tooltip="В процессе">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m12.296 3.464 3.02 3.956"></path>
                         <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"></path>

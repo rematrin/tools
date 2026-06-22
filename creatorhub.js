@@ -22,6 +22,9 @@ const initialVideos = [
         tags: ["ИИ", "Эксперимент"],
         date: "19 мая 2024",
         dateLabel: "19 мая 2024",
+        publishDate: "2024-05-19",
+        createdTime: new Date("2024-05-19").getTime(),
+        order: 1,
         thumbnail: "https://placehold.co/600x338/5c6bc0/ffffff?text=Simpsons+AI+Remake",
         description: "Полностью пересоздал несколько сцен Симпсонов с помощью нейросетей. Сравнение оригинала и результата.",
         playlist: "ИИ эксперименты",
@@ -42,10 +45,13 @@ const initialVideos = [
         id: "2",
         title: "Что если YouTube существовал в древности",
         status: "editing",
-        statusText: "На монтаже",
+        statusText: "В процессе",
         tags: ["История", "Юмор"],
-        date: "Изменено вчера",
-        dateLabel: "Изменено вчера",
+        date: "21 июня 2026",
+        dateLabel: "21 июня 2026",
+        publishDate: "2026-06-21",
+        createdTime: new Date("2026-06-21").getTime(),
+        order: 2,
         thumbnail: "https://placehold.co/600x338/f57c00/ffffff?text=Ancient+YouTube",
         description: "Шутливый ролик про то, как выглядели бы каналы древнеримских блогеров, спартанские стримы и обзоры на колесницы.",
         playlist: "Исторические гипотезы",
@@ -65,10 +71,13 @@ const initialVideos = [
         id: "3",
         title: "Как я использую ИИ для создания видео",
         status: "in_progress",
-        statusText: "В работе",
+        statusText: "Черновик",
         tags: ["ИИ", "Процесс"],
-        date: "Изменено 2 дня назад",
-        dateLabel: "Изменено 2 дня назад",
+        date: "20 июня 2026",
+        dateLabel: "20 июня 2026",
+        publishDate: "2026-06-20",
+        createdTime: new Date("2026-06-20").getTime(),
+        order: 3,
         thumbnail: "https://placehold.co/600x338/0288d1/ffffff?text=AI+Video+Workflow",
         description: "Подробный разбор моего рабочего процесса: от генерации идеи до финального монтажа с использованием нейросетей.",
         playlist: "Полезное",
@@ -87,8 +96,11 @@ const initialVideos = [
         status: "idea",
         statusText: "Идея",
         tags: ["История", "Исследование"],
-        date: "Создано 5 дней назад",
-        dateLabel: "Создано 5 дней назад",
+        date: "17 июня 2026",
+        dateLabel: "17 июня 2026",
+        publishDate: "2026-06-17",
+        createdTime: new Date("2026-06-17").getTime(),
+        order: 4,
         thumbnail: "https://placehold.co/600x338/7e57c2/ffffff?text=History+of+Propaganda",
         description: "Большой разбор методов влияния на общественное мнение от Древнего Египта до наших дней.",
         playlist: "Длинные видео",
@@ -107,8 +119,11 @@ const initialVideos = [
         status: "idea",
         statusText: "Идея",
         tags: ["Космос", "Психология"],
-        date: "Создано 6 дней назад",
-        dateLabel: "Создано 6 дней назад",
+        date: "16 июня 2026",
+        dateLabel: "16 июня 2026",
+        publishDate: "2026-06-16",
+        createdTime: new Date("2026-06-16").getTime(),
+        order: 5,
         thumbnail: "https://placehold.co/600x338/455a64/ffffff?text=Scary+Space",
         description: "Эссе о космическом страхе (космофобии), масштабах Вселенной и о том, почему неизвестность манит и пугает одновременно.",
         playlist: "Эссе",
@@ -128,6 +143,9 @@ const initialVideos = [
         tags: ["YouTube", "Будущее"],
         date: "7 мая 2024",
         dateLabel: "7 мая 2024",
+        publishDate: "2024-05-07",
+        createdTime: new Date("2024-05-07").getTime(),
+        order: 6,
         thumbnail: "https://placehold.co/600x338/43a047/ffffff?text=Future+of+YouTube",
         description: "Каким будет видеохостинг в 2034 году? Будет ли VR-стриминг, ИИ-блогеры и новые форматы монетизации.",
         playlist: "Будущее",
@@ -169,16 +187,109 @@ const tabPanes = document.querySelectorAll(".tab-pane");
 
 // Элементы вкладок
 const infoDescription = document.getElementById("infoDescription");
+const infoDescriptionViewer = document.getElementById("infoDescriptionViewer");
 const infoTags = document.getElementById("infoTags");
 const infoDate = document.getElementById("infoDate");
-const infoLink = document.getElementById("infoLink");
-const infoPlaylist = document.getElementById("infoPlaylist");
+const infoCreatedDate = document.getElementById("infoCreatedDate");
 const referencesContent = document.getElementById("referencesContent");
 const settingNotionLink = document.getElementById("settingNotionLink");
 const btnOpenNotion = document.getElementById("btnOpenNotion");
 
+// Элементы календаря в настройках
+const btnDueDate = document.getElementById("btnDueDate");
+const dueDateDropdown = document.getElementById("dueDateDropdown");
+const calendarMonthYear = document.getElementById("calendarMonthYear");
+const calendarDaysGrid = document.getElementById("calendarDaysGrid");
+const calPrevMonth = document.getElementById("calPrevMonth");
+const calCurrentMonth = document.getElementById("calCurrentMonth");
+const calNextMonth = document.getElementById("calNextMonth");
+const dueDateBtnText = document.getElementById("dueDateBtnText");
+const btnSortList = document.getElementById("btnSortList");
+const sortDropdown = document.getElementById("sortDropdown");
+
+let calendarYear = new Date().getFullYear();
+let calendarMonth = new Date().getMonth();
+let selectedDueDate = ""; // В формате YYYY-MM-DD
+let currentSort = "manual";
+
+function getSortKey() {
+    return `creatorhub_sort_${currentFilter}`;
+}
+
+function loadSortForCurrentFilter() {
+    currentSort = localStorage.getItem(getSortKey()) || "manual";
+    
+    // Update active state on sort button
+    if (btnSortList) {
+        if (currentSort !== "manual") {
+            btnSortList.classList.add("active");
+        } else {
+            btnSortList.classList.remove("active");
+        }
+    }
+    
+    // Update selected checkmarks in dropdown
+    if (sortDropdown) {
+        const items = sortDropdown.querySelectorAll(".sort-dropdown-item");
+        items.forEach(item => {
+            if (item.dataset.sort === currentSort) {
+                item.classList.add("selected");
+            } else {
+                item.classList.remove("selected");
+            }
+        });
+    }
+}
+
+function saveSortForCurrentFilter(sortVal) {
+    localStorage.setItem(getSortKey(), sortVal);
+}
+
 // Инициализация
 document.addEventListener("DOMContentLoaded", () => {
+    // Сортировка списка
+    if (btnSortList) {
+        btnSortList.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (sortDropdown.style.display === "none" || !sortDropdown.style.display) {
+                sortDropdown.style.display = "flex";
+            } else {
+                sortDropdown.style.display = "none";
+            }
+        });
+    }
+
+    // Закрытие дропдауна сортировки при клике вне его
+    document.addEventListener("click", (e) => {
+        if (sortDropdown && !btnSortList.contains(e.target) && !sortDropdown.contains(e.target)) {
+            sortDropdown.style.display = "none";
+        }
+    });
+
+    loadSortForCurrentFilter();
+
+    if (sortDropdown) {
+        const items = sortDropdown.querySelectorAll(".sort-dropdown-item");
+        items.forEach(item => {
+            item.addEventListener("click", (e) => {
+                e.stopPropagation();
+                currentSort = item.dataset.sort;
+                saveSortForCurrentFilter(currentSort);
+                
+                items.forEach(i => i.classList.remove("selected"));
+                item.classList.add("selected");
+                
+                if (currentSort !== "manual") {
+                    btnSortList.classList.add("active");
+                } else {
+                    btnSortList.classList.remove("active");
+                }
+                
+                sortDropdown.style.display = "none";
+                renderVideosList();
+            });
+        });
+    }
     // Случайное приветствие
     const subtitles = [
         "Давай сделаем сегодня что-то крутое.",
@@ -213,9 +324,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     filterButtons.forEach(btn => {
         btn.addEventListener("click", () => {
-            filterButtons.forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            currentFilter = btn.dataset.filter;
+            const filterVal = btn.dataset.filter;
+            if (currentFilter === filterVal) {
+                btn.classList.remove("active");
+                currentFilter = "all";
+            } else {
+                filterButtons.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                currentFilter = filterVal;
+            }
+            loadSortForCurrentFilter();
             renderVideosList();
         });
     });
@@ -242,10 +360,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!selectedVideo) return;
             const newStatus = e.target.value;
             let statusText = "Идея";
-            if (newStatus === "in_progress") statusText = "В работе";
-            else if (newStatus === "editing") statusText = "На монтаже";
+            if (newStatus === "in_progress") statusText = "Черновик";
+            else if (newStatus === "editing") statusText = "В процессе";
             else if (newStatus === "published") statusText = "Опубликовано";
-            else if (newStatus === "archive") statusText = "Архив";
             
             selectedVideo.status = newStatus;
             selectedVideo.statusText = statusText;
@@ -272,12 +389,77 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Сохранение описания при изменении
-    if (infoDescription) {
-        infoDescription.addEventListener("input", async (e) => {
+    // Показ/скрытие календаря публикации в настройках
+    if (btnDueDate) {
+        btnDueDate.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (dueDateDropdown.style.display === "none") {
+                dueDateDropdown.style.display = "block";
+                renderCalendarGrid();
+            } else {
+                dueDateDropdown.style.display = "none";
+            }
+        });
+    }
+
+    // Скрытие календаря при клике в любое другое место
+    document.addEventListener("click", (e) => {
+        if (dueDateDropdown && !btnDueDate.contains(e.target) && !dueDateDropdown.contains(e.target)) {
+            dueDateDropdown.style.display = "none";
+        }
+    });
+
+    // Навигация по месяцам календаря
+    if (calPrevMonth) {
+        calPrevMonth.addEventListener('click', (e) => {
+            e.stopPropagation();
+            calendarMonth--;
+            if (calendarMonth < 0) {
+                calendarMonth = 11;
+                calendarYear--;
+            }
+            renderCalendarGrid();
+        });
+    }
+    if (calNextMonth) {
+        calNextMonth.addEventListener('click', (e) => {
+            e.stopPropagation();
+            calendarMonth++;
+            if (calendarMonth > 11) {
+                calendarMonth = 0;
+                calendarYear++;
+            }
+            renderCalendarGrid();
+        });
+    }
+    if (calCurrentMonth) {
+        calCurrentMonth.addEventListener('click', (e) => {
+            e.stopPropagation();
+            calendarYear = new Date().getFullYear();
+            calendarMonth = new Date().getMonth();
+            renderCalendarGrid();
+        });
+    }
+
+    // Сохранение описания при изменении и логика переключения Viewer/Textarea
+    if (infoDescriptionViewer && infoDescription) {
+        infoDescriptionViewer.addEventListener("click", (e) => {
+            if (e.target.tagName === "A") {
+                return; // Разрешаем переход по ссылке
+            }
+            infoDescriptionViewer.style.display = "none";
+            infoDescription.style.display = "block";
+            infoDescription.focus();
+        });
+
+        infoDescription.addEventListener("blur", async () => {
+            infoDescription.style.display = "none";
+            infoDescriptionViewer.style.display = "block";
+            
+            const newDesc = infoDescription.value;
             if (!selectedVideo) return;
-            const newDesc = e.target.value;
             selectedVideo.description = newDesc;
+            updateDescriptionViewer(newDesc);
             
             if (currentUid) {
                 try {
@@ -293,6 +475,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+
+
     // Сохранение референсов при изменении
     if (referencesContent) {
         referencesContent.addEventListener("input", () => {
@@ -301,10 +485,13 @@ document.addEventListener("DOMContentLoaded", () => {
             saveVideoData("references", selectedVideo.references);
         });
 
-        // Просмотр картинок в полный размер (лайтбокс) при клике
+        // Просмотр картинок в полный размер (лайтбокс) при клике, а также переход по ссылкам
         referencesContent.addEventListener("click", (e) => {
             if (e.target.tagName === "IMG") {
                 openImageLightbox(e.target.src);
+            } else if (e.target.tagName === "A") {
+                e.preventDefault();
+                window.open(e.target.href, "_blank");
             }
         });
 
@@ -426,6 +613,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Инициализация ресайзера правого сайдбара
     initDetailSidebarResizer();
+
+    // Инициализация Drag and Drop
+    initDragAndDrop();
+    initTouchDragAndDrop();
 });
 
 // Функция обновления интерфейса в зависимости от текущего маршрута меню
@@ -507,8 +698,57 @@ function updateStatsCounters() {
 function renderVideosList() {
     videosListContainer.innerHTML = "";
     
+    // Сортируем видео по выбранному критерию
+    if (currentSort === "manual") {
+        videos.sort((a, b) => {
+            const orderA = a.order !== undefined ? a.order : 0;
+            const orderB = b.order !== undefined ? b.order : 0;
+            if (orderA !== orderB) return orderA - orderB;
+            return String(a.id).localeCompare(String(b.id));
+        });
+    } else if (currentSort === "pubDateNew") {
+        videos.sort((a, b) => {
+            const pA = a.publishDate || "";
+            const pB = b.publishDate || "";
+            if (!pA && !pB) return 0;
+            if (!pA) return 1;
+            if (!pB) return -1;
+            return pB.localeCompare(pA);
+        });
+    } else if (currentSort === "pubDateOld") {
+        videos.sort((a, b) => {
+            const pA = a.publishDate || "";
+            const pB = b.publishDate || "";
+            if (!pA && !pB) return 0;
+            if (!pA) return 1;
+            if (!pB) return -1;
+            return pA.localeCompare(pB);
+        });
+    } else if (currentSort === "createdDateNew") {
+        videos.sort((a, b) => {
+            const tA = a.createdTime || (a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0);
+            const tB = b.createdTime || (b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0);
+            return tB - tA;
+        });
+    } else if (currentSort === "createdDateOld") {
+        videos.sort((a, b) => {
+            const tA = a.createdTime || (a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0);
+            const tB = b.createdTime || (b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0);
+            return tA - tB;
+        });
+    } else if (currentSort === "alphabeticalAZ") {
+        videos.sort((a, b) => {
+            return (a.title || "").localeCompare(b.title || "");
+        });
+    } else if (currentSort === "alphabeticalZA") {
+        videos.sort((a, b) => {
+            return (b.title || "").localeCompare(a.title || "");
+        });
+    }
+
     // Обновляем статистические счетчики
     updateStatsCounters();
+    updateTabCounts();
 
     const filtered = videos.filter(v => {
         const matchesSearch = v.title.toLowerCase().includes(searchQuery);
@@ -529,6 +769,19 @@ function renderVideosList() {
         const card = document.createElement("div");
         card.className = `video-card ${selectedVideo && selectedVideo.id === v.id ? 'active' : ''}`;
         card.dataset.id = v.id;
+
+        // Настройка активации draggable при взаимодействии (для десктопа)
+        if (!v.deleted && currentSort === "manual") {
+            card.addEventListener('mousedown', (e) => {
+                if (e.target.closest('button, input, textarea, a, select')) {
+                    return;
+                }
+                card.setAttribute('draggable', 'true');
+            });
+            card.addEventListener('mouseup', () => {
+                card.removeAttribute('draggable');
+            });
+        }
         
         if (v.deleted) {
             card.innerHTML = `
@@ -575,8 +828,13 @@ function renderVideosList() {
                 </div>
                 <div class="video-card-right">
                     <div class="video-status-date-block">
-                        <span class="status-badge ${v.status}">${v.statusText}</span>
-                        <span class="video-date">${v.date}</span>
+                        ${(() => {
+                            let displayStatusText = v.statusText || "Идея";
+                            if (v.status === "in_progress") displayStatusText = "Черновик";
+                            else if (v.status === "editing") displayStatusText = "В процессе";
+                            return `<span class="status-badge ${v.status}">${displayStatusText}</span>`;
+                        })()}
+                        <span class="video-date">${formatDateToRussian(v.publishDate)}</span>
                     </div>
                     <button class="video-options-btn" title="Опции">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
@@ -1013,14 +1271,48 @@ function selectVideoItem(id) {
     if (infoDescription && document.activeElement !== infoDescription) {
         infoDescription.value = selectedVideo.description || "";
     }
+    if (infoDescriptionViewer) {
+        updateDescriptionViewer(selectedVideo.description);
+        infoDescription.style.display = "none";
+        infoDescriptionViewer.style.display = "block";
+    }
     
     infoTags.innerHTML = selectedVideo.tags.map(tag => `<span class="tag-badge">${tag}</span>`).join('') + 
                          `<button class="btn-add-tag">+</button>`;
     
-    infoDate.textContent = selectedVideo.dateLabel;
-    infoLink.href = `https://${selectedVideo.link}`;
-    infoLink.querySelector("span").textContent = selectedVideo.link;
-    infoPlaylist.textContent = selectedVideo.playlist;
+    const pubDateFormatted = formatDateToRussian(selectedVideo.publishDate);
+    if (infoDate) {
+        infoDate.textContent = pubDateFormatted;
+    }
+    selectedDueDate = selectedVideo.publishDate || "";
+    if (dueDateBtnText) {
+        dueDateBtnText.textContent = pubDateFormatted !== "не запланировано" ? pubDateFormatted : "Выбрать дату";
+    }
+
+    if (infoCreatedDate) {
+        let createdTimestamp = null;
+        if (selectedVideo.createdTime) {
+            createdTimestamp = selectedVideo.createdTime;
+        } else if (selectedVideo.createdAt) {
+            if (selectedVideo.createdAt.toDate && typeof selectedVideo.createdAt.toDate === "function") {
+                createdTimestamp = selectedVideo.createdAt.toDate().getTime();
+            } else {
+                createdTimestamp = new Date(selectedVideo.createdAt).getTime();
+            }
+        }
+        infoCreatedDate.textContent = formatCreatedDate(createdTimestamp);
+    }
+
+    if (selectedVideo.publishDate) {
+        const parts = selectedVideo.publishDate.split('-');
+        if (parts.length === 3) {
+            calendarYear = parseInt(parts[0], 10);
+            calendarMonth = parseInt(parts[1], 10) - 1;
+        }
+    } else {
+        calendarYear = new Date().getFullYear();
+        calendarMonth = new Date().getMonth();
+    }
 
     // Вкладка: Референсы
     if (referencesContent && document.activeElement !== referencesContent) {
@@ -1282,11 +1574,20 @@ function clearDetailSidebar() {
     }
     detailStatusDot.className = "status-dot";
     infoDescription.value = "";
+    if (infoDescriptionViewer) {
+        infoDescriptionViewer.innerHTML = "";
+    }
     infoTags.innerHTML = "";
-    infoDate.textContent = "--";
-    infoLink.href = "#";
-    infoLink.querySelector("span").textContent = "ссылка";
-    infoPlaylist.textContent = "--";
+    if (infoDate) {
+        infoDate.textContent = "не запланировано";
+    }
+    if (infoCreatedDate) {
+        infoCreatedDate.textContent = "--";
+    }
+    selectedDueDate = "";
+    if (dueDateBtnText) {
+        dueDateBtnText.textContent = "Выбрать дату";
+    }
     if (referencesContent) referencesContent.innerHTML = "";
     if (settingNotionLink) settingNotionLink.value = "";
     if (btnOpenNotion) {
@@ -1297,13 +1598,22 @@ function clearDetailSidebar() {
 
 // === Создание нового видео ===
 async function addVideo() {
+    const maxOrder = videos.length > 0 ? Math.max(...videos.map(v => v.order || 0)) : 0;
+    const defaultStatus = currentFilter !== "all" ? currentFilter : "idea";
+    let statusText = "Идея";
+    if (defaultStatus === "in_progress") statusText = "Черновик";
+    else if (defaultStatus === "editing") statusText = "В процессе";
+    else if (defaultStatus === "published") statusText = "Опубликовано";
+
     const newVideoData = {
         title: "Новое видео",
-        status: "idea",
-        statusText: "Идея",
+        status: defaultStatus,
+        statusText: statusText,
         tags: ["Проект"],
-        date: "Создано сегодня",
-        dateLabel: "Создано сегодня",
+        date: "не запланировано",
+        dateLabel: "не запланировано",
+        publishDate: "",
+        order: maxOrder + 1000,
         thumbnail: "https://placehold.co/600x338/e2e8f0/475569?text=New+Video",
         description: "",
         playlist: "",
@@ -1658,10 +1968,9 @@ statusOptButtons.forEach(btn => {
         if (!activeMenuVideoId) return;
         const newStatus = btn.dataset.status;
         let statusText = "Идея";
-        if (newStatus === "in_progress") statusText = "В работе";
-        else if (newStatus === "editing") statusText = "На монтаже";
+        if (newStatus === "in_progress") statusText = "Черновик";
+        else if (newStatus === "editing") statusText = "В процессе";
         else if (newStatus === "published") statusText = "Опубликовано";
-        else if (newStatus === "archive") statusText = "Архив";
         
         // Обновляем статус в массиве
         const video = videos.find(v => v.id === activeMenuVideoId);
@@ -1741,6 +2050,517 @@ function openImageLightbox(src) {
     overlay.addEventListener("click", close);
     overlay.querySelector(".image-lightbox-img").addEventListener("click", (e) => {
         e.stopPropagation();
+    });
+}
+
+// === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ И DRAG-AND-DROP ===
+
+function formatDateToRussian(dateString) {
+    if (!dateString || dateString === "Без даты" || dateString === "не запланировано") return "не запланировано";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "не запланировано";
+    
+    const months = [
+        "января", "февраля", "марта", "апреля", "мая", "июня",
+        "июля", "августа", "сентября", "октября", "ноября", "декабря"
+    ];
+    
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    
+    return `${day} ${month} ${year}`;
+}
+
+function formatCreatedDate(timestamp) {
+    if (!timestamp) return "--";
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return "--";
+
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const isSameDay = (d1, d2) => 
+        d1.getFullYear() === d2.getFullYear() &&
+        d1.getMonth() === d2.getMonth() &&
+        d1.getDate() === d2.getDate();
+
+    if (isSameDay(date, today)) {
+        return "сегодня";
+    } else if (isSameDay(date, yesterday)) {
+        return "вчера";
+    } else {
+        return formatDateToRussian(date);
+    }
+}
+
+// Рендеринг календарной сетки в настройках
+function renderCalendarGrid() {
+    const monthsRu = [
+        'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+        'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'
+    ];
+    if (calendarMonthYear) {
+        calendarMonthYear.textContent = `${monthsRu[calendarMonth]} ${calendarYear}`;
+    }
+
+    const firstDay = new Date(calendarYear, calendarMonth, 1);
+    let startDayOfWeek = firstDay.getDay() - 1;
+    if (startDayOfWeek < 0) startDayOfWeek = 6; // Воскресенье -> 6
+
+    const totalDays = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+    const prevMonthTotalDays = new Date(calendarYear, calendarMonth, 0).getDate();
+
+    if (calendarDaysGrid) {
+        calendarDaysGrid.innerHTML = '';
+
+        // Предыдущий месяц
+        for (let i = startDayOfWeek - 1; i >= 0; i--) {
+            const dayNum = prevMonthTotalDays - i;
+            const cell = createCalendarCell(dayNum, false, calendarMonth - 1, calendarYear);
+            calendarDaysGrid.appendChild(cell);
+        }
+
+        // Текущий месяц
+        for (let i = 1; i <= totalDays; i++) {
+            const cell = createCalendarCell(i, true, calendarMonth, calendarYear);
+            calendarDaysGrid.appendChild(cell);
+        }
+
+        // Следующий месяц
+        const totalCells = startDayOfWeek + totalDays;
+        const remainingCells = 42 - totalCells;
+        for (let i = 1; i <= remainingCells; i++) {
+            const cell = createCalendarCell(i, false, calendarMonth + 1, calendarYear);
+            calendarDaysGrid.appendChild(cell);
+        }
+    }
+}
+
+function createCalendarCell(dayNum, isCurrentMonth, month, year) {
+    let cellMonth = month;
+    let cellYear = year;
+
+    if (cellMonth < 0) {
+        cellMonth = 11;
+        cellYear--;
+    } else if (cellMonth > 11) {
+        cellMonth = 0;
+        cellYear++;
+    }
+
+    const cell = document.createElement('span');
+    cell.className = 'calendar-day-cell';
+    cell.textContent = dayNum;
+
+    if (!isCurrentMonth) {
+        cell.classList.add('other-month');
+    }
+
+    const dateStr = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+
+    if (selectedDueDate === dateStr) {
+        cell.classList.add('selected');
+    }
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    if (todayStr === dateStr) {
+        cell.classList.add('today');
+    }
+
+    cell.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setDueDate(dateStr);
+        renderCalendarGrid();
+    });
+
+    return cell;
+}
+
+async function setDueDate(dateStr) {
+    if (!selectedVideo) return;
+    
+    selectedDueDate = dateStr;
+    selectedVideo.publishDate = dateStr;
+    
+    const formattedDate = formatDateToRussian(dateStr);
+    selectedVideo.date = formattedDate;
+    selectedVideo.dateLabel = formattedDate;
+    
+    // Обновляем текст на кнопке настроек
+    if (dueDateBtnText) {
+        dueDateBtnText.textContent = formattedDate;
+    }
+    // Обновляем статичный текст на вкладке Информация
+    if (infoDate) {
+        infoDate.textContent = formattedDate;
+    }
+
+    if (currentUid) {
+        try {
+            await updateDoc(doc(db, "users", currentUid, "videos", selectedVideo.id), {
+                publishDate: dateStr,
+                date: formattedDate,
+                dateLabel: formattedDate
+            });
+        } catch (err) {
+            console.error("Ошибка при сохранении даты публикации в Firestore:", err);
+        }
+    } else {
+        localStorage.setItem("local_videos", JSON.stringify(videos));
+        renderVideosList();
+    }
+    
+    if (dueDateDropdown) {
+        dueDateDropdown.style.display = "none";
+    }
+}
+
+function updateDescriptionViewer(text) {
+    if (!infoDescriptionViewer) return;
+    if (!text) {
+        infoDescriptionViewer.innerHTML = `<span style="color: var(--ch-text-gray); font-style: italic;">Нажмите, чтобы добавить описание...</span>`;
+        return;
+    }
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    html = html.replace(urlRegex, (url) => {
+        return `<a href="${url}" target="_blank" style="color: var(--ch-purple); text-decoration: underline; font-weight: 500;">${url}</a>`;
+    });
+    infoDescriptionViewer.innerHTML = html;
+}
+
+function initDragAndDrop() {
+    let draggingElement = null;
+    let placeholder = null;
+
+    videosListContainer.addEventListener('dragstart', (e) => {
+        const card = e.target.closest('.video-card');
+        if (currentSort !== "manual" || !card || card.classList.contains('editing') || card.querySelector('.btn-restore')) {
+            e.preventDefault();
+            return;
+        }
+        draggingElement = card;
+        card.classList.add('dragging');
+        
+        placeholder = document.createElement('div');
+        placeholder.className = 'video-drag-placeholder';
+        placeholder.style.height = `${draggingElement.offsetHeight}px`;
+
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', card.getAttribute('data-id'));
+
+        setTimeout(() => {
+            if (draggingElement) {
+                draggingElement.style.display = 'none';
+            }
+        }, 0);
+    });
+
+    videosListContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (!draggingElement || !placeholder) return;
+
+        const afterElement = getDragAfterVideo(videosListContainer, e.clientY);
+        if (afterElement) {
+            videosListContainer.insertBefore(placeholder, afterElement);
+        } else {
+            videosListContainer.appendChild(placeholder);
+        }
+    });
+
+    videosListContainer.addEventListener('dragend', (e) => {
+        if (draggingElement) {
+            draggingElement.style.display = '';
+            draggingElement.classList.remove('dragging');
+            draggingElement.removeAttribute('draggable');
+        }
+        if (placeholder && placeholder.parentNode) {
+            placeholder.remove();
+        }
+        placeholder = null;
+        draggingElement = null;
+    });
+
+    videosListContainer.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        if (!draggingElement || !placeholder) return;
+
+        const prevElement = placeholder.previousElementSibling;
+        const nextElement = placeholder.nextElementSibling;
+
+        placeholder.remove();
+        placeholder = null;
+        
+        if (draggingElement) {
+            draggingElement.style.display = '';
+            draggingElement.classList.remove('dragging');
+        }
+
+        const videoId = draggingElement.getAttribute('data-id');
+        const video = videos.find(v => v.id === videoId);
+        if (!video) {
+            draggingElement = null;
+            return;
+        }
+
+        const prevVideoId = prevElement ? prevElement.getAttribute('data-id') : null;
+        const nextVideoId = nextElement ? nextElement.getAttribute('data-id') : null;
+
+        const prevVideo = videos.find(v => v.id === prevVideoId);
+        const nextVideo = videos.find(v => v.id === nextVideoId);
+
+        let newOrder = 0;
+        if (!prevVideo && !nextVideo) {
+            newOrder = 0;
+        } else if (!prevVideo) {
+            newOrder = (nextVideo.order !== undefined ? nextVideo.order : 0) - 1000;
+        } else if (!nextVideo) {
+            newOrder = (prevVideo.order !== undefined ? prevVideo.order : 0) + 1000;
+        } else {
+            const prevOrder = prevVideo.order !== undefined ? prevVideo.order : 0;
+            const nextOrder = nextVideo.order !== undefined ? nextVideo.order : 0;
+            newOrder = (prevOrder + nextOrder) / 2;
+        }
+
+        video.order = newOrder;
+
+        if (currentUid && videoId) {
+            try {
+                await updateDoc(doc(db, "users", currentUid, "videos", videoId), {
+                    order: newOrder
+                });
+            } catch (err) {
+                console.error("Ошибка при переупорядочивании видео:", err);
+            }
+        } else {
+            localStorage.setItem("local_videos", JSON.stringify(videos));
+            renderVideosList();
+        }
+        draggingElement = null;
+    });
+}
+
+function getDragAfterVideo(container, y) {
+    const dragElements = [...container.querySelectorAll('.video-card:not(.dragging):not(.video-drag-placeholder)')];
+
+    return dragElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - (box.top + box.height / 2);
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function initTouchDragAndDrop() {
+    let touchStartTimer = null;
+    let touchDraggingElement = null;
+    let startY = 0;
+    let startX = 0;
+    let placeholder = null;
+
+    const removePassiveListeners = () => {
+        window.removeEventListener('touchmove', handleTouchMovePassive);
+        window.removeEventListener('touchend', handleTouchEndPassive);
+        window.removeEventListener('touchcancel', handleTouchEndPassive);
+    };
+
+    const handleTouchMovePassive = (e) => {
+        const touch = e.touches[0];
+        if (Math.abs(touch.clientY - startY) > 10 || Math.abs(touch.clientX - startX) > 10) {
+            if (touchStartTimer) {
+                clearTimeout(touchStartTimer);
+                touchStartTimer = null;
+            }
+            removePassiveListeners();
+        }
+    };
+
+    const handleTouchEndPassive = () => {
+        if (touchStartTimer) {
+            clearTimeout(touchStartTimer);
+            touchStartTimer = null;
+        }
+        removePassiveListeners();
+    };
+
+    const resetTouchState = () => {
+        if (touchStartTimer) {
+            clearTimeout(touchStartTimer);
+            touchStartTimer = null;
+        }
+        removePassiveListeners();
+        window.removeEventListener('touchmove', handleTouchMoveActive);
+        window.removeEventListener('touchend', handleTouchEndActive);
+        window.removeEventListener('touchcancel', resetTouchState);
+
+        if (touchDraggingElement) {
+            touchDraggingElement.classList.remove('dragging');
+            touchDraggingElement.removeAttribute('draggable');
+            if (touchDraggingElement._preventSelection) {
+                window.removeEventListener('selectstart', touchDraggingElement._preventSelection, { capture: true });
+                window.removeEventListener('contextmenu', touchDraggingElement._preventSelection, { capture: true });
+                delete touchDraggingElement._preventSelection;
+            }
+        }
+        if (placeholder && placeholder.parentNode) {
+            placeholder.remove();
+        }
+        placeholder = null;
+        touchDraggingElement = null;
+    };
+
+    const handleTouchStart = (e) => {
+        if (e.touches.length > 1) return;
+        if (currentSort !== "manual") return;
+        
+        // Предотвращаем срабатывание драга, если кликнули на селект статуса или другие интерактивные элементы
+        if (e.target.closest('button, input, textarea, a, select')) {
+            return;
+        }
+        
+        const touch = e.touches[0];
+        startY = touch.clientY;
+        startX = touch.clientX;
+
+        const card = e.target.closest('.video-card');
+        if (!card || card.classList.contains('editing') || card.querySelector('.btn-restore')) return;
+
+        const preventSelection = (evt) => {
+            evt.preventDefault();
+        };
+
+        window.addEventListener('touchmove', handleTouchMovePassive, { passive: true });
+        window.addEventListener('touchend', handleTouchEndPassive, { passive: true });
+        window.addEventListener('touchcancel', handleTouchEndPassive, { passive: true });
+
+        touchStartTimer = setTimeout(() => {
+            removePassiveListeners();
+
+            touchDraggingElement = card;
+            touchDraggingElement.classList.add('dragging');
+            touchDraggingElement.setAttribute('draggable', 'true');
+
+            window.addEventListener('selectstart', preventSelection, { capture: true });
+            window.addEventListener('contextmenu', preventSelection, { capture: true });
+            touchDraggingElement._preventSelection = preventSelection;
+
+            window.addEventListener('touchmove', handleTouchMoveActive, { passive: false });
+            window.addEventListener('touchend', handleTouchEndActive, { passive: true });
+            window.addEventListener('touchcancel', resetTouchState, { passive: true });
+
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }, 300);
+    };
+
+    const handleTouchMoveActive = (e) => {
+        if (!touchDraggingElement) return;
+        e.preventDefault();
+
+        const touch = e.touches[0];
+        
+        if (!placeholder) {
+            placeholder = document.createElement('div');
+            placeholder.className = 'video-drag-placeholder';
+            placeholder.style.height = `${touchDraggingElement.offsetHeight}px`;
+        }
+
+        const afterElement = getDragAfterVideo(videosListContainer, touch.clientY);
+        if (afterElement) {
+            videosListContainer.insertBefore(placeholder, afterElement);
+        } else {
+            videosListContainer.appendChild(placeholder);
+        }
+    };
+
+    const handleTouchEndActive = async (e) => {
+        if (touchStartTimer) {
+            clearTimeout(touchStartTimer);
+            touchStartTimer = null;
+        }
+
+        if (!touchDraggingElement || !placeholder) {
+            resetTouchState();
+            return;
+        }
+
+        const prevElement = placeholder.previousElementSibling;
+        const nextElement = placeholder.nextElementSibling;
+        const draggingEl = touchDraggingElement;
+
+        resetTouchState();
+
+        const videoId = draggingEl.getAttribute('data-id');
+        const video = videos.find(v => v.id === videoId);
+        if (!video) return;
+
+        const prevVideoId = prevElement ? prevElement.getAttribute('data-id') : null;
+        const nextVideoId = nextElement ? nextElement.getAttribute('data-id') : null;
+
+        const prevVideo = videos.find(v => v.id === prevVideoId);
+        const nextVideo = videos.find(v => v.id === nextVideoId);
+
+        let newOrder = 0;
+        if (!prevVideo && !nextVideo) {
+            newOrder = 0;
+        } else if (!prevVideo) {
+            newOrder = (nextVideo.order !== undefined ? nextVideo.order : 0) - 1000;
+        } else if (!nextVideo) {
+            newOrder = (prevVideo.order !== undefined ? prevVideo.order : 0) + 1000;
+        } else {
+            const prevOrder = prevVideo.order !== undefined ? prevVideo.order : 0;
+            const nextOrder = nextVideo.order !== undefined ? nextVideo.order : 0;
+            newOrder = (prevOrder + nextOrder) / 2;
+        }
+
+        video.order = newOrder;
+
+        if (currentUid && videoId) {
+            try {
+                await updateDoc(doc(db, "users", currentUid, "videos", videoId), {
+                    order: newOrder
+                });
+            } catch (err) {
+                console.error("Ошибка при touch-перетаскивании видео:", err);
+            }
+        } else {
+            localStorage.setItem("local_videos", JSON.stringify(videos));
+            renderVideosList();
+        }
+    };
+
+    videosListContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
+}
+
+function updateTabCounts() {
+    const activeVideos = videos.filter(v => !v.deleted);
+    const countMap = {
+        idea: activeVideos.filter(v => v.status === "idea").length,
+        in_progress: activeVideos.filter(v => v.status === "in_progress").length,
+        editing: activeVideos.filter(v => v.status === "editing").length,
+        published: activeVideos.filter(v => v.status === "published").length
+    };
+
+    const tabLabels = {
+        idea: "Идеи",
+        in_progress: "Черновик",
+        editing: "В процессе",
+        published: "Опубликовано"
+    };
+
+    const tabBtns = document.querySelectorAll(".filters-tabs .tab-btn");
+    tabBtns.forEach(btn => {
+        const filterVal = btn.dataset.filter;
+        if (tabLabels[filterVal] !== undefined) {
+            btn.innerHTML = `${tabLabels[filterVal]} <span class="tab-count">${countMap[filterVal]}</span>`;
+        }
     });
 }
 

@@ -210,6 +210,11 @@ const sortDropdown = document.getElementById("sortDropdown");
 let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth();
 let selectedDueDate = ""; // В формате YYYY-MM-DD
+let calendarViewDate = new Date();
+const cvMonthNames = [
+    "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+    "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+];
 let currentSort = "manual";
 let statsPeriodDays = localStorage.getItem("creatorhub_stats_period") || "28";
 if (statsPeriodDays !== "all" && statsPeriodDays !== "ytd") {
@@ -651,6 +656,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Слушатели бокового меню навигации
+    // Слушатели бового меню навигации
     const sidebarMenuItems = document.querySelectorAll(".sidebar-menu .menu-item");
     sidebarMenuItems.forEach(item => {
         if (item.id === "menuSettings") return; // Настройки обрабатываются отдельно как модалка
@@ -660,12 +666,38 @@ document.addEventListener("DOMContentLoaded", () => {
             item.classList.add("active");
             if (item.id === "menuTrash") {
                 currentMenuRoute = "trash";
+            } else if (item.id === "menuCalendar") {
+                currentMenuRoute = "calendar";
             } else {
                 currentMenuRoute = "videos";
             }
             updateViewForRoute();
         });
     });
+
+    // Календарь на странице (навигация)
+    const btnCalPrev = document.getElementById("btnCalPrev");
+    const btnCalToday = document.getElementById("btnCalToday");
+    const btnCalNext = document.getElementById("btnCalNext");
+
+    if (btnCalPrev) {
+        btnCalPrev.addEventListener("click", () => {
+            calendarViewDate.setMonth(calendarViewDate.getMonth() - 1);
+            renderCalendarView();
+        });
+    }
+    if (btnCalToday) {
+        btnCalToday.addEventListener("click", () => {
+            calendarViewDate = new Date();
+            renderCalendarView();
+        });
+    }
+    if (btnCalNext) {
+        btnCalNext.addEventListener("click", () => {
+            calendarViewDate.setMonth(calendarViewDate.getMonth() + 1);
+            renderCalendarView();
+        });
+    }
 
     // Слушатель кнопки очистки корзины
     const btnEmptyTrash = document.getElementById("btnEmptyTrash");
@@ -701,8 +733,28 @@ function updateViewForRoute() {
     const trashNoticeBanner = document.getElementById("trashNoticeBanner");
     const sectionTitle = document.querySelector(".videos-section h2");
     const filtersTabs = document.querySelector(".filters-tabs");
-
     const sortWrapper = document.querySelector(".sort-wrapper");
+
+    const mainContent = document.querySelector(".main-content");
+    const calendarViewContainer = document.getElementById("calendarViewContainer");
+    const detailSidebarResizer = document.getElementById("detailSidebarResizer");
+    const detailSidebar = document.getElementById("detailSidebar");
+
+    if (currentMenuRoute === "calendar") {
+        if (mainContent) mainContent.style.display = "none";
+        if (detailSidebarResizer) detailSidebarResizer.style.display = "none";
+        if (detailSidebar) detailSidebar.style.display = "none";
+        if (calendarViewContainer) {
+            calendarViewContainer.style.display = "flex";
+            renderCalendarView();
+        }
+        return;
+    }
+
+    if (calendarViewContainer) calendarViewContainer.style.display = "none";
+    if (mainContent) mainContent.style.display = "flex";
+    if (detailSidebarResizer) detailSidebarResizer.style.display = "block";
+    if (detailSidebar) detailSidebar.style.display = "flex";
 
     if (currentMenuRoute === "trash") {
         if (statsGrid) statsGrid.style.display = "none";
@@ -2203,6 +2255,67 @@ function openImageLightbox(src) {
     overlay.querySelector(".image-lightbox-img").addEventListener("click", (e) => {
         e.stopPropagation();
     });
+}
+
+// === РЕНДЕРИНГ КАЛЕНДАРЯ НА СТРАНИЦЕ ===
+function renderCalendarView() {
+    const daysContainer = document.getElementById("calendarViewDaysGrid");
+    const monthTitle = document.getElementById("calendarViewMonthTitle");
+    if (!daysContainer || !monthTitle) return;
+
+    daysContainer.innerHTML = "";
+
+    const year = calendarViewDate.getFullYear();
+    const month = calendarViewDate.getMonth();
+
+    monthTitle.textContent = `${cvMonthNames[month]} ${year}`;
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    let startDay = firstDay.getDay();
+    startDay = startDay === 0 ? 6 : startDay - 1;
+
+    const totalDays = lastDay.getDate();
+    const prevLastDay = new Date(year, month, 0).getDate();
+
+    const today = new Date();
+
+    const createDayElement = (number, otherMonth = false, isToday = false) => {
+        const dayEl = document.createElement("div");
+        dayEl.className = "cv-day";
+
+        if (otherMonth) dayEl.classList.add("cv-other-month");
+        if (isToday) dayEl.classList.add("cv-today");
+
+        dayEl.innerHTML = `
+            <div class="cv-day-number">${number}</div>
+            ${!otherMonth && number % 6 === 0 ? `<div class="cv-event">Задача / событие</div>` : ""}
+        `;
+        daysContainer.appendChild(dayEl);
+    };
+
+    let cellsDrawn = 0;
+    for (let i = startDay; i > 0; i--) {
+        createDayElement(prevLastDay - i + 1, true);
+        cellsDrawn++;
+    }
+
+    for (let day = 1; day <= totalDays; day++) {
+        if (cellsDrawn >= 35) break;
+        const isToday =
+            day === today.getDate() &&
+            month === today.getMonth() &&
+            year === today.getFullYear();
+
+        createDayElement(day, false, isToday);
+        cellsDrawn++;
+    }
+
+    const remainingCells = Math.max(0, 35 - cellsDrawn);
+    for (let day = 1; day <= remainingCells; day++) {
+        createDayElement(day, true);
+    }
 }
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ И DRAG-AND-DROP ===

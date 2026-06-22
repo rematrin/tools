@@ -298,6 +298,34 @@
             </div>
         </main>
 
+        <!-- Календарь (новый раздел) -->
+        <main class="cv-calendar" id="calendarViewContainer" style="display: none;">
+            <div class="cv-header">
+                <div class="cv-title">
+                    <h1 id="calendarViewMonthTitle"></h1>
+                </div>
+
+                <div class="cv-controls">
+                    <button class="cv-btn" id="btnCalPrev">←</button>
+                    <button class="cv-btn" id="btnCalToday">Сегодня</button>
+                    <button class="cv-btn" id="btnCalNext">→</button>
+                </div>
+            </div>
+
+            <div class="cv-weekdays">
+                <div>Пн</div>
+                <div>Вт</div>
+                <div>Ср</div>
+                <div>Чт</div>
+                <div>Пт</div>
+                <div>Сб</div>
+                <div>Вс</div>
+            </div>
+
+            <div class="cv-days" id="calendarViewDaysGrid"></div>
+        </main>
+
+
         <!-- Ресайзер правого сайдбара -->
         <div class="detail-sidebar-resizer" id="detailSidebarResizer"></div>
 

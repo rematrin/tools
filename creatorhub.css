@@ -2593,3 +2593,184 @@ body.dark .video-drag-placeholder {
     font-weight: 700;
     color: var(--ch-purple);
 }
+
+/* === КАЛЕНДАРЬ НА СТРАНИЦЕ (СЕКЦИЯ) === */
+.cv-calendar {
+    flex: 1;
+    height: calc(100vh - 48px);
+    background: var(--ch-card-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: 28px;
+    box-shadow: var(--ch-shadow);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin: 24px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.cv-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.cv-title h1 {
+    font-size: clamp(20px, 2.5vw, 28px);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--ch-text-dark);
+}
+
+.cv-title p {
+    color: var(--ch-text-gray);
+    margin-top: 6px;
+    font-size: 15px;
+}
+
+.cv-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.cv-btn {
+    border: none;
+    background: var(--ch-text-dark);
+    color: var(--ch-card-bg);
+    padding: 12px 16px;
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.cv-btn:hover {
+    transform: translateY(-2px);
+    background: var(--ch-purple);
+    color: #ffffff;
+}
+
+.cv-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 12px;
+    color: var(--ch-text-gray);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 13px;
+}
+
+.cv-weekdays div {
+    padding-left: 12px;
+}
+
+.cv-days {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 12px;
+}
+
+.cv-day {
+    background: var(--ch-card-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: 20px;
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+    transition: 0.2s;
+    min-height: 110px;
+    color: var(--ch-text-dark);
+}
+
+.cv-day:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--ch-shadow);
+    border-color: var(--ch-purple);
+}
+
+.cv-day-number {
+    font-weight: 800;
+    font-size: 18px;
+}
+
+.cv-other-month {
+    opacity: 0.35;
+    background: var(--ch-bg);
+}
+
+.cv-today {
+    background: linear-gradient(135deg, var(--ch-purple), #7c3aed);
+    color: white;
+    border: none;
+}
+
+.cv-today::after {
+    content: "Сегодня";
+    position: absolute;
+    right: 12px;
+    top: 14px;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.2);
+    padding: 5px 9px;
+    border-radius: 999px;
+}
+
+.cv-event {
+    margin-top: 12px;
+    background: var(--ch-purple-light);
+    color: var(--ch-purple);
+    padding: 7px 9px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.cv-today .cv-event {
+    background: rgba(255,255,255,0.2);
+    color: white;
+}
+
+@media (max-width: 800px) {
+    .cv-calendar {
+        margin: 12px;
+        min-height: calc(100vh - 24px);
+        padding: 18px;
+        border-radius: 22px;
+    }
+
+    .cv-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .cv-days {
+        grid-auto-rows: 90px;
+        gap: 8px;
+    }
+
+    .cv-weekdays {
+        gap: 8px;
+        font-size: 11px;
+    }
+
+    .cv-day {
+        border-radius: 14px;
+        padding: 10px;
+        min-height: 90px;
+    }
+
+    .cv-day-number {
+        font-size: 15px;
+    }
+
+    .cv-event {
+        display: none;
+    }
+}

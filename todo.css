@@ -3469,9 +3469,8 @@ body.dark .priority-opt-btn:hover {
     .add-task-form .due-date-dropdown,
     .add-task-form .project-dropdown,
     .add-task-form .priority-dropdown {
-        position: absolute !important;
-        top: calc(100% + 12px) !important;
-        /* На 12px ниже поля ввода */
+        position: fixed !important;
+        top: auto !important;
         bottom: auto !important;
         left: 12px !important;
         right: 12px !important;
@@ -3739,6 +3738,12 @@ body.dark .section-actions-btn:hover {
 }
 
 /* --- STREAK WIDGET STYLE --- */
+.streak-widget,
+.streak-divider,
+#mobileStreakWidgetContainer {
+    display: none !important;
+}
+
 .streak-widget {
     padding: 18px;
     border-radius: 18px;

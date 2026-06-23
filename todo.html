@@ -759,11 +759,46 @@
                         </svg>
                         <span>Добавить подзадачу</span>
                     </button>
-                    <div class="modal-new-subtask-input-container" id="modalNewSubtaskContainer" style="display: none;">
-                        <input type="text" id="modalNewSubtaskTitle" placeholder="Название подзадачи..." maxlength="500">
-                        <div class="modal-new-subtask-actions">
-                            <button class="btn-save-subtask" id="btnModalSaveSubtask">Добавить</button>
-                            <button class="btn-cancel-subtask" id="btnModalCancelSubtask">Отмена</button>
+                    <div class="modal-new-subtask-input-container add-task-form" id="modalNewSubtaskContainer" style="display: none; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-top: 10px; background: var(--card-bg); flex-direction: column; gap: 10px; width: 100%; box-sizing: border-box;">
+                        <textarea id="modalNewSubtaskTitle" class="task-input" placeholder="Что бы вы хотели сделать?" rows="1" autocomplete="off" style="width: 100%; min-height: 24px; max-height: 120px; background: transparent; border: none; outline: none; resize: none; font-family: inherit; color: var(--text); padding: 0; margin-bottom: 8px; box-sizing: border-box;"></textarea>
+                        <div class="form-actions" style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0; background: transparent; border: none;">
+                            <div class="form-actions-left" style="display: flex; gap: 8px; align-items: center;">
+                                <!-- Срок подзадачи -->
+                                <div class="due-date-wrapper" id="modalSubtaskDueWrapper" style="position: relative;">
+                                    <button class="btn-due-date" id="btnModalSubtaskDue" type="button" style="font-weight: 700;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                                        </svg>
+                                        <span class="due-date-text" id="modalSubtaskDueText">Срок</span>
+                                        <span id="btnClearModalSubtaskDue" class="clear-due-icon" style="display:none" title="Очистить">&times;</span>
+                                    </button>
+                                </div>
+                                
+                                <!-- Приоритет подзадачи -->
+                                <div class="priority-wrapper" id="modalSubtaskPriorityWrapper" style="position: relative;">
+                                    <button class="btn-due-date" id="btnModalSubtaskPriority" type="button" style="font-weight: 700;">
+                                        <span class="priority-icon-wrapper" id="modalSubtaskPriorityIcon" style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; flex-shrink: 0; margin-right: 4px; color: #808080;">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                                <line x1="4" y1="22" x2="4" y2="15"></line>
+                                            </svg>
+                                        </span>
+                                        <span id="modalSubtaskPriorityText">Приоритет</span>
+                                    </button>
+                                    <div class="due-date-dropdown priority-dropdown" id="modalSubtaskPriorityDropdown" style="display: none; width: 170px; flex-direction: column; gap: 2px; padding: 4px; z-index: 1100;">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions-right" style="display: flex; gap: 8px; align-items: center;">
+                                <button class="btn-cancel-subtask" id="btnModalCancelSubtask" type="button" style="background: var(--hover-bg); border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; color: var(--text-secondary); transition: background-color 0.15s, color 0.15s; font-size: 0.85rem;">Отмена</button>
+                                <button class="btn-save-subtask" id="btnModalSaveSubtask" type="button" style="background: var(--accent); color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: opacity 0.15s; font-size: 0.85rem;">
+                                    <span>Добавить</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

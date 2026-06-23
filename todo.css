@@ -809,7 +809,9 @@ body.dark .task-title-link {
 @media (hover: hover) {
 
     .task-item:hover .task-actions,
-    .task-item.menu-open .task-actions {
+    .task-item.menu-open .task-actions,
+    .modal-subtask-item:hover .task-actions,
+    .modal-subtask-item.menu-open .task-actions {
         opacity: 1;
     }
 }
@@ -3282,64 +3284,79 @@ body.dark .appearance-card-preview {
 }
 
 /* Priority System Checkbox Styles */
-.task-item.priority-3 .custom-checkbox {
+.task-item.priority-3 .custom-checkbox,
+.modal-subtask-item.priority-3 .custom-checkbox {
     border-color: #dc2626 !important;
     background-color: rgba(220, 38, 38, 0.08) !important;
 }
 
-.task-item.priority-3 .custom-checkbox:hover {
+.task-item.priority-3 .custom-checkbox:hover,
+.modal-subtask-item.priority-3 .custom-checkbox:hover {
     background-color: rgba(220, 38, 38, 0.15) !important;
 }
 
-.task-item.priority-3 .custom-checkbox svg {
+.task-item.priority-3 .custom-checkbox svg,
+.modal-subtask-item.priority-3 .custom-checkbox svg {
     color: #dc2626 !important;
 }
 
-.task-item.priority-2 .custom-checkbox {
+.task-item.priority-2 .custom-checkbox,
+.modal-subtask-item.priority-2 .custom-checkbox {
     border-color: #d97706 !important;
     background-color: rgba(217, 119, 6, 0.08) !important;
 }
 
-.task-item.priority-2 .custom-checkbox:hover {
+.task-item.priority-2 .custom-checkbox:hover,
+.modal-subtask-item.priority-2 .custom-checkbox:hover {
     background-color: rgba(217, 119, 6, 0.15) !important;
 }
 
-.task-item.priority-2 .custom-checkbox svg {
+.task-item.priority-2 .custom-checkbox svg,
+.modal-subtask-item.priority-2 .custom-checkbox svg {
     color: #d97706 !important;
 }
 
-.task-item.priority-1 .custom-checkbox {
+.task-item.priority-1 .custom-checkbox,
+.modal-subtask-item.priority-1 .custom-checkbox {
     border-color: #2563eb !important;
     background-color: rgba(37, 99, 235, 0.08) !important;
 }
 
-.task-item.priority-1 .custom-checkbox:hover {
+.task-item.priority-1 .custom-checkbox:hover,
+.modal-subtask-item.priority-1 .custom-checkbox:hover {
     background-color: rgba(37, 99, 235, 0.15) !important;
 }
 
-.task-item.priority-1 .custom-checkbox svg {
+.task-item.priority-1 .custom-checkbox svg,
+.modal-subtask-item.priority-1 .custom-checkbox svg {
     color: #2563eb !important;
 }
 
 /* Completed Priority Checkbox Styles */
-.task-item.completed.priority-3 .custom-checkbox {
+.task-item.completed.priority-3 .custom-checkbox,
+.modal-subtask-item.completed.priority-3 .custom-checkbox {
     background-color: #dc2626 !important;
     border-color: #dc2626 !important;
 }
 
-.task-item.completed.priority-2 .custom-checkbox {
+.task-item.completed.priority-2 .custom-checkbox,
+.modal-subtask-item.completed.priority-2 .custom-checkbox {
     background-color: #d97706 !important;
     border-color: #d97706 !important;
 }
 
-.task-item.completed.priority-1 .custom-checkbox {
+.task-item.completed.priority-1 .custom-checkbox,
+.modal-subtask-item.completed.priority-1 .custom-checkbox {
     background-color: #2563eb !important;
     border-color: #2563eb !important;
 }
 
 .task-item.completed.priority-3 .custom-checkbox svg,
+.modal-subtask-item.completed.priority-3 .custom-checkbox svg,
 .task-item.completed.priority-2 .custom-checkbox svg,
-.task-item.completed.priority-1 .custom-checkbox svg {
+.modal-subtask-item.completed.priority-2 .custom-checkbox svg,
+.task-item.completed.priority-1 .custom-checkbox svg,
+.modal-subtask-item.completed.priority-1 .custom-checkbox svg {
     color: #ffffff !important;
 }
 
@@ -4176,6 +4193,10 @@ body.dark .progress-bg-circle {
     max-height: 80vh;
 }
 
+.task-details-main-content.has-open-dropdown {
+    overflow-y: visible !important;
+}
+
 .task-details-title-row {
     display: flex;
     align-items: flex-start;
@@ -4202,6 +4223,13 @@ body.dark .progress-bg-circle {
     margin: 0;
     line-height: 1.4;
     overflow-y: hidden;
+}
+
+/* Prevent clipping/masking of subtask creation calendar and priority dropdowns in details modal */
+#modalSubtaskDueWrapper .due-date-dropdown,
+#modalSubtaskPriorityWrapper .priority-dropdown {
+    top: auto !important;
+    bottom: calc(100% + 6px) !important;
 }
 
 .modal-subtasks-section {

@@ -522,6 +522,13 @@ body.dark .add-task-form.expanded {
     width: calc(100% - 36px);
 }
 
+/* Remove indentation for subtasks when rendered flat on Today/Tomorrow views */
+body.route-today .task-item.subtask,
+body.route-tomorrow .task-item.subtask {
+    margin-left: 0 !important;
+    width: 100% !important;
+}
+
 .task-collapse-btn {
     background: transparent;
     border: none;

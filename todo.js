@@ -3032,6 +3032,18 @@ function renderTasksGroup(tasksGroup, containerEl) {
 
 // Отрендерить задачи в UI
 function renderTasks() {
+    // Устанавливаем класс роута на body
+    document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash');
+    if (currentRoute === 'today') {
+        document.body.classList.add('route-today');
+    } else if (currentRoute === 'tomorrow') {
+        document.body.classList.add('route-tomorrow');
+    } else if (currentRoute === 'trash') {
+        document.body.classList.add('route-trash');
+    } else if (currentRoute === 'inbox') {
+        document.body.classList.add('route-inbox');
+    }
+
     const nonDeletedTasks = allTasks.filter(t => !t.deleted);
     const activeTasks = nonDeletedTasks.filter(t => !t.completed);
     const completedTasks = nonDeletedTasks.filter(t => t.completed);
@@ -3491,7 +3503,14 @@ function renderTasks() {
                     });
                 });
             } else {
-                renderTasksGroup(displayActiveTasks, activeTasksContainer);
+                if (currentRoute === 'today' || currentRoute === 'tomorrow') {
+                    displayActiveTasks.forEach(task => {
+                        const el = createTaskRowElement(task);
+                        activeTasksContainer.appendChild(el);
+                    });
+                } else {
+                    renderTasksGroup(displayActiveTasks, activeTasksContainer);
+                }
             }
         }
     }
@@ -3519,38 +3538,45 @@ function renderTasks() {
         if (completedSection) completedSection.style.display = 'block';
         if (completedToggleText) completedToggleText.textContent = `Выполненные (${displayCompletedTasks.length})`;
 
-        const completedParentTasks = [];
-        displayCompletedTasks.forEach(t => {
-            if (!t.parentId) {
-                if (!completedParentTasks.some(p => p.id === t.id)) {
-                    completedParentTasks.push(t);
+        if (currentRoute === 'today' || currentRoute === 'tomorrow') {
+            displayCompletedTasks.forEach(task => {
+                const el = createTaskRowElement(task);
+                completedTasksContainer.appendChild(el);
+            });
+        } else {
+            const completedParentTasks = [];
+            displayCompletedTasks.forEach(t => {
+                if (!t.parentId) {
+                    if (!completedParentTasks.some(p => p.id === t.id)) {
+                        completedParentTasks.push(t);
+                    }
+                } else {
+                    const parent = allTasks.find(pt => pt.id === t.parentId && !pt.deleted);
+                    if (parent && !completedParentTasks.some(p => p.id === parent.id)) {
+                        completedParentTasks.push(parent);
+                    }
                 }
-            } else {
-                const parent = allTasks.find(pt => pt.id === t.parentId && !pt.deleted);
-                if (parent && !completedParentTasks.some(p => p.id === parent.id)) {
-                    completedParentTasks.push(parent);
+            });
+
+            sortTasksByOrder(completedParentTasks);
+
+            completedParentTasks.forEach(task => {
+                const el = createTaskRowElement(task);
+                completedTasksContainer.appendChild(el);
+
+                // Рендерим только выполненные подзадачи для выполненного родителя
+                const subtasks = allTasks.filter(t => t.parentId === task.id && t.completed && !t.deleted);
+                sortTasksByOrder(subtasks);
+
+                const isCollapsed = isParentTaskCollapsed(task.id);
+                if (!isCollapsed) {
+                    subtasks.forEach(subtask => {
+                        const subEl = createTaskRowElement(subtask);
+                        completedTasksContainer.appendChild(subEl);
+                    });
                 }
-            }
-        });
-
-        sortTasksByOrder(completedParentTasks);
-
-        completedParentTasks.forEach(task => {
-            const el = createTaskRowElement(task);
-            completedTasksContainer.appendChild(el);
-
-            // Рендерим только выполненные подзадачи для выполненного родителя
-            const subtasks = allTasks.filter(t => t.parentId === task.id && t.completed && !t.deleted);
-            sortTasksByOrder(subtasks);
-
-            const isCollapsed = isParentTaskCollapsed(task.id);
-            if (!isCollapsed) {
-                subtasks.forEach(subtask => {
-                    const subEl = createTaskRowElement(subtask);
-                    completedTasksContainer.appendChild(subEl);
-                });
-            }
-        });
+            });
+        }
 
         updateCompletedToggleUI();
     }

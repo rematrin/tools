@@ -728,14 +728,82 @@
         </div>
     </div>
 
-    <div class="confirm-modal-overlay" id="confirmDeleteModal" style="display: none;">
-        <div class="confirm-modal-card">
-            <h3 class="confirm-modal-title">Удалить задачу?</h3>
-            <p class="confirm-modal-desc">Задача <strong id="confirmDeleteTaskTitle">Название задачи</strong> будет
-                удалена безвозвратно.</p>
-            <div class="confirm-modal-actions">
-                <button class="confirm-btn-cancel" id="btnConfirmDeleteCancel">Отмена</button>
-                <button class="confirm-btn-danger" id="btnConfirmDeleteCoform">Удалить</button>
+    <div class="task-details-modal-overlay" id="taskDetailsModal" style="display: none;">
+        <div class="task-details-modal-card">
+            <button class="task-details-close-btn" id="btnTaskDetailsClose" aria-label="Закрыть">&times;</button>
+            <div class="task-details-main-content">
+                <div class="task-details-title-row">
+                    <div class="checkbox-wrapper">
+                        <button class="custom-checkbox modal-task-checkbox" aria-label="Отметить выполненной">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                    <textarea id="modalTaskTitle" class="modal-task-title-input" placeholder="Название задачи" rows="1"></textarea>
+                </div>
+                
+                <div class="modal-subtasks-section">
+                    <button class="modal-subtasks-toggle" id="modalSubtasksToggle">
+                        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 12px; height: 12px; transition: transform 0.2s; transform: rotate(0deg); margin-right: 6px;">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                        <span style="font-weight: 600;">Подзадачи</span>
+                        <span class="modal-subtasks-counter" id="modalSubtasksCounter" style="margin-left: 6px; color: var(--text-secondary); font-size: 0.85rem;">0/0</span>
+                    </button>
+                    <div class="modal-subtasks-list" id="modalSubtasksList"></div>
+                    <button class="btn-modal-add-subtask" id="btnModalAddSubtask">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px;">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Добавить подзадачу</span>
+                    </button>
+                    <div class="modal-new-subtask-input-container" id="modalNewSubtaskContainer" style="display: none;">
+                        <input type="text" id="modalNewSubtaskTitle" placeholder="Название подзадачи..." maxlength="500">
+                        <div class="modal-new-subtask-actions">
+                            <button class="btn-save-subtask" id="btnModalSaveSubtask">Добавить</button>
+                            <button class="btn-cancel-subtask" id="btnModalCancelSubtask">Отмена</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="task-details-sidebar">
+                <div class="sidebar-item">
+                    <div class="sidebar-item-label">Проект</div>
+                    <div class="sidebar-project-selector" style="position: relative;">
+                        <button class="sidebar-val-btn" id="modalProjectBtn">
+                            <span class="project-hash" style="margin-right: 4px;">#</span>
+                            <span id="modalProjectName">Входящие</span>
+                        </button>
+                        <div class="due-date-dropdown project-dropdown" id="modalProjectDropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 220px; z-index: 1000; max-height: 250px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+                
+                <div class="sidebar-item">
+                    <div class="sidebar-item-label">Срок</div>
+                    <div class="sidebar-due-selector due-date-wrapper" id="modalDueSelector" style="position: relative;">
+                        <button class="sidebar-val-btn btn-due-date" id="modalDueBtn" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <span class="due-date-text" id="modalDueText">Срок</span>
+                            <span id="modalBtnClearDue" class="clear-due-icon" style="display:none" title="Очистить">&times;</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="sidebar-item">
+                    <div class="sidebar-item-label">Приоритет</div>
+                    <div class="sidebar-priority-selector" style="position: relative;">
+                        <button class="sidebar-val-btn" id="modalPriorityBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" id="modalPriorityIcon" style="margin-right: 6px;">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                <line x1="4" y1="22" x2="4" y2="15"></line>
+                            </svg>
+                            <span id="modalPriorityText">P4</span>
+                        </button>
+                        <div class="due-date-dropdown priority-dropdown" id="modalPriorityDropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 170px; z-index: 1000; padding: 4px; flex-direction: column; gap: 2px;"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

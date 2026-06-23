@@ -2522,6 +2522,30 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
             btn.classList.add('active');
         }
     }
+
+    return {
+        updateState: (date, time, repeat) => {
+            localSelectedDate = date;
+            localSelectedTime = time;
+            localSelectedRepeat = repeat;
+            if (date) {
+                localYear = parseInt(date.split('-')[0], 10);
+                localMonth = parseInt(date.split('-')[1], 10) - 1;
+            } else {
+                localYear = new Date().getFullYear();
+                localMonth = new Date().getMonth();
+            }
+            if (!localSelectedDate) {
+                textLabel.textContent = 'Срок';
+                if (clearIcon) clearIcon.style.display = 'none';
+                btn.classList.remove('active');
+            } else {
+                textLabel.textContent = formatDueDateDisplay(localSelectedDate, localSelectedTime, localSelectedRepeat);
+                if (clearIcon) clearIcon.style.display = 'inline-flex';
+                btn.classList.add('active');
+            }
+        }
+    };
 }
 
 // Переименование задачи (Карточка редактирования)
@@ -3542,6 +3566,7 @@ function renderTasks() {
     }
 
     renderProjects();
+    syncModalIfOpen();
 }
 
 // Проверка свернутости родительской задачи
@@ -4217,6 +4242,17 @@ function createTaskRowElement(task) {
             });
         }
     }
+
+    // Клик на саму задачу открывает модалку деталей
+    item.addEventListener('click', (e) => {
+        if (e.target.closest('button, input, textarea, a, .checkbox-wrapper, .custom-checkbox, .task-actions-dropdown, .task-drag-handle, .new-subtask-temp')) {
+            return;
+        }
+        if (item.classList.contains('editing')) {
+            return;
+        }
+        openTaskDetailsModal(task.id);
+    });
 
     return item;
 }
@@ -6690,4 +6726,581 @@ function updateStreakWidget(project) {
         }).join('');
     }
 }
+
+// --- ЛОГИКА ДЛЯ МОДАЛЬНОГО ОКНА ДЕТАЛЕЙ ЗАДАЧИ ---
+let currentModalTaskId = null;
+let isModalSubtasksCollapsed = false;
+let modalCalendarInstance = null;
+
+function closeModalDueDropdown() {
+    const dropdown = document.querySelector('#modalDueSelector .due-date-dropdown');
+    if (dropdown) dropdown.style.display = 'none';
+}
+
+function ensureModalCalendarInitialized() {
+    if (modalCalendarInstance) return;
+    const modalDueSelector = document.getElementById('modalDueSelector');
+    if (modalDueSelector) {
+        modalCalendarInstance = initCalendarForWrapper(
+            modalDueSelector,
+            null,
+            null,
+            null,
+            async (dateStr, timeStr, repeatStr) => {
+                if (currentModalTaskId) {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', currentModalTaskId), {
+                        dueDate: dateStr,
+                        dueTime: timeStr,
+                        dueRepeat: repeatStr
+                    });
+                }
+            }
+        );
+    }
+}
+
+const taskDetailsModal = document.getElementById('taskDetailsModal');
+const btnTaskDetailsClose = document.getElementById('btnTaskDetailsClose');
+const modalTaskCheckbox = document.querySelector('.modal-task-checkbox');
+const modalTaskTitle = document.getElementById('modalTaskTitle');
+const modalSubtasksToggle = document.getElementById('modalSubtasksToggle');
+const modalSubtasksCounter = document.getElementById('modalSubtasksCounter');
+const modalSubtasksList = document.getElementById('modalSubtasksList');
+const btnModalAddSubtask = document.getElementById('btnModalAddSubtask');
+const modalNewSubtaskContainer = document.getElementById('modalNewSubtaskContainer');
+const modalNewSubtaskTitle = document.getElementById('modalNewSubtaskTitle');
+const btnModalSaveSubtask = document.getElementById('btnModalSaveSubtask');
+const btnModalCancelSubtask = document.getElementById('btnModalCancelSubtask');
+const modalProjectBtn = document.getElementById('modalProjectBtn');
+const modalProjectName = document.getElementById('modalProjectName');
+const modalProjectDropdown = document.getElementById('modalProjectDropdown');
+const modalDueBtn = document.getElementById('modalDueBtn');
+const modalDueText = document.getElementById('modalDueText');
+const modalPriorityBtn = document.getElementById('modalPriorityBtn');
+const modalPriorityText = document.getElementById('modalPriorityText');
+const modalPriorityIcon = document.getElementById('modalPriorityIcon');
+const modalPriorityDropdown = document.getElementById('modalPriorityDropdown');
+
+function autoResizeTextarea(textarea) {
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+}
+
+function openTaskDetailsModal(taskId) {
+    let task = allTasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    // Если это подзадача, открываем основную задачу (родительскую)
+    if (task.parentId) {
+        const parentTask = allTasks.find(t => t.id === task.parentId);
+        if (parentTask) {
+            task = parentTask;
+            taskId = parentTask.id;
+        }
+    }
+    
+    currentModalTaskId = taskId;
+    
+    if (taskDetailsModal) {
+        taskDetailsModal.style.display = 'flex';
+    }
+    
+    if (btnModalAddSubtask) btnModalAddSubtask.style.display = 'inline-flex';
+    if (modalNewSubtaskContainer) modalNewSubtaskContainer.style.display = 'none';
+    if (modalNewSubtaskTitle) modalNewSubtaskTitle.value = '';
+    
+    if (modalProjectDropdown) modalProjectDropdown.style.display = 'none';
+    closeModalDueDropdown();
+    if (modalPriorityDropdown) modalPriorityDropdown.style.display = 'none';
+    
+    updateModalUI(task);
+}
+
+function closeTaskDetailsModal() {
+    currentModalTaskId = null;
+    if (taskDetailsModal) {
+        taskDetailsModal.style.display = 'none';
+    }
+}
+
+function syncModalIfOpen() {
+    if (taskDetailsModal && taskDetailsModal.style.display === 'flex' && currentModalTaskId) {
+        const activeTask = allTasks.find(t => t.id === currentModalTaskId);
+        if (activeTask) {
+            updateModalUI(activeTask);
+        } else {
+            closeTaskDetailsModal();
+        }
+    }
+}
+
+function updateModalUI(task) {
+    const titleRow = document.querySelector('.task-details-title-row');
+    
+    if (titleRow && modalTaskCheckbox) {
+        if (task.completed) {
+            titleRow.classList.add('completed');
+            modalTaskCheckbox.setAttribute('aria-label', 'Отметить невыполненной');
+        } else {
+            titleRow.classList.remove('completed');
+            modalTaskCheckbox.setAttribute('aria-label', 'Отметить выполненной');
+        }
+    }
+    
+    if (modalTaskTitle && document.activeElement !== modalTaskTitle) {
+        modalTaskTitle.value = task.title || '';
+        autoResizeTextarea(modalTaskTitle);
+    }
+    
+    if (modalProjectName) {
+        if (task.projectId) {
+            const project = projectsList.find(p => p.id === task.projectId);
+            modalProjectName.textContent = project ? project.name : 'Входящие';
+        } else {
+            modalProjectName.textContent = 'Входящие';
+        }
+    }
+    
+    ensureModalCalendarInitialized();
+    if (modalCalendarInstance) {
+        modalCalendarInstance.updateState(task.dueDate || null, task.dueTime || null, task.dueRepeat || null);
+    }
+    
+    if (modalPriorityText && modalPriorityIcon) {
+        const prio = task.priority || 0;
+        modalPriorityText.textContent = `Приоритет ${4 - prio}`;
+        
+        let flagColor = '#808080';
+        let fill = 'none';
+        if (prio === 3) { flagColor = '#dc2626'; fill = 'currentColor'; }
+        else if (prio === 2) { flagColor = '#d97706'; fill = 'currentColor'; }
+        else if (prio === 1) { flagColor = '#2563eb'; fill = 'currentColor'; }
+        
+        modalPriorityIcon.style.color = flagColor;
+        modalPriorityIcon.setAttribute('fill', fill);
+    }
+    
+    renderModalSubtasks(task);
+}
+
+function createSubtaskElement(subtask) {
+    const itemEl = document.createElement('div');
+    itemEl.className = `modal-subtask-item ${subtask.completed ? 'completed' : ''}`;
+    itemEl.innerHTML = `
+        <div class="checkbox-wrapper">
+            <button class="custom-checkbox modal-subtask-checkbox" aria-label="${subtask.completed ? 'Отметить невыполненной' : 'Отметить выполненной'}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </button>
+        </div>
+        <input type="text" class="modal-subtask-title" value="${escapeHtml(subtask.title)}">
+        <div class="modal-subtask-actions">
+            <button class="btn-delete-subtask" title="Удалить подзадачу">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+        </div>
+    `;
+    
+    const chk = itemEl.querySelector('.modal-subtask-checkbox');
+    if (chk) {
+        chk.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (!subtask.completed) {
+                const completedSound = new Audio('completed.mp3');
+                completedSound.play().catch(err => console.log('Audio play error:', err));
+            }
+            await toggleTaskCompleted(subtask.id, subtask.completed);
+        });
+    }
+    
+    const titleInput = itemEl.querySelector('.modal-subtask-title');
+    if (titleInput) {
+        titleInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                titleInput.blur();
+            }
+        });
+        titleInput.addEventListener('blur', async () => {
+            const newTitle = titleInput.value.trim();
+            if (newTitle && newTitle !== subtask.title) {
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', subtask.id), {
+                        title: newTitle
+                    });
+                } catch (err) {
+                    console.error("Ошибка при обновлении подзадачи:", err);
+                }
+            }
+        });
+    }
+    
+    const btnDelete = itemEl.querySelector('.btn-delete-subtask');
+    if (btnDelete) {
+        btnDelete.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'tasks', subtask.id), {
+                    deleted: true,
+                    deletedAt: serverTimestamp()
+                });
+            } catch (err) {
+                console.error("Ошибка удаления подзадачи:", err);
+            }
+        });
+    }
+    return itemEl;
+}
+
+function renderModalSubtasks(task) {
+    if (!modalSubtasksList || !modalSubtasksCounter || !modalSubtasksToggle) return;
+    
+    modalSubtasksList.innerHTML = '';
+    
+    const subtasks = allTasks.filter(t => t.parentId === task.id && !t.deleted);
+    subtasks.sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    const completedCount = subtasks.filter(s => s.completed).length;
+    modalSubtasksCounter.textContent = `${completedCount}/${subtasks.length}`;
+    
+    const chevronIcon = modalSubtasksToggle.querySelector('.chevron-icon');
+    
+    if (subtasks.length === 0) {
+        modalSubtasksToggle.style.display = 'none';
+        modalSubtasksList.style.display = 'flex';
+        
+        const addRow = document.createElement('div');
+        addRow.style.padding = '4px 0';
+        addRow.appendChild(btnModalAddSubtask);
+        addRow.appendChild(modalNewSubtaskContainer);
+        modalSubtasksList.appendChild(addRow);
+        return;
+    }
+    
+    modalSubtasksToggle.style.display = 'flex';
+    
+    if (isModalSubtasksCollapsed) {
+        modalSubtasksList.style.display = 'none';
+        if (chevronIcon) chevronIcon.style.transform = 'rotate(-90deg)';
+        return;
+    }
+    
+    modalSubtasksList.style.display = 'flex';
+    if (chevronIcon) chevronIcon.style.transform = 'rotate(0deg)';
+    
+    // Split subtasks: active vs completed
+    const activeSubs = subtasks.filter(s => !s.completed);
+    const completedSubs = subtasks.filter(s => s.completed);
+    
+    // 1. Render active subtasks
+    activeSubs.forEach(sub => {
+        modalSubtasksList.appendChild(createSubtaskElement(sub));
+    });
+    
+    // 2. Render Add Subtask trigger/container row directly in the middle!
+    const addRow = document.createElement('div');
+    addRow.style.padding = '4px 0';
+    addRow.appendChild(btnModalAddSubtask);
+    addRow.appendChild(modalNewSubtaskContainer);
+    modalSubtasksList.appendChild(addRow);
+    
+    // 3. Render completed subtasks below the add form
+    completedSubs.forEach(sub => {
+        modalSubtasksList.appendChild(createSubtaskElement(sub));
+    });
+}
+
+
+
+if (btnTaskDetailsClose) {
+    btnTaskDetailsClose.addEventListener('click', closeTaskDetailsModal);
+}
+if (taskDetailsModal) {
+    taskDetailsModal.addEventListener('click', (e) => {
+        if (e.target === taskDetailsModal) {
+            closeTaskDetailsModal();
+        }
+    });
+}
+
+if (modalTaskCheckbox) {
+    modalTaskCheckbox.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const currentTask = allTasks.find(t => t.id === currentModalTaskId);
+        if (!currentTask) return;
+        if (!currentTask.completed) {
+            const completedSound = new Audio('completed.mp3');
+            completedSound.play().catch(err => console.log('Audio playback failed:', err));
+        }
+        await toggleTaskCompleted(currentTask.id, currentTask.completed);
+    });
+}
+
+if (modalTaskTitle) {
+    modalTaskTitle.addEventListener('input', () => {
+        autoResizeTextarea(modalTaskTitle);
+    });
+    modalTaskTitle.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            modalTaskTitle.blur();
+        }
+    });
+    modalTaskTitle.addEventListener('blur', async () => {
+        const newTitle = modalTaskTitle.value.trim();
+        const currentTask = allTasks.find(t => t.id === currentModalTaskId);
+        if (currentTask && newTitle && newTitle !== currentTask.title) {
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'tasks', currentTask.id), {
+                    title: newTitle
+                });
+            } catch (err) {
+                console.error("Ошибка при сохранении названия:", err);
+            }
+        }
+    });
+}
+
+if (modalSubtasksToggle) {
+    modalSubtasksToggle.addEventListener('click', () => {
+        isModalSubtasksCollapsed = !isModalSubtasksCollapsed;
+        const currentTask = allTasks.find(t => t.id === currentModalTaskId);
+        if (currentTask) {
+            renderModalSubtasks(currentTask);
+        }
+    });
+}
+
+if (btnModalAddSubtask) {
+    btnModalAddSubtask.addEventListener('click', () => {
+        btnModalAddSubtask.style.display = 'none';
+        if (modalNewSubtaskContainer) modalNewSubtaskContainer.style.display = 'flex';
+        if (modalNewSubtaskTitle) {
+            modalNewSubtaskTitle.value = '';
+            modalNewSubtaskTitle.focus();
+        }
+    });
+}
+
+if (btnModalCancelSubtask) {
+    btnModalCancelSubtask.addEventListener('click', () => {
+        if (btnModalAddSubtask) btnModalAddSubtask.style.display = 'inline-flex';
+        if (modalNewSubtaskContainer) modalNewSubtaskContainer.style.display = 'none';
+    });
+}
+
+const saveModalSubtask = async () => {
+    if (!modalNewSubtaskTitle) return;
+    const text = modalNewSubtaskTitle.value.trim();
+    if (text) {
+        const parentId = currentModalTaskId;
+        const parentTask = allTasks.find(t => t.id === parentId);
+        if (!parentTask) return;
+        
+        const siblingSubtasks = allTasks.filter(t => t.parentId === parentId && !t.deleted);
+        let newOrder = 0;
+        if (siblingSubtasks.length > 0) {
+            const maxOrder = Math.max(...siblingSubtasks.map(t => t.order !== undefined ? t.order : 0));
+            newOrder = maxOrder + 1;
+        }
+        
+        try {
+            await addDoc(collection(db, 'users', currentUid, 'tasks'), {
+                title: text,
+                completed: false,
+                dueDate: null,
+                dueTime: null,
+                dueRepeat: null,
+                projectId: parentTask.projectId || null,
+                sectionId: parentTask.sectionId || null,
+                priority: 0,
+                order: newOrder,
+                parentId: parentId,
+                createdAt: serverTimestamp()
+            });
+            modalNewSubtaskTitle.value = '';
+            modalNewSubtaskTitle.focus();
+        } catch (err) {
+            console.error("Ошибка добавления подзадачи:", err);
+        }
+    } else {
+        if (btnModalAddSubtask) btnModalAddSubtask.style.display = 'inline-flex';
+        if (modalNewSubtaskContainer) modalNewSubtaskContainer.style.display = 'none';
+    }
+};
+
+if (btnModalSaveSubtask) {
+    btnModalSaveSubtask.addEventListener('click', saveModalSubtask);
+}
+
+if (modalNewSubtaskTitle) {
+    modalNewSubtaskTitle.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            saveModalSubtask();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            if (btnModalAddSubtask) btnModalAddSubtask.style.display = 'inline-flex';
+            if (modalNewSubtaskContainer) modalNewSubtaskContainer.style.display = 'none';
+        }
+    });
+}
+
+if (modalProjectBtn) {
+    modalProjectBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeModalDueDropdown();
+        if (modalPriorityDropdown) modalPriorityDropdown.style.display = 'none';
+        
+        if (modalProjectDropdown) {
+            const isHidden = modalProjectDropdown.style.display === 'none';
+            if (isHidden) {
+                modalProjectDropdown.style.display = 'flex';
+                const currentTask = allTasks.find(t => t.id === currentModalTaskId);
+                if (!currentTask) return;
+                
+                let html = `
+                    <button class="dropdown-item ${!currentTask.projectId ? 'selected' : ''}" data-project-id="" style="display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 8px 12px; cursor: pointer; text-align: left; color: var(--text);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                        </svg>
+                        <span style="flex-grow: 1;">Входящие</span>
+                    </button>
+                `;
+                
+                projectsList.forEach(proj => {
+                    const isCurrent = currentTask.projectId === proj.id;
+                    const iconHtml = proj.iconUrl ?
+                        `<img src="${proj.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 3px;">` :
+                        `<span style="font-weight: bold; color: var(--text-secondary);">#</span>`;
+                    html += `
+                        <button class="dropdown-item ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}" style="display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 8px 12px; cursor: pointer; text-align: left; color: var(--text);">
+                            ${iconHtml}
+                            <span style="flex-grow: 1;">${escapeHtml(proj.name)}</span>
+                        </button>
+                    `;
+                });
+                
+                modalProjectDropdown.innerHTML = html;
+                
+                modalProjectDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                    item.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        modalProjectDropdown.style.display = 'none';
+                        const targetProjId = item.getAttribute('data-project-id') || null;
+                        
+                        try {
+                            await updateDoc(doc(db, 'users', currentUid, 'tasks', currentModalTaskId), {
+                                projectId: targetProjId,
+                                order: 0
+                            });
+                            
+                            const subtasks = allTasks.filter(t => t.parentId === currentModalTaskId);
+                            for (const sub of subtasks) {
+                                await updateDoc(doc(db, 'users', currentUid, 'tasks', sub.id), {
+                                    projectId: targetProjId
+                                });
+                            }
+                        } catch (err) {
+                            console.error("Ошибка смены проекта в модалке:", err);
+                        }
+                    });
+                });
+            } else {
+                modalProjectDropdown.style.display = 'none';
+            }
+        }
+    });
+}
+
+if (modalPriorityBtn) {
+    modalPriorityBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (modalProjectDropdown) modalProjectDropdown.style.display = 'none';
+        closeModalDueDropdown();
+        
+        if (modalPriorityDropdown) {
+            const isHidden = modalPriorityDropdown.style.display === 'none';
+            if (isHidden) {
+                modalPriorityDropdown.style.display = 'flex';
+                modalPriorityDropdown.style.flexDirection = 'column';
+                
+                const task = allTasks.find(t => t.id === currentModalTaskId);
+                const currentPrio = task ? (task.priority || 0) : 0;
+                
+                modalPriorityDropdown.innerHTML = `
+                    <button class="priority-opt-btn dropdown-item" data-priority="3" style="display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 8px 12px; cursor: pointer; text-align: left; color: var(--text);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color: #dc2626; flex-shrink: 0;">
+                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                            <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                        </svg>
+                        <span style="flex-grow: 1;">Приоритет 1</span>
+                        <span class="priority-check" style="${currentPrio === 3 ? '' : 'display: none;'} color: #dc2626; font-weight: bold; margin-left: auto;">✓</span>
+                    </button>
+                    <button class="priority-opt-btn dropdown-item" data-priority="2" style="display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 8px 12px; cursor: pointer; text-align: left; color: var(--text);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color: #d97706; flex-shrink: 0;">
+                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                            <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                        </svg>
+                        <span style="flex-grow: 1;">Приоритет 2</span>
+                        <span class="priority-check" style="${currentPrio === 2 ? '' : 'display: none;'} color: #d97706; font-weight: bold; margin-left: auto;">✓</span>
+                    </button>
+                    <button class="priority-opt-btn dropdown-item" data-priority="1" style="display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 8px 12px; cursor: pointer; text-align: left; color: var(--text);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color: #2563eb; flex-shrink: 0;">
+                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                            <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                        </svg>
+                        <span style="flex-grow: 1;">Приоритет 3</span>
+                        <span class="priority-check" style="${currentPrio === 1 ? '' : 'display: none;'} color: #2563eb; font-weight: bold; margin-left: auto;">✓</span>
+                    </button>
+                    <button class="priority-opt-btn dropdown-item" data-priority="0" style="display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 8px 12px; cursor: pointer; text-align: left; color: var(--text);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #808080; flex-shrink: 0;">
+                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                            <line x1="4" y1="22" x2="4" y2="15"></line>
+                        </svg>
+                        <span style="flex-grow: 1;">Приоритет 4</span>
+                        <span class="priority-check" style="${currentPrio === 0 ? '' : 'display: none;'} color: #808080; font-weight: bold; margin-left: auto;">✓</span>
+                    </button>
+                `;
+                
+                modalPriorityDropdown.querySelectorAll('.priority-opt-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        modalPriorityDropdown.style.display = 'none';
+                        const prio = parseInt(btn.getAttribute('data-priority'), 10);
+                        await updateDoc(doc(db, 'users', currentUid, 'tasks', currentModalTaskId), { priority: prio });
+                    });
+                });
+            } else {
+                modalPriorityDropdown.style.display = 'none';
+            }
+        }
+    });
+}
+
+document.addEventListener('click', (e) => {
+    if (taskDetailsModal && taskDetailsModal.style.display === 'flex') {
+        if (modalProjectDropdown && !e.target.closest('.sidebar-project-selector')) {
+            modalProjectDropdown.style.display = 'none';
+        }
+        if (!e.target.closest('.sidebar-due-selector')) {
+            closeModalDueDropdown();
+        }
+        if (modalPriorityDropdown && !e.target.closest('.sidebar-priority-selector')) {
+            modalPriorityDropdown.style.display = 'none';
+        }
+    }
+});
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && taskDetailsModal && taskDetailsModal.style.display === 'flex') {
+        closeTaskDetailsModal();
+    }
+});
 

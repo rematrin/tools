@@ -1467,10 +1467,12 @@ body.dark .mobile-bottom-nav {
     border-radius: 50%;
     background-color: rgba(0, 0, 0, 0.05);
     color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: bold;
-    line-height: 1;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 0;
     margin-left: 2px;
+    padding-bottom: 1.5px;
+    box-sizing: border-box;
     transition: background-color 0.2s, color 0.2s;
 }
 
@@ -1481,6 +1483,11 @@ body.dark .clear-due-icon {
 .clear-due-icon:hover {
     background-color: #ef4444;
     color: white !important;
+}
+
+.sidebar-val-btn .clear-due-icon {
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 /* Выпадающий список */
@@ -4108,4 +4115,382 @@ body.dark .progress-bg-circle {
         margin: 0;
         padding: 0;
     }
+}
+
+/* --- МОДАЛЬНОЕ ОКНО ДЕТАЛЕЙ ЗАДАЧИ --- */
+.task-details-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.task-details-modal-card {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 860px;
+    min-height: 480px;
+    display: flex;
+    position: relative;
+    overflow: visible;
+    color: var(--text);
+}
+
+.task-details-close-btn {
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    line-height: 1;
+    z-index: 10;
+    transition: color 0.15s;
+}
+
+.task-details-close-btn:hover {
+    color: var(--text);
+}
+
+.task-details-main-content {
+    flex: 1;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+    max-height: 80vh;
+}
+
+.task-details-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.task-details-title-row .custom-checkbox {
+    margin-top: 3px;
+    width: 22px;
+    height: 22px;
+}
+
+.modal-task-title-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    padding: 0;
+    margin: 0;
+    line-height: 1.4;
+    overflow-y: hidden;
+}
+
+.modal-subtasks-section {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal-subtasks-toggle {
+    background: transparent;
+    border: none;
+    padding: 6px 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.95rem;
+    text-align: left;
+    outline: none;
+}
+
+.modal-subtasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-top: 1px solid var(--border-light, rgba(0, 0, 0, 0.04));
+}
+
+.modal-subtask-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 4px;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    transition: background-color 0.15s;
+}
+
+.modal-subtask-item:hover {
+    background-color: var(--hover-bg);
+}
+
+.modal-subtask-item.completed .modal-subtask-title {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+}
+
+.modal-subtask-title {
+    flex: 1;
+    font-size: 0.92rem;
+    color: var(--text);
+    border: none;
+    background: transparent;
+    outline: none;
+    padding: 0;
+    margin: 0;
+}
+
+.modal-subtask-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.modal-subtask-item:hover .modal-subtask-actions {
+    opacity: 1;
+}
+
+.modal-subtask-actions button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.modal-subtask-actions button:hover {
+    background-color: var(--border);
+    color: var(--text);
+}
+
+.btn-modal-add-subtask {
+    display: inline-flex;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 8px 4px;
+    font-weight: 500;
+    width: fit-content;
+    border-radius: 6px;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.btn-modal-add-subtask:hover {
+    color: var(--accent);
+    background-color: var(--hover-bg);
+}
+
+.modal-new-subtask-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 4px;
+}
+
+.modal-new-subtask-input-container input {
+    width: 100%;
+    background: var(--hover-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.92rem;
+    color: var(--text);
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.modal-new-subtask-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+}
+
+.modal-new-subtask-actions button {
+    font-size: 0.88rem;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+}
+
+.btn-save-subtask {
+    background-color: var(--accent);
+    color: white;
+}
+
+.btn-save-subtask:hover {
+    background-color: var(--accent-hover);
+}
+
+.btn-cancel-subtask {
+    background-color: var(--hover-bg);
+    color: var(--text);
+}
+
+.btn-cancel-subtask:hover {
+    background-color: var(--border);
+}
+
+.task-details-sidebar {
+    width: 240px;
+    background-color: var(--sidebar-bg);
+    border-left: 1px solid var(--border);
+    padding: 32px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    box-sizing: border-box;
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.sidebar-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sidebar-item-label {
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.sidebar-val-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    color: var(--text);
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.15s, border-color 0.15s;
+    box-sizing: border-box;
+}
+
+.sidebar-val-btn:hover {
+    background-color: var(--hover-bg);
+    border-color: var(--border);
+}
+
+.modal-dropdown {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    padding: 4px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Адаптивность для модального окна */
+@media (max-width: 768px) {
+    .task-details-modal-card {
+        flex-direction: column;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+        border: none;
+    }
+    
+    .task-details-modal-overlay {
+        padding: 0;
+    }
+    
+    .task-details-main-content {
+        max-height: none;
+        flex: 1;
+    }
+    
+    .task-details-sidebar {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        padding: 20px;
+    }
+}
+
+/* Стили выполненных задач и подзадач в модальном окне */
+.task-details-title-row.completed .custom-checkbox {
+    background-color: #c0c2cc;
+    border-color: #c0c2cc;
+}
+
+body.dark .task-details-title-row.completed .custom-checkbox {
+    background-color: #4e525a;
+    border-color: #4e525a;
+}
+
+.task-details-title-row.completed .custom-checkbox svg {
+    opacity: 1;
+    transform: scale(1);
+    color: #ffffff !important;
+}
+
+.task-details-title-row.completed .modal-task-title-input {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.modal-subtask-item.completed .custom-checkbox {
+    background-color: #c0c2cc;
+    border-color: #c0c2cc;
+}
+
+body.dark .modal-subtask-item.completed .custom-checkbox {
+    background-color: #4e525a;
+    border-color: #4e525a;
+}
+
+.modal-subtask-item.completed .custom-checkbox svg {
+    opacity: 1;
+    transform: scale(1);
+    color: #ffffff !important;
+}
+
+.modal-subtask-item.completed .modal-subtask-title {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+    opacity: 0.6;
 }

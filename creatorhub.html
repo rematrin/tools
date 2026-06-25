@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0/default.css">
     <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0/index.min.js"></script>
     <script>
-        window.addEventListener('touchmove', function() {}, {passive: false});
+        window.addEventListener('touchmove', function () { }, { passive: false });
         MobileDragDrop.polyfill({
             dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
         });
@@ -40,7 +40,7 @@
             <div class="sidebar-logo" id="sidebarLogo" style="cursor: pointer;">
                 <span class="logo-icon">
                     <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z"/>
+                        <path d="M8 5v14l11-7z" />
                     </svg>
                 </span>
                 <span class="logo-text">CreatorHub</span>
@@ -48,7 +48,8 @@
             <nav class="sidebar-menu">
                 <a href="#" class="menu-item active" id="menuHome">
                     <span class="menu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                             <polyline points="9 22 9 12 15 12 15 22"></polyline>
                         </svg>
@@ -57,7 +58,8 @@
                 </a>
                 <a href="#" class="menu-item" id="menuTasks">
                     <span class="menu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="9 11 12 14 22 4"></polyline>
                             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                         </svg>
@@ -66,7 +68,8 @@
                 </a>
                 <a href="#" class="menu-item" id="menuCalendar">
                     <span class="menu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                             <line x1="16" y1="2" x2="16" y2="6"></line>
                             <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -77,7 +80,8 @@
                 </a>
                 <a href="#" class="menu-item" id="menuStats">
                     <span class="menu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="20" x2="18" y2="10"></line>
                             <line x1="12" y1="20" x2="12" y2="4"></line>
                             <line x1="6" y1="20" x2="6" y2="14"></line>
@@ -87,7 +91,8 @@
                 </a>
                 <a href="#" class="menu-item" id="menuTemplates">
                     <span class="menu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="3" width="7" height="7" rx="1"></rect>
                             <rect x="14" y="3" width="7" height="7" rx="1"></rect>
                             <rect x="14" y="14" width="7" height="7" rx="1"></rect>
@@ -98,9 +103,12 @@
                 </a>
                 <a href="#" class="menu-item" id="menuSettings">
                     <span class="menu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+                            </path>
                         </svg>
                     </span>
                     <span class="menu-label">Настройки</span>
@@ -108,9 +116,11 @@
                 <div class="sidebar-divider"></div>
                 <a href="#" class="menu-item" id="menuTrash">
                     <span class="menu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                            </path>
                         </svg>
                     </span>
                     <span class="menu-label">Корзина</span>
@@ -121,7 +131,8 @@
         <!-- Центральный контент -->
         <main class="main-content">
             <!-- Заголовок приветствия -->
-            <div class="welcome-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 16px;">
+            <div class="welcome-header"
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 16px;">
                 <div>
                     <h1>Привет, <span id="welcomeUserName">Max</span>! 👋</h1>
                     <p id="welcomeSubtitle">Давай сделаем сегодня что-то крутое.</p>
@@ -130,7 +141,8 @@
                 <div class="stats-period-wrapper">
                     <button class="btn-period-select" id="btnPeriodSelect" type="button">
                         <span id="periodSelectText">Последние 28 дней</span>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                     </button>
@@ -152,14 +164,20 @@
                     <div class="stat-main">
                         <div class="icon" aria-hidden="true">
                             <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                                <path d="M16,7a8.36,8.36,0,0,0-8,8,8.4,8.4,0,0,0,2.29,5.7A4.56,4.56,0,0,1,12,24a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1,4.46,4.46,0,0,1,1.69-3.28A7.87,7.87,0,0,0,24,15a8.17,8.17,0,0,0-2.44-5.83A7.67,7.67,0,0,0,16,7Zm4.34,12.28A6.87,6.87,0,0,0,18.09,23H13.91a7,7,0,0,0-2.2-3.71A6.41,6.41,0,0,1,10,15a6.29,6.29,0,0,1,6-6,5.63,5.63,0,0,1,4.13,1.6A6.16,6.16,0,0,1,22,15,5.93,5.93,0,0,1,20.31,19.28Z"></path>
+                                <path
+                                    d="M16,7a8.36,8.36,0,0,0-8,8,8.4,8.4,0,0,0,2.29,5.7A4.56,4.56,0,0,1,12,24a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1,4.46,4.46,0,0,1,1.69-3.28A7.87,7.87,0,0,0,24,15a8.17,8.17,0,0,0-2.44-5.83A7.67,7.67,0,0,0,16,7Zm4.34,12.28A6.87,6.87,0,0,0,18.09,23H13.91a7,7,0,0,0-2.2-3.71A6.41,6.41,0,0,1,10,15a6.29,6.29,0,0,1,6-6,5.63,5.63,0,0,1,4.13,1.6A6.16,6.16,0,0,1,22,15,5.93,5.93,0,0,1,20.31,19.28Z">
+                                </path>
                                 <path d="M19,26H13a1,1,0,0,0,0,2h6a1,1,0,0,0,0-2Z"></path>
                                 <path d="M18,29H14a1,1,0,0,0,0,2h4a1,1,0,0,0,0-2Z"></path>
                                 <path d="M16,5a1,1,0,0,0,1-1V2a1,1,0,0,0-2,0V4A1,1,0,0,0,16,5Z"></path>
                                 <path d="M5,14H3a1,1,0,0,0,0,2H5a1,1,0,0,0,0-2Z"></path>
                                 <path d="M29,14H27a1,1,0,0,0,0,2h2a1,1,0,0,0,0-2Z"></path>
-                                <path d="M25.9,5.1a1,1,0,0,0-1.41,0L23.07,6.51a1,1,0,0,0,0,1.42,1,1,0,0,0,.71.29,1,1,0,0,0,.71-.29L25.9,6.51A1,1,0,0,0,25.9,5.1Z"></path>
-                                <path d="M8.93,7.93a1,1,0,0,0,0-1.42L7.51,5.1A1,1,0,0,0,6.1,6.51L7.51,7.93a1,1,0,0,0,.71.29A1,1,0,0,0,8.93,7.93Z"></path>
+                                <path
+                                    d="M25.9,5.1a1,1,0,0,0-1.41,0L23.07,6.51a1,1,0,0,0,0,1.42,1,1,0,0,0,.71.29,1,1,0,0,0,.71-.29L25.9,6.51A1,1,0,0,0,25.9,5.1Z">
+                                </path>
+                                <path
+                                    d="M8.93,7.93a1,1,0,0,0,0-1.42L7.51,5.1A1,1,0,0,0,6.1,6.51L7.51,7.93a1,1,0,0,0,.71.29A1,1,0,0,0,8.93,7.93Z">
+                                </path>
                             </svg>
                         </div>
                         <div class="content">
@@ -173,7 +191,8 @@
                 <article class="stat-card work">
                     <div class="stat-main">
                         <div class="icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 20h9"></path>
                                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                             </svg>
@@ -189,9 +208,11 @@
                 <article class="stat-card edit">
                     <div class="stat-main">
                         <div class="icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
                                 <path d="m12.296 3.464 3.02 3.956"></path>
-                                <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"></path>
+                                <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z">
+                                </path>
                                 <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                                 <path d="m6.18 5.276 3.1 3.899"></path>
                             </svg>
@@ -207,9 +228,11 @@
                 <article class="stat-card published">
                     <div class="stat-main">
                         <div class="icon" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
-                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-                                <path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05"/>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-check-circle"
+                                viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                <path
+                                    d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05" />
                             </svg>
                         </div>
                         <div class="content">
@@ -239,18 +262,25 @@
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <div class="sort-wrapper">
                             <button class="btn-sort" id="btnSortList" type="button" data-tip="Сортировка">
-                                <svg class="sort-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M8 20V10m0 10-3-3m3 3 3-3m5-13v10m0-10 3 3m-3-3-3 3"/>
+                                <svg class="sort-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
+                                    height="24" fill="none" viewBox="0 0 24 24">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="1.7" d="M8 20V10m0 10-3-3m3 3 3-3m5-13v10m0-10 3 3m-3-3-3 3" />
                                 </svg>
                             </button>
                             <div class="sort-dropdown" id="sortDropdown">
-                                <button class="sort-dropdown-item selected" data-sort="manual">Вручную (перетаскивание)</button>
+                                <button class="sort-dropdown-item selected" data-sort="manual">Вручную
+                                    (перетаскивание)</button>
                                 <div class="sort-dropdown-divider"></div>
-                                <button class="sort-dropdown-item" data-sort="pubDateNew">Сначала новые (публикация)</button>
-                                <button class="sort-dropdown-item" data-sort="pubDateOld">Сначала старые (публикация)</button>
+                                <button class="sort-dropdown-item" data-sort="pubDateNew">Сначала новые
+                                    (публикация)</button>
+                                <button class="sort-dropdown-item" data-sort="pubDateOld">Сначала старые
+                                    (публикация)</button>
                                 <div class="sort-dropdown-divider"></div>
-                                <button class="sort-dropdown-item" data-sort="createdDateNew">Сначала новые (создание)</button>
-                                <button class="sort-dropdown-item" data-sort="createdDateOld">Сначала старые (создание)</button>
+                                <button class="sort-dropdown-item" data-sort="createdDateNew">Сначала новые
+                                    (создание)</button>
+                                <button class="sort-dropdown-item" data-sort="createdDateOld">Сначала старые
+                                    (создание)</button>
                                 <div class="sort-dropdown-divider"></div>
                                 <button class="sort-dropdown-item" data-sort="alphabeticalAZ">По алфавиту А-Я</button>
                                 <button class="sort-dropdown-item" data-sort="alphabeticalZA">По алфавиту Я-А</button>
@@ -259,18 +289,26 @@
                         <!-- Переключатель вида (сетка/список) -->
                         <div class="view-toggles" id="viewToggles">
                             <button class="view-btn active" id="btnListView" type="button" data-tip="Список">
-                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"></path></svg>
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"></path>
+                                </svg>
                             </button>
                             <button class="view-btn" id="btnGridView" type="button" data-tip="Сетка">
-                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z"></path></svg>
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z">
+                                    </path>
+                                </svg>
                             </button>
                         </div>
                         <div class="search-wrapper">
-                            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
                                 <circle cx="11" cy="11" r="8"></circle>
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
-                            <input type="text" id="videoSearch" class="search-input" placeholder="Поиск видео..." autocomplete="off">
+                            <input type="text" id="videoSearch" class="search-input" placeholder="Поиск видео..."
+                                autocomplete="off">
                         </div>
                     </div>
                 </div>
@@ -279,9 +317,11 @@
                 <div class="trash-notice-banner" id="trashNoticeBanner" style="display: none;">
                     <span>Объекты в корзисе хранятся 30 дней — потом удаляются навсегда.</span>
                     <button class="btn-empty-trash" id="btnEmptyTrash" type="button">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12" style="vertical-align: middle; margin-right: 4px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12"
+                            height="12" style="vertical-align: middle; margin-right: 4px;">
                             <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                            </path>
                         </svg>
                         Очистить корзину
                     </button>
@@ -322,9 +362,12 @@
         </main>
 
         <!-- Задачи (Todoist iframe) -->
-        <main class="cv-tasks" id="tasksViewContainer" style="display: none; flex: 1; height: 100vh; overflow: hidden; padding: 24px; box-sizing: border-box; background: var(--ch-bg); position: relative;">
-            <div class="tasks-center-window" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; height: 80vh; background: var(--ch-card-bg); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2); border-radius: 12px; overflow: hidden; border: 1px solid var(--ch-border); z-index: 10;">
-                <iframe src="https://rematrin.github.io/tools/todo.html#project/n5bn9v5o4JjrBKTngfiN" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
+        <main class="cv-tasks" id="tasksViewContainer"
+            style="display: none; flex: 1; height: 100vh; overflow: hidden; padding: 24px; box-sizing: border-box; background: var(--ch-bg); position: relative;">
+            <div class="tasks-center-window"
+                style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: calc(100% - 48px); max-width: 750px; height: 80vh; background: var(--ch-card-bg); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2); border-radius: 12px; overflow: hidden; border: 1px solid var(--ch-border); z-index: 10;">
+                <iframe src="https://rematrin.github.io/tools/todo.html#project/n5bn9v5o4JjrBKTngfiN"
+                    style="width: 100%; height: 100%; border: none; display: block;"></iframe>
             </div>
         </main>
 
@@ -336,9 +379,12 @@
         <aside class="detail-sidebar" id="detailSidebar">
             <!-- Превью видео -->
             <div class="detail-thumbnail-wrapper" style="position: relative;">
-                <img id="detailImage" src="https://placehold.co/600x338?text=Select+Video" alt="Превью" class="detail-thumbnail">
-                <button class="btn-change-thumbnail" id="btnChangeThumbnail" style="display: none;" title="Изменить обложку">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <img id="detailImage" src="https://placehold.co/600x338?text=Select+Video" alt="Превью"
+                    class="detail-thumbnail">
+                <button class="btn-change-thumbnail" id="btnChangeThumbnail" style="display: none;"
+                    title="Изменить обложку">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 20h9"></path>
                         <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
                     </svg>
@@ -374,8 +420,11 @@
                     <div class="detail-card">
                         <div class="info-group" style="position: relative;">
                             <label class="info-label">Описание</label>
-                            <textarea id="infoDescription" class="info-description-textarea" placeholder="Напишите здесь описание видео..." style="display: none;"></textarea>
-                            <div id="infoDescriptionViewer" class="info-description-textarea info-description-viewer" style="min-height: 100px; cursor: pointer; white-space: pre-wrap; overflow-y: auto;"></div>
+                            <textarea id="infoDescription" class="info-description-textarea"
+                                placeholder="Напишите здесь описание видео..." style="display: none;"></textarea>
+                            <div id="infoDescriptionViewer" class="info-description-textarea info-description-viewer"
+                                style="min-height: 100px; cursor: pointer; white-space: pre-wrap; overflow-y: auto;">
+                            </div>
                         </div>
 
                         <div class="info-group flex-row">
@@ -395,9 +444,11 @@
                             <span id="infoCreatedDate" class="info-value">--</span>
                         </div>
 
-                        <div class="info-group" style="margin-top: 20px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
+                        <div class="info-group"
+                            style="margin-top: 20px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
                             <a id="btnOpenNotion" href="#" target="_blank" class="btn-notion-link disabled">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" style="margin-right: 6px; vertical-align: middle;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
+                                    height="16" style="margin-right: 6px; vertical-align: middle;">
                                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                                     <polyline points="15 3 21 3 21 9"></polyline>
                                     <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -410,28 +461,33 @@
 
                 <!-- Вкладка: Референсы -->
                 <div class="tab-pane" id="pane-references">
-                    <div id="referencesContent" class="references-editor" contenteditable="true" placeholder="Вставьте ссылки или изображения из буфера обмена..."></div>
+                    <div id="referencesContent" class="references-editor" contenteditable="true"
+                        placeholder="Вставьте ссылки или изображения из буфера обмена..."></div>
                 </div>
 
                 <!-- Вкладка: Настройки -->
                 <div class="tab-pane" id="pane-settings">
                     <div class="detail-card">
                         <label class="info-label" style="margin-bottom: 16px; font-weight: 700;">Настройки видео</label>
-                        
+
                         <div class="settings-row">
                             <div class="settings-row-left">
                                 <span class="settings-row-label">Notion</span>
                             </div>
-                            <input type="text" id="settingNotionLink" class="settings-row-input" placeholder="https://notion.so/...">
+                            <input type="text" id="settingNotionLink" class="settings-row-input"
+                                placeholder="https://notion.so/...">
                         </div>
 
-                        <div class="settings-row" style="position: relative; align-items: flex-start; margin-top: 16px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
+                        <div class="settings-row"
+                            style="position: relative; align-items: flex-start; margin-top: 16px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
                             <div class="settings-row-left">
                                 <span class="settings-row-label">Дата публикации</span>
                             </div>
                             <div class="due-date-wrapper" style="position: relative;">
-                                <button class="btn-due-date" id="btnDueDate" type="button" style="display: flex; align-items: center; gap: 8px; background: var(--ch-card-bg); border: 1px solid var(--ch-border); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-size: 0.9rem; color: var(--ch-text-dark); cursor: pointer; transition: border-color 0.2s;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <button class="btn-due-date" id="btnDueDate" type="button"
+                                    style="display: flex; align-items: center; gap: 8px; background: var(--ch-card-bg); border: 1px solid var(--ch-border); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-size: 0.9rem; color: var(--ch-text-dark); cursor: pointer; transition: border-color 0.2s;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
                                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                         <line x1="16" y1="2" x2="16" y2="6"></line>
                                         <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -440,20 +496,31 @@
                                     <span id="dueDateBtnText">Выбрать дату</span>
                                 </button>
                                 <!-- Выпадающее меню календаря -->
-                                <div class="due-date-dropdown" id="dueDateDropdown" style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background-color: var(--ch-card-bg); border: 1px solid var(--ch-border); border-radius: 12px; width: 280px; box-shadow: var(--ch-shadow); padding: 12px; z-index: 1000; box-sizing: border-box;">
-                                    <div class="due-calendar-picker" style="display: flex; flex-direction: column; gap: 10px;">
-                                        <div class="calendar-header" style="display: flex; align-items: center; justify-content: space-between;">
-                                            <span class="calendar-month-year" id="calendarMonthYear" style="font-size: 0.95rem; font-weight: 700; color: var(--ch-text-dark); text-transform: capitalize;">июнь 2026</span>
+                                <div class="due-date-dropdown" id="dueDateDropdown"
+                                    style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background-color: var(--ch-card-bg); border: 1px solid var(--ch-border); border-radius: 12px; width: 280px; box-shadow: var(--ch-shadow); padding: 12px; z-index: 1000; box-sizing: border-box;">
+                                    <div class="due-calendar-picker"
+                                        style="display: flex; flex-direction: column; gap: 10px;">
+                                        <div class="calendar-header"
+                                            style="display: flex; align-items: center; justify-content: space-between;">
+                                            <span class="calendar-month-year" id="calendarMonthYear"
+                                                style="font-size: 0.95rem; font-weight: 700; color: var(--ch-text-dark); text-transform: capitalize;">июнь
+                                                2026</span>
                                             <div class="calendar-nav" style="display: flex; gap: 4px;">
-                                                <button class="cal-nav-btn" id="calPrevMonth" type="button" style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">&lt;</button>
-                                                <button class="cal-nav-btn" id="calCurrentMonth" type="button" style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">●</button>
-                                                <button class="cal-nav-btn" id="calNextMonth" type="button" style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">&gt;</button>
+                                                <button class="cal-nav-btn" id="calPrevMonth" type="button"
+                                                    style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">&lt;</button>
+                                                <button class="cal-nav-btn" id="calCurrentMonth" type="button"
+                                                    style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">●</button>
+                                                <button class="cal-nav-btn" id="calNextMonth" type="button"
+                                                    style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">&gt;</button>
                                             </div>
                                         </div>
-                                        <div class="calendar-weekdays" style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--ch-text-gray); opacity: 0.7;">
+                                        <div class="calendar-weekdays"
+                                            style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--ch-text-gray); opacity: 0.7;">
                                             <span>ПН</span><span>ВТ</span><span>СР</span><span>ЧТ</span><span>ПТ</span><span>СБ</span><span>ВС</span>
                                         </div>
-                                        <div class="calendar-days" id="calendarDaysGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;"></div>
+                                        <div class="calendar-days" id="calendarDaysGrid"
+                                            style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -466,7 +533,8 @@
     <!-- Меню действий видео -->
     <div class="video-actions-dropdown" id="videoActionsDropdown" style="display: none; width: 200px;">
         <button class="dropdown-item btn-rename" id="btnVideoRename">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
@@ -480,34 +548,47 @@
             <div class="status-options-row">
                 <button class="status-opt-btn status-btn-idea" type="button" data-status="idea" data-tooltip="Идея">
                     <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                        <path d="M16,7a8.36,8.36,0,0,0-8,8,8.4,8.4,0,0,0,2.29,5.7A4.56,4.56,0,0,1,12,24a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1,4.46,4.46,0,0,1,1.69-3.28A7.87,7.87,0,0,0,24,15a8.17,8.17,0,0,0-2.44-5.83A7.67,7.67,0,0,0,16,7Zm4.34,12.28A6.87,6.87,0,0,0,18.09,23H13.91a7,7,0,0,0-2.2-3.71A6.41,6.41,0,0,1,10,15a6.29,6.29,0,0,1,6-6,5.63,5.63,0,0,1,4.13,1.6A6.16,6.16,0,0,1,22,15,5.93,5.93,0,0,1,20.31,19.28Z"></path>
+                        <path
+                            d="M16,7a8.36,8.36,0,0,0-8,8,8.4,8.4,0,0,0,2.29,5.7A4.56,4.56,0,0,1,12,24a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1,4.46,4.46,0,0,1,1.69-3.28A7.87,7.87,0,0,0,24,15a8.17,8.17,0,0,0-2.44-5.83A7.67,7.67,0,0,0,16,7Zm4.34,12.28A6.87,6.87,0,0,0,18.09,23H13.91a7,7,0,0,0-2.2-3.71A6.41,6.41,0,0,1,10,15a6.29,6.29,0,0,1,6-6,5.63,5.63,0,0,1,4.13,1.6A6.16,6.16,0,0,1,22,15,5.93,5.93,0,0,1,20.31,19.28Z">
+                        </path>
                         <path d="M19,26H13a1,1,0,0,0,0,2h6a1,1,0,0,0,0-2Z"></path>
                         <path d="M18,29H14a1,1,0,0,0,0,2h4a1,1,0,0,0,0-2Z"></path>
                         <path d="M16,5a1,1,0,0,0,1-1V2a1,1,0,0,0-2,0V4A1,1,0,0,0,16,5Z"></path>
                         <path d="M5,14H3a1,1,0,0,0,0,2H5a1,1,0,0,0,0-2Z"></path>
                         <path d="M29,14H27a1,1,0,0,0,0,2h2a1,1,0,0,0,0-2Z"></path>
-                        <path d="M25.9,5.1a1,1,0,0,0-1.41,0L23.07,6.51a1,1,0,0,0,0,1.42,1,1,0,0,0,.71.29,1,1,0,0,0,.71-.29L25.9,6.51A1,1,0,0,0,25.9,5.1Z"></path>
-                        <path d="M8.93,7.93a1,1,0,0,0,0-1.42L7.51,5.1A1,1,0,0,0,6.1,6.51L7.51,7.93a1,1,0,0,0,.71.29A1,1,0,0,0,8.93,7.93Z"></path>
+                        <path
+                            d="M25.9,5.1a1,1,0,0,0-1.41,0L23.07,6.51a1,1,0,0,0,0,1.42,1,1,0,0,0,.71.29,1,1,0,0,0,.71-.29L25.9,6.51A1,1,0,0,0,25.9,5.1Z">
+                        </path>
+                        <path
+                            d="M8.93,7.93a1,1,0,0,0,0-1.42L7.51,5.1A1,1,0,0,0,6.1,6.51L7.51,7.93a1,1,0,0,0,.71.29A1,1,0,0,0,8.93,7.93Z">
+                        </path>
                     </svg>
                 </button>
-                <button class="status-opt-btn status-btn-in_progress" type="button" data-status="in_progress" data-tooltip="Черновик">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="status-opt-btn status-btn-in_progress" type="button" data-status="in_progress"
+                    data-tooltip="Черновик">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
                         <path d="M12 20h9"></path>
                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                     </svg>
                 </button>
-                <button class="status-opt-btn status-btn-editing" type="button" data-status="editing" data-tooltip="В процессе">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="status-opt-btn status-btn-editing" type="button" data-status="editing"
+                    data-tooltip="В процессе">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
                         <path d="m12.296 3.464 3.02 3.956"></path>
                         <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"></path>
                         <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <path d="m6.18 5.276 3.1 3.899"></path>
                     </svg>
                 </button>
-                <button class="status-opt-btn status-btn-published" type="button" data-status="published" data-tooltip="Опубликовано">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
-                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-                        <path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05"/>
+                <button class="status-opt-btn status-btn-published" type="button" data-status="published"
+                    data-tooltip="Опубликовано">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-check-circle"
+                        viewBox="0 0 16 16">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                        <path
+                            d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05" />
                     </svg>
                 </button>
             </div>
@@ -515,7 +596,8 @@
 
         <div class="dropdown-divider"></div>
         <button class="dropdown-item btn-delete" id="btnVideoDelete">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
@@ -527,7 +609,8 @@
     <div class="confirm-modal-overlay" id="confirmDeleteVideoModal" style="display: none;">
         <div class="confirm-modal-card">
             <h3 class="confirm-modal-title">Удалить видео?</h3>
-            <p class="confirm-modal-desc">Видео <strong id="confirmDeleteVideoTitle">Название видео</strong> будет удалено безвозвратно.</p>
+            <p class="confirm-modal-desc">Видео <strong id="confirmDeleteVideoTitle">Название видео</strong> будет
+                удалено безвозвратно.</p>
             <div class="confirm-modal-actions">
                 <button class="confirm-btn-cancel" id="btnConfirmDeleteVideoCancel">Отмена</button>
                 <button class="confirm-btn-danger" id="btnConfirmDeleteVideoConfirm">Удалить</button>
@@ -543,21 +626,26 @@
                 <h2 class="settings-sidebar-title">Настройки</h2>
                 <nav class="settings-sidebar-menu">
                     <button class="settings-menu-item active" data-tab="account">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
+                            height="16">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
                         </svg>
                         <span>Аккаунт</span>
                     </button>
                     <button class="settings-menu-item" data-tab="general">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
+                            height="16">
                             <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+                            </path>
                         </svg>
                         <span>Основное</span>
                     </button>
                     <button class="settings-menu-item" data-tab="appearance">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
+                            height="16">
                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                             <line x1="9" y1="3" x2="9" y2="21"></line>
                         </svg>
@@ -572,12 +660,16 @@
 
                 <!-- Вкладка: Основное -->
                 <div class="settings-tab-pane" id="tab-general" style="display: none;">
-                    <h3 style="margin-top: 0; font-size: 1.1rem; font-weight: 600; color: var(--ch-text-dark);">Общие настройки</h3>
+                    <h3 style="margin-top: 0; font-size: 1.1rem; font-weight: 600; color: var(--ch-text-dark);">Общие
+                        настройки</h3>
                     <div class="settings-section">
-                        <div class="settings-field" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0;">
+                        <div class="settings-field"
+                            style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0;">
                             <div class="settings-field-info">
-                                <label style="display: block; font-weight: 600; font-size: 0.95rem; color: var(--ch-text-dark); margin-bottom: 2px;">Уведомления</label>
-                                <span style="font-size: 0.82rem; color: var(--ch-text-gray);">Включить системные уведомления</span>
+                                <label
+                                    style="display: block; font-weight: 600; font-size: 0.95rem; color: var(--ch-text-dark); margin-bottom: 2px;">Уведомления</label>
+                                <span style="font-size: 0.82rem; color: var(--ch-text-gray);">Включить системные
+                                    уведомления</span>
                             </div>
                             <label class="switch-container">
                                 <input type="checkbox" id="prefNotifications">
@@ -591,7 +683,8 @@
                 <div class="settings-tab-pane active" id="tab-account">
                     <div class="settings-profile-header">
                         <div class="settings-avatar-wrapper">
-                            <img src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" alt="Avatar" class="settings-profile-avatar" id="settingsProfileAvatar">
+                            <img src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" alt="Avatar"
+                                class="settings-profile-avatar" id="settingsProfileAvatar">
                         </div>
                         <div class="settings-profile-info">
                             <h3 class="settings-profile-name" id="settingsProfileName">Max</h3>
@@ -610,15 +703,18 @@
                                 <label>Пароль</label>
                                 <span>••••••••</span>
                             </div>
-                            <button class="settings-field-action-btn" id="btnSettingsChangePassword">Изменить пароль</button>
+                            <button class="settings-field-action-btn" id="btnSettingsChangePassword">Изменить
+                                пароль</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Вкладка: Боковая панель -->
                 <div class="settings-tab-pane" id="tab-appearance" style="display: none;">
-                    <h3 style="margin-top: 0; font-size: 1.1rem; font-weight: 600; color: var(--ch-text-dark);">Настройки боковой панели</h3>
-                    <p style="font-size: 0.92rem; color: var(--ch-text-gray);">Настройки отображения меню появятся здесь.</p>
+                    <h3 style="margin-top: 0; font-size: 1.1rem; font-weight: 600; color: var(--ch-text-dark);">
+                        Настройки боковой панели</h3>
+                    <p style="font-size: 0.92rem; color: var(--ch-text-gray);">Настройки отображения меню появятся
+                        здесь.</p>
                 </div>
             </div>
         </div>

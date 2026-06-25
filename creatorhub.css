@@ -188,7 +188,7 @@ body.dark .welcome-header .highlight {
 }
 
 .stat-card {
-    height: 142px;
+    height: 130px;
     border-radius: 16px;
     padding: 22px 20px 16px;
     display: flex;
@@ -2860,7 +2860,7 @@ body.dark .video-drag-placeholder {
     top: 14px;
     font-size: 12px;
     font-weight: 700;
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     padding: 5px 9px;
     border-radius: 999px;
 }
@@ -2876,7 +2876,7 @@ body.dark .video-drag-placeholder {
 }
 
 .cv-today .cv-event {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     color: white;
 }
 
@@ -2934,46 +2934,55 @@ body.dark .video-drag-placeholder {
     color: hsl(250, 80%, 50%) !important;
     border: 1px solid hsl(250, 80%, 90%) !important;
 }
+
 .tag-color-blue {
     background-color: hsl(210, 100%, 96%) !important;
     color: hsl(210, 85%, 45%) !important;
     border: 1px solid hsl(210, 85%, 88%) !important;
 }
+
 .tag-color-green {
     background-color: hsl(145, 80%, 96%) !important;
     color: hsl(145, 80%, 35%) !important;
     border: 1px solid hsl(145, 80%, 88%) !important;
 }
+
 .tag-color-yellow {
     background-color: hsl(48, 100%, 95%) !important;
     color: hsl(40, 90%, 35%) !important;
     border: 1px solid hsl(48, 100%, 85%) !important;
 }
+
 .tag-color-orange {
     background-color: hsl(24, 100%, 96%) !important;
     color: hsl(24, 90%, 45%) !important;
     border: 1px solid hsl(24, 100%, 88%) !important;
 }
+
 .tag-color-red {
     background-color: hsl(0, 100%, 97%) !important;
     color: hsl(0, 85%, 45%) !important;
     border: 1px solid hsl(0, 85%, 90%) !important;
 }
+
 .tag-color-pink {
     background-color: hsl(330, 100%, 97%) !important;
     color: hsl(330, 85%, 50%) !important;
     border: 1px solid hsl(330, 85%, 90%) !important;
 }
+
 .tag-color-teal {
     background-color: hsl(180, 80%, 95%) !important;
     color: hsl(180, 80%, 30%) !important;
     border: 1px solid hsl(180, 80%, 85%) !important;
 }
+
 .tag-color-indigo {
     background-color: hsl(230, 100%, 97%) !important;
     color: hsl(230, 85%, 50%) !important;
     border: 1px solid hsl(230, 85%, 90%) !important;
 }
+
 .tag-color-gray {
     background-color: #f1f3f5 !important;
     color: #495057 !important;
@@ -2986,46 +2995,55 @@ body.dark .tag-color-purple {
     color: hsl(250, 90%, 80%) !important;
     border-color: hsl(250, 60%, 25%) !important;
 }
+
 body.dark .tag-color-blue {
     background-color: hsl(210, 60%, 14%) !important;
     color: hsl(210, 90%, 75%) !important;
     border-color: hsl(210, 60%, 24%) !important;
 }
+
 body.dark .tag-color-green {
     background-color: hsl(145, 60%, 12%) !important;
     color: hsl(145, 80%, 75%) !important;
     border-color: hsl(145, 60%, 22%) !important;
 }
+
 body.dark .tag-color-yellow {
     background-color: hsl(48, 60%, 12%) !important;
     color: hsl(48, 90%, 70%) !important;
     border-color: hsl(48, 60%, 22%) !important;
 }
+
 body.dark .tag-color-orange {
     background-color: hsl(24, 60%, 13%) !important;
     color: hsl(24, 90%, 75%) !important;
     border-color: hsl(24, 60%, 23%) !important;
 }
+
 body.dark .tag-color-red {
     background-color: hsl(0, 60%, 15%) !important;
     color: hsl(0, 90%, 80%) !important;
     border-color: hsl(0, 60%, 25%) !important;
 }
+
 body.dark .tag-color-pink {
     background-color: hsl(330, 60%, 15%) !important;
     color: hsl(330, 90%, 80%) !important;
     border-color: hsl(330, 60%, 25%) !important;
 }
+
 body.dark .tag-color-teal {
     background-color: hsl(180, 60%, 12%) !important;
     color: hsl(180, 80%, 70%) !important;
     border-color: hsl(180, 60%, 22%) !important;
 }
+
 body.dark .tag-color-indigo {
     background-color: hsl(230, 60%, 15%) !important;
     color: hsl(230, 90%, 80%) !important;
     border-color: hsl(230, 60%, 25%) !important;
 }
+
 body.dark .tag-color-gray {
     background-color: #2d3748 !important;
     color: #cbd5e1 !important;

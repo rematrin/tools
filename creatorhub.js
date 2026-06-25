@@ -769,16 +769,6 @@ function updateStatsCounters() {
         }
     }).length;
 
-    const ideasCard = document.querySelector(".stat-card.ideas .number");
-    const workCard = document.querySelector(".stat-card.work .number");
-    const editCard = document.querySelector(".stat-card.edit .number");
-    const publishedCard = document.querySelector(".stat-card.published .number");
-
-    if (ideasCard) ideasCard.textContent = countIdeas;
-    if (workCard) workCard.textContent = countInProgress;
-    if (editCard) editCard.textContent = countEditing;
-    if (publishedCard) publishedCard.textContent = countPublished;
-
     // Динамический подсчет изменений на основе периода
     const now = Date.now();
     const calculateChange = (status) => {
@@ -829,16 +819,25 @@ function updateStatsCounters() {
     const editingChange = calculateChange("editing");
     const publishedChange = calculateChange("published");
 
-    const formatChangeText = (num) => {
-        if (num === 0) return "без изменений";
+    const ideasCard = document.querySelector(".stat-card.ideas .number");
+    const workCard = document.querySelector(".stat-card.work .number");
+    const editCard = document.querySelector(".stat-card.edit .number");
+    const publishedCard = document.querySelector(".stat-card.published .number");
+
+    if (ideasCard) ideasCard.textContent = `+${ideasChange}`;
+    if (workCard) workCard.textContent = `+${inProgressChange}`;
+    if (editCard) editCard.textContent = `+${editingChange}`;
+    if (publishedCard) publishedCard.textContent = `+${publishedChange}`;
+
+    const formatChangeText = () => {
         if (statsPeriodDays === "all") {
-            return `+${num} за все время`;
+            return "за все время";
         } else if (statsPeriodDays === "ytd") {
-            return `+${num} с 1 янв. ${new Date().getFullYear()}`;
+            return `с 1 янв. ${new Date().getFullYear()}`;
         } else if (statsPeriodDays === 7) {
-            return `+${num} за неделю`;
+            return "за неделю";
         } else {
-            return `+${num} за последние ${statsPeriodDays} дней`;
+            return `за последние ${statsPeriodDays} дней`;
         }
     };
 
@@ -847,10 +846,10 @@ function updateStatsCounters() {
     const editChangeEl = document.querySelector(".stat-card.edit .change");
     const publishedChangeEl = document.querySelector(".stat-card.published .change");
 
-    if (ideasChangeEl) ideasChangeEl.textContent = formatChangeText(ideasChange);
-    if (workChangeEl) workChangeEl.textContent = formatChangeText(inProgressChange);
-    if (editChangeEl) editChangeEl.textContent = formatChangeText(editingChange);
-    if (publishedChangeEl) publishedChangeEl.textContent = formatChangeText(publishedChange);
+    if (ideasChangeEl) ideasChangeEl.textContent = formatChangeText();
+    if (workChangeEl) workChangeEl.textContent = formatChangeText();
+    if (editChangeEl) editChangeEl.textContent = formatChangeText();
+    if (publishedChangeEl) publishedChangeEl.textContent = formatChangeText();
 }
 
 // Функция рендеринга списка

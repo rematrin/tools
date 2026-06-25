@@ -503,8 +503,8 @@ body.dark .published .change {
 
 .video-card.active {
     background: var(--hover-bg);
-    /* Мягкий серый цвет без жирных обводок */
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+    border-color: var(--ch-purple);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05), 0 0 0 1px var(--ch-purple);
 }
 
 .video-card-left {
@@ -3198,4 +3198,120 @@ body.dark .tag-color-gray {
 .btn-tag-edit-delete:hover {
     background: rgba(239, 68, 68, 0.1);
     border-color: rgba(239, 68, 68, 0.2);
+}
+
+/* --- VIEW TOGGLES (GRID / LIST) --- */
+.view-toggles {
+    display: flex;
+    background: var(--ch-border);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 2px;
+    align-items: center;
+    height: 38px;
+    box-sizing: border-box;
+}
+
+.view-btn {
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--ch-text-gray);
+    transition: all 0.2s ease;
+}
+
+.view-btn:hover {
+    color: var(--ch-text-dark);
+}
+
+.view-btn.active {
+    background: var(--ch-card-bg);
+    color: var(--ch-purple);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.view-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* --- GRID VIEW LAYOUT FOR VIDEOS LIST --- */
+.videos-list.grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.videos-list.grid-view .video-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+    gap: 12px;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.videos-list.grid-view .video-card-left {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+}
+
+.videos-list.grid-view .video-thumbnail-mini {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+}
+
+.videos-list.grid-view .video-info-block {
+    gap: 6px;
+}
+
+.videos-list.grid-view .video-card-right {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--ch-border);
+    padding-top: 12px;
+    gap: 8px;
+}
+
+.videos-list.grid-view .video-status-date-block {
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 0;
+}
+
+.videos-list.grid-view .video-date {
+    text-align: left;
+}
+
+/* Tooltip styles */
+#customTooltip {
+    position: fixed;
+    background: var(--tooltip-bg, #2a2c33);
+    color: var(--tooltip-text, #ffffff);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+#customTooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
 }

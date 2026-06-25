@@ -32,6 +32,8 @@
 
 <body>
 
+    <div id="customTooltip"></div>
+
     <div class="creatorhub-app">
         <!-- Левое боковое меню -->
         <aside class="sidebar">
@@ -251,7 +253,7 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <div class="sort-wrapper">
-                            <button class="btn-sort" id="btnSortList" type="button" title="Сортировка">
+                            <button class="btn-sort" id="btnSortList" type="button" data-tip="Сортировка">
                                 <svg class="sort-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                   <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M8 20V10m0 10-3-3m3 3 3-3m5-13v10m0-10 3 3m-3-3-3 3"/>
                                 </svg>
@@ -268,6 +270,15 @@
                                 <button class="sort-dropdown-item" data-sort="alphabeticalAZ">По алфавиту А-Я</button>
                                 <button class="sort-dropdown-item" data-sort="alphabeticalZA">По алфавиту Я-А</button>
                             </div>
+                        </div>
+                        <!-- Переключатель вида (сетка/список) -->
+                        <div class="view-toggles" id="viewToggles">
+                            <button class="view-btn active" id="btnListView" type="button" data-tip="Список">
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"></path></svg>
+                            </button>
+                            <button class="view-btn" id="btnGridView" type="button" data-tip="Сетка">
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z"></path></svg>
+                            </button>
                         </div>
                         <div class="search-wrapper">
                             <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

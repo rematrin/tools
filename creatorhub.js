@@ -169,6 +169,7 @@ let currentFilter = "all";
 let searchQuery = "";
 let currentMenuRoute = "videos"; // "videos" | "trash"
 let isDeletePermanentMode = false;
+let currentViewMode = localStorage.getItem("creatorhub_view_mode") || "list";
 
 // DOM Элементы
 const videosListContainer = document.getElementById("videosListContainer");
@@ -268,6 +269,20 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 sortDropdown.style.display = "none";
             }
+        });
+    }
+
+    // Переключение режимов отображения (список/сетка)
+    const btnListView = document.getElementById("btnListView");
+    const btnGridView = document.getElementById("btnGridView");
+    if (btnListView) {
+        btnListView.addEventListener("click", () => {
+            setViewMode("list");
+        });
+    }
+    if (btnGridView) {
+        btnGridView.addEventListener("click", () => {
+            setViewMode("grid");
         });
     }
 
@@ -740,6 +755,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Инициализация ресайзера правого сайдбара
     initDetailSidebarResizer();
 
+    // Инициализация тултипов
+    if (typeof initTooltips === "function") {
+        initTooltips();
+    }
+
     // Инициализация Drag and Drop
     initDragAndDrop();
     initTouchDragAndDrop();
@@ -1115,6 +1135,10 @@ function renderVideosList() {
 
         videosListContainer.appendChild(card);
     });
+
+    if (typeof setViewMode === "function") {
+        setViewMode(currentViewMode);
+    }
 }
 
 // Вспомогательные функции изменения обложки
@@ -3207,5 +3231,71 @@ async function deleteTagGlobally(oldTag) {
     }
     renderVideosList();
     renderTags();
+}
+
+function setViewMode(mode) {
+    currentViewMode = mode;
+    localStorage.setItem("creatorhub_view_mode", mode);
+    
+    const container = document.getElementById("videosListContainer");
+    const btnList = document.getElementById("btnListView");
+    const btnGrid = document.getElementById("btnGridView");
+    
+    if (mode === "grid") {
+        if (container) container.classList.add("grid-view");
+        if (btnGrid) btnGrid.classList.add("active");
+        if (btnList) btnList.classList.remove("active");
+    } else {
+        if (container) container.classList.remove("grid-view");
+        if (btnList) btnList.classList.add("active");
+        if (btnGrid) btnGrid.classList.remove("active");
+    }
+}
+
+/* ================= TOOLTIPS SYSTEM ================= */
+const tooltipEl = document.getElementById('customTooltip');
+function initTooltips() {
+    const elements = document.querySelectorAll('[data-tip]');
+    elements.forEach(el => {
+        if (!el.dataset.tooltipAttached) {
+            el.dataset.tooltipAttached = "true";
+            el.addEventListener('mouseenter', showTip);
+            el.addEventListener('mouseleave', hideTip);
+            el.addEventListener('click', hideTip);
+        }
+    });
+}
+
+function showTip(e) {
+    if (!tooltipEl) return;
+    const el = e.currentTarget;
+    const text = el.getAttribute('data-tip');
+    if (!text) return;
+    
+    tooltipEl.textContent = text;
+    tooltipEl.classList.add('visible');
+    
+    const rect = el.getBoundingClientRect();
+    
+    // Position tooltip ABOVE the button
+    let top = rect.top - tooltipEl.offsetHeight - 8;
+    
+    // Fallback to below if no space above
+    if (top < 0) {
+        top = rect.bottom + 8;
+    }
+    
+    let left = rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
+    if (left < 10) left = 10;
+    if (left + tooltipEl.offsetWidth > window.innerWidth) {
+        left = window.innerWidth - tooltipEl.offsetWidth - 10;
+    }
+    
+    tooltipEl.style.top = `${top}px`;
+    tooltipEl.style.left = `${left}px`;
+}
+
+function hideTip() {
+    if (tooltipEl) tooltipEl.classList.remove('visible');
 }
 

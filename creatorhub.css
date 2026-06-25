@@ -135,6 +135,7 @@ body {
     flex-direction: column;
     gap: 32px;
     background: var(--ch-bg);
+    position: relative;
 }
 
 /* Скроллбары для контента */
@@ -480,14 +481,14 @@ body.dark .published .change {
 .videos-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
 }
 
 .video-card {
     background: var(--ch-card-bg);
     border: 1px solid var(--ch-border);
     border-radius: var(--ch-radius);
-    padding: 12px 20px;
+    padding: 8px 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -3244,7 +3245,7 @@ body.dark .tag-color-gray {
 /* --- GRID VIEW LAYOUT FOR VIDEOS LIST --- */
 .videos-list.grid-view {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 16px;
 }
 

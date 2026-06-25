@@ -13,155 +13,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // Изначальные данные видео
-const initialVideos = [
-    {
-        id: "1",
-        title: "ИИ сделал ремейк Симпсонов",
-        status: "published", // "idea" | "in_progress" | "editing" | "published" | "archive"
-        statusText: "Опубликовано",
-        tags: ["ИИ", "Эксперимент"],
-        date: "19 мая 2024",
-        dateLabel: "19 мая 2024",
-        publishDate: "2024-05-19",
-        createdTime: new Date("2024-05-19").getTime(),
-        order: 1,
-        thumbnail: "https://placehold.co/600x338/5c6bc0/ffffff?text=Simpsons+AI+Remake",
-        description: "Полностью пересоздал несколько сцен Симпсонов с помощью нейросетей. Сравнение оригинала и результата.",
-        playlist: "ИИ эксперименты",
-        link: "youtu.be/ai-simpsons-remake",
-        notes: "Нужно добавить примеры с более ранних сезонов и сделать акцент на деталях окружения.\n\nИспользовал: Midjourney, Runway, ElevenLabs",
-        checklist: [
-            { text: "Написать сценарий", checked: true },
-            { text: "Сделать озвучку", checked: true },
-            { text: "Смонтировать видео", checked: true },
-            { text: "Создать превью", checked: false }
-        ],
-        files: [
-            { name: "Сценарий_Симпсоны.docx", size: "24 КБ" },
-            { name: "Озвучка_Mid.mp3", size: "4.2 МБ" }
-        ]
-    },
-    {
-        id: "2",
-        title: "Что если YouTube существовал в древности",
-        status: "editing",
-        statusText: "В процессе",
-        tags: ["История", "Юмор"],
-        date: "21 июня 2026",
-        dateLabel: "21 июня 2026",
-        publishDate: "2026-06-21",
-        createdTime: new Date("2026-06-21").getTime(),
-        order: 2,
-        thumbnail: "https://placehold.co/600x338/f57c00/ffffff?text=Ancient+YouTube",
-        description: "Шутливый ролик про то, как выглядели бы каналы древнеримских блогеров, спартанские стримы и обзоры на колесницы.",
-        playlist: "Исторические гипотезы",
-        link: "youtu.be/ancient-youtube",
-        notes: "Добавить больше звуков толпы и амфитеатра на задний план. Сделать отсылки к известным римским деятелям.",
-        checklist: [
-            { text: "Написать шутки для сценария", checked: true },
-            { text: "Записать видеоряд", checked: true },
-            { text: "Озвучить Цезаря", checked: false },
-            { text: "Подобрать музыку", checked: false }
-        ],
-        files: [
-            { name: "Римский_блог_сценарий.docx", size: "18 КБ" }
-        ]
-    },
-    {
-        id: "3",
-        title: "Как я использую ИИ для создания видео",
-        status: "in_progress",
-        statusText: "Черновик",
-        tags: ["ИИ", "Процесс"],
-        date: "20 июня 2026",
-        dateLabel: "20 июня 2026",
-        publishDate: "2026-06-20",
-        createdTime: new Date("2026-06-20").getTime(),
-        order: 3,
-        thumbnail: "https://placehold.co/600x338/0288d1/ffffff?text=AI+Video+Workflow",
-        description: "Подробный разбор моего рабочего процесса: от генерации идеи до финального монтажа с использованием нейросетей.",
-        playlist: "Полезное",
-        link: "youtu.be/ai-workflow",
-        notes: "Сделать акцент на бесплатные альтернативы платным нейросетям.",
-        checklist: [
-            { text: "Собрать список инструментов", checked: true },
-            { text: "Записать скринкаст работы в Photoshop AI", checked: false },
-            { text: "Сделать структуру видео", checked: false }
-        ],
-        files: []
-    },
-    {
-        id: "4",
-        title: "Все виды пропаганды в истории",
-        status: "idea",
-        statusText: "Идея",
-        tags: ["История", "Исследование"],
-        date: "17 июня 2026",
-        dateLabel: "17 июня 2026",
-        publishDate: "2026-06-17",
-        createdTime: new Date("2026-06-17").getTime(),
-        order: 4,
-        thumbnail: "https://placehold.co/600x338/7e57c2/ffffff?text=History+of+Propaganda",
-        description: "Большой разбор методов влияния на общественное мнение от Древнего Египта до наших дней.",
-        playlist: "Длинные видео",
-        link: "youtu.be/history-propaganda",
-        notes: "Нужен нейтральный и объективный тон. Изучить плакаты Первой и Второй мировых войн.",
-        checklist: [
-            { text: "Найти исторические материалы", checked: true },
-            { text: "Написать план сценария", checked: false },
-            { text: "Подобрать архивные фото", checked: false }
-        ],
-        files: []
-    },
-    {
-        id: "5",
-        title: "Почему космос нас пугает",
-        status: "idea",
-        statusText: "Идея",
-        tags: ["Космос", "Психология"],
-        date: "16 июня 2026",
-        dateLabel: "16 июня 2026",
-        publishDate: "2026-06-16",
-        createdTime: new Date("2026-06-16").getTime(),
-        order: 5,
-        thumbnail: "https://placehold.co/600x338/455a64/ffffff?text=Scary+Space",
-        description: "Эссе о космическом страхе (космофобии), масштабах Вселенной и о том, почему неизвестность манит и пугает одновременно.",
-        playlist: "Эссе",
-        link: "youtu.be/space-fear",
-        notes: "Использовать эмбиент музыку для нагнетания атмосферы.",
-        checklist: [
-            { text: "Набросать мысли", checked: true },
-            { text: "Найти красивые футажи NASA", checked: false }
-        ],
-        files: []
-    },
-    {
-        id: "6",
-        title: "Будущее YouTube через 10 лет",
-        status: "published",
-        statusText: "Опубликовано",
-        tags: ["YouTube", "Будущее"],
-        date: "7 мая 2024",
-        dateLabel: "7 мая 2024",
-        publishDate: "2024-05-07",
-        createdTime: new Date("2024-05-07").getTime(),
-        order: 6,
-        thumbnail: "https://placehold.co/600x338/43a047/ffffff?text=Future+of+YouTube",
-        description: "Каким будет видеохостинг в 2034 году? Будет ли VR-стриминг, ИИ-блогеры и новые форматы монетизации.",
-        playlist: "Будущее",
-        link: "youtu.be/youtube-future",
-        notes: "Интересно посмотреть, насколько прогнозы совпадут с реальностью через годы.",
-        checklist: [
-            { text: "Сценарий", checked: true },
-            { text: "Озвучка", checked: true },
-            { text: "Монтаж", checked: true },
-            { text: "Превью", checked: true }
-        ],
-        files: [
-            { name: "Превью_10лет.png", size: "1.8 МБ" }
-        ]
-    }
-];
+const initialVideos = [];
 
 let videos = [...initialVideos];
 let selectedVideo = null;
@@ -681,24 +533,52 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Слушатели бокового меню навигации
-    // Слушатели бового меню навигации
+    // Функция обработки маршрутизации по хэшу URL
+    function handleRoute() {
+        const hash = window.location.hash.replace('#', '') || 'home';
+        const sidebarMenuItems = document.querySelectorAll(".sidebar-menu .menu-item");
+        sidebarMenuItems.forEach(mi => mi.classList.remove("active"));
+
+        if (hash === 'trash') {
+            currentMenuRoute = "trash";
+            const item = document.getElementById("menuTrash");
+            if (item) item.classList.add("active");
+        } else if (hash === 'calendar') {
+            currentMenuRoute = "calendar";
+            const item = document.getElementById("menuCalendar");
+            if (item) item.classList.add("active");
+        } else if (hash === 'tasks') {
+            currentMenuRoute = "tasks";
+            const item = document.getElementById("menuTasks");
+            if (item) item.classList.add("active");
+        } else {
+            currentMenuRoute = "videos";
+            const item = document.getElementById("menuHome");
+            if (item) item.classList.add("active");
+        }
+        updateViewForRoute();
+    }
+
+    // Слушатели бокового меню навигации
     const sidebarMenuItems = document.querySelectorAll(".sidebar-menu .menu-item");
     sidebarMenuItems.forEach(item => {
         if (item.id === "menuSettings") return; // Настройки обрабатываются отдельно как модалка
         item.addEventListener("click", (e) => {
             e.preventDefault();
-            sidebarMenuItems.forEach(mi => mi.classList.remove("active"));
-            item.classList.add("active");
             if (item.id === "menuTrash") {
-                currentMenuRoute = "trash";
+                window.location.hash = "trash";
             } else if (item.id === "menuCalendar") {
-                currentMenuRoute = "calendar";
+                window.location.hash = "calendar";
+            } else if (item.id === "menuTasks") {
+                window.location.hash = "tasks";
             } else {
-                currentMenuRoute = "videos";
+                window.location.hash = "home";
             }
-            updateViewForRoute();
         });
     });
+
+    window.addEventListener("hashchange", handleRoute);
+    handleRoute(); // Вызываем один раз при инициализации
 
     // Календарь на странице (навигация)
     const btnCalPrev = document.getElementById("btnCalPrev");
@@ -752,6 +632,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // Перемещаем меню действий видео в .main-content для корректного скролла
+    const mainContentEl = document.querySelector(".main-content");
+    const videoActionsDropdownEl = document.getElementById("videoActionsDropdown");
+    if (mainContentEl && videoActionsDropdownEl) {
+        mainContentEl.appendChild(videoActionsDropdownEl);
+    }
+
     // Инициализация ресайзера правого сайдбара
     initDetailSidebarResizer();
 
@@ -779,10 +666,13 @@ function updateViewForRoute() {
     const detailSidebarResizer = document.getElementById("detailSidebarResizer");
     const detailSidebar = document.getElementById("detailSidebar");
 
+    const tasksViewContainer = document.getElementById("tasksViewContainer");
+
     if (currentMenuRoute === "calendar") {
         if (mainContent) mainContent.style.display = "none";
         if (detailSidebarResizer) detailSidebarResizer.style.display = "none";
         if (detailSidebar) detailSidebar.style.display = "none";
+        if (tasksViewContainer) tasksViewContainer.style.display = "none";
         if (calendarViewContainer) {
             calendarViewContainer.style.display = "flex";
             renderCalendarView();
@@ -790,7 +680,19 @@ function updateViewForRoute() {
         return;
     }
 
+    if (currentMenuRoute === "tasks") {
+        if (mainContent) mainContent.style.display = "none";
+        if (detailSidebarResizer) detailSidebarResizer.style.display = "none";
+        if (detailSidebar) detailSidebar.style.display = "none";
+        if (calendarViewContainer) calendarViewContainer.style.display = "none";
+        if (tasksViewContainer) {
+            tasksViewContainer.style.display = "block";
+        }
+        return;
+    }
+
     if (calendarViewContainer) calendarViewContainer.style.display = "none";
+    if (tasksViewContainer) tasksViewContainer.style.display = "none";
     if (mainContent) mainContent.style.display = "flex";
     if (detailSidebarResizer) detailSidebarResizer.style.display = "block";
     if (detailSidebar) detailSidebar.style.display = "flex";
@@ -2002,21 +1904,32 @@ function showVideoMenu(e, videoId, triggerEl = null) {
         });
     }
 
-    // Позиционируем меню
+    // Позиционируем меню относительно .main-content
+    const mainContent = document.querySelector(".main-content");
+    const contentRect = mainContent ? mainContent.getBoundingClientRect() : { left: 0, top: 0 };
+    const scrollLeft = mainContent ? mainContent.scrollLeft : 0;
+    const scrollTop = mainContent ? mainContent.scrollTop : 0;
+
     if (triggerEl && (!e.clientX || e.type !== "contextmenu")) {
         const rect = triggerEl.getBoundingClientRect();
-        videoActionsDropdown.style.position = "fixed";
-        videoActionsDropdown.style.left = `${rect.left - 150}px`;
-        videoActionsDropdown.style.top = `${rect.bottom + 6}px`;
+        videoActionsDropdown.style.position = "absolute";
+        videoActionsDropdown.style.left = `${rect.left - contentRect.left + scrollLeft - 150}px`;
+        videoActionsDropdown.style.top = `${rect.bottom - contentRect.top + scrollTop + 6}px`;
     } else {
-        videoActionsDropdown.style.position = "fixed";
-        let x = e.clientX;
-        let y = e.clientY;
+        videoActionsDropdown.style.position = "absolute";
+        let x = e.clientX - contentRect.left + scrollLeft;
+        let y = e.clientY - contentRect.top + scrollTop;
         
         const menuWidth = 200;
         const menuHeight = 180;
-        if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
-        if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+        if (mainContent) {
+            if (x + menuWidth > mainContent.scrollWidth) {
+                x = mainContent.scrollWidth - menuWidth - 10;
+            }
+            if (e.clientY + menuHeight > window.innerHeight) {
+                y = y - menuHeight;
+            }
+        }
 
         videoActionsDropdown.style.left = `${x}px`;
         videoActionsDropdown.style.top = `${y}px`;

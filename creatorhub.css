@@ -709,12 +709,13 @@ body.dark .status-badge.archive {
 }
 
 .detail-thumbnail-wrapper {
-    margin: 24px 24px 0 24px;
-    /* Отступы от краев панели по макету */
+    margin: 24px auto 0 auto;
+    width: calc(100% - 48px);
+    max-width: 340px;
+    min-width: 240px;
     aspect-ratio: 16/9;
     background: #e2e8f0;
     border-radius: 14px;
-    /* Скругленные углы */
     overflow: hidden;
     flex-shrink: 0;
 }
@@ -723,6 +724,7 @@ body.dark .status-badge.archive {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    cursor: pointer;
 }
 
 .detail-title-block {
@@ -898,15 +900,51 @@ body.dark .status-badge.archive {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    position: relative;
 }
 
 .tag-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 0.8rem;
     font-weight: 500;
-    padding: 4px 12px;
+    padding: 4px 10px 4px 12px;
     background: #f1f3f5;
     color: #495057;
     border-radius: 20px;
+    transition: all 0.2s ease;
+}
+
+body.dark .tag-badge {
+    background: #2d3748;
+    color: #e2e8f0;
+}
+
+.tag-badge .btn-remove-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.8rem;
+    line-height: 1;
+    font-weight: 700;
+    color: #94a3b8;
+    transition: all 0.2s ease;
+    margin-left: 2px;
+}
+
+.tag-badge .btn-remove-tag:hover {
+    background: #cbd5e1;
+    color: #1e293b;
+}
+
+body.dark .tag-badge .btn-remove-tag:hover {
+    background: #4a5568;
+    color: #f7fafc;
 }
 
 .btn-add-tag {
@@ -927,6 +965,107 @@ body.dark .status-badge.archive {
 
 .btn-add-tag:hover {
     background: #e2e8f0;
+}
+
+body.dark .btn-add-tag {
+    background: #2d3748;
+    color: #e2e8f0;
+}
+
+body.dark .btn-add-tag:hover {
+    background: #4a5568;
+}
+
+.tag-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: var(--ch-card-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: 12px;
+    width: 300px;
+    box-shadow: var(--ch-shadow);
+    padding: 12px;
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    box-sizing: border-box;
+}
+
+.tag-dropdown-search {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    border: 1px solid var(--ch-border);
+    border-radius: 8px;
+    background: var(--ch-bg);
+    color: var(--ch-text-dark);
+    outline: none;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.tag-dropdown-list {
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 4px 0;
+    padding-right: 4px;
+}
+
+.tag-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--ch-text-dark);
+    transition: background-color 0.2s;
+    user-select: none;
+}
+
+.tag-dropdown-item:hover {
+    background: var(--ch-border);
+}
+
+.tag-dropdown-item.selected {
+    font-weight: 600;
+    color: var(--ch-purple);
+}
+
+.tag-dropdown-create {
+    border-top: 1px solid var(--ch-border);
+    padding-top: 8px;
+    display: flex;
+    justify-content: center;
+}
+
+.btn-create-tag {
+    width: 100%;
+    background: var(--ch-purple-light);
+    color: var(--ch-purple);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: inherit;
+}
+
+.btn-create-tag:hover {
+    background: var(--ch-purple);
+    color: white;
 }
 
 .info-value {
@@ -1883,10 +2022,13 @@ body.dark .status-select {
     right: 12px;
     background: rgba(255, 255, 255, 0.9);
     border: none;
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #111827;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -2773,4 +2915,287 @@ body.dark .video-drag-placeholder {
     .cv-event {
         display: none;
     }
+}
+
+/* Cursor pointers for links and fullscreen-openable images */
+#infoDescriptionViewer a,
+#referencesContent a {
+    cursor: pointer !important;
+}
+
+#referencesContent img {
+    cursor: pointer;
+}
+
+/* --- ЦВЕТА ТЕГОВ (LIGHT & DARK MODES) --- */
+.tag-color-purple {
+    background-color: hsl(250, 100%, 97%) !important;
+    color: hsl(250, 80%, 50%) !important;
+    border: 1px solid hsl(250, 80%, 90%) !important;
+}
+.tag-color-blue {
+    background-color: hsl(210, 100%, 96%) !important;
+    color: hsl(210, 85%, 45%) !important;
+    border: 1px solid hsl(210, 85%, 88%) !important;
+}
+.tag-color-green {
+    background-color: hsl(145, 80%, 96%) !important;
+    color: hsl(145, 80%, 35%) !important;
+    border: 1px solid hsl(145, 80%, 88%) !important;
+}
+.tag-color-yellow {
+    background-color: hsl(48, 100%, 95%) !important;
+    color: hsl(40, 90%, 35%) !important;
+    border: 1px solid hsl(48, 100%, 85%) !important;
+}
+.tag-color-orange {
+    background-color: hsl(24, 100%, 96%) !important;
+    color: hsl(24, 90%, 45%) !important;
+    border: 1px solid hsl(24, 100%, 88%) !important;
+}
+.tag-color-red {
+    background-color: hsl(0, 100%, 97%) !important;
+    color: hsl(0, 85%, 45%) !important;
+    border: 1px solid hsl(0, 85%, 90%) !important;
+}
+.tag-color-pink {
+    background-color: hsl(330, 100%, 97%) !important;
+    color: hsl(330, 85%, 50%) !important;
+    border: 1px solid hsl(330, 85%, 90%) !important;
+}
+.tag-color-teal {
+    background-color: hsl(180, 80%, 95%) !important;
+    color: hsl(180, 80%, 30%) !important;
+    border: 1px solid hsl(180, 80%, 85%) !important;
+}
+.tag-color-indigo {
+    background-color: hsl(230, 100%, 97%) !important;
+    color: hsl(230, 85%, 50%) !important;
+    border: 1px solid hsl(230, 85%, 90%) !important;
+}
+.tag-color-gray {
+    background-color: #f1f3f5 !important;
+    color: #495057 !important;
+    border: 1px solid #e9ecef !important;
+}
+
+/* Dark mode overrides for tag colors */
+body.dark .tag-color-purple {
+    background-color: hsl(250, 60%, 15%) !important;
+    color: hsl(250, 90%, 80%) !important;
+    border-color: hsl(250, 60%, 25%) !important;
+}
+body.dark .tag-color-blue {
+    background-color: hsl(210, 60%, 14%) !important;
+    color: hsl(210, 90%, 75%) !important;
+    border-color: hsl(210, 60%, 24%) !important;
+}
+body.dark .tag-color-green {
+    background-color: hsl(145, 60%, 12%) !important;
+    color: hsl(145, 80%, 75%) !important;
+    border-color: hsl(145, 60%, 22%) !important;
+}
+body.dark .tag-color-yellow {
+    background-color: hsl(48, 60%, 12%) !important;
+    color: hsl(48, 90%, 70%) !important;
+    border-color: hsl(48, 60%, 22%) !important;
+}
+body.dark .tag-color-orange {
+    background-color: hsl(24, 60%, 13%) !important;
+    color: hsl(24, 90%, 75%) !important;
+    border-color: hsl(24, 60%, 23%) !important;
+}
+body.dark .tag-color-red {
+    background-color: hsl(0, 60%, 15%) !important;
+    color: hsl(0, 90%, 80%) !important;
+    border-color: hsl(0, 60%, 25%) !important;
+}
+body.dark .tag-color-pink {
+    background-color: hsl(330, 60%, 15%) !important;
+    color: hsl(330, 90%, 80%) !important;
+    border-color: hsl(330, 60%, 25%) !important;
+}
+body.dark .tag-color-teal {
+    background-color: hsl(180, 60%, 12%) !important;
+    color: hsl(180, 80%, 70%) !important;
+    border-color: hsl(180, 60%, 22%) !important;
+}
+body.dark .tag-color-indigo {
+    background-color: hsl(230, 60%, 15%) !important;
+    color: hsl(230, 90%, 80%) !important;
+    border-color: hsl(230, 60%, 25%) !important;
+}
+body.dark .tag-color-gray {
+    background-color: #2d3748 !important;
+    color: #cbd5e1 !important;
+    border-color: #3e4e68 !important;
+}
+
+
+/* --- ИНЛАЙН РЕДАКТИРОВАНИЕ ТЕГОВ В ДРОПДАУНЕ --- */
+.tag-dropdown-item-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.tag-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--ch-text-dark);
+    transition: background-color 0.2s;
+    user-select: none;
+}
+
+.tag-dropdown-item:hover {
+    background: var(--ch-border);
+}
+
+.btn-edit-tag-inline {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--ch-text-gray);
+    transition: all 0.2s;
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.tag-dropdown-item:hover .btn-edit-tag-inline {
+    display: inline-flex;
+}
+
+.btn-edit-tag-inline:hover {
+    background: var(--ch-purple-light);
+    color: var(--ch-purple);
+}
+
+.tag-edit-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 1px solid var(--ch-border);
+    border-radius: 8px;
+    padding: 10px;
+    background: var(--ch-bg);
+    margin: 4px 0 8px 0;
+}
+
+.tag-edit-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--ch-text-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.tag-edit-input {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 0.82rem;
+    border: 1px solid var(--ch-border);
+    border-radius: 6px;
+    background: var(--ch-card-bg);
+    color: var(--ch-text-dark);
+    outline: none;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.tag-color-picker {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 4px 0;
+}
+
+.color-bubble {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.color-bubble.selected {
+    border-color: var(--ch-text-dark) !important;
+    transform: scale(1.25);
+    box-shadow: 0 0 0 2px var(--ch-purple);
+}
+
+.tag-edit-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.tag-edit-actions-right {
+    display: flex;
+    gap: 4px;
+}
+
+.btn-tag-edit-save {
+    background: var(--ch-purple);
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-tag-edit-save:hover {
+    background: var(--ch-purple-hover);
+}
+
+.btn-tag-edit-cancel {
+    background: transparent;
+    color: var(--ch-text-gray);
+    border: 1px solid var(--ch-border);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-tag-edit-cancel:hover {
+    background: var(--ch-border);
+    color: var(--ch-text-dark);
+}
+
+.btn-tag-edit-delete {
+    background: transparent;
+    color: #ef4444;
+    border: 1px solid transparent;
+    padding: 5px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-tag-edit-delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
 }

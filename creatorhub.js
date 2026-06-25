@@ -256,6 +256,9 @@ function saveSortForCurrentFilter(sortVal) {
 
 // Инициализация
 document.addEventListener("DOMContentLoaded", () => {
+    if (typeof loadTagConfigs === "function") {
+        loadTagConfigs();
+    }
     // Сортировка списка
     if (btnSortList) {
         btnSortList.addEventListener("click", (e) => {
@@ -555,7 +558,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-
+    // Просмотр обложки в полный размер (лайтбокс) при клике
+    if (detailImage) {
+        detailImage.addEventListener("click", () => {
+            if (selectedVideo && selectedVideo.thumbnail) {
+                openImageLightbox(selectedVideo.thumbnail);
+            }
+        });
+    }
 
     // Сохранение референсов при изменении
     if (referencesContent) {
@@ -718,6 +728,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Скрытие дропдауна тегов при клике вне его
+    document.addEventListener("click", (e) => {
+        const dropdown = document.querySelector(".tag-dropdown");
+        const btnAddTag = document.getElementById("btnAddTag");
+        if (dropdown && !dropdown.contains(e.target) && (!btnAddTag || !btnAddTag.contains(e.target))) {
+            dropdown.style.display = "none";
+        }
+    });
+
     // Инициализация ресайзера правого сайдбара
     initDetailSidebarResizer();
 
@@ -812,7 +831,21 @@ function updateStatsCounters() {
     const countIdeas = activeVideos.filter(v => v.status === "idea").length;
     const countInProgress = activeVideos.filter(v => v.status === "in_progress").length;
     const countEditing = activeVideos.filter(v => v.status === "editing").length;
-    const countPublished = activeVideos.filter(v => v.status === "published").length;
+    const countPublished = activeVideos.filter(v => {
+        if (!v.publishDate) return false;
+        const targetTimestamp = new Date(v.publishDate).getTime();
+        if (isNaN(targetTimestamp)) return false;
+        const now = Date.now();
+        if (statsPeriodDays === "all") {
+            return targetTimestamp <= now;
+        } else if (statsPeriodDays === "ytd") {
+            const startOfYear = new Date(new Date().getFullYear(), 0, 1).getTime();
+            return targetTimestamp >= startOfYear && targetTimestamp <= now;
+        } else {
+            const periodMs = statsPeriodDays * 24 * 60 * 60 * 1000;
+            return (now - targetTimestamp <= periodMs) && targetTimestamp <= now;
+        }
+    }).length;
 
     const ideasCard = document.querySelector(".stat-card.ideas .number");
     const workCard = document.querySelector(".stat-card.work .number");
@@ -994,7 +1027,7 @@ function renderVideosList() {
                     <div class="video-info-block">
                         <h4 class="video-title">${v.title}</h4>
                         <div class="video-meta-tags">
-                            ${v.tags.map(tag => `<span class="meta-tag">${tag}</span>`).join('')}
+                            ${v.tags.map(tag => `<span class="meta-tag ${typeof getTagColorClass === 'function' ? getTagColorClass(tag) : ''}">${tag}</span>`).join('')}
                         </div>
                     </div>
                 </div>
@@ -1026,7 +1059,7 @@ function renderVideosList() {
                     <div class="video-info-block">
                         <h4 class="video-title">${v.title}</h4>
                         <div class="video-meta-tags">
-                            ${v.tags.map(tag => `<span class="meta-tag">${tag}</span>`).join('')}
+                            ${v.tags.map(tag => `<span class="meta-tag ${typeof getTagColorClass === 'function' ? getTagColorClass(tag) : ''}">${tag}</span>`).join('')}
                         </div>
                     </div>
                 </div>
@@ -1481,8 +1514,7 @@ function selectVideoItem(id) {
         infoDescriptionViewer.style.display = "block";
     }
     
-    infoTags.innerHTML = selectedVideo.tags.map(tag => `<span class="tag-badge">${tag}</span>`).join('') + 
-                         `<button class="btn-add-tag">+</button>`;
+    renderTags();
     
     const pubDateFormatted = formatDateToRussian(selectedVideo.publishDate);
     if (infoDate) {
@@ -2827,5 +2859,353 @@ function updateTabCounts() {
             btn.innerHTML = `${tabLabels[filterVal]} <span class="tab-count">${countMap[filterVal]}</span>`;
         }
     });
+}
+
+function renderTags() {
+    if (!selectedVideo) {
+        if (infoTags) infoTags.innerHTML = "";
+        return;
+    }
+    const tagsList = selectedVideo.tags || [];
+    infoTags.innerHTML = tagsList.map(tag => `
+        <span class="tag-badge ${getTagColorClass(tag)}" data-tag="${tag}">${tag}<span class="btn-remove-tag" data-tag="${tag}">&times;</span></span>
+    `).join('') + `<button class="btn-add-tag" id="btnAddTag">+</button>`;
+
+    // Add event listeners to delete buttons
+    infoTags.querySelectorAll(".btn-remove-tag").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const tagToRemove = btn.dataset.tag;
+            removeTagFromVideo(tagToRemove);
+        });
+    });
+
+    // Add event listener to plus button
+    const btnAddTag = document.getElementById("btnAddTag");
+    if (btnAddTag) {
+        btnAddTag.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleTagsDropdown(e);
+        });
+    }
+}
+
+function removeTagFromVideo(tagToRemove) {
+    if (!selectedVideo) return;
+    const currentTags = selectedVideo.tags || [];
+    const newTags = currentTags.filter(t => t !== tagToRemove);
+    updateTagsState(newTags);
+}
+
+async function updateTagsState(newTags) {
+    if (!selectedVideo) return;
+    selectedVideo.tags = newTags;
+    await saveVideoData("tags", newTags);
+    renderVideosList();
+    renderTags();
+}
+
+function getAllUniqueTags() {
+    const allTagsSet = new Set();
+    videos.forEach(v => {
+        if (v.tags && Array.isArray(v.tags)) {
+            v.tags.forEach(tag => {
+                if (tag && tag.trim() !== "") {
+                    allTagsSet.add(tag.trim());
+                }
+            });
+        }
+    });
+    return Array.from(allTagsSet);
+}
+
+let tagConfigs = {};
+let activeTagEdit = null;
+const tagColorsList = ["purple", "blue", "green", "yellow", "orange", "red", "pink", "teal", "indigo", "gray"];
+
+function loadTagConfigs() {
+    try {
+        const stored = localStorage.getItem("creatorhub_tag_configs");
+        if (stored) {
+            tagConfigs = JSON.parse(stored);
+        }
+    } catch (e) {
+        console.error("Error loading tag configs", e);
+    }
+}
+
+function saveTagConfigs() {
+    try {
+        localStorage.setItem("creatorhub_tag_configs", JSON.stringify(tagConfigs));
+    } catch (e) {
+        console.error("Error saving tag configs", e);
+    }
+}
+
+function getTagColorClass(tag) {
+    if (tagConfigs[tag] && tagConfigs[tag].color) {
+        return `tag-color-${tagConfigs[tag].color}`;
+    }
+    return "tag-color-purple";
+}
+
+function toggleTagsDropdown(event) {
+    let dropdown = infoTags.querySelector(".tag-dropdown");
+    if (dropdown) {
+        if (dropdown.style.display === "flex") {
+            dropdown.style.display = "none";
+        } else {
+            dropdown.style.display = "flex";
+            dropdown.querySelector(".tag-dropdown-search").value = "";
+            dropdown.querySelector(".tag-dropdown-search").focus();
+            activeTagEdit = null;
+            renderDropdownList(dropdown);
+        }
+        return;
+    }
+
+    dropdown = document.createElement("div");
+    dropdown.className = "tag-dropdown";
+    dropdown.style.display = "flex";
+    
+    dropdown.innerHTML = `
+        <input type="text" class="tag-dropdown-search" placeholder="Поиск или новый тег..." autocomplete="off">
+        <div class="tag-dropdown-list"></div>
+        <div class="tag-dropdown-create" style="display: none;">
+            <button class="btn-create-tag"></button>
+        </div>
+    `;
+
+    infoTags.appendChild(dropdown);
+
+    dropdown.addEventListener("click", (e) => {
+        e.stopPropagation();
+    });
+
+    const searchInput = dropdown.querySelector(".tag-dropdown-search");
+    searchInput.focus();
+
+    searchInput.addEventListener("input", () => {
+        renderDropdownList(dropdown);
+    });
+
+    searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            const val = searchInput.value.trim();
+            if (val) {
+                const currentTags = selectedVideo.tags || [];
+                if (!currentTags.includes(val)) {
+                    updateTagsState([...currentTags, val]);
+                }
+                searchInput.value = "";
+                renderDropdownList(dropdown);
+            }
+        }
+    });
+
+    renderDropdownList(dropdown);
+}
+
+function renderDropdownList(dropdown) {
+    const searchInput = dropdown.querySelector(".tag-dropdown-search");
+    const query = searchInput.value.trim().toLowerCase();
+    const listContainer = dropdown.querySelector(".tag-dropdown-list");
+    const createContainer = dropdown.querySelector(".tag-dropdown-create");
+    const createBtn = dropdown.querySelector(".btn-create-tag");
+
+    listContainer.innerHTML = "";
+
+    const uniqueTags = getAllUniqueTags();
+    const currentTags = selectedVideo.tags || [];
+
+    const filteredTags = uniqueTags.filter(tag => tag.toLowerCase().includes(query));
+
+    filteredTags.forEach(tag => {
+        const isSelected = currentTags.includes(tag);
+        const itemWrapper = document.createElement("div");
+        itemWrapper.className = "tag-dropdown-item-wrapper";
+
+        const isEditingThis = activeTagEdit === tag;
+
+        const item = document.createElement("div");
+        item.className = `tag-dropdown-item${isSelected ? ' selected' : ''}`;
+        item.innerHTML = `
+            <span style="display: flex; align-items: center; gap: 6px;">
+                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%;" class="${getTagColorClass(tag)}"></span>
+                <span>${tag}</span>
+            </span>
+            <span style="display: flex; align-items: center; gap: 4px;">
+                ${isSelected ? '<span style="font-size: 0.8rem; margin-right: 4px;">✓</span>' : ''}
+                <button class="btn-edit-tag-inline" title="Редактировать тег">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                    </svg>
+                </button>
+            </span>
+        `;
+
+        const btnEdit = item.querySelector(".btn-edit-tag-inline");
+        btnEdit.addEventListener("click", (e) => {
+            e.stopPropagation();
+            activeTagEdit = isEditingThis ? null : tag;
+            renderDropdownList(dropdown);
+        });
+
+        item.addEventListener("click", () => {
+            if (isSelected) {
+                updateTagsState(currentTags.filter(t => t !== tag));
+            } else {
+                updateTagsState([...currentTags, tag]);
+            }
+            searchInput.focus();
+        });
+
+        itemWrapper.appendChild(item);
+
+        if (isEditingThis) {
+            const editPanel = document.createElement("div");
+            editPanel.className = "tag-edit-panel";
+            
+            const currentColor = tagConfigs[tag]?.color || "purple";
+
+            editPanel.innerHTML = `
+                <div class="tag-edit-title">Параметры тега</div>
+                <input type="text" class="tag-edit-input" value="${tag}" placeholder="Название тега...">
+                <div class="tag-color-picker">
+                    ${tagColorsList.map(c => `
+                        <div class="color-bubble tag-color-${c} ${currentColor === c ? 'selected' : ''}" data-color="${c}"></div>
+                    `).join('')}
+                </div>
+                <div class="tag-edit-actions">
+                    <button class="btn-tag-edit-delete" title="Удалить тег глобально">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        <span style="margin-left: 4px; font-size: 0.72rem;">Удалить</span>
+                    </button>
+                    <div class="tag-edit-actions-right">
+                        <button class="btn-tag-edit-cancel">Отмена</button>
+                        <button class="btn-tag-edit-save">ОК</button>
+                    </div>
+                </div>
+            `;
+
+            const bubbles = editPanel.querySelectorAll(".color-bubble");
+            bubbles.forEach(b => {
+                b.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    bubbles.forEach(x => x.classList.remove("selected"));
+                    b.classList.add("selected");
+                });
+            });
+
+            editPanel.querySelector(".btn-tag-edit-cancel").addEventListener("click", () => {
+                activeTagEdit = null;
+                renderDropdownList(dropdown);
+            });
+
+            editPanel.querySelector(".btn-tag-edit-delete").addEventListener("click", async () => {
+                if (confirm(`Удалить тег "${tag}" у всех видео?`)) {
+                    activeTagEdit = null;
+                    await deleteTagGlobally(tag);
+                    renderDropdownList(dropdown);
+                }
+            });
+
+            editPanel.querySelector(".btn-tag-edit-save").addEventListener("click", async () => {
+                const newName = editPanel.querySelector(".tag-edit-input").value.trim();
+                const selectedBubble = editPanel.querySelector(".color-bubble.selected");
+                const newColor = selectedBubble ? selectedBubble.dataset.color : "purple";
+                
+                if (newName) {
+                    activeTagEdit = null;
+                    await renameAndColorTag(tag, newName, newColor);
+                    renderDropdownList(dropdown);
+                }
+            });
+
+            itemWrapper.appendChild(editPanel);
+        }
+
+        listContainer.appendChild(itemWrapper);
+    });
+
+    const inputVal = searchInput.value.trim();
+    if (inputVal && !uniqueTags.some(t => t.toLowerCase() === inputVal.toLowerCase())) {
+        createContainer.style.display = "flex";
+        createBtn.textContent = `+ Создать тег "${inputVal}"`;
+        const newBtn = createBtn.cloneNode(true);
+        createBtn.parentNode.replaceChild(newBtn, createBtn);
+        newBtn.addEventListener("click", () => {
+            const currentTags = selectedVideo.tags || [];
+            updateTagsState([...currentTags, inputVal]);
+            searchInput.value = "";
+            renderDropdownList(dropdown);
+        });
+    } else {
+        createContainer.style.display = "none";
+    }
+}
+
+async function renameAndColorTag(oldTag, newName, color) {
+    if (!newName) return;
+    delete tagConfigs[oldTag];
+    tagConfigs[newName] = { color: color };
+    saveTagConfigs();
+
+    videos.forEach(v => {
+        if (v.tags && Array.isArray(v.tags)) {
+            const mapped = v.tags.map(t => t === oldTag ? newName : t);
+            v.tags = Array.from(new Set(mapped));
+        }
+    });
+
+    if (currentUid) {
+        const promises = videos.map(async (v) => {
+            try {
+                await updateDoc(doc(db, "users", currentUid, "videos", v.id), {
+                    tags: v.tags
+                });
+            } catch (err) {
+                console.error("Error updating tag on video:", v.id, err);
+            }
+        });
+        await Promise.all(promises);
+    } else {
+        localStorage.setItem("local_videos", JSON.stringify(videos));
+    }
+    renderVideosList();
+    renderTags();
+}
+
+async function deleteTagGlobally(oldTag) {
+    delete tagConfigs[oldTag];
+    saveTagConfigs();
+
+    videos.forEach(v => {
+        if (v.tags && Array.isArray(v.tags)) {
+            v.tags = v.tags.filter(t => t !== oldTag);
+        }
+    });
+
+    if (currentUid) {
+        const promises = videos.map(async (v) => {
+            try {
+                await updateDoc(doc(db, "users", currentUid, "videos", v.id), {
+                    tags: v.tags
+                });
+            } catch (err) {
+                console.error("Error deleting tag from video:", v.id, err);
+            }
+        });
+        await Promise.all(promises);
+    } else {
+        localStorage.setItem("local_videos", JSON.stringify(videos));
+    }
+    renderVideosList();
+    renderTags();
 }
 

@@ -655,10 +655,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (mobMore) {
         mobMore.addEventListener("click", (e) => {
+            e.preventDefault();
             e.stopPropagation();
             if (window.innerWidth <= 900) {
-                if (sidebar) sidebar.classList.add("active");
-                if (sidebarOverlay) sidebarOverlay.classList.add("active");
+                if (sidebar && sidebarOverlay) {
+                    const isActive = sidebar.classList.contains("active");
+                    if (isActive) {
+                        sidebar.classList.remove("active");
+                        sidebarOverlay.classList.remove("active");
+                    } else {
+                        sidebar.classList.add("active");
+                        sidebarOverlay.classList.add("active");
+                    }
+                }
             }
         });
     }

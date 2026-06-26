@@ -383,8 +383,10 @@ document.addEventListener('click', (e) => {
 
 // Умное позиционирование подменю проектов (чтобы не вылезало за границы экрана)
 document.addEventListener('mouseenter', (e) => {
-    const container = e.target.closest('.dropdown-submenu-container');
-    if (!container) return;
+    // Реагируем только на событие входа в сам контейнер подменю (а не в его дочерние элементы)
+    if (!e.target.classList || !e.target.classList.contains('dropdown-submenu-container')) return;
+
+    const container = e.target;
     const submenu = container.querySelector('.dropdown-submenu');
     if (!submenu) return;
 

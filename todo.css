@@ -1065,13 +1065,23 @@ body.dark .dropdown-submenu {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
-/* На десктопе раскрываем подменю сбоку при наведении */
+/* На десктопе раскрываем подменю сбоку при наведении с небольшой задержкой при уходе курсора */
 @media (hover: hover) {
-    .dropdown-submenu-container:hover .dropdown-submenu {
+    .dropdown-submenu {
         display: flex;
         position: absolute;
         left: calc(100% + 4px);
         top: -4px;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.15s ease, visibility 0.15s ease;
+        transition-delay: 0.25s;
+    }
+
+    .dropdown-submenu-container:hover .dropdown-submenu {
+        opacity: 1;
+        visibility: visible;
+        transition-delay: 0s;
     }
 }
 

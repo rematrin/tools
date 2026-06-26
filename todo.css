@@ -506,7 +506,7 @@ body.dark .add-task-form.expanded {
     border: none;
     border-bottom: 1px solid var(--border);
     border-radius: 0;
-    padding: 12px 6px;
+    padding: 8px 6px;
     gap: 12px;
     transition: background-color 0.2s ease, border-color 0.2s ease, margin 0.2s ease;
     position: relative;
@@ -689,7 +689,10 @@ body.dark .task-item.completed .custom-checkbox svg {
     border: none;
     background: transparent;
     padding: 4px 0;
-    cursor: text;
+    cursor: pointer;
+    line-height: 1.4;
+    box-sizing: content-box;
+    max-height: 5.6em;
     transition: color 0.2s, text-decoration 0.2s;
     display: -webkit-box;
     -webkit-line-clamp: 4;

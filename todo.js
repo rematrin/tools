@@ -4088,6 +4088,10 @@ function createTaskRowElement(task) {
             const dateInput = btnDueSelect.querySelector('.invisible-due-date-input');
             if (dateInput) {
                 btnDueSelect.addEventListener('click', (e) => {
+                    if (e.target === dateInput) {
+                        e.stopPropagation();
+                        return;
+                    }
                     e.stopPropagation();
                     if (typeof dateInput.showPicker === 'function') {
                         dateInput.showPicker();
@@ -6884,6 +6888,15 @@ function openTaskDetailsModal(taskId) {
     
     if (taskDetailsModal) {
         taskDetailsModal.style.display = 'flex';
+        const card = taskDetailsModal.querySelector('.task-details-modal-card');
+        if (card) {
+            card.classList.remove('expanded');
+            card.classList.add('collapsed');
+            card.style.transform = ''; // reset inline drag transform
+        }
+        // Force reflow
+        taskDetailsModal.offsetHeight;
+        taskDetailsModal.classList.add('active');
     }
     
     if (btnModalAddSubtask) btnModalAddSubtask.style.display = 'inline-flex';
@@ -6900,7 +6913,125 @@ function openTaskDetailsModal(taskId) {
 function closeTaskDetailsModal() {
     currentModalTaskId = null;
     if (taskDetailsModal) {
-        taskDetailsModal.style.display = 'none';
+        taskDetailsModal.classList.remove('active');
+        const card = taskDetailsModal.querySelector('.task-details-modal-card');
+        if (card) {
+            card.classList.remove('expanded', 'collapsed');
+            card.style.transform = ''; // reset inline drag transform
+        }
+        setTimeout(() => {
+            if (currentModalTaskId === null) {
+                taskDetailsModal.style.display = 'none';
+            }
+        }, 300);
+    }
+}
+
+// === ЖЕСТЫ ДЛЯ МОБИЛЬНОЙ ВЕРСИИ ДЕТАЛЕЙ ЗАДАЧИ (BOTTOM SHEET) ===
+function initMobileBottomSheet() {
+    if (!taskDetailsModal) return;
+    const card = taskDetailsModal.querySelector('.task-details-modal-card');
+    const dragHandleContainer = taskDetailsModal.querySelector('.task-details-drag-handle-container');
+    const mainContent = taskDetailsModal.querySelector('.task-details-main-content');
+    
+    if (!card || !dragHandleContainer) return;
+    
+    let startY = 0;
+    let currentY = 0;
+    let startTranslateY = 0;
+    let isDragging = false;
+    
+    function onTouchStart(e) {
+        if (window.innerWidth > 768) return; // Only mobile
+        
+        const isHandle = e.target.closest('.task-details-drag-handle-container') || e.target.closest('.task-details-title-row');
+        const isMainContent = e.target.closest('.task-details-main-content');
+        
+        if (!isHandle && isMainContent && mainContent.scrollTop > 0) {
+            return;
+        }
+        
+        startY = e.touches[0].clientY;
+        currentY = startY;
+        
+        if (card.classList.contains('expanded')) {
+            startTranslateY = 0;
+        } else {
+            startTranslateY = window.innerHeight * 0.40;
+        }
+        
+        isDragging = true;
+        card.style.transition = 'none';
+    }
+    
+    function onTouchMove(e) {
+        if (!isDragging) return;
+        
+        currentY = e.touches[0].clientY;
+        const deltaY = currentY - startY;
+        
+        let newTranslateY = startTranslateY + deltaY;
+        
+        if (newTranslateY < 0) {
+            newTranslateY = newTranslateY * 0.3; // Rubber-band effect
+        }
+        
+        card.style.transform = `translateY(${newTranslateY}px)`;
+        
+        if (newTranslateY > window.innerHeight * 0.40) {
+            const progress = Math.max(0, Math.min(1, (newTranslateY - window.innerHeight * 0.40) / (window.innerHeight * 0.52)));
+            taskDetailsModal.style.backgroundColor = `rgba(0, 0, 0, ${0.45 * (1 - progress)})`;
+        }
+    }
+    
+    function onTouchEnd(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        card.style.transition = '';
+        taskDetailsModal.style.backgroundColor = '';
+        
+        const deltaY = currentY - startY;
+        const viewportHeight = window.innerHeight;
+        
+        if (startTranslateY === 0) {
+            if (deltaY > 100) {
+                if (deltaY > viewportHeight * 0.35) {
+                    closeTaskDetailsModal();
+                } else {
+                    card.classList.remove('expanded');
+                    card.classList.add('collapsed');
+                    card.style.transform = '';
+                }
+            } else {
+                card.classList.add('expanded');
+                card.classList.remove('collapsed');
+                card.style.transform = '';
+            }
+        } else {
+            if (deltaY < -60) {
+                card.classList.add('expanded');
+                card.classList.remove('collapsed');
+                card.style.transform = '';
+            } else if (deltaY > 100) {
+                closeTaskDetailsModal();
+            } else {
+                card.classList.remove('expanded');
+                card.classList.add('collapsed');
+                card.style.transform = '';
+            }
+        }
+    }
+    
+    dragHandleContainer.addEventListener('touchstart', onTouchStart, { passive: true });
+    dragHandleContainer.addEventListener('touchmove', onTouchMove, { passive: true });
+    dragHandleContainer.addEventListener('touchend', onTouchEnd);
+    
+    const titleRow = taskDetailsModal.querySelector('.task-details-title-row');
+    if (titleRow) {
+        titleRow.addEventListener('touchstart', onTouchStart, { passive: true });
+        titleRow.addEventListener('touchmove', onTouchMove, { passive: true });
+        titleRow.addEventListener('touchend', onTouchEnd);
     }
 }
 
@@ -7308,6 +7439,10 @@ function createSubtaskElement(subtask) {
             const dateInput = btnDueSelect.querySelector('.invisible-due-date-input');
             if (dateInput) {
                 btnDueSelect.addEventListener('click', (e) => {
+                    if (e.target === dateInput) {
+                        e.stopPropagation();
+                        return;
+                    }
                     e.stopPropagation();
                     if (typeof dateInput.showPicker === 'function') {
                         dateInput.showPicker();
@@ -7485,6 +7620,9 @@ if (taskDetailsModal) {
             closeTaskDetailsModal();
         }
     });
+    
+    // Инициализация жестов для bottom sheet на мобильных устройствах
+    initMobileBottomSheet();
 }
 
 if (modalTaskCheckbox) {

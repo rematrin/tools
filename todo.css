@@ -4458,30 +4458,100 @@ body.dark .progress-bg-circle {
     gap: 2px;
 }
 
+.invisible-due-date-input {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    opacity: 0 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    z-index: 5 !important;
+}
+
+.task-details-drag-handle-container {
+    display: none;
+}
+
 /* Адаптивность для модального окна */
 @media (max-width: 768px) {
-    .task-details-modal-card {
-        flex-direction: column;
-        height: 100%;
-        max-height: 100%;
-        border-radius: 0;
-        border: none;
-    }
-    
     .task-details-modal-overlay {
         padding: 0;
+        align-items: flex-end;
+        justify-content: center;
+        background-color: rgba(0, 0, 0, 0);
+        transition: background-color 0.3s ease-out;
+    }
+    
+    .task-details-modal-overlay.active {
+        background-color: rgba(0, 0, 0, 0.45);
+    }
+    
+    .task-details-modal-card {
+        flex-direction: column;
+        height: 92vh;
+        max-height: 92vh;
+        border-radius: 20px 20px 0 0;
+        border: none;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        display: flex;
+        box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.18);
+    }
+    
+    .task-details-modal-overlay.active .task-details-modal-card {
+        transform: translateY(40vh); /* collapsed state by default */
+    }
+    
+    .task-details-modal-card.expanded {
+        transform: translateY(0vh) !important;
+    }
+    
+    .task-details-modal-card.collapsed {
+        transform: translateY(40vh) !important;
+    }
+    
+    .task-details-drag-handle-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 12px 0 6px 0;
+        cursor: grab;
+        user-select: none;
+        touch-action: none;
+        flex-shrink: 0;
+    }
+    
+    .task-details-drag-handle-container:active {
+        cursor: grabbing;
+    }
+    
+    .task-details-drag-handle {
+        width: 40px;
+        height: 5px;
+        background-color: var(--border);
+        border-radius: 3px;
+        opacity: 0.8;
+    }
+    
+    .task-details-close-btn {
+        top: 8px;
+        right: 16px;
+        font-size: 22px;
     }
     
     .task-details-main-content {
         max-height: none;
         flex: 1;
+        padding: 16px 20px;
     }
     
     .task-details-sidebar {
         width: 100%;
         border-left: none;
         border-top: 1px solid var(--border);
-        padding: 20px;
+        padding: 16px 20px 40px 20px;
     }
 }
 

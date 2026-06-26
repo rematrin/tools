@@ -2112,6 +2112,8 @@ const pendingCompletions = new Set();
 // Переключение выполнения задачи
 async function toggleTaskCompleted(taskId, currentStatus) {
     if (!currentUid || !taskId) return;
+    const task = allTasks.find(t => t.id === taskId);
+    if (task && task.title && task.title.startsWith('* ')) return;
     if (pendingCompletions.has(taskId)) return;
 
     pendingCompletions.add(taskId);
@@ -2141,7 +2143,7 @@ async function toggleTaskCompleted(taskId, currentStatus) {
 
         // 1.1. Каскадное выполнение подзадач при завершении родительской задачи
         if (!currentStatus) {
-            const subtasksToUpdate = allTasks.filter(t => t.parentId === taskId && !t.deleted && !t.completed);
+            const subtasksToUpdate = allTasks.filter(t => t.parentId === taskId && !t.deleted && !t.completed && !(t.title && t.title.startsWith('* ')));
             subtasksToUpdate.forEach(subtask => {
                 let subPromise;
                 if (deleteCompletedPref) {
@@ -3007,8 +3009,8 @@ function renderTasksGroup(tasksGroup, containerEl) {
         const el = createTaskRowElement(task);
         containerEl.appendChild(el);
 
-        // Рендерим подзадачи родительской задачи (как активные, так и выполненные)
-        const subtasks = allTasks.filter(t => t.parentId === task.id && !t.deleted);
+        // Рендерим подзадачи родительской задачи (только активные на главном экране)
+        const subtasks = allTasks.filter(t => t.parentId === task.id && !t.deleted && !t.completed);
 
         // Sort subtasks
         subtasks.sort((a, b) => {
@@ -3127,12 +3129,8 @@ function renderTasks() {
         displayCompletedTasks = completedTasks.filter(t => !t.projectId);
     }
 
-    // Фильтруем выполненные подзадачи: они не должны перемещаться в выполненные, пока не выполнена основная задача
-    displayCompletedTasks = displayCompletedTasks.filter(t => {
-        if (!t.parentId) return true;
-        const parent = allTasks.find(pt => pt.id === t.parentId && !pt.deleted);
-        return parent && parent.completed;
-    });
+    // Выполненные подзадачи скрываются из главного экрана
+    displayCompletedTasks = displayCompletedTasks.filter(t => !t.parentId);
 
     // Обновляем виджет прогресса на вкладке "Сегодня"
     const todayProgressWidget = document.getElementById('todayProgressWidget');
@@ -3564,8 +3562,8 @@ function renderTasks() {
                 const el = createTaskRowElement(task);
                 completedTasksContainer.appendChild(el);
 
-                // Рендерим только выполненные подзадачи для выполненного родителя
-                const subtasks = allTasks.filter(t => t.parentId === task.id && t.completed && !t.deleted);
+                // Выполненные подзадачи скрыты из главного экрана
+                const subtasks = [];
                 sortTasksByOrder(subtasks);
 
                 const isCollapsed = isParentTaskCollapsed(task.id);
@@ -3631,7 +3629,7 @@ function toggleParentTaskCollapsed(taskId) {
 
 function createTaskRowElement(task) {
     const isSubtask = !!task.parentId;
-    const hasSubtasks = !isSubtask && allTasks.some(t => t.parentId === task.id && !t.deleted);
+    const hasSubtasks = !isSubtask && allTasks.some(t => t.parentId === task.id && !t.deleted && !t.completed);
     const isCollapsed = hasSubtasks && isParentTaskCollapsed(task.id);
 
     let dueLabel = '';
@@ -3738,7 +3736,7 @@ function createTaskRowElement(task) {
             </svg>
         </button>
         ${chevronHtml}
-        <div class="checkbox-wrapper">
+        <div class="checkbox-wrapper" style="${(task.title && task.title.startsWith('* ')) ? 'display: none;' : ''}">
             <button class="custom-checkbox" aria-label="${task.completed ? 'Отметить невыполненной' : 'Отметить выполненной'}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="20 6 9 17 4 12"></polyline>
@@ -3967,6 +3965,7 @@ function createTaskRowElement(task) {
     // Клик на чекбокс
     checkbox.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (task.title && task.title.startsWith('* ')) return;
 
         if (!task.completed) {
             const completedSound = new Audio('completed.mp3');
@@ -4444,7 +4443,11 @@ function escapeHtml(text) {
 // Функция форматирования названия задачи с поддержкой кликабельных ссылок
 function formatTaskTitle(title) {
     if (!title) return '';
-    const escaped = escapeHtml(title);
+    let displayTitle = title;
+    if (displayTitle.startsWith('* ')) {
+        displayTitle = displayTitle.slice(2);
+    }
+    const escaped = escapeHtml(displayTitle);
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     return escaped.replace(urlRegex, (url) => {
         return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="task-title-link" onclick="event.stopPropagation();">${url}</a>`;
@@ -7050,6 +7053,13 @@ function updateModalUI(task) {
     const titleRow = document.querySelector('.task-details-title-row');
     
     if (titleRow && modalTaskCheckbox) {
+        const checkboxWrapper = modalTaskCheckbox.closest('.checkbox-wrapper');
+        const startsWithStar = task.title && task.title.startsWith('* ');
+        if (startsWithStar) {
+            if (checkboxWrapper) checkboxWrapper.style.display = 'none';
+        } else {
+            if (checkboxWrapper) checkboxWrapper.style.display = 'flex';
+        }
         if (task.completed) {
             titleRow.classList.add('completed');
             modalTaskCheckbox.setAttribute('aria-label', 'Отметить невыполненной');
@@ -7060,7 +7070,8 @@ function updateModalUI(task) {
     }
     
     if (modalTaskTitle && document.activeElement !== modalTaskTitle) {
-        modalTaskTitle.value = task.title || '';
+        const hasAsterisk = task.title && task.title.startsWith('* ');
+        modalTaskTitle.value = hasAsterisk ? task.title.slice(2) : (task.title || '');
         autoResizeTextarea(modalTaskTitle);
     }
     
@@ -7137,15 +7148,17 @@ function createSubtaskElement(subtask) {
         `;
     }
     
+    const hasAsterisk = subtask.title && subtask.title.startsWith('* ');
+    const displayTitle = hasAsterisk ? subtask.title.slice(2) : subtask.title;
     itemEl.innerHTML = `
-        <div class="checkbox-wrapper">
+        <div class="checkbox-wrapper" style="${hasAsterisk ? 'display: none;' : ''}">
             <button class="custom-checkbox modal-subtask-checkbox" aria-label="${subtask.completed ? 'Отметить невыполненной' : 'Отметить выполненной'}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
             </button>
         </div>
-        <input type="text" class="modal-subtask-title" value="${escapeHtml(subtask.title)}" style="flex-grow: 1; min-width: 0; margin-right: 8px;">
+        <input type="text" class="modal-subtask-title" value="${escapeHtml(displayTitle)}" style="flex-grow: 1; min-width: 0; margin-right: 8px;">
         ${dueHtml}
         <div class="task-actions" style="position: relative; margin-left: ${subtask.dueDate ? '0' : 'auto'};">
             <button class="action-btn btn-more" title="Действия">
@@ -7284,6 +7297,7 @@ function createSubtaskElement(subtask) {
     if (chk) {
         chk.addEventListener('click', async (e) => {
             e.stopPropagation();
+            if (subtask.title && subtask.title.startsWith('* ')) return;
             if (!subtask.completed) {
                 const completedSound = new Audio('completed.mp3');
                 completedSound.play().catch(err => console.log('Audio play error:', err));
@@ -7294,6 +7308,11 @@ function createSubtaskElement(subtask) {
     
     const titleInput = itemEl.querySelector('.modal-subtask-title');
     if (titleInput) {
+        titleInput.addEventListener('focus', () => {
+            if (subtask.title && subtask.title.startsWith('* ')) {
+                titleInput.value = subtask.title;
+            }
+        });
         titleInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -7310,6 +7329,9 @@ function createSubtaskElement(subtask) {
                 } catch (err) {
                     console.error("Ошибка при обновлении подзадачи:", err);
                 }
+            } else {
+                const hasAsteriskNow = subtask.title && subtask.title.startsWith('* ');
+                titleInput.value = hasAsteriskNow ? subtask.title.slice(2) : (subtask.title || '');
             }
         });
     }
@@ -7630,6 +7652,7 @@ if (modalTaskCheckbox) {
         e.stopPropagation();
         const currentTask = allTasks.find(t => t.id === currentModalTaskId);
         if (!currentTask) return;
+        if (currentTask.title && currentTask.title.startsWith('* ')) return;
         if (!currentTask.completed) {
             const completedSound = new Audio('completed.mp3');
             completedSound.play().catch(err => console.log('Audio playback failed:', err));
@@ -7639,6 +7662,12 @@ if (modalTaskCheckbox) {
 }
 
 if (modalTaskTitle) {
+    modalTaskTitle.addEventListener('focus', () => {
+        const currentTask = allTasks.find(t => t.id === currentModalTaskId);
+        if (currentTask && currentTask.title && currentTask.title.startsWith('* ')) {
+            modalTaskTitle.value = currentTask.title;
+        }
+    });
     modalTaskTitle.addEventListener('input', () => {
         autoResizeTextarea(modalTaskTitle);
     });
@@ -7659,6 +7688,10 @@ if (modalTaskTitle) {
             } catch (err) {
                 console.error("Ошибка при сохранении названия:", err);
             }
+        } else if (currentTask) {
+            const hasAsteriskNow = currentTask.title && currentTask.title.startsWith('* ');
+            modalTaskTitle.value = hasAsteriskNow ? currentTask.title.slice(2) : (currentTask.title || '');
+            autoResizeTextarea(modalTaskTitle);
         }
     });
 }

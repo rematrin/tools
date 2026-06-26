@@ -576,6 +576,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const mobileNavItems = document.querySelectorAll(".mobile-bottom-nav .mobile-nav-item");
         mobileNavItems.forEach(mi => mi.classList.remove("active"));
 
+        // Скрываем мобильное меню при переходе по маршрутам
+        const sidebar = document.querySelector(".sidebar");
+        const sidebarOverlay = document.getElementById("sidebarOverlay");
+        if (sidebar) sidebar.classList.remove("active");
+        if (sidebarOverlay) sidebarOverlay.classList.remove("active");
+
         if (hash === 'trash') {
             currentMenuRoute = "trash";
             const item = document.getElementById("menuTrash");

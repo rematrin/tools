@@ -112,6 +112,43 @@ document.addEventListener("DOMContentLoaded", () => {
     if (typeof loadTagConfigs === "function") {
         loadTagConfigs();
     }
+    if (typeof initVideoDetailMobileBottomSheet === "function") {
+        initVideoDetailMobileBottomSheet();
+    }
+
+    // Восстанавливаем десктопное отображение при масштабировании экрана
+    window.addEventListener("resize", () => {
+        const overlay = document.getElementById("detailSidebarOverlay");
+        if (window.innerWidth > 900) {
+            if (overlay) overlay.style.display = "none";
+            if (detailSidebar) {
+                detailSidebar.classList.remove("active", "expanded", "collapsed");
+                detailSidebar.style.transform = "";
+                
+                // Отображаем сайдбар только если выбран соответствующий маршрут
+                if (currentMenuRoute === "videos" || currentMenuRoute === "trash") {
+                    detailSidebar.style.display = "flex";
+                    if (detailSidebarResizer) detailSidebarResizer.style.display = "block";
+                } else {
+                    detailSidebar.style.display = "none";
+                    if (detailSidebarResizer) detailSidebarResizer.style.display = "none";
+                }
+            }
+            
+            const sidebarOverlay = document.getElementById("sidebarOverlay");
+            const sidebar = document.querySelector(".sidebar");
+            if (sidebarOverlay) sidebarOverlay.classList.remove("active");
+            if (sidebar) {
+                sidebar.classList.remove("active");
+                sidebar.style.display = "flex";
+            }
+        } else {
+            if (detailSidebarResizer) detailSidebarResizer.style.display = "none";
+            if (detailSidebar && !detailSidebar.classList.contains("active")) {
+                detailSidebar.style.display = "none";
+            }
+        }
+    });
     // Сортировка списка
     if (btnSortList) {
         btnSortList.addEventListener("click", (e) => {
@@ -238,10 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     renderVideosList();
     
-    // Выбираем первое видео по умолчанию
-    if (videos.length > 0) {
-        selectVideoItem(videos[0].id);
-    }
+    // Выбираем первое видео по умолчанию (отключено по запросу пользователя)
 
     // Слушатель добавления видео
     const btnAddVideo = document.querySelector(".btn-add-video");
@@ -538,33 +572,54 @@ document.addEventListener("DOMContentLoaded", () => {
         const hash = window.location.hash.replace('#', '') || 'home';
         const sidebarMenuItems = document.querySelectorAll(".sidebar-menu .menu-item");
         sidebarMenuItems.forEach(mi => mi.classList.remove("active"));
+        
+        const mobileNavItems = document.querySelectorAll(".mobile-bottom-nav .mobile-nav-item");
+        mobileNavItems.forEach(mi => mi.classList.remove("active"));
 
         if (hash === 'trash') {
             currentMenuRoute = "trash";
             const item = document.getElementById("menuTrash");
             if (item) item.classList.add("active");
+            
+            const mobMore = document.getElementById("mobileNavMore");
+            if (mobMore) mobMore.classList.add("active");
         } else if (hash === 'calendar') {
             currentMenuRoute = "calendar";
             const item = document.getElementById("menuCalendar");
             if (item) item.classList.add("active");
+            
+            const mobCal = document.getElementById("mobileNavCalendar");
+            if (mobCal) mobCal.classList.add("active");
         } else if (hash === 'tasks') {
             currentMenuRoute = "tasks";
             const item = document.getElementById("menuTasks");
             if (item) item.classList.add("active");
+            
+            const mobTasks = document.getElementById("mobileNavTasks");
+            if (mobTasks) mobTasks.classList.add("active");
         } else {
             currentMenuRoute = "videos";
             const item = document.getElementById("menuHome");
             if (item) item.classList.add("active");
+            
+            const mobHome = document.getElementById("mobileNavHome");
+            if (mobHome) mobHome.classList.add("active");
         }
         updateViewForRoute();
     }
 
     // Слушатели бокового меню навигации
     const sidebarMenuItems = document.querySelectorAll(".sidebar-menu .menu-item");
+    const sidebar = document.querySelector(".sidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+
     sidebarMenuItems.forEach(item => {
         if (item.id === "menuSettings") return; // Настройки обрабатываются отдельно как модалка
         item.addEventListener("click", (e) => {
             e.preventDefault();
+            if (sidebar) sidebar.classList.remove("active");
+            if (sidebarOverlay) sidebarOverlay.classList.remove("active");
+
             if (item.id === "menuTrash") {
                 window.location.hash = "trash";
             } else if (item.id === "menuCalendar") {
@@ -576,6 +631,44 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     });
+
+    // Слушатели мобильной нижней навигации
+    const mobHome = document.getElementById("mobileNavHome");
+    const mobTasks = document.getElementById("mobileNavTasks");
+    const mobCalendar = document.getElementById("mobileNavCalendar");
+    const mobMore = document.getElementById("mobileNavMore");
+
+    if (mobHome) {
+        mobHome.addEventListener("click", () => {
+            window.location.hash = "home";
+        });
+    }
+    if (mobTasks) {
+        mobTasks.addEventListener("click", () => {
+            window.location.hash = "tasks";
+        });
+    }
+    if (mobCalendar) {
+        mobCalendar.addEventListener("click", () => {
+            window.location.hash = "calendar";
+        });
+    }
+    if (mobMore) {
+        mobMore.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (window.innerWidth <= 900) {
+                if (sidebar) sidebar.classList.add("active");
+                if (sidebarOverlay) sidebarOverlay.classList.add("active");
+            }
+        });
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener("click", () => {
+            if (sidebar) sidebar.classList.remove("active");
+            sidebarOverlay.classList.remove("active");
+        });
+    }
 
     window.addEventListener("hashchange", handleRoute);
     handleRoute(); // Вызываем один раз при инициализации
@@ -694,8 +787,12 @@ function updateViewForRoute() {
     if (calendarViewContainer) calendarViewContainer.style.display = "none";
     if (tasksViewContainer) tasksViewContainer.style.display = "none";
     if (mainContent) mainContent.style.display = "flex";
-    if (detailSidebarResizer) detailSidebarResizer.style.display = "block";
-    if (detailSidebar) detailSidebar.style.display = "flex";
+    if (detailSidebarResizer) {
+        detailSidebarResizer.style.display = window.innerWidth <= 900 ? "none" : "block";
+    }
+    if (detailSidebar) {
+        detailSidebar.style.display = window.innerWidth <= 900 ? "none" : "flex";
+    }
 
     if (currentMenuRoute === "trash") {
         if (statsGrid) statsGrid.style.display = "none";
@@ -736,10 +833,11 @@ function updateViewForRoute() {
         }
     });
     if (filtered.length > 0) {
-        if (!selectedVideo || !filtered.some(v => v.id === selectedVideo.id)) {
-            selectVideoItem(filtered[0].id);
-        } else {
+        if (selectedVideo && filtered.some(v => v.id === selectedVideo.id)) {
             selectVideoItem(selectedVideo.id);
+        } else {
+            selectedVideo = null;
+            clearDetailSidebar();
         }
     } else {
         selectedVideo = null;
@@ -1487,6 +1585,23 @@ function selectVideoItem(id) {
 
     // Обновляем состояние кнопки Notion
     updateNotionButtonState();
+
+    // Показываем контент, скрываем заглушку
+    const emptyStateEl = document.getElementById("detailSidebarEmptyState");
+    const contentWrapperEl = document.getElementById("detailSidebarContentWrapper");
+    if (emptyStateEl) emptyStateEl.style.display = "none";
+    if (contentWrapperEl) contentWrapperEl.style.display = "block";
+
+    if (window.innerWidth <= 900) {
+        openDetailSidebarMobile();
+    } else {
+        if (detailSidebar) {
+            detailSidebar.style.display = "flex";
+        }
+        if (detailSidebarResizer) {
+            detailSidebarResizer.style.display = "block";
+        }
+    }
 }
 
 // Функция рендера файлов удалена так как вкладка файлы заменена на референсы
@@ -1552,10 +1667,11 @@ window.addEventListener('authChanged', (e) => {
                 }
             });
             if (filtered.length > 0) {
-                if (!selectedVideo || !filtered.some(v => v.id === selectedVideo.id)) {
-                    selectVideoItem(filtered[0].id);
-                } else {
+                if (selectedVideo && filtered.some(v => v.id === selectedVideo.id)) {
                     selectVideoItem(selectedVideo.id);
+                } else {
+                    selectedVideo = null;
+                    clearDetailSidebar();
                 }
             } else {
                 selectedVideo = null;
@@ -1603,7 +1719,12 @@ window.addEventListener('authChanged', (e) => {
             }
         });
         if (filtered.length > 0) {
-            selectVideoItem(filtered[0].id);
+            if (selectedVideo && filtered.some(v => v.id === selectedVideo.id)) {
+                selectVideoItem(selectedVideo.id);
+            } else {
+                selectedVideo = null;
+                clearDetailSidebar();
+            }
         } else {
             clearDetailSidebar();
         }
@@ -1693,6 +1814,10 @@ if (menuSettings) {
     menuSettings.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        const sidebar = document.querySelector(".sidebar");
+        const sidebarOverlay = document.getElementById("sidebarOverlay");
+        if (sidebar) sidebar.classList.remove("active");
+        if (sidebarOverlay) sidebarOverlay.classList.remove("active");
         openSettingsModal();
     });
 }
@@ -1754,6 +1879,22 @@ function clearDetailSidebar() {
     if (btnOpenNotion) {
         btnOpenNotion.classList.add("disabled");
         btnOpenNotion.href = "#";
+    }
+
+    // Снимаем выделение со всех карточек видео
+    document.querySelectorAll(".video-card").forEach(card => {
+        card.classList.remove("active");
+    });
+
+    // Переключаем видимость заглушки / контента
+    const emptyStateEl = document.getElementById("detailSidebarEmptyState");
+    const contentWrapperEl = document.getElementById("detailSidebarContentWrapper");
+    if (window.innerWidth > 900) {
+        if (emptyStateEl) emptyStateEl.style.display = "flex";
+        if (contentWrapperEl) contentWrapperEl.style.display = "none";
+    } else {
+        if (emptyStateEl) emptyStateEl.style.display = "none";
+        if (contentWrapperEl) contentWrapperEl.style.display = "block";
     }
 }
 
@@ -3209,5 +3350,152 @@ function showTip(e) {
 
 function hideTip() {
     if (tooltipEl) tooltipEl.classList.remove('visible');
+}
+
+// === MOBILE BOTTOM SHEET FOR VIDEO DETAILS ===
+function openDetailSidebarMobile() {
+    const overlay = document.getElementById("detailSidebarOverlay");
+    if (!detailSidebar || !overlay) return;
+    
+    overlay.style.display = "block";
+    detailSidebar.style.display = "flex";
+    
+    detailSidebar.classList.remove("collapsed");
+    detailSidebar.classList.add("expanded");
+    detailSidebar.style.transform = "";
+    
+    // Force reflow
+    detailSidebar.offsetHeight;
+    
+    overlay.classList.add("active");
+    detailSidebar.classList.add("active");
+}
+
+function closeDetailSidebarMobile() {
+    const overlay = document.getElementById("detailSidebarOverlay");
+    if (!detailSidebar || !overlay) return;
+    
+    overlay.classList.remove("active");
+    detailSidebar.classList.remove("active", "expanded", "collapsed");
+    detailSidebar.style.transform = "";
+    
+    setTimeout(() => {
+        if (!detailSidebar.classList.contains("active")) {
+            overlay.style.display = "none";
+            detailSidebar.style.display = "none";
+        }
+    }, 300);
+}
+
+function initVideoDetailMobileBottomSheet() {
+    const overlay = document.getElementById("detailSidebarOverlay");
+    if (!detailSidebar || !overlay) return;
+    
+    const dragHandleContainer = detailSidebar.querySelector(".detail-sidebar-drag-handle-container");
+    
+    overlay.addEventListener("click", () => {
+        if (window.innerWidth <= 900) {
+            closeDetailSidebarMobile();
+        }
+    });
+    
+    if (!dragHandleContainer) return;
+    
+    let startY = 0;
+    let currentY = 0;
+    let startTranslateY = 0;
+    let isDragging = false;
+    
+    function onTouchStart(e) {
+        if (window.innerWidth > 900) return; // Only mobile
+        
+        const isHandle = e.target.closest(".detail-sidebar-drag-handle-container") || e.target.closest(".detail-title-block");
+        
+        if (!isHandle && detailSidebar.scrollTop > 0) {
+            return;
+        }
+        
+        startY = e.touches[0].clientY;
+        currentY = startY;
+        
+        if (detailSidebar.classList.contains("expanded")) {
+            startTranslateY = 0;
+        } else {
+            startTranslateY = window.innerHeight * 0.40;
+        }
+        
+        isDragging = true;
+        detailSidebar.style.transition = "none";
+    }
+    
+    function onTouchMove(e) {
+        if (!isDragging) return;
+        
+        currentY = e.touches[0].clientY;
+        const deltaY = currentY - startY;
+        
+        let newTranslateY = startTranslateY + deltaY;
+        
+        if (newTranslateY < 0) {
+            newTranslateY = newTranslateY * 0.3; // Rubber-band
+        }
+        
+        detailSidebar.style.transform = `translateY(${newTranslateY}px)`;
+        
+        if (newTranslateY > window.innerHeight * 0.40) {
+            const progress = Math.max(0, Math.min(1, (newTranslateY - window.innerHeight * 0.40) / (window.innerHeight * 0.52)));
+            overlay.style.backgroundColor = `rgba(0, 0, 0, ${0.45 * (1 - progress)})`;
+        }
+    }
+    
+    function onTouchEnd(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        detailSidebar.style.transition = "";
+        overlay.style.backgroundColor = "";
+        
+        const deltaY = currentY - startY;
+        const viewportHeight = window.innerHeight;
+        
+        if (startTranslateY === 0) {
+            if (deltaY > 100) {
+                if (deltaY > viewportHeight * 0.35) {
+                    closeDetailSidebarMobile();
+                } else {
+                    detailSidebar.classList.remove("expanded");
+                    detailSidebar.classList.add("collapsed");
+                    detailSidebar.style.transform = "";
+                }
+            } else {
+                detailSidebar.classList.add("expanded");
+                detailSidebar.classList.remove("collapsed");
+                detailSidebar.style.transform = "";
+            }
+        } else {
+            if (deltaY < -60) {
+                detailSidebar.classList.add("expanded");
+                detailSidebar.classList.remove("collapsed");
+                detailSidebar.style.transform = "";
+            } else if (deltaY > 100) {
+                closeDetailSidebarMobile();
+            } else {
+                detailSidebar.classList.remove("expanded");
+                detailSidebar.classList.add("collapsed");
+                detailSidebar.style.transform = "";
+            }
+        }
+    }
+    
+    dragHandleContainer.addEventListener("touchstart", onTouchStart, { passive: true });
+    dragHandleContainer.addEventListener("touchmove", onTouchMove, { passive: true });
+    dragHandleContainer.addEventListener("touchend", onTouchEnd);
+    
+    const titleBlock = detailSidebar.querySelector(".detail-title-block");
+    if (titleBlock) {
+        titleBlock.addEventListener("touchstart", onTouchStart, { passive: true });
+        titleBlock.addEventListener("touchmove", onTouchMove, { passive: true });
+        titleBlock.addEventListener("touchend", onTouchEnd);
+    }
 }
 

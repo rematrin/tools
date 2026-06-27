@@ -3702,3 +3702,37 @@ body.dark .tag-color-gray {
         padding: 12px 14px !important;
     }
 }
+
+/* --- Группировка видео по статусам --- */
+.video-group-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--ch-text-gray);
+    margin: 20px 0 8px 4px;
+    grid-column: 1 / -1;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+/* --- Редактирование заголовка в сайдбаре --- */
+#detailTitle {
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    padding: 2px 4px;
+    margin-left: -4px;
+    display: inline-block;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+#detailTitle:hover {
+    background-color: var(--ch-border);
+}
+
+#detailTitle[contenteditable="true"] {
+    outline: none;
+    background-color: var(--ch-border);
+    cursor: text;
+    border-radius: 4px;
+}

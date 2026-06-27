@@ -359,6 +359,70 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Клик по заголовку в сайдбаре для быстрого редактирования
+    if (detailTitle) {
+        detailTitle.addEventListener("click", () => {
+            if (!selectedVideo) return;
+            if (detailTitle.getAttribute("contenteditable") === "true") return; // уже редактируется
+
+            const oldTitle = selectedVideo.title || "";
+            detailTitle.setAttribute("contenteditable", "true");
+            detailTitle.focus();
+
+            // Выделяем весь текст в contenteditable
+            const range = document.createRange();
+            range.selectNodeContents(detailTitle);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+
+            let committed = false;
+            async function commitRename() {
+                if (committed) return;
+                committed = true;
+
+                detailTitle.removeAttribute("contenteditable");
+                const newTitle = detailTitle.textContent.trim() || oldTitle;
+                detailTitle.textContent = newTitle;
+
+                if (newTitle !== oldTitle) {
+                    selectedVideo.title = newTitle;
+                    
+                    if (currentUid) {
+                        try {
+                            await updateDoc(doc(db, "users", currentUid, "videos", selectedVideo.id), {
+                                title: newTitle
+                            });
+                        } catch (err) {
+                            console.error("Ошибка при обновлении названия в Firestore:", err);
+                        }
+                    } else {
+                        const v = videos.find(video => video.id === selectedVideo.id);
+                        if (v) {
+                            v.title = newTitle;
+                            localStorage.setItem("local_videos", JSON.stringify(videos));
+                            renderVideosList();
+                        }
+                    }
+                }
+            }
+
+            // Используем { once: true } чтобы избежать дублирования
+            detailTitle.addEventListener("blur", commitRename, { once: true });
+            
+            detailTitle.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault(); // Запрещаем перенос строки
+                    detailTitle.blur();
+                } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    detailTitle.textContent = oldTitle;
+                    detailTitle.blur();
+                }
+            });
+        });
+    }
+
     // Показ/скрытие календаря публикации в настройках
     if (btnDueDate) {
         btnDueDate.addEventListener("click", (e) => {
@@ -1036,7 +1100,7 @@ function renderVideosList() {
         return;
     }
 
-    filtered.forEach(v => {
+    function createVideoCard(v) {
         const card = document.createElement("div");
         card.className = `video-card ${selectedVideo && selectedVideo.id === v.id ? 'active' : ''}`;
         card.dataset.id = v.id;
@@ -1147,8 +1211,35 @@ function renderVideosList() {
             });
         }
 
-        videosListContainer.appendChild(card);
-    });
+        return card;
+    }
+
+    if (currentFilter === "all" && currentMenuRoute !== "trash") {
+        const statuses = [
+            { id: "idea", label: "Идеи" },
+            { id: "in_progress", label: "Черновик" },
+            { id: "editing", label: "В процессе" },
+            { id: "published", label: "Опубликовано" }
+        ];
+
+        statuses.forEach(statusObj => {
+            const statusFiltered = filtered.filter(v => (v.status || "idea") === statusObj.id);
+            if (statusFiltered.length > 0) {
+                const header = document.createElement("div");
+                header.className = "video-group-title";
+                header.textContent = statusObj.label;
+                videosListContainer.appendChild(header);
+
+                statusFiltered.forEach(v => {
+                    videosListContainer.appendChild(createVideoCard(v));
+                });
+            }
+        });
+    } else {
+        filtered.forEach(v => {
+            videosListContainer.appendChild(createVideoCard(v));
+        });
+    }
 
     if (typeof setViewMode === "function") {
         setViewMode(currentViewMode);

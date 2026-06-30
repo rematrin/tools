@@ -645,6 +645,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const sidebarOverlay = document.getElementById("sidebarOverlay");
         if (sidebar) sidebar.classList.remove("active");
         if (sidebarOverlay) sidebarOverlay.classList.remove("active");
+        const hamburgerDropdown = document.getElementById("hamburgerDropdown");
+        if (hamburgerDropdown) hamburgerDropdown.classList.remove("active");
 
         if (hash === 'trash') {
             currentMenuRoute = "trash";
@@ -682,6 +684,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const sidebarMenuItems = document.querySelectorAll(".sidebar-menu .menu-item");
     const sidebar = document.querySelector(".sidebar");
     const sidebarOverlay = document.getElementById("sidebarOverlay");
+    const hamburgerDropdown = document.getElementById("hamburgerDropdown");
 
     sidebarMenuItems.forEach(item => {
         if (item.id === "menuSettings") return; // Настройки обрабатываются отдельно как модалка
@@ -689,6 +692,7 @@ document.addEventListener("DOMContentLoaded", () => {
             e.preventDefault();
             if (sidebar) sidebar.classList.remove("active");
             if (sidebarOverlay) sidebarOverlay.classList.remove("active");
+            if (hamburgerDropdown) hamburgerDropdown.classList.remove("active");
 
             if (item.id === "menuTrash") {
                 window.location.hash = "trash";
@@ -727,16 +731,16 @@ document.addEventListener("DOMContentLoaded", () => {
         mobMore.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (window.innerWidth <= 900) {
-                if (sidebar && sidebarOverlay) {
-                    const isActive = sidebar.classList.contains("active");
-                    if (isActive) {
-                        sidebar.classList.remove("active");
-                        sidebarOverlay.classList.remove("active");
-                    } else {
-                        sidebar.classList.add("active");
-                        sidebarOverlay.classList.add("active");
-                    }
+            if (hamburgerDropdown) {
+                hamburgerDropdown.classList.toggle("active");
+            } else if (sidebar && sidebarOverlay) {
+                const isActive = sidebar.classList.contains("active");
+                if (isActive) {
+                    sidebar.classList.remove("active");
+                    sidebarOverlay.classList.remove("active");
+                } else {
+                    sidebar.classList.add("active");
+                    sidebarOverlay.classList.add("active");
                 }
             }
         });
@@ -746,6 +750,7 @@ document.addEventListener("DOMContentLoaded", () => {
         sidebarOverlay.addEventListener("click", () => {
             if (sidebar) sidebar.classList.remove("active");
             sidebarOverlay.classList.remove("active");
+            if (hamburgerDropdown) hamburgerDropdown.classList.remove("active");
         });
     }
 
@@ -1922,9 +1927,27 @@ if (menuSettings) {
         e.stopPropagation();
         const sidebar = document.querySelector(".sidebar");
         const sidebarOverlay = document.getElementById("sidebarOverlay");
+        const hamburgerDropdown = document.getElementById("hamburgerDropdown");
         if (sidebar) sidebar.classList.remove("active");
         if (sidebarOverlay) sidebarOverlay.classList.remove("active");
+        if (hamburgerDropdown) hamburgerDropdown.classList.remove("active");
         openSettingsModal();
+    });
+}
+
+// Слушатели для кнопки гамбургера и закрытия при клике вне
+const hamburgerMenuBtn = document.getElementById("hamburgerMenuBtn");
+if (hamburgerMenuBtn && hamburgerDropdown) {
+    hamburgerMenuBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        hamburgerDropdown.classList.toggle("active");
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!hamburgerDropdown.contains(e.target) && !hamburgerMenuBtn.contains(e.target)) {
+            hamburgerDropdown.classList.remove("active");
+        }
     });
 }
 

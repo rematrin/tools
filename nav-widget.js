@@ -82,6 +82,10 @@ const servicesLinks = [
     {
         href: "bookmarks.html", title: "Мои закладки",
         icon: '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>'
+    },
+    {
+        href: "invoices.html", title: "Инвойсы и Счета",
+        icon: '<rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="9" y1="22" x2="9" y2="16"></line><path d="M8 6h8"></path><path d="M8 10h8"></path><path d="M8 14h4"></path>'
     }
 
 ];

@@ -303,8 +303,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 btn.classList.add("active");
                 currentFilter = filterVal;
             }
+            currentMenuRoute = (currentFilter === "trash" ? "trash" : "videos");
             loadSortForCurrentFilter();
-            renderVideosList();
+            updateViewForRoute();
         });
     });
 
@@ -630,156 +631,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Слушатели бокового меню навигации
-    // Функция обработки маршрутизации по хэшу URL
-    function handleRoute() {
-        const hash = window.location.hash.replace('#', '') || 'home';
-        const sidebarMenuItems = document.querySelectorAll(".sidebar-menu .menu-item");
-        sidebarMenuItems.forEach(mi => mi.classList.remove("active"));
-        
-        const mobileNavItems = document.querySelectorAll(".mobile-bottom-nav .mobile-nav-item");
-        mobileNavItems.forEach(mi => mi.classList.remove("active"));
-
-        // Скрываем мобильное меню при переходе по маршрутам
-        const sidebar = document.querySelector(".sidebar");
-        const sidebarOverlay = document.getElementById("sidebarOverlay");
-        if (sidebar) sidebar.classList.remove("active");
-        if (sidebarOverlay) sidebarOverlay.classList.remove("active");
-        const hamburgerDropdown = document.getElementById("hamburgerDropdown");
-        if (hamburgerDropdown) hamburgerDropdown.classList.remove("active");
-
-        if (hash === 'trash') {
-            currentMenuRoute = "trash";
-            const item = document.getElementById("menuTrash");
-            if (item) item.classList.add("active");
-            
-            const mobMore = document.getElementById("mobileNavMore");
-            if (mobMore) mobMore.classList.add("active");
-        } else if (hash === 'calendar') {
-            currentMenuRoute = "calendar";
-            const item = document.getElementById("menuCalendar");
-            if (item) item.classList.add("active");
-            
-            const mobCal = document.getElementById("mobileNavCalendar");
-            if (mobCal) mobCal.classList.add("active");
-        } else if (hash === 'tasks') {
-            currentMenuRoute = "tasks";
-            const item = document.getElementById("menuTasks");
-            if (item) item.classList.add("active");
-            
-            const mobTasks = document.getElementById("mobileNavTasks");
-            if (mobTasks) mobTasks.classList.add("active");
-        } else {
-            currentMenuRoute = "videos";
-            const item = document.getElementById("menuHome");
-            if (item) item.classList.add("active");
-            
-            const mobHome = document.getElementById("mobileNavHome");
-            if (mobHome) mobHome.classList.add("active");
-        }
-        updateViewForRoute();
-    }
-
-    // Слушатели бокового меню навигации
-    const sidebarMenuItems = document.querySelectorAll(".sidebar-menu .menu-item");
-    const sidebar = document.querySelector(".sidebar");
-    const sidebarOverlay = document.getElementById("sidebarOverlay");
-    const hamburgerDropdown = document.getElementById("hamburgerDropdown");
-
-    sidebarMenuItems.forEach(item => {
-        if (item.id === "menuSettings") return; // Настройки обрабатываются отдельно как модалка
-        item.addEventListener("click", (e) => {
-            e.preventDefault();
-            if (sidebar) sidebar.classList.remove("active");
-            if (sidebarOverlay) sidebarOverlay.classList.remove("active");
-            if (hamburgerDropdown) hamburgerDropdown.classList.remove("active");
-
-            if (item.id === "menuTrash") {
-                window.location.hash = "trash";
-            } else if (item.id === "menuCalendar") {
-                window.location.hash = "calendar";
-            } else if (item.id === "menuTasks") {
-                window.location.hash = "tasks";
-            } else {
-                window.location.hash = "home";
-            }
-        });
-    });
-
-    // Слушатели мобильной нижней навигации
-    const mobHome = document.getElementById("mobileNavHome");
-    const mobTasks = document.getElementById("mobileNavTasks");
-    const mobCalendar = document.getElementById("mobileNavCalendar");
-    const mobMore = document.getElementById("mobileNavMore");
-
-    if (mobHome) {
-        mobHome.addEventListener("click", () => {
-            window.location.hash = "home";
-        });
-    }
-    if (mobTasks) {
-        mobTasks.addEventListener("click", () => {
-            window.location.hash = "tasks";
-        });
-    }
-    if (mobCalendar) {
-        mobCalendar.addEventListener("click", () => {
-            window.location.hash = "calendar";
-        });
-    }
-    if (mobMore) {
-        mobMore.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (hamburgerDropdown) {
-                hamburgerDropdown.classList.toggle("active");
-            } else if (sidebar && sidebarOverlay) {
-                const isActive = sidebar.classList.contains("active");
-                if (isActive) {
-                    sidebar.classList.remove("active");
-                    sidebarOverlay.classList.remove("active");
-                } else {
-                    sidebar.classList.add("active");
-                    sidebarOverlay.classList.add("active");
-                }
-            }
-        });
-    }
-
-    if (sidebarOverlay) {
-        sidebarOverlay.addEventListener("click", () => {
-            if (sidebar) sidebar.classList.remove("active");
-            sidebarOverlay.classList.remove("active");
-            if (hamburgerDropdown) hamburgerDropdown.classList.remove("active");
-        });
-    }
-
-    window.addEventListener("hashchange", handleRoute);
-    handleRoute(); // Вызываем один раз при инициализации
-
-    // Календарь на странице (навигация)
-    const btnCalPrev = document.getElementById("btnCalPrev");
-    const btnCalToday = document.getElementById("btnCalToday");
-    const btnCalNext = document.getElementById("btnCalNext");
-
-    if (btnCalPrev) {
-        btnCalPrev.addEventListener("click", () => {
-            calendarViewDate.setMonth(calendarViewDate.getMonth() - 1);
-            renderCalendarView();
-        });
-    }
-    if (btnCalToday) {
-        btnCalToday.addEventListener("click", () => {
-            calendarViewDate = new Date();
-            renderCalendarView();
-        });
-    }
-    if (btnCalNext) {
-        btnCalNext.addEventListener("click", () => {
-            calendarViewDate.setMonth(calendarViewDate.getMonth() + 1);
-            renderCalendarView();
-        });
-    }
+    // Маршрутизация по хэшу и навигация удалены, так как всё перенесено на одну страницу
 
     // Слушатель кнопки очистки корзины
     const btnEmptyTrash = document.getElementById("btnEmptyTrash");
@@ -829,47 +681,14 @@ document.addEventListener("DOMContentLoaded", () => {
     initTouchDragAndDrop();
 });
 
-// Функция обновления интерфейса в зависимости от текущего маршрута меню
+// Функция обновления интерфейса в зависимости от текущего фильтра
 function updateViewForRoute() {
-    const statsGrid = document.querySelector(".stats-grid");
-    const welcomeHeader = document.querySelector(".welcome-header");
     const trashNoticeBanner = document.getElementById("trashNoticeBanner");
     const sectionTitle = document.querySelector(".videos-section h2");
-    const filtersTabs = document.querySelector(".filters-tabs");
-    const sortWrapper = document.querySelector(".sort-wrapper");
-
     const mainContent = document.querySelector(".main-content");
-    const calendarViewContainer = document.getElementById("calendarViewContainer");
     const detailSidebarResizer = document.getElementById("detailSidebarResizer");
     const detailSidebar = document.getElementById("detailSidebar");
 
-    const tasksViewContainer = document.getElementById("tasksViewContainer");
-
-    if (currentMenuRoute === "calendar") {
-        if (mainContent) mainContent.style.display = "none";
-        if (detailSidebarResizer) detailSidebarResizer.style.display = "none";
-        if (detailSidebar) detailSidebar.style.display = "none";
-        if (tasksViewContainer) tasksViewContainer.style.display = "none";
-        if (calendarViewContainer) {
-            calendarViewContainer.style.display = "flex";
-            renderCalendarView();
-        }
-        return;
-    }
-
-    if (currentMenuRoute === "tasks") {
-        if (mainContent) mainContent.style.display = "none";
-        if (detailSidebarResizer) detailSidebarResizer.style.display = "none";
-        if (detailSidebar) detailSidebar.style.display = "none";
-        if (calendarViewContainer) calendarViewContainer.style.display = "none";
-        if (tasksViewContainer) {
-            tasksViewContainer.style.display = "block";
-        }
-        return;
-    }
-
-    if (calendarViewContainer) calendarViewContainer.style.display = "none";
-    if (tasksViewContainer) tasksViewContainer.style.display = "none";
     if (mainContent) mainContent.style.display = "flex";
     if (detailSidebarResizer) {
         detailSidebarResizer.style.display = window.innerWidth <= 900 ? "none" : "block";
@@ -878,21 +697,13 @@ function updateViewForRoute() {
         detailSidebar.style.display = window.innerWidth <= 900 ? "none" : "flex";
     }
 
-    if (currentMenuRoute === "trash") {
-        if (statsGrid) statsGrid.style.display = "none";
-        if (welcomeHeader) welcomeHeader.style.display = "none";
+    if (currentFilter === "trash") {
         if (trashNoticeBanner) trashNoticeBanner.style.display = "flex";
-        if (filtersTabs) filtersTabs.style.display = "none";
-        if (sortWrapper) sortWrapper.style.display = "none";
         if (sectionTitle) {
             sectionTitle.innerHTML = `Корзина`;
         }
     } else {
-        if (statsGrid) statsGrid.style.display = "grid";
-        if (welcomeHeader) welcomeHeader.style.display = "flex";
         if (trashNoticeBanner) trashNoticeBanner.style.display = "none";
-        if (filtersTabs) filtersTabs.style.display = "flex";
-        if (sortWrapper) sortWrapper.style.display = "inline-flex";
         if (sectionTitle) {
             sectionTitle.innerHTML = `Мои видео <button class="btn-add-video" title="Добавить видео">+</button>`;
             const btnAddVideo = sectionTitle.querySelector(".btn-add-video");
@@ -909,7 +720,7 @@ function updateViewForRoute() {
     // Выбираем первое подходящее видео по умолчанию
     const filtered = videos.filter(v => {
         const matchesSearch = v.title.toLowerCase().includes(searchQuery);
-        if (currentMenuRoute === "trash") {
+        if (currentFilter === "trash") {
             return matchesSearch && v.deleted === true;
         } else {
             const matchesFilter = currentFilter === "all" || v.status === currentFilter;
@@ -1925,29 +1736,7 @@ if (menuSettings) {
     menuSettings.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const sidebar = document.querySelector(".sidebar");
-        const sidebarOverlay = document.getElementById("sidebarOverlay");
-        const hamburgerDropdown = document.getElementById("hamburgerDropdown");
-        if (sidebar) sidebar.classList.remove("active");
-        if (sidebarOverlay) sidebarOverlay.classList.remove("active");
-        if (hamburgerDropdown) hamburgerDropdown.classList.remove("active");
         openSettingsModal();
-    });
-}
-
-// Слушатели для кнопки гамбургера и закрытия при клике вне
-const hamburgerMenuBtn = document.getElementById("hamburgerMenuBtn");
-if (hamburgerMenuBtn && hamburgerDropdown) {
-    hamburgerMenuBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        hamburgerDropdown.classList.toggle("active");
-    });
-
-    document.addEventListener("click", (e) => {
-        if (!hamburgerDropdown.contains(e.target) && !hamburgerMenuBtn.contains(e.target)) {
-            hamburgerDropdown.classList.remove("active");
-        }
     });
 }
 
@@ -2495,66 +2284,7 @@ function openImageLightbox(src) {
     });
 }
 
-// === РЕНДЕРИНГ КАЛЕНДАРЯ НА СТРАНИЦЕ ===
-function renderCalendarView() {
-    const daysContainer = document.getElementById("calendarViewDaysGrid");
-    const monthTitle = document.getElementById("calendarViewMonthTitle");
-    if (!daysContainer || !monthTitle) return;
 
-    daysContainer.innerHTML = "";
-
-    const year = calendarViewDate.getFullYear();
-    const month = calendarViewDate.getMonth();
-
-    monthTitle.textContent = `${cvMonthNames[month]} ${year}`;
-
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-
-    let startDay = firstDay.getDay();
-    startDay = startDay === 0 ? 6 : startDay - 1;
-
-    const totalDays = lastDay.getDate();
-    const prevLastDay = new Date(year, month, 0).getDate();
-
-    const today = new Date();
-
-    const createDayElement = (number, otherMonth = false, isToday = false) => {
-        const dayEl = document.createElement("div");
-        dayEl.className = "cv-day";
-
-        if (otherMonth) dayEl.classList.add("cv-other-month");
-        if (isToday) dayEl.classList.add("cv-today");
-
-        dayEl.innerHTML = `
-            <div class="cv-day-number">${number}</div>
-            ${!otherMonth && number % 6 === 0 ? `<div class="cv-event">Задача / событие</div>` : ""}
-        `;
-        daysContainer.appendChild(dayEl);
-    };
-
-    let cellsDrawn = 0;
-    for (let i = startDay; i > 0; i--) {
-        createDayElement(prevLastDay - i + 1, true);
-        cellsDrawn++;
-    }
-
-    for (let day = 1; day <= totalDays; day++) {
-        if (cellsDrawn >= 35) break;
-        const isToday =
-            day === today.getDate() &&
-            month === today.getMonth() &&
-            year === today.getFullYear();
-
-        createDayElement(day, false, isToday);
-        cellsDrawn++;
-    }
-
-    const remainingCells = Math.max(0, 35 - cellsDrawn);
-    for (let day = 1; day <= remainingCells; day++) {
-        createDayElement(day, true);
-    }
-}
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ И DRAG-AND-DROP ===
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tools-pwa-v8';
+const CACHE_NAME = 'tools-pwa-v10';
 const DYNAMIC_CACHE = 'tools-dynamic-image-cache-v1';
 const ASSETS = [
     './fx_converter.html',
@@ -8,6 +8,9 @@ const ASSETS = [
     './todo.js',
     './todo.css',
     './todo_manifest.json',
+    './creatorhub.html',
+    './creatorhub.js',
+    './creatorhub.css',
     './theme.css',
     './theme-loader.js',
     './footer.css',
@@ -21,6 +24,10 @@ const ASSETS = [
     './exchange2.png',
     './clock.png',
     './clock2.png',
+    './todo128.png',
+    './todo256.png',
+    './hub128.png',
+    './hub256.png',
     './house-favicon.svg',
     './glass.jpg'
 ];

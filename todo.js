@@ -383,6 +383,7 @@ document.addEventListener('click', (e) => {
 
 // Умное позиционирование подменю проектов (чтобы не вылезало за границы экрана)
 document.addEventListener('mouseenter', (e) => {
+    if (window.innerWidth <= 768) return;
     // Реагируем только на событие входа в сам контейнер подменю (а не в его дочерние элементы)
     if (!e.target.classList || !e.target.classList.contains('dropdown-submenu-container')) return;
 
@@ -3467,6 +3468,7 @@ function renderTasks() {
                     const btnMoveSectionTrigger = sectionEl.querySelector('.btn-move-section-trigger');
                     if (btnMoveSectionTrigger) {
                         btnMoveSectionTrigger.addEventListener('click', (ev) => {
+                            if (window.innerWidth > 768) return;
                             ev.stopPropagation();
                             const submenu = btnMoveSectionTrigger.nextElementSibling;
                             if (submenu && submenu.classList.contains('dropdown-submenu')) {
@@ -4181,6 +4183,7 @@ function createTaskRowElement(task) {
     const btnMoveProject = item.querySelector('.btn-move-project');
     if (btnMoveProject) {
         btnMoveProject.addEventListener('click', (e) => {
+            if (window.innerWidth > 768) return;
             e.stopPropagation();
             const submenu = btnMoveProject.nextElementSibling;
             if (submenu && submenu.classList.contains('dropdown-submenu')) {
@@ -7373,18 +7376,14 @@ function createSubtaskElement(subtask) {
                 actionsDropdown.style.left = '';
                 
                 const rect = btnMore.getBoundingClientRect();
-                const container = document.querySelector('.task-details-main-content');
-                if (container) {
-                    const containerRect = container.getBoundingClientRect();
-                    const spaceBelow = containerRect.bottom - rect.bottom;
-                    const dropdownHeight = subtask.completed ? 80 : 260;
-                    if (spaceBelow < dropdownHeight) {
-                        actionsDropdown.style.top = 'auto';
-                        actionsDropdown.style.bottom = 'calc(100% + 4px)';
-                    } else {
-                        actionsDropdown.style.top = 'calc(100% + 4px)';
-                        actionsDropdown.style.bottom = 'auto';
-                    }
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const dropdownHeight = subtask.completed ? 80 : 260;
+                if (spaceBelow < dropdownHeight) {
+                    actionsDropdown.style.top = 'auto';
+                    actionsDropdown.style.bottom = 'calc(100% + 4px)';
+                } else {
+                    actionsDropdown.style.top = 'calc(100% + 4px)';
+                    actionsDropdown.style.bottom = 'auto';
                 }
             }
         } else {

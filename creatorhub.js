@@ -1829,7 +1829,7 @@ async function addVideo() {
         title: "Новое видео",
         status: defaultStatus,
         statusText: statusText,
-        tags: ["Проект"],
+        tags: [],
         date: "не запланировано",
         dateLabel: "не запланировано",
         publishDate: "",
@@ -2496,7 +2496,7 @@ function initDragAndDrop() {
         e.preventDefault();
         if (!draggingElement || !placeholder) return;
 
-        const afterElement = getDragAfterVideo(videosListContainer, e.clientY);
+        const afterElement = getDragAfterVideo(videosListContainer, e.clientX, e.clientY);
         if (afterElement) {
             videosListContainer.insertBefore(placeholder, afterElement);
         } else {
@@ -2576,18 +2576,39 @@ function initDragAndDrop() {
     });
 }
 
-function getDragAfterVideo(container, y) {
+function getDragAfterVideo(container, x, y) {
     const dragElements = [...container.querySelectorAll('.video-card:not(.dragging):not(.video-drag-placeholder)')];
+    if (dragElements.length === 0) return null;
 
-    return dragElements.reduce((closest, child) => {
+    let closest = null;
+    let minDistance = Infinity;
+
+    dragElements.forEach(child => {
         const box = child.getBoundingClientRect();
-        const offset = y - (box.top + box.height / 2);
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
+        const centerX = box.left + box.width / 2;
+        const centerY = box.top + box.height / 2;
+        const distance = Math.hypot(x - centerX, y - centerY);
+
+        if (distance < minDistance) {
+            minDistance = distance;
+            closest = { element: child, box: box, centerX: centerX, centerY: centerY };
         }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
+    });
+
+    if (!closest) return null;
+
+    const box = closest.box;
+    if (y < box.top) {
+        return closest.element;
+    } else if (y > box.bottom) {
+        return closest.element.nextElementSibling;
+    } else {
+        if (x < closest.centerX) {
+            return closest.element;
+        } else {
+            return closest.element.nextElementSibling;
+        }
+    }
 }
 
 function initTouchDragAndDrop() {
@@ -2705,7 +2726,7 @@ function initTouchDragAndDrop() {
             placeholder.style.height = `${touchDraggingElement.offsetHeight}px`;
         }
 
-        const afterElement = getDragAfterVideo(videosListContainer, touch.clientY);
+        const afterElement = getDragAfterVideo(videosListContainer, touch.clientX, touch.clientY);
         if (afterElement) {
             videosListContainer.insertBefore(placeholder, afterElement);
         } else {

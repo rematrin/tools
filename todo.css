@@ -587,9 +587,10 @@ body.route-tomorrow .task-item.subtask {
 
 
 
-.task-item.menu-open {
-    z-index: 50;
-    /* Поверх остальных задач при открытом меню */
+.task-item.menu-open,
+.modal-subtask-item.menu-open {
+    z-index: 1000 !important;
+    position: relative !important;
 }
 
 /* Кастомный чекбокс */
@@ -1069,9 +1070,9 @@ body.dark .dropdown-submenu {
 }
 
 /* На десктопе раскрываем подменю сбоку при наведении с небольшой задержкой при уходе курсора */
-@media (hover: hover) {
+@media (min-width: 769px) {
     .dropdown-submenu {
-        display: flex;
+        display: flex !important;
         position: absolute;
         left: calc(100% + 4px);
         top: -4px;
@@ -1088,8 +1089,8 @@ body.dark .dropdown-submenu {
     }
 }
 
-/* На мобильных (тач) раскрываем подменю вниз под пунктом при клике */
-@media (hover: none) {
+/* На мобильных раскрываем подменю вниз под пунктом при клике */
+@media (max-width: 768px) {
     .dropdown-submenu {
         display: none;
         position: relative;
@@ -1102,6 +1103,9 @@ body.dark .dropdown-submenu {
         padding-left: 8px;
         margin: 4px 0;
         background-color: transparent;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transition: none !important;
     }
 }
 
@@ -3570,7 +3574,8 @@ body.dark .priority-opt-btn:hover {
 }
 
 /* Убираем полупрозрачность контекстного меню на мобильных, когда оно открыто */
-.task-item.menu-open .task-actions {
+.task-item.menu-open .task-actions,
+.modal-subtask-item.menu-open .task-actions {
     opacity: 1 !important;
 }
 
@@ -4505,12 +4510,14 @@ body.dark .progress-bg-circle {
         flex-direction: column;
         height: 92vh;
         max-height: 92vh;
+        min-height: 0;
         border-radius: 20px 20px 0 0;
         border: none;
         transform: translateY(100%);
         transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         display: flex;
         box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.18);
+        overflow: visible;
     }
     
     .task-details-modal-overlay.active .task-details-modal-card {
@@ -4553,13 +4560,58 @@ body.dark .progress-bg-circle {
     }
     
     .task-details-main-content {
-        max-height: none;
+        max-height: 100%;
         flex: 1;
         padding: 16px 20px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        min-height: 0;
     }
     
     .task-details-sidebar {
         display: none;
+    }
+
+    .btn-save-subtask {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 50% !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background-color: var(--accent) !important;
+        color: white !important;
+        border: none !important;
+        flex-shrink: 0 !important;
+        box-shadow: none !important;
+        transition: background-color 0.2s ease, opacity 0.2s ease !important;
+    }
+
+    .btn-save-subtask span {
+        display: none !important;
+    }
+
+    .btn-save-subtask .icon-arrow {
+        display: block !important;
+        margin: 0 !important;
+        width: 28px !important;
+        height: 28px !important;
+    }
+
+    .btn-cancel-subtask {
+        display: none !important;
+    }
+
+    #modalSubtaskDueWrapper .due-date-dropdown,
+    #modalSubtaskPriorityWrapper .priority-dropdown {
+        position: absolute !important;
+        bottom: 60px !important;
+        left: 16px !important;
+        right: 16px !important;
+        width: auto !important;
+        margin: 0 !important;
+        z-index: 10000 !important;
     }
 }
 

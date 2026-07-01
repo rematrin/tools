@@ -83,9 +83,10 @@ const getDefaultDueDate = () => {
 let selectedDueDate = getDefaultDueDate(); // Хранит выбранную дату в формате YYYY-MM-DD
 let selectedDueTime = null; // Хранит выбранное время в формате HH:MM
 let selectedDueRepeat = null; // Хранит выбранный повтор: daily, weekly, weekday, monthly, yearly, custom
-let selectedPriority = 0; // Приоритет новой задачи по умолчанию
+let calendarTargetTask = null; // Текущая редактируемая задача/подзадача для кастомного календаря
 let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth(); // 0-11
+let selectedPriority = 0; // Приоритет новой задачи по умолчанию
 
 let taskIdToDelete = null;
 
@@ -236,20 +237,60 @@ if (btnPriority && priorityDropdown) {
 if (dueDateDropdown) {
     setupNestedViews(
         dueDateDropdown,
-        () => selectedDueDate,
+        () => calendarTargetTask ? calendarTargetTask.dueDate : selectedDueDate,
         (dateStr) => {
-            selectedDueDate = dateStr;
+            if (calendarTargetTask) {
+                calendarTargetTask.dueDate = dateStr;
+            } else {
+                selectedDueDate = dateStr;
+            }
         },
-        () => selectedDueTime,
+        () => calendarTargetTask ? calendarTargetTask.dueTime : selectedDueTime,
         (timeStr) => {
-            selectedDueTime = timeStr;
+            if (calendarTargetTask) {
+                calendarTargetTask.dueTime = timeStr;
+            } else {
+                selectedDueTime = timeStr;
+            }
         },
-        () => selectedDueRepeat,
+        () => calendarTargetTask ? calendarTargetTask.dueRepeat : selectedDueRepeat,
         (repeatStr) => {
-            selectedDueRepeat = repeatStr;
+            if (calendarTargetTask) {
+                calendarTargetTask.dueRepeat = repeatStr;
+            } else {
+                selectedDueRepeat = repeatStr;
+            }
         },
-        () => {
-            setDueDate(selectedDueDate, selectedDueTime, selectedDueRepeat);
+        async () => {
+            if (calendarTargetTask) {
+                if (currentUid && calendarTargetTask.id) {
+                    try {
+                        await updateDoc(doc(db, 'users', currentUid, 'tasks', calendarTargetTask.id), {
+                            dueDate: calendarTargetTask.dueDate || null,
+                            dueTime: calendarTargetTask.dueTime || null,
+                            dueRepeat: calendarTargetTask.dueRepeat || null
+                        });
+                    } catch (err) {
+                        console.error("Ошибка обновления даты задачи:", err);
+                    }
+                }
+                dueDateDropdown.style.display = 'none';
+                calendarTargetTask = null;
+
+                // Close all actions menus
+                document.querySelectorAll('.task-actions-dropdown, .modal-subtask-item .task-actions-dropdown').forEach(dd => {
+                    dd.style.display = 'none';
+                    dd.style.position = '';
+                    dd.style.left = '';
+                    dd.style.top = '';
+                    dd.style.bottom = '';
+                });
+                document.querySelectorAll('.task-item, .modal-subtask-item').forEach(el => {
+                    el.classList.remove('menu-open');
+                });
+            } else {
+                setDueDate(selectedDueDate, selectedDueTime, selectedDueRepeat);
+            }
         }
     );
 }
@@ -261,15 +302,25 @@ if (btnDueDate) {
         if (dueDateDropdown.style.display === 'none') {
             if (addTaskProjectDropdown) addTaskProjectDropdown.style.display = 'none';
             if (priorityDropdown) priorityDropdown.style.display = 'none';
+            
+            calendarTargetTask = null;
+            
             openDueDateDropdown();
 
-            // Adjust position for mobile
-            if (window.innerWidth <= 768) {
-                const rect = addTaskForm.getBoundingClientRect();
-                dueDateDropdown.style.top = `${rect.bottom + 12}px`;
-            } else {
-                dueDateDropdown.style.top = '';
-            }
+            dueDateDropdown.style.position = 'fixed';
+            const rect = btnDueDate.getBoundingClientRect();
+            let x = rect.left;
+            let y = rect.bottom + 8;
+            
+            const menuWidth = 290;
+            const menuHeight = 320;
+            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+            if (y + menuHeight > window.innerHeight) y = rect.top - menuHeight - 8;
+            if (x < 10) x = 10;
+            if (y < 10) y = 10;
+
+            dueDateDropdown.style.left = `${x}px`;
+            dueDateDropdown.style.top = `${y}px`;
         } else {
             closeDueDateDropdown();
         }
@@ -313,9 +364,18 @@ document.addEventListener('click', (e) => {
     // 1. Закрытие всех календарей/выпадающих списков при клике вне
     document.querySelectorAll('.due-date-dropdown').forEach(dropdown => {
         if (dropdown.style.display !== 'none') {
+            if (dropdown.contains(e.target)) return;
+            if (dropdown.id === 'dueDateDropdown') {
+                if (e.target.closest('#btnDueDate') || e.target.closest('.btn-due-select')) {
+                    return;
+                }
+            }
             const wrapper = dropdown.closest('.due-date-wrapper') || dropdown.closest('.add-task-project-wrapper') || dropdown.closest('.priority-wrapper');
-            if (wrapper && !wrapper.contains(e.target)) {
+            if (!wrapper || !wrapper.contains(e.target)) {
                 dropdown.style.display = 'none';
+                if (dropdown.id === 'dueDateDropdown') {
+                    calendarTargetTask = null;
+                }
             }
         }
     });
@@ -340,6 +400,9 @@ document.addEventListener('click', (e) => {
     // 3. Закрытие всех меню действий («три точки») при клике вне их области
     document.querySelectorAll('.task-actions-dropdown').forEach(dropdown => {
         if (dropdown.style.display !== 'none') {
+            if (e.target.closest('#dueDateDropdown')) {
+                return;
+            }
             const taskActions = dropdown.closest('.task-actions');
             if (taskActions && !taskActions.contains(e.target)) {
                 dropdown.style.display = 'none';
@@ -450,6 +513,7 @@ function openDueDateDropdown() {
 
 function closeDueDateDropdown() {
     dueDateDropdown.style.display = 'none';
+    calendarTargetTask = null;
 }
 
 function setAddTaskProject(projectId) {
@@ -572,14 +636,24 @@ document.querySelectorAll('.quick-opt-btn').forEach(btn => {
             targetDate = null;
         }
 
+        let dateStr = null;
         if (targetDate) {
-            const formatted = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
-            setDueDate(formatted);
-        } else {
-            setDueDate(null);
+            dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
         }
 
-        closeDueDateDropdown();
+        if (calendarTargetTask) {
+            calendarTargetTask.dueDate = dateStr;
+            if (dueDateDropdown.onDoneCallback) {
+                dueDateDropdown.onDoneCallback();
+            }
+        } else {
+            if (targetDate) {
+                setDueDate(dateStr);
+            } else {
+                setDueDate(null);
+            }
+            closeDueDateDropdown();
+        }
     });
 });
 
@@ -773,6 +847,7 @@ function calculateNextDueDate(currentDateStr, repeatCode) {
 }
 
 function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelectedTime, setSelectedTime, getSelectedRepeat, setSelectedRepeat, onDone) {
+    dropdownEl.onDoneCallback = onDone;
     const mainView = dropdownEl.querySelector('.due-main-view');
     const timeView = dropdownEl.querySelector('.due-time-view');
     const repeatView = dropdownEl.querySelector('.due-repeat-view');
@@ -1090,7 +1165,8 @@ function createCalendarCell(dayNum, isCurrentMonth, month, year) {
 
     const dateStr = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
 
-    if (selectedDueDate === dateStr) {
+    const activeSelectedDate = calendarTargetTask ? calendarTargetTask.dueDate : selectedDueDate;
+    if (activeSelectedDate === dateStr) {
         cell.classList.add('selected');
     }
 
@@ -1102,7 +1178,12 @@ function createCalendarCell(dayNum, isCurrentMonth, month, year) {
 
     cell.addEventListener('click', (e) => {
         e.stopPropagation();
-        setDueDate(dateStr);
+        if (calendarTargetTask) {
+            calendarTargetTask.dueDate = dateStr;
+            if (dueDateDropdown.onDoneCallback) dueDateDropdown.onDoneCallback();
+        } else {
+            setDueDate(dateStr);
+        }
         renderCalendarGrid();
     });
 
@@ -3505,7 +3586,80 @@ function renderTasks() {
                     });
                 });
             } else {
-                if (currentRoute === 'today' || currentRoute === 'tomorrow') {
+                if (currentRoute === 'today') {
+                    const overdueActiveTasks = activeTasks.filter(t => t.dueDate && t.dueDate < todayStr);
+                    sortTasksByOrder(overdueActiveTasks);
+
+                    if (overdueActiveTasks.length > 0) {
+                        // Render overdue section
+                        const isOverdueCollapsed = localStorage.getItem('todo_today_overdue_collapsed') === 'true';
+                        const overdueSectionEl = document.createElement('div');
+                        overdueSectionEl.className = `project-section today-overdue-section ${isOverdueCollapsed ? 'collapsed' : ''}`;
+                        overdueSectionEl.style.marginTop = '20px';
+                        overdueSectionEl.innerHTML = `
+                            <div class="project-section-header" style="cursor: pointer;">
+                                <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
+                                    <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+                                <span class="section-title-text" style="font-weight: 600;">Просрочено</span>
+                                <span style="color: var(--text-secondary); font-size: 0.9rem; font-weight: normal; margin-left: 2px;">${overdueActiveTasks.length}</span>
+                            </div>
+                            <div class="section-tasks-container" style="${isOverdueCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
+                        `;
+                        activeTasksContainer.appendChild(overdueSectionEl);
+
+                        const overdueContainer = overdueSectionEl.querySelector('.section-tasks-container');
+                        overdueActiveTasks.forEach(task => {
+                            const el = createTaskRowElement(task);
+                            overdueContainer.appendChild(el);
+                        });
+
+                        overdueSectionEl.querySelector('.project-section-header').addEventListener('click', () => {
+                            const collapsed = localStorage.getItem('todo_today_overdue_collapsed') === 'true';
+                            localStorage.setItem('todo_today_overdue_collapsed', !collapsed);
+                            renderTasks();
+                        });
+
+                        // Render today section
+                        const isTodayCollapsed = localStorage.getItem('todo_today_current_collapsed') === 'true';
+                        const todaySectionEl = document.createElement('div');
+                        todaySectionEl.className = `project-section today-current-section ${isTodayCollapsed ? 'collapsed' : ''}`;
+                        todaySectionEl.style.marginTop = '20px';
+                        todaySectionEl.innerHTML = `
+                            <div class="project-section-header" style="cursor: pointer;">
+                                <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
+                                    <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+                                <span class="section-title-text" style="font-weight: 600;">Сегодня</span>
+                                <span style="color: var(--text-secondary); font-size: 0.9rem; font-weight: normal; margin-left: 2px;">${displayActiveTasks.length}</span>
+                            </div>
+                            <div class="section-tasks-container" style="${isTodayCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
+                        `;
+                        activeTasksContainer.appendChild(todaySectionEl);
+
+                        const todayContainer = todaySectionEl.querySelector('.section-tasks-container');
+                        displayActiveTasks.forEach(task => {
+                            const el = createTaskRowElement(task);
+                            todayContainer.appendChild(el);
+                        });
+
+                        todaySectionEl.querySelector('.project-section-header').addEventListener('click', () => {
+                            const collapsed = localStorage.getItem('todo_today_current_collapsed') === 'true';
+                            localStorage.setItem('todo_today_current_collapsed', !collapsed);
+                            renderTasks();
+                        });
+                    } else {
+                        // Render standard list without headers
+                        displayActiveTasks.forEach(task => {
+                            const el = createTaskRowElement(task);
+                            activeTasksContainer.appendChild(el);
+                        });
+                    }
+                } else if (currentRoute === 'tomorrow') {
                     displayActiveTasks.forEach(task => {
                         const el = createTaskRowElement(task);
                         activeTasksContainer.appendChild(el);
@@ -3842,7 +3996,6 @@ function createTaskRowElement(task) {
                                 <rect x="11.25" y="16.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
                                 <rect x="16" y="16.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
                             </svg>
-                            <input type="date" class="invisible-due-date-input" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
                         </button>
                         <button class="due-opt-btn btn-due-none" type="button" data-tooltip="Без срока">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -4088,36 +4241,42 @@ function createTaskRowElement(task) {
         }
 
         if (btnDueSelect) {
-            const dateInput = btnDueSelect.querySelector('.invisible-due-date-input');
-            if (dateInput) {
-                btnDueSelect.addEventListener('click', (e) => {
-                    if (e.target === dateInput) {
-                        e.stopPropagation();
-                        return;
-                    }
-                    e.stopPropagation();
-                    if (typeof dateInput.showPicker === 'function') {
-                        dateInput.showPicker();
-                    } else {
-                        dateInput.click();
-                    }
-                });
+            btnDueSelect.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const rect = btnDueSelect.getBoundingClientRect();
 
-                dateInput.addEventListener('change', async (e) => {
-                    const newDate = e.target.value;
-                    actionsDropdown.style.display = 'none';
-                    item.classList.remove('menu-open');
-                    if (newDate) {
-                        try {
-                            await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
-                                dueDate: newDate
-                            });
-                        } catch (err) {
-                            console.error("Ошибка обновления даты:", err);
-                        }
-                    }
-                });
-            }
+                calendarTargetTask = {
+                    id: task.id,
+                    dueDate: task.dueDate || null,
+                    dueTime: task.dueTime || null,
+                    dueRepeat: task.dueRepeat || null
+                };
+
+                dueDateDropdown.style.display = 'flex';
+                dueDateDropdown.style.position = 'fixed';
+
+                let x = rect.left;
+                let y = rect.bottom + 8;
+
+                const menuWidth = 290;
+                const menuHeight = 320;
+                if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+                if (y + menuHeight > window.innerHeight) y = rect.top - menuHeight - 8;
+                if (x < 10) x = 10;
+                if (y < 10) y = 10;
+
+                dueDateDropdown.style.left = `${x}px`;
+                dueDateDropdown.style.top = `${y}px`;
+
+                const mainView = dueDateDropdown.querySelector('.due-main-view');
+                const timeView = dueDateDropdown.querySelector('.due-time-view');
+                const repeatView = dueDateDropdown.querySelector('.due-repeat-view');
+                if (mainView) mainView.style.display = 'flex';
+                if (timeView) timeView.style.display = 'none';
+                if (repeatView) repeatView.style.display = 'none';
+
+                renderCalendarGrid();
+            });
         }
 
         if (btnDueNone) {
@@ -5236,7 +5395,7 @@ function initDragAndDrop() {
             if (!draggingElement || !placeholder) return;
 
             let targetContainer = container;
-            if (container === activeTasksContainer && currentRoute.startsWith('project/')) {
+            if (container === activeTasksContainer && (currentRoute.startsWith('project/') || (currentRoute === 'today' && activeTasksContainer.querySelector('.section-tasks-container')))) {
                 // Determine which section or unsectioned container the cursor is hovering over
                 targetContainer = e.target.closest('.unsectioned-tasks-container, .section-tasks-container');
                 if (!targetContainer) {
@@ -5472,6 +5631,19 @@ function initDragAndDrop() {
                 parentId: targetParentId,
                 sectionId: targetSectionId
             };
+
+            if (currentRoute === 'today' && parentContainer) {
+                const sectEl = parentContainer.closest('.project-section');
+                if (sectEl && sectEl.classList.contains('today-current-section')) {
+                    const today = new Date();
+                    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                    updateFields.dueDate = todayStr;
+                    const task = allTasks.find(t => t.id === taskId);
+                    if (task) {
+                        task.dueDate = todayStr;
+                    }
+                }
+            }
 
             if (targetParentId) {
                 const parentTask = allTasks.find(t => t.id === targetParentId);
@@ -6381,6 +6553,19 @@ function initTouchDragAndDrop() {
                 sectionId: targetSectionId
             };
 
+            if (currentRoute === 'today' && parentContainer) {
+                const sectEl = parentContainer.closest('.project-section');
+                if (sectEl && sectEl.classList.contains('today-current-section')) {
+                    const today = new Date();
+                    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                    updateFields.dueDate = todayStr;
+                    const task = allTasks.find(t => t.id === taskId);
+                    if (task) {
+                        task.dueDate = todayStr;
+                    }
+                }
+            }
+
             if (targetParentId) {
                 const parentTask = allTasks.find(t => t.id === targetParentId);
                 if (parentTask) {
@@ -7231,7 +7416,6 @@ function createSubtaskElement(subtask) {
                                 <rect x="11.25" y="16.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
                                 <rect x="16" y="16.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
                             </svg>
-                            <input type="date" class="invisible-due-date-input" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
                         </button>
                         <button class="due-opt-btn btn-due-none" type="button" data-tooltip="Без срока">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -7459,37 +7643,42 @@ function createSubtaskElement(subtask) {
         }
 
         if (btnDueSelect) {
-            const dateInput = btnDueSelect.querySelector('.invisible-due-date-input');
-            if (dateInput) {
-                btnDueSelect.addEventListener('click', (e) => {
-                    if (e.target === dateInput) {
-                        e.stopPropagation();
-                        return;
-                    }
-                    e.stopPropagation();
-                    if (typeof dateInput.showPicker === 'function') {
-                        dateInput.showPicker();
-                    } else {
-                        dateInput.click();
-                    }
-                });
+            btnDueSelect.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const rect = btnDueSelect.getBoundingClientRect();
 
-                dateInput.addEventListener('change', async (e) => {
-                    const newDate = e.target.value;
-                    if (actionsDropdown) actionsDropdown.style.display = 'none';
-                    itemEl.classList.remove('menu-open');
-                    updateModalOverflow();
-                    if (newDate) {
-                        try {
-                            await updateDoc(doc(db, 'users', currentUid, 'tasks', subtask.id), {
-                                dueDate: newDate
-                            });
-                        } catch (err) {
-                            console.error("Ошибка обновления даты подзадачи:", err);
-                        }
-                    }
-                });
-            }
+                calendarTargetTask = {
+                    id: subtask.id,
+                    dueDate: subtask.dueDate || null,
+                    dueTime: subtask.dueTime || null,
+                    dueRepeat: subtask.dueRepeat || null
+                };
+
+                dueDateDropdown.style.display = 'flex';
+                dueDateDropdown.style.position = 'fixed';
+
+                let x = rect.left;
+                let y = rect.bottom + 8;
+
+                const menuWidth = 290;
+                const menuHeight = 320;
+                if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+                if (y + menuHeight > window.innerHeight) y = rect.top - menuHeight - 8;
+                if (x < 10) x = 10;
+                if (y < 10) y = 10;
+
+                dueDateDropdown.style.left = `${x}px`;
+                dueDateDropdown.style.top = `${y}px`;
+
+                const mainView = dueDateDropdown.querySelector('.due-main-view');
+                const timeView = dueDateDropdown.querySelector('.due-time-view');
+                const repeatView = dueDateDropdown.querySelector('.due-repeat-view');
+                if (mainView) mainView.style.display = 'flex';
+                if (timeView) timeView.style.display = 'none';
+                if (repeatView) repeatView.style.display = 'none';
+
+                renderCalendarGrid();
+            });
         }
 
         if (btnDueNone) {
@@ -8046,7 +8235,7 @@ document.addEventListener('click', (e) => {
         }
         
         // Скрытие выпадающих меню действий для списка подзадач
-        if (!e.target.closest('.modal-subtask-item .task-actions')) {
+        if (!e.target.closest('.modal-subtask-item .task-actions') && !e.target.closest('#dueDateDropdown')) {
             document.querySelectorAll('.modal-subtask-item .task-actions-dropdown').forEach(dd => {
                 dd.style.display = 'none';
                 dd.style.position = '';

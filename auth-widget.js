@@ -317,7 +317,65 @@ function initAuthWidget() {
         closeModal();
     });
 
+    const connectGoogleCalendar = async (forceConsent = true) => {
+        try {
+            console.log("Запускаем авторизацию Google Calendar через Popup...");
+            const calendarProvider = new GoogleAuthProvider();
+            calendarProvider.addScope('https://www.googleapis.com/auth/calendar');
+            
+            const params = { 'access_type': 'offline' };
+            if (forceConsent) {
+                params['prompt'] = 'consent';
+            }
+            calendarProvider.setCustomParameters(params);
+
+            const result = await signInWithPopup(auth, calendarProvider);
+            const credential = GoogleAuthProvider.credentialFromResult(result);
+            const token = credential.accessToken;
+            const refreshToken = result._tokenResponse?.refreshToken || null;
+
+            if (token) {
+                const expiry = Date.now() + 3500 * 1000;
+                localStorage.setItem('google_calendar_access_token', token);
+                localStorage.setItem('google_calendar_token_expiry', expiry);
+                if (refreshToken) {
+                    localStorage.setItem('google_calendar_refresh_token', refreshToken);
+                }
+
+                const user = auth.currentUser;
+                if (user) {
+                    const updateData = {
+                        google_calendar_access_token: token,
+                        google_calendar_token_expiry: expiry,
+                        updated_at: serverTimestamp()
+                    };
+                    if (refreshToken) {
+                        updateData.google_calendar_refresh_token = refreshToken;
+                    }
+                    await setDoc(doc(db, "users", user.uid), updateData, { merge: true });
+                }
+
+                window.dispatchEvent(new CustomEvent('googleCalendarTokenChanged', { detail: { token } }));
+                return token;
+            }
+        } catch (e) {
+            console.error("Ошибка при подключении Google Calendar:", e);
+            let errMsg = e.message;
+            if (e.code === 'auth/popup-blocked') {
+                errMsg = "Окно входа заблокировано браузером. Пожалуйста, разрешите всплывающие окна.";
+            }
+            if (typeof showToast === 'function') {
+                showToast("Ошибка: " + errMsg, 'error');
+            } else {
+                alert("Ошибка авторизации: " + errMsg);
+            }
+            throw e;
+        }
+    };
+    window.connectGoogleCalendar = connectGoogleCalendar;
+
     // Функция для получения токена с проверкой на протухание
+
     window.getGoogleAccessToken = () => {
         const token = localStorage.getItem('google_access_token');
         const expiry = localStorage.getItem('google_token_expiry');
@@ -353,6 +411,9 @@ function initAuthWidget() {
     document.getElementById('btnLogout').addEventListener('click', () => {
         signOut(auth);
         localStorage.removeItem('google_access_token');
+        localStorage.removeItem('google_calendar_access_token');
+        localStorage.removeItem('google_calendar_refresh_token');
+        localStorage.removeItem('google_calendar_token_expiry');
         closeModal();
     });
 
@@ -373,19 +434,24 @@ function initAuthWidget() {
             }
             modal.classList.add('logged-in-flag');
 
-            // Попробуем достать токен из БД если его нет в localStorage
-            if (!localStorage.getItem('google_access_token')) {
-                try {
-                    const userDoc = await getDoc(doc(db, "users", user.uid));
-                    if (userDoc.exists()) {
-                        const data = userDoc.data();
-                        if (data.google_access_token) {
-                            localStorage.setItem('google_access_token', data.google_access_token);
-                            localStorage.setItem('google_token_expiry', data.google_token_expiry || 0);
+            // Попробуем достать токены из БД если их нет в localStorage
+            try {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    if (data.google_access_token && !localStorage.getItem('google_access_token')) {
+                        localStorage.setItem('google_access_token', data.google_access_token);
+                        localStorage.setItem('google_token_expiry', data.google_token_expiry || 0);
+                    }
+                    if (data.google_calendar_access_token && !localStorage.getItem('google_calendar_access_token')) {
+                        localStorage.setItem('google_calendar_access_token', data.google_calendar_access_token);
+                        localStorage.setItem('google_calendar_token_expiry', data.google_calendar_token_expiry || 0);
+                        if (data.google_calendar_refresh_token) {
+                            localStorage.setItem('google_calendar_refresh_token', data.google_calendar_refresh_token);
                         }
                     }
-                } catch (e) { console.error("Ошибка синхронизации токена:", e); }
-            }
+                }
+            } catch (e) { console.error("Ошибка синхронизации токенов:", e); }
 
             // Генерируем событие об изменении состояния авторизации
             window.dispatchEvent(new CustomEvent('authChanged', { detail: { user } }));

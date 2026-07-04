@@ -4765,3 +4765,473 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     cursor: pointer;
 }
+
+/* --- GOOGLE CALENDAR INTEGRATION --- */
+.gcal-status-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: var(--hover-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 24px;
+}
+
+.gcal-status-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.gcal-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(66, 133, 244, 0.1);
+    border-radius: 8px;
+}
+
+.gcal-status-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.gcal-status-email {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.gcal-connect-btn {
+    padding: 8px 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.gcal-connect-btn:hover {
+    opacity: 0.9;
+}
+
+.gcal-connect-btn.disconnect {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: #ef4444;
+}
+
+.gcal-connect-btn.disconnect:hover {
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.gcal-features-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.gcal-feature-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--card-bg);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gcal-feature-card:not(.disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.gcal-feature-card.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.gcal-feature-preview {
+    background: var(--hover-bg);
+    padding: 16px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.gcal-feature-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--text);
+    overflow: hidden;
+}
+
+.placeholder-day-title {
+    font-weight: bold;
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+    color: var(--text);
+}
+
+.placeholder-event {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: var(--card-bg);
+    border-radius: 4px;
+    border-left: 3px solid #4285F4;
+    font-weight: 500;
+}
+
+.placeholder-event.checked {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.event-color {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+.event-color.red { background: #ea4335; }
+.event-color.blue { background: #4285f4; }
+.event-color.green { background: #34a853; }
+
+.gcal-feature-info {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.gcal-feature-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 6px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gcal-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    border-radius: 4px;
+}
+
+.gcal-feature-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* --- MAPPING CONFIGURATION MODAL --- */
+.gcal-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 11000; /* Higher than settings modal z-index 10000 */
+}
+
+.gcal-modal-card {
+    background: #ffffff !important; /* Always clean white */
+    border: 1px solid #cbd5e0;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 560px; /* Slightly wider to fit content */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: visible;
+}
+
+.gcal-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #718096;
+    cursor: pointer;
+    outline: none;
+}
+
+.gcal-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.gcal-modal-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1a202c !important;
+}
+
+.gcal-modal-body {
+    padding: 24px;
+}
+
+.gcal-modal-desc {
+    font-size: 0.85rem;
+    color: #4a5568 !important;
+    margin: 0 0 20px 0;
+    line-height: 1.4;
+}
+
+.gcal-sync-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+}
+
+.sync-side {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0; /* Allows select to shrink and use ellipsis */
+}
+
+.sync-side label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #4a5568 !important;
+}
+
+.gcal-custom-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.gcal-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e0 !important;
+    border-radius: 8px;
+    background-color: #ffffff !important;
+    color: #1a202c !important;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    box-sizing: border-box;
+    outline: none;
+    text-align: left;
+}
+
+.gcal-dropdown-trigger .trigger-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 8px;
+}
+
+.gcal-dropdown-trigger .trigger-arrow {
+    font-size: 0.75rem;
+    color: #718096;
+}
+
+.gcal-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-top: 4px;
+    z-index: 12000;
+    display: none;
+    padding: 4px;
+    box-sizing: border-box;
+}
+
+.gcal-dropdown-menu.show {
+    display: block;
+}
+
+.gcal-dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    color: #2d3748 !important;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    box-sizing: border-box;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gcal-dropdown-item:hover {
+    background-color: #f7fafc !important;
+    color: #1a202c !important;
+}
+
+.gcal-dropdown-item.selected {
+    background-color: #ebf8ff !important;
+    color: #2b6cb0 !important;
+}
+
+.sync-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    margin-top: 20px;
+}
+
+.gcal-tag-row {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gcal-tag-row label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #4a5568 !important;
+}
+
+.gcal-tag-row input {
+    padding: 10px 12px;
+    border: 1px solid #cbd5e0 !important;
+    border-radius: 8px;
+    background-color: #ffffff !important;
+    color: #1a202c !important;
+    outline: none;
+}
+
+.gcal-active-mappings {
+    margin-top: 24px;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 20px;
+}
+
+.gcal-active-mappings h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1a202c !important;
+    margin: 0 0 10px 0;
+}
+
+#gcalMappingsList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.gcal-no-mappings {
+    font-size: 0.82rem;
+    color: #718096 !important;
+    text-align: center;
+    padding: 16px 0;
+}
+
+.gcal-mapping-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #f7fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.gcal-mapping-details {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: #2d3748 !important;
+    font-weight: 500;
+}
+
+.gcal-mapping-arrow {
+    color: #a0aec0;
+}
+
+.gcal-mapping-delete {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+}
+
+.gcal-mapping-delete:hover {
+    opacity: 0.8;
+}
+
+.gcal-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.gcal-btn-secondary {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.gcal-btn-primary {
+    padding: 8px 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.gcal-btn-primary:hover, .gcal-btn-secondary:hover {
+    opacity: 0.9;
+}

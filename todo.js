@@ -1426,6 +1426,10 @@ function openSettingsModal() {
             cardShow.classList.add('selected');
         }
     }
+
+    if (typeof updateGCalSettingsUI === 'function') {
+        updateGCalSettingsUI();
+    }
 }
 
 function closeSettingsModal() {
@@ -1823,6 +1827,11 @@ window.addEventListener('authChanged', (e) => {
         startTodoForUser(currentUid);
         startProjectsForUser(currentUid);
         startSectionsForUser(currentUid);
+        
+        loadGCalConfig().then(() => {
+            updateGCalSettingsUI();
+        });
+
         handleRoute();
     } else {
         // Скрываем интерфейс
@@ -1868,6 +1877,22 @@ function startTodoForUser(uid) {
                 id: docSnap.id,
                 ...data
             });
+        });
+
+        // Синхронизация изменений с Google Календарем
+        snapshot.docChanges().forEach((change) => {
+            const docData = change.doc.data();
+            const task = { id: change.doc.id, ...docData };
+            
+            if (change.type === "added" || change.type === "modified") {
+                if (typeof handleTaskSync === 'function') {
+                    handleTaskSync(task);
+                }
+            } else if (change.type === "removed") {
+                if (typeof handleTaskDelete === 'function') {
+                    handleTaskDelete(task);
+                }
+            }
         });
 
         renderTasks();
@@ -8615,4 +8640,502 @@ window.addEventListener('keydown', (e) => {
         closeTaskDetailsModal();
     }
 });
+
+// === GOOGLE CALENDAR CONTROLLER ===
+let gcalMappings = {};
+let gcalDefaultTag = "gcal";
+const syncingTasks = new Set();
+
+function updateGCalSettingsUI() {
+    const emailEl = document.getElementById('gcalUserEmail');
+    const connectBtn = document.getElementById('btnGCalConnect');
+    const setupSyncCard = document.getElementById('btnGCalSetupSync');
+    
+    const token = localStorage.getItem('google_calendar_access_token');
+    
+    if (token) {
+        if (emailEl) emailEl.textContent = window.currentUser ? window.currentUser.email : 'Привязано';
+        if (connectBtn) {
+            connectBtn.textContent = 'Отключить';
+            connectBtn.classList.add('disconnect');
+        }
+        if (setupSyncCard) {
+            setupSyncCard.classList.remove('disabled');
+        }
+    } else {
+        if (emailEl) emailEl.textContent = 'Не подключено';
+        if (connectBtn) {
+            connectBtn.textContent = 'Подключить';
+            connectBtn.classList.remove('disconnect');
+        }
+        if (setupSyncCard) {
+            setupSyncCard.classList.add('disabled');
+        }
+    }
+}
+
+async function loadGCalConfig() {
+    if (!currentUid) return;
+    try {
+        const userDoc = await window.getDoc(window.doc(db, "users", currentUid));
+        if (userDoc.exists()) {
+            const data = userDoc.data();
+            gcalMappings = data.gcal_mappings || {};
+            gcalDefaultTag = data.gcal_default_tag || "gcal";
+        } else {
+            gcalMappings = {};
+            gcalDefaultTag = "gcal";
+        }
+    } catch (e) {
+        console.error("Ошибка при загрузке связей Google Календаря:", e);
+    }
+}
+
+async function saveGCalConfig() {
+    if (!currentUid) return;
+    try {
+        await window.setDoc(window.doc(db, "users", currentUid), {
+            gcal_mappings: gcalMappings,
+            gcal_default_tag: gcalDefaultTag
+        }, { merge: true });
+    } catch (e) {
+        console.error("Ошибка при сохранении связей Google Календаря:", e);
+    }
+}
+
+// Открытие модального окна связей
+const gcalIntegrationModal = document.getElementById('gcalIntegrationModal');
+const btnGCalSetupSync = document.getElementById('btnGCalSetupSync');
+const btnGCalModalClose = document.getElementById('btnGCalModalClose');
+const btnGCalModalCancel = document.getElementById('btnGCalModalCancel');
+const btnGCalModalSave = document.getElementById('btnGCalModalSave');
+const gcalLocalProjectDropdown = document.getElementById('gcalLocalProjectDropdown');
+const gcalRemoteCalendarDropdown = document.getElementById('gcalRemoteCalendarDropdown');
+const btnGCalLocalProject = document.getElementById('btnGCalLocalProject');
+const btnGCalRemoteCalendar = document.getElementById('btnGCalRemoteCalendar');
+const menuGCalLocalProject = document.getElementById('menuGCalLocalProject');
+const menuGCalRemoteCalendar = document.getElementById('menuGCalRemoteCalendar');
+const gcalMappingsList = document.getElementById('gcalMappingsList');
+
+let selectedLocalProjectId = 'all';
+let selectedRemoteCalendarId = '';
+
+// Помощник переключения выпадающих списков
+function toggleDropdownMenu(menu) {
+    const isShowing = menu.classList.contains('show');
+    // Закрываем все кастомные списки
+    if (menuGCalLocalProject) menuGCalLocalProject.classList.remove('show');
+    if (menuGCalRemoteCalendar) menuGCalRemoteCalendar.classList.remove('show');
+    
+    if (!isShowing) {
+        menu.classList.add('show');
+    }
+}
+
+// Закрытие при клике вовне
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('#gcalLocalProjectDropdown') && menuGCalLocalProject) {
+        menuGCalLocalProject.classList.remove('show');
+    }
+    if (!e.target.closest('#gcalRemoteCalendarDropdown') && menuGCalRemoteCalendar) {
+        menuGCalRemoteCalendar.classList.remove('show');
+    }
+});
+
+if (btnGCalLocalProject) {
+    btnGCalLocalProject.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleDropdownMenu(menuGCalLocalProject);
+    });
+}
+
+if (btnGCalRemoteCalendar) {
+    btnGCalRemoteCalendar.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleDropdownMenu(menuGCalRemoteCalendar);
+    });
+}
+
+if (btnGCalSetupSync) {
+    btnGCalSetupSync.addEventListener('click', async () => {
+        if (btnGCalSetupSync.classList.contains('disabled')) return;
+        
+        btnGCalRemoteCalendar.querySelector('.trigger-text').textContent = 'Загрузка календарей...';
+        selectedRemoteCalendarId = '';
+        
+        gcalIntegrationModal.style.display = 'flex';
+        
+        // Заполняем списки локальных проектов
+        selectedLocalProjectId = 'all';
+        btnGCalLocalProject.querySelector('.trigger-text').textContent = 'Все';
+        populateLocalProjectsDropdown();
+
+        // Загружаем календари из Google
+        try {
+            const calendars = await window.GCalendarService.fetchCalendars();
+            populateRemoteCalendarsDropdown(calendars);
+        } catch (err) {
+            console.error("Ошибка при получении реальных календарей:", err);
+            alert("Ошибка Google Calendar API:\n" + err.message + "\n\nПожалуйста, убедитесь, что в консоли Google Cloud включен API Google Календаря для этого проекта.");
+            btnGCalRemoteCalendar.querySelector('.trigger-text').textContent = 'Ошибка загрузки';
+        }
+
+        renderActiveMappings();
+    });
+}
+
+function populateLocalProjectsDropdown() {
+    if (!menuGCalLocalProject) return;
+    menuGCalLocalProject.innerHTML = '';
+
+    // Вариант 1: Все
+    const optAll = document.createElement('button');
+    optAll.type = 'button';
+    optAll.className = 'gcal-dropdown-item' + (selectedLocalProjectId === 'all' ? ' selected' : '');
+    optAll.textContent = 'Все';
+    optAll.addEventListener('click', () => {
+        selectedLocalProjectId = 'all';
+        btnGCalLocalProject.querySelector('.trigger-text').textContent = 'Все';
+        menuGCalLocalProject.classList.remove('show');
+        populateLocalProjectsDropdown();
+    });
+    menuGCalLocalProject.appendChild(optAll);
+
+    // Вариант 2: Входящие
+    const optInbox = document.createElement('button');
+    optInbox.type = 'button';
+    optInbox.className = 'gcal-dropdown-item' + (selectedLocalProjectId === 'inbox' ? ' selected' : '');
+    optInbox.textContent = 'Входящие';
+    optInbox.addEventListener('click', () => {
+        selectedLocalProjectId = 'inbox';
+        btnGCalLocalProject.querySelector('.trigger-text').textContent = 'Входящие';
+        menuGCalLocalProject.classList.remove('show');
+        populateLocalProjectsDropdown();
+    });
+    menuGCalLocalProject.appendChild(optInbox);
+
+    // Все остальные кастомные проекты
+    projectsList.forEach(p => {
+        const opt = document.createElement('button');
+        opt.type = 'button';
+        opt.className = 'gcal-dropdown-item' + (selectedLocalProjectId === p.id ? ' selected' : '');
+        opt.textContent = p.name;
+        opt.addEventListener('click', () => {
+            selectedLocalProjectId = p.id;
+            btnGCalLocalProject.querySelector('.trigger-text').textContent = p.name;
+            menuGCalLocalProject.classList.remove('show');
+            populateLocalProjectsDropdown();
+        });
+        menuGCalLocalProject.appendChild(opt);
+    });
+}
+
+function populateRemoteCalendarsDropdown(calendars) {
+    if (!menuGCalRemoteCalendar) return;
+    menuGCalRemoteCalendar.innerHTML = '';
+
+    if (calendars.length > 0) {
+        if (!selectedRemoteCalendarId) {
+            selectedRemoteCalendarId = calendars[0].id;
+            btnGCalRemoteCalendar.querySelector('.trigger-text').textContent = calendars[0].summary;
+        }
+
+        calendars.forEach(c => {
+            const opt = document.createElement('button');
+            opt.type = 'button';
+            opt.className = 'gcal-dropdown-item' + (selectedRemoteCalendarId === c.id ? ' selected' : '');
+            opt.textContent = c.summary;
+            opt.addEventListener('click', () => {
+                selectedRemoteCalendarId = c.id;
+                btnGCalRemoteCalendar.querySelector('.trigger-text').textContent = c.summary;
+                menuGCalRemoteCalendar.classList.remove('show');
+                populateRemoteCalendarsDropdown(calendars);
+            });
+            menuGCalRemoteCalendar.appendChild(opt);
+        });
+    } else {
+        btnGCalRemoteCalendar.querySelector('.trigger-text').textContent = 'Календари отсутствуют';
+    }
+
+    // Кнопка создания нового календаря
+    const optNew = document.createElement('button');
+    optNew.type = 'button';
+    optNew.className = 'gcal-dropdown-item';
+    optNew.style.color = 'var(--accent)';
+    optNew.style.fontWeight = 'bold';
+    optNew.textContent = '+ Добавить календарь';
+    optNew.addEventListener('click', async () => {
+        menuGCalRemoteCalendar.classList.remove('show');
+        const name = prompt("Введите название нового календаря:", "Todoist");
+        if (name) {
+            try {
+                btnGCalRemoteCalendar.querySelector('.trigger-text').textContent = 'Создание...';
+                let newCal;
+                try {
+                    newCal = await window.GCalendarService.createCalendar(name);
+                } catch (apiErr) {
+                    console.warn("Не удалось создать календарь по API, создаем локальную заглушку:", apiErr);
+                    newCal = { id: 'mock_' + Date.now(), summary: name };
+                }
+                
+                selectedRemoteCalendarId = newCal.id;
+                btnGCalRemoteCalendar.querySelector('.trigger-text').textContent = newCal.summary;
+                
+                calendars.push(newCal);
+                populateRemoteCalendarsDropdown(calendars);
+            } catch (e) {
+                alert("Не удалось создать календарь: " + e.message);
+                btnGCalRemoteCalendar.querySelector('.trigger-text').textContent = 'Выберите календарь...';
+            }
+        }
+    });
+    menuGCalRemoteCalendar.appendChild(optNew);
+}
+
+function renderActiveMappings() {
+    if (!gcalMappingsList) return;
+    gcalMappingsList.innerHTML = '';
+
+    const keys = Object.keys(gcalMappings);
+    if (keys.length === 0) {
+        gcalMappingsList.innerHTML = '<div class="gcal-no-mappings">Нет активных синхронизаций</div>';
+        return;
+    }
+
+    keys.forEach(projId => {
+        const calId = gcalMappings[projId];
+        let projName = '';
+        if (projId === 'all') {
+            projName = 'Все';
+        } else if (projId === 'inbox') {
+            projName = 'Входящие';
+        } else {
+            projName = (projectsList.find(p => p.id === projId)?.name || 'Неизвестный проект');
+        }
+        
+        const item = document.createElement('div');
+        item.className = 'gcal-mapping-item';
+        item.innerHTML = `
+            <div class="gcal-mapping-details">
+                <span>${escapeHtml(projName)}</span>
+                <span class="gcal-mapping-arrow">⇄</span>
+                <span style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(calId)}</span>
+            </div>
+            <button class="gcal-mapping-delete" data-project="${projId}" title="Удалить привязку">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        `;
+        
+        item.querySelector('.gcal-mapping-delete').addEventListener('click', async (e) => {
+            const pId = e.currentTarget.getAttribute('data-project');
+            
+            if (!confirm("Вы действительно хотите удалить эту синхронизацию? Все задачи этого проекта будут удалены из Google Календаря.")) {
+                return;
+            }
+            
+            const tasksToClear = allTasks.filter(t => (pId === 'all' || (pId === 'inbox' ? !t.projectId : t.projectId === pId)) && t.gcal_event_id);
+            for (const task of tasksToClear) {
+                try {
+                    await window.GCalendarService.deleteTaskFromGoogle(task.gcal_event_id, task.gcal_calendar_id || calId);
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                        gcal_event_id: null,
+                        gcal_calendar_id: null
+                    });
+                } catch (err) {
+                    console.error("Ошибка удаления события при снятии привязки:", err);
+                }
+            }
+
+            delete gcalMappings[pId];
+            await saveGCalConfig();
+            renderActiveMappings();
+        });
+
+        gcalMappingsList.appendChild(item);
+    });
+}
+
+function closeGCalModal() {
+    if (gcalIntegrationModal) gcalIntegrationModal.style.display = 'none';
+}
+
+if (btnGCalModalClose) btnGCalModalClose.addEventListener('click', closeGCalModal);
+if (btnGCalModalCancel) btnGCalModalCancel.addEventListener('click', closeGCalModal);
+
+if (btnGCalModalSave) {
+    btnGCalModalSave.addEventListener('click', async () => {
+        const localProj = selectedLocalProjectId;
+        const remoteCal = selectedRemoteCalendarId;
+        
+        if (!localProj || !remoteCal) {
+            alert("Пожалуйста, выберите проект и календарь.");
+            return;
+        }
+
+        gcalMappings[localProj] = remoteCal;
+        
+        await saveGCalConfig();
+        renderActiveMappings();
+        
+        syncAllTasksForProject(localProj);
+        
+        closeGCalModal();
+    });
+}
+
+async function syncAllTasksForProject(projectId) {
+    const calendarId = gcalMappings[projectId];
+    if (!calendarId) return;
+
+    const tasksToSync = allTasks.filter(t => 
+        !t.deleted && 
+        !t.completed && 
+        (projectId === 'all' ? true : (projectId === 'inbox' ? !t.projectId : t.projectId === projectId))
+    );
+
+    for (const task of tasksToSync) {
+        if (syncingTasks.has(task.id)) continue;
+        syncingTasks.add(task.id);
+        
+        try {
+            const currentTaskHash = `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.completed}|${task.description || ''}`;
+            const eventId = await window.GCalendarService.syncTaskToGoogle(task, calendarId);
+            if (eventId) {
+                await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                    gcal_event_id: eventId,
+                    gcal_calendar_id: calendarId,
+                    gcal_last_sync_hash: currentTaskHash
+                });
+            }
+        } catch (err) {
+            console.error(`Ошибка синхронизации задачи ${task.id}:`, err);
+        } finally {
+            syncingTasks.delete(task.id);
+        }
+    }
+}
+
+async function handleTaskSync(task) {
+    if (!currentUid) return;
+    
+    // Предотвращаем одновременную повторную синхронизацию одной и той же задачи
+    if (syncingTasks.has(task.id)) return;
+    
+    const token = localStorage.getItem('google_calendar_access_token');
+    if (!token) return;
+
+    // Сначала проверяем общую синхронизацию ("all"), затем точечную
+    const mappedCalendarId = gcalMappings['all'] || gcalMappings[task.projectId || 'inbox'];
+
+    const shouldHaveEvent = !task.completed && !task.deleted && task.dueDate && mappedCalendarId;
+    const currentTaskHash = `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.completed}|${task.description || ''}`;
+
+    if (shouldHaveEvent) {
+        // Если уже есть корректная привязка и данные не изменились — ничего не делаем
+        if (task.gcal_event_id && task.gcal_calendar_id === mappedCalendarId && task.gcal_last_sync_hash === currentTaskHash) {
+            return;
+        }
+
+        syncingTasks.add(task.id);
+
+        try {
+            if (task.gcal_event_id && task.gcal_calendar_id && task.gcal_calendar_id !== mappedCalendarId) {
+                try {
+                    await window.GCalendarService.deleteTaskFromGoogle(task.gcal_event_id, task.gcal_calendar_id);
+                } catch (e) {
+                    console.error("Ошибка удаления старого события:", e);
+                }
+                task.gcal_event_id = null;
+            }
+
+            const eventId = await window.GCalendarService.syncTaskToGoogle(task, mappedCalendarId);
+            if (eventId) {
+                await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                    gcal_event_id: eventId,
+                    gcal_calendar_id: mappedCalendarId,
+                    gcal_last_sync_hash: currentTaskHash
+                });
+            }
+        } catch (err) {
+            console.error("Ошибка при синхронизации задачи с Google:", err);
+        } finally {
+            syncingTasks.delete(task.id);
+        }
+    } else {
+        if (task.gcal_event_id && task.gcal_calendar_id) {
+            syncingTasks.add(task.id);
+            try {
+                await window.GCalendarService.deleteTaskFromGoogle(task.gcal_event_id, task.gcal_calendar_id);
+                await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                    gcal_event_id: null,
+                    gcal_calendar_id: null,
+                    gcal_last_sync_hash: null
+                });
+            } catch (err) {
+                console.error("Ошибка при удалении события из Google:", err);
+            } finally {
+                syncingTasks.delete(task.id);
+            }
+        }
+    }
+}
+
+async function handleTaskDelete(task) {
+    if (task.gcal_event_id && task.gcal_calendar_id) {
+        try {
+            await window.GCalendarService.deleteTaskFromGoogle(task.gcal_event_id, task.gcal_calendar_id);
+        } catch (err) {
+            console.error("Ошибка при удалении события при удалении задачи:", err);
+        }
+    }
+}
+
+// Привязка событий клика на подключение календаря
+const btnGCalConnect = document.getElementById('btnGCalConnect');
+if (btnGCalConnect) {
+    btnGCalConnect.addEventListener('click', async () => {
+        const token = localStorage.getItem('google_calendar_access_token');
+        if (token) {
+            localStorage.removeItem('google_calendar_access_token');
+            localStorage.removeItem('google_calendar_refresh_token');
+            localStorage.removeItem('google_calendar_token_expiry');
+            
+            if (currentUid) {
+                await window.setDoc(window.doc(db, "users", currentUid), {
+                    google_calendar_access_token: null,
+                    google_calendar_refresh_token: null,
+                    google_calendar_token_expiry: null,
+                    gcal_mappings: {}
+                }, { merge: true });
+            }
+            
+            gcalMappings = {};
+            updateGCalSettingsUI();
+        } else {
+            try {
+                const newToken = await window.connectGoogleCalendar(true);
+                if (newToken) {
+                    await loadGCalConfig();
+                    updateGCalSettingsUI();
+                }
+            } catch (e) {
+                console.error("Ошибка подключения календаря:", e);
+            }
+        }
+    });
+}
+
+window.addEventListener('googleCalendarTokenChanged', () => {
+    updateGCalSettingsUI();
+});
+
+// Экспортируем функции в глобальную область видимости
+window.handleTaskSync = handleTaskSync;
+window.handleTaskDelete = handleTaskDelete;
+window.updateGCalSettingsUI = updateGCalSettingsUI;
+window.loadGCalConfig = loadGCalConfig;
+
 

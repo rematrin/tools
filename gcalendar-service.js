@@ -26,25 +26,7 @@ const GCalendarService = {
     },
 
     async refreshAccessToken() {
-        // Ждем немного если db еще не инициализирован
-        for (let i = 0; i < 10; i++) {
-            if (window.db && window.connectGoogleCalendar) break;
-            await new Promise(r => setTimeout(r, 200));
-        }
-
-        if (!window.connectGoogleCalendar) {
-            throw new Error('Сервис авторизации Google Calendar не готов. Попробуйте обновить страницу.');
-        }
-
-        try {
-            console.log('Попытка автоматического обновления токена Google Calendar...');
-            // Запускаем авторизацию без принудительного согласия (prompt=none или без prompt)
-            const newToken = await window.connectGoogleCalendar(false);
-            return newToken;
-        } catch (err) {
-            console.error('Ошибка автоматического обновления токена Google Calendar:', err);
-            throw new Error('Требуется обновление доступа к Google Календарю. Пожалуйста, привяжите его заново в настройках.');
-        }
+        throw new Error('Сессия Google Календаря истекла. Пожалуйста, откройте Настройки -> Календари и подключите его заново.');
     },
 
     async apiCall(endpoint, options = {}) {
@@ -238,6 +220,31 @@ const GCalendarService = {
             event.end = {
                 date: endDate
             };
+        }
+
+        // Поддержка правил повторения (Recurrence RRULE)
+        if (task.dueRepeat) {
+            let rrule = '';
+            switch (task.dueRepeat) {
+                case 'daily':
+                    rrule = 'RRULE:FREQ=DAILY';
+                    break;
+                case 'weekly':
+                    rrule = 'RRULE:FREQ=WEEKLY';
+                    break;
+                case 'weekday':
+                    rrule = 'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR';
+                    break;
+                case 'monthly':
+                    rrule = 'RRULE:FREQ=MONTHLY';
+                    break;
+                case 'yearly':
+                    rrule = 'RRULE:FREQ=YEARLY';
+                    break;
+            }
+            if (rrule) {
+                event.recurrence = [rrule];
+            }
         }
 
         return event;

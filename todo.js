@@ -8680,6 +8680,17 @@ async function loadGCalConfig() {
             const data = userDoc.data();
             gcalMappings = data.gcal_mappings || {};
             gcalDefaultTag = data.gcal_default_tag || "gcal";
+            
+            // Загружаем сохраненные токены в localStorage, чтобы GCalendarService работал без повторной авторизации
+            if (data.google_calendar_access_token) {
+                localStorage.setItem('google_calendar_access_token', data.google_calendar_access_token);
+            }
+            if (data.google_calendar_token_expiry) {
+                localStorage.setItem('google_calendar_token_expiry', data.google_calendar_token_expiry);
+            }
+            if (data.google_calendar_refresh_token) {
+                localStorage.setItem('google_calendar_refresh_token', data.google_calendar_refresh_token);
+            }
         } else {
             gcalMappings = {};
             gcalDefaultTag = "gcal";
@@ -8999,7 +9010,7 @@ async function syncAllTasksForProject(projectId) {
         syncingTasks.add(task.id);
         
         try {
-            const currentTaskHash = `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.completed}|${task.description || ''}`;
+            const currentTaskHash = `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.dueRepeat || ''}|${task.completed}|${task.description || ''}`;
             const eventId = await window.GCalendarService.syncTaskToGoogle(task, calendarId);
             if (eventId) {
                 await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
@@ -9029,7 +9040,7 @@ async function handleTaskSync(task) {
     const mappedCalendarId = gcalMappings['all'] || gcalMappings[task.projectId || 'inbox'];
 
     const shouldHaveEvent = !task.completed && !task.deleted && task.dueDate && mappedCalendarId;
-    const currentTaskHash = `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.completed}|${task.description || ''}`;
+    const currentTaskHash = `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.dueRepeat || ''}|${task.completed}|${task.description || ''}`;
 
     if (shouldHaveEvent) {
         // Если уже есть корректная привязка и данные не изменились — ничего не делаем

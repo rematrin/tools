@@ -3820,6 +3820,8 @@ function createTaskRowElement(task) {
     item.className = `task-item ${task.completed ? 'completed' : ''} priority-${task.priority || 0} ${isSubtask ? 'subtask' : ''}`;
     item.setAttribute('data-id', task.id);
 
+    const project = task.projectId ? projectsList.find(p => p.id === task.projectId) : null;
+
     if (task.deleted) {
         item.innerHTML = `
             ${chevronHtml}
@@ -3904,14 +3906,36 @@ function createTaskRowElement(task) {
         <div class="task-content">
             <span class="task-title-text">${formatTaskTitle(task.title)}</span>
         </div>
-        ${task.dueDate ? `
-            <span class="task-due-badge ${isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '')}" style="margin-left: auto;">
+        ${task.dueDate ? (() => {
+            let isProj = false;
+            if (task.dueDate && (currentRoute === 'today' || currentRoute === 'tomorrow')) {
+                const tdy = new Date();
+                const tdyS = tdy.getFullYear() + '-' + String(tdy.getMonth() + 1).padStart(2, '0') + '-' + String(tdy.getDate()).padStart(2, '0');
+                const tmr = new Date();
+                tmr.setDate(tmr.getDate() + 1);
+                const tmrS = tmr.getFullYear() + '-' + String(tmr.getMonth() + 1).padStart(2, '0') + '-' + String(tmr.getDate()).padStart(2, '0');
+                if (task.dueDate === tdyS || task.dueDate === tmrS) {
+                    isProj = true;
+                }
+            }
+            let bStyle = 'style="margin-left: auto;"';
+            if (isProj) {
+                if (project && project.color) {
+                    bStyle = `style="color: ${project.color} !important; border-color: ${hexToRgba(project.color, 0.15)} !important; background-color: ${hexToRgba(project.color, 0.08)} !important; margin-left: auto;"`;
+                } else {
+                    bStyle = `style="color: #71717a !important; border-color: rgba(113, 113, 122, 0.15) !important; background-color: rgba(113, 113, 122, 0.08) !important; margin-left: auto;"`;
+                }
+            }
+            return `
+            <span class="task-due-badge ${isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '')}" ${bStyle}>
+                ${!isProj ? `
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                     <line x1="16" y1="2" x2="16" y2="6"></line>
                     <line x1="8" y1="2" x2="8" y2="6"></line>
                     <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
+                ` : ''}
                 <span style="vertical-align: middle;">${dueLabel}</span>
                 ${task.dueRepeat ? `
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
@@ -3919,7 +3943,8 @@ function createTaskRowElement(task) {
                     </svg>
                 ` : ''}
             </span>
-        ` : ''}
+            `;
+        })() : ''}
         <div class="task-actions">
             <button class="action-btn btn-more" title="Действия">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -4764,7 +4789,10 @@ function renderProjects() {
                     </span>
                     <span>${escapeHtml(project.name)}</span>
                 </span>
-                <span class="menu-counter" style="${(showCounters && !hideProjectCount && projectTaskCount > 0) ? '' : 'display:none'}">${projectTaskCount}</span>
+                <span style="display: flex; align-items: center; gap: 8px;">
+                    ${project.color ? `<span class="project-color-dot" style="background-color: ${project.color};"></span>` : ''}
+                    <span class="menu-counter" style="${(showCounters && !hideProjectCount && projectTaskCount > 0) ? '' : 'display:none'}">${projectTaskCount}</span>
+                </span>
             </a>
             <button class="project-actions-btn" data-id="${project.id}" title="Действия">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -5057,6 +5085,10 @@ function renderProjectHeaderDropdown() {
             </svg>
             <span>Переименовать</span>
         </button>
+        <button class="dropdown-item" id="btnProjectChangeColor">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="5" fill="currentColor"></circle></svg>
+            <span>Изменить цвет</span>
+        </button>
         <button class="dropdown-item" id="btnProjectToggleCompleted">
             ${isCompletedHidden ? `
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
@@ -5092,6 +5124,12 @@ function renderProjectHeaderDropdown() {
         e.stopPropagation();
         projectHeaderDropdown.style.display = 'none';
         enableHeaderProjectInlineEdit(projectId, project.name);
+    });
+
+    document.getElementById('btnProjectChangeColor').addEventListener('click', (e) => {
+        e.stopPropagation();
+        projectHeaderDropdown.style.display = 'none';
+        showProjectColorModal(projectId);
     });
 
     document.getElementById('btnProjectToggleCompleted').addEventListener('click', async (e) => {
@@ -5709,6 +5747,10 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
             <span>Сменить иконку</span>
         </div>
+        <div class="ctx-item" id="ctx-change-color-project">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="5" fill="currentColor"></circle></svg>
+            <span>Изменить цвет</span>
+        </div>
         <div class="ctx-item" id="ctx-rename-project">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             <span>Переименовать</span>
@@ -5764,6 +5806,14 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
 
     menu.style.left = `${x}px`;
     menu.style.top = `${y}px`;
+
+    // Обработчик изменения цвета проекта
+    menu.querySelector('#ctx-change-color-project').addEventListener('click', (evt) => {
+        evt.stopPropagation();
+        menu.remove();
+        activeContextMenu = null;
+        showProjectColorModal(projectId);
+    });
 
     // Обработчик переключения видимости счетчика проекта
     menu.querySelector('#ctx-toggle-count-project').addEventListener('click', async (evt) => {
@@ -6039,6 +6089,314 @@ function showProjectIconModal(projectId, projectName) {
         };
         reader.readAsDataURL(file);
     }
+}
+
+
+function hexToRgba(hex, alpha = 1) {
+    if (!hex) return '';
+    hex = hex.replace('#', '');
+    if (hex.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
+    }
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
+}
+
+function hsvToRgb(h, s, v) {
+    s /= 100;
+    v /= 100;
+    let r, g, b;
+    let i = Math.floor(h / 60);
+    let f = h / 60 - i;
+    let p = v * (1 - s);
+    let q = v * (1 - f * s);
+    let t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return {
+        r: Math.round(r * 255),
+        g: Math.round(g * 255),
+        b: Math.round(b * 255)
+    };
+}
+
+function rgbToHex(r, g, b) {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+}
+
+function hexToHsv(hex) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
+    }
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+    
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const d = max - min;
+    
+    let h;
+    if (d === 0) h = 0;
+    else if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else if (max === b) h = (r - g) / d + 4;
+    h = Math.round(h * 60);
+    
+    const s = Math.round(max === 0 ? 0 : (d / max) * 100);
+    const v = Math.round(max * 100);
+    return { h, s, v };
+}
+
+function showProjectColorModal(projectId) {
+    const project = projectsList.find(p => p.id === projectId);
+    if (!project) return;
+
+    let selectedColor = project.color || null;
+    const presets = [
+        '#dc2626',
+        '#f97316',
+        '#eab308',
+        '#84cc16',
+        '#22c55e',
+        '#3b82f6',
+        '#8b5cf6'
+    ];
+
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-confirm-overlay';
+    overlay.style.zIndex = '1050';
+
+    overlay.innerHTML = '<div class="confirm-box" style="width: 380px; padding: 24px; border-radius: 16px; position: relative;">' +
+            '<div class="confirm-title" style="font-size: 18px; margin-bottom: 20px; font-weight: 600; text-align: center;">Изменить цвет</div>' +
+            '<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">' +
+                '<span style="font-size: 14px; font-weight: 500; color: var(--text-secondary);">Цвет списка</span>' +
+                '<div class="color-presets-container" style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">' +
+                    '<div class="color-circle no-color ' + (!selectedColor ? 'active' : '') + '" data-color="" style="--active-color: #d1d5db;"></div>' +
+                    presets.map(color => '<div class="color-circle ' + (selectedColor === color ? 'active' : '') + '" data-color="' + color + '" style="background-color: ' + color + '; --active-color: ' + color + ';"></div>').join('') +
+                    '<div class="color-circle custom-color-btn ' + (selectedColor && !presets.includes(selectedColor) ? 'active' : '') + '" id="custom-color-trigger" style="--active-color: ' + (selectedColor && !presets.includes(selectedColor) ? selectedColor : '#3b82f6') + ';"></div>' +
+                '</div>' +
+            '</div>' +
+            '<div style="display: flex; justify-content: flex-end; gap: 12px;">' +
+                '<button class="confirm-btn-secondary" id="btn-cancel-color" style="margin: 0; padding: 10px 20px; border-radius: 10px; background: var(--card-bg); border: 1px solid var(--border); color: var(--text);">Отмена</button>' +
+                '<button class="confirm-btn-primary" id="btn-save-color" style="margin: 0; padding: 10px 20px; border-radius: 10px; background: #3b82f6; border: none; color: #fff;">Сохранить</button>' +
+            '</div>' +
+        '</div>';
+
+    document.body.appendChild(overlay);
+
+    const presetCircles = overlay.querySelectorAll('.color-circle:not(.custom-color-btn)');
+    const customColorTrigger = overlay.querySelector('#custom-color-trigger');
+    const saveBtn = overlay.querySelector('#btn-save-color');
+    const cancelBtn = overlay.querySelector('#btn-cancel-color');
+    const modalBox = overlay.querySelector('.confirm-box');
+
+    let customColorPopover = null;
+    let tempCustomColor = selectedColor && !presets.includes(selectedColor) ? selectedColor : '#ff0000';
+
+    function updateActiveState(activeCircle) {
+        overlay.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
+        activeCircle.classList.add('active');
+        if (activeCircle === customColorTrigger) {
+            customColorTrigger.style.setProperty('--active-color', tempCustomColor);
+            selectedColor = tempCustomColor;
+        } else {
+            selectedColor = activeCircle.getAttribute('data-color') || null;
+        }
+    }
+
+    presetCircles.forEach(circle => {
+        circle.addEventListener('click', () => {
+            if (customColorPopover) {
+                customColorPopover.remove();
+                customColorPopover = null;
+            }
+            updateActiveState(circle);
+        });
+    });
+
+    customColorTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (customColorPopover) {
+            customColorPopover.remove();
+            customColorPopover = null;
+            return;
+        }
+
+        customColorPopover = document.createElement('div');
+        customColorPopover.className = 'custom-color-picker-popover';
+        customColorPopover.style.position = 'fixed';
+        customColorPopover.style.background = 'var(--card-bg)';
+        customColorPopover.style.border = '1px solid var(--border)';
+        customColorPopover.style.borderRadius = '16px';
+        customColorPopover.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.15)';
+        customColorPopover.style.width = '220px';
+        customColorPopover.style.padding = '12px';
+        customColorPopover.style.display = 'flex';
+        customColorPopover.style.flexDirection = 'column';
+        customColorPopover.style.gap = '10px';
+        customColorPopover.style.zIndex = '1100';
+
+        const rect = modalBox.getBoundingClientRect();
+        let left = rect.right + 12;
+        let top = rect.top;
+        if (left + 240 > window.innerWidth) {
+            left = Math.max(10, rect.left + (rect.width - 220) / 2);
+            top = rect.bottom + 12;
+            if (top + 280 > window.innerHeight) {
+                top = Math.max(10, rect.top - 290);
+            }
+        }
+
+        customColorPopover.style.left = left + 'px';
+        customColorPopover.style.top = top + 'px';
+
+        customColorPopover.innerHTML = '<div class="sv-canvas" style="width: 100%; height: 120px; border-radius: 8px; position: relative; cursor: crosshair; overflow: hidden;">' +
+                '<div style="position: absolute; inset: 0; background: linear-gradient(to right, #fff, transparent);"></div>' +
+                '<div style="position: absolute; inset: 0; background: linear-gradient(to top, #000, transparent);"></div>' +
+                '<div class="sv-handle" style="position: absolute; width: 8px; height: 8px; border: 1.5px solid #fff; border-radius: 50%; box-shadow: 0 0 2px rgba(0,0,0,0.5); transform: translate(-50%, -50%); pointer-events: none;"></div>' +
+            '</div>' +
+            '<div style="display: flex; align-items: center; gap: 8px;">' +
+                '<div class="color-preview-circle" style="width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.1);"></div>' +
+                '<input type="range" class="hue-slider" min="0" max="360" value="0" style="flex-grow: 1; margin: 0;">' +
+            '</div>' +
+            '<div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">' +
+                '<input type="text" class="hex-input" style="width: 100%; text-align: center; border: 1px solid var(--border); border-radius: 6px; padding: 4px; font-size: 12px; font-family: monospace; background: var(--hover-bg); color: var(--text);">' +
+                '<span style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase;">HEX</span>' +
+            '</div>' +
+            '<div style="display: flex; justify-content: space-between; gap: 6px;">' +
+                '<button class="picker-btn-cancel" style="flex: 1; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text); font-size: 12px; cursor: pointer;">Отмена</button>' +
+                '<button class="picker-btn-save" style="flex: 1; padding: 6px; border-radius: 6px; border: none; background: #3b82f6; color: #fff; font-size: 12px; cursor: pointer;">Сохранить</button>' +
+            '</div>';
+
+        document.body.appendChild(customColorPopover);
+
+        const popHsv = hexToHsv(tempCustomColor);
+        let curHue = popHsv.h;
+        let curSat = popHsv.s;
+        let curVal = popHsv.v;
+
+        const svCanvas = customColorPopover.querySelector('.sv-canvas');
+        const svHandle = customColorPopover.querySelector('.sv-handle');
+        const previewCircle = customColorPopover.querySelector('.color-preview-circle');
+        const hueSlider = customColorPopover.querySelector('.hue-slider');
+        const hexInput = customColorPopover.querySelector('.hex-input');
+
+        hueSlider.value = curHue;
+
+        function updatePickerUI() {
+            svCanvas.style.backgroundColor = 'hsl(' + curHue + ', 100%, 50%)';
+            svHandle.style.left = curSat + '%';
+            svHandle.style.top = (100 - curVal) + '%';
+
+            const rgb = hsvToRgb(curHue, curSat, curVal);
+            const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+
+            previewCircle.style.backgroundColor = hex;
+            if (document.activeElement !== hexInput) {
+                hexInput.value = hex;
+            }
+        }
+
+        function updateSVFromEvent(evt) {
+            const rect = svCanvas.getBoundingClientRect();
+            let x = evt.clientX - rect.left;
+            let y = evt.clientY - rect.top;
+            x = Math.max(0, Math.min(rect.width, x));
+            y = Math.max(0, Math.min(rect.height, y));
+            curSat = Math.round((x / rect.width) * 100);
+            curVal = Math.round((1 - y / rect.height) * 100);
+            updatePickerUI();
+        }
+
+        function onMouseDown(evt) {
+            updateSVFromEvent(evt);
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        }
+        function onMouseMove(evt) {
+            updateSVFromEvent(evt);
+        }
+        function onMouseUp() {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+
+        svCanvas.addEventListener('mousedown', onMouseDown);
+
+        hueSlider.addEventListener('input', (evt) => {
+            curHue = parseInt(evt.target.value);
+            updatePickerUI();
+        });
+
+        hexInput.addEventListener('input', (evt) => {
+            const val = evt.target.value;
+            if (/^#[0-9A-F]{6}$/i.test(val)) {
+                const hsv = hexToHsv(val);
+                curHue = hsv.h;
+                curSat = hsv.s;
+                curVal = hsv.v;
+                hueSlider.value = curHue;
+                updatePickerUI();
+            }
+        });
+
+        customColorPopover.querySelector('.picker-btn-save').addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            const rgb = hsvToRgb(curHue, curSat, curVal);
+            tempCustomColor = rgbToHex(rgb.r, rgb.g, rgb.b);
+            updateActiveState(customColorTrigger);
+            customColorPopover.remove();
+            customColorPopover = null;
+        });
+
+        customColorPopover.querySelector('.picker-btn-cancel').addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            customColorPopover.remove();
+            customColorPopover = null;
+        });
+
+        customColorPopover.addEventListener('click', (evt) => {
+            evt.stopPropagation();
+        });
+
+        updatePickerUI();
+    });
+
+    saveBtn.addEventListener('click', async () => {
+        if (customColorPopover) customColorPopover.remove();
+        overlay.remove();
+
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                color: selectedColor
+            });
+        } catch (err) {
+            console.error("Ошибка при сохранении цвета проекта:", err);
+            alert("Не удалось изменить цвет проекта.");
+        }
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        if (customColorPopover) customColorPopover.remove();
+        overlay.remove();
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            if (customColorPopover) customColorPopover.remove();
+            overlay.remove();
+        }
+    });
 }
 
 // Inline-редактирование имени проекта в боковой панели

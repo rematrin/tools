@@ -1824,15 +1824,13 @@ window.addEventListener('authChanged', (e) => {
         if (authRequiredState) authRequiredState.style.setProperty('display', 'none', 'important');
         if (todoMainLayout) todoMainLayout.style.display = 'flex';
 
-        startTodoForUser(currentUid);
-        startProjectsForUser(currentUid);
-        startSectionsForUser(currentUid);
-        
         loadGCalConfig().then(() => {
             updateGCalSettingsUI();
+            startTodoForUser(currentUid);
+            startProjectsForUser(currentUid);
+            startSectionsForUser(currentUid);
+            handleRoute();
         });
-
-        handleRoute();
     } else {
         // Скрываем интерфейс
         if (todoMainLayout) todoMainLayout.style.setProperty('display', 'none', 'important');

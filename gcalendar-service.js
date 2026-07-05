@@ -25,8 +25,65 @@ const GCalendarService = {
         return token;
     },
 
+    tokenClient: null,
+    refreshResolve: null,
+    refreshReject: null,
+
     async refreshAccessToken() {
-        throw new Error('Сессия Google Календаря истекла. Пожалуйста, откройте Настройки -> Календари и подключите его заново.');
+        if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+            throw new Error('Библиотека Google API еще не загружена. Пожалуйста, подождите пару секунд и повторите попытку.');
+        }
+
+        if (!this.tokenClient) {
+            this.tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: '595986762798-1pm4iaiom54d4bflvnp1hrf4iugqfvhu.apps.googleusercontent.com',
+                scope: 'https://www.googleapis.com/auth/calendar',
+                callback: async (tokenResponse) => {
+                    if (tokenResponse && tokenResponse.access_token) {
+                        const token = tokenResponse.access_token;
+                        const expiry = Date.now() + (tokenResponse.expires_in || 3600) * 1000;
+
+                        localStorage.setItem('google_calendar_access_token', token);
+                        localStorage.setItem('google_calendar_token_expiry', expiry);
+
+                        if (window.currentUser && window.db && window.updateDoc && window.doc) {
+                            try {
+                                const userRef = window.doc(window.db, "users", window.currentUser.uid);
+                                await window.updateDoc(userRef, {
+                                    google_calendar_access_token: token,
+                                    google_calendar_token_expiry: expiry,
+                                    updated_at: window.serverTimestamp()
+                                });
+                            } catch (e) {
+                                console.error("Ошибка сохранения обновленного токена в Firestore:", e);
+                            }
+                        }
+
+                        window.dispatchEvent(new CustomEvent('googleCalendarTokenChanged', { detail: { token } }));
+
+                        if (this.refreshResolve) {
+                            this.refreshResolve(token);
+                            this.refreshResolve = null;
+                            this.refreshReject = null;
+                        }
+                    }
+                },
+                error_callback: (err) => {
+                    console.error("GSI token refresh error:", err);
+                    if (this.refreshReject) {
+                        this.refreshReject(err);
+                        this.refreshResolve = null;
+                        this.refreshReject = null;
+                    }
+                }
+            });
+        }
+
+        return new Promise((resolve, reject) => {
+            this.refreshResolve = resolve;
+            this.refreshReject = reject;
+            this.tokenClient.requestAccessToken({ prompt: '' });
+        });
     },
 
     async apiCall(endpoint, options = {}) {

@@ -86,6 +86,11 @@ let selectedDueRepeat = null; // Хранит выбранный повтор: d
 let selectedDueEndDate = null; // Хранит выбранную конечную дату
 let selectedDueEndTime = null; // Хранит выбранное конечное время
 let calendarTargetTask = null; // Текущая редактируемая задача/подзадача для кастомного календаря
+let tempSelectedDueDate = null;
+let tempSelectedDueTime = null;
+let tempSelectedDueRepeat = null;
+let tempSelectedDueEndDate = null;
+let tempSelectedDueEndTime = null;
 let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth(); // 0-11
 let selectedPriority = 0; // Приоритет новой задачи по умолчанию
@@ -239,48 +244,28 @@ if (btnPriority && priorityDropdown) {
 if (dueDateDropdown) {
     setupNestedViews(
         dueDateDropdown,
-        () => calendarTargetTask ? calendarTargetTask.dueDate : selectedDueDate,
+        () => tempSelectedDueDate,
         (dateStr) => {
-            if (calendarTargetTask) {
-                calendarTargetTask.dueDate = dateStr;
-            } else {
-                selectedDueDate = dateStr;
+            tempSelectedDueDate = dateStr;
+            if (dueDateDropdown.updateRepeatListOnDateChange) {
+                dueDateDropdown.updateRepeatListOnDateChange();
             }
         },
-        () => calendarTargetTask ? calendarTargetTask.dueTime : selectedDueTime,
-        (timeStr) => {
-            if (calendarTargetTask) {
-                calendarTargetTask.dueTime = timeStr;
-            } else {
-                selectedDueTime = timeStr;
-            }
-        },
-        () => calendarTargetTask ? calendarTargetTask.dueRepeat : selectedDueRepeat,
-        (repeatStr) => {
-            if (calendarTargetTask) {
-                calendarTargetTask.dueRepeat = repeatStr;
-            } else {
-                selectedDueRepeat = repeatStr;
-            }
-        },
-        () => calendarTargetTask ? calendarTargetTask.dueEndDate : selectedDueEndDate,
-        (dateStr) => {
-            if (calendarTargetTask) {
-                calendarTargetTask.dueEndDate = dateStr;
-            } else {
-                selectedDueEndDate = dateStr;
-            }
-        },
-        () => calendarTargetTask ? calendarTargetTask.dueEndTime : selectedDueEndTime,
-        (timeStr) => {
-            if (calendarTargetTask) {
-                calendarTargetTask.dueEndTime = timeStr;
-            } else {
-                selectedDueEndTime = timeStr;
-            }
-        },
+        () => tempSelectedDueTime,
+        (timeStr) => { tempSelectedDueTime = timeStr; },
+        () => tempSelectedDueRepeat,
+        (repeatStr) => { tempSelectedDueRepeat = repeatStr; },
+        () => tempSelectedDueEndDate,
+        (dateStr) => { tempSelectedDueEndDate = dateStr; },
+        () => tempSelectedDueEndTime,
+        (timeStr) => { tempSelectedDueEndTime = timeStr; },
         async () => {
             if (calendarTargetTask) {
+                calendarTargetTask.dueDate = tempSelectedDueDate;
+                calendarTargetTask.dueTime = tempSelectedDueTime;
+                calendarTargetTask.dueRepeat = tempSelectedDueRepeat;
+                calendarTargetTask.dueEndDate = tempSelectedDueEndDate;
+                calendarTargetTask.dueEndTime = tempSelectedDueEndTime;
                 if (currentUid && calendarTargetTask.id) {
                     try {
                         await updateDoc(doc(db, 'users', currentUid, 'tasks', calendarTargetTask.id), {
@@ -294,9 +279,8 @@ if (dueDateDropdown) {
                         console.error("Ошибка обновления даты задачи:", err);
                     }
                 }
-                dueDateDropdown.style.display = 'none';
-                calendarTargetTask = null;
-
+                closeDueDateDropdown();
+ 
                 // Close all actions menus
                 document.querySelectorAll('.task-actions-dropdown, .modal-subtask-item .task-actions-dropdown').forEach(dd => {
                     dd.style.display = 'none';
@@ -309,8 +293,12 @@ if (dueDateDropdown) {
                     el.classList.remove('menu-open');
                 });
             } else {
-                setDueDate(selectedDueDate, selectedDueTime, selectedDueRepeat, selectedDueEndDate, selectedDueEndTime);
+                setDueDate(tempSelectedDueDate, tempSelectedDueTime, tempSelectedDueRepeat, tempSelectedDueEndDate, tempSelectedDueEndTime);
+                closeDueDateDropdown();
             }
+        },
+        () => {
+            closeDueDateDropdown();
         }
     );
 }
@@ -662,18 +650,7 @@ document.querySelectorAll('.quick-opt-btn').forEach(btn => {
             dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
         }
 
-        if (calendarTargetTask) {
-            calendarTargetTask.dueDate = dateStr;
-            if (dueDateDropdown.onDoneCallback) {
-                dueDateDropdown.onDoneCallback();
-            }
-        } else {
-            if (targetDate) {
-                setDueDate(dateStr);
-            } else {
-                setDueDate(null);
-            }
-        }
+        tempSelectedDueDate = dateStr;
         if (dueDateDropdown.updateRepeatListOnDateChange) {
             dueDateDropdown.updateRepeatListOnDateChange();
         }
@@ -885,8 +862,9 @@ function calculateNextDueDate(currentDateStr, repeatCode) {
     return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
 }
 
-function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelectedTime, setSelectedTime, getSelectedRepeat, setSelectedRepeat, getSelectedEndDate, setSelectedEndDate, getSelectedEndTime, setSelectedEndTime, onDone) {
+function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelectedTime, setSelectedTime, getSelectedRepeat, setSelectedRepeat, getSelectedEndDate, setSelectedEndDate, getSelectedEndTime, setSelectedEndTime, onDone, onCancel) {
     dropdownEl.onDoneCallback = onDone;
+    dropdownEl.onCancelCallback = onCancel;
 
     // Close on overlay backdrop click
     const overlay = dropdownEl.parentElement;
@@ -894,10 +872,7 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
                 e.stopPropagation();
-                overlay.style.display = 'none';
-                dropdownEl.style.display = 'none';
-                if (typeof updateModalOverflow === 'function') updateModalOverflow();
-                calendarTargetTask = null;
+                if (typeof onCancel === 'function') onCancel();
             }
         });
     }
@@ -912,7 +887,6 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
     const endTimeCheckbox = dropdownEl.querySelector('.end-time-active-checkbox');
     const customTimeDropdown = dropdownEl.querySelector('.custom-time-dropdown');
     const repeatPickerList = dropdownEl.querySelector('.repeat-picker-list');
-    const closeBtn = dropdownEl.querySelector('.due-close-btn');
 
     // Helper functions for time offsets
     const minToTimeStr = (min) => {
@@ -968,17 +942,21 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
         return opts;
     };
 
-    // Close button click
-    if (closeBtn) {
-        closeBtn.addEventListener('click', (e) => {
+    // Save & Cancel buttons in the footer
+    const btnSave = dropdownEl.querySelector('.due-btn-save');
+    const btnCancel = dropdownEl.querySelector('.due-btn-cancel');
+
+    if (btnSave) {
+        btnSave.addEventListener('click', (e) => {
             e.stopPropagation();
-            dropdownEl.style.display = 'none';
-            const overlay = dropdownEl.parentElement;
-            if (overlay && overlay.classList.contains('due-modal-overlay')) {
-                overlay.style.display = 'none';
-            }
-            if (typeof updateModalOverflow === 'function') updateModalOverflow();
-            calendarTargetTask = null;
+            if (typeof onDone === 'function') onDone();
+        });
+    }
+
+    if (btnCancel) {
+        btnCancel.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (typeof onCancel === 'function') onCancel();
         });
     }
 
@@ -1003,7 +981,6 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                 setSelectedEndTime(null);
             }
             dropdownEl.initUI();
-            onDone();
         });
     }
 
@@ -1030,7 +1007,6 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                 setSelectedEndTime(null);
             }
             dropdownEl.initUI();
-            onDone();
         });
     }
 
@@ -1077,7 +1053,6 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                         
                         customTimeDropdown.style.display = 'none';
                         dropdownEl.initUI();
-                        onDone();
                     });
                     customTimeDropdown.appendChild(item);
                 }
@@ -1120,7 +1095,6 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                     setSelectedEndDate(getSelectedDate() || getTodayString());
                     customTimeDropdown.style.display = 'none';
                     dropdownEl.initUI();
-                    onDone();
                 });
                 customTimeDropdown.appendChild(item);
             });
@@ -1159,7 +1133,6 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                 setSelectedRepeat(null);
             }
             dropdownEl.initUI();
-            onDone();
         });
     }
 
@@ -1193,7 +1166,6 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                 }
                 setSelectedRepeat(opt.id);
                 dropdownEl.initUI();
-                onDone();
             });
 
             repeatPickerList.appendChild(item);
@@ -1334,7 +1306,7 @@ function createCalendarCell(dayNum, isCurrentMonth, month, year) {
 
     const dateStr = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
 
-    const activeSelectedDate = calendarTargetTask ? calendarTargetTask.dueDate : selectedDueDate;
+    const activeSelectedDate = tempSelectedDueDate;
     if (activeSelectedDate === dateStr) {
         cell.classList.add('selected');
     }
@@ -1347,11 +1319,9 @@ function createCalendarCell(dayNum, isCurrentMonth, month, year) {
 
     cell.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (calendarTargetTask) {
-            calendarTargetTask.dueDate = dateStr;
-            if (dueDateDropdown.onDoneCallback) dueDateDropdown.onDoneCallback();
-        } else {
-            setDueDate(dateStr);
+        tempSelectedDueDate = dateStr;
+        if (dueDateDropdown.updateRepeatListOnDateChange) {
+            dueDateDropdown.updateRepeatListOnDateChange();
         }
         renderCalendarGrid();
     });
@@ -2590,12 +2560,14 @@ function createDropdownHtml() {
                         </svg>
                         <span>Время</span>
                     </label>
-                    <div class="due-time-inputs-wrapper" style="display: none; align-items: center; gap: 6px; margin-left: auto;">
-                        <button class="pill-btn start-time-btn" type="button">08:00</button>
-                        <span class="time-dash">—</span>
-                        <button class="pill-btn end-time-btn disabled" type="button" disabled>09:00</button>
-                        <input type="checkbox" class="end-time-active-checkbox" style="margin-left: 4px;">
-                    </div>
+                </div>
+                
+                <!-- Поля ввода времени (отображаются под надписью Время) -->
+                <div class="due-time-inputs-wrapper" style="display: none; align-items: center; gap: 6px; margin-top: 8px; padding-left: 22px;">
+                    <button class="pill-btn start-time-btn" type="button">08:00</button>
+                    <span class="time-dash">—</span>
+                    <button class="pill-btn end-time-btn disabled" type="button" disabled>09:00</button>
+                    <input type="checkbox" class="end-time-active-checkbox" style="margin-left: 4px;">
                 </div>
                 
                 <!-- Кастомный выпадающий список времени -->
@@ -2618,13 +2590,12 @@ function createDropdownHtml() {
                         <!-- Будет заполнено динамически -->
                     </div>
                 </div>
-            </div>
-            
-            <!-- Колонка 3: Пустая серая область с кнопкой закрытия -->
-            <div class="due-column due-column-close">
-                <button class="due-close-btn" type="button" aria-label="Закрыть">
-                    &times;
-                </button>
+
+                <!-- Подвал с кнопками Отмена и Сохранить внутри правой колонки -->
+                <div class="due-modal-footer">
+                    <button class="due-btn-cancel" type="button">Отмена</button>
+                    <button class="due-btn-save" type="button">Сохранить</button>
+                </div>
             </div>
         </div>
     </div>
@@ -2637,6 +2608,12 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
     let localSelectedRepeat = activeRepeat;
     let localSelectedEndDate = activeEndDate;
     let localSelectedEndTime = activeEndTime;
+
+    let originalDate = activeDate;
+    let originalTime = activeTime;
+    let originalRepeat = activeRepeat;
+    let originalEndDate = activeEndDate;
+    let originalEndTime = activeEndTime;
     let localYear = activeDate ? parseInt(activeDate.split('-')[0], 10) : new Date().getFullYear();
     let localMonth = activeDate ? parseInt(activeDate.split('-')[1], 10) - 1 : new Date().getMonth();
 
@@ -2657,25 +2634,37 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
         () => localSelectedDate,
         (dateStr) => {
             localSelectedDate = dateStr;
+            if (dropdown.updateRepeatListOnDateChange) dropdown.updateRepeatListOnDateChange();
         },
         () => localSelectedTime,
-        (timeStr) => {
-            localSelectedTime = timeStr;
-        },
+        (timeStr) => { localSelectedTime = timeStr; },
         () => localSelectedRepeat,
-        (repeatStr) => {
-            localSelectedRepeat = repeatStr;
-        },
+        (repeatStr) => { localSelectedRepeat = repeatStr; },
         () => localSelectedEndDate,
-        (dateStr) => {
-            localSelectedEndDate = dateStr;
-        },
+        (dateStr) => { localSelectedEndDate = dateStr; },
         () => localSelectedEndTime,
-        (timeStr) => {
-            localSelectedEndTime = timeStr;
+        (timeStr) => { localSelectedEndTime = timeStr; },
+        () => {
+            if (!localSelectedDate) {
+                textLabel.textContent = 'Срок';
+                if (clearIcon) clearIcon.style.display = 'none';
+                btn.classList.remove('active');
+            } else {
+                textLabel.textContent = formatDueDateDisplay(localSelectedDate, localSelectedTime, localSelectedRepeat, localSelectedEndDate, localSelectedEndTime);
+                if (clearIcon) clearIcon.style.display = 'inline-flex';
+                btn.classList.add('active');
+            }
+            onSelect(localSelectedDate, localSelectedTime, localSelectedRepeat, localSelectedEndDate, localSelectedEndTime);
+            closeDropdown();
         },
         () => {
-            updateDate(localSelectedDate);
+            localSelectedDate = originalDate;
+            localSelectedTime = originalTime;
+            localSelectedRepeat = originalRepeat;
+            localSelectedEndDate = originalEndDate;
+            localSelectedEndTime = originalEndTime;
+            renderGrid();
+            closeDropdown();
         }
     );
 
@@ -2758,7 +2747,7 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
             } else {
                 updateDate(null);
             }
-            closeDropdown();
+            renderGrid();
         });
     });
 
@@ -2869,19 +2858,8 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
 
     function updateDate(dateStr) {
         localSelectedDate = dateStr;
-        onSelect(localSelectedDate, localSelectedTime, localSelectedRepeat, localSelectedEndDate, localSelectedEndTime);
-
         if (dropdown.updateRepeatListOnDateChange) dropdown.updateRepeatListOnDateChange();
-
-        if (!localSelectedDate) {
-            textLabel.textContent = 'Срок';
-            if (clearIcon) clearIcon.style.display = 'none';
-            btn.classList.remove('active');
-        } else {
-            textLabel.textContent = formatDueDateDisplay(dateStr, localSelectedTime, localSelectedRepeat, localSelectedEndDate, localSelectedEndTime);
-            if (clearIcon) clearIcon.style.display = 'inline-flex';
-            btn.classList.add('active');
-        }
+        if (dropdown.initUI) dropdown.initUI();
     }
 
     return {
@@ -2891,6 +2869,11 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
             localSelectedRepeat = repeat;
             localSelectedEndDate = endDate;
             localSelectedEndTime = endTime;
+            originalDate = date;
+            originalTime = time;
+            originalRepeat = repeat;
+            originalEndDate = endDate;
+            originalEndTime = endTime;
             if (date) {
                 localYear = parseInt(date.split('-')[0], 10);
                 localMonth = parseInt(date.split('-')[1], 10) - 1;

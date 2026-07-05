@@ -1540,36 +1540,43 @@ body.dark .clear-due-icon {
     width: 100vw;
     height: 100vh;
     background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     z-index: 2500;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* Трехколоночный макет для нового модального окна */
+/* Двухколоночный макет для модального окна */
 .due-date-dropdown.new-modal-layout {
     position: relative !important;
     top: auto !important;
     left: auto !important;
-    width: 710px;
-    min-height: 380px;
-    padding: 0;
-    flex-direction: row;
-    display: flex;
+    width: 571px;
+    height: 420px; /* Фиксированная высота для идеального выравнивания сторон */
+    display: flex !important;
+    flex-direction: row !important;
     overflow: hidden;
     margin: 0 !important;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
 .due-column {
-    padding: 16px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
 .due-column-date {
     width: 280px;
     flex-shrink: 0;
+    background-color: var(--card-bg);
+    padding: 20px !important;
 }
 
 .due-vertical-divider {
@@ -1580,42 +1587,52 @@ body.dark .clear-due-icon {
 }
 
 .due-column-time-repeat {
-    flex: 1;
-    border-right: 1px solid var(--border);
-    position: relative;
     width: 290px;
     min-width: 290px;
-}
-
-.due-column-close {
-    width: 140px;
-    background-color: var(--sidebar-bg); /* Серый фон из раскрытой задачи */
+    background-color: var(--sidebar-bg) !important; /* Серый фон правой колонки */
     position: relative;
-    flex-shrink: 0;
+    padding: 20px !important;
 }
 
-.due-close-btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: transparent;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: var(--text-secondary);
-    line-height: 1;
+/* Подвал модального окна с кнопками Отмена и Сохранить внутри правой колонки */
+.due-modal-footer {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    transition: background-color 0.2s, color 0.2s;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: auto; /* Прижимает кнопки к низу серой колонки */
+    padding-top: 16px;
 }
 
-.due-close-btn:hover {
+.due-btn-cancel,
+.due-btn-save {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, opacity 0.2s;
+    border: none;
+    outline: none;
+}
+
+.due-btn-cancel {
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.due-btn-cancel:hover {
     background-color: var(--hover-bg);
     color: var(--text);
+}
+
+.due-btn-save {
+    background-color: var(--accent);
+    color: #ffffff;
+}
+
+.due-btn-save:hover {
+    opacity: 0.9;
 }
 
 .due-row-time-trigger,
@@ -1665,32 +1682,27 @@ body.dark .clear-due-icon {
 @media (max-width: 768px) {
     .due-date-dropdown.new-modal-layout {
         width: 320px !important;
+        flex-direction: column !important;
         height: auto !important;
         max-height: 90vh;
-        flex-direction: column !important;
         overflow-y: auto;
-    }
-    .due-vertical-divider {
-        display: none !important;
     }
     .due-column-date {
         width: 100% !important;
     }
+    .due-vertical-divider {
+        display: none !important;
+    }
     .due-column-time-repeat {
         width: 100% !important;
         min-width: 0 !important;
-        border-right: none !important;
         border-top: 1px solid var(--border);
+        height: auto !important;
     }
-    .due-column-close {
+    .due-modal-footer {
         width: 100% !important;
-        height: 50px !important;
-        background-color: var(--sidebar-bg);
-        order: -1; /* Поместить кнопку закрытия наверх или оставить как есть */
-    }
-    .due-close-btn {
-        top: 8px;
-        right: 8px;
+        box-sizing: border-box;
+        margin-top: 16px !important;
     }
 }
 

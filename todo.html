@@ -1111,12 +1111,14 @@
                         </svg>
                         <span>Время</span>
                     </label>
-                    <div class="due-time-inputs-wrapper" style="display: none; align-items: center; gap: 6px; margin-left: auto;">
-                        <button class="pill-btn start-time-btn" type="button">08:00</button>
-                        <span class="time-dash">—</span>
-                        <button class="pill-btn end-time-btn disabled" type="button" disabled>09:00</button>
-                        <input type="checkbox" class="end-time-active-checkbox" style="margin-left: 4px;">
-                    </div>
+                </div>
+                
+                <!-- Поля ввода времени (отображаются под надписью Время) -->
+                <div class="due-time-inputs-wrapper" style="display: none; align-items: center; gap: 6px; margin-top: 8px; padding-left: 22px;">
+                    <button class="pill-btn start-time-btn" type="button">08:00</button>
+                    <span class="time-dash">—</span>
+                    <button class="pill-btn end-time-btn disabled" type="button" disabled>09:00</button>
+                    <input type="checkbox" class="end-time-active-checkbox" style="margin-left: 4px;">
                 </div>
 
                 <!-- Кастомный выпадающий список времени -->
@@ -1139,13 +1141,12 @@
                         <!-- Будет заполнено динамически -->
                     </div>
                 </div>
-            </div>
 
-            <!-- Колонка 3: Пустая серая область с кнопкой закрытия -->
-            <div class="due-column due-column-close">
-                <button class="due-close-btn" type="button" aria-label="Закрыть">
-                    &times;
-                </button>
+                <!-- Подвал с кнопками Отмена и Сохранить внутри правой колонки -->
+                <div class="due-modal-footer">
+                    <button class="due-btn-cancel" type="button">Отмена</button>
+                    <button class="due-btn-save" type="button">Сохранить</button>
+                </div>
             </div>
         </div>
     </div>

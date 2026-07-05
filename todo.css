@@ -5235,3 +5235,186 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
 .gcal-btn-primary:hover, .gcal-btn-secondary:hover {
     opacity: 0.9;
 }
+
+/* === NEW GOOGLE CALENDAR STYLES === */
+
+.gcal-status-card-new {
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.gcal-connect-btn.disconnect {
+    border-color: #ef4444 !important;
+    color: #ef4444 !important;
+}
+.gcal-connect-btn.disconnect:hover {
+    background: rgba(239, 68, 68, 0.05) !important;
+}
+
+.gcal-text-btn:hover {
+    color: var(--text) !important;
+    text-decoration: underline;
+}
+
+.gcal-calendar-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+.gcal-calendar-item:last-child {
+    border-bottom: none;
+}
+
+.gcal-calendar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.gcal-color-pill {
+    width: 6px;
+    height: 18px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.gcal-calendar-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.gcal-visibility-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background-color 0.15s, color 0.15s;
+}
+.gcal-visibility-btn:hover {
+    background-color: var(--hover-bg);
+    color: var(--text);
+}
+
+/* Top Banner Events Style */
+.gcal-events-banner {
+    background-color: rgba(66, 133, 244, 0.05);
+    border: 1px solid rgba(66, 133, 244, 0.15);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+body.dark .gcal-events-banner {
+    background-color: rgba(66, 133, 244, 0.08);
+    border-color: rgba(66, 133, 244, 0.2);
+}
+
+.gcal-banner-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+}
+
+.gcal-banner-summary {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+    width: 90%;
+}
+
+.gcal-banner-summary-event {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--text);
+}
+
+.gcal-banner-summary-event-pill {
+    width: 3px;
+    height: 12px;
+    border-radius: 1.5px;
+}
+
+.gcal-banner-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s, color 0.15s;
+}
+.gcal-banner-toggle-btn:hover {
+    background-color: var(--hover-bg);
+    color: var(--text);
+}
+
+.gcal-banner-toggle-btn .chevron-icon {
+    transition: transform 0.2s ease;
+}
+.gcal-events-banner.collapsed .gcal-banner-toggle-btn .chevron-icon {
+    transform: rotate(-90deg);
+}
+
+.gcal-banner-events-list {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid rgba(0, 0, 0, 0.04);
+    padding-top: 10px;
+}
+
+body.dark .gcal-banner-events-list {
+    border-top-color: rgba(255, 255, 255, 0.04);
+}
+
+.gcal-events-banner.collapsed .gcal-banner-events-list {
+    display: none;
+}
+
+.gcal-event-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.88rem;
+    color: var(--text);
+}
+
+.gcal-event-bar {
+    width: 3px;
+    height: 14px;
+    border-radius: 1.5px;
+    flex-shrink: 0;
+}
+
+.gcal-event-time {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+.gcal-event-title {
+    font-weight: 400;
+}

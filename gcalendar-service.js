@@ -208,6 +208,18 @@ const GCalendarService = {
         }
     },
 
+    // Получить события из конкретного календаря за диапазон дат
+    async fetchEventsForRange(calendarId, timeMin, timeMax) {
+        const queryParams = new URLSearchParams({
+            timeMin: timeMin,
+            timeMax: timeMax,
+            singleEvents: 'true',
+            orderBy: 'startTime'
+        });
+        const result = await this.apiCall(`calendars/${encodeURIComponent(calendarId)}/events?${queryParams.toString()}`);
+        return result.items || [];
+    },
+
     // Конструктор данных события для Google Calendar API
     buildEventData(task) {
         const title = task.title || 'Без названия';

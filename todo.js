@@ -9395,7 +9395,8 @@ async function syncAllTasksForProject(projectId) {
         } finally {
             syncingTasks.delete(task.id);
         }
-
+    }
+}
 
 async function handleTaskSync(task) {
     if (!currentUid) return;

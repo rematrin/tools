@@ -240,30 +240,35 @@ const GCalendarService = {
             // Задача с указанным временем
             const startDateTime = `${task.dueDate}T${task.dueTime}:00`;
             
-            // Конец события через 30 минут
-            const [hours, minutes] = task.dueTime.split(':').map(Number);
-            let endHours = hours;
-            let endMinutes = minutes + 30;
-            if (endMinutes >= 60) {
-                endMinutes -= 60;
-                endHours += 1;
+            let endDateTime;
+            if (task.dueEndTime) {
+                const endDate = task.dueEndDate || task.dueDate;
+                endDateTime = `${endDate}T${task.dueEndTime}:00`;
+            } else {
+                // Конец события через 30 минут
+                const [hours, minutes] = task.dueTime.split(':').map(Number);
+                let endHours = hours;
+                let endMinutes = minutes + 30;
+                if (endMinutes >= 60) {
+                    endMinutes -= 60;
+                    endHours += 1;
+                }
+                let endHoursStr = String(endHours).padStart(2, '0');
+                const endMinutesStr = String(endMinutes).padStart(2, '0');
+                
+                // Проверка переполнения дня (если 23:45, то конец события на следующий день)
+                let endDate = task.dueDate;
+                if (endHours >= 24) {
+                    const dateObj = new Date(task.dueDate);
+                    dateObj.setDate(dateObj.getDate() + 1);
+                    const year = dateObj.getFullYear();
+                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const day = String(dateObj.getDate()).padStart(2, '0');
+                    endDate = `${year}-${month}-${day}`;
+                    endHoursStr = '00';
+                }
+                endDateTime = `${endDate}T${endHoursStr}:${endMinutesStr}:00`;
             }
-            const endHoursStr = String(endHours).padStart(2, '0');
-            const endMinutesStr = String(endMinutes).padStart(2, '0');
-            
-            // Проверка переполнения дня (если 23:45, то конец события на следующий день)
-            let endDate = task.dueDate;
-            if (endHours >= 24) {
-                const dateObj = new Date(task.dueDate);
-                dateObj.setDate(dateObj.getDate() + 1);
-                const year = dateObj.getFullYear();
-                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                const day = String(dateObj.getDate()).padStart(2, '0');
-                endDate = `${year}-${month}-${day}`;
-                endHoursStr = '00';
-            }
-
-            const endDateTime = `${endDate}T${endHoursStr}:${endMinutesStr}:00`;
 
             event.start = {
                 dateTime: startDateTime,
@@ -275,8 +280,9 @@ const GCalendarService = {
             };
         } else {
             // Весь день (All-day)
-            // Конечная дата должна быть на 1 день больше начальной (в Google Calendar API это exclusive поле)
-            const dateObj = new Date(task.dueDate);
+            // Конечная дата должна быть на 1 день больше начальной/конечной (в Google Calendar API это exclusive поле)
+            const targetEndDateStr = task.dueEndDate || task.dueDate;
+            const dateObj = new Date(targetEndDateStr);
             dateObj.setDate(dateObj.getDate() + 1);
             const year = dateObj.getFullYear();
             const month = String(dateObj.getMonth() + 1).padStart(2, '0');

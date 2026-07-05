@@ -83,6 +83,8 @@ const getDefaultDueDate = () => {
 let selectedDueDate = getDefaultDueDate(); // Хранит выбранную дату в формате YYYY-MM-DD
 let selectedDueTime = null; // Хранит выбранное время в формате HH:MM
 let selectedDueRepeat = null; // Хранит выбранный повтор: daily, weekly, weekday, monthly, yearly, custom
+let selectedDueEndDate = null; // Хранит выбранную конечную дату
+let selectedDueEndTime = null; // Хранит выбранное конечное время
 let calendarTargetTask = null; // Текущая редактируемая задача/подзадача для кастомного календаря
 let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth(); // 0-11
@@ -261,6 +263,22 @@ if (dueDateDropdown) {
                 selectedDueRepeat = repeatStr;
             }
         },
+        () => calendarTargetTask ? calendarTargetTask.dueEndDate : selectedDueEndDate,
+        (dateStr) => {
+            if (calendarTargetTask) {
+                calendarTargetTask.dueEndDate = dateStr;
+            } else {
+                selectedDueEndDate = dateStr;
+            }
+        },
+        () => calendarTargetTask ? calendarTargetTask.dueEndTime : selectedDueEndTime,
+        (timeStr) => {
+            if (calendarTargetTask) {
+                calendarTargetTask.dueEndTime = timeStr;
+            } else {
+                selectedDueEndTime = timeStr;
+            }
+        },
         async () => {
             if (calendarTargetTask) {
                 if (currentUid && calendarTargetTask.id) {
@@ -268,7 +286,9 @@ if (dueDateDropdown) {
                         await updateDoc(doc(db, 'users', currentUid, 'tasks', calendarTargetTask.id), {
                             dueDate: calendarTargetTask.dueDate || null,
                             dueTime: calendarTargetTask.dueTime || null,
-                            dueRepeat: calendarTargetTask.dueRepeat || null
+                            dueRepeat: calendarTargetTask.dueRepeat || null,
+                            dueEndDate: calendarTargetTask.dueEndDate || null,
+                            dueEndTime: calendarTargetTask.dueEndTime || null
                         });
                     } catch (err) {
                         console.error("Ошибка обновления даты задачи:", err);
@@ -289,7 +309,7 @@ if (dueDateDropdown) {
                     el.classList.remove('menu-open');
                 });
             } else {
-                setDueDate(selectedDueDate, selectedDueTime, selectedDueRepeat);
+                setDueDate(selectedDueDate, selectedDueTime, selectedDueRepeat, selectedDueEndDate, selectedDueEndTime);
             }
         }
     );
@@ -658,19 +678,23 @@ document.querySelectorAll('.quick-opt-btn').forEach(btn => {
 });
 
 // Установка выбранного срока
-function setDueDate(dateStr, timeStr = undefined, repeatStr = undefined) {
+function setDueDate(dateStr, timeStr = undefined, repeatStr = undefined, endDateStr = undefined, endTimeStr = undefined) {
     selectedDueDate = dateStr;
     if (timeStr !== undefined) selectedDueTime = timeStr;
     if (repeatStr !== undefined) selectedDueRepeat = repeatStr;
+    if (endDateStr !== undefined) selectedDueEndDate = endDateStr;
+    if (endTimeStr !== undefined) selectedDueEndTime = endTimeStr;
 
     if (!selectedDueDate) {
         selectedDueTime = null;
         selectedDueRepeat = null;
+        selectedDueEndDate = null;
+        selectedDueEndTime = null;
         if (dueDateBtnText) dueDateBtnText.textContent = 'Срок';
         if (btnClearDueDate) btnClearDueDate.style.display = 'none';
         if (btnDueDate) btnDueDate.classList.remove('active');
     } else {
-        const label = formatDueDateDisplay(selectedDueDate, selectedDueTime, selectedDueRepeat);
+        const label = formatDueDateDisplay(selectedDueDate, selectedDueTime, selectedDueRepeat, selectedDueEndDate, selectedDueEndTime);
         if (dueDateBtnText) dueDateBtnText.textContent = label;
         if (btnClearDueDate) btnClearDueDate.style.display = 'inline-flex';
         if (btnDueDate) btnDueDate.classList.add('active');
@@ -678,7 +702,7 @@ function setDueDate(dateStr, timeStr = undefined, repeatStr = undefined) {
 }
 
 // Форматирование даты для кнопки и карточек
-function formatDueDateDisplay(dateStr, timeStr = null, repeatStr = null) {
+function formatDueDateDisplay(dateStr, timeStr = null, repeatStr = null, endDateStr = null, endTimeStr = null) {
     if (!dateStr) return 'Срок';
 
     const today = new Date();
@@ -692,25 +716,33 @@ function formatDueDateDisplay(dateStr, timeStr = null, repeatStr = null) {
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
 
-    let label = '';
-    if (dateStr === todayStr) {
-        label = 'Сегодня';
-    } else if (dateStr === tomorrowStr) {
-        label = 'Завтра';
-    } else if (dateStr === yesterdayStr) {
-        label = 'Вчера';
-    } else {
-        const [year, month, day] = dateStr.split('-');
+    const formatDatePart = (dStr) => {
+        if (dStr === todayStr) return 'Сегодня';
+        if (dStr === tomorrowStr) return 'Завтра';
+        if (dStr === yesterdayStr) return 'Вчера';
+        const [year, month, day] = dStr.split('-');
         const monthsRuShort = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-        label = `${parseInt(day, 10)} ${monthsRuShort[parseInt(month, 10) - 1]}`;
-        const currentYear = new Date().getFullYear();
-        if (parseInt(year, 10) !== currentYear) {
-            label += ` ${year}`;
+        let l = `${parseInt(day, 10)} ${monthsRuShort[parseInt(month, 10) - 1]}`;
+        if (parseInt(year, 10) !== today.getFullYear()) {
+            l += ` ${year}`;
         }
-    }
+        return l;
+    };
+
+    let label = formatDatePart(dateStr);
 
     if (timeStr) {
-        label += ` в ${timeStr}`;
+        if (endTimeStr) {
+            if (!endDateStr || endDateStr === dateStr) {
+                label += ` в ${timeStr}-${endTimeStr}`;
+            } else {
+                label += ` в ${timeStr} - ${formatDatePart(endDateStr)} в ${endTimeStr}`;
+            }
+        } else {
+            label += ` в ${timeStr}`;
+        }
+    } else if (endDateStr && endDateStr !== dateStr) {
+        label += ` - ${formatDatePart(endDateStr)}`;
     }
 
     if (repeatStr) {
@@ -846,7 +878,7 @@ function calculateNextDueDate(currentDateStr, repeatCode) {
     return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
 }
 
-function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelectedTime, setSelectedTime, getSelectedRepeat, setSelectedRepeat, onDone) {
+function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelectedTime, setSelectedTime, getSelectedRepeat, setSelectedRepeat, getSelectedEndDate, setSelectedEndDate, getSelectedEndTime, setSelectedEndTime, onDone) {
     dropdownEl.onDoneCallback = onDone;
     const mainView = dropdownEl.querySelector('.due-main-view');
     const timeView = dropdownEl.querySelector('.due-time-view');
@@ -857,19 +889,7 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
 
     const timeBackBtn = dropdownEl.querySelector('.time-back-btn');
     const repeatBackBtn = dropdownEl.querySelector('.repeat-back-btn');
-
-    const timeInput = dropdownEl.querySelector('.time-picker-input');
-    const timeClearBtn = dropdownEl.querySelector('.time-clear-btn');
-    const timePickerList = dropdownEl.querySelector('.time-picker-list');
     const repeatPickerList = dropdownEl.querySelector('.repeat-picker-list');
-
-    const ensureDateSelected = () => {
-        if (!getSelectedDate()) {
-            const today = new Date();
-            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-            setSelectedDate(todayStr);
-        }
-    };
 
     if (btnTime) {
         btnTime.addEventListener('click', (e) => {
@@ -877,13 +897,223 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
             mainView.style.display = 'none';
             timeView.style.display = 'flex';
 
-            const currentVal = getSelectedTime() || '00:00';
-            timeInput.value = currentVal;
-            renderTimeList(currentVal);
-            setTimeout(() => {
-                timeInput.focus();
-                timeInput.setSelectionRange(0, 5);
-            }, 50);
+            const startTimeBtn = timeView.querySelector('.start-time-btn');
+            const endTimeBtn = timeView.querySelector('.end-time-btn');
+            const endTimeCheckbox = timeView.querySelector('.end-time-active-checkbox');
+            const customTimeDropdown = timeView.querySelector('.custom-time-dropdown');
+            const timeClearBtn = timeView.querySelector('.time-view-clear-btn');
+            const timeOkBtn = timeView.querySelector('.time-view-ok-btn');
+
+            let startTimeVal = getSelectedTime() || '08:00';
+            let endTimeVal = getSelectedEndTime() || '09:00';
+            let endTimeActive = !!getSelectedEndTime();
+
+            const minToTimeStr = (min) => {
+                const h = Math.floor(min / 60);
+                const m = min % 60;
+                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            };
+
+            const formatDurationHours = (h) => {
+                if (h === 1) return '1 час';
+                if (h % 1 === 0) {
+                    if (h >= 2 && h <= 4) return `${h} часа`;
+                    return `${h} часов`;
+                }
+                return `${h} часа`;
+            };
+
+            const getEndTimeOptions = (startStr) => {
+                const [sh, sm] = startStr.split(':').map(Number);
+                const startMin = sh * 60 + sm;
+                const opts = [];
+                
+                const shortOffsets = [15, 30, 45];
+                shortOffsets.forEach(off => {
+                    const targetMin = startMin + off;
+                    if (targetMin <= 23 * 60 + 59) {
+                        opts.push({
+                            time: minToTimeStr(targetMin),
+                            label: `${off} минут`
+                        });
+                    }
+                });
+                
+                for (let h = 1; h <= 24; h += 0.5) {
+                    const off = h * 60;
+                    const targetMin = startMin + off;
+                    if (targetMin <= 23 * 60 + 59) {
+                        opts.push({
+                            time: minToTimeStr(targetMin),
+                            label: formatDurationHours(h)
+                        });
+                    } else {
+                        const maxMin = 23 * 60 + 59;
+                        if (opts.length > 0 && opts[opts.length - 1].time !== '23:59' && startMin < maxMin) {
+                            opts.push({
+                                time: '23:59',
+                                label: 'до конца дня'
+                            });
+                        }
+                        break;
+                    }
+                }
+                return opts;
+            };
+
+            const updateUI = () => {
+                startTimeBtn.textContent = startTimeVal;
+                endTimeBtn.textContent = endTimeVal;
+                endTimeCheckbox.checked = endTimeActive;
+                if (endTimeActive) {
+                    endTimeBtn.classList.remove('disabled');
+                    endTimeBtn.removeAttribute('disabled');
+                } else {
+                    endTimeBtn.classList.add('disabled');
+                    endTimeBtn.setAttribute('disabled', 'true');
+                }
+            };
+
+            const onCheckboxChange = (event) => {
+                endTimeActive = event.target.checked;
+                if (endTimeActive) {
+                    const [sh, sm] = startTimeVal.split(':').map(Number);
+                    const [eh, em] = endTimeVal.split(':').map(Number);
+                    if (eh * 60 + em <= sh * 60 + sm) {
+                        let targetH = sh + 1;
+                        if (targetH >= 24) targetH = 23;
+                        let targetM = sm;
+                        if (sh === 23) targetM = 59;
+                        endTimeVal = `${String(targetH).padStart(2, '0')}:${String(targetM).padStart(2, '0')}`;
+                    }
+                }
+                updateUI();
+                customTimeDropdown.style.display = 'none';
+            };
+            endTimeCheckbox.removeEventListener('change', onCheckboxChange);
+            endTimeCheckbox.addEventListener('change', onCheckboxChange);
+
+            const showStartDropdown = (event) => {
+                event.stopPropagation();
+                customTimeDropdown.innerHTML = '';
+                customTimeDropdown.style.display = 'flex';
+
+                // Generate start times: 00:00 to 23:30 in 30-min increments
+                for (let h = 0; h < 24; h++) {
+                    for (let m = 0; m < 60; m += 30) {
+                        const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                        const isSelected = startTimeVal === timeStr;
+                        const item = document.createElement('button');
+                        item.type = 'button';
+                        item.className = `custom-time-dropdown-item ${isSelected ? 'selected' : ''}`;
+                        item.innerHTML = `
+                            <span>${timeStr}</span>
+                            ${isSelected ? '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12"><polyline points="20 6 9 17 4 12"></polyline></svg></span>' : ''}
+                        `;
+                        item.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            startTimeVal = timeStr;
+                            if (endTimeActive) {
+                                const [nsh, nsm] = startTimeVal.split(':').map(Number);
+                                const [neh, nem] = endTimeVal.split(':').map(Number);
+                                if (neh * 60 + nem <= nsh * 60 + nsm) {
+                                    let targetH = nsh + 1;
+                                    if (targetH >= 24) targetH = 23;
+                                    let targetM = nsm;
+                                    if (nsh === 23) targetM = 59;
+                                    endTimeVal = `${String(targetH).padStart(2, '0')}:${String(targetM).padStart(2, '0')}`;
+                                }
+                            }
+                            updateUI();
+                            customTimeDropdown.style.display = 'none';
+                        });
+                        customTimeDropdown.appendChild(item);
+                    }
+                }
+
+                setTimeout(() => {
+                    const sel = customTimeDropdown.querySelector('.selected');
+                    if (sel) {
+                        customTimeDropdown.scrollTop = sel.offsetTop - customTimeDropdown.offsetTop - 10;
+                    }
+                }, 10);
+            };
+            startTimeBtn.removeEventListener('click', showStartDropdown);
+            startTimeBtn.addEventListener('click', showStartDropdown);
+
+            const showEndDropdown = (event) => {
+                event.stopPropagation();
+                if (!endTimeActive) return;
+                customTimeDropdown.innerHTML = '';
+                customTimeDropdown.style.display = 'flex';
+
+                const opts = getEndTimeOptions(startTimeVal);
+                opts.forEach(opt => {
+                    const isSelected = endTimeVal === opt.time;
+                    const item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = `custom-time-dropdown-item ${isSelected ? 'selected' : ''}`;
+                    item.innerHTML = `
+                        <span>${opt.time}</span>
+                        <span class="item-duration-label">${opt.label}</span>
+                        ${isSelected ? '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12"><polyline points="20 6 9 17 4 12"></polyline></svg></span>' : ''}
+                    `;
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        endTimeVal = opt.time;
+                        updateUI();
+                        customTimeDropdown.style.display = 'none';
+                    });
+                    customTimeDropdown.appendChild(item);
+                });
+
+                setTimeout(() => {
+                    const sel = customTimeDropdown.querySelector('.selected');
+                    if (sel) {
+                        customTimeDropdown.scrollTop = sel.offsetTop - customTimeDropdown.offsetTop - 10;
+                    }
+                }, 10);
+            };
+            endTimeBtn.removeEventListener('click', showEndDropdown);
+            endTimeBtn.addEventListener('click', showEndDropdown);
+
+            // Close dropdown if clicking elsewhere in timeView
+            const onTimeViewClick = () => {
+                customTimeDropdown.style.display = 'none';
+            };
+            timeView.removeEventListener('click', onTimeViewClick);
+            timeView.addEventListener('click', onTimeViewClick);
+
+            const onClearClick = (event) => {
+                event.stopPropagation();
+                setSelectedTime(null);
+                setSelectedEndDate(null);
+                setSelectedEndTime(null);
+                timeView.style.display = 'none';
+                mainView.style.display = 'flex';
+                onDone();
+            };
+            timeClearBtn.removeEventListener('click', onClearClick);
+            timeClearBtn.addEventListener('click', onClearClick);
+
+            const onOkClick = (event) => {
+                event.stopPropagation();
+                setSelectedTime(startTimeVal);
+                if (endTimeActive) {
+                    setSelectedEndDate(getSelectedDate());
+                    setSelectedEndTime(endTimeVal);
+                } else {
+                    setSelectedEndDate(null);
+                    setSelectedEndTime(null);
+                }
+                timeView.style.display = 'none';
+                mainView.style.display = 'flex';
+                onDone();
+            };
+            timeOkBtn.removeEventListener('click', onOkClick);
+            timeOkBtn.addEventListener('click', onOkClick);
+
+            updateUI();
         });
     }
 
@@ -913,144 +1143,6 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
         });
     }
 
-    if (timeClearBtn) {
-        timeClearBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            timeInput.value = '00:00';
-            setSelectedTime(null);
-            timeView.style.display = 'none';
-            mainView.style.display = 'flex';
-            onDone();
-        });
-    }
-
-    const validateTimeStr = (str) => {
-        const parts = str.split(':');
-        if (parts.length !== 2) return false;
-        const h = parseInt(parts[0], 10);
-        const m = parseInt(parts[1], 10);
-        return (!isNaN(h) && h >= 0 && h < 24 && !isNaN(m) && m >= 0 && m < 60);
-    };
-
-    if (timeInput) {
-        timeInput.addEventListener('keydown', (e) => {
-            if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Escape'].includes(e.key)) {
-                if (e.key === 'Backspace') {
-                    e.preventDefault();
-                    let start = timeInput.selectionStart;
-                    let end = timeInput.selectionEnd;
-                    let val = timeInput.value.split('');
-
-                    if (start === end) {
-                        if (start > 0) {
-                            let deletePos = start - 1;
-                            if (deletePos === 2) deletePos = 1;
-                            val[deletePos] = '0';
-                            timeInput.value = val.join('');
-                            timeInput.setSelectionRange(deletePos, deletePos);
-                        }
-                    } else {
-                        for (let i = start; i < end; i++) {
-                            if (i !== 2) val[i] = '0';
-                        }
-                        timeInput.value = val.join('');
-                        timeInput.setSelectionRange(start, start);
-                    }
-                    const cur = timeInput.value;
-                    if (validateTimeStr(cur)) {
-                        renderTimeList(cur);
-                    }
-                }
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const val = timeInput.value.trim();
-                    if (validateTimeStr(val)) {
-                        ensureDateSelected();
-                        setSelectedTime(val);
-                        timeView.style.display = 'none';
-                        mainView.style.display = 'flex';
-                        onDone();
-                    }
-                }
-                return;
-            }
-
-            if (!/[0-9]/.test(e.key)) {
-                e.preventDefault();
-                return;
-            }
-
-            e.preventDefault();
-            let start = timeInput.selectionStart;
-            let end = timeInput.selectionEnd;
-            let val = timeInput.value.split('');
-
-            if (start === end) {
-                if (start < 5) {
-                    let pos = start;
-                    if (pos === 2) pos = 3;
-                    val[pos] = e.key;
-                    timeInput.value = val.join('');
-                    timeInput.setSelectionRange(pos + 1, pos + 1);
-                }
-            } else {
-                let pos = start;
-                if (pos === 2) pos = 3;
-                val[pos] = e.key;
-                for (let i = start + 1; i < end; i++) {
-                    if (i !== 2) val[i] = '0';
-                }
-                timeInput.value = val.join('');
-                timeInput.setSelectionRange(pos + 1, pos + 1);
-            }
-
-            const cur = timeInput.value;
-            if (validateTimeStr(cur)) {
-                renderTimeList(cur);
-            }
-        });
-
-        timeInput.addEventListener('blur', () => {
-            const val = timeInput.value.trim();
-            if (validateTimeStr(val)) {
-                setSelectedTime(val);
-            } else {
-                timeInput.value = getSelectedTime() || '00:00';
-            }
-        });
-    }
-
-    function renderTimeList(selectedVal) {
-        if (!timePickerList) return;
-        timePickerList.innerHTML = '';
-
-        for (let h = 0; h < 24; h++) {
-            for (let m = 0; m < 60; m += 30) {
-                const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                const isSelected = selectedVal === timeStr;
-
-                const item = document.createElement('button');
-                item.type = 'button';
-                item.className = `time-select-item ${isSelected ? 'selected' : ''}`;
-                item.innerHTML = `
-                    <span>${timeStr}</span>
-                    ${isSelected ? '<span class="time-select-item-checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10"><polyline points="20 6 9 17 4 12"></polyline></svg></span>' : ''}
-                `;
-
-                item.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    ensureDateSelected();
-                    setSelectedTime(timeStr);
-                    timeView.style.display = 'none';
-                    mainView.style.display = 'flex';
-                    onDone();
-                });
-
-                timePickerList.appendChild(item);
-            }
-        }
-    }
-
     function renderRepeatList() {
         if (!repeatPickerList) return;
         repeatPickerList.innerHTML = '';
@@ -1070,7 +1162,11 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
 
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
-                ensureDateSelected();
+                if (!getSelectedDate()) {
+                    const today = new Date();
+                    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                    setSelectedDate(todayStr);
+                }
                 setSelectedRepeat(opt.id);
                 repeatView.style.display = 'none';
                 mainView.style.display = 'flex';
@@ -1949,6 +2045,8 @@ async function handleAddTask() {
     const dueDateForDb = selectedDueDate;
     const dueTimeForDb = selectedDueTime || null;
     const dueRepeatForDb = selectedDueRepeat || null;
+    const dueEndDateForDb = selectedDueEndDate || null;
+    const dueEndTimeForDb = selectedDueEndTime || null;
     const projectIdForDb = addTaskSelectedProjectId;
     const priorityForDb = selectedPriority || 0;
 
@@ -1992,6 +2090,8 @@ async function handleAddTask() {
             dueDate: dueDateForDb,
             dueTime: dueTimeForDb,
             dueRepeat: dueRepeatForDb,
+            dueEndDate: dueEndDateForDb,
+            dueEndTime: dueEndTimeForDb,
             projectId: projectIdForDb,
             priority: priorityForDb,
             order: newOrder,
@@ -2001,6 +2101,8 @@ async function handleAddTask() {
         taskTitleInput.value = '';
         selectedDueTime = null;
         selectedDueRepeat = null;
+        selectedDueEndDate = null;
+        selectedDueEndTime = null;
         setDueDate(getDefaultDueDate());
         setPriority(0);
 
@@ -2295,13 +2397,23 @@ async function toggleTaskCompleted(taskId, currentStatus) {
         if (!currentStatus && task && task.dueRepeat && task.dueDate) {
             const nextDateStr = calculateNextDueDate(task.dueDate, task.dueRepeat);
             if (nextDateStr) {
-                nextDateFormatted = formatDueDateDisplay(nextDateStr, task.dueTime || null, null);
+                let nextEndDateStr = null;
+                if (task.dueEndDate) {
+                    const diffMs = new Date(task.dueEndDate) - new Date(task.dueDate);
+                    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+                    const nextEndDateObj = new Date(nextDateStr);
+                    nextEndDateObj.setDate(nextEndDateObj.getDate() + diffDays);
+                    nextEndDateStr = `${nextEndDateObj.getFullYear()}-${String(nextEndDateObj.getMonth() + 1).padStart(2, '0')}-${String(nextEndDateObj.getDate()).padStart(2, '0')}`;
+                }
+                nextDateFormatted = formatDueDateDisplay(nextDateStr, task.dueTime || null, null, nextEndDateStr, task.dueEndTime || null);
                 addPromise = addDoc(collection(db, 'users', currentUid, 'tasks'), {
                     title: task.title,
                     completed: false,
                     dueDate: nextDateStr,
                     dueTime: task.dueTime || null,
                     dueRepeat: task.dueRepeat,
+                    dueEndDate: nextEndDateStr,
+                    dueEndTime: task.dueEndTime || null,
                     projectId: task.projectId || null,
                     order: task.order !== undefined ? task.order : 0,
                     createdAt: task.createdAt || new Date()
@@ -2403,21 +2515,35 @@ function createDropdownHtml() {
             </div>
 
             <!-- Выбор времени -->
-            <div class="due-time-view" style="display: none; flex-direction: column; gap: 10px; width: 100%;">
-                <div class="time-view-header" style="display: flex; align-items: center; gap: 8px;">
+            <div class="due-time-view" style="display: none; flex-direction: column; gap: 12px; width: 100%;">
+                <div class="time-view-header" style="display: flex; align-items: center; justify-content: flex-start; gap: 12px;">
                     <button class="time-back-btn" type="button" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 8px;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
                             <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                     </button>
-                    <div class="time-input-container" style="display: flex; align-items: center; background: var(--hover-bg); border: 1px solid var(--border); border-radius: 10px; padding: 4px 8px; flex: 1; gap: 6px;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2.5" width="14" height="14" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                        <input type="text" class="time-picker-input" value="00:00" placeholder="00:00" style="background: transparent; border: none; outline: none; color: var(--text); font-family: inherit; font-size: 14px; width: 100%; font-weight: 600; padding: 0;">
-                        <button class="time-clear-btn" type="button" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 16px; padding: 0 2px; line-height: 1;">&times;</button>
+                    <span style="font-weight: 700; font-size: 0.95rem; color: var(--text);">Время</span>
+                </div>
+                <div class="time-controls">
+                    <div class="time-row start-row">
+                        <span class="time-row-label" style="font-size: 14px; color: var(--text); font-weight: 500;">Начать</span>
+                        <button class="pill-btn start-time-btn" type="button">08:00</button>
+                    </div>
+                    <div class="time-row end-row">
+                        <label class="end-time-checkbox-label">
+                            <input type="checkbox" class="end-time-active-checkbox">
+                            <span>Закончить</span>
+                        </label>
+                        <button class="pill-btn end-time-btn disabled" type="button" disabled>09:00</button>
                     </div>
                 </div>
-                <div class="time-picker-list" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;">
-                    <!-- Будет заполнено динамически -->
+
+                <!-- Кастомный выпадающий список времени -->
+                <div class="custom-time-dropdown" style="display: none;"></div>
+
+                <div class="time-view-footer">
+                    <button class="time-view-clear-btn" type="button">Очистить</button>
+                    <button class="time-view-ok-btn" type="button">ОК</button>
                 </div>
             </div>
 
@@ -2439,10 +2565,12 @@ function createDropdownHtml() {
     `;
 }
 
-function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat, onSelect) {
+function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat, onSelect, activeEndDate = null, activeEndTime = null) {
     let localSelectedDate = activeDate;
     let localSelectedTime = activeTime;
     let localSelectedRepeat = activeRepeat;
+    let localSelectedEndDate = activeEndDate;
+    let localSelectedEndTime = activeEndTime;
     let localYear = activeDate ? parseInt(activeDate.split('-')[0], 10) : new Date().getFullYear();
     let localMonth = activeDate ? parseInt(activeDate.split('-')[1], 10) - 1 : new Date().getMonth();
 
@@ -2471,6 +2599,14 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
         () => localSelectedRepeat,
         (repeatStr) => {
             localSelectedRepeat = repeatStr;
+        },
+        () => localSelectedEndDate,
+        (dateStr) => {
+            localSelectedEndDate = dateStr;
+        },
+        () => localSelectedEndTime,
+        (timeStr) => {
+            localSelectedEndTime = timeStr;
         },
         () => {
             updateDate(localSelectedDate);
@@ -2505,23 +2641,28 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
         if (typeof updateModalOverflow === 'function') updateModalOverflow();
     };
 
-    btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (dropdown.style.display === 'none') {
-            document.querySelectorAll('.due-date-dropdown, .priority-dropdown, .project-dropdown, .task-actions-dropdown').forEach(d => {
-                if (d !== dropdown) d.style.display = 'none';
-            });
-            openDropdown();
-        } else {
-            closeDropdown();
-        }
-    });
+    if (btn) {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (dropdown.style.display === 'none') {
+                // Закрываем другие выпадающие списки
+                document.querySelectorAll('.due-date-dropdown').forEach(dd => {
+                    if (dd !== dropdown && !dd.contains(e.target)) dd.style.display = 'none';
+                });
+                openDropdown();
+            } else {
+                closeDropdown();
+            }
+        });
+    }
 
     if (clearIcon) {
         clearIcon.addEventListener('click', (e) => {
             e.stopPropagation();
             localSelectedTime = null;
             localSelectedRepeat = null;
+            localSelectedEndDate = null;
+            localSelectedEndTime = null;
             updateDate(null);
             closeDropdown();
         });
@@ -2624,10 +2765,15 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
         const cell = document.createElement('span');
         cell.className = 'calendar-day-cell';
         cell.textContent = dayNum;
-        if (!isCurrentMonth) cell.classList.add('other-month');
+
+        if (!isCurrentMonth) {
+            cell.classList.add('other-month');
+        }
 
         const dateStr = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-        if (localSelectedDate === dateStr) cell.classList.add('selected');
+        if (localSelectedDate === dateStr) {
+            cell.classList.add('selected');
+        }
 
         const tdy = new Date();
         const tdyStr = `${tdy.getFullYear()}-${String(tdy.getMonth() + 1).padStart(2, '0')}-${String(tdy.getDate()).padStart(2, '0')}`;
@@ -2643,24 +2789,26 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
 
     function updateDate(dateStr) {
         localSelectedDate = dateStr;
-        onSelect(localSelectedDate, localSelectedTime, localSelectedRepeat);
+        onSelect(localSelectedDate, localSelectedTime, localSelectedRepeat, localSelectedEndDate, localSelectedEndTime);
 
         if (!localSelectedDate) {
             textLabel.textContent = 'Срок';
             if (clearIcon) clearIcon.style.display = 'none';
             btn.classList.remove('active');
         } else {
-            textLabel.textContent = formatDueDateDisplay(dateStr, localSelectedTime, localSelectedRepeat);
+            textLabel.textContent = formatDueDateDisplay(dateStr, localSelectedTime, localSelectedRepeat, localSelectedEndDate, localSelectedEndTime);
             if (clearIcon) clearIcon.style.display = 'inline-flex';
             btn.classList.add('active');
         }
     }
 
     return {
-        updateState: (date, time, repeat) => {
+        updateState: (date, time, repeat, endDate = null, endTime = null) => {
             localSelectedDate = date;
             localSelectedTime = time;
             localSelectedRepeat = repeat;
+            localSelectedEndDate = endDate;
+            localSelectedEndTime = endTime;
             if (date) {
                 localYear = parseInt(date.split('-')[0], 10);
                 localMonth = parseInt(date.split('-')[1], 10) - 1;
@@ -2673,7 +2821,7 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
                 if (clearIcon) clearIcon.style.display = 'none';
                 btn.classList.remove('active');
             } else {
-                textLabel.textContent = formatDueDateDisplay(localSelectedDate, localSelectedTime, localSelectedRepeat);
+                textLabel.textContent = formatDueDateDisplay(localSelectedDate, localSelectedTime, localSelectedRepeat, localSelectedEndDate, localSelectedEndTime);
                 if (clearIcon) clearIcon.style.display = 'inline-flex';
                 btn.classList.add('active');
             }
@@ -2690,6 +2838,8 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
     let editSelectedDueDate = task.dueDate;
     let editSelectedDueTime = task.dueTime || null;
     let editSelectedDueRepeat = task.dueRepeat || null;
+    let editSelectedDueEndDate = task.dueEndDate || null;
+    let editSelectedDueEndTime = task.dueEndTime || null;
     let editSelectedProjectId = task.projectId || null;
     let editSelectedPriority = task.priority || 0;
 
@@ -2709,7 +2859,7 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
                             <line x1="8" y1="2" x2="8" y2="6"></line>
                             <line x1="3" y1="10" x2="21" y2="10"></line>
                         </svg>
-                        <span class="due-date-text">${formatDueDateDisplay(editSelectedDueDate, editSelectedDueTime, editSelectedDueRepeat)}</span>
+                        <span class="due-date-text">${formatDueDateDisplay(editSelectedDueDate, editSelectedDueTime, editSelectedDueRepeat, editSelectedDueEndDate, editSelectedDueEndTime)}</span>
                         <span class="clear-due-icon" style="display: ${editSelectedDueDate ? 'inline-flex' : 'none'};" title="Очистить">&times;</span>
                     </button>
                 </div>
@@ -2821,11 +2971,13 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
     const wrapper = editContainer.querySelector('.due-date-wrapper');
 
     // Инициализируем календарь с поддержкой времени и повтора
-    initCalendarForWrapper(wrapper, editSelectedDueDate, editSelectedDueTime, editSelectedDueRepeat, (dateStr, timeStr, repeatStr) => {
+    initCalendarForWrapper(wrapper, editSelectedDueDate, editSelectedDueTime, editSelectedDueRepeat, (dateStr, timeStr, repeatStr, endDateStr, endTimeStr) => {
         editSelectedDueDate = dateStr;
         editSelectedDueTime = timeStr;
         editSelectedDueRepeat = repeatStr;
-    });
+        editSelectedDueEndDate = endDateStr;
+        editSelectedDueEndTime = endTimeStr;
+    }, editSelectedDueEndDate, editSelectedDueEndTime);
 
     // Инициализируем выбор проекта для редактирования
     const editProjectWrapper = editContainer.querySelector('.edit-task-project-wrapper');
@@ -3034,16 +3186,20 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
         const dateChanged = editSelectedDueDate !== task.dueDate;
         const timeChanged = editSelectedDueTime !== (task.dueTime || null);
         const repeatChanged = editSelectedDueRepeat !== (task.dueRepeat || null);
+        const endDateChanged = editSelectedDueEndDate !== (task.dueEndDate || null);
+        const endTimeChanged = editSelectedDueEndTime !== (task.dueEndTime || null);
         const projectChanged = editSelectedProjectId !== (task.projectId || null);
         const priorityChanged = editSelectedPriority !== (task.priority || 0);
 
-        if (titleChanged || dateChanged || timeChanged || repeatChanged || projectChanged || priorityChanged) {
+        if (titleChanged || dateChanged || timeChanged || repeatChanged || endDateChanged || endTimeChanged || projectChanged || priorityChanged) {
             try {
                 await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                     title: newTitle,
                     dueDate: editSelectedDueDate,
                     dueTime: editSelectedDueTime,
                     dueRepeat: editSelectedDueRepeat,
+                    dueEndDate: editSelectedDueEndDate,
+                    dueEndTime: editSelectedDueEndTime,
                     projectId: editSelectedProjectId,
                     priority: editSelectedPriority
                 });
@@ -3839,7 +3995,7 @@ function createTaskRowElement(task) {
 
     let dueLabel = '';
     if (task.dueDate) {
-        dueLabel = formatDueDateDisplay(task.dueDate, task.dueTime, task.dueRepeat);
+        dueLabel = formatDueDateDisplay(task.dueDate, task.dueTime, task.dueRepeat, task.dueEndDate, task.dueEndTime);
         if (currentRoute === 'today' || currentRoute === 'tomorrow') {
             const today = new Date();
             const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -4321,7 +4477,9 @@ function createTaskRowElement(task) {
                     id: task.id,
                     dueDate: task.dueDate || null,
                     dueTime: task.dueTime || null,
-                    dueRepeat: task.dueRepeat || null
+                    dueRepeat: task.dueRepeat || null,
+                    dueEndDate: task.dueEndDate || null,
+                    dueEndTime: task.dueEndTime || null
                 };
 
                 dueDateDropdown.style.display = 'flex';
@@ -4360,7 +4518,9 @@ function createTaskRowElement(task) {
                     await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                         dueDate: null,
                         dueTime: null,
-                        dueRepeat: null
+                        dueRepeat: null,
+                        dueEndDate: null,
+                        dueEndTime: null
                     });
                 } catch (err) {
                     console.error("Ошибка очистки даты:", err);
@@ -7372,6 +7532,8 @@ let modalCalendarInstance = null;
 let modalSubtaskSelectedDate = null;
 let modalSubtaskSelectedTime = null;
 let modalSubtaskSelectedRepeat = null;
+let modalSubtaskSelectedEndDate = null;
+let modalSubtaskSelectedEndTime = null;
 let modalSubtaskSelectedPriority = 0;
 let subtaskCalendarInstance = null;
 
@@ -7384,10 +7546,12 @@ function ensureSubtaskCalendarInitialized() {
             null,
             null,
             null,
-            (dateStr, timeStr, repeatStr) => {
+            (dateStr, timeStr, repeatStr, endDateStr, endTimeStr) => {
                 modalSubtaskSelectedDate = dateStr;
                 modalSubtaskSelectedTime = timeStr;
                 modalSubtaskSelectedRepeat = repeatStr;
+                modalSubtaskSelectedEndDate = endDateStr;
+                modalSubtaskSelectedEndTime = endTimeStr;
             }
         );
     }
@@ -7428,12 +7592,14 @@ function ensureModalCalendarInitialized() {
             null,
             null,
             null,
-            async (dateStr, timeStr, repeatStr) => {
+            async (dateStr, timeStr, repeatStr, endDateStr, endTimeStr) => {
                 if (currentModalTaskId) {
                     await updateDoc(doc(db, 'users', currentUid, 'tasks', currentModalTaskId), {
                         dueDate: dateStr,
                         dueTime: timeStr,
-                        dueRepeat: repeatStr
+                        dueRepeat: repeatStr,
+                        dueEndDate: endDateStr,
+                        dueEndTime: endTimeStr
                     });
                 }
             }
@@ -7681,7 +7847,7 @@ function updateModalUI(task) {
 
     ensureModalCalendarInitialized();
     if (modalCalendarInstance) {
-        modalCalendarInstance.updateState(task.dueDate || null, task.dueTime || null, task.dueRepeat || null);
+        modalCalendarInstance.updateState(task.dueDate || null, task.dueTime || null, task.dueRepeat || null, task.dueEndDate || null, task.dueEndTime || null);
     }
 
     if (modalPriorityText && modalPriorityIcon) {
@@ -7723,7 +7889,7 @@ function createSubtaskElement(subtask) {
         const isToday = isDateToday(subtask.dueDate);
         const isOverdue = isDateOverdue(subtask.dueDate);
         const badgeClass = isToday ? 'today' : (isOverdue ? 'overdue' : '');
-        const label = formatDueDateDisplay(subtask.dueDate, subtask.dueTime || null, subtask.dueRepeat || null);
+        const label = formatDueDateDisplay(subtask.dueDate, subtask.dueTime || null, subtask.dueRepeat || null, subtask.dueEndDate || null, subtask.dueEndTime || null);
 
         dueHtml = `
             <span class="task-due-badge ${badgeClass}" style="margin-left: auto; margin-right: 8px;">
@@ -8056,7 +8222,9 @@ function createSubtaskElement(subtask) {
                     id: subtask.id,
                     dueDate: subtask.dueDate || null,
                     dueTime: subtask.dueTime || null,
-                    dueRepeat: subtask.dueRepeat || null
+                    dueRepeat: subtask.dueRepeat || null,
+                    dueEndDate: subtask.dueEndDate || null,
+                    dueEndTime: subtask.dueEndTime || null
                 };
 
                 dueDateDropdown.style.display = 'flex';
@@ -8096,7 +8264,9 @@ function createSubtaskElement(subtask) {
                     await updateDoc(doc(db, 'users', currentUid, 'tasks', subtask.id), {
                         dueDate: null,
                         dueTime: null,
-                        dueRepeat: null
+                        dueRepeat: null,
+                        dueEndDate: null,
+                        dueEndTime: null
                     });
                 } catch (err) {
                     console.error("Ошибка очистки даты подзадачи:", err);
@@ -8312,6 +8482,8 @@ if (btnModalAddSubtask) {
         modalSubtaskSelectedDate = null;
         modalSubtaskSelectedTime = null;
         modalSubtaskSelectedRepeat = null;
+        modalSubtaskSelectedEndDate = null;
+        modalSubtaskSelectedEndTime = null;
         modalSubtaskSelectedPriority = 0;
 
         if (modalNewSubtaskTitle) {
@@ -8322,7 +8494,7 @@ if (btnModalAddSubtask) {
 
         ensureSubtaskCalendarInitialized();
         if (subtaskCalendarInstance) {
-            subtaskCalendarInstance.updateState(null, null, null);
+            subtaskCalendarInstance.updateState(null, null, null, null, null);
         }
         updateSubtaskPriorityUI(0);
     });
@@ -8357,6 +8529,8 @@ const saveModalSubtask = async () => {
                 dueDate: modalSubtaskSelectedDate || null,
                 dueTime: modalSubtaskSelectedTime || null,
                 dueRepeat: modalSubtaskSelectedRepeat || null,
+                dueEndDate: modalSubtaskSelectedEndDate || null,
+                dueEndTime: modalSubtaskSelectedEndTime || null,
                 projectId: parentTask.projectId || null,
                 sectionId: parentTask.sectionId || null,
                 priority: modalSubtaskSelectedPriority,
@@ -8369,6 +8543,8 @@ const saveModalSubtask = async () => {
             modalSubtaskSelectedDate = null;
             modalSubtaskSelectedTime = null;
             modalSubtaskSelectedRepeat = null;
+            modalSubtaskSelectedEndDate = null;
+            modalSubtaskSelectedEndTime = null;
             modalSubtaskSelectedPriority = 0;
 
             modalNewSubtaskTitle.value = '';
@@ -8376,7 +8552,7 @@ const saveModalSubtask = async () => {
             modalNewSubtaskTitle.focus();
 
             if (subtaskCalendarInstance) {
-                subtaskCalendarInstance.updateState(null, null, null);
+                subtaskCalendarInstance.updateState(null, null, null, null, null);
             }
             updateSubtaskPriorityUI(0);
         } catch (err) {
@@ -9174,7 +9350,7 @@ async function syncAllTasksForProject(projectId) {
         syncingTasks.add(task.id);
 
         try {
-            const currentTaskHash = `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.dueRepeat || ''}|${task.completed}|${task.description || ''}`;
+            const currentTaskHash = `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.dueRepeat || ''}|${task.dueEndDate || ''}|${task.dueEndTime || ''}|${task.completed}|${task.description || ''}`;
             const eventId = await window.GCalendarService.syncTaskToGoogle(task, calendarId);
             if (eventId) {
                 await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
@@ -9207,7 +9383,7 @@ async function handleTaskSync(task) {
 
     const isAllDay = !task.dueTime;
     const shouldHaveEvent = !task.completed && !task.deleted && task.dueDate && mappedCalendarId && (!isAllDay || gcalSyncAllDay);
-    const currentTaskHash = `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.dueRepeat || ''}|${task.completed}|${task.description || ''}`;
+    const currentTaskHash = `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.dueRepeat || ''}|${task.dueEndDate || ''}|${task.dueEndTime || ''}|${task.completed}|${task.description || ''}`;
 
     if (shouldHaveEvent) {
         // Если уже есть корректная привязка и данные не изменились — ничего не делаем

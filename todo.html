@@ -1120,8 +1120,8 @@
         </div>
 
         <!-- Выбор времени -->
-        <div class="due-time-view" style="display: none; flex-direction: column; gap: 10px; width: 100%;">
-            <div class="time-view-header" style="display: flex; align-items: center; gap: 8px;">
+        <div class="due-time-view" style="display: none; flex-direction: column; gap: 12px; width: 100%;">
+            <div class="time-view-header" style="display: flex; align-items: center; justify-content: flex-start; gap: 12px;">
                 <button class="time-back-btn" type="button"
                     style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 8px;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
@@ -1129,22 +1129,28 @@
                         <polyline points="15 18 9 12 15 6"></polyline>
                     </svg>
                 </button>
-                <div class="time-input-container"
-                    style="display: flex; align-items: center; background: var(--hover-bg); border: 1px solid var(--border); border-radius: 10px; padding: 4px 8px; flex: 1; gap: 6px;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2.5" width="14" height="14"
-                        style="flex-shrink: 0;">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                    </svg>
-                    <input type="text" class="time-picker-input" value="00:00" placeholder="00:00"
-                        style="background: transparent; border: none; outline: none; color: var(--text); font-family: inherit; font-size: 14px; width: 100%; font-weight: 600; padding: 0;">
-                    <button class="time-clear-btn" type="button"
-                        style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 16px; padding: 0 2px; line-height: 1;">&times;</button>
+                <span style="font-weight: 700; font-size: 0.95rem; color: var(--text);">Время</span>
+            </div>
+            <div class="time-controls">
+                <div class="time-row start-row">
+                    <span class="time-row-label" style="font-size: 14px; color: var(--text); font-weight: 500;">Начать</span>
+                    <button class="pill-btn start-time-btn" type="button">08:00</button>
+                </div>
+                <div class="time-row end-row">
+                    <label class="end-time-checkbox-label">
+                        <input type="checkbox" class="end-time-active-checkbox">
+                        <span>Закончить</span>
+                    </label>
+                    <button class="pill-btn end-time-btn disabled" type="button" disabled>09:00</button>
                 </div>
             </div>
-            <div class="time-picker-list"
-                style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;">
-                <!-- Будет заполнено динамически -->
+            
+            <!-- Кастомный выпадающий список времени -->
+            <div class="custom-time-dropdown" style="display: none;"></div>
+
+            <div class="time-view-footer">
+                <button class="time-view-clear-btn" type="button">Очистить</button>
+                <button class="time-view-ok-btn" type="button">ОК</button>
             </div>
         </div>
 

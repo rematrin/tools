@@ -13,81 +13,71 @@ const GCalendarService = {
     },
 
     // Проверяет, валиден ли токен и обновляет его при необходимости
-    async ensureValidToken() {
+    async ensureValidToken(allowInteractive = false) {
         let token = this.getStoredAccessToken();
         let expiry = this.getStoredTokenExpiry();
 
         // Если токена нет или он истекает менее чем через 5 минут (300 000 мс)
         if (!token || Date.now() + 300 * 1000 > expiry) {
-            console.log('Access token для Google Calendar протух или отсутствует, пытаемся обновить...');
-            return await this.refreshAccessToken();
+            if (allowInteractive) {
+                console.log('Access token для Google Calendar протух или отсутствует, пытаемся обновить...');
+                return await this.refreshAccessToken();
+            } else {
+                console.log('Access token для Google Calendar протух или отсутствует. Автоматическое обновление отключено, чтобы избежать нежелательных окон входа.');
+                throw new Error('CALENDAR_TOKEN_EXPIRED');
+            }
         }
         return token;
     },
 
-    tokenClient: null,
-    refreshResolve: null,
-    refreshReject: null,
-
     async refreshAccessToken() {
-        if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
-            throw new Error('Библиотека Google API еще не загружена. Пожалуйста, подождите пару секунд и повторите попытку.');
+        const user = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
+        if (!user) {
+            throw new Error('Пользователь не авторизован в системе.');
         }
 
-        if (!this.tokenClient) {
-            this.tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: '595986762798-1pm4iaiom54d4bflvnp1hrf4iugqfvhu.apps.googleusercontent.com',
-                scope: 'https://www.googleapis.com/auth/calendar',
-                callback: async (tokenResponse) => {
-                    if (tokenResponse && tokenResponse.access_token) {
-                        const token = tokenResponse.access_token;
-                        const expiry = Date.now() + (tokenResponse.expires_in || 3600) * 1000;
+        try {
+            console.log('Запрос нового access token для Google Calendar через Cloud Function...');
+            const idToken = await user.getIdToken(true);
 
-                        localStorage.setItem('google_calendar_access_token', token);
-                        localStorage.setItem('google_calendar_token_expiry', expiry);
-
-                        if (window.currentUser && window.db && window.updateDoc && window.doc) {
-                            try {
-                                const userRef = window.doc(window.db, "users", window.currentUser.uid);
-                                await window.updateDoc(userRef, {
-                                    google_calendar_access_token: token,
-                                    google_calendar_token_expiry: expiry,
-                                    updated_at: window.serverTimestamp()
-                                });
-                            } catch (e) {
-                                console.error("Ошибка сохранения обновленного токена в Firestore:", e);
-                            }
-                        }
-
-                        window.dispatchEvent(new CustomEvent('googleCalendarTokenChanged', { detail: { token } }));
-
-                        if (this.refreshResolve) {
-                            this.refreshResolve(token);
-                            this.refreshResolve = null;
-                            this.refreshReject = null;
-                        }
-                    }
+            const response = await fetch('https://us-central1-tools-c98fd.cloudfunctions.net/refreshCalendarToken', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
                 },
-                error_callback: (err) => {
-                    console.error("GSI token refresh error:", err);
-                    if (this.refreshReject) {
-                        this.refreshReject(err);
-                        this.refreshResolve = null;
-                        this.refreshReject = null;
-                    }
-                }
+                body: JSON.stringify({ data: {} })
             });
-        }
 
-        return new Promise((resolve, reject) => {
-            this.refreshResolve = resolve;
-            this.refreshReject = reject;
-            this.tokenClient.requestAccessToken({ prompt: '' });
-        });
+            if (!response.ok) {
+                const errData = await response.json();
+                const errMsg = errData.error?.message || `HTTP Error ${response.status}`;
+                throw new Error(errMsg);
+            }
+
+            const resData = await response.json();
+            const result = resData.result;
+
+            if (result && result.access_token) {
+                const token = result.access_token;
+                const expiry = result.token_expiry;
+
+                localStorage.setItem('google_calendar_access_token', token);
+                localStorage.setItem('google_calendar_token_expiry', expiry);
+
+                window.dispatchEvent(new CustomEvent('googleCalendarTokenChanged', { detail: { token } }));
+                return token;
+            } else {
+                throw new Error('Некорректный ответ от сервера авторизации.');
+            }
+        } catch (err) {
+            console.error('Ошибка при обновлении токена через Cloud Function:', err);
+            throw err;
+        }
     },
 
-    async apiCall(endpoint, options = {}) {
-        const token = await this.ensureValidToken();
+    async apiCall(endpoint, options = {}, allowInteractive = false) {
+        const token = await this.ensureValidToken(allowInteractive);
 
         const headers = {
             'Authorization': `Bearer ${token}`,
@@ -101,15 +91,19 @@ const GCalendarService = {
         });
 
         if (response.status === 401) {
-            console.log('Получен ответ 401. Попытка принудительного обновления токена и повторного вызова...');
-            const newToken = await this.refreshAccessToken();
-            return this.apiCall(endpoint, {
-                ...options,
-                headers: {
-                    ...options.headers,
-                    'Authorization': `Bearer ${newToken}`
-                }
-            });
+            console.log('Получен ответ 401. Попытка принудительного обновления токена...');
+            if (allowInteractive) {
+                const newToken = await this.refreshAccessToken();
+                return this.apiCall(endpoint, {
+                    ...options,
+                    headers: {
+                        ...options.headers,
+                        'Authorization': `Bearer ${newToken}`
+                    }
+                }, true);
+            } else {
+                throw new Error('CALENDAR_TOKEN_EXPIRED');
+            }
         }
 
         if (!response.ok) {
@@ -132,13 +126,13 @@ const GCalendarService = {
     },
 
     // Получить список календарей пользователя
-    async fetchCalendars() {
-        const result = await this.apiCall('users/me/calendarList');
+    async fetchCalendars(allowInteractive = false) {
+        const result = await this.apiCall('users/me/calendarList', {}, allowInteractive);
         return result.items || [];
     },
 
     // Создать новый календарь
-    async createCalendar(title) {
+    async createCalendar(title, allowInteractive = false) {
         const calendarMetadata = {
             summary: title,
             description: 'Календарь для синхронизации задач из Todo'
@@ -147,31 +141,32 @@ const GCalendarService = {
         const newCalendar = await this.apiCall('calendars', {
             method: 'POST',
             body: JSON.stringify(calendarMetadata)
-        });
+        }, allowInteractive);
 
         return newCalendar;
     },
 
     // Удалить событие из Google Календаря
-    async deleteTaskFromGoogle(eventId, calendarId) {
+    async deleteTaskFromGoogle(eventId, calendarId, allowInteractive = false) {
         if (!eventId || !calendarId) return;
         try {
             await this.apiCall(`calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`, {
                 method: 'DELETE'
-            });
+            }, allowInteractive);
         } catch (e) {
             console.error('Не удалось удалить событие из Google Calendar:', e);
+            throw e;
         }
     },
 
     // Добавить или обновить задачу в Google Календаре
-    async syncTaskToGoogle(task, calendarId) {
+    async syncTaskToGoogle(task, calendarId, allowInteractive = false) {
         if (!calendarId) return null;
 
         // Если у задачи нет dueDate, мы удаляем её событие из календаря (если оно было)
         if (!task.dueDate) {
             if (task.gcal_event_id) {
-                await this.deleteTaskFromGoogle(task.gcal_event_id, calendarId);
+                await this.deleteTaskFromGoogle(task.gcal_event_id, calendarId, allowInteractive);
             }
             return null;
         }
@@ -190,7 +185,7 @@ const GCalendarService = {
             const result = await this.apiCall(endpoint, {
                 method: method,
                 body: JSON.stringify(eventData)
-            });
+            }, allowInteractive);
             return result.id;
         } catch (e) {
             // Если событие было удалено вручную в Google Календаре, API вернет 404/410 при попытке обновить.
@@ -201,7 +196,7 @@ const GCalendarService = {
                 const result = await this.apiCall(newEndpoint, {
                     method: 'POST',
                     body: JSON.stringify(eventData)
-                });
+                }, allowInteractive);
                 return result.id;
             }
             throw e;
@@ -209,14 +204,14 @@ const GCalendarService = {
     },
 
     // Получить события из конкретного календаря за диапазон дат
-    async fetchEventsForRange(calendarId, timeMin, timeMax) {
+    async fetchEventsForRange(calendarId, timeMin, timeMax, allowInteractive = false) {
         const queryParams = new URLSearchParams({
             timeMin: timeMin,
             timeMax: timeMax,
             singleEvents: 'true',
             orderBy: 'startTime'
         });
-        const result = await this.apiCall(`calendars/${encodeURIComponent(calendarId)}/events?${queryParams.toString()}`);
+        const result = await this.apiCall(`calendars/${encodeURIComponent(calendarId)}/events?${queryParams.toString()}`, {}, allowInteractive);
         return result.items || [];
     },
 

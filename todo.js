@@ -8866,23 +8866,47 @@ function updateGCalSettingsUI() {
     const optionsSection = document.getElementById('gcalOptionsSection');
 
     const token = localStorage.getItem('google_calendar_access_token');
+    const expiry = parseInt(localStorage.getItem('google_calendar_token_expiry') || '0');
+    const isExpired = token && (Date.now() + 300 * 1000 > expiry);
 
     if (token) {
-        if (emailEl) emailEl.textContent = window.currentUser ? window.currentUser.email : 'Подключено';
+        if (emailEl) {
+            if (isExpired) {
+                emailEl.textContent = 'Сессия истекла. Требуется войти заново.';
+            } else {
+                emailEl.textContent = window.currentUser ? window.currentUser.email : 'Подключено';
+            }
+        }
         if (statusBadge) {
-            statusBadge.innerHTML = `
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="3" style="vertical-align: middle;">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span style="color: #22c55e; font-weight: 500;">Подключено</span>
-            `;
+            if (isExpired) {
+                statusBadge.innerHTML = `
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" style="vertical-align: middle;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span style="color: #ef4444; font-weight: 500;">Истек токен</span>
+                `;
+            } else {
+                statusBadge.innerHTML = `
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="3" style="vertical-align: middle;">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span style="color: #22c55e; font-weight: 500;">Подключено</span>
+                `;
+            }
         }
         if (connectBtn) {
-            connectBtn.textContent = 'Отключить';
-            connectBtn.classList.add('disconnect');
+            if (isExpired) {
+                connectBtn.textContent = 'Войти заново';
+                connectBtn.classList.remove('disconnect');
+            } else {
+                connectBtn.textContent = 'Отключить';
+                connectBtn.classList.add('disconnect');
+            }
         }
-        if (syncBtnNow) syncBtnNow.style.display = 'inline-block';
-        if (syncTip) syncTip.style.display = 'block';
+        if (syncBtnNow) syncBtnNow.style.display = isExpired ? 'none' : 'inline-block';
+        if (syncTip) syncTip.style.display = isExpired ? 'none' : 'block';
         if (optionsSection) optionsSection.style.display = 'grid';
 
         // Load checkbox values
@@ -8896,15 +8920,22 @@ function updateGCalSettingsUI() {
         }
 
         if (typeof window.GCalendarService !== 'undefined') {
-            window.GCalendarService.fetchCalendars().then(calendars => {
-                renderGCalCalendarsList(calendars);
-            }).catch(err => {
-                console.error("Error loading calendars for settings list:", err);
+            if (isExpired) {
                 const container = document.getElementById('gcalCalendarsContainer');
                 if (container) {
-                    container.innerHTML = '<div style="font-size:0.85rem; color:var(--text-secondary); padding:8px 0;">Не удалось загрузить список календарей.</div>';
+                    container.innerHTML = '<div style="font-size:0.85rem; color:var(--text-secondary); padding:8px 0;">Сессия Google Календаря истекла. Для загрузки списка календарей нажмите "Войти заново".</div>';
                 }
-            });
+            } else {
+                window.GCalendarService.fetchCalendars().then(calendars => {
+                    renderGCalCalendarsList(calendars);
+                }).catch(err => {
+                    console.error("Error loading calendars for settings list:", err);
+                    const container = document.getElementById('gcalCalendarsContainer');
+                    if (container) {
+                        container.innerHTML = '<div style="font-size:0.85rem; color:var(--text-secondary); padding:8px 0;">Не удалось загрузить список календарей.</div>';
+                    }
+                });
+            }
         }
     } else {
         if (emailEl) emailEl.textContent = 'Не подключено';
@@ -9447,7 +9478,7 @@ async function handleTaskDelete(task) {
 
 // === FETCH AND RENDER GCAL EVENTS ON BANNERS ===
 
-async function fetchAndRenderGCalEvents(force = false) {
+async function fetchAndRenderGCalEvents(force = false, allowInteractive = false) {
     const banner = document.getElementById('gcalEventsBanner');
     if (!banner) return;
 
@@ -9479,7 +9510,7 @@ async function fetchAndRenderGCalEvents(force = false) {
     gcalIsFetching = true;
 
     try {
-        const calendars = await window.GCalendarService.fetchCalendars();
+        const calendars = await window.GCalendarService.fetchCalendars(allowInteractive);
         const visibleCalendars = calendars.filter(c => !gcalHiddenCalendars.includes(c.id));
 
         if (visibleCalendars.length === 0) {
@@ -9503,7 +9534,7 @@ async function fetchAndRenderGCalEvents(force = false) {
 
         const fetchPromises = visibleCalendars.map(async (cal) => {
             try {
-                const events = await window.GCalendarService.fetchEventsForRange(cal.id, timeMin, timeMax);
+                const events = await window.GCalendarService.fetchEventsForRange(cal.id, timeMin, timeMax, allowInteractive);
                 return events.map(e => ({
                     ...e,
                     calendarColor: cal.backgroundColor || '#4285F4',
@@ -9539,8 +9570,46 @@ async function fetchAndRenderGCalEvents(force = false) {
         renderGCalEventsBanner(allEvents);
     } catch (err) {
         console.error("Error fetching calendar events:", err);
-        if (banner) {
-            banner.style.display = 'none';
+        const listEl = document.getElementById('gcalBannerEventsList');
+        const toggleBtn = document.getElementById('btnGCalBannerToggle');
+        if (banner && listEl) {
+            if (err.message === 'CALENDAR_TOKEN_EXPIRED') {
+                banner.style.display = 'block';
+                listEl.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; font-size: 0.85rem; padding: 4px 8px; color: var(--text-secondary);">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="flex-shrink:0;">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            <span>Сессия Google Календаря истекла.</span>
+                        </div>
+                        <button id="btnGCalBannerReconnect" class="gcal-reconnect-link-btn" 
+                                style="background: none; border: none; color: #4285F4; font-weight: 600; cursor: pointer; padding: 0 4px; font-size: 0.85rem; text-decoration: underline;">
+                            Войти заново
+                        </button>
+                    </div>
+                `;
+                const reconnectBtn = document.getElementById('btnGCalBannerReconnect');
+                if (reconnectBtn) {
+                    reconnectBtn.addEventListener('click', async () => {
+                        try {
+                            const newToken = await window.connectGoogleCalendar(true);
+                            if (newToken) {
+                                await loadGCalConfig();
+                                updateGCalSettingsUI();
+                                fetchAndRenderGCalEvents(true, true);
+                            }
+                        } catch (e) {
+                            console.error("Ошибка при подключении из баннера:", e);
+                        }
+                    });
+                }
+                if (toggleBtn) toggleBtn.style.display = 'none';
+            } else {
+                banner.style.display = 'none';
+            }
         }
     } finally {
         gcalIsFetching = false;
@@ -9656,7 +9725,12 @@ const btnGCalConnect = document.getElementById('btnGCalConnect');
 if (btnGCalConnect) {
     btnGCalConnect.addEventListener('click', async () => {
         const token = localStorage.getItem('google_calendar_access_token');
-        if (token) {
+        const expiry = parseInt(localStorage.getItem('google_calendar_token_expiry') || '0');
+        const isExpired = token && (Date.now() + 300 * 1000 > expiry);
+
+        // Если токен есть и он НЕ истек — отключаем календарь.
+        // Если он истек — предлагаем авторизоваться заново (так как кнопка показывает "Войти заново").
+        if (token && !isExpired) {
             localStorage.removeItem('google_calendar_access_token');
             localStorage.removeItem('google_calendar_refresh_token');
             localStorage.removeItem('google_calendar_token_expiry');
@@ -9684,9 +9758,10 @@ if (btnGCalConnect) {
                 if (newToken) {
                     await loadGCalConfig();
                     updateGCalSettingsUI();
+                    fetchAndRenderGCalEvents(true, true);
                 }
             } catch (e) {
-                console.error("Ошибка подключения календаря:", e);
+                console.error("Ошибка подключения/обновления календаря:", e);
             }
         }
     });
@@ -9697,7 +9772,7 @@ if (btnGCalSyncNow) {
     btnGCalSyncNow.addEventListener('click', () => {
         gcalLastFetchTime = 0;
         updateGCalSettingsUI();
-        fetchAndRenderGCalEvents(true);
+        fetchAndRenderGCalEvents(true, true);
     });
 }
 

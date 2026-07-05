@@ -5330,7 +5330,26 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     color: var(--text);
 }
 
-/* Top Banner Events Style */
+@keyframes gcalSlideDownFade {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+        margin-bottom: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-color: transparent;
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        margin-bottom: 12px;
+        max-height: 200px;
+        padding-top: 3px;
+        padding-bottom: 3px;
+    }
+}
+
 .gcal-events-banner {
     position: relative;
     background-color: var(--hover-bg);
@@ -5339,6 +5358,8 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     margin-bottom: 12px;
     padding: 3px 6px;
     padding-right: 24px;
+    animation: gcalSlideDownFade 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    overflow: hidden;
 }
 
 .gcal-banner-toggle-btn {

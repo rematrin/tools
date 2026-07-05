@@ -9395,14 +9395,20 @@ async function syncAllTasksForProject(projectId) {
         } finally {
             syncingTasks.delete(task.id);
         }
-    }
-}
+
 
 async function handleTaskSync(task) {
     if (!currentUid) return;
 
-    // Предотвращаем одновременную повторную синхронизацию одной и той же задачи
+    // Предотвращаем одновременную повторную синхронизацию одной и той же задачи в этой вкладке
     if (syncingTasks.has(task.id)) return;
+
+    // Проверка межвкладочного лока в localStorage (действует 15 секунд)
+    const lockKey = `gcal_sync_lock_${task.id}`;
+    const activeLock = localStorage.getItem(lockKey);
+    if (activeLock && Date.now() - parseInt(activeLock) < 15000) {
+        return;
+    }
 
     const token = localStorage.getItem('google_calendar_access_token');
     if (!token) return;
@@ -9423,6 +9429,7 @@ async function handleTaskSync(task) {
         }
 
         syncingTasks.add(task.id);
+        localStorage.setItem(lockKey, Date.now().toString());
 
         try {
             if (task.gcal_event_id && task.gcal_calendar_id && task.gcal_calendar_id !== mappedCalendarId) {
@@ -9446,10 +9453,12 @@ async function handleTaskSync(task) {
             console.error("Ошибка при синхронизации задачи с Google:", err);
         } finally {
             syncingTasks.delete(task.id);
+            localStorage.removeItem(lockKey);
         }
     } else {
         if (task.gcal_event_id && task.gcal_calendar_id) {
             syncingTasks.add(task.id);
+            localStorage.setItem(lockKey, Date.now().toString());
             try {
                 await window.GCalendarService.deleteTaskFromGoogle(task.gcal_event_id, task.gcal_calendar_id);
                 await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
@@ -9461,6 +9470,7 @@ async function handleTaskSync(task) {
                 console.error("Ошибка при удалении события из Google:", err);
             } finally {
                 syncingTasks.delete(task.id);
+                localStorage.removeItem(lockKey);
             }
         }
     }

@@ -302,16 +302,16 @@ if (btnDueDate) {
         if (dueDateDropdown.style.display === 'none') {
             if (addTaskProjectDropdown) addTaskProjectDropdown.style.display = 'none';
             if (priorityDropdown) priorityDropdown.style.display = 'none';
-            
+
             calendarTargetTask = null;
-            
+
             openDueDateDropdown();
 
             dueDateDropdown.style.position = 'fixed';
             const rect = btnDueDate.getBoundingClientRect();
             let x = rect.left;
             let y = rect.bottom + 8;
-            
+
             const menuWidth = 290;
             const menuHeight = 320;
             if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
@@ -1900,7 +1900,7 @@ function startTodoForUser(uid) {
         snapshot.docChanges().forEach((change) => {
             const docData = change.doc.data();
             const task = { id: change.doc.id, ...docData };
-            
+
             if (change.type === "added" || change.type === "modified") {
                 if (typeof handleTaskSync === 'function') {
                     handleTaskSync(task);
@@ -4137,16 +4137,16 @@ function createTaskRowElement(task) {
                             ` : ''}
                         </button>
                         ${projectsList.map(proj => {
-        const isCurrent = task.projectId === proj.id;
-        const iconHtml = proj.iconUrl ?
-            `<img src="${proj.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 0;">` :
-            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0;">
+            const isCurrent = task.projectId === proj.id;
+            const iconHtml = proj.iconUrl ?
+                `<img src="${proj.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 0;">` :
+                `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0;">
                                     <line x1="4" y1="9" x2="20" y2="9"></line>
                                     <line x1="4" y1="15" x2="20" y2="15"></line>
                                     <line x1="10" y1="3" x2="8" y2="21"></line>
                                     <line x1="16" y1="3" x2="14" y2="21"></line>
                                 </svg>`;
-        return `
+            return `
                                     <button class="dropdown-item btn-select-project ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}">
                                         ${iconHtml}
                                         <span>${escapeHtml(proj.name)}</span>
@@ -4157,7 +4157,7 @@ function createTaskRowElement(task) {
                                         ` : ''}
                                     </button>
                                 `;
-    }).join('')}
+        }).join('')}
                     </div>
                 </div>
                 ` : ''}
@@ -6187,18 +6187,18 @@ function hexToHsv(hex) {
     const r = parseInt(hex.substring(0, 2), 16) / 255;
     const g = parseInt(hex.substring(2, 4), 16) / 255;
     const b = parseInt(hex.substring(4, 6), 16) / 255;
-    
+
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     const d = max - min;
-    
+
     let h;
     if (d === 0) h = 0;
     else if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) % 6;
     else if (max === g) h = (b - r) / d + 2;
     else if (max === b) h = (r - g) / d + 4;
     h = Math.round(h * 60);
-    
+
     const s = Math.round(max === 0 ? 0 : (d / max) * 100);
     const v = Math.round(max * 100);
     return { h, s, v };
@@ -6224,19 +6224,19 @@ function showProjectColorModal(projectId) {
     overlay.style.zIndex = '1050';
 
     overlay.innerHTML = '<div class="confirm-box" style="width: 380px; padding: 24px; border-radius: 16px; position: relative;">' +
-            '<div class="confirm-title" style="font-size: 18px; margin-bottom: 20px; font-weight: 600; text-align: center;">Изменить цвет</div>' +
-            '<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">' +
-                '<span style="font-size: 14px; font-weight: 500; color: var(--text-secondary);">Цвет списка</span>' +
-                '<div class="color-presets-container" style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">' +
-                    '<div class="color-circle no-color ' + (!selectedColor ? 'active' : '') + '" data-color="" style="--active-color: #d1d5db;"></div>' +
-                    presets.map(color => '<div class="color-circle ' + (selectedColor === color ? 'active' : '') + '" data-color="' + color + '" style="background-color: ' + color + '; --active-color: ' + color + ';"></div>').join('') +
-                    '<div class="color-circle custom-color-btn ' + (selectedColor && !presets.includes(selectedColor) ? 'active' : '') + '" id="custom-color-trigger" style="--active-color: ' + (selectedColor && !presets.includes(selectedColor) ? selectedColor : '#3b82f6') + ';"></div>' +
-                '</div>' +
-            '</div>' +
-            '<div style="display: flex; justify-content: flex-end; gap: 12px;">' +
-                '<button class="confirm-btn-secondary" id="btn-cancel-color" style="margin: 0; padding: 10px 20px; border-radius: 10px; background: var(--card-bg); border: 1px solid var(--border); color: var(--text);">Отмена</button>' +
-                '<button class="confirm-btn-primary" id="btn-save-color" style="margin: 0; padding: 10px 20px; border-radius: 10px; background: #3b82f6; border: none; color: #fff;">Сохранить</button>' +
-            '</div>' +
+        '<div class="confirm-title" style="font-size: 18px; margin-bottom: 20px; font-weight: 600; text-align: center;">Изменить цвет</div>' +
+        '<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">' +
+        '<span style="font-size: 14px; font-weight: 500; color: var(--text-secondary);">Цвет списка</span>' +
+        '<div class="color-presets-container" style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">' +
+        '<div class="color-circle no-color ' + (!selectedColor ? 'active' : '') + '" data-color="" style="--active-color: #d1d5db;"></div>' +
+        presets.map(color => '<div class="color-circle ' + (selectedColor === color ? 'active' : '') + '" data-color="' + color + '" style="background-color: ' + color + '; --active-color: ' + color + ';"></div>').join('') +
+        '<div class="color-circle custom-color-btn ' + (selectedColor && !presets.includes(selectedColor) ? 'active' : '') + '" id="custom-color-trigger" style="--active-color: ' + (selectedColor && !presets.includes(selectedColor) ? selectedColor : '#3b82f6') + ';"></div>' +
+        '</div>' +
+        '</div>' +
+        '<div style="display: flex; justify-content: flex-end; gap: 12px;">' +
+        '<button class="confirm-btn-secondary" id="btn-cancel-color" style="margin: 0; padding: 10px 20px; border-radius: 10px; background: var(--card-bg); border: 1px solid var(--border); color: var(--text);">Отмена</button>' +
+        '<button class="confirm-btn-primary" id="btn-save-color" style="margin: 0; padding: 10px 20px; border-radius: 10px; background: #3b82f6; border: none; color: #fff;">Сохранить</button>' +
+        '</div>' +
         '</div>';
 
     document.body.appendChild(overlay);
@@ -6308,21 +6308,21 @@ function showProjectColorModal(projectId) {
         customColorPopover.style.top = top + 'px';
 
         customColorPopover.innerHTML = '<div class="sv-canvas" style="width: 100%; height: 120px; border-radius: 8px; position: relative; cursor: crosshair; overflow: hidden;">' +
-                '<div style="position: absolute; inset: 0; background: linear-gradient(to right, #fff, transparent);"></div>' +
-                '<div style="position: absolute; inset: 0; background: linear-gradient(to top, #000, transparent);"></div>' +
-                '<div class="sv-handle" style="position: absolute; width: 8px; height: 8px; border: 1.5px solid #fff; border-radius: 50%; box-shadow: 0 0 2px rgba(0,0,0,0.5); transform: translate(-50%, -50%); pointer-events: none;"></div>' +
+            '<div style="position: absolute; inset: 0; background: linear-gradient(to right, #fff, transparent);"></div>' +
+            '<div style="position: absolute; inset: 0; background: linear-gradient(to top, #000, transparent);"></div>' +
+            '<div class="sv-handle" style="position: absolute; width: 8px; height: 8px; border: 1.5px solid #fff; border-radius: 50%; box-shadow: 0 0 2px rgba(0,0,0,0.5); transform: translate(-50%, -50%); pointer-events: none;"></div>' +
             '</div>' +
             '<div style="display: flex; align-items: center; gap: 8px;">' +
-                '<div class="color-preview-circle" style="width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.1);"></div>' +
-                '<input type="range" class="hue-slider" min="0" max="360" value="0" style="flex-grow: 1; margin: 0;">' +
+            '<div class="color-preview-circle" style="width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.1);"></div>' +
+            '<input type="range" class="hue-slider" min="0" max="360" value="0" style="flex-grow: 1; margin: 0;">' +
             '</div>' +
             '<div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">' +
-                '<input type="text" class="hex-input" style="width: 100%; text-align: center; border: 1px solid var(--border); border-radius: 6px; padding: 4px; font-size: 12px; font-family: monospace; background: var(--hover-bg); color: var(--text);">' +
-                '<span style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase;">HEX</span>' +
+            '<input type="text" class="hex-input" style="width: 100%; text-align: center; border: 1px solid var(--border); border-radius: 6px; padding: 4px; font-size: 12px; font-family: monospace; background: var(--hover-bg); color: var(--text);">' +
+            '<span style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase;">HEX</span>' +
             '</div>' +
             '<div style="display: flex; justify-content: space-between; gap: 6px;">' +
-                '<button class="picker-btn-cancel" style="flex: 1; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text); font-size: 12px; cursor: pointer;">Отмена</button>' +
-                '<button class="picker-btn-save" style="flex: 1; padding: 6px; border-radius: 6px; border: none; background: #3b82f6; color: #fff; font-size: 12px; cursor: pointer;">Сохранить</button>' +
+            '<button class="picker-btn-cancel" style="flex: 1; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text); font-size: 12px; cursor: pointer;">Отмена</button>' +
+            '<button class="picker-btn-save" style="flex: 1; padding: 6px; border-radius: 6px; border: none; background: #3b82f6; color: #fff; font-size: 12px; cursor: pointer;">Сохранить</button>' +
             '</div>';
 
         document.body.appendChild(customColorPopover);
@@ -7397,14 +7397,14 @@ function updateSubtaskPriorityUI(prio) {
     const textLabel = document.getElementById('modalSubtaskPriorityText');
     const iconWrapper = document.getElementById('modalSubtaskPriorityIcon');
     if (textLabel) textLabel.textContent = prio > 0 ? `Приоритет ${4 - prio}` : 'Приоритет';
-    
+
     if (iconWrapper) {
         let flagColor = '#808080';
         let fill = 'none';
         if (prio === 3) { flagColor = '#dc2626'; fill = 'currentColor'; }
         else if (prio === 2) { flagColor = '#d97706'; fill = 'currentColor'; }
         else if (prio === 1) { flagColor = '#2563eb'; fill = 'currentColor'; }
-        
+
         iconWrapper.style.color = flagColor;
         const svg = iconWrapper.querySelector('svg');
         if (svg) {
@@ -7472,7 +7472,7 @@ function autoResizeTextarea(textarea) {
 function openTaskDetailsModal(taskId) {
     let task = allTasks.find(t => t.id === taskId);
     if (!task) return;
-    
+
     // Если это подзадача, открываем основную задачу (родительскую)
     if (task.parentId) {
         const parentTask = allTasks.find(t => t.id === task.parentId);
@@ -7481,9 +7481,9 @@ function openTaskDetailsModal(taskId) {
             taskId = parentTask.id;
         }
     }
-    
+
     currentModalTaskId = taskId;
-    
+
     if (taskDetailsModal) {
         taskDetailsModal.style.display = 'flex';
         const card = taskDetailsModal.querySelector('.task-details-modal-card');
@@ -7496,15 +7496,15 @@ function openTaskDetailsModal(taskId) {
         taskDetailsModal.offsetHeight;
         taskDetailsModal.classList.add('active');
     }
-    
+
     if (btnModalAddSubtask) btnModalAddSubtask.style.display = 'inline-flex';
     if (modalNewSubtaskContainer) modalNewSubtaskContainer.style.display = 'none';
     if (modalNewSubtaskTitle) modalNewSubtaskTitle.value = '';
-    
+
     if (modalProjectDropdown) modalProjectDropdown.style.display = 'none';
     closeModalDueDropdown();
     if (modalPriorityDropdown) modalPriorityDropdown.style.display = 'none';
-    
+
     updateModalUI(task);
 }
 
@@ -7531,67 +7531,67 @@ function initMobileBottomSheet() {
     const card = taskDetailsModal.querySelector('.task-details-modal-card');
     const dragHandleContainer = taskDetailsModal.querySelector('.task-details-drag-handle-container');
     const mainContent = taskDetailsModal.querySelector('.task-details-main-content');
-    
+
     if (!card || !dragHandleContainer) return;
-    
+
     let startY = 0;
     let currentY = 0;
     let startTranslateY = 0;
     let isDragging = false;
-    
+
     function onTouchStart(e) {
         if (window.innerWidth > 768) return; // Only mobile
-        
+
         const isHandle = e.target.closest('.task-details-drag-handle-container') || e.target.closest('.task-details-title-row');
         const isMainContent = e.target.closest('.task-details-main-content');
-        
+
         if (!isHandle && isMainContent && mainContent.scrollTop > 0) {
             return;
         }
-        
+
         startY = e.touches[0].clientY;
         currentY = startY;
-        
+
         if (card.classList.contains('expanded')) {
             startTranslateY = 0;
         } else {
             startTranslateY = window.innerHeight * 0.40;
         }
-        
+
         isDragging = true;
         card.style.transition = 'none';
     }
-    
+
     function onTouchMove(e) {
         if (!isDragging) return;
-        
+
         currentY = e.touches[0].clientY;
         const deltaY = currentY - startY;
-        
+
         let newTranslateY = startTranslateY + deltaY;
-        
+
         if (newTranslateY < 0) {
             newTranslateY = newTranslateY * 0.3; // Rubber-band effect
         }
-        
+
         card.style.transform = `translateY(${newTranslateY}px)`;
-        
+
         if (newTranslateY > window.innerHeight * 0.40) {
             const progress = Math.max(0, Math.min(1, (newTranslateY - window.innerHeight * 0.40) / (window.innerHeight * 0.52)));
             taskDetailsModal.style.backgroundColor = `rgba(0, 0, 0, ${0.45 * (1 - progress)})`;
         }
     }
-    
+
     function onTouchEnd(e) {
         if (!isDragging) return;
         isDragging = false;
-        
+
         card.style.transition = '';
         taskDetailsModal.style.backgroundColor = '';
-        
+
         const deltaY = currentY - startY;
         const viewportHeight = window.innerHeight;
-        
+
         if (startTranslateY === 0) {
             if (deltaY > 100) {
                 if (deltaY > viewportHeight * 0.35) {
@@ -7620,11 +7620,11 @@ function initMobileBottomSheet() {
             }
         }
     }
-    
+
     dragHandleContainer.addEventListener('touchstart', onTouchStart, { passive: true });
     dragHandleContainer.addEventListener('touchmove', onTouchMove, { passive: true });
     dragHandleContainer.addEventListener('touchend', onTouchEnd);
-    
+
     const titleRow = taskDetailsModal.querySelector('.task-details-title-row');
     if (titleRow) {
         titleRow.addEventListener('touchstart', onTouchStart, { passive: true });
@@ -7646,7 +7646,7 @@ function syncModalIfOpen() {
 
 function updateModalUI(task) {
     const titleRow = document.querySelector('.task-details-title-row');
-    
+
     if (titleRow && modalTaskCheckbox) {
         const checkboxWrapper = modalTaskCheckbox.closest('.checkbox-wrapper');
         const startsWithStar = task.title && task.title.startsWith('* ');
@@ -7663,13 +7663,13 @@ function updateModalUI(task) {
             modalTaskCheckbox.setAttribute('aria-label', 'Отметить выполненной');
         }
     }
-    
+
     if (modalTaskTitle && document.activeElement !== modalTaskTitle) {
         const hasAsterisk = task.title && task.title.startsWith('* ');
         modalTaskTitle.value = hasAsterisk ? task.title.slice(2) : (task.title || '');
         autoResizeTextarea(modalTaskTitle);
     }
-    
+
     if (modalProjectName) {
         if (task.projectId) {
             const project = projectsList.find(p => p.id === task.projectId);
@@ -7678,26 +7678,26 @@ function updateModalUI(task) {
             modalProjectName.textContent = 'Входящие';
         }
     }
-    
+
     ensureModalCalendarInitialized();
     if (modalCalendarInstance) {
         modalCalendarInstance.updateState(task.dueDate || null, task.dueTime || null, task.dueRepeat || null);
     }
-    
+
     if (modalPriorityText && modalPriorityIcon) {
         const prio = task.priority || 0;
         modalPriorityText.textContent = `Приоритет ${4 - prio}`;
-        
+
         let flagColor = '#808080';
         let fill = 'none';
         if (prio === 3) { flagColor = '#dc2626'; fill = 'currentColor'; }
         else if (prio === 2) { flagColor = '#d97706'; fill = 'currentColor'; }
         else if (prio === 1) { flagColor = '#2563eb'; fill = 'currentColor'; }
-        
+
         modalPriorityIcon.style.color = flagColor;
         modalPriorityIcon.setAttribute('fill', fill);
     }
-    
+
     renderModalSubtasks(task);
 }
 
@@ -7716,7 +7716,7 @@ function updateModalOverflow() {
 function createSubtaskElement(subtask) {
     const itemEl = document.createElement('div');
     itemEl.className = `modal-subtask-item ${subtask.completed ? 'completed' : ''} priority-${subtask.priority || 0}`;
-    
+
     // Генерируем плашку срока, если она установлена
     let dueHtml = '';
     if (subtask.dueDate) {
@@ -7724,7 +7724,7 @@ function createSubtaskElement(subtask) {
         const isOverdue = isDateOverdue(subtask.dueDate);
         const badgeClass = isToday ? 'today' : (isOverdue ? 'overdue' : '');
         const label = formatDueDateDisplay(subtask.dueDate, subtask.dueTime || null, subtask.dueRepeat || null);
-        
+
         dueHtml = `
             <span class="task-due-badge ${badgeClass}" style="margin-left: auto; margin-right: 8px;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
@@ -7742,7 +7742,7 @@ function createSubtaskElement(subtask) {
             </span>
         `;
     }
-    
+
     const hasAsterisk = subtask.title && subtask.title.startsWith('* ');
     const displayTitle = hasAsterisk ? subtask.title.slice(2) : subtask.title;
     itemEl.innerHTML = `
@@ -7886,7 +7886,7 @@ function createSubtaskElement(subtask) {
             </div>
         </div>
     `;
-    
+
     const chk = itemEl.querySelector('.modal-subtask-checkbox');
     if (chk) {
         chk.addEventListener('click', async (e) => {
@@ -7899,7 +7899,7 @@ function createSubtaskElement(subtask) {
             await toggleTaskCompleted(subtask.id, subtask.completed);
         });
     }
-    
+
     const titleInput = itemEl.querySelector('.modal-subtask-title');
     if (titleInput) {
         titleInput.addEventListener('focus', () => {
@@ -7929,10 +7929,10 @@ function createSubtaskElement(subtask) {
             }
         });
     }
-    
+
     const btnMore = itemEl.querySelector('.btn-more');
     const actionsDropdown = itemEl.querySelector('.task-actions-dropdown');
-    
+
     const openSubtaskActionsDropdown = (clickEvent = null) => {
         // Закрываем все остальные меню
         document.querySelectorAll('.due-date-dropdown, .priority-dropdown, .project-dropdown, .task-actions-dropdown').forEach(dd => {
@@ -7946,7 +7946,7 @@ function createSubtaskElement(subtask) {
         if (isHidden || clickEvent) {
             actionsDropdown.style.display = 'flex';
             itemEl.classList.add('menu-open');
-            
+
             if (clickEvent) {
                 actionsDropdown.style.position = 'fixed';
                 let x = clickEvent.clientX;
@@ -7963,7 +7963,7 @@ function createSubtaskElement(subtask) {
             } else {
                 actionsDropdown.style.position = 'absolute';
                 actionsDropdown.style.left = '';
-                
+
                 const rect = btnMore.getBoundingClientRect();
                 const spaceBelow = window.innerHeight - rect.bottom;
                 const dropdownHeight = subtask.completed ? 80 : 260;
@@ -8000,7 +8000,7 @@ function createSubtaskElement(subtask) {
             openSubtaskActionsDropdown(e);
         }
     });
-    
+
     if (!subtask.completed) {
         // Due Date selectors inside subtask actions dropdown
         const btnDueToday = itemEl.querySelector('.btn-due-today');
@@ -8147,7 +8147,7 @@ function createSubtaskElement(subtask) {
             await duplicateTask(subtask);
         });
     }
-    
+
     const btnDeleteSubtask = itemEl.querySelector('.btn-delete-subtask');
     if (btnDeleteSubtask) {
         btnDeleteSubtask.addEventListener('click', async (e) => {
@@ -8170,21 +8170,21 @@ function createSubtaskElement(subtask) {
 
 function renderModalSubtasks(task) {
     if (!modalSubtasksList || !modalSubtasksCounter || !modalSubtasksToggle) return;
-    
+
     modalSubtasksList.innerHTML = '';
-    
+
     const subtasks = allTasks.filter(t => t.parentId === task.id && !t.deleted);
     subtasks.sort((a, b) => (a.order || 0) - (b.order || 0));
-    
+
     const completedCount = subtasks.filter(s => s.completed).length;
     modalSubtasksCounter.textContent = `${completedCount}/${subtasks.length}`;
-    
+
     const chevronIcon = modalSubtasksToggle.querySelector('.chevron-icon');
-    
+
     if (subtasks.length === 0) {
         modalSubtasksToggle.style.display = 'none';
         modalSubtasksList.style.display = 'flex';
-        
+
         const addRow = document.createElement('div');
         addRow.style.padding = '4px 0';
         addRow.appendChild(btnModalAddSubtask);
@@ -8192,34 +8192,34 @@ function renderModalSubtasks(task) {
         modalSubtasksList.appendChild(addRow);
         return;
     }
-    
+
     modalSubtasksToggle.style.display = 'flex';
-    
+
     if (isModalSubtasksCollapsed) {
         modalSubtasksList.style.display = 'none';
         if (chevronIcon) chevronIcon.style.transform = 'rotate(-90deg)';
         return;
     }
-    
+
     modalSubtasksList.style.display = 'flex';
     if (chevronIcon) chevronIcon.style.transform = 'rotate(0deg)';
-    
+
     // Split subtasks: active vs completed
     const activeSubs = subtasks.filter(s => !s.completed);
     const completedSubs = subtasks.filter(s => s.completed);
-    
+
     // 1. Render active subtasks
     activeSubs.forEach(sub => {
         modalSubtasksList.appendChild(createSubtaskElement(sub));
     });
-    
+
     // 2. Render Add Subtask trigger/container row directly in the middle!
     const addRow = document.createElement('div');
     addRow.style.padding = '4px 0';
     addRow.appendChild(btnModalAddSubtask);
     addRow.appendChild(modalNewSubtaskContainer);
     modalSubtasksList.appendChild(addRow);
-    
+
     // 3. Render completed subtasks below the add form
     completedSubs.forEach(sub => {
         modalSubtasksList.appendChild(createSubtaskElement(sub));
@@ -8237,7 +8237,7 @@ if (taskDetailsModal) {
             closeTaskDetailsModal();
         }
     });
-    
+
     // Инициализация жестов для bottom sheet на мобильных устройствах
     initMobileBottomSheet();
 }
@@ -8307,19 +8307,19 @@ if (btnModalAddSubtask) {
         if (modalNewSubtaskContainer) {
             modalNewSubtaskContainer.style.display = 'flex';
         }
-        
+
         // Reset subtask form state
         modalSubtaskSelectedDate = null;
         modalSubtaskSelectedTime = null;
         modalSubtaskSelectedRepeat = null;
         modalSubtaskSelectedPriority = 0;
-        
+
         if (modalNewSubtaskTitle) {
             modalNewSubtaskTitle.value = '';
             modalNewSubtaskTitle.style.height = 'auto';
             modalNewSubtaskTitle.focus();
         }
-        
+
         ensureSubtaskCalendarInitialized();
         if (subtaskCalendarInstance) {
             subtaskCalendarInstance.updateState(null, null, null);
@@ -8342,14 +8342,14 @@ const saveModalSubtask = async () => {
         const parentId = currentModalTaskId;
         const parentTask = allTasks.find(t => t.id === parentId);
         if (!parentTask) return;
-        
+
         const siblingSubtasks = allTasks.filter(t => t.parentId === parentId && !t.deleted);
         let newOrder = 0;
         if (siblingSubtasks.length > 0) {
             const maxOrder = Math.max(...siblingSubtasks.map(t => t.order !== undefined ? t.order : 0));
             newOrder = maxOrder + 1;
         }
-        
+
         try {
             await addDoc(collection(db, 'users', currentUid, 'tasks'), {
                 title: text,
@@ -8364,17 +8364,17 @@ const saveModalSubtask = async () => {
                 parentId: parentId,
                 createdAt: serverTimestamp()
             });
-            
+
             // Reset for next subtask
             modalSubtaskSelectedDate = null;
             modalSubtaskSelectedTime = null;
             modalSubtaskSelectedRepeat = null;
             modalSubtaskSelectedPriority = 0;
-            
+
             modalNewSubtaskTitle.value = '';
             modalNewSubtaskTitle.style.height = 'auto';
             modalNewSubtaskTitle.focus();
-            
+
             if (subtaskCalendarInstance) {
                 subtaskCalendarInstance.updateState(null, null, null);
             }
@@ -8403,7 +8403,7 @@ if (modalNewSubtaskTitle) {
             if (modalNewSubtaskContainer) modalNewSubtaskContainer.style.display = 'none';
         }
     });
-    
+
     // Auto-resize textarea as user types
     modalNewSubtaskTitle.addEventListener('input', () => {
         modalNewSubtaskTitle.style.height = 'auto';
@@ -8422,7 +8422,7 @@ if (btnModalSubtaskPriority) {
         // Hide subtask calendar dropdown too if open
         const subtaskCalDropdown = document.querySelector('#modalSubtaskDueWrapper .due-date-dropdown');
         if (subtaskCalDropdown) subtaskCalDropdown.style.display = 'none';
-        
+
         if (modalSubtaskPriorityDropdown) {
             const isHidden = modalSubtaskPriorityDropdown.style.display === 'none';
             if (isHidden) {
@@ -8432,7 +8432,7 @@ if (btnModalSubtaskPriority) {
                 });
                 modalSubtaskPriorityDropdown.style.display = 'flex';
                 modalSubtaskPriorityDropdown.style.flexDirection = 'column';
-                
+
                 modalSubtaskPriorityDropdown.innerHTML = `
                     <button class="priority-opt-btn dropdown-item" data-priority="3" style="display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 8px 12px; cursor: pointer; text-align: left; color: var(--text);">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color: #dc2626; flex-shrink: 0;">
@@ -8467,7 +8467,7 @@ if (btnModalSubtaskPriority) {
                         <span class="priority-check" style="${modalSubtaskSelectedPriority === 0 ? '' : 'display: none;'} color: #808080; font-weight: bold; margin-left: auto;">✓</span>
                     </button>
                 `;
-                
+
                 modalSubtaskPriorityDropdown.querySelectorAll('.priority-opt-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -8489,14 +8489,14 @@ if (modalProjectBtn) {
         e.stopPropagation();
         closeModalDueDropdown();
         if (modalPriorityDropdown) modalPriorityDropdown.style.display = 'none';
-        
+
         if (modalProjectDropdown) {
             const isHidden = modalProjectDropdown.style.display === 'none';
             if (isHidden) {
                 modalProjectDropdown.style.display = 'flex';
                 const currentTask = allTasks.find(t => t.id === currentModalTaskId);
                 if (!currentTask) return;
-                
+
                 let html = `
                     <button class="dropdown-item ${!currentTask.projectId ? 'selected' : ''}" data-project-id="" style="display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 8px 12px; cursor: pointer; text-align: left; color: var(--text);">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -8506,7 +8506,7 @@ if (modalProjectBtn) {
                         <span style="flex-grow: 1;">Входящие</span>
                     </button>
                 `;
-                
+
                 projectsList.forEach(proj => {
                     const isCurrent = currentTask.projectId === proj.id;
                     const iconHtml = proj.iconUrl ?
@@ -8519,21 +8519,21 @@ if (modalProjectBtn) {
                         </button>
                     `;
                 });
-                
+
                 modalProjectDropdown.innerHTML = html;
-                
+
                 modalProjectDropdown.querySelectorAll('.dropdown-item').forEach(item => {
                     item.addEventListener('click', async (e) => {
                         e.stopPropagation();
                         modalProjectDropdown.style.display = 'none';
                         const targetProjId = item.getAttribute('data-project-id') || null;
-                        
+
                         try {
                             await updateDoc(doc(db, 'users', currentUid, 'tasks', currentModalTaskId), {
                                 projectId: targetProjId,
                                 order: 0
                             });
-                            
+
                             const subtasks = allTasks.filter(t => t.parentId === currentModalTaskId);
                             for (const sub of subtasks) {
                                 await updateDoc(doc(db, 'users', currentUid, 'tasks', sub.id), {
@@ -8557,16 +8557,16 @@ if (modalPriorityBtn) {
         e.stopPropagation();
         if (modalProjectDropdown) modalProjectDropdown.style.display = 'none';
         closeModalDueDropdown();
-        
+
         if (modalPriorityDropdown) {
             const isHidden = modalPriorityDropdown.style.display === 'none';
             if (isHidden) {
                 modalPriorityDropdown.style.display = 'flex';
                 modalPriorityDropdown.style.flexDirection = 'column';
-                
+
                 const task = allTasks.find(t => t.id === currentModalTaskId);
                 const currentPrio = task ? (task.priority || 0) : 0;
-                
+
                 modalPriorityDropdown.innerHTML = `
                     <button class="priority-opt-btn dropdown-item" data-priority="3" style="display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 8px 12px; cursor: pointer; text-align: left; color: var(--text);">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color: #dc2626; flex-shrink: 0;">
@@ -8601,7 +8601,7 @@ if (modalPriorityBtn) {
                         <span class="priority-check" style="${currentPrio === 0 ? '' : 'display: none;'} color: #808080; font-weight: bold; margin-left: auto;">✓</span>
                     </button>
                 `;
-                
+
                 modalPriorityDropdown.querySelectorAll('.priority-opt-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
                         e.stopPropagation();
@@ -8628,7 +8628,7 @@ document.addEventListener('click', (e) => {
         if (modalPriorityDropdown && !e.target.closest('.sidebar-priority-selector')) {
             modalPriorityDropdown.style.display = 'none';
         }
-        
+
         // Скрытие выпадающих меню для добавления подзадачи при клике вовне
         if (!e.target.closest('#modalSubtaskDueWrapper')) {
             const subtaskCalDropdown = document.querySelector('#modalSubtaskDueWrapper .due-date-dropdown');
@@ -8638,7 +8638,7 @@ document.addEventListener('click', (e) => {
         if (subtaskPrioDropdown && !e.target.closest('#modalSubtaskPriorityWrapper')) {
             subtaskPrioDropdown.style.display = 'none';
         }
-        
+
         // Скрытие выпадающих меню действий для списка подзадач
         if (!e.target.closest('.modal-subtask-item .task-actions') && !e.target.closest('#dueDateDropdown')) {
             document.querySelectorAll('.modal-subtask-item .task-actions-dropdown').forEach(dd => {
@@ -8652,7 +8652,7 @@ document.addEventListener('click', (e) => {
                 item.classList.remove('menu-open');
             });
         }
-        
+
         updateModalOverflow();
     }
 });
@@ -8675,7 +8675,7 @@ try {
 } catch (e) {
     gcalHiddenCalendars = [];
 }
-let gcalCachedEvents = []; 
+let gcalCachedEvents = [];
 let gcalCachedDate = null;
 let gcalLastFetchTime = 0;
 let gcalIsFetching = false;
@@ -8688,9 +8688,9 @@ function updateGCalSettingsUI() {
     const syncBtnNow = document.getElementById('btnGCalSyncNow');
     const syncTip = document.getElementById('gcalSyncTip');
     const optionsSection = document.getElementById('gcalOptionsSection');
-    
+
     const token = localStorage.getItem('google_calendar_access_token');
-    
+
     if (token) {
         if (emailEl) emailEl.textContent = window.currentUser ? window.currentUser.email : 'Подключено';
         if (statusBadge) {
@@ -8787,7 +8787,7 @@ function renderGCalCalendarsList(calendars) {
             } else {
                 gcalHiddenCalendars.push(calId);
             }
-            
+
             localStorage.setItem('gcal_hidden_calendars', JSON.stringify(gcalHiddenCalendars));
             if (currentUid) {
                 await window.setDoc(window.doc(db, "users", currentUid), {
@@ -8796,8 +8796,8 @@ function renderGCalCalendarsList(calendars) {
             }
 
             renderGCalCalendarsList(calendars);
-            
-            gcalLastFetchTime = 0; 
+
+            gcalLastFetchTime = 0;
             fetchAndRenderGCalEvents(true);
         });
 
@@ -8817,7 +8817,7 @@ async function loadGCalConfig() {
             gcalSyncTasks = data.gcal_sync_tasks !== false;
             gcalSyncAllDay = data.gcal_sync_allday !== false;
             gcalHiddenCalendars = data.gcal_hidden_calendars || [];
-            
+
             localStorage.setItem('gcal_show_events', gcalShowEvents);
             localStorage.setItem('gcal_sync_tasks', gcalSyncTasks);
             localStorage.setItem('gcal_sync_allday', gcalSyncAllDay);
@@ -8880,7 +8880,7 @@ function toggleDropdownMenu(menu) {
     // Закрываем все кастомные списки
     if (menuGCalLocalProject) menuGCalLocalProject.classList.remove('show');
     if (menuGCalRemoteCalendar) menuGCalRemoteCalendar.classList.remove('show');
-    
+
     if (!isShowing) {
         menu.classList.add('show');
     }
@@ -8913,12 +8913,12 @@ if (btnGCalRemoteCalendar) {
 if (btnGCalSetupSync) {
     btnGCalSetupSync.addEventListener('click', async () => {
         if (btnGCalSetupSync.classList.contains('disabled')) return;
-        
+
         btnGCalRemoteCalendar.querySelector('.trigger-text').textContent = 'Загрузка календарей...';
         selectedRemoteCalendarId = '';
-        
+
         gcalIntegrationModal.style.display = 'flex';
-        
+
         // Заполняем списки локальных проектов
         selectedLocalProjectId = 'all';
         btnGCalLocalProject.querySelector('.trigger-text').textContent = 'Все';
@@ -9050,10 +9050,10 @@ function populateRemoteCalendarsDropdown(calendars) {
                     console.warn("Не удалось создать календарь по API, создаем локальную заглушку:", apiErr);
                     newCal = { id: 'mock_' + Date.now(), summary: name };
                 }
-                
+
                 selectedRemoteCalendarId = newCal.id;
                 btnGCalRemoteCalendar.querySelector('.trigger-text').textContent = newCal.summary;
-                
+
                 calendars.push(newCal);
                 populateRemoteCalendarsDropdown(calendars);
             } catch (e) {
@@ -9085,7 +9085,7 @@ function renderActiveMappings() {
         } else {
             projName = (projectsList.find(p => p.id === projId)?.name || 'Неизвестный проект');
         }
-        
+
         const item = document.createElement('div');
         item.className = 'gcal-mapping-item';
         item.innerHTML = `
@@ -9101,14 +9101,14 @@ function renderActiveMappings() {
                 </svg>
             </button>
         `;
-        
+
         item.querySelector('.gcal-mapping-delete').addEventListener('click', async (e) => {
             const pId = e.currentTarget.getAttribute('data-project');
-            
+
             if (!confirm("Вы действительно хотите удалить эту синхронизацию? Все задачи этого проекта будут удалены из Google Календаря.")) {
                 return;
             }
-            
+
             const tasksToClear = allTasks.filter(t => (pId === 'all' || (pId === 'inbox' ? !t.projectId : t.projectId === pId)) && t.gcal_event_id);
             for (const task of tasksToClear) {
                 try {
@@ -9142,19 +9142,19 @@ if (btnGCalModalSave) {
     btnGCalModalSave.addEventListener('click', async () => {
         const localProj = selectedLocalProjectId;
         const remoteCal = selectedRemoteCalendarId;
-        
+
         if (!localProj || !remoteCal) {
             alert("Пожалуйста, выберите проект и календарь.");
             return;
         }
 
         gcalMappings[localProj] = remoteCal;
-        
+
         await saveGCalConfig();
         renderActiveMappings();
-        
+
         syncAllTasksForProject(localProj);
-        
+
         closeGCalModal();
     });
 }
@@ -9163,16 +9163,16 @@ async function syncAllTasksForProject(projectId) {
     const calendarId = gcalMappings[projectId];
     if (!calendarId) return;
 
-    const tasksToSync = allTasks.filter(t => 
-        !t.deleted && 
-        !t.completed && 
+    const tasksToSync = allTasks.filter(t =>
+        !t.deleted &&
+        !t.completed &&
         (projectId === 'all' ? true : (projectId === 'inbox' ? !t.projectId : t.projectId === projectId))
     );
 
     for (const task of tasksToSync) {
         if (syncingTasks.has(task.id)) continue;
         syncingTasks.add(task.id);
-        
+
         try {
             const currentTaskHash = `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.dueRepeat || ''}|${task.completed}|${task.description || ''}`;
             const eventId = await window.GCalendarService.syncTaskToGoogle(task, calendarId);
@@ -9193,10 +9193,10 @@ async function syncAllTasksForProject(projectId) {
 
 async function handleTaskSync(task) {
     if (!currentUid) return;
-    
+
     // Предотвращаем одновременную повторную синхронизацию одной и той же задачи
     if (syncingTasks.has(task.id)) return;
-    
+
     const token = localStorage.getItem('google_calendar_access_token');
     if (!token) return;
 
@@ -9284,10 +9284,10 @@ async function fetchAndRenderGCalEvents(force = false) {
     }
 
     const now = Date.now();
-    const isCacheValid = !force && 
-                          (now - gcalLastFetchTime < 60 * 1000) && 
-                          (gcalCachedDate === currentRoute) &&
-                          gcalCachedEvents.length > 0;
+    const isCacheValid = !force &&
+        (now - gcalLastFetchTime < 60 * 1000) &&
+        (gcalCachedDate === currentRoute) &&
+        gcalCachedEvents.length > 0;
 
     if (isCacheValid) {
         renderGCalEventsBanner(gcalCachedEvents);
@@ -9373,8 +9373,8 @@ async function fetchAndRenderGCalEvents(force = false) {
 
 function renderGCalEventsBanner(events) {
     const banner = document.getElementById('gcalEventsBanner');
-    const summaryEl = document.getElementById('gcalBannerSummary');
     const listEl = document.getElementById('gcalBannerEventsList');
+    const toggleBtn = document.getElementById('btnGCalBannerToggle');
 
     if (!banner) return;
 
@@ -9386,89 +9386,93 @@ function renderGCalEventsBanner(events) {
     banner.style.display = 'block';
 
     const isCollapsed = localStorage.getItem('gcal_banner_collapsed') === 'true';
-    if (isCollapsed) {
+    if (isCollapsed && events.length > 1) {
         banner.classList.add('collapsed');
     } else {
         banner.classList.remove('collapsed');
     }
 
-    if (summaryEl) {
-        summaryEl.innerHTML = '';
-        
-        if (isCollapsed) {
-            const previewCount = Math.min(events.length, 2);
-            for (let i = 0; i < previewCount; i++) {
-                const e = events[i];
-                const pill = document.createElement('div');
-                pill.className = 'gcal-banner-summary-event';
-                
-                let timeStr = '';
-                if (e.start.dateTime) {
-                    const start = new Date(e.start.dateTime);
-                    const hours = String(start.getHours()).padStart(2, '0');
-                    const minutes = String(start.getMinutes()).padStart(2, '0');
-                    timeStr = `${hours}:${minutes} `;
-                }
-
-                pill.innerHTML = `
-                    <div class="gcal-banner-summary-event-pill" style="background-color: ${e.calendarColor};"></div>
-                    <span>${timeStr}${escapeHtml(e.summary || 'Без названия')}</span>
-                `;
-                summaryEl.appendChild(pill);
-            }
-
-            if (events.length > 2) {
-                const moreEl = document.createElement('span');
-                moreEl.style.fontSize = '0.78rem';
-                moreEl.style.color = 'var(--text-secondary)';
-                moreEl.style.marginLeft = '4px';
-                moreEl.textContent = `и еще ${events.length - 2}`;
-                summaryEl.appendChild(moreEl);
-            }
-        } else {
-            const eventsWord = events.length === 1 ? 'событие' : (events.length >= 2 && events.length <= 4 ? 'события' : 'событий');
-            summaryEl.innerHTML = `<span style="font-weight: 600; color: var(--text);">${events.length} ${eventsWord} из календаря</span>`;
-        }
+    if (toggleBtn) {
+        toggleBtn.style.display = events.length > 1 ? 'flex' : 'none';
     }
 
     if (listEl) {
         listEl.innerHTML = '';
-        events.forEach(e => {
+
+        if (isCollapsed && events.length > 1) {
+            // Свернутое состояние: показываем цветные полосочки всех событий и заголовок первого + "и еще N"
             const row = document.createElement('div');
             row.className = 'gcal-event-row';
+            row.style.display = 'flex';
+            row.style.alignItems = 'center';
 
-            let timeText = 'Весь день';
-            if (e.start.dateTime) {
-                const start = new Date(e.start.dateTime);
-                const end = new Date(e.end.dateTime);
+            // Контейнер с цветными полосками side-by-side
+            let barsHtml = `<div style="display: flex; gap: 2px; align-items: center; flex-shrink: 0; margin-right: 6px;">`;
+            events.forEach(e => {
+                barsHtml += `<div class="gcal-event-bar" style="background-color: ${e.calendarColor};"></div>`;
+            });
+            barsHtml += `</div>`;
+
+            // Текст: первый ивент + сколько еще
+            const firstEvent = events[0];
+            let firstTimeText = '';
+            if (firstEvent.start.dateTime) {
+                const start = new Date(firstEvent.start.dateTime);
+                const end = new Date(firstEvent.end.dateTime);
                 const startH = String(start.getHours()).padStart(2, '0');
                 const startM = String(start.getMinutes()).padStart(2, '0');
                 const endH = String(end.getHours()).padStart(2, '0');
                 const endM = String(end.getMinutes()).padStart(2, '0');
-                timeText = `${startH}:${startM}-${endH}:${endM}`;
+                firstTimeText = `${startH}:${startM}-${endH}:${endM} `;
             }
 
+            const titleText = escapeHtml(firstEvent.summary || 'Без названия');
+            const suffix = ` и еще ${events.length - 1}..`;
+
             row.innerHTML = `
-                <div class="gcal-event-bar" style="background-color: ${e.calendarColor};"></div>
-                <span class="gcal-event-time">${timeText}</span>
-                <span class="gcal-event-title">${escapeHtml(e.summary || 'Без названия')}</span>
+                ${barsHtml}
+                <span class="gcal-event-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 24px);">
+                    ${firstTimeText ? `<span class="gcal-event-time" style="margin-right: 4px;">${firstTimeText}</span>` : ''}${titleText}${suffix}
+                </span>
             `;
             listEl.appendChild(row);
-        });
+        } else {
+            // Развернутое состояние или 1 событие
+            events.forEach(e => {
+                const row = document.createElement('div');
+                row.className = 'gcal-event-row';
+
+                let timeText = '';
+                if (e.start.dateTime) {
+                    const start = new Date(e.start.dateTime);
+                    const end = new Date(e.end.dateTime);
+                    const startH = String(start.getHours()).padStart(2, '0');
+                    const startM = String(start.getMinutes()).padStart(2, '0');
+                    const endH = String(end.getHours()).padStart(2, '0');
+                    const endM = String(end.getMinutes()).padStart(2, '0');
+                    timeText = `${startH}:${startM}-${endH}:${endM}`;
+                }
+
+                row.innerHTML = `
+                    <div class="gcal-event-bar" style="background-color: ${e.calendarColor};"></div>
+                    ${timeText ? `<span class="gcal-event-time">${timeText}</span>` : ''}
+                    <span class="gcal-event-title">${escapeHtml(e.summary || 'Без названия')}</span>
+                `;
+                listEl.appendChild(row);
+            });
+        }
     }
 }
 
-// Привязка клика по шапке баннера для сворачивания
-const gcalEventsBannerEl = document.getElementById('gcalEventsBanner');
-if (gcalEventsBannerEl) {
-    const headerEl = gcalEventsBannerEl.querySelector('.gcal-banner-header');
-    if (headerEl) {
-        headerEl.addEventListener('click', () => {
-            const isCollapsed = localStorage.getItem('gcal_banner_collapsed') === 'true';
-            localStorage.setItem('gcal_banner_collapsed', !isCollapsed);
-            renderGCalEventsBanner(gcalCachedEvents);
-        });
-    }
+// Привязка клика по кнопке сворачивания баннера
+const btnGCalBannerToggle = document.getElementById('btnGCalBannerToggle');
+if (btnGCalBannerToggle) {
+    btnGCalBannerToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isCollapsed = localStorage.getItem('gcal_banner_collapsed') === 'true';
+        localStorage.setItem('gcal_banner_collapsed', !isCollapsed);
+        renderGCalEventsBanner(gcalCachedEvents);
+    });
 }
 
 // Привязка кнопок управления календарями в настройках
@@ -9481,7 +9485,7 @@ if (btnGCalConnect) {
             localStorage.removeItem('google_calendar_refresh_token');
             localStorage.removeItem('google_calendar_token_expiry');
             localStorage.removeItem('gcal_hidden_calendars');
-            
+
             if (currentUid) {
                 await window.setDoc(window.doc(db, "users", currentUid), {
                     google_calendar_access_token: null,
@@ -9491,11 +9495,11 @@ if (btnGCalConnect) {
                     gcal_hidden_calendars: []
                 }, { merge: true });
             }
-            
+
             gcalMappings = {};
             gcalHiddenCalendars = [];
             updateGCalSettingsUI();
-            
+
             gcalLastFetchTime = 0;
             fetchAndRenderGCalEvents(true);
         } else {
@@ -9515,7 +9519,7 @@ if (btnGCalConnect) {
 const btnGCalSyncNow = document.getElementById('btnGCalSyncNow');
 if (btnGCalSyncNow) {
     btnGCalSyncNow.addEventListener('click', () => {
-        gcalLastFetchTime = 0; 
+        gcalLastFetchTime = 0;
         updateGCalSettingsUI();
         fetchAndRenderGCalEvents(true);
     });

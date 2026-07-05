@@ -4501,11 +4501,11 @@ body.dark .progress-bg-circle {
         background-color: rgba(0, 0, 0, 0);
         transition: background-color 0.3s ease-out;
     }
-    
+
     .task-details-modal-overlay.active {
         background-color: rgba(0, 0, 0, 0.45);
     }
-    
+
     .task-details-modal-card {
         flex-direction: column;
         height: 92vh;
@@ -4519,19 +4519,20 @@ body.dark .progress-bg-circle {
         box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.18);
         overflow: visible;
     }
-    
+
     .task-details-modal-overlay.active .task-details-modal-card {
-        transform: translateY(40vh); /* collapsed state by default */
+        transform: translateY(40vh);
+        /* collapsed state by default */
     }
-    
+
     .task-details-modal-card.expanded {
         transform: translateY(0vh) !important;
     }
-    
+
     .task-details-modal-card.collapsed {
         transform: translateY(40vh) !important;
     }
-    
+
     .task-details-drag-handle-container {
         display: flex;
         justify-content: center;
@@ -4542,11 +4543,11 @@ body.dark .progress-bg-circle {
         touch-action: none;
         flex-shrink: 0;
     }
-    
+
     .task-details-drag-handle-container:active {
         cursor: grabbing;
     }
-    
+
     .task-details-drag-handle {
         width: 40px;
         height: 5px;
@@ -4554,11 +4555,11 @@ body.dark .progress-bg-circle {
         border-radius: 3px;
         opacity: 0.8;
     }
-    
+
     .task-details-close-btn {
         display: none;
     }
-    
+
     .task-details-main-content {
         max-height: 100%;
         flex: 1;
@@ -4567,7 +4568,7 @@ body.dark .progress-bg-circle {
         -webkit-overflow-scrolling: touch;
         min-height: 0;
     }
-    
+
     .task-details-sidebar {
         display: none;
     }
@@ -4666,6 +4667,7 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
         flex-shrink: 1;
         min-width: 0;
     }
+
     .task-due-badge span {
         max-width: 90px;
         white-space: nowrap;
@@ -4710,16 +4712,20 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     border: 1px solid rgba(0, 0, 0, 0.15);
     box-sizing: border-box;
 }
+
 .color-circle:hover {
     transform: scale(1.1);
 }
+
 .color-circle.active {
     box-shadow: 0 0 0 2px var(--card-bg), 0 0 0 4px var(--active-color);
 }
+
 .color-circle.no-color {
     background: transparent;
     border: 1.5px solid #d1d5db;
 }
+
 .color-circle.no-color::after {
     content: '';
     position: absolute;
@@ -4730,6 +4736,7 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     top: calc(50% - 0.75px);
     left: 0;
 }
+
 .color-circle.custom-color-btn {
     background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
     border: none !important;
@@ -4745,6 +4752,7 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     cursor: pointer;
     outline: none;
 }
+
 .hue-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -4752,17 +4760,18 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     height: 12px;
     border-radius: 50%;
     background: #ffffff;
-    border: 1.5px solid rgba(0,0,0,0.3);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    border: 1.5px solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     cursor: pointer;
 }
+
 .hue-slider::-moz-range-thumb {
     width: 12px;
     height: 12px;
     border-radius: 50%;
     background: #ffffff;
-    border: 1.5px solid rgba(0,0,0,0.3);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    border: 1.5px solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     cursor: pointer;
 }
 
@@ -4907,9 +4916,18 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     height: 6px;
     border-radius: 50%;
 }
-.event-color.red { background: #ea4335; }
-.event-color.blue { background: #4285f4; }
-.event-color.green { background: #34a853; }
+
+.event-color.red {
+    background: #ea4335;
+}
+
+.event-color.blue {
+    background: #4285f4;
+}
+
+.event-color.green {
+    background: #34a853;
+}
 
 .gcal-feature-info {
     padding: 16px;
@@ -4954,15 +4972,18 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 11000; /* Higher than settings modal z-index 10000 */
+    z-index: 11000;
+    /* Higher than settings modal z-index 10000 */
 }
 
 .gcal-modal-card {
-    background: #ffffff !important; /* Always clean white */
+    background: #ffffff !important;
+    /* Always clean white */
     border: 1px solid #cbd5e0;
     border-radius: 16px;
     width: 90%;
-    max-width: 560px; /* Slightly wider to fit content */
+    max-width: 560px;
+    /* Slightly wider to fit content */
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     position: relative;
     overflow: visible;
@@ -5014,7 +5035,8 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    min-width: 0; /* Allows select to shrink and use ellipsis */
+    min-width: 0;
+    /* Allows select to shrink and use ellipsis */
 }
 
 .sync-side label {
@@ -5232,7 +5254,8 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     cursor: pointer;
 }
 
-.gcal-btn-primary:hover, .gcal-btn-secondary:hover {
+.gcal-btn-primary:hover,
+.gcal-btn-secondary:hover {
     opacity: 0.9;
 }
 
@@ -5248,6 +5271,7 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     border-color: #ef4444 !important;
     color: #ef4444 !important;
 }
+
 .gcal-connect-btn.disconnect:hover {
     background: rgba(239, 68, 68, 0.05) !important;
 }
@@ -5264,6 +5288,7 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     padding: 10px 0;
     border-bottom: 1px solid var(--border);
 }
+
 .gcal-calendar-item:last-child {
     border-bottom: none;
 }
@@ -5299,6 +5324,7 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     border-radius: 6px;
     transition: background-color 0.15s, color 0.15s;
 }
+
 .gcal-visibility-btn:hover {
     background-color: var(--hover-bg);
     color: var(--text);
@@ -5306,110 +5332,72 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
 
 /* Top Banner Events Style */
 .gcal-events-banner {
-    background-color: rgba(66, 133, 244, 0.05);
-    border: 1px solid rgba(66, 133, 244, 0.15);
-    border-radius: 12px;
-    margin-bottom: 16px;
-    padding: 12px 16px;
-    transition: background-color 0.2s, border-color 0.2s;
-}
-
-body.dark .gcal-events-banner {
-    background-color: rgba(66, 133, 244, 0.08);
-    border-color: rgba(66, 133, 244, 0.2);
-}
-
-.gcal-banner-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    user-select: none;
-}
-
-.gcal-banner-summary {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 12px;
-    align-items: center;
-    width: 90%;
-}
-
-.gcal-banner-summary-event {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.82rem;
-    color: var(--text);
-}
-
-.gcal-banner-summary-event-pill {
-    width: 3px;
-    height: 12px;
-    border-radius: 1.5px;
+    position: relative;
+    background-color: var(--hover-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 12px;
+    padding: 3px 6px;
+    padding-right: 24px;
 }
 
 .gcal-banner-toggle-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 5px;
     background: none;
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
+    padding: 0;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background-color 0.15s, color 0.15s;
 }
+
 .gcal-banner-toggle-btn:hover {
-    background-color: var(--hover-bg);
+    background-color: var(--border);
     color: var(--text);
 }
 
 .gcal-banner-toggle-btn .chevron-icon {
     transition: transform 0.2s ease;
+    transform: rotate(180deg);
 }
+
 .gcal-events-banner.collapsed .gcal-banner-toggle-btn .chevron-icon {
-    transform: rotate(-90deg);
+    transform: rotate(0deg);
 }
 
 .gcal-banner-events-list {
-    margin-top: 10px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    border-top: 1px solid rgba(0, 0, 0, 0.04);
-    padding-top: 10px;
-}
-
-body.dark .gcal-banner-events-list {
-    border-top-color: rgba(255, 255, 255, 0.04);
-}
-
-.gcal-events-banner.collapsed .gcal-banner-events-list {
-    display: none;
+    gap: 3px;
 }
 
 .gcal-event-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 0.88rem;
+    gap: 6px;
+    font-size: 12px;
     color: var(--text);
+    line-height: 1.35;
 }
 
 .gcal-event-bar {
     width: 3px;
-    height: 14px;
-    border-radius: 1.5px;
+    height: 10px;
+    border-radius: 1px;
     flex-shrink: 0;
 }
 
 .gcal-event-time {
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
     flex-shrink: 0;

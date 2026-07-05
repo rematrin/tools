@@ -266,19 +266,14 @@
                 <div id="todayProgressWidget" style="display: none;"></div>
 
                 <!-- Баннер событий Google Календаря -->
-                <div class="gcal-events-banner" id="gcalEventsBanner" style="display: none;">
-                    <div class="gcal-banner-header">
-                        <div class="gcal-banner-summary" id="gcalBannerSummary">
-                            <!-- Будет заполнено динамически, например: "5 событий" -->
-                        </div>
-                        <button class="gcal-banner-toggle-btn" id="btnGCalBannerToggle"
-                            aria-label="Свернуть/развернуть">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14"
-                                height="14" class="chevron-icon">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </button>
-                    </div>
+                <div class="gcal-events-banner" id="gcalEventsBanner" style="display: none; position: relative;">
+                    <button class="gcal-banner-toggle-btn" id="btnGCalBannerToggle"
+                        aria-label="Свернуть/развернуть" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12"
+                            height="12" class="chevron-icon">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
                     <div class="gcal-banner-events-list" id="gcalBannerEventsList">
                         <!-- События будут добавляться динамически -->
                     </div>

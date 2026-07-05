@@ -1533,6 +1533,167 @@ body.dark .clear-due-icon {
     flex-direction: column;
 }
 
+.due-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 2500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Трехколоночный макет для нового модального окна */
+.due-date-dropdown.new-modal-layout {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: 710px;
+    min-height: 380px;
+    padding: 0;
+    flex-direction: row;
+    display: flex;
+    overflow: hidden;
+    margin: 0 !important;
+}
+
+.due-column {
+    padding: 16px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.due-column-date {
+    width: 280px;
+    flex-shrink: 0;
+}
+
+.due-vertical-divider {
+    width: 1px;
+    background-color: var(--border);
+    height: 100%;
+    flex-shrink: 0;
+}
+
+.due-column-time-repeat {
+    flex: 1;
+    border-right: 1px solid var(--border);
+    position: relative;
+    width: 290px;
+    min-width: 290px;
+}
+
+.due-column-close {
+    width: 140px;
+    background-color: var(--sidebar-bg); /* Серый фон из раскрытой задачи */
+    position: relative;
+    flex-shrink: 0;
+}
+
+.due-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.due-close-btn:hover {
+    background-color: var(--hover-bg);
+    color: var(--text);
+}
+
+.due-row-time-trigger,
+.due-row-repeat-trigger {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.due-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    user-select: none;
+    color: var(--text);
+}
+
+.due-checkbox-label input[type="checkbox"],
+.end-time-active-checkbox {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.due-time-inputs-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.time-dash {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Выравнивание выпадающего списка срока в сайдбаре деталей, чтобы он не уезжал за правый край */
+#modalDueSelector .due-date-dropdown {
+    right: 0 !important;
+    left: auto !important;
+}
+
+/* Адаптивность для мобильных экранов */
+@media (max-width: 768px) {
+    .due-date-dropdown.new-modal-layout {
+        width: 320px !important;
+        height: auto !important;
+        max-height: 90vh;
+        flex-direction: column !important;
+        overflow-y: auto;
+    }
+    .due-vertical-divider {
+        display: none !important;
+    }
+    .due-column-date {
+        width: 100% !important;
+    }
+    .due-column-time-repeat {
+        width: 100% !important;
+        min-width: 0 !important;
+        border-right: none !important;
+        border-top: 1px solid var(--border);
+    }
+    .due-column-close {
+        width: 100% !important;
+        height: 50px !important;
+        background-color: var(--sidebar-bg);
+        order: -1; /* Поместить кнопку закрытия наверх или оставить как есть */
+    }
+    .due-close-btn {
+        top: 8px;
+        right: 8px;
+    }
+}
+
 body.dark .due-date-dropdown {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }

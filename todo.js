@@ -332,8 +332,8 @@ if (btnDueDate) {
             let x = rect.left;
             let y = rect.bottom + 8;
 
-            const menuWidth = 290;
-            const menuHeight = 320;
+            const menuWidth = 710;
+            const menuHeight = 380;
             if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
             if (y + menuHeight > window.innerHeight) y = rect.top - menuHeight - 8;
             if (x < 10) x = 10;
@@ -520,18 +520,19 @@ if (addTaskForm) {
 }
 
 function openDueDateDropdown() {
+    const overlay = document.getElementById('dueModalOverlay');
+    if (overlay) overlay.style.display = 'flex';
     dueDateDropdown.style.display = 'flex';
-    const mainView = dueDateDropdown.querySelector('.due-main-view');
-    const timeView = dueDateDropdown.querySelector('.due-time-view');
-    const repeatView = dueDateDropdown.querySelector('.due-repeat-view');
-    if (mainView) mainView.style.display = 'flex';
-    if (timeView) timeView.style.display = 'none';
-    if (repeatView) repeatView.style.display = 'none';
     initQuickOptionsText();
     renderCalendarGrid();
+    if (typeof dueDateDropdown.initUI === 'function') {
+        dueDateDropdown.initUI();
+    }
 }
 
 function closeDueDateDropdown() {
+    const overlay = document.getElementById('dueModalOverlay');
+    if (overlay) overlay.style.display = 'none';
     dueDateDropdown.style.display = 'none';
     calendarTargetTask = null;
 }
@@ -672,8 +673,14 @@ document.querySelectorAll('.quick-opt-btn').forEach(btn => {
             } else {
                 setDueDate(null);
             }
-            closeDueDateDropdown();
         }
+        if (dueDateDropdown.updateRepeatListOnDateChange) {
+            dueDateDropdown.updateRepeatListOnDateChange();
+        }
+        if (dueDateDropdown.initUI) {
+            dueDateDropdown.initUI();
+        }
+        renderCalendarGrid();
     });
 });
 
@@ -880,278 +887,297 @@ function calculateNextDueDate(currentDateStr, repeatCode) {
 
 function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelectedTime, setSelectedTime, getSelectedRepeat, setSelectedRepeat, getSelectedEndDate, setSelectedEndDate, getSelectedEndTime, setSelectedEndTime, onDone) {
     dropdownEl.onDoneCallback = onDone;
-    const mainView = dropdownEl.querySelector('.due-main-view');
-    const timeView = dropdownEl.querySelector('.due-time-view');
-    const repeatView = dropdownEl.querySelector('.due-repeat-view');
 
-    const btnTime = dropdownEl.querySelector('.btn-time');
-    const btnRepeat = dropdownEl.querySelector('.btn-repeat');
+    // Close on overlay backdrop click
+    const overlay = dropdownEl.parentElement;
+    if (overlay && overlay.classList.contains('due-modal-overlay')) {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                e.stopPropagation();
+                overlay.style.display = 'none';
+                dropdownEl.style.display = 'none';
+                if (typeof updateModalOverflow === 'function') updateModalOverflow();
+                calendarTargetTask = null;
+            }
+        });
+    }
 
-    const timeBackBtn = dropdownEl.querySelector('.time-back-btn');
-    const repeatBackBtn = dropdownEl.querySelector('.repeat-back-btn');
+    const timeCheckbox = dropdownEl.querySelector('.due-time-checkbox');
+    const repeatCheckbox = dropdownEl.querySelector('.due-repeat-checkbox');
+    const timeInputsWrapper = dropdownEl.querySelector('.due-time-inputs-wrapper');
+    const repeatOptionsBlock = dropdownEl.querySelector('.due-repeat-options-block');
+
+    const startTimeBtn = dropdownEl.querySelector('.start-time-btn');
+    const endTimeBtn = dropdownEl.querySelector('.end-time-btn');
+    const endTimeCheckbox = dropdownEl.querySelector('.end-time-active-checkbox');
+    const customTimeDropdown = dropdownEl.querySelector('.custom-time-dropdown');
     const repeatPickerList = dropdownEl.querySelector('.repeat-picker-list');
+    const closeBtn = dropdownEl.querySelector('.due-close-btn');
 
-    if (btnTime) {
-        btnTime.addEventListener('click', (e) => {
-            e.stopPropagation();
-            mainView.style.display = 'none';
-            timeView.style.display = 'flex';
+    // Helper functions for time offsets
+    const minToTimeStr = (min) => {
+        const h = Math.floor(min / 60);
+        const m = min % 60;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    };
 
-            const startTimeBtn = timeView.querySelector('.start-time-btn');
-            const endTimeBtn = timeView.querySelector('.end-time-btn');
-            const endTimeCheckbox = timeView.querySelector('.end-time-active-checkbox');
-            const customTimeDropdown = timeView.querySelector('.custom-time-dropdown');
-            const timeClearBtn = timeView.querySelector('.time-view-clear-btn');
-            const timeOkBtn = timeView.querySelector('.time-view-ok-btn');
+    const formatDurationHours = (h) => {
+        if (h === 1) return '1 час';
+        if (h % 1 === 0) {
+            if (h >= 2 && h <= 4) return `${h} часа`;
+            return `${h} часов`;
+        }
+        return `${h} часа`;
+    };
 
-            let startTimeVal = getSelectedTime() || '08:00';
-            let endTimeVal = getSelectedEndTime() || '09:00';
-            let endTimeActive = !!getSelectedEndTime();
-
-            const minToTimeStr = (min) => {
-                const h = Math.floor(min / 60);
-                const m = min % 60;
-                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-            };
-
-            const formatDurationHours = (h) => {
-                if (h === 1) return '1 час';
-                if (h % 1 === 0) {
-                    if (h >= 2 && h <= 4) return `${h} часа`;
-                    return `${h} часов`;
-                }
-                return `${h} часа`;
-            };
-
-            const getEndTimeOptions = (startStr) => {
-                const [sh, sm] = startStr.split(':').map(Number);
-                const startMin = sh * 60 + sm;
-                const opts = [];
-                
-                const shortOffsets = [15, 30, 45];
-                shortOffsets.forEach(off => {
-                    const targetMin = startMin + off;
-                    if (targetMin <= 23 * 60 + 59) {
-                        opts.push({
-                            time: minToTimeStr(targetMin),
-                            label: `${off} минут`
-                        });
-                    }
+    const getEndTimeOptions = (startStr) => {
+        const [sh, sm] = startStr.split(':').map(Number);
+        const startMin = sh * 60 + sm;
+        const opts = [];
+        
+        const shortOffsets = [15, 30, 45];
+        shortOffsets.forEach(off => {
+            const targetMin = startMin + off;
+            if (targetMin <= 23 * 60 + 59) {
+                opts.push({
+                    time: minToTimeStr(targetMin),
+                    label: `${off} минут`
                 });
-                
-                for (let h = 1; h <= 24; h += 0.5) {
-                    const off = h * 60;
-                    const targetMin = startMin + off;
-                    if (targetMin <= 23 * 60 + 59) {
-                        opts.push({
-                            time: minToTimeStr(targetMin),
-                            label: formatDurationHours(h)
-                        });
-                    } else {
-                        const maxMin = 23 * 60 + 59;
-                        if (opts.length > 0 && opts[opts.length - 1].time !== '23:59' && startMin < maxMin) {
-                            opts.push({
-                                time: '23:59',
-                                label: 'до конца дня'
-                            });
-                        }
-                        break;
-                    }
+            }
+        });
+        
+        for (let h = 1; h <= 24; h += 0.5) {
+            const off = h * 60;
+            const targetMin = startMin + off;
+            if (targetMin <= 23 * 60 + 59) {
+                opts.push({
+                    time: minToTimeStr(targetMin),
+                    label: formatDurationHours(h)
+                });
+            } else {
+                const maxMin = 23 * 60 + 59;
+                if (opts.length > 0 && opts[opts.length - 1].time !== '23:59' && startMin < maxMin) {
+                    opts.push({
+                        time: '23:59',
+                        label: 'до конца дня'
+                    });
                 }
-                return opts;
-            };
+                break;
+            }
+        }
+        return opts;
+    };
 
-            const updateUI = () => {
-                startTimeBtn.textContent = startTimeVal;
-                endTimeBtn.textContent = endTimeVal;
-                endTimeCheckbox.checked = endTimeActive;
-                if (endTimeActive) {
-                    endTimeBtn.classList.remove('disabled');
-                    endTimeBtn.removeAttribute('disabled');
-                } else {
-                    endTimeBtn.classList.add('disabled');
-                    endTimeBtn.setAttribute('disabled', 'true');
+    // Close button click
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownEl.style.display = 'none';
+            const overlay = dropdownEl.parentElement;
+            if (overlay && overlay.classList.contains('due-modal-overlay')) {
+                overlay.style.display = 'none';
+            }
+            if (typeof updateModalOverflow === 'function') updateModalOverflow();
+            calendarTargetTask = null;
+        });
+    }
+
+    // Time Checkbox Toggle
+    if (timeCheckbox) {
+        timeCheckbox.addEventListener('change', (e) => {
+            const active = e.target.checked;
+            if (active) {
+                if (timeInputsWrapper) timeInputsWrapper.style.display = 'flex';
+                const start = getSelectedTime() || '08:00';
+                setSelectedTime(start);
+                const endActive = !!getSelectedEndTime();
+                if (endActive) {
+                    setSelectedEndDate(getSelectedDate() || getTodayString());
+                    setSelectedEndTime(getSelectedEndTime() || '09:00');
                 }
-            };
+            } else {
+                if (timeInputsWrapper) timeInputsWrapper.style.display = 'none';
+                if (customTimeDropdown) customTimeDropdown.style.display = 'none';
+                setSelectedTime(null);
+                setSelectedEndDate(null);
+                setSelectedEndTime(null);
+            }
+            dropdownEl.initUI();
+            onDone();
+        });
+    }
 
-            const onCheckboxChange = (event) => {
-                endTimeActive = event.target.checked;
-                if (endTimeActive) {
-                    const [sh, sm] = startTimeVal.split(':').map(Number);
-                    const [eh, em] = endTimeVal.split(':').map(Number);
-                    if (eh * 60 + em <= sh * 60 + sm) {
-                        let targetH = sh + 1;
-                        if (targetH >= 24) targetH = 23;
-                        let targetM = sm;
-                        if (sh === 23) targetM = 59;
-                        endTimeVal = `${String(targetH).padStart(2, '0')}:${String(targetM).padStart(2, '0')}`;
-                    }
+    // End Time Checkbox Toggle
+    if (endTimeCheckbox) {
+        endTimeCheckbox.addEventListener('change', (e) => {
+            const active = e.target.checked;
+            if (active) {
+                const start = getSelectedTime() || '08:00';
+                let end = getSelectedEndTime() || '09:00';
+                const [sh, sm] = start.split(':').map(Number);
+                const [eh, em] = end.split(':').map(Number);
+                if (eh * 60 + em <= sh * 60 + sm) {
+                    let targetH = sh + 1;
+                    if (targetH >= 24) targetH = 23;
+                    let targetM = sm;
+                    if (sh === 23) targetM = 59;
+                    end = `${String(targetH).padStart(2, '0')}:${String(targetM).padStart(2, '0')}`;
                 }
-                updateUI();
-                customTimeDropdown.style.display = 'none';
-            };
-            endTimeCheckbox.removeEventListener('change', onCheckboxChange);
-            endTimeCheckbox.addEventListener('change', onCheckboxChange);
+                setSelectedEndDate(getSelectedDate() || getTodayString());
+                setSelectedEndTime(end);
+            } else {
+                setSelectedEndDate(null);
+                setSelectedEndTime(null);
+            }
+            dropdownEl.initUI();
+            onDone();
+        });
+    }
 
-            const showStartDropdown = (event) => {
-                event.stopPropagation();
-                customTimeDropdown.innerHTML = '';
-                customTimeDropdown.style.display = 'flex';
+    // Start Time Button Click
+    if (startTimeBtn) {
+        startTimeBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (!customTimeDropdown) return;
+            customTimeDropdown.innerHTML = '';
+            customTimeDropdown.style.display = 'flex';
 
-                // Generate start times: 00:00 to 23:30 in 30-min increments
-                for (let h = 0; h < 24; h++) {
-                    for (let m = 0; m < 60; m += 30) {
-                        const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                        const isSelected = startTimeVal === timeStr;
-                        const item = document.createElement('button');
-                        item.type = 'button';
-                        item.className = `custom-time-dropdown-item ${isSelected ? 'selected' : ''}`;
-                        item.innerHTML = `
-                            <span>${timeStr}</span>
-                            ${isSelected ? '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12"><polyline points="20 6 9 17 4 12"></polyline></svg></span>' : ''}
-                        `;
-                        item.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            startTimeVal = timeStr;
-                            if (endTimeActive) {
-                                const [nsh, nsm] = startTimeVal.split(':').map(Number);
-                                const [neh, nem] = endTimeVal.split(':').map(Number);
-                                if (neh * 60 + nem <= nsh * 60 + nsm) {
-                                    let targetH = nsh + 1;
-                                    if (targetH >= 24) targetH = 23;
-                                    let targetM = nsm;
-                                    if (nsh === 23) targetM = 59;
-                                    endTimeVal = `${String(targetH).padStart(2, '0')}:${String(targetM).padStart(2, '0')}`;
-                                }
-                            }
-                            updateUI();
-                            customTimeDropdown.style.display = 'none';
-                        });
-                        customTimeDropdown.appendChild(item);
-                    }
-                }
+            const startTimeVal = getSelectedTime() || '08:00';
 
-                setTimeout(() => {
-                    const sel = customTimeDropdown.querySelector('.selected');
-                    if (sel) {
-                        customTimeDropdown.scrollTop = sel.offsetTop - customTimeDropdown.offsetTop - 10;
-                    }
-                }, 10);
-            };
-            startTimeBtn.removeEventListener('click', showStartDropdown);
-            startTimeBtn.addEventListener('click', showStartDropdown);
-
-            const showEndDropdown = (event) => {
-                event.stopPropagation();
-                if (!endTimeActive) return;
-                customTimeDropdown.innerHTML = '';
-                customTimeDropdown.style.display = 'flex';
-
-                const opts = getEndTimeOptions(startTimeVal);
-                opts.forEach(opt => {
-                    const isSelected = endTimeVal === opt.time;
+            for (let h = 0; h < 24; h++) {
+                for (let m = 0; m < 60; m += 30) {
+                    const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                    const isSelected = startTimeVal === timeStr;
                     const item = document.createElement('button');
                     item.type = 'button';
                     item.className = `custom-time-dropdown-item ${isSelected ? 'selected' : ''}`;
                     item.innerHTML = `
-                        <span>${opt.time}</span>
-                        <span class="item-duration-label">${opt.label}</span>
+                        <span>${timeStr}</span>
                         ${isSelected ? '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12"><polyline points="20 6 9 17 4 12"></polyline></svg></span>' : ''}
                     `;
                     item.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        endTimeVal = opt.time;
-                        updateUI();
+                        setSelectedTime(timeStr);
+                        
+                        // If end time is active, ensure it is after start time
+                        const endActive = !!getSelectedEndTime();
+                        if (endActive) {
+                            const endTimeVal = getSelectedEndTime() || '09:00';
+                            const [nsh, nsm] = timeStr.split(':').map(Number);
+                            const [neh, nem] = endTimeVal.split(':').map(Number);
+                            if (neh * 60 + nem <= nsh * 60 + nsm) {
+                                let targetH = nsh + 1;
+                                if (targetH >= 24) targetH = 23;
+                                let targetM = nsm;
+                                if (nsh === 23) targetM = 59;
+                                const newEnd = `${String(targetH).padStart(2, '0')}:${String(targetM).padStart(2, '0')}`;
+                                setSelectedEndTime(newEnd);
+                            }
+                        }
+                        
                         customTimeDropdown.style.display = 'none';
+                        dropdownEl.initUI();
+                        onDone();
                     });
                     customTimeDropdown.appendChild(item);
-                });
-
-                setTimeout(() => {
-                    const sel = customTimeDropdown.querySelector('.selected');
-                    if (sel) {
-                        customTimeDropdown.scrollTop = sel.offsetTop - customTimeDropdown.offsetTop - 10;
-                    }
-                }, 10);
-            };
-            endTimeBtn.removeEventListener('click', showEndDropdown);
-            endTimeBtn.addEventListener('click', showEndDropdown);
-
-            // Close dropdown if clicking elsewhere in timeView
-            const onTimeViewClick = () => {
-                customTimeDropdown.style.display = 'none';
-            };
-            timeView.removeEventListener('click', onTimeViewClick);
-            timeView.addEventListener('click', onTimeViewClick);
-
-            const onClearClick = (event) => {
-                event.stopPropagation();
-                setSelectedTime(null);
-                setSelectedEndDate(null);
-                setSelectedEndTime(null);
-                timeView.style.display = 'none';
-                mainView.style.display = 'flex';
-                onDone();
-            };
-            timeClearBtn.removeEventListener('click', onClearClick);
-            timeClearBtn.addEventListener('click', onClearClick);
-
-            const onOkClick = (event) => {
-                event.stopPropagation();
-                setSelectedTime(startTimeVal);
-                if (endTimeActive) {
-                    setSelectedEndDate(getSelectedDate());
-                    setSelectedEndTime(endTimeVal);
-                } else {
-                    setSelectedEndDate(null);
-                    setSelectedEndTime(null);
                 }
-                timeView.style.display = 'none';
-                mainView.style.display = 'flex';
-                onDone();
-            };
-            timeOkBtn.removeEventListener('click', onOkClick);
-            timeOkBtn.addEventListener('click', onOkClick);
+            }
 
-            updateUI();
+            setTimeout(() => {
+                const sel = customTimeDropdown.querySelector('.selected');
+                if (sel) {
+                    customTimeDropdown.scrollTop = sel.offsetTop - customTimeDropdown.offsetTop - 10;
+                }
+            }, 10);
         });
     }
 
-    if (btnRepeat) {
-        btnRepeat.addEventListener('click', (e) => {
-            e.stopPropagation();
-            mainView.style.display = 'none';
-            repeatView.style.display = 'flex';
+    // End Time Button Click
+    if (endTimeBtn) {
+        endTimeBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (!customTimeDropdown) return;
+            customTimeDropdown.innerHTML = '';
+            customTimeDropdown.style.display = 'flex';
 
-            renderRepeatList();
+            const startTimeVal = getSelectedTime() || '08:00';
+            const endTimeVal = getSelectedEndTime() || '09:00';
+            const opts = getEndTimeOptions(startTimeVal);
+
+            opts.forEach(opt => {
+                const isSelected = endTimeVal === opt.time;
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = `custom-time-dropdown-item ${isSelected ? 'selected' : ''}`;
+                item.innerHTML = `
+                    <span>${opt.time}</span>
+                    <span class="item-duration-label">${opt.label}</span>
+                    ${isSelected ? '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12"><polyline points="20 6 9 17 4 12"></polyline></svg></span>' : ''}
+                `;
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    setSelectedEndTime(opt.time);
+                    setSelectedEndDate(getSelectedDate() || getTodayString());
+                    customTimeDropdown.style.display = 'none';
+                    dropdownEl.initUI();
+                    onDone();
+                });
+                customTimeDropdown.appendChild(item);
+            });
+
+            setTimeout(() => {
+                const sel = customTimeDropdown.querySelector('.selected');
+                if (sel) {
+                    customTimeDropdown.scrollTop = sel.offsetTop - customTimeDropdown.offsetTop - 10;
+                }
+            }, 10);
         });
     }
 
-    if (timeBackBtn) {
-        timeBackBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            timeView.style.display = 'none';
-            mainView.style.display = 'flex';
+    // Close custom time dropdown if clicking elsewhere inside the time/repeat column
+    const timeRepeatCol = dropdownEl.querySelector('.due-column-time-repeat');
+    if (timeRepeatCol) {
+        timeRepeatCol.addEventListener('click', () => {
+            if (customTimeDropdown) customTimeDropdown.style.display = 'none';
         });
     }
 
-    if (repeatBackBtn) {
-        repeatBackBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            repeatView.style.display = 'none';
-            mainView.style.display = 'flex';
+    // Repeat Checkbox Toggle
+    if (repeatCheckbox) {
+        repeatCheckbox.addEventListener('change', (e) => {
+            const active = e.target.checked;
+            if (active) {
+                if (repeatOptionsBlock) repeatOptionsBlock.style.display = 'block';
+                if (!getSelectedDate()) {
+                    setSelectedDate(getTodayString());
+                }
+                if (!getSelectedRepeat()) {
+                    setSelectedRepeat('daily');
+                }
+            } else {
+                if (repeatOptionsBlock) repeatOptionsBlock.style.display = 'none';
+                setSelectedRepeat(null);
+            }
+            dropdownEl.initUI();
+            onDone();
         });
     }
 
+    function getTodayString() {
+        const today = new Date();
+        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    }
+
+    // Render repeat list options
     function renderRepeatList() {
         if (!repeatPickerList) return;
         repeatPickerList.innerHTML = '';
 
+        const currentRepeatVal = getSelectedRepeat();
         const options = getRepeatOptions(getSelectedDate());
-        const selectedVal = getSelectedRepeat();
 
         options.forEach(opt => {
-            const isSelected = selectedVal === opt.id;
+            const isSelected = currentRepeatVal === opt.id;
             const item = document.createElement('button');
             item.type = 'button';
             item.className = `repeat-select-item ${isSelected ? 'selected' : ''}`;
@@ -1163,19 +1189,66 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (!getSelectedDate()) {
-                    const today = new Date();
-                    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-                    setSelectedDate(todayStr);
+                    setSelectedDate(getTodayString());
                 }
                 setSelectedRepeat(opt.id);
-                repeatView.style.display = 'none';
-                mainView.style.display = 'flex';
+                dropdownEl.initUI();
                 onDone();
             });
 
             repeatPickerList.appendChild(item);
         });
     }
+
+    // Bind public update helpers on the dropdown element
+    dropdownEl.updateRepeatListOnDateChange = () => {
+        renderRepeatList();
+    };
+
+    dropdownEl.initUI = () => {
+        const hasTime = !!getSelectedTime();
+        const hasRepeat = !!getSelectedRepeat();
+
+        if (timeCheckbox) {
+            timeCheckbox.checked = hasTime;
+        }
+        if (timeInputsWrapper) {
+            timeInputsWrapper.style.display = hasTime ? 'flex' : 'none';
+        }
+        if (repeatCheckbox) {
+            repeatCheckbox.checked = hasRepeat;
+        }
+        if (repeatOptionsBlock) {
+            repeatOptionsBlock.style.display = hasRepeat ? 'block' : 'none';
+        }
+
+        if (hasTime) {
+            const startTimeVal = getSelectedTime() || '08:00';
+            const endTimeVal = getSelectedEndTime() || '09:00';
+            const endTimeActive = !!getSelectedEndTime();
+            
+            if (startTimeBtn) startTimeBtn.textContent = startTimeVal;
+            if (endTimeBtn) {
+                endTimeBtn.textContent = endTimeVal;
+                if (endTimeActive) {
+                    endTimeBtn.classList.remove('disabled');
+                    endTimeBtn.removeAttribute('disabled');
+                } else {
+                    endTimeBtn.classList.add('disabled');
+                    endTimeBtn.setAttribute('disabled', 'true');
+                }
+            }
+            if (endTimeCheckbox) {
+                endTimeCheckbox.checked = endTimeActive;
+            }
+        }
+        
+        if (customTimeDropdown) {
+            customTimeDropdown.style.display = 'none';
+        }
+
+        renderRepeatList();
+    };
 }
 
 // Проверка просроченности даты
@@ -2444,8 +2517,10 @@ async function toggleTaskCompleted(taskId, currentStatus) {
 
 function createDropdownHtml() {
     return `
-        <div class="due-date-dropdown" style="display: none;">
-            <div class="due-main-view" style="display: flex; flex-direction: column; width: 100%;">
+        <div class="due-modal-overlay" style="display: none;">
+            <div class="due-date-dropdown new-modal-layout" style="display: none; position: relative !important; margin: 0 !important; z-index: 2000;">
+            <!-- Колонка 1: Дата -->
+            <div class="due-column due-column-date">
                 <div class="due-quick-options">
                     <button class="quick-opt-btn" type="button" data-date="today">
                         <span class="quick-opt-left">
@@ -2454,7 +2529,7 @@ function createDropdownHtml() {
                             </span>
                             <span>Сегодня</span>
                         </span>
-                        <span class="quick-opt-day-name">Пн</span>
+                        <span class="quick-opt-day-name">Вс</span>
                     </button>
                     <button class="quick-opt-btn" type="button" data-date="tomorrow">
                         <span class="quick-opt-left">
@@ -2473,7 +2548,7 @@ function createDropdownHtml() {
                             </span>
                             <span>Завтра</span>
                         </span>
-                        <span class="quick-opt-day-name">Вт</span>
+                        <span class="quick-opt-day-name">Пн</span>
                     </button>
                 </div>
                 
@@ -2499,69 +2574,60 @@ function createDropdownHtml() {
                     </div>
                     <div class="calendar-days"></div>
                 </div>
-                
-                <div class="due-divider"></div>
-                
-                <div class="due-footer-actions">
-                    <button class="footer-action-btn btn-time" type="button">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                        Время
-                    </button>
-                    <button class="footer-action-btn btn-repeat" type="button">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
-                        Повтор
-                    </button>
-                </div>
             </div>
-
-            <!-- Выбор времени -->
-            <div class="due-time-view" style="display: none; flex-direction: column; gap: 12px; width: 100%;">
-                <div class="time-view-header" style="display: flex; align-items: center; justify-content: flex-start; gap: 12px;">
-                    <button class="time-back-btn" type="button" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 8px;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-                            <polyline points="15 18 9 12 15 6"></polyline>
+            
+            <div class="due-vertical-divider"></div>
+            
+            <!-- Колонка 2: Время и Повтор -->
+            <div class="due-column due-column-time-repeat">
+                <!-- Время -->
+                <div class="due-row-time-trigger">
+                    <label class="due-checkbox-label">
+                        <input type="checkbox" class="due-time-checkbox">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-left: 4px; margin-right: 4px; vertical-align: middle; color: var(--text-secondary);">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
-                    </button>
-                    <span style="font-weight: 700; font-size: 0.95rem; color: var(--text);">Время</span>
-                </div>
-                <div class="time-controls">
-                    <div class="time-row start-row">
-                        <span class="time-row-label" style="font-size: 14px; color: var(--text); font-weight: 500;">Начать</span>
+                        <span>Время</span>
+                    </label>
+                    <div class="due-time-inputs-wrapper" style="display: none; align-items: center; gap: 6px; margin-left: auto;">
                         <button class="pill-btn start-time-btn" type="button">08:00</button>
-                    </div>
-                    <div class="time-row end-row">
-                        <label class="end-time-checkbox-label">
-                            <input type="checkbox" class="end-time-active-checkbox">
-                            <span>Закончить</span>
-                        </label>
+                        <span class="time-dash">—</span>
                         <button class="pill-btn end-time-btn disabled" type="button" disabled>09:00</button>
+                        <input type="checkbox" class="end-time-active-checkbox" style="margin-left: 4px;">
                     </div>
                 </div>
-
+                
                 <!-- Кастомный выпадающий список времени -->
                 <div class="custom-time-dropdown" style="display: none;"></div>
-
-                <div class="time-view-footer">
-                    <button class="time-view-clear-btn" type="button">Очистить</button>
-                    <button class="time-view-ok-btn" type="button">ОК</button>
+                
+                <!-- Повтор -->
+                <div class="due-row-repeat-trigger" style="margin-top: 12px;">
+                    <label class="due-checkbox-label">
+                        <input type="checkbox" class="due-repeat-checkbox">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-left: 4px; margin-right: 4px; vertical-align: middle; color: var(--text-secondary);">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                        </svg>
+                        <span>Повтор</span>
+                    </label>
+                </div>
+                
+                <div class="due-repeat-options-block" style="display: none; margin-top: 10px;">
+                    <div class="repeat-section-title" style="font-weight: 700; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">Повторять задачу</div>
+                    <div class="repeat-picker-list" style="display: flex; flex-direction: column; gap: 2px; max-height: 180px; overflow-y: auto;">
+                        <!-- Будет заполнено динамически -->
+                    </div>
                 </div>
             </div>
-
-            <!-- Выбор повтора -->
-            <div class="due-repeat-view" style="display: none; flex-direction: column; gap: 10px; width: 100%;">
-                <div class="repeat-view-header" style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <button class="repeat-back-btn" type="button" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 8px;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-                            <polyline points="15 18 9 12 15 6"></polyline>
-                        </svg>
-                    </button>
-                    <span style="font-weight: 700; font-size: 0.95rem; color: var(--text);">Повторять задачу</span>
-                </div>
-                <div class="repeat-picker-list" style="display: flex; flex-direction: column; gap: 2px;">
-                    <!-- Будет заполнено динамически -->
-                </div>
+            
+            <!-- Колонка 3: Пустая серая область с кнопкой закрытия -->
+            <div class="due-column due-column-close">
+                <button class="due-close-btn" type="button" aria-label="Закрыть">
+                    &times;
+                </button>
             </div>
         </div>
+    </div>
     `;
 }
 
@@ -2625,18 +2691,23 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
     if (tomorrowNameEl) tomorrowNameEl.textContent = dayNames[tomorrow.getDay()];
 
     const openDropdown = () => {
+        const overlay = dropdown.parentElement;
+        if (overlay && overlay.classList.contains('due-modal-overlay')) {
+            overlay.style.display = 'flex';
+        }
         dropdown.style.display = 'flex';
-        const mainView = dropdown.querySelector('.due-main-view');
-        const timeView = dropdown.querySelector('.due-time-view');
-        const repeatView = dropdown.querySelector('.due-repeat-view');
-        if (mainView) mainView.style.display = 'flex';
-        if (timeView) timeView.style.display = 'none';
-        if (repeatView) repeatView.style.display = 'none';
         renderGrid();
+        if (typeof dropdown.initUI === 'function') {
+            dropdown.initUI();
+        }
         if (typeof updateModalOverflow === 'function') updateModalOverflow();
     };
 
     const closeDropdown = () => {
+        const overlay = dropdown.parentElement;
+        if (overlay && overlay.classList.contains('due-modal-overlay')) {
+            overlay.style.display = 'none';
+        }
         dropdown.style.display = 'none';
         if (typeof updateModalOverflow === 'function') updateModalOverflow();
     };
@@ -2692,30 +2763,39 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
     });
 
     // Навигация
-    dropdown.querySelector('.cal-prev-month').addEventListener('click', (e) => {
-        e.stopPropagation();
-        localMonth--;
-        if (localMonth < 0) {
-            localMonth = 11;
-            localYear--;
-        }
-        renderGrid();
-    });
-    dropdown.querySelector('.cal-next-month').addEventListener('click', (e) => {
-        e.stopPropagation();
-        localMonth++;
-        if (localMonth > 11) {
-            localMonth = 0;
-            localYear++;
-        }
-        renderGrid();
-    });
-    dropdown.querySelector('.cal-current-month').addEventListener('click', (e) => {
-        e.stopPropagation();
-        localYear = new Date().getFullYear();
-        localMonth = new Date().getMonth();
-        renderGrid();
-    });
+    const prevBtn = dropdown.querySelector('.cal-prev-month');
+    if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            localMonth--;
+            if (localMonth < 0) {
+                localMonth = 11;
+                localYear--;
+            }
+            renderGrid();
+        });
+    }
+    const nextBtn = dropdown.querySelector('.cal-next-month');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            localMonth++;
+            if (localMonth > 11) {
+                localMonth = 0;
+                localYear++;
+            }
+            renderGrid();
+        });
+    }
+    const currBtn = dropdown.querySelector('.cal-current-month');
+    if (currBtn) {
+        currBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            localYear = new Date().getFullYear();
+            localMonth = new Date().getMonth();
+            renderGrid();
+        });
+    }
 
     function renderGrid() {
         const monthsRu = [
@@ -2791,6 +2871,8 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
         localSelectedDate = dateStr;
         onSelect(localSelectedDate, localSelectedTime, localSelectedRepeat, localSelectedEndDate, localSelectedEndTime);
 
+        if (dropdown.updateRepeatListOnDateChange) dropdown.updateRepeatListOnDateChange();
+
         if (!localSelectedDate) {
             textLabel.textContent = 'Срок';
             if (clearIcon) clearIcon.style.display = 'none';
@@ -2824,6 +2906,9 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
                 textLabel.textContent = formatDueDateDisplay(localSelectedDate, localSelectedTime, localSelectedRepeat, localSelectedEndDate, localSelectedEndTime);
                 if (clearIcon) clearIcon.style.display = 'inline-flex';
                 btn.classList.add('active');
+            }
+            if (typeof dropdown.initUI === 'function') {
+                dropdown.initUI();
             }
         }
     };
@@ -4488,8 +4573,8 @@ function createTaskRowElement(task) {
                 let x = rect.left;
                 let y = rect.bottom + 8;
 
-                const menuWidth = 290;
-                const menuHeight = 320;
+                const menuWidth = 710;
+                const menuHeight = 380;
                 if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
                 if (y + menuHeight > window.innerHeight) y = rect.top - menuHeight - 8;
                 if (x < 10) x = 10;
@@ -4498,12 +4583,9 @@ function createTaskRowElement(task) {
                 dueDateDropdown.style.left = `${x}px`;
                 dueDateDropdown.style.top = `${y}px`;
 
-                const mainView = dueDateDropdown.querySelector('.due-main-view');
-                const timeView = dueDateDropdown.querySelector('.due-time-view');
-                const repeatView = dueDateDropdown.querySelector('.due-repeat-view');
-                if (mainView) mainView.style.display = 'flex';
-                if (timeView) timeView.style.display = 'none';
-                if (repeatView) repeatView.style.display = 'none';
+                if (typeof dueDateDropdown.initUI === 'function') {
+                    dueDateDropdown.initUI();
+                }
 
                 renderCalendarGrid();
             });
@@ -8233,8 +8315,8 @@ function createSubtaskElement(subtask) {
                 let x = rect.left;
                 let y = rect.bottom + 8;
 
-                const menuWidth = 290;
-                const menuHeight = 320;
+                const menuWidth = 710;
+                const menuHeight = 380;
                 if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
                 if (y + menuHeight > window.innerHeight) y = rect.top - menuHeight - 8;
                 if (x < 10) x = 10;
@@ -8243,12 +8325,9 @@ function createSubtaskElement(subtask) {
                 dueDateDropdown.style.left = `${x}px`;
                 dueDateDropdown.style.top = `${y}px`;
 
-                const mainView = dueDateDropdown.querySelector('.due-main-view');
-                const timeView = dueDateDropdown.querySelector('.due-time-view');
-                const repeatView = dueDateDropdown.querySelector('.due-repeat-view');
-                if (mainView) mainView.style.display = 'flex';
-                if (timeView) timeView.style.display = 'none';
-                if (repeatView) repeatView.style.display = 'none';
+                if (typeof dueDateDropdown.initUI === 'function') {
+                    dueDateDropdown.initUI();
+                }
 
                 renderCalendarGrid();
             });

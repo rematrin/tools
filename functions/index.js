@@ -1,8 +1,17 @@
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const fetch = require("node-fetch");
+const { google } = require("googleapis");
 
 admin.initializeApp();
+
+function getOAuth2Client() {
+    const clientId = process.env.GOOGLE_CALENDAR_CLIENT_ID || "595986762798-1pm4iaiom54d4bflvnp1hrf4iugqfvhu.apps.googleusercontent.com";
+    const clientSecret = process.env.GOOGLE_CALENDAR_CLIENT_SECRET;
+    const redirectUri = process.env.GOOGLE_CALENDAR_REDIRECT_URI || "https://us-central1-tools-c98fd.cloudfunctions.net/googleCalendarCallback";
+    return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+}
+
 
 exports.refreshCalendarToken = onCall({ cors: true }, async (request) => {
     // 1. Проверяем, авторизован ли пользователь в Firebase
@@ -111,3 +120,55 @@ exports.refreshCalendarToken = onCall({ cors: true }, async (request) => {
         throw new HttpsError("internal", error.message || "Внутренняя ошибка сервера при обновлении токена.");
     }
 });
+
+// Генерируем URL для авторизации Google API с офлайн-доступом
+exports.getCalendarAuthUrl = onCall({ cors: true }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "Запрос должен быть отправлен от авторизованного пользователя.");
+    }
+    const uid = request.auth.uid;
+    const oauth2Client = getOAuth2Client();
+    const url = oauth2Client.generateAuthUrl({
+        access_type: "offline",
+        prompt: "consent",
+        scope: ["https://www.googleapis.com/auth/calendar"],
+        state: uid
+    });
+    return { url };
+});
+
+// Коллбэк-эндпоинт, который Google вызывает после успешного входа
+exports.googleCalendarCallback = onRequest({ cors: true }, async (req, res) => {
+    const code = req.query.code;
+    const uid = req.query.state;
+
+    if (!code || !uid) {
+        return res.status(400).send("Не передан код авторизации или ID пользователя.");
+    }
+
+    try {
+        const oauth2Client = getOAuth2Client();
+        const { tokens } = await oauth2Client.getToken(code);
+
+        const db = admin.firestore();
+        const updateData = {
+            google_calendar_access_token: tokens.access_token,
+            google_calendar_token_expiry: tokens.expiry_date || (Date.now() + (tokens.expires_in || 3600) * 1000),
+            updated_at: admin.firestore.FieldValue.serverTimestamp()
+        };
+
+        if (tokens.refresh_token) {
+            updateData.google_calendar_refresh_token = tokens.refresh_token;
+        }
+
+        await db.collection("users").doc(uid).set(updateData, { merge: true });
+
+        // Перенаправляем пользователя обратно на фронтенд GitHub Pages
+        const redirectUrl = process.env.FRONTEND_URL || "https://rematrin.github.io/tools/todo.html";
+        res.redirect(redirectUrl);
+    } catch (error) {
+        console.error("Ошибка в googleCalendarCallback:", error);
+        res.status(500).send("Ошибка авторизации Google Calendar: " + error.message);
+    }
+});
+

@@ -3,3 +3,5 @@ functions/node_modules/
 .firebase/
 .DS_Store
 *.log
+.env
+functions/.env

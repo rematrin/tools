@@ -19,11 +19,11 @@ const GCalendarService = {
 
         // Если токена нет или он истекает менее чем через 5 минут (300 000 мс)
         if (!token || Date.now() + 300 * 1000 > expiry) {
-            if (allowInteractive) {
-                console.log('Access token для Google Calendar протух или отсутствует, пытаемся обновить...');
+            console.log('Access token для Google Calendar протух или отсутствует, пытаемся обновить автоматически...');
+            try {
                 return await this.refreshAccessToken();
-            } else {
-                console.log('Access token для Google Calendar протух или отсутствует. Автоматическое обновление отключено, чтобы избежать нежелательных окон входа.');
+            } catch (err) {
+                console.log('Автоматическое обновление токена через Cloud Function не удалось:', err);
                 throw new Error('CALENDAR_TOKEN_EXPIRED');
             }
         }
@@ -92,7 +92,7 @@ const GCalendarService = {
 
         if (response.status === 401) {
             console.log('Получен ответ 401. Попытка принудительного обновления токена...');
-            if (allowInteractive) {
+            try {
                 const newToken = await this.refreshAccessToken();
                 return this.apiCall(endpoint, {
                     ...options,
@@ -100,8 +100,9 @@ const GCalendarService = {
                         ...options.headers,
                         'Authorization': `Bearer ${newToken}`
                     }
-                }, true);
-            } else {
+                }, allowInteractive);
+            } catch (err) {
+                console.log('Принудительное обновление токена не удалось:', err);
                 throw new Error('CALENDAR_TOKEN_EXPIRED');
             }
         }

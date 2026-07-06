@@ -319,44 +319,33 @@ function initAuthWidget() {
 
     const connectGoogleCalendar = async (forceConsent = true) => {
         try {
-            console.log("Запускаем авторизацию Google Calendar через Popup...");
-            const calendarProvider = new GoogleAuthProvider();
-            calendarProvider.addScope('https://www.googleapis.com/auth/calendar');
-            
-            const params = { 'access_type': 'offline' };
-            if (forceConsent) {
-                params['prompt'] = 'consent';
+            console.log("Запускаем авторизацию Google Calendar через Cloud Functions...");
+            const user = auth.currentUser;
+            if (!user) {
+                throw new Error("Пользователь не авторизован.");
             }
-            calendarProvider.setCustomParameters(params);
+            const idToken = await user.getIdToken(true);
+            const response = await fetch('https://us-central1-tools-c98fd.cloudfunctions.net/getCalendarAuthUrl', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({ data: {} })
+            });
 
-            const result = await signInWithPopup(auth, calendarProvider);
-            const credential = GoogleAuthProvider.credentialFromResult(result);
-            const token = credential.accessToken;
-            const refreshToken = result._tokenResponse?.refreshToken || null;
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error?.message || `HTTP Error ${response.status}`);
+            }
 
-            if (token) {
-                const expiry = Date.now() + 3500 * 1000;
-                localStorage.setItem('google_calendar_access_token', token);
-                localStorage.setItem('google_calendar_token_expiry', expiry);
-                if (refreshToken) {
-                    localStorage.setItem('google_calendar_refresh_token', refreshToken);
-                }
+            const resData = await response.json();
+            const authUrl = resData.result?.url;
 
-                const user = auth.currentUser;
-                if (user) {
-                    const updateData = {
-                        google_calendar_access_token: token,
-                        google_calendar_token_expiry: expiry,
-                        updated_at: serverTimestamp()
-                    };
-                    if (refreshToken) {
-                        updateData.google_calendar_refresh_token = refreshToken;
-                    }
-                    await setDoc(doc(db, "users", user.uid), updateData, { merge: true });
-                }
-
-                window.dispatchEvent(new CustomEvent('googleCalendarTokenChanged', { detail: { token } }));
-                return token;
+            if (authUrl) {
+                window.location.href = authUrl;
+            } else {
+                throw new Error("Не удалось получить ссылку для авторизации.");
             }
         } catch (e) {
             console.error("Ошибка при подключении Google Calendar:", e);
@@ -439,11 +428,11 @@ function initAuthWidget() {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 if (userDoc.exists()) {
                     const data = userDoc.data();
-                    if (data.google_access_token && !localStorage.getItem('google_access_token')) {
+                    if (data.google_access_token) {
                         localStorage.setItem('google_access_token', data.google_access_token);
                         localStorage.setItem('google_token_expiry', data.google_token_expiry || 0);
                     }
-                    if (data.google_calendar_access_token && !localStorage.getItem('google_calendar_access_token')) {
+                    if (data.google_calendar_access_token) {
                         localStorage.setItem('google_calendar_access_token', data.google_calendar_access_token);
                         localStorage.setItem('google_calendar_token_expiry', data.google_calendar_token_expiry || 0);
                         if (data.google_calendar_refresh_token) {

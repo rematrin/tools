@@ -1103,18 +1103,18 @@
             <div class="due-column due-column-time-repeat">
                 <!-- Время -->
                 <div class="due-row-time-trigger">
-                    <label class="due-checkbox-label">
-                        <input type="checkbox" class="due-time-checkbox" id="dueTimeCheckbox">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-left: 4px; margin-right: 4px; vertical-align: middle; color: var(--text-secondary);">
+                    <div class="due-checkbox-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px; vertical-align: middle; color: var(--text-secondary);">
                             <circle cx="12" cy="12" r="10"></circle>
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
                         <span>Время</span>
-                    </label>
+                    </div>
                 </div>
                 
-                <!-- Поля ввода времени (отображаются под надписью Время) -->
-                <div class="due-time-inputs-wrapper" style="display: none; align-items: center; gap: 6px; margin-top: 8px; padding-left: 22px;">
+                <!-- Поля ввода времени (всегда видны) -->
+                <div class="due-time-inputs-wrapper" style="display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-left: 0;">
+                    <input type="checkbox" class="due-time-checkbox" id="dueTimeCheckbox" style="margin-right: 2px;">
                     <button class="pill-btn start-time-btn" type="button">08:00</button>
                     <span class="time-dash">—</span>
                     <button class="pill-btn end-time-btn disabled" type="button" disabled>09:00</button>
@@ -1124,20 +1124,21 @@
                 <!-- Кастомный выпадающий список времени -->
                 <div class="custom-time-dropdown" style="display: none;"></div>
 
+                <div class="due-divider" style="margin: 12px 0;"></div>
+
                 <!-- Повтор -->
-                <div class="due-row-repeat-trigger" style="margin-top: 12px;">
-                    <label class="due-checkbox-label">
-                        <input type="checkbox" class="due-repeat-checkbox" id="dueRepeatCheckbox">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-left: 4px; margin-right: 4px; vertical-align: middle; color: var(--text-secondary);">
+                <div class="due-row-repeat-trigger">
+                    <div class="due-checkbox-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px; vertical-align: middle; color: var(--text-secondary);">
                             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
                         </svg>
                         <span>Повтор</span>
-                    </label>
+                    </div>
                 </div>
 
-                <div class="due-repeat-options-block" style="display: none; margin-top: 10px;">
-                    <div class="repeat-section-title" style="font-weight: 700; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">Повторять задачу</div>
-                    <div class="repeat-picker-list" style="display: flex; flex-direction: column; gap: 2px; max-height: 180px; overflow-y: auto;">
+                <!-- Повторять задачу (всегда видно) -->
+                <div class="due-repeat-options-block" style="display: block; margin-top: 10px;">
+                    <div class="repeat-picker-list" style="display: flex; flex-direction: column; gap: 2px; max-height: 220px; overflow-y: auto;">
                         <!-- Будет заполнено динамически -->
                     </div>
                 </div>

@@ -24,6 +24,7 @@
     </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js" defer></script>
+    <script src="facts.js" defer></script>
     <script>
         // --- CRITICAL WALLPAPER LOADER ---
         (function () {
@@ -2214,6 +2215,92 @@
         .toast-error .toast-icon {
             color: #FF453A;
         }
+
+        /* --- ДЕСКТОПНЫЙ ВИДЖЕТ ИНТЕРЕСНЫХ ФАКТОВ (СЛЕВА) --- */
+        .desktop-fact-widget {
+            display: none;
+            position: fixed;
+            left: 45px;
+            top: 100px;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 20px;
+            padding: 20px;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            z-index: 10;
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-sizing: border-box;
+            user-select: text;
+        }
+
+        .desktop-fact-widget.fade-out {
+            opacity: 0;
+            transform: scale(0.98);
+        }
+
+        .fact-widget-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .fact-widget-icon {
+            font-size: 16px;
+            line-height: 1;
+            opacity: 0.8;
+        }
+
+        .fact-widget-title {
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.45);
+        }
+
+        .fact-widget-refresh-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.35);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            margin-left: auto;
+        }
+
+        .fact-widget-refresh-btn:hover {
+            color: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .fact-widget-refresh-btn:active {
+            transform: scale(0.9) rotate(90deg);
+        }
+
+        .fact-widget-body {
+            font-size: 14px;
+            line-height: 1.5;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.85);
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        @media (min-width: 1450px) {
+            body.show-facts-widget-enabled .desktop-fact-widget {
+                display: block;
+            }
+        }
     </style>
 </head>
 
@@ -2229,6 +2316,22 @@
                 <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
             <span id="toastText">Готово</span>
+        </div>
+    </div>
+
+    <!-- Десктопный виджет с фактами/словами дня (слева) -->
+    <div id="desktopFactWidget" class="desktop-fact-widget">
+        <div class="fact-widget-header">
+            <span class="fact-widget-icon" id="factWidgetIcon">💡</span>
+            <span class="fact-widget-title" id="factWidgetTitle">Слово часа</span>
+            <button id="factWidgetRefresh" class="fact-widget-refresh-btn" title="Сменить факт">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="fact-widget-body" id="factWidgetContent">
+            Загрузка...
         </div>
     </div>
 
@@ -2371,6 +2474,11 @@
         const savedExpandedFolders = localStorage.getItem('expandedFolders') === 'true';
         if (savedExpandedFolders) {
             document.body.classList.add('expanded-folders');
+        }
+
+        const savedShowFacts = localStorage.getItem('showFactsWidget') !== 'false';
+        if (savedShowFacts) {
+            document.body.classList.add('show-facts-widget-enabled');
         }
 
         const savedCols = localStorage.getItem('gridColumns') || '4';
@@ -3355,6 +3463,17 @@
                                     if (toggle) toggle.checked = isExpanded;
                                 }
 
+                                // Загрузка Показать факты/цитаты
+                                if (typeof cloudSettings.showFactsWidget !== 'undefined') {
+                                    const showFacts = cloudSettings.showFactsWidget;
+                                    localStorage.setItem('showFactsWidget', showFacts.toString());
+                                    if (showFacts) document.body.classList.add('show-facts-widget-enabled');
+                                    else document.body.classList.remove('show-facts-widget-enabled');
+
+                                    const toggle = document.getElementById('showFactsWidgetToggle');
+                                    if (toggle) toggle.checked = showFacts;
+                                }
+
                                 // Загрузка Колонок
                                 if (typeof cloudSettings.gridColumns !== 'undefined') {
                                     const cols = cloudSettings.gridColumns;
@@ -3452,6 +3571,74 @@
                 iframe.contentWindow.postMessage({ type: 'closeMenus' }, '*');
             }
         }, true);
+
+        // --- ДЕСКТОПНЫЙ ВИДЖЕТ ИНТЕРЕСНЫХ ФАКТОВ (ЛОГИКА) ---
+        let currentFactIndex = -1;
+        let lastDisplayedHour = -1;
+
+        function updateHourlyFactWidget(customFactObj) {
+            const widget = document.getElementById('desktopFactWidget');
+            const iconEl = document.getElementById('factWidgetIcon');
+            const titleEl = document.getElementById('factWidgetTitle');
+            const contentEl = document.getElementById('factWidgetContent');
+
+            if (!widget || typeof getFactForCurrentHour !== 'function') return;
+
+            const currentHour = Math.floor(Date.now() / 3600000);
+            let fact;
+
+            if (customFactObj) {
+                fact = customFactObj.fact;
+                currentFactIndex = customFactObj.index;
+            } else {
+                if (lastDisplayedHour === currentHour && currentFactIndex !== -1) {
+                    return;
+                }
+                lastDisplayedHour = currentHour;
+                currentFactIndex = currentHour % HOURLY_FACTS.length;
+                fact = HOURLY_FACTS[currentFactIndex];
+            }
+
+            if (!fact) return;
+
+            let icon = '💡';
+            if (fact.type === 'word') icon = '📖';
+            if (fact.type === 'quote') icon = '✍️';
+            if (fact.type === 'joke') icon = '🎭';
+
+            // Эффект красивого затухания и смены контента
+            widget.classList.add('fade-out');
+
+            setTimeout(() => {
+                iconEl.textContent = icon;
+                titleEl.textContent = fact.title || 'Интересное';
+                contentEl.textContent = fact.text;
+                widget.classList.remove('fade-out');
+            }, 400);
+        }
+
+        function initFactWidget() {
+            updateHourlyFactWidget();
+            setInterval(updateHourlyFactWidget, 60000);
+
+            const refreshBtn = document.getElementById('factWidgetRefresh');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (typeof getRandomFact === 'function') {
+                        const newFactObj = getRandomFact(currentFactIndex);
+                        updateHourlyFactWidget(newFactObj);
+                    }
+                });
+            }
+        }
+
+        // Запуск инициализации при загрузке
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initFactWidget);
+        } else {
+            initFactWidget();
+        }
 
     </script>
 </body>

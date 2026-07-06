@@ -378,6 +378,7 @@ export function initSidebarManager(context) {
         const expandedFolders = localStorage.getItem('expandedFolders') === 'true';
         const showBookmarksBeta = localStorage.getItem('showBookmarksBeta') === 'true';
         const showTodoist = localStorage.getItem('showTodoist') === 'true';
+        const showFactsWidget = localStorage.getItem('showFactsWidget') !== 'false';
 
         const glassSettingsHTML = `
             <div class="profile-card" style="gap: 8px; padding: 12px 16px;">
@@ -414,6 +415,13 @@ export function initSidebarManager(context) {
                     <span style="font-size: 14px; flex: 1; padding-right: 10px;">Использовать Todoist</span>
                     <label class="switch" style="transform: scale(0.85); transform-origin: right;">
                         <input type="checkbox" id="showTodoistToggle" ${showTodoist ? 'checked' : ''}>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
+                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Интересные факты и цитаты</span>
+                    <label class="switch" style="transform: scale(0.85); transform-origin: right;">
+                        <input type="checkbox" id="showFactsWidgetToggle" ${showFactsWidget ? 'checked' : ''}>
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
@@ -560,6 +568,18 @@ export function initSidebarManager(context) {
                 localStorage.setItem('showTodoist', isEnabled.toString());
                 if (auth.currentUser) window.dbApi.saveSettings({ showTodoist: isEnabled });
                 if (window.renderCategoryBar) window.renderCategoryBar();
+            };
+        }
+
+        // Интересные факты и цитаты
+        const showFactsWidgetToggle = document.getElementById('showFactsWidgetToggle');
+        if (showFactsWidgetToggle) {
+            showFactsWidgetToggle.onchange = (e) => {
+                const isEnabled = e.target.checked;
+                localStorage.setItem('showFactsWidget', isEnabled.toString());
+                if (auth.currentUser) window.dbApi.saveSettings({ showFactsWidget: isEnabled });
+                if (isEnabled) document.body.classList.add('show-facts-widget-enabled');
+                else document.body.classList.remove('show-facts-widget-enabled');
             };
         }
 

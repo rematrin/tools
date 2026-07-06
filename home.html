@@ -3601,10 +3601,34 @@
 
             if (!fact) return;
 
-            let icon = '💡';
-            if (fact.type === 'word') icon = '📖';
-            if (fact.type === 'quote') icon = '✍️';
-            if (fact.type === 'joke') icon = '🎭';
+            const typeIcons = {
+                'word': '📖',
+                'quote': '✍️',
+                'joke': '🎭',
+                'fact': '💡',
+                'english_word': '🧠',
+                'english_phrase': '💬',
+                'english_idiom': '🇬🇧',
+                'book_quote': '📖',
+                'movie_quote': '🎬',
+                'country_fact': '🌍',
+                'space_fact': '🚀',
+                'animal_fact': '🐘',
+                'lifehack': '💡',
+                'shortcut': '⌨️',
+                'history_fact': '📜',
+                'science_fact': '🔬',
+                'finance_fact': '💰',
+                'design_tip': '🎨',
+                'programming_fact': '💻',
+                'russian_word': '📚',
+                'foreign_word': '🗣️',
+                'riddle': '🤔',
+                'brain_teaser': '🧩',
+                'on_this_day': '📅',
+                'did_you_know': '⚡'
+            };
+            const icon = typeIcons[fact.type] || '💡';
 
             // Эффект красивого затухания и смены контента
             widget.classList.add('fade-out');

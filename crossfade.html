@@ -56,14 +56,14 @@
             background: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 20px;
+            padding: 16px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
             min-height: 550px;
         }
 
         #player-container {
             display: flex;
-            gap: 25px;
+            gap: 20px;
             height: 100%;
         }
 
@@ -75,6 +75,82 @@
             flex-direction: column;
             max-height: 600px;
             min-width: 320px;
+        }
+
+        /* Saved Playlists Section */
+        .saved-playlists-section {
+            margin-top: 15px;
+            border-top: 1px solid var(--border);
+            padding-top: 15px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex-shrink: 0;
+        }
+        .saved-playlists-title {
+            font-size: 0.95rem;
+            margin: 0 0 10px 0;
+            color: var(--text);
+            font-weight: 700;
+        }
+        .saved-playlists-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+            max-height: 180px;
+            padding-right: 4px;
+        }
+        .saved-playlist-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            gap: 8px;
+        }
+        .saved-playlist-item:hover {
+            background: var(--hover-bg);
+            border-color: var(--accent);
+        }
+        .saved-playlist-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .saved-playlist-name {
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .saved-playlist-meta {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        .btn-delete-playlist {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+        .btn-delete-playlist:hover {
+            color: var(--neon-pink);
+            background: var(--hover-bg);
         }
 
         #playlist-header-row {
@@ -98,6 +174,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            cursor: text;
         }
 
         #playlist-count-text {
@@ -193,7 +270,7 @@
 
         .playlist-item {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             padding: 8px;
             margin-bottom: 4px;
             border-radius: 8px;
@@ -227,8 +304,8 @@
         }
 
         .playlist-thumb {
-            width: 100px;
-            height: 56px;
+            width: 70px;
+            height: 40px;
             flex-shrink: 0;
             border-radius: 6px;
             overflow: hidden;
@@ -252,8 +329,8 @@
         }
 
         .playlist-title {
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: 0.82rem;
+            font-weight: 500;
             line-height: 1.3;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -827,7 +904,70 @@
         <div class="card">
             <div id="player-container">
 
+                <div id="playlist-sidebar">
+                    <div id="playlist-header-row">
+                        <div class="playlist-header-text">
+                            <h2 id="playlist-title-text">Мой Плейлист</h2>
+                            <div id="playlist-count-text">0 видео из 0</div>
+                        </div>
+                        <div class="playlist-header-actions">
+                            <button class="icon-action-btn" onclick="savePlaylistToFirebase()"
+                                data-tooltip="Сохранить плейлист">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                    <polyline points="7 3 7 8 15 8"></polyline>
+                                </svg>
+                            </button>
+                            <button class="icon-action-btn btn-shuffle-large" onclick="shufflePlaylist()"
+                                data-tooltip="Перемешать">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path
+                                        d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3" />
+                                </svg>
+                            </button>
+                            <button class="icon-action-btn" onclick="copyPlaylistLink()"
+                                data-tooltip="Копировать ссылку на плейлист">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                </svg>
+                            </button>
+                            <button class="icon-action-btn" onclick="toggleImportBox()"
+                                data-tooltip="Редактировать плейлист">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="import-box" id="importBox">
+                        <input type="text" class="import-input" id="urlInput" placeholder="Ссылка на YouTube..." autocomplete="off">
+                        <button class="btn-add" onclick="handleInput()">+</button>
+                    </div>
+
+                    <div class="playlist-scroll-area" id="playlist-list">
+                    </div>
+
+                    <div class="saved-playlists-section" id="saved-playlists-section" style="display: none;">
+                        <div class="saved-playlists-title">Мои плейлисты</div>
+                        <div class="saved-playlists-list" id="saved-playlists-list"></div>
+                    </div>
+                </div>
+
                 <div id="main-player-area" class="mode-video">
+
+                    <div id="visual-container">
+                        <div id="wrapper1" class="deck-wrapper deck-active">
+                            <div id="player1" style="width:100%; height:100%;"></div>
+                        </div>
+                        <div id="wrapper2" class="deck-wrapper deck-bg">
+                            <div id="player2" style="width:100%; height:100%;"></div>
+                        </div>
+                        <img id="cover-overlay" src="" alt="Cover" draggable="false">
+                    </div>
 
                     <div class="mode-switcher">
                         <button class="mode-btn active" onclick="setMode('video')" id="btn-video">
@@ -846,16 +986,6 @@
                             </svg>
                             <span>Аудио</span>
                         </button>
-                    </div>
-
-                    <div id="visual-container">
-                        <div id="wrapper1" class="deck-wrapper deck-active">
-                            <div id="player1" style="width:100%; height:100%;"></div>
-                        </div>
-                        <div id="wrapper2" class="deck-wrapper deck-bg">
-                            <div id="player2" style="width:100%; height:100%;"></div>
-                        </div>
-                        <img id="cover-overlay" src="" alt="Cover" draggable="false">
                     </div>
 
                     <div id="current-track-info">Загрузка...</div>
@@ -940,46 +1070,6 @@
 
                 </div>
 
-                <div id="playlist-sidebar">
-                    <div id="playlist-header-row">
-                        <div class="playlist-header-text">
-                            <h2 id="playlist-title-text">Мой Плейлист</h2>
-                            <div id="playlist-count-text">0 видео из 0</div>
-                        </div>
-                        <div class="playlist-header-actions">
-                            <button class="icon-action-btn btn-shuffle-large" onclick="shufflePlaylist()"
-                                data-tooltip="Перемешать">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path
-                                        d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3" />
-                                </svg>
-                            </button>
-                            <button class="icon-action-btn" onclick="copyPlaylistLink()"
-                                data-tooltip="Копировать ссылку на плейлист">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                                </svg>
-                            </button>
-                            <button class="icon-action-btn" onclick="toggleImportBox()"
-                                data-tooltip="Редактировать плейлист">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="import-box" id="importBox">
-                        <input type="text" class="import-input" id="urlInput" placeholder="Ссылка на YouTube..." autocomplete="off">
-                        <button class="btn-add" onclick="handleInput()">+</button>
-                    </div>
-
-                    <div class="playlist-scroll-area" id="playlist-list">
-                    </div>
-                </div>
-
             </div>
         </div>
     </div>
@@ -988,6 +1078,8 @@
         // --- ДАННЫЕ И НАСТРОЙКИ ---
         let playlist = [];
         window.currentListId = null;
+        window.loadedPlaylistName = null;
+        window.loadedPlaylistUrl = null;
 
 
         let crossfadeDuration = parseInt(localStorage.getItem('crossfade-duration')) || 8;
@@ -1137,6 +1229,8 @@
             const list = document.getElementById('playlist-list');
             list.innerHTML = '';
 
+            document.getElementById('playlist-title-text').innerText = window.loadedPlaylistName || "Мой Плейлист";
+
             if (playlist.length === 0) {
                 list.innerHTML = `
                     <div class="empty-list-stub">
@@ -1194,6 +1288,7 @@
                 const t = playlist[trackIndex];
                 document.getElementById('current-track-info').innerText = t.title;
                 document.getElementById('cover-overlay').src = `https://i.ytimg.com/vi/${t.id}/maxresdefault.jpg`;
+                document.title = t.title;
             } else {
                 playerArea.classList.add('is-empty');
                 document.getElementById('current-track-info').innerText = "Добавьте ваш плейлист";
@@ -1201,6 +1296,7 @@
                 document.getElementById('currentTime').innerText = "0:00";
                 document.getElementById('totalTime').innerText = "0:00";
                 document.getElementById('progressBar').value = 0;
+                document.title = "Auto-DJ Station";
             }
 
 
@@ -1419,6 +1515,8 @@
                 if (videoId) {
                     playlist.push({ id: videoId, title: "Загрузка..." });
                     window.currentListId = null;
+                    window.loadedPlaylistName = null;
+                    window.loadedPlaylistUrl = null;
                     renderPlaylist();
                     input.value = "";
                     fetchTitlesForPlaylist();
@@ -1553,12 +1651,14 @@
                         startLoop();
                     }
                     updatePlayerLoop();
+                    updateUI();
                 }
                 else if (event.data === YT.PlayerState.PAUSED) {
                     if (isPlaying) {
                         isPlaying = false;
                         updatePlayPauseIcon();
                     }
+                    updateUI();
                 }
             }
 
@@ -1574,6 +1674,13 @@
                         p1.stopVideo(); p2.stopVideo();
                         isPlaying = false;
                         updatePlayPauseIcon();
+
+                        const isSaved = window.loadedPlaylistUrl && window.loadedPlaylistUrl.includes(`list=${window.scanningListId}`);
+                        if (!isSaved) {
+                            window.loadedPlaylistName = null;
+                            window.loadedPlaylistUrl = null;
+                        }
+
                         window.currentListId = window.scanningListId;
                     } else {
                         window.currentListId = null;
@@ -1625,9 +1732,11 @@
                 const j = Math.floor(Math.random() * (i + 1));
                 [others[i], others[j]] = [others[j], others[i]];
             }
-            playlist = [current, ...others];
+             playlist = [current, ...others];
             trackIndex = 0;
             window.currentListId = null;
+            window.loadedPlaylistName = null;
+            window.loadedPlaylistUrl = null;
             renderPlaylist();
             prepareNext();
             updateUrlState();
@@ -1646,6 +1755,237 @@
             let sec = Math.floor(s % 60);
             return `${m}:${sec < 10 ? '0' : ''}${sec}`;
         }
+
+        // --- FIREBASE SAVED PLAYLISTS ---
+
+        async function savePlaylistToFirebase() {
+            if (!playlist || playlist.length === 0) {
+                alert("Плейлист пуст. Добавьте треки перед сохранением.");
+                return;
+            }
+            if (!window.currentUser) {
+                if (typeof window.openAuthModal === 'function') {
+                    window.openAuthModal(document.querySelector('button[data-tooltip="Сохранить плейлист"]'), 'login');
+                } else {
+                    alert("Пожалуйста, войдите в аккаунт, чтобы сохранить плейлист.");
+                }
+                return;
+            }
+
+            let defaultName = window.currentListId ? 
+                `Плейлист YouTube (${playlist.length} треков)` : 
+                `Мой микс (${playlist.length} треков)`;
+
+            let name = prompt("Введите название плейлиста:", defaultName);
+            if (name === null) return;
+            name = name.trim() || defaultName;
+
+            let url = new URL(window.location.href);
+            if (window.currentListId) {
+                url.searchParams.set('list', window.currentListId);
+                url.searchParams.delete('v');
+            } else {
+                let vIds = playlist.map(item => item.id).join(',');
+                if (vIds && vIds.length < 1500) {
+                    url.searchParams.set('v', vIds);
+                } else {
+                    alert("Плейлист слишком большой для сохранения.");
+                    return;
+                }
+                url.searchParams.delete('list');
+            }
+            
+            const pathUrl = `crossfade.html?${url.searchParams.toString()}`;
+
+            try {
+                const userDoc = window.doc(window.db, "users", window.currentUser.uid);
+                const docSnap = await window.getDoc(userDoc);
+                let savedPlaylists = [];
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
+                        savedPlaylists = data.saved_playlists;
+                    }
+                }
+
+                savedPlaylists.unshift({
+                    id: Date.now().toString(),
+                    name: name,
+                    url: pathUrl,
+                    created_at: new Date().toISOString()
+                });
+
+                await window.updateDoc(userDoc, {
+                    saved_playlists: savedPlaylists
+                });
+
+                renderSavedPlaylists(savedPlaylists);
+            } catch (e) {
+                console.error("Ошибка сохранения плейлиста в Firebase:", e);
+                alert("Не удалось сохранить плейлист.");
+            }
+        }
+
+        async function deleteSavedPlaylist(id, event) {
+            if (event) event.stopPropagation();
+            if (!confirm("Удалить этот плейлист?")) return;
+
+            try {
+                const userDoc = window.doc(window.db, "users", window.currentUser.uid);
+                const docSnap = await window.getDoc(userDoc);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
+                        let savedPlaylists = data.saved_playlists.filter(p => p.id !== id);
+                        await window.updateDoc(userDoc, {
+                            saved_playlists: savedPlaylists
+                        });
+                        renderSavedPlaylists(savedPlaylists);
+                    }
+                }
+            } catch (e) {
+                console.error("Ошибка удаления плейлиста:", e);
+            }
+        }
+
+        function loadSavedPlaylist(urlStr, name) {
+            window.loadedPlaylistName = name;
+            window.loadedPlaylistUrl = urlStr;
+
+            const url = new URL(urlStr, window.location.origin);
+            const listId = url.searchParams.get('list');
+            const vIds = url.searchParams.get('v');
+            if (listId) {
+                importPlaylist(listId, true);
+            } else if (vIds) {
+                let ids = vIds.split(',');
+                playlist = [];
+                ids.forEach(id => playlist.push({ id: id, title: "Загрузка..." }));
+                trackIndex = 0;
+                window.currentListId = null;
+                renderPlaylist();
+                fetchTitlesForPlaylist();
+                loadDeck(p1, 0);
+                prepareNext();
+                updateUI();
+            }
+        }
+
+        async function editSavedPlaylistName(id, event) {
+            if (event) event.stopPropagation();
+
+            try {
+                const userDoc = window.doc(window.db, "users", window.currentUser.uid);
+                const docSnap = await window.getDoc(userDoc);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
+                        let playlistToEdit = data.saved_playlists.find(p => p.id === id);
+                        if (!playlistToEdit) return;
+
+                        let newName = prompt("Введите новое название плейлиста:", playlistToEdit.name);
+                        if (newName === null) return;
+                        newName = newName.trim();
+                        if (!newName) return;
+
+                        let savedPlaylists = data.saved_playlists.map(p => {
+                            if (p.id === id) {
+                                p.name = newName;
+                            }
+                            return p;
+                        });
+
+                        await window.updateDoc(userDoc, {
+                            saved_playlists: savedPlaylists
+                        });
+
+                        if (window.loadedPlaylistUrl === playlistToEdit.url) {
+                            window.loadedPlaylistName = newName;
+                            document.getElementById('playlist-title-text').innerText = newName;
+                        }
+
+                        renderSavedPlaylists(savedPlaylists);
+                    }
+                }
+            } catch (e) {
+                console.error("Ошибка при переименовании плейлиста:", e);
+            }
+        }
+
+        function renderSavedPlaylists(list) {
+            const container = document.getElementById('saved-playlists-section');
+            const listContainer = document.getElementById('saved-playlists-list');
+            if (!listContainer) return;
+
+            listContainer.innerHTML = '';
+            if (!window.currentUser || !list || list.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'flex';
+            list.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'saved-playlist-item';
+                div.onclick = () => loadSavedPlaylist(p.url, p.name);
+
+                div.innerHTML = `
+                    <div class="saved-playlist-info">
+                        <div class="saved-playlist-name">${escapeHtml(p.name)}</div>
+                        <div class="saved-playlist-meta">${new Date(p.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="btn-delete-playlist" onclick="editSavedPlaylistName('${p.id}', event)" title="Редактировать название">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                        <button class="btn-delete-playlist" onclick="deleteSavedPlaylist('${p.id}', event)" title="Удалить">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                listContainer.appendChild(div);
+            });
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        async function loadSavedPlaylistsFromFirebase(uid) {
+            if (!window.db) return;
+            try {
+                const userDoc = window.doc(window.db, "users", uid);
+                const docSnap = await window.getDoc(userDoc);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
+                        renderSavedPlaylists(data.saved_playlists);
+                    } else {
+                        renderSavedPlaylists([]);
+                    }
+                } else {
+                    renderSavedPlaylists([]);
+                }
+            } catch (e) {
+                console.error("Ошибка загрузки сохраненных плейлистов:", e);
+            }
+        }
+
+        window.addEventListener('authChanged', async (e) => {
+            const user = e.detail.user;
+            window.currentUser = user;
+            if (user) {
+                await loadSavedPlaylistsFromFirebase(user.uid);
+            } else {
+                renderSavedPlaylists([]);
+            }
+        });
     </script>
 
     <link rel="stylesheet" href="footer.css">

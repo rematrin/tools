@@ -79,9 +79,12 @@
 
         /* Saved Playlists Section */
         .saved-playlists-section {
-            margin-top: 15px;
-            border-top: 1px solid var(--border);
-            padding-top: 15px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            margin-top: 20px;
             display: flex;
             flex-direction: column;
             min-height: 0;
@@ -94,47 +97,83 @@
             font-weight: 700;
         }
         .saved-playlists-list {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            overflow-y: auto;
-            max-height: 180px;
-            padding-right: 4px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 15px;
         }
-        .saved-playlist-item {
+        @media (max-width: 900px) {
+            .saved-playlists-list {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        @media (max-width: 600px) {
+            .saved-playlists-list {
+                grid-template-columns: 1fr;
+            }
+        }
+        .saved-playlist-card {
+            position: relative;
             display: flex;
             align-items: center;
-            justify-content: space-between;
             background: var(--bg);
             border: 1px solid var(--border);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.85rem;
+            padding: 12px;
+            border-radius: 12px;
             cursor: pointer;
             transition: 0.2s;
-            gap: 8px;
+            gap: 12px;
+            min-width: 0;
         }
-        .saved-playlist-item:hover {
+        .saved-playlist-card:hover {
             background: var(--hover-bg);
             border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
-        .saved-playlist-info {
+        .playlist-card-cover {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #1e1e24 0%, #33333e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.5rem;
+        }
+        .playlist-card-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .playlist-card-content {
             flex: 1;
             min-width: 0;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 4px;
+            padding-right: 48px;
         }
-        .saved-playlist-name {
+        .playlist-card-title {
             font-weight: 600;
+            font-size: 0.9rem;
             color: var(--text);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .saved-playlist-meta {
+        .playlist-card-meta {
             font-size: 0.75rem;
             color: var(--text-secondary);
+        }
+        .playlist-card-actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
         }
         .btn-delete-playlist {
             background: transparent;
@@ -950,11 +989,6 @@
 
                     <div class="playlist-scroll-area" id="playlist-list">
                     </div>
-
-                    <div class="saved-playlists-section" id="saved-playlists-section" style="display: none;">
-                        <div class="saved-playlists-title">Мои плейлисты</div>
-                        <div class="saved-playlists-list" id="saved-playlists-list"></div>
-                    </div>
                 </div>
 
                 <div id="main-player-area" class="mode-video">
@@ -1071,6 +1105,11 @@
                 </div>
 
             </div>
+        </div>
+
+        <div class="saved-playlists-section" id="saved-playlists-section" style="display: none;">
+            <div class="saved-playlists-title">Мои плейлисты</div>
+            <div class="saved-playlists-list" id="saved-playlists-list"></div>
         </div>
     </div>
 
@@ -1812,6 +1851,8 @@
                     id: Date.now().toString(),
                     name: name,
                     url: pathUrl,
+                    first_video_id: playlist[0] ? playlist[0].id : null,
+                    tracks_count: playlist.length,
                     created_at: new Date().toISOString()
                 });
 
@@ -1925,16 +1966,59 @@
 
             container.style.display = 'flex';
             list.forEach(p => {
+                const url = new URL(p.url, window.location.origin);
+                const listId = url.searchParams.get('list');
+                const vIds = url.searchParams.get('v');
+
+                let firstVideoId = p.first_video_id || null;
+                let tracksCount = p.tracks_count || null;
+
+                if (!firstVideoId && vIds) {
+                    firstVideoId = vIds.split(',')[0];
+                }
+                if (!tracksCount && vIds) {
+                    tracksCount = vIds.split(',').length;
+                }
+
+                let coverHtml = '';
+                if (firstVideoId) {
+                    coverHtml = `<img src="https://i.ytimg.com/vi/${firstVideoId}/mqdefault.jpg" loading="lazy" alt="Cover">`;
+                } else {
+                    coverHtml = `🎧`;
+                }
+
+                let metaText = '';
+                if (tracksCount) {
+                    const lastDigit = tracksCount % 10;
+                    const lastTwoDigits = tracksCount % 100;
+                    let videoWord = 'видео';
+                    if (lastTwoDigits < 11 || lastTwoDigits > 19) {
+                        if (lastDigit === 1) {
+                            videoWord = 'видео';
+                        } else if (lastDigit >= 2 && lastDigit <= 4) {
+                            videoWord = 'видео';
+                        }
+                    }
+                    metaText = `${tracksCount} ${videoWord}`;
+                } else if (listId) {
+                    metaText = `YouTube Плейлист`;
+                } else {
+                    metaText = new Date(p.created_at).toLocaleDateString();
+                }
+
                 const div = document.createElement('div');
-                div.className = 'saved-playlist-item';
+                div.className = 'saved-playlist-card';
                 div.onclick = () => loadSavedPlaylist(p.url, p.name);
 
                 div.innerHTML = `
-                    <div class="saved-playlist-info">
-                        <div class="saved-playlist-name">${escapeHtml(p.name)}</div>
-                        <div class="saved-playlist-meta">${new Date(p.created_at).toLocaleDateString()}</div>
+                    <div class="playlist-card-cover">
+                        ${coverHtml}
                     </div>
-                    <div style="display: flex; gap: 4px;">
+                    <div class="playlist-card-content">
+                        <div class="playlist-card-title" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div>
+                        <div class="playlist-card-meta">${metaText}</div>
+                    </div>
+                    <div class="playlist-card-actions">
                         <button class="btn-delete-playlist" onclick="editSavedPlaylistName('${p.id}', event)" title="Редактировать название">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>

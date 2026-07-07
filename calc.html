@@ -1,221 +1,173 @@
 <!doctype html>
 <html lang="ru">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Процентные и календарные калькуляторы</title>
-  
-  <link rel="stylesheet" href="theme.css">
+  <title>Умные калькуляторы</title>
 
+  <link rel="stylesheet" href="theme.css">
   <link rel="icon" type="image/png" href="percentage.png">
-  
+
   <style>
     /* === СТИЛИ ЭТОЙ СТРАНИЦЫ === */
-    /* Используем переменные из theme.css */
-    
-    :root { 
-        --gap: 10px; 
-        --pad: 16px; 
+    :root {
+      --gap: 8px;
+      --pad: 12px;
     }
-    
-    .wrap { max-width: 630px; margin: 0 auto; }
-    
-    h1 { 
-        font-size: 1.5rem; 
-        margin: 0 0 10px; 
-        text-align: center; 
-        color: var(--text);
+
+    .wrap {
+      max-width: 630px;
+      margin: 0 auto;
+      padding: 0 10px;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      margin: 10px 0 24px;
+      /* Increased bottom margin for more breathing room */
+      text-align: center;
+      color: var(--text);
     }
 
     .card {
-      background: var(--card-bg); 
-      border: 1px solid var(--border); 
-      border-radius: 12px;
-      padding: var(--pad); margin-bottom: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: var(--pad);
+      margin-bottom: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
 
     .card-title {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 300;
       color: var(--text-secondary);
       margin-bottom: 8px;
     }
 
-    .row {
-      display: flex; flex-wrap: wrap;
-      align-items: center; gap: var(--gap);
-      font-size: 1.1rem; white-space: nowrap;
-      overflow: visible; position: relative;
-    }
-
-    /* БАЗОВЫЕ ИНПУТЫ */
-    input[type="text"] {
-      padding: 8px 10px; font-size: 1.05rem;
-      border: 1px solid var(--border); 
-      border-radius: 8px; 
-      background: var(--bg); /* Фон инпута чуть отличается от карточки */
-      color: var(--text);
-      flex-shrink: 0;
-    }
-    input[type="text"]:focus {
-      outline: none; border-color: var(--accent); 
-      box-shadow: 0 0 0 3px rgba(98, 0, 238, 0.16); /* Цвет тени можно подстроить */
-    }
-
-    input[type="time"]{
-      width: 90px;
-      font-size: 1.1rem;
-      text-align: center;
+    .calc-row {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      background: #ffffff;
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 6px 8px;
-      background: var(--bg);
-      color: var(--text);
-      font-family: inherit;
+      border-radius: 6px;
+      padding: 0;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    input[type="time"]:focus{
-      outline: none;
+
+    body.dark .calc-row {
+      background: #1e1e1e;
+    }
+
+    .calc-row:focus-within {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(98, 0, 238, 0.16);
-    }
-    
-    /* Стили для Time input (reset) */
-    input[type="time"]::-webkit-calendar-picker-indicator { display: none; -webkit-appearance: none; }
-    input[type="time"]::-webkit-inner-spin-button,
-    input[type="time"]::-webkit-clear-button { display: none; -webkit-appearance: none; }
-    input[type="time"] { -moz-appearance: textfield; }
-
-    /* Компактные числовые поля */
-    .num { width: 11ch; }
-    .num.long { width: 14ch; }
-    .date-input { width: 16ch; text-align: center; cursor: pointer; }
-
-    /* Поле с суффиксом */
-    .with-suffix { position: relative; }
-    .with-suffix input { padding-right: 28px; }
-    .with-suffix::after {
-      content: attr(data-suffix);
-      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-      color: var(--text-secondary); font-size: .95rem; pointer-events: none;
+      box-shadow: 0 0 0 3px rgba(98, 0, 238, 0.12);
     }
 
-    .eq { font-weight: 650; color: var(--text); }
-    
-    .result {
-      min-width: 10ch; font-weight: 700; text-align: left;
-      padding: 6px 10px; border-radius: 8px;
-      background: var(--active-bg); 
-      border: 1px solid var(--border);
-      color: var(--text);
+    .editor-wrapper {
+      position: relative;
       flex-grow: 1;
+      min-width: 0;
     }
-    
-    .text { opacity: .9; color: var(--text); font-size: 0.9rem; }
-    .hint { margin-top: 10px; font-size: .92rem; color: var(--text-secondary); margin-bottom: 10px; }
-    code { background: var(--hover-bg); padding: 2px 6px; border-radius: 6px; color: var(--text); border: 1px solid var(--border); }
 
-    .toggle {
-      display: inline-flex; gap: 6px; padding: 4px; border-radius: 7px;
-      background: var(--bg); border: 1px solid var(--border);
-      flex-shrink: 0; align-items: center;
+    .calc-input {
+      border: none;
+      background: transparent;
+      color: transparent;
+      caret-color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+      width: 100%;
+      outline: none;
+      padding: 8px 10px;
+      margin: 0;
+      position: relative;
+      z-index: 2;
+      line-height: 1.4;
+      display: block;
+      box-sizing: border-box;
     }
-    .toggle input { display: none; }
-    .opt {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 30px; height: 30px; border-radius: 10px; cursor: pointer;
-      border: 1px solid transparent; 
-      background: var(--card-bg); 
+
+    .editor-highlight {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 1;
+      pointer-events: none;
+      padding: 8px 10px;
+      font-size: 1rem;
+      font-family: inherit;
       color: var(--text);
-      font-weight: 700; user-select: none; font-size: 0.9rem;
-    }
-    .opt:has(input:checked) { 
-        border-color: var(--accent); 
-        color: var(--accent);
-        background: var(--active-bg);
+      white-space: pre;
+      overflow: hidden;
+      margin: 0;
+      box-sizing: border-box;
+      line-height: 1.4;
+      display: block;
     }
 
-    .select {
-      position: relative; border: 1px solid var(--border); border-radius: 8px;
-      background: var(--bg); color: var(--text);
-      padding: 8px 32px 8px 10px; font-size: 1.05rem; cursor: pointer; user-select: none;
-      min-width: 9ch; flex-shrink: 0;
+    /* Highlight Colors */
+    .hl-num {
+      color: #2A64F6;
+      font-weight: 400;
     }
-    .select::after {
-      content: "▾"; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-      font-size: .9rem; color: var(--text-secondary);
-    }
-    .options {
-      list-style: none; padding: 4px 0; margin: 0;
-      background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
-      position: absolute; z-index: 10; width: 100%;
-      box-shadow: 0 2px 6px rgba(0,0,0,.1);
-      bottom: 110%;
-    }
-    .options[hidden] { display: none; }
-    .options li { padding: 6px 10px; cursor: pointer; color: var(--text); }
-    .options li:hover { background: var(--hover-bg); }
 
-    /* === КАЛЕНДАРЬ === */
-    .calendar {
-      position: absolute; bottom: 110%; left: 0;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,.08);
-      padding: 10px; z-index: 30; min-width: 280px;
-      opacity: 0; transform: translateY(10px); transition: all 0.2s ease;
+    .hl-kwd {
+      color: #C24BB8;
+      font-weight: 400;
+    }
+
+    body.dark .hl-num {
+      color: #5B89FF;
+    }
+
+    body.dark .hl-kwd {
+      color: #E071D7;
+    }
+
+    .calc-result {
+      font-weight: 700;
       color: var(--text);
+      background: #f7f7f7;
+      border-left: 1px solid #e5e5e5;
+      padding: 8px 12px;
+      user-select: none;
+      -webkit-user-select: none;
+      pointer-events: none;
+      white-space: nowrap;
+      min-width: 80px;
+      text-align: right;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-shrink: 0;
+      max-width: 45%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 1rem;
     }
-    .calendar.show { opacity: 1; transform: translateY(0); }
-    
-    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .cal-header span {
-      font-weight: 800; cursor: pointer; text-transform: capitalize;
-      padding: 4px 8px; border-radius: 6px; transition: background 0.15s;
-    }
-    .cal-header span:hover { background: var(--hover-bg); }
-    .cal-header button {
-      border: none; background: var(--bg); color: var(--text);
-      border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 1.1rem;
-    }
-    .cal-header button:hover { background: var(--hover-bg); }
 
-    .weekday-row {
-      display: grid; grid-template-columns: repeat(7, 1fr);
-      text-align: center; font-size: 0.85rem; color: var(--text-secondary); margin: 6px 0;
+    body.dark .calc-result {
+      background: #1a1a1a;
+      border-left-color: #333;
     }
-    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-    .cal-grid div {
-      text-align: center; padding: 8px 0; border-radius: 8px; font-size: 0.95rem; cursor: pointer;
-    }
-    .cal-grid div:hover { background: var(--hover-bg); }
-    .cal-grid .today { border: 1px solid var(--accent); background: var(--active-bg); }
-    .cal-grid .selected { background: var(--accent); color: #fff; }
-
-    .year-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 4px; }
-    .year-grid div { padding: 8px 0; text-align: center; border-radius: 8px; cursor: pointer; }
-    .year-grid div:hover { background: var(--hover-bg); }
-    .year-grid .selected { background: var(--accent); color: #fff; }
-
-    .calendar .today-btn {
-      margin-top: 8px; width: 100%; background: var(--bg); color: var(--text);
-      border: 1px solid var(--border); border-radius: 8px; padding: 6px 0;
-      font-size: 0.9rem; cursor: pointer;
-    }
-    .calendar .today-btn:hover { background: var(--hover-bg); }
-
   </style>
-  
+
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
 
     gtag('config', 'G-384FKZ1NQP');
   </script>
 </head>
+
 <body>
 
   <script src="theme-loader.js"></script>
@@ -223,315 +175,370 @@
   <div id="header-container"></div>
 
   <div class="wrap">
-    <h1>Полезные калькуляторы</h1>
+    <h1>Умные калькуляторы</h1>
 
     <div class="card" id="calcA">
       <div class="card-title">Сколько процентов одно число от другого</div>
-      <div class="hint">💡 Пример: <code>15</code> это <code>15%</code> от <code>100</code></div>
-      <div class="row">
-        <input class="num long" type="text" inputmode="decimal" data-role="x">
-        <span class="text">это сколько % от</span>
-        <input class="num long" type="text" inputmode="decimal" data-role="y">
-        <span class="eq">=</span>
-        <span class="result" data-role="out">-</span>
+      <div class="calc-row">
+        <div class="editor-wrapper">
+          <div class="editor-highlight" aria-hidden="true"></div>
+          <input class="calc-input" type="text" value="15 это сколько % от 200" spellcheck="false">
+        </div>
+        <span class="calc-result">-</span>
       </div>
     </div>
 
     <div class="card" id="calcB">
       <div class="card-title">Вычисление процента от числа</div>
-      <div class="hint">💡 Пример: <code>20%</code> от <code>150</code> это <code>30</code></div>
-      <div class="row">
-        <div class="with-suffix" data-suffix="%">
-          <input class="num" type="text" inputmode="decimal" data-role="n" aria-label="Процент">
+      <div class="calc-row">
+        <div class="editor-wrapper">
+          <div class="editor-highlight" aria-hidden="true"></div>
+          <input class="calc-input" type="text" value="20% от 150" spellcheck="false">
         </div>
-        <span class="text">от</span>
-        <input class="num long" type="text" inputmode="decimal" data-role="m" aria-label="Число">
-        <span class="eq">=</span>
-        <span class="result" data-role="out">-</span>
+        <span class="calc-result">-</span>
       </div>
     </div>
 
     <div class="card" id="calcC">
       <div class="card-title">Плюс или минус процент</div>
-      <div class="hint">💡 Пример: <code>200 + 10%</code> = <code>220</code></div>
-      <div class="row">
-        <input class="num long" type="text" inputmode="decimal" data-role="x" aria-label="Число">
-        <div class="toggle" role="radiogroup" aria-label="Операция">
-          <label class="opt" title="Плюс"><input type="radio" name="opC" value="+" checked>➕</label>
-          <label class="opt" title="Минус"><input type="radio" name="opC" value="−">➖</label>
+      <div class="calc-row">
+        <div class="editor-wrapper">
+          <div class="editor-highlight" aria-hidden="true"></div>
+          <input class="calc-input" type="text" value="200 + 10%" spellcheck="false">
         </div>
-        <div class="with-suffix" data-suffix="%">
-          <input class="num" type="text" inputmode="decimal" data-role="y" aria-label="Процент">
-        </div>
-        <span class="eq">=</span>
-        <span class="result" data-role="out">-</span>
+        <span class="calc-result">-</span>
       </div>
     </div>
 
     <div class="card" id="calcD">
       <div class="card-title">Калькулятор даты</div>
-      <div class="hint">💡 Пример: <code>01.11.2025 + 2 месяца</code> = <code>01.01.2026</code></div>
-      <div class="row">
-        <div class="date-picker" data-role="date-picker">
-          <input class="date-input" type="text" readonly data-role="date-display">
-          <div class="calendar" hidden></div>
+      <div class="calc-row">
+        <div class="editor-wrapper">
+          <div class="editor-highlight" aria-hidden="true"></div>
+          <input class="calc-input" type="text" id="dateCalcInput" value="" spellcheck="false">
         </div>
-        <div class="toggle" role="radiogroup" aria-label="Операция даты">
-          <label class="opt"><input type="radio" name="opD" value="+" checked>➕</label>
-          <label class="opt"><input type="radio" name="opD" value="-">➖</label>
-        </div>
-        <input class="num" type="text" inputmode="decimal" data-role="amount" aria-label="Величина">
-        <div class="select" data-role="select" aria-haspopup="listbox" aria-expanded="false">
-          <span class="selected">дней</span>
-          <ul class="options" hidden role="listbox">
-            <li data-value="years">лет</li>
-            <li data-value="months">месяцев</li>
-            <li data-value="weeks">недель</li>
-            <li data-value="days">дней</li>
-          </ul>
-        </div>
-        <span class="eq">=</span><span class="result" data-role="out">-</span>
+        <span class="calc-result">-</span>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="calcE">
       <div class="card-title">Калькулятор времени</div>
-      <div class="hint">💡 Пример: <code>12:00 + 05:00</code> = <code>17:00</code></div>
-      <div class="row">
-        <input type="time" id="time1" value="00:00">
-        <div class="toggle">
-          <label class="opt"><input type="radio" name="op" value="+" checked><span>➕</span></label>
-          <label class="opt"><input type="radio" name="op" value="-"><span>➖</span></label>
+      <div class="calc-row">
+        <div class="editor-wrapper">
+          <div class="editor-highlight" aria-hidden="true"></div>
+          <input class="calc-input" type="text" value="12:00 + 05:00" spellcheck="false">
         </div>
-        <input type="time" id="time2" value="00:00">
-        <span class="result" id="out">-</span>
+        <span class="calc-result">-</span>
       </div>
     </div>
 
-  <script>
-  // Парсер и форматтер чисел
-  const parseNum = v => {
-    if (typeof v !== 'string') return NaN;
-    v = v.replace(/\s+/g, '').replace(',', '.').trim();
-    return v ? +v : NaN;
-  };
+    <div class="card" id="calcF">
+      <div class="card-title">Конвертер времени</div>
+      <div class="calc-row">
+        <div class="editor-wrapper">
+          <div class="editor-highlight" aria-hidden="true"></div>
+          <input class="calc-input" type="text" value="5 часов в минутах" spellcheck="false">
+        </div>
+        <span class="calc-result">-</span>
+      </div>
+    </div>
 
-  const fmtNum = n => {
-    if (!isFinite(n)) return '-';
-    const parts = (Math.round(n * 100) / 100).toString().split('.');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return parts.join('.');
-  };
+    <script>
+      let exchangeRates = { USD: 1, EUR: 0.92, RUB: 90 };
 
-  // === КАЛЬКУЛЯТОР A ===
-  (() => {
-    const r = document.getElementById('calcA');
-    const x = r.querySelector('[data-role="x"]');
-    const y = r.querySelector('[data-role="y"]');
-    const o = r.querySelector('[data-role="out"]');
-    const f = () => {
-      const xv = parseNum(x.value), yv = parseNum(y.value);
-      o.textContent = isFinite(xv) && isFinite(yv) && yv !== 0 ? fmtNum((xv / yv) * 100) + ' %' : '-';
-    };
-    x.oninput = y.oninput = f;
-  })();
+      // Setup today's date for calculator D
+      const today = new Date();
+      const dd = String(today.getDate()).padStart(2, '0');
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const yyyy = today.getFullYear();
+      document.getElementById('dateCalcInput').value = `${dd}.${mm}.${yyyy} + 2 месяца`;
 
-  // === КАЛЬКУЛЯТОР B ===
-  (() => {
-    const r = document.getElementById('calcB');
-    const n = r.querySelector('[data-role="n"]');
-    const m = r.querySelector('[data-role="m"]');
-    const o = r.querySelector('[data-role="out"]');
-    const f = () => {
-      const nv = parseNum(n.value), mv = parseNum(m.value);
-      o.textContent = isFinite(nv) && isFinite(mv) ? fmtNum((nv / 100) * mv) : '-';
-    };
-    n.oninput = m.oninput = f;
-  })();
+      // Load real exchange rates
+      fetch('https://open.er-api.com/v6/latest/USD')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.rates) {
+            exchangeRates = data.rates;
+            updateAll();
+          }
+        })
+        .catch(err => console.error("Could not fetch rates:", err));
 
-  // === КАЛЬКУЛЯТОР C ===
-  (() => {
-    const r = document.getElementById('calcC');
-    const x = r.querySelector('[data-role="x"]');
-    const y = r.querySelector('[data-role="y"]');
-    const o = r.querySelector('[data-role="out"]');
-    const ops = r.querySelectorAll('input[name="opC"]');
-    const f = () => {
-      const xv = parseNum(x.value), yv = parseNum(y.value);
-      if (!isFinite(xv) || !isFinite(yv)) return (o.textContent = '-');
-      const op = [...ops].find(v => v.checked)?.value;
-      const res = op === '+' ? xv + (xv * yv / 100) : xv - (xv * yv / 100);
-      o.textContent = fmtNum(res);
-    };
-    x.oninput = y.oninput = f;
-    ops.forEach(v => v.onchange = f);
-  })();
-
-  // === КАЛЕНДАРЬ / КАЛЬКУЛЯТОР D ===
-  (() => {
-    const r = document.getElementById('calcD'), o = r.querySelector('[data-role="out"]'),
-          a = r.querySelector('[data-role="amount"]'), ops = r.querySelectorAll('input[name="opD"]');
-
-    const sel = r.querySelector('[data-role="select"]'),
-          selText = sel.querySelector('.selected'),
-          opts = sel.querySelector('.options');
-    let unit = 'days';
-    sel.onclick = e => {
-      if (e.target.tagName === 'LI') {
-        unit = e.target.dataset.value;
-        selText.textContent = e.target.textContent;
-        opts.hidden = true;
-        sel.setAttribute('aria-expanded', 'false');
-        recompute();
-      } else {
-        opts.hidden = !opts.hidden;
-        sel.setAttribute('aria-expanded', String(!opts.hidden));
+      function cleanNumber(str) {
+        return str.replace(/ /g, '').replace(',', '.');
       }
-      e.stopPropagation();
-    };
-    document.addEventListener('pointerdown', e => { if (!sel.contains(e.target)) { opts.hidden = true; sel.setAttribute('aria-expanded','false'); } });
 
-    const dp = r.querySelector('[data-role="date-picker"]'),
-          display = dp.querySelector('[data-role="date-display"]'),
-          cal = dp.querySelector('.calendar');
-    let base = new Date(), mode = 'days';
-    display.value = fmt(base);
+      function applyHighlights(text) {
+        let s = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // Highlight numbers and time (e.g. 15:00)
+        s = s.replace(/(\b\d+(?:[\.,:]\d+)?\b)/g, '<span class="hl-num">$1</span>');
 
-    function fmt(d){
-      return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
-    }
+        // Highlight keywords and dynamically loaded currencies
+        let curs = Object.keys(exchangeRates).join('|');
+        let kwdRegex = new RegExp(`([%€\\$£₽]|\\b(?:${curs})\\b|милисек[ундах]*|миллисек[ундах]*|мсек|сек[ундах]*|недел[июьея]*|мес[яцв]*|год[а]*|лет|дн[ейя]*|день|час[ова]*|мин[утыа]*|это|сколько|от)`, 'gi');
+        s = s.replace(kwdRegex, '<span class="hl-kwd">$1</span>');
+        return s;
+      }
 
-    function render(vd){
-      cal.innerHTML = '';
-      const h = document.createElement('div'); h.className = 'cal-header';
-      const mName = vd.toLocaleString('ru-RU',{month:'long'}), yNum = vd.getFullYear();
-      const p = document.createElement('button'); p.textContent = '‹';
-      const n = document.createElement('button'); n.textContent = '›';
-      const t = document.createElement('span'); t.textContent = `${mName} ${yNum}`;
-      h.append(p,t,n); cal.append(h);
+      function evaluateLine(line) {
+        try {
+          let s = line.toLowerCase().trim();
+          let isCurrencyOut = null;
+          if (!s) return '';
 
-      p.onclick = e => { e.stopPropagation(); if (mode==='days') vd.setMonth(vd.getMonth()-1); else vd.setFullYear(vd.getFullYear()-12); render(vd); };
-      n.onclick = e => { e.stopPropagation(); if (mode==='days') vd.setMonth(vd.getMonth()+1); else vd.setFullYear(vd.getFullYear()+12); render(vd); };
-      t.onclick = e => { e.stopPropagation(); mode = (mode==='days'?'years':'days'); render(vd); };
+          // Date evaluation
+          let dateMatch1 = s.match(/(\d+(?:\.\d+)?)\s+(дн[a-zа-яё]*|ден[a-zа-яё]*|нед[a-zа-яё]*|мес[a-zа-яё]*|год[a-zа-яё]*|лет)\s+(после|до)\s+(завтра|вчера|сегодня)/);
+          let dateMatch2 = s.match(/(?:через|спустя)\s+(\d+(?:\.\d+)?)\s+(дн[a-zа-яё]*|ден[a-zа-яё]*|нед[a-zа-яё]*|мес[a-zа-яё]*|год[a-zа-яё]*|лет)/);
+          let dateMatch3 = s.match(/(\d{1,2}(?:\.\d{1,2}\.\d{4}|\s*[a-zа-яё]+(?:\s*\d{4})?))\s*([-+])\s*(\d+(?:\.\d+)?)\s+(дн[a-zа-яё]*|ден[a-zа-яё]*|нед[a-zа-яё]*|мес[a-zа-яё]*|год[a-zа-яё]*|лет)/);
 
-      if (mode === 'days') {
-        const w = document.createElement('div'); w.className='weekday-row';
-        ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(nm => { const d=document.createElement('div'); d.textContent=nm; w.append(d);});
-        cal.append(w);
+          let dateMatch = dateMatch1 || dateMatch2 || dateMatch3;
+          if (dateMatch) {
+            let num, unitStr, dir = 1, baseOffset = 0, baseDate = new Date();
+            baseDate.setHours(0, 0, 0, 0);
 
-        const g = document.createElement('div'); g.className='cal-grid'; cal.append(g);
-        const y = vd.getFullYear(), m = vd.getMonth(),
-              first = (new Date(y,m,1).getDay()||7)-1, days = new Date(y,m+1,0).getDate();
-        for (let i=0;i<first;i++) g.append(document.createElement('div'));
-        for (let d=1; d<=days; d++){
-          const cell=document.createElement('div'); cell.textContent=d; const curr=new Date(y,m,d);
-          if (curr.toDateString()===new Date().toDateString()) cell.classList.add('today');
-          if (curr.toDateString()===base.toDateString()) cell.classList.add('selected');
-          cell.onclick=e=>{e.stopPropagation(); base=curr; display.value=fmt(base); cal.hidden=true; cal.classList.remove('show'); recompute();};
-          g.append(cell);
+            if (dateMatch3) {
+              let dateStr = dateMatch3[1].trim();
+              dir = (dateMatch3[2] === '+') ? 1 : -1;
+              num = parseFloat(cleanNumber(dateMatch3[3]));
+              unitStr = dateMatch3[4];
+
+              if (/\d{1,2}\.\d{1,2}\.\d{4}/.test(dateStr)) {
+                let parts = dateStr.split('.');
+                baseDate = new Date(parts[2], parseInt(parts[1], 10) - 1, parts[0]);
+              } else {
+                let strParts = dateStr.split(/\s+/);
+                let day = parseInt(strParts[0], 10);
+                let monthStr = strParts[1];
+                let year = strParts[2] ? parseInt(strParts[2], 10) : baseDate.getFullYear();
+
+                let monthsMap = {
+                  'янв': 0, 'фев': 1, 'мар': 2, 'апр': 3, 'мая': 4, 'май': 4,
+                  'июн': 5, 'июл': 6, 'авг': 7, 'сен': 8, 'окт': 9, 'ноя': 10, 'дек': 11
+                };
+
+                let monthIdx = 0;
+                for (let m in monthsMap) {
+                  if (monthStr.startsWith(m)) { monthIdx = monthsMap[m]; break; }
+                }
+                baseDate = new Date(year, monthIdx, day);
+              }
+            } else {
+              num = parseFloat(cleanNumber(dateMatch[1]));
+              unitStr = dateMatch[2];
+
+              if (dateMatch1) {
+                let dirStr = dateMatch1[3];
+                let baseStr = dateMatch1[4];
+                dir = (dirStr === 'после') ? 1 : -1;
+                if (baseStr === 'завтра') baseOffset = 1;
+                if (baseStr === 'вчера') baseOffset = -1;
+              }
+            }
+
+            let d = new Date(baseDate.getTime());
+            d.setDate(d.getDate() + baseOffset);
+
+            if (unitStr.startsWith('мес')) {
+              d.setMonth(d.getMonth() + dir * num);
+            } else if (unitStr.startsWith('год') || unitStr.startsWith('лет')) {
+              d.setFullYear(d.getFullYear() + dir * num);
+            } else {
+              let days = 0;
+              if (unitStr.startsWith('дн') || unitStr.startsWith('ден')) days = num;
+              else if (unitStr.startsWith('нед')) days = num * 7;
+              d.setDate(d.getDate() + dir * days);
+            }
+
+            let dispMonths = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+            let resYear = d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : '';
+            return `${d.getDate()} ${dispMonths[d.getMonth()]}${resYear}`;
+          }
+
+          // Currency exchange (e.g. 220 EUR в USD)
+          s = s.replace(/([\d\.,\s]+)\s*([a-zа-я]{3})\s+в\s+([a-zа-я]{3})/gi, (m, val, c1, c2) => {
+            let v = parseFloat(cleanNumber(val));
+            let map = { 'eur': 'EUR', 'евр': 'EUR', 'usd': 'USD', 'дол': 'USD', 'rub': 'RUB', 'руб': 'RUB' };
+            let from = map[c1.toLowerCase()] || c1.toUpperCase();
+            let to = map[c2.toLowerCase()] || c2.toUpperCase();
+
+            if (exchangeRates && exchangeRates[from] && exchangeRates[to]) {
+              isCurrencyOut = to;
+              return (v / exchangeRates[from] * exchangeRates[to]).toFixed(4);
+            }
+            return val; // fallback
+          });
+
+          // Unit Conversion (e.g. 5 часов в минутах)
+          s = s.replace(/([\d\.,\s]+)\s+([a-zа-яё]+)\s+в\s+([a-zа-яё]+)/gi, (m, val, u1, u2) => {
+            let v = parseFloat(cleanNumber(val));
+
+            let timeUnits = {
+              'мс': 0.001, 'мсек': 0.001, 'милисек': 0.001, 'миллисек': 0.001,
+              'с': 1, 'сек': 1, 'секунд': 1,
+              'м': 60, 'мин': 60, 'минут': 60,
+              'ч': 3600, 'час': 3600,
+              'д': 86400, 'дн': 86400, 'ден': 86400,
+              'нед': 604800,
+              'мес': 2592000,
+              'г': 31536000, 'год': 31536000, 'лет': 31536000
+            };
+
+            const getUnitMatch = (str) => {
+              let lower = str.toLowerCase();
+              let longestMatch = null;
+              for (let key in timeUnits) {
+                if (lower.startsWith(key)) {
+                  if (!longestMatch || key.length > longestMatch.length) {
+                    longestMatch = key;
+                  }
+                }
+              }
+              return longestMatch ? timeUnits[longestMatch] : null;
+            };
+
+            let mult1 = getUnitMatch(u1);
+            let mult2 = getUnitMatch(u2);
+
+            if (mult1 !== null && mult2 !== null) {
+              isCurrencyOut = u2;
+              let res = (v * mult1 / mult2);
+              return res.toFixed(4);
+            }
+
+            return m;
+          });
+
+          // X это сколько % от Y
+          s = s.replace(/([\d\.,\s]+)\s+это\s+сколько\s+%\s+от\s+([\d\.,\s]+)/gi, (m, a, b) => {
+            let va = parseFloat(cleanNumber(a));
+            let vb = parseFloat(cleanNumber(b));
+            isCurrencyOut = '%';
+            return ((va / vb) * 100).toFixed(4);
+          });
+
+          // Percentage "от" (e.g. 35% от $550)
+          s = s.replace(/([\d\.,\s]+)\s*%\s*(?:от|of)\s*([\$€£₽]?)\s*([\d\.,\s]+)/gi, (m, p, cur, val) => {
+            if (cur) isCurrencyOut = cur;
+            let pv = parseFloat(cleanNumber(p));
+            let vv = parseFloat(cleanNumber(val));
+            return ((pv / 100) * vv).toFixed(4);
+          });
+
+          // Discount (e.g. X - 15% скидка)
+          s = s.replace(/([\d\.,\s]+)\s*(?:[\$€£₽a-zа-я]{0,3})?\s*([-+])\s*([\d\.,\s]+)\s*%\s*(?:скидка)?/gi, (m, a, sign, b) => {
+            let av = parseFloat(cleanNumber(a));
+            let bv = parseFloat(cleanNumber(b));
+            let pct = (av * bv / 100);
+            return sign === '-' ? (av - pct).toFixed(4) : (av + pct).toFixed(4);
+          });
+
+          // Time evaluation (e.g. 15:00 + 03:00, 12:00 - 5 часов)
+          let timeMatch = s.match(/(?:^|\s)(\d{1,2}):(\d{2})\s*([-+])\s*(.+)/);
+          if (timeMatch) {
+            let baseH = parseInt(timeMatch[1], 10);
+            let baseM = parseInt(timeMatch[2], 10);
+            let sign = timeMatch[3];
+            let rest = timeMatch[4].trim();
+
+            let timeDir = sign === '+' ? 1 : -1;
+            let addMins = 0;
+
+            let rhsTimeMatch = rest.match(/^(\d{1,2}):(\d{2})$/);
+            if (rhsTimeMatch) {
+              addMins = parseInt(rhsTimeMatch[1], 10) * 60 + parseInt(rhsTimeMatch[2], 10);
+            } else {
+              let hmMatchH = rest.match(/([\d\.,]+)\s*(час[a-zа-яё]*)/);
+              if (hmMatchH) addMins += parseFloat(cleanNumber(hmMatchH[1])) * 60;
+
+              let hmMatchM = rest.match(/([\d\.,]+)\s*(мин[a-zа-яё]*)/);
+              if (hmMatchM) addMins += parseFloat(cleanNumber(hmMatchM[1]));
+            }
+
+            if (rhsTimeMatch || rest.match(/(час|мин)/)) {
+              let totalMins = baseH * 60 + baseM + timeDir * addMins;
+              let days = 0;
+              while (totalMins < 0) { totalMins += 24 * 60; days--; }
+              while (totalMins >= 24 * 60) { totalMins -= 24 * 60; days++; }
+
+              let outH = Math.floor(totalMins / 60);
+              let outM = Math.round(totalMins % 60);
+              let resTime = `${String(outH).padStart(2, '0')}:${String(outM).padStart(2, '0')}`;
+              if (days !== 0) {
+                resTime += ` (${days > 0 ? '+' : ''}${days} дн)`;
+              }
+              return resTime;
+            }
+          }
+
+          // Cleanup currency symbols
+          if (s.includes('$')) { isCurrencyOut = '$'; s = s.replace(/\$/g, ''); }
+          if (s.includes('€')) { isCurrencyOut = '€'; s = s.replace(/€/g, ''); }
+
+          // Pure math evaluation
+          s = cleanNumber(s);
+          let mathStr = s.replace(/[^\d\.\+\-\*\/\(\)]/g, '');
+
+          if (!mathStr) return '';
+
+          let res = eval(mathStr);
+          if (isNaN(res) || !isFinite(res)) return '';
+
+          let out = res;
+          if (out % 1 !== 0) {
+            out = out.toFixed(2).replace(/\.00$/, '');
+            out = out.replace('.', ',');
+          }
+
+          if (isCurrencyOut) {
+            if (isCurrencyOut === '$' || isCurrencyOut === 'USD') return '$' + out;
+            if (isCurrencyOut === '€' || isCurrencyOut === 'EUR') return '€' + out;
+            if (isCurrencyOut === 'RUB') return out + ' ₽';
+            return out + ' ' + isCurrencyOut;
+          }
+
+          // Format number with spaces
+          const parts = out.toString().split(',');
+          parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+          return parts.join(',');
+        } catch (e) {
+          return '';
         }
-      } else {
-        const start = Math.floor(yNum/12)*12;
-        const g = document.createElement('div'); g.className='year-grid'; cal.append(g);
-        for (let y=start; y<start+12; y++){
-          const cell=document.createElement('div'); cell.textContent=y;
-          if (y===yNum) cell.classList.add('selected');
-          cell.onclick=e=>{e.stopPropagation(); vd.setFullYear(y); mode='days'; render(vd); };
-          g.append(cell);
-        }
       }
 
-      const todayBtn=document.createElement('button'); todayBtn.className='today-btn'; todayBtn.textContent='Сегодня';
-      todayBtn.onclick=e=>{e.stopPropagation(); base=new Date(); display.value=fmt(base); cal.hidden=true; cal.classList.remove('show'); recompute();};
-      cal.append(todayBtn);
-    }
+      function updateCalc(input) {
+        const row = input.closest('.calc-row');
+        const highlightDiv = row.querySelector('.editor-highlight');
+        const resultSpan = row.querySelector('.calc-result');
 
-    display.onclick = e => {
-      e.stopPropagation();
-      mode='days';
-      cal.hidden = !cal.hidden;
-      if (!cal.hidden) { render(new Date(base)); setTimeout(()=>cal.classList.add('show'), 10); }
-      else cal.classList.remove('show');
-    };
-    document.addEventListener('pointerdown', e => { if (!dp.contains(e.target)) { cal.hidden = true; cal.classList.remove('show'); } });
+        // Update highlight
+        highlightDiv.innerHTML = applyHighlights(input.value);
 
-    function recompute(){
-      const v = +a.value.replace(',', '.');
-      if (!isFinite(v) || v <= 0) return o.textContent='-';
-      const op = [...ops].find(o => o.checked)?.value || '+';
-      const dir = op === '+' ? 1 : -1;
-      const res = new Date(base);
-      switch (unit) {
-        case 'days':   res.setDate(res.getDate() + dir*v); break;
-        case 'weeks':  res.setDate(res.getDate() + dir*v*7); break;
-        case 'months': res.setMonth(res.getMonth() + dir*v); break;
-        case 'years':  res.setFullYear(res.getFullYear() + dir*v); break;
+        // Sync scroll
+        highlightDiv.scrollLeft = input.scrollLeft;
+
+        // Update result
+        const result = evaluateLine(input.value);
+        resultSpan.textContent = result || '-';
+        resultSpan.title = result || ''; // Show tooltip if text is clipped
       }
-      o.textContent = fmt(res);
-    }
-    a.oninput = recompute; ops.forEach(o => o.onchange = recompute);
-  })();
 
-  // === ФИЛЬТР: только цифры, точка и запятая во всех текстовых полях ===
-  document.querySelectorAll('input[type="text"]').forEach(i => {
-    if (!i.hasAttribute('readonly')) i.setAttribute('inputmode','decimal'); // цифровая клавиатура
-    i.addEventListener('input', () => { i.value = i.value.replace(/[^0-9.,]/g, ''); });
-  });
-    
-  // === Авторазделение тысяч при вводе ===
-  document.querySelectorAll('input[type="text"]').forEach(i => {
-    if (!i.hasAttribute('readonly')) {
-      i.setAttribute('inputmode', 'decimal');
-      i.addEventListener('input', e => {
-        const oldValue = i.getAttribute('data-old') || '';
-        const oldPos = i.selectionStart || 0;
-        let clean = i.value.replace(/[^0-9.,]/g, '');
-        clean = clean.replace(',', '.');
-        let [intPart, decPart] = clean.split('.');
-        const formattedInt = intPart ? intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : '';
-        const formatted = decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
-        const diff = formatted.length - i.value.length;
-        i.value = formatted;
-        i.setAttribute('data-old', formatted);
-        let newPos = oldPos + diff;
-        if (newPos < 0) newPos = 0;
-        if (newPos > i.value.length) newPos = i.value.length;
-        i.setSelectionRange(newPos, newPos);
+      function updateAll() {
+        document.querySelectorAll('.calc-input').forEach(input => updateCalc(input));
+      }
+
+      document.querySelectorAll('.calc-input').forEach(input => {
+        input.addEventListener('input', () => updateCalc(input));
+        input.addEventListener('scroll', () => {
+          const highlightDiv = input.closest('.calc-row').querySelector('.editor-highlight');
+          highlightDiv.scrollLeft = input.scrollLeft;
+        });
+        // Initial update
+        updateCalc(input);
       });
-      i.addEventListener('focus', () => i.setAttribute('data-old', i.value));
-    }
-  });
+    </script>
+  </div>
 
-  const t1=document.getElementById('time1');
-  const t2=document.getElementById('time2');
-  const out=document.getElementById('out');
-  const ops=document.querySelectorAll('input[name="op"]');
-
-  function parseTime(v){
-    if(!v)return null;
-    const[h,m]=v.split(':').map(Number);
-    return h*60+m;
-  }
-  function fmtTime(mins){
-    let day=0;
-    if(mins>=1440){mins-=1440;day++;}
-    if(mins<0){mins+=1440;day--;}
-    const h=String(Math.floor(mins/60)).padStart(2,'0');
-    const m=String(mins%60).padStart(2,'0');
-    return `${h}:${m}${day!==0?` <span class='small'>(${day>0?'+':'−'}${Math.abs(day)})</span>`:''}`;
-  }
-  function recompute(){
-    const op=[...ops].find(x=>x.checked).value;
-    const a=parseTime(t1.value);
-    const b=parseTime(t2.value);
-    if(a==null||b==null)return out.textContent='-';
-    const res=op==='+'?a+b:a-b;
-    out.innerHTML=fmtTime(res);
-  }
-  [t1,t2].forEach(i=>i.addEventListener('input',recompute));
-  ops.forEach(o=>o.onchange=recompute);
-  </script>
-  </div> <link rel="stylesheet" href="footer.css">
+  <link rel="stylesheet" href="footer.css">
   <div id="footer"></div>
   <script>
     fetch('footer.html')
@@ -540,8 +547,9 @@
   </script>
 
   <link rel="stylesheet" href="auth-widget.css">
-  <script type="module" src="nav-widget.js"></script> 
+  <script type="module" src="nav-widget.js"></script>
   <script type="module" src="auth-widget.js"></script>
   <script type="module" src="header.js"></script>
 </body>
+
 </html>

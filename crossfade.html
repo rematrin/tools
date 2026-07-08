@@ -361,10 +361,43 @@
             margin-bottom: 15px;
         }
 
+        .playlist-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            flex-grow: 1;
+        }
+
+        .btn-back-to-list {
+            border: none;
+            background: transparent;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+
+        .btn-back-to-list:hover {
+            background: var(--hover-bg);
+        }
+
+        .btn-back-to-list:active {
+            transform: scale(0.9);
+        }
+
         .playlist-header-text {
             display: flex;
             flex-direction: column;
             gap: 4px;
+            min-width: 0;
+            flex-grow: 1;
         }
 
         #playlist-title-text {
@@ -385,7 +418,18 @@
 
         .playlist-header-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .playlist-header-actions .icon-action-btn {
+            width: 32px;
+            height: 32px;
+        }
+
+        .playlist-header-actions .icon-action-btn svg {
+            width: 16px;
+            height: 16px;
         }
 
         .icon-action-btn {
@@ -1106,9 +1150,17 @@
 
                 <div id="playlist-sidebar">
                     <div id="playlist-header-row">
-                        <div class="playlist-header-text">
-                            <h2 id="playlist-title-text">Мой Плейлист</h2>
-                            <div id="playlist-count-text">0 видео из 0</div>
+                        <div class="playlist-header-left">
+                            <button class="btn-back-to-list" onclick="closePlayerCard()" title="Назад к плейлистам" data-tooltip="Назад к плейлистам">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                                    <polyline points="12 19 5 12 12 5"></polyline>
+                                </svg>
+                            </button>
+                            <div class="playlist-header-text">
+                                <h2 id="playlist-title-text">Мой Плейлист</h2>
+                                <div id="playlist-count-text">0 видео из 0</div>
+                            </div>
                         </div>
                         <div class="playlist-header-actions">
                             <button class="icon-action-btn" onclick="savePlaylistToFirebase()"
@@ -2392,6 +2444,28 @@
             } catch (e) {
                 console.error("Ошибка при сохранении плейлиста в Firebase:", e);
                 alert("Не удалось сохранить плейлист.");
+            }
+        }
+
+        function closePlayerCard() {
+            if (p1 && typeof p1.stopVideo === 'function') p1.stopVideo();
+            if (p2 && typeof p2.stopVideo === 'function') p2.stopVideo();
+            isPlaying = false;
+            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
+
+            playlist = [];
+            trackIndex = 0;
+            window.currentListId = null;
+            window.loadedPlaylistName = null;
+            window.loadedPlaylistUrl = null;
+
+            renderPlaylist();
+            updateUI();
+            updateUrlState();
+
+            const cardEl = document.getElementById('main-player-card');
+            if (cardEl) {
+                cardEl.style.display = 'none';
             }
         }
 

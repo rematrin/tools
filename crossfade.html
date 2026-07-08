@@ -39,7 +39,7 @@
             width: 100%;
             max-width: 900px;
             margin: 0 auto;
-            padding: 20px 14px;
+            padding: 80px 14px 20px 14px;
             flex-grow: 1;
             /* Чтобы футер прибивался */
         }
@@ -92,15 +92,177 @@
         }
         .saved-playlists-title {
             font-size: 0.95rem;
-            margin: 0 0 10px 0;
+            margin: 0;
             color: var(--text);
             font-weight: 700;
+        }
+        .saved-playlists-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .saved-playlists-header .icon-action-btn {
+            width: 28px;
+            height: 28px;
+        }
+        .saved-playlists-header .icon-action-btn svg {
+            width: 14px;
+            height: 14px;
         }
         .saved-playlists-list {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 16px;
-            margin-top: 15px;
+            margin-top: 5px;
+        }
+        .playlists-empty-state {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            gap: 12px;
+            background: var(--bg);
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            transition: background 0.3s ease;
+        }
+        .playlists-empty-state svg {
+            width: 48px;
+            height: 48px;
+            opacity: 0.4;
+            color: var(--accent);
+        }
+        .playlists-empty-state h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text);
+        }
+        .playlists-empty-state p {
+            font-size: 0.85rem;
+            margin: 0;
+            line-height: 1.5;
+            max-width: 400px;
+            opacity: 0.8;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+        .modal-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 450px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transform: scale(0.9);
+            transition: transform 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text);
+        }
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+        }
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .modal-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .modal-field label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .modal-input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .modal-input:focus {
+            border-color: var(--accent);
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        .btn-modal {
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+        }
+        .btn-modal-cancel {
+            background: var(--hover-bg);
+            color: var(--text);
+        }
+        .btn-modal-cancel:hover {
+            background: var(--border);
+        }
+        .btn-modal-submit {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-modal-submit:hover {
+            background: var(--accent-hover);
         }
         @media (max-width: 900px) {
             .saved-playlists-list {
@@ -938,9 +1100,8 @@
     <div id="header-container"></div>
 
     <div class="wrap">
-        <h1>🎧 Auto-DJ Station</h1>
 
-        <div class="card">
+        <div class="card" id="main-player-card" style="display: none;">
             <div id="player-container">
 
                 <div id="playlist-sidebar">
@@ -1107,8 +1268,16 @@
             </div>
         </div>
 
-        <div class="saved-playlists-section" id="saved-playlists-section" style="display: none;">
-            <div class="saved-playlists-title">Мои плейлисты</div>
+        <div class="saved-playlists-section" id="saved-playlists-section">
+            <div class="saved-playlists-header">
+                <div class="saved-playlists-title">Мои плейлисты</div>
+                <button class="icon-action-btn" onclick="openAddPlaylistModal()" title="Добавить плейлист" data-tooltip="Добавить плейлист">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
             <div class="saved-playlists-list" id="saved-playlists-list"></div>
         </div>
     </div>
@@ -1215,6 +1384,11 @@
                 let urlParams = new URLSearchParams(window.location.search);
                 let listId = urlParams.get('list');
                 let vIds = urlParams.get('v');
+
+                if (listId || vIds) {
+                    const cardEl = document.getElementById('main-player-card');
+                    if (cardEl) cardEl.style.display = 'block';
+                }
 
                 if (listId) {
                     importPlaylist(listId, true);
@@ -1641,22 +1815,30 @@
             window.scanningListId = listId;
             document.getElementById('current-track-info').innerText = "Сканирую плейлист...";
 
-            if (!window.scannerPlayer) {
-                let div = document.createElement('div');
-                div.id = 'hidden-scanner';
-                div.style.display = 'none';
-                document.body.appendChild(div);
-                window.scannerPlayer = new YT.Player('hidden-scanner', {
-                    height: '1', width: '1',
-                    playerVars: { origin: window.location.origin },
-                    events: {
-                        'onReady': (e) => { e.target.cuePlaylist({ list: listId }); },
-                        'onStateChange': onPlayerStateChange
-                    }
-                });
-            } else {
-                window.scannerPlayer.cuePlaylist({ list: listId });
+            if (window.scannerPlayer) {
+                try {
+                    window.scannerPlayer.destroy();
+                } catch (e) { }
+                window.scannerPlayer = null;
             }
+
+            let scannerDiv = document.getElementById('hidden-scanner');
+            if (!scannerDiv) {
+                scannerDiv = document.createElement('div');
+                scannerDiv.id = 'hidden-scanner';
+                scannerDiv.style.display = 'none';
+                document.body.appendChild(scannerDiv);
+            }
+
+            window.scannerPlayer = new YT.Player('hidden-scanner', {
+                height: '1', width: '1',
+                playerVars: { origin: window.location.origin },
+                events: {
+                    'onReady': (e) => { e.target.cuePlaylist({ list: listId }); },
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+
             document.getElementById('importBox').classList.remove('show');
         }
 
@@ -1728,6 +1910,11 @@
                     renderPlaylist();
                     window.isScanning = false;
                     window.autoReplacePlaylist = false;
+
+                    if (window.currentUser && window.db && window.scanningListId) {
+                        updateSavedPlaylistInfo(window.scanningListId, ids[0], ids.length);
+                    }
+
                     window.scanningListId = null;
                     updateUrlState();
                     fetchTitlesForPlaylist();
@@ -1890,6 +2077,12 @@
         }
 
         function loadSavedPlaylist(urlStr, name) {
+            const cardEl = document.getElementById('main-player-card');
+            if (cardEl) {
+                cardEl.style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
             window.loadedPlaylistName = name;
             window.loadedPlaylistUrl = urlStr;
 
@@ -1909,6 +2102,36 @@
                 loadDeck(p1, 0);
                 prepareNext();
                 updateUI();
+            }
+        }
+
+        async function updateSavedPlaylistInfo(listId, firstVideoId, count) {
+            if (!window.currentUser || !window.db) return;
+            try {
+                const userDoc = window.doc(window.db, "users", window.currentUser.uid);
+                const docSnap = await window.getDoc(userDoc);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
+                        let updated = false;
+                        const newList = data.saved_playlists.map(p => {
+                            if (p.url.includes(`list=${listId}`)) {
+                                if (p.first_video_id !== firstVideoId || p.tracks_count !== count) {
+                                    p.first_video_id = firstVideoId;
+                                    p.tracks_count = count;
+                                    updated = true;
+                                }
+                            }
+                            return p;
+                        });
+                        if (updated) {
+                            await window.updateDoc(userDoc, { saved_playlists: newList });
+                            renderSavedPlaylists(newList);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Ошибка при обновлении информации о плейлисте:", e);
             }
         }
 
@@ -1960,7 +2183,19 @@
 
             listContainer.innerHTML = '';
             if (!window.currentUser || !list || list.length === 0) {
-                container.style.display = 'none';
+                container.style.display = 'flex';
+                listContainer.innerHTML = `
+                    <div class="playlists-empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                            <line x1="8" y1="18" x2="16" y2="18"></line>
+                            <path d="M3 6h2v6H3V6zm0 8h2v4H3v-4z"></path>
+                        </svg>
+                        <h3>У вас пока нет плейлистов</h3>
+                        <p>Добавьте свой первый плейлист с YouTube по ссылке и начните удобно организовывать свои видео.</p>
+                    </div>
+                `;
                 return;
             }
 
@@ -2061,6 +2296,112 @@
             }
         }
 
+        function openAddPlaylistModal() {
+            if (!window.currentUser) {
+                if (typeof window.openAuthModal === 'function') {
+                    window.openAuthModal(document.querySelector('.saved-playlists-title'), 'login');
+                } else {
+                    alert("Пожалуйста, войдите в аккаунт, чтобы сохранять плейлисты.");
+                }
+                return;
+            }
+            const modal = document.getElementById('addPlaylistModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                setTimeout(() => {
+                    modal.classList.add('active');
+                }, 10);
+                document.getElementById('modalPlaylistUrl').focus();
+            }
+        }
+
+        function closeAddPlaylistModal() {
+            const modal = document.getElementById('addPlaylistModal');
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    document.getElementById('modalPlaylistUrl').value = '';
+                    document.getElementById('modalPlaylistName').value = '';
+                }, 250);
+            }
+        }
+
+        async function submitNewPlaylist() {
+            const urlInput = document.getElementById('modalPlaylistUrl');
+            const nameInput = document.getElementById('modalPlaylistName');
+            const urlValue = urlInput.value.trim();
+            let nameValue = nameInput.value.trim();
+
+            if (!urlValue) {
+                alert("Пожалуйста, введите ссылку на плейлист или видео.");
+                return;
+            }
+
+            let listId = extractListId(urlValue);
+            let videoId = extractVideoId(urlValue);
+
+            if (!listId && !videoId) {
+                alert("Ссылка на YouTube не распознана.");
+                return;
+            }
+
+            let pathUrl = "";
+            let defaultName = "";
+            if (listId) {
+                pathUrl = `crossfade.html?list=${listId}`;
+                defaultName = "YouTube Плейлист";
+            } else {
+                pathUrl = `crossfade.html?v=${videoId}`;
+                defaultName = "YouTube Видео";
+            }
+
+            let finalName = nameValue || defaultName;
+
+            if (!window.currentUser) {
+                alert("Необходимо войти в аккаунт.");
+                return;
+            }
+
+            try {
+                const userDoc = window.doc(window.db, "users", window.currentUser.uid);
+                const docSnap = await window.getDoc(userDoc);
+                let savedPlaylists = [];
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
+                        savedPlaylists = data.saved_playlists;
+                    }
+                }
+
+                savedPlaylists.unshift({
+                    id: Date.now().toString(),
+                    name: finalName,
+                    url: pathUrl,
+                    first_video_id: videoId || null,
+                    tracks_count: listId ? null : 1,
+                    created_at: new Date().toISOString()
+                });
+
+                await window.updateDoc(userDoc, {
+                    saved_playlists: savedPlaylists
+                });
+
+                renderSavedPlaylists(savedPlaylists);
+                closeAddPlaylistModal();
+            } catch (e) {
+                console.error("Ошибка при сохранении плейлиста в Firebase:", e);
+                alert("Не удалось сохранить плейлист.");
+            }
+        }
+
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('addPlaylistModal');
+            if (e.target === modal) {
+                closeAddPlaylistModal();
+            }
+        });
+
         window.addEventListener('authChanged', async (e) => {
             const user = e.detail.user;
             window.currentUser = user;
@@ -2080,6 +2421,30 @@
             .then(html => { if (html) document.getElementById('footer').innerHTML = html; })
             .catch(() => { });
     </script>
+
+    <!-- Модальное окно добавления плейлиста -->
+    <div id="addPlaylistModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Добавить плейлист</h3>
+                <button class="modal-close" onclick="closeAddPlaylistModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-field">
+                    <label for="modalPlaylistUrl">Ссылка на YouTube плейлист или видео</label>
+                    <input type="text" id="modalPlaylistUrl" class="modal-input" placeholder="https://www.youtube.com/playlist?list=..." autocomplete="off">
+                </div>
+                <div class="modal-field">
+                    <label for="modalPlaylistName">Название плейлиста (необязательно)</label>
+                    <input type="text" id="modalPlaylistName" class="modal-input" placeholder="Мой плейлист" autocomplete="off">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-modal-cancel" onclick="closeAddPlaylistModal()">Отмена</button>
+                <button class="btn-modal btn-modal-submit" onclick="submitNewPlaylist()">Добавить</button>
+            </div>
+        </div>
+    </div>
 
     <link rel="stylesheet" href="auth-widget.css">
     <script type="module" src="nav-widget.js"></script>

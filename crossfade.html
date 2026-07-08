@@ -150,6 +150,19 @@
             max-width: 400px;
             opacity: 0.8;
         }
+        #player-error-state {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+            gap: 20px;
+            min-height: 400px;
+            color: var(--text-secondary);
+            width: 100%;
+        }
+
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -418,18 +431,37 @@
 
         .playlist-header-actions {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             flex-shrink: 0;
         }
 
         .playlist-header-actions .icon-action-btn {
+            width: 36px;
+            height: 36px;
+        }
+
+        .playlist-header-actions .icon-action-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .btn-back-to-list.icon-action-btn {
             width: 32px;
             height: 32px;
         }
 
-        .playlist-header-actions .icon-action-btn svg {
+        .btn-back-to-list.icon-action-btn svg {
             width: 16px;
             height: 16px;
+        }
+
+        .btn-modal-danger {
+            background: var(--neon-pink) !important;
+            color: #fff !important;
+        }
+
+        .btn-modal-danger:hover {
+            background: #d00045 !important;
         }
 
         .icon-action-btn {
@@ -532,6 +564,12 @@
 
         .playlist-item.active {
             background: var(--active-bg);
+        }
+
+        .playlist-item.error-track {
+            opacity: 0.5;
+            color: var(--text-secondary);
+            pointer-events: none;
         }
 
         .playlist-index {
@@ -1151,7 +1189,7 @@
                 <div id="playlist-sidebar">
                     <div id="playlist-header-row">
                         <div class="playlist-header-left">
-                            <button class="btn-back-to-list" onclick="closePlayerCard()" title="Назад к плейлистам" data-tooltip="Назад к плейлистам">
+                            <button class="icon-action-btn btn-back-to-list" onclick="closePlayerCard()" data-tooltip="Назад">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
@@ -1163,14 +1201,6 @@
                             </div>
                         </div>
                         <div class="playlist-header-actions">
-                            <button class="icon-action-btn" onclick="savePlaylistToFirebase()"
-                                data-tooltip="Сохранить плейлист">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                                    <polyline points="7 3 7 8 15 8"></polyline>
-                                </svg>
-                            </button>
                             <button class="icon-action-btn btn-shuffle-large" onclick="shufflePlaylist()"
                                 data-tooltip="Перемешать">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -1185,19 +1215,7 @@
                                     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                                 </svg>
                             </button>
-                            <button class="icon-action-btn" onclick="toggleImportBox()"
-                                data-tooltip="Редактировать плейлист">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                            </button>
                         </div>
-                    </div>
-
-                    <div class="import-box" id="importBox">
-                        <input type="text" class="import-input" id="urlInput" placeholder="Ссылка на YouTube..." autocomplete="off">
-                        <button class="btn-add" onclick="handleInput()">+</button>
                     </div>
 
                     <div class="playlist-scroll-area" id="playlist-list">
@@ -1318,6 +1336,18 @@
                 </div>
 
             </div>
+            <!-- Информационное окно ошибки воспроизведения всего плейлиста -->
+            <div id="player-error-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 64px; height: 64px; opacity: 0.5; color: var(--neon-pink);">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--text);">Не удалось воспроизвести ни одного видео из этого плейлиста.</h3>
+                <button class="btn-modal btn-modal-cancel" onclick="closePlayerCard()" style="display: flex; align-items: center; gap: 8px; font-weight: 600; padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); margin-top: 10px;">
+                    ← Вернуться к плейлистам
+                </button>
+            </div>
         </div>
 
         <div class="saved-playlists-section" id="saved-playlists-section">
@@ -1376,12 +1406,20 @@
             p1 = new YT.Player('player1', {
                 height: '100%', width: '100%',
                 playerVars: playerVars,
-                events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': (e) => onPlayerError(e, 1)
+                }
             });
             p2 = new YT.Player('player2', {
                 height: '100%', width: '100%',
                 playerVars: playerVars,
-                events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': (e) => onPlayerError(e, 2)
+                }
             });
 
             renderPlaylist();
@@ -1439,7 +1477,11 @@
 
                 if (listId || vIds) {
                     const cardEl = document.getElementById('main-player-card');
-                    if (cardEl) cardEl.style.display = 'block';
+                    if (cardEl) {
+                        cardEl.style.display = 'block';
+                        document.getElementById('player-container').style.display = 'flex';
+                        document.getElementById('player-error-state').style.display = 'none';
+                    }
                 }
 
                 if (listId) {
@@ -1520,7 +1562,8 @@
                 const thumbUrl = `https://i.ytimg.com/vi/${track.id}/mqdefault.jpg`;
 
                 const div = document.createElement('div');
-                div.className = `playlist-item${isActive}`;
+                const isErrClass = track.isError ? ' error-track' : '';
+                div.className = `playlist-item${isActive}${isErrClass}`;
 
                 let indexContent = isActive ? '▶' : (index + 1);
 
@@ -1629,6 +1672,71 @@
         function loadDeck(player, idx) {
             if (!playlist[idx]) return;
             player.loadVideoById(playlist[idx].id);
+
+            let activePlayer = (currentDeck === 1) ? p1 : p2;
+            if (player === activePlayer) {
+                startVideoLoadingTimeout(idx);
+            }
+        }
+
+        let activeLoadingTimeout = null;
+
+        function startVideoLoadingTimeout(idx) {
+            clearVideoLoadingTimeout();
+            activeLoadingTimeout = setTimeout(() => {
+                console.log(`Video loading timeout for index ${idx}`);
+                handleVideoError(idx);
+            }, 7000); // 7 seconds timeout
+        }
+
+        function clearVideoLoadingTimeout() {
+            if (activeLoadingTimeout) {
+                clearTimeout(activeLoadingTimeout);
+                activeLoadingTimeout = null;
+            }
+        }
+
+        function handleVideoError(idx) {
+            clearVideoLoadingTimeout();
+            if (!playlist[idx]) return;
+
+            // Mark as error
+            playlist[idx].isError = true;
+            playlist[idx].title = "⚠ Ошибка (видео недоступно)";
+
+            renderPlaylist();
+
+            // Check if all tracks in the playlist are marked as error
+            const allErrors = playlist.every(t => t.isError);
+            if (allErrors) {
+                showAllVideosError();
+                return;
+            }
+
+            // Go to next track
+            let nextIdx = (idx + 1) % playlist.length;
+            trackIndex = nextIdx;
+
+            // Start playing the next track
+            startMix();
+        }
+
+        function onPlayerError(event, deckNum) {
+            console.error(`Player error on deck ${deckNum}:`, event.data);
+            if (deckNum === currentDeck) {
+                handleVideoError(trackIndex);
+            }
+        }
+
+        function showAllVideosError() {
+            clearVideoLoadingTimeout();
+            if (p1 && typeof p1.stopVideo === 'function') p1.stopVideo();
+            if (p2 && typeof p2.stopVideo === 'function') p2.stopVideo();
+            isPlaying = false;
+            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
+
+            document.getElementById('player-container').style.display = 'none';
+            document.getElementById('player-error-state').style.display = 'flex';
         }
 
         function prepareNext() {
@@ -1650,14 +1758,24 @@
 
         function nextTrack() {
             if (isCrossfading || playlist.length < 2) return;
-            trackIndex = (trackIndex + 1) % playlist.length;
+            let startIndex = trackIndex;
+            let nextIndex = (trackIndex + 1) % playlist.length;
+            while (playlist[nextIndex] && playlist[nextIndex].isError && nextIndex !== startIndex) {
+                nextIndex = (nextIndex + 1) % playlist.length;
+            }
+            trackIndex = nextIndex;
             startMix();
             updateUI();
         }
 
         function prevTrack() {
             if (isCrossfading || playlist.length < 2) return;
-            trackIndex = (trackIndex - 1 + playlist.length) % playlist.length;
+            let startIndex = trackIndex;
+            let prevIndex = (trackIndex - 1 + playlist.length) % playlist.length;
+            while (playlist[prevIndex] && playlist[prevIndex].isError && prevIndex !== startIndex) {
+                prevIndex = (prevIndex - 1 + playlist.length) % playlist.length;
+            }
+            trackIndex = prevIndex;
             startMix();
             updateUI();
         }
@@ -1743,13 +1861,7 @@
             });
         }
 
-        function toggleImportBox() {
-            const box = document.getElementById('importBox');
-            box.classList.toggle('show');
-            if (box.classList.contains('show')) {
-                document.getElementById('urlInput').focus();
-            }
-        }
+
 
         function finishMix(oldP) {
             oldP.stopVideo();
@@ -1764,43 +1876,7 @@
             prepareNext();
         }
 
-        // --- UTILS ---
 
-        function handleInput() {
-            let input = document.getElementById('urlInput');
-            let url = input.value.trim();
-            if (!url) return;
-
-            let listId = extractListId(url);
-            if (listId) {
-                importPlaylist(listId);
-                input.value = "";
-            } else {
-                let videoId = extractVideoId(url);
-                if (videoId) {
-                    playlist.push({ id: videoId, title: "Загрузка..." });
-                    window.currentListId = null;
-                    window.loadedPlaylistName = null;
-                    window.loadedPlaylistUrl = null;
-                    renderPlaylist();
-                    input.value = "";
-                    fetchTitlesForPlaylist();
-                    if (playlist.length === 1 && !isPlaying) {
-                        trackIndex = 0;
-                        loadDeck(p1, 0);
-                        updateUI();
-                    } else if (!isPlaying) {
-                        prepareNext();
-                    }
-                    updateButtons();
-                    updateUrlState();
-                    document.getElementById('importBox').classList.remove('show');
-                } else {
-
-                    alert("Ссылка не распознана");
-                }
-            }
-        }
 
 
 
@@ -1918,6 +1994,7 @@
 
             if (event.target === activePlayer) {
                 if (event.data === YT.PlayerState.PLAYING) {
+                    clearVideoLoadingTimeout();
                     if (!isPlaying) {
                         isPlaying = true;
                         updatePlayPauseIcon();
@@ -2036,95 +2113,52 @@
 
         // --- FIREBASE SAVED PLAYLISTS ---
 
-        async function savePlaylistToFirebase() {
-            if (!playlist || playlist.length === 0) {
-                alert("Плейлист пуст. Добавьте треки перед сохранением.");
-                return;
-            }
-            if (!window.currentUser) {
-                if (typeof window.openAuthModal === 'function') {
-                    window.openAuthModal(document.querySelector('button[data-tooltip="Сохранить плейлист"]'), 'login');
-                } else {
-                    alert("Пожалуйста, войдите в аккаунт, чтобы сохранить плейлист.");
-                }
-                return;
-            }
-
-            let defaultName = window.currentListId ? 
-                `Плейлист YouTube (${playlist.length} треков)` : 
-                `Мой микс (${playlist.length} треков)`;
-
-            let name = prompt("Введите название плейлиста:", defaultName);
-            if (name === null) return;
-            name = name.trim() || defaultName;
-
-            let url = new URL(window.location.href);
-            if (window.currentListId) {
-                url.searchParams.set('list', window.currentListId);
-                url.searchParams.delete('v');
-            } else {
-                let vIds = playlist.map(item => item.id).join(',');
-                if (vIds && vIds.length < 1500) {
-                    url.searchParams.set('v', vIds);
-                } else {
-                    alert("Плейлист слишком большой для сохранения.");
-                    return;
-                }
-                url.searchParams.delete('list');
-            }
-            
-            const pathUrl = `crossfade.html?${url.searchParams.toString()}`;
-
-            try {
-                const userDoc = window.doc(window.db, "users", window.currentUser.uid);
-                const docSnap = await window.getDoc(userDoc);
-                let savedPlaylists = [];
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
-                        savedPlaylists = data.saved_playlists;
-                    }
-                }
-
-                savedPlaylists.unshift({
-                    id: Date.now().toString(),
-                    name: name,
-                    url: pathUrl,
-                    first_video_id: playlist[0] ? playlist[0].id : null,
-                    tracks_count: playlist.length,
-                    created_at: new Date().toISOString()
-                });
-
-                await window.updateDoc(userDoc, {
-                    saved_playlists: savedPlaylists
-                });
-
-                renderSavedPlaylists(savedPlaylists);
-            } catch (e) {
-                console.error("Ошибка сохранения плейлиста в Firebase:", e);
-                alert("Не удалось сохранить плейлист.");
+        let activeDeleteId = null;
+        function openDeletePlaylistModal(id, event) {
+            if (event) event.stopPropagation();
+            activeDeleteId = id;
+            const modal = document.getElementById('deletePlaylistModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                setTimeout(() => modal.classList.add('active'), 10);
             }
         }
 
-        async function deleteSavedPlaylist(id, event) {
-            if (event) event.stopPropagation();
-            if (!confirm("Удалить этот плейлист?")) return;
+        function closeDeletePlaylistModal() {
+            activeDeleteId = null;
+            const modal = document.getElementById('deletePlaylistModal');
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => { modal.style.display = 'none'; }, 250);
+            }
+        }
 
+        async function submitDeletePlaylist() {
+            if (!activeDeleteId) return;
             try {
                 const userDoc = window.doc(window.db, "users", window.currentUser.uid);
                 const docSnap = await window.getDoc(userDoc);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
-                        let savedPlaylists = data.saved_playlists.filter(p => p.id !== id);
-                        await window.updateDoc(userDoc, {
-                            saved_playlists: savedPlaylists
-                        });
-                        renderSavedPlaylists(savedPlaylists);
+                        let savedPlaylists = data.saved_playlists;
+                        const playlistToDelete = savedPlaylists.find(p => p.id === activeDeleteId);
+                        if (playlistToDelete) {
+                            savedPlaylists = savedPlaylists.filter(p => p.id !== activeDeleteId);
+                            await window.updateDoc(userDoc, {
+                                saved_playlists: savedPlaylists
+                            });
+                            if (window.loadedPlaylistUrl === playlistToDelete.url) {
+                                closePlayerCard();
+                            }
+                            renderSavedPlaylists(savedPlaylists);
+                        }
                     }
                 }
+                closeDeletePlaylistModal();
             } catch (e) {
                 console.error("Ошибка удаления плейлиста:", e);
+                alert("Не удалось удалить плейлист.");
             }
         }
 
@@ -2132,6 +2166,8 @@
             const cardEl = document.getElementById('main-player-card');
             if (cardEl) {
                 cardEl.style.display = 'block';
+                document.getElementById('player-container').style.display = 'flex';
+                document.getElementById('player-error-state').style.display = 'none';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
@@ -2187,44 +2223,62 @@
             }
         }
 
-        async function editSavedPlaylistName(id, event) {
+        let activeRenameId = null;
+        function openRenamePlaylistModal(id, currentName, event) {
             if (event) event.stopPropagation();
+            activeRenameId = id;
+            const modal = document.getElementById('renamePlaylistModal');
+            const input = document.getElementById('modalRenameInput');
+            if (modal && input) {
+                input.value = currentName;
+                modal.style.display = 'flex';
+                setTimeout(() => modal.classList.add('active'), 10);
+                input.focus();
+            }
+        }
 
+        function closeRenamePlaylistModal() {
+            activeRenameId = null;
+            const modal = document.getElementById('renamePlaylistModal');
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => { modal.style.display = 'none'; }, 250);
+            }
+        }
+
+        async function submitRenamePlaylist() {
+            if (!activeRenameId) return;
+            const input = document.getElementById('modalRenameInput');
+            const newName = input.value.trim();
+            if (!newName) {
+                alert("Пожалуйста, введите название.");
+                return;
+            }
             try {
                 const userDoc = window.doc(window.db, "users", window.currentUser.uid);
                 const docSnap = await window.getDoc(userDoc);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
-                        let playlistToEdit = data.saved_playlists.find(p => p.id === id);
-                        if (!playlistToEdit) return;
-
-                        let newName = prompt("Введите новое название плейлиста:", playlistToEdit.name);
-                        if (newName === null) return;
-                        newName = newName.trim();
-                        if (!newName) return;
-
-                        let savedPlaylists = data.saved_playlists.map(p => {
-                            if (p.id === id) {
-                                p.name = newName;
+                        let savedPlaylists = data.saved_playlists;
+                        let playlistToEdit = savedPlaylists.find(p => p.id === activeRenameId);
+                        if (playlistToEdit) {
+                            playlistToEdit.name = newName;
+                            await window.updateDoc(userDoc, {
+                                saved_playlists: savedPlaylists
+                            });
+                            if (window.loadedPlaylistUrl === playlistToEdit.url) {
+                                window.loadedPlaylistName = newName;
+                                document.getElementById('playlist-title-text').innerText = newName;
                             }
-                            return p;
-                        });
-
-                        await window.updateDoc(userDoc, {
-                            saved_playlists: savedPlaylists
-                        });
-
-                        if (window.loadedPlaylistUrl === playlistToEdit.url) {
-                            window.loadedPlaylistName = newName;
-                            document.getElementById('playlist-title-text').innerText = newName;
+                            renderSavedPlaylists(savedPlaylists);
                         }
-
-                        renderSavedPlaylists(savedPlaylists);
                     }
                 }
+                closeRenamePlaylistModal();
             } catch (e) {
                 console.error("Ошибка при переименовании плейлиста:", e);
+                alert("Не удалось переименовать плейлист.");
             }
         }
 
@@ -2306,13 +2360,13 @@
                         <div class="playlist-card-meta">${metaText}</div>
                     </div>
                     <div class="playlist-card-actions">
-                        <button class="btn-delete-playlist" onclick="editSavedPlaylistName('${p.id}', event)" title="Редактировать название">
+                        <button class="btn-delete-playlist" onclick="openRenamePlaylistModal('${p.id}', '${escapeHtml(p.name)}', event)" title="Редактировать название">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                             </svg>
                         </button>
-                        <button class="btn-delete-playlist" onclick="deleteSavedPlaylist('${p.id}', event)" title="Удалить">
+                        <button class="btn-delete-playlist" onclick="openDeletePlaylistModal('${p.id}', event)" title="Удалить">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="3 6 5 6 21 6"></polyline>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -2467,12 +2521,22 @@
             if (cardEl) {
                 cardEl.style.display = 'none';
             }
+            document.getElementById('player-container').style.display = 'flex';
+            document.getElementById('player-error-state').style.display = 'none';
         }
 
         window.addEventListener('click', (e) => {
-            const modal = document.getElementById('addPlaylistModal');
-            if (e.target === modal) {
+            const addModal = document.getElementById('addPlaylistModal');
+            const renameModal = document.getElementById('renamePlaylistModal');
+            const deleteModal = document.getElementById('deletePlaylistModal');
+            if (e.target === addModal) {
                 closeAddPlaylistModal();
+            }
+            if (e.target === renameModal) {
+                closeRenamePlaylistModal();
+            }
+            if (e.target === deleteModal) {
+                closeDeletePlaylistModal();
             }
         });
 
@@ -2516,6 +2580,43 @@
             <div class="modal-footer">
                 <button class="btn-modal btn-modal-cancel" onclick="closeAddPlaylistModal()">Отмена</button>
                 <button class="btn-modal btn-modal-submit" onclick="submitNewPlaylist()">Добавить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно переименования плейлиста -->
+    <div id="renamePlaylistModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Переименовать плейлист</h3>
+                <button class="modal-close" onclick="closeRenamePlaylistModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-field">
+                    <label for="modalRenameInput">Новое название</label>
+                    <input type="text" id="modalRenameInput" class="modal-input" placeholder="Название плейлиста" autocomplete="off">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-modal-cancel" onclick="closeRenamePlaylistModal()">Отмена</button>
+                <button class="btn-modal btn-modal-submit" onclick="submitRenamePlaylist()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно удаления плейлиста -->
+    <div id="deletePlaylistModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Удалить плейлист?</h3>
+                <button class="modal-close" onclick="closeDeletePlaylistModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin: 0; font-size: 0.95rem; color: var(--text-secondary);">Это действие нельзя отменить.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-modal-cancel" onclick="closeDeletePlaylistModal()">Отмена</button>
+                <button class="btn-modal btn-modal-submit btn-modal-danger" onclick="submitDeletePlaylist()">Удалить</button>
             </div>
         </div>
     </div>

@@ -1385,6 +1385,7 @@
         var trackIndex = 0;
         var isPlaying = false;
         var isCrossfading = false;
+        var activeCrossfadeInterval = null;
         var isDragging = false;
         var updateTimer;
         var currentMode = 'video';
@@ -1650,9 +1651,11 @@
                     startMix();
                 } else {
                     activeP.playVideo();
+                    startVideoLoadingTimeout(trackIndex);
                 }
             } else {
                 activeP.pauseVideo();
+                clearVideoLoadingTimeout();
             }
         }
 
@@ -1664,6 +1667,7 @@
             loadDeck(activeP, trackIndex);
 
             activeP.playVideo();
+            startVideoLoadingTimeout(trackIndex);
             prepareNext();
             renderPlaylist();
             updateUI();
@@ -1672,11 +1676,6 @@
         function loadDeck(player, idx) {
             if (!playlist[idx]) return;
             player.loadVideoById(playlist[idx].id);
-
-            let activePlayer = (currentDeck === 1) ? p1 : p2;
-            if (player === activePlayer) {
-                startVideoLoadingTimeout(idx);
-            }
         }
 
         let activeLoadingTimeout = null;
@@ -1706,6 +1705,15 @@
 
             renderPlaylist();
 
+            // Cancel active crossfade if this error is handling the fading-in song
+            if (isCrossfading) {
+                clearInterval(activeCrossfadeInterval);
+                isCrossfading = false;
+                setMixStatus(false);
+                let nextP = (currentDeck === 1) ? p2 : p1;
+                if (nextP && typeof nextP.stopVideo === 'function') nextP.stopVideo();
+            }
+
             // Check if all tracks in the playlist are marked as error
             const allErrors = playlist.every(t => t.isError);
             if (allErrors) {
@@ -1713,8 +1721,12 @@
                 return;
             }
 
-            // Go to next track
+            // Find next non-error track
             let nextIdx = (idx + 1) % playlist.length;
+            while (playlist[nextIdx] && playlist[nextIdx].isError && nextIdx !== idx) {
+                nextIdx = (nextIdx + 1) % playlist.length;
+            }
+
             trackIndex = nextIdx;
 
             // Start playing the next track
@@ -1723,8 +1735,16 @@
 
         function onPlayerError(event, deckNum) {
             console.error(`Player error on deck ${deckNum}:`, event.data);
-            if (deckNum === currentDeck) {
+            
+            let activePlayerNum = currentDeck;
+            let nextPlayerNum = (currentDeck === 1) ? 2 : 1;
+            
+            if (deckNum === activePlayerNum) {
                 handleVideoError(trackIndex);
+            } else if (deckNum === nextPlayerNum && isCrossfading) {
+                if (window.nextTrackIndex !== null && window.nextTrackIndex !== undefined) {
+                    handleVideoError(window.nextTrackIndex);
+                }
             }
         }
 
@@ -1742,7 +1762,19 @@
         function prepareNext() {
             if (playlist.length < 2) return;
             let nextP = (currentDeck === 1) ? p2 : p1;
+            
+            let startIndex = trackIndex;
             let nextIndex = (trackIndex + 1) % playlist.length;
+            while (playlist[nextIndex] && playlist[nextIndex].isError && nextIndex !== startIndex) {
+                nextIndex = (nextIndex + 1) % playlist.length;
+            }
+
+            if (nextIndex === startIndex) {
+                window.nextTrackIndex = null;
+                return;
+            }
+
+            window.nextTrackIndex = nextIndex;
             if (playlist[nextIndex]) {
                 nextP.cueVideoById(playlist[nextIndex].id);
                 nextP.setVolume(0);
@@ -1826,12 +1858,18 @@
             let nextP = (currentDeck === 1) ? p2 : p1;
 
             nextP.playVideo();
+            
+            // Start the loading timeout for the next track being faded in!
+            if (window.nextTrackIndex !== null && window.nextTrackIndex !== undefined) {
+                startVideoLoadingTimeout(window.nextTrackIndex);
+            }
 
             let steps = 40;
             let stepTime = (crossfadeDuration * 1000) / steps;
             let vol = 0;
 
-            let fadeInt = setInterval(() => {
+            clearInterval(activeCrossfadeInterval);
+            activeCrossfadeInterval = setInterval(() => {
                 vol += (100 / steps);
                 if (vol > 100) vol = 100;
 
@@ -1843,7 +1881,7 @@
 
 
                 if (vol >= 100) {
-                    clearInterval(fadeInt);
+                    clearInterval(activeCrossfadeInterval);
                     finishMix(activeP);
                 }
             }, stepTime);
@@ -1869,7 +1907,11 @@
             setMixStatus(false);
 
             currentDeck = (currentDeck === 1) ? 2 : 1;
-            trackIndex = (trackIndex + 1) % playlist.length;
+            if (window.nextTrackIndex !== null && window.nextTrackIndex !== undefined) {
+                trackIndex = window.nextTrackIndex;
+            } else {
+                trackIndex = (trackIndex + 1) % playlist.length;
+            }
 
             updateUI();
             renderPlaylist();
@@ -1991,6 +2033,7 @@
         function onPlayerStateChange(event) {
             // --- 1. ЛОГИКА СИНХРОНИЗАЦИИ КНОПКИ ---
             let activePlayer = (currentDeck === 1) ? p1 : p2;
+            let nextPlayer = (currentDeck === 1) ? p2 : p1;
 
             if (event.target === activePlayer) {
                 if (event.data === YT.PlayerState.PLAYING) {
@@ -2004,11 +2047,16 @@
                     updateUI();
                 }
                 else if (event.data === YT.PlayerState.PAUSED) {
+                    clearVideoLoadingTimeout();
                     if (isPlaying) {
                         isPlaying = false;
                         updatePlayPauseIcon();
                     }
                     updateUI();
+                }
+            } else if (event.target === nextPlayer && isCrossfading) {
+                if (event.data === YT.PlayerState.PLAYING) {
+                    clearVideoLoadingTimeout();
                 }
             }
 
@@ -2064,8 +2112,9 @@
         }
 
         async function fetchTitlesForPlaylist() {
+
             for (let i = 0; i < playlist.length; i++) {
-                if (playlist[i].title.startsWith("Video ID") || playlist[i].title === "Загрузка...") {
+                if (playlist[i] && (playlist[i].title.startsWith("Video ID") || playlist[i].title === "Загрузка...")) {
                     try {
                         const response = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${playlist[i].id}`);
                         const data = await response.json();
@@ -2073,6 +2122,13 @@
                             playlist[i].title = data.title;
                             renderPlaylist();
                             if (i === trackIndex) updateUI();
+                        } else {
+                            playlist[i].title = "⚠ Ошибка (видео недоступно)";
+                            playlist[i].isError = true;
+                            renderPlaylist();
+                            if (i === trackIndex) {
+                                handleVideoError(i);
+                            }
                         }
                     } catch (e) { }
                 }

@@ -1447,6 +1447,15 @@ if (sidebarHeader && !document.getElementById('userProfileMenu')) {
                 </svg>
                 <span>Настройки</span>
             </button>
+            <button class="user-menu-item" id="btnUserMenuPomodoro">
+                <svg viewBox="0 0 512 512" fill="currentColor" width="16" height="16">
+                    <g>
+                        <path d="M505.038,228.923c-4.596-16.219-11.413-31.43-20.408-44.915c-7.467-11.208-16.39-20.831-26.175-28.908 c-14.69-12.128-31.291-20.806-48.226-26.484c-3.269-1.089-6.563-2.05-9.866-2.928c28.737-26.841,36.049-76.336,31.445-67.112 c-3.92,7.834-56.002,36.692-92.872,52.146c13.64-16.504,29.42-44.622,40.335-78.231c0,0-56.619,52.3-91.798,73.196 c-11.119-19.326-31.478-84.055-31.478-84.055s-17.236,49.64-18.895,79.248c-28.054-15.714-58.832-51.454-67.307-72.862 c-9.996-25.296-12.819,53.675,14.494,86.861c-0.391,0.114-0.765,0.228-1.13,0.333c-0.334-0.081-0.651-0.171-0.984-0.244 c-1.065-0.252-2.132-0.48-3.214-0.699c-36.366-15.17-91.294-47.405-95.369-53.749c-4.506-7.012,0.732,42.028,27.427,65.323 c-14.446,3.912-28.81,9.899-42.206,18.269c-15.779,9.858-30.241,23.076-41.442,39.896c-8.995,13.486-15.812,28.696-20.4,44.915 C2.367,245.141,0,262.386,0,280.036c0,24.71,4.652,50.218,14.568,74.7c7.434,18.342,17.846,36.098,31.445,52.366 c20.392,24.409,47.982,45.402,82.933,60.092c34.951,14.714,77.174,23.181,127.05,23.173c44.345,0,82.623-6.678,115.142-18.505 c24.377-8.865,45.492-20.618,63.379-34.487c26.833-20.806,46.314-46.33,58.945-73.521c12.649-27.2,18.529-56.026,18.537-83.819 C512,262.386,509.633,245.141,505.038,228.923z M463.538,340.991c-6.059,14.966-14.518,29.387-25.614,42.654 c-16.65,19.895-39.205,37.261-69.056,49.844c-29.851,12.558-67.088,20.302-112.872,20.31c-40.686,0-74.637-6.124-102.633-16.308 c-21.01-7.638-38.684-17.552-53.463-29.013c-22.165-17.203-37.888-37.904-48.202-60.052c-10.306-22.14-15.129-45.752-15.129-68.389 c0-14.356,1.944-28.306,5.58-41.149c3.644-12.852,8.971-24.589,15.649-34.602c5.377-8.052,11.81-15.023,19.033-20.986 c10.818-8.939,23.45-15.609,36.562-20c13.103-4.409,26.679-6.508,39.042-6.499c7.759-0.008,15.047,0.83,21.384,2.318 c6.336,1.472,11.688,3.628,15.689,6.035l3.758-6.247c3.799-1.139,9.785-2.814,17.13-4.474c12.762-2.895,29.647-5.686,45.598-5.661 c8.101,0,16.455,0.7,24.376,1.782c11.884,1.635,22.783,4.115,30.608,6.182c3.132,0.821,5.734,1.57,7.76,2.18l3.75,6.238 c4.001-2.407,9.362-4.563,15.69-6.035c6.336-1.488,13.624-2.326,21.383-2.318c8.24,0,17.025,0.92,25.842,2.855 c13.233,2.888,26.524,8.036,38.392,15.462c11.883,7.434,22.344,17.09,30.404,29.168c6.678,10.012,12.005,21.75,15.649,34.602 c3.636,12.843,5.58,26.793,5.58,41.149C475.43,300.15,471.624,321.054,463.538,340.991z"></path>
+                        <path d="M108.692,280.19c-0.008-15.56,3.229-30.153,8.126-41.573l-24.011-10.273 c-6.369,14.893-10.224,32.706-10.241,51.846c0,11.753,1.48,23.986,4.824,36.236s8.565,24.516,16.016,36.228l22.042-14.022 c-5.986-9.411-10.167-19.213-12.851-29.087C109.897,299.687,108.692,289.756,108.692,280.19z"></path>
+                    </g>
+                </svg>
+                <span>Помодоро</span>
+            </button>
             <button class="user-menu-item" id="btnUserMenuTrash">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -1469,6 +1478,7 @@ if (sidebarHeader && !document.getElementById('userProfileMenu')) {
 
 const userProfileMenu = document.getElementById('userProfileMenu');
 const btnUserMenuSettings = document.getElementById('btnUserMenuSettings');
+const btnUserMenuPomodoro = document.getElementById('btnUserMenuPomodoro');
 const btnUserMenuTrash = document.getElementById('btnUserMenuTrash');
 const btnUserMenuLogout = document.getElementById('btnUserMenuLogout');
 
@@ -1495,6 +1505,14 @@ if (sidebarUser && userProfileMenu) {
             e.stopPropagation();
             userProfileMenu.style.display = 'none';
             openSettingsModal();
+        });
+    }
+
+    if (btnUserMenuPomodoro) {
+        btnUserMenuPomodoro.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userProfileMenu.style.display = 'none';
+            window.location.hash = '#pomodoro';
         });
     }
 
@@ -1887,6 +1905,8 @@ function updateBrowserTitle() {
         title = 'Завтра';
     } else if (currentRoute === 'trash') {
         title = 'Корзина';
+    } else if (currentRoute === 'pomodoro') {
+        title = 'Помодоро';
     } else if (currentRoute.startsWith('project/')) {
         const projectId = currentRoute.split('/')[1];
         const proj = projectsList.find(p => p.id === projectId);
@@ -1904,6 +1924,8 @@ function handleRoute() {
         currentRoute = 'tomorrow';
     } else if (hash === 'trash') {
         currentRoute = 'trash';
+    } else if (hash === 'pomodoro') {
+        currentRoute = 'pomodoro';
     } else if (hash.startsWith('project/')) {
         const projectId = hash.split('/')[1];
         if (!projectId) {
@@ -1954,6 +1976,8 @@ function handleRoute() {
         if (titleEl) titleEl.textContent = 'Завтра';
     } else if (currentRoute === 'trash') {
         if (titleEl) titleEl.textContent = 'Корзина';
+    } else if (currentRoute === 'pomodoro') {
+        if (titleEl) titleEl.textContent = 'Помодоро';
     } else if (currentRoute.startsWith('project/')) {
         const projectId = currentRoute.split('/')[1];
         const proj = projectsList.find(p => p.id === projectId);
@@ -3449,7 +3473,7 @@ function renderTasksGroup(tasksGroup, containerEl) {
 // Отрендерить задачи в UI
 function renderTasks() {
     // Устанавливаем класс роута на body
-    document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash');
+    document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash', 'route-pomodoro');
     if (currentRoute === 'today') {
         document.body.classList.add('route-today');
     } else if (currentRoute === 'tomorrow') {
@@ -3458,6 +3482,8 @@ function renderTasks() {
         document.body.classList.add('route-trash');
     } else if (currentRoute === 'inbox') {
         document.body.classList.add('route-inbox');
+    } else if (currentRoute === 'pomodoro') {
+        document.body.classList.add('route-pomodoro');
     }
 
     const nonDeletedTasks = allTasks.filter(t => !t.deleted);
@@ -3505,20 +3531,43 @@ function renderTasks() {
         trashCounter.style.display = trashActiveCount > 0 ? 'inline-block' : 'none';
     }
 
-    // Переключаем отображение баннера Корзины и формы быстрого добавления
+    // Переключаем отображение баннера Корзины, Pomodoro и формы быстрого добавления
     const trashNoticeBanner = document.getElementById('trashNoticeBanner');
     const addTaskFormEl = document.querySelector('.add-task-form');
+    const pomodoroContainer = document.getElementById('pomodoroContainer');
+    const activeTasksContainer = document.getElementById('activeTasksContainer');
+    const gcalEventsBanner = document.getElementById('gcalEventsBanner');
+    const completedSection = document.getElementById('completedSection');
 
     if (trashNoticeBanner) {
         trashNoticeBanner.style.display = currentRoute === 'trash' ? 'flex' : 'none';
     }
+    if (pomodoroContainer) {
+        pomodoroContainer.style.display = currentRoute === 'pomodoro' ? 'flex' : 'none';
+    }
+    if (activeTasksContainer) {
+        activeTasksContainer.style.display = currentRoute === 'pomodoro' ? 'none' : 'block';
+    }
+    if (gcalEventsBanner && currentRoute === 'pomodoro') {
+        gcalEventsBanner.style.display = 'none';
+    }
     if (addTaskFormEl) {
-        addTaskFormEl.style.display = currentRoute === 'trash' ? 'none' : 'flex';
+        addTaskFormEl.style.display = (currentRoute === 'trash' || currentRoute === 'pomodoro') ? 'none' : 'flex';
     }
 
     const projectHeaderActions = document.getElementById('projectHeaderActions');
     if (projectHeaderActions) {
         projectHeaderActions.style.display = (currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox') ? 'block' : 'none';
+    }
+
+    if (currentRoute === 'pomodoro') {
+        if (completedSection) completedSection.style.display = 'none';
+        const todayProgWidget = document.getElementById('todayProgressWidget');
+        if (todayProgWidget) {
+            todayProgWidget.style.display = 'none';
+            todayProgWidget.innerHTML = '';
+        }
+        return;
     }
 
     // Фильтруем задачи для отображения в зависимости от текущей вкладки (роута)
@@ -4071,20 +4120,6 @@ function renderTasks() {
         if (activeTasksContainer) activeTasksContainer.classList.remove('disable-hover');
         if (completedTasksContainer) completedTasksContainer.classList.remove('disable-hover');
     }, 50);
-
-    // Обновление виджета серии (Streak)
-    if (currentRoute.startsWith('project/')) {
-        const projectId = currentRoute.split('/')[1];
-        const project = projectsList.find(p => p.id === projectId);
-        if (project) {
-            syncProjectStreak(projectId);
-            updateStreakWidget(project);
-        } else {
-            updateStreakWidget(null);
-        }
-    } else {
-        updateStreakWidget(null);
-    }
 
     renderProjects();
     syncModalIfOpen();
@@ -4905,33 +4940,13 @@ function showInlineSubtaskInput(parentTaskEl, parentId, projectId) {
     });
 }
 
-// Вспомогательные функции для серии дней (Streak)
+// Вспомогательные функции для работы с датами
 function getLocalDateString(date) {
     const d = new Date(date);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-}
-
-function getYesterdayDateString(date) {
-    const d = new Date(date);
-    d.setDate(d.getDate() - 1);
-    return getLocalDateString(d);
-}
-
-function getISOWeekString(date) {
-    const d = new Date(date);
-    const day = d.getDay() || 7;
-    d.setDate(d.getDate() + 4 - day);
-    const year = d.getFullYear();
-    const startOfYear = new Date(year, 0, 1);
-    const week = Math.ceil((((d - startOfYear) / 86400000) + 1) / 7);
-    return `${year}-W${week}`;
-}
-
-function getDayOfWeek(date) {
-    return date.getDay() || 7;
 }
 
 // Вспомогательная функция для экранирования HTML
@@ -7457,182 +7472,6 @@ function adjustAddTaskFormLocation() {
 adjustAddTaskFormLocation();
 window.addEventListener('resize', adjustAddTaskFormLocation);
 
-// === ЛОГИКА СЕРИИ ДНЕЙ (STREAK WIDGET) ===
-
-function calculateProjectStreak(projectId) {
-    const todayStr = getLocalDateString(new Date());
-    const yesterdayStr = getYesterdayDateString(new Date());
-    const currentWeekStr = getISOWeekString(new Date());
-
-    // Выбираем все выполненные задачи проекта (включая удаленные, если у них есть completedDate)
-    const projectCompletedTasks = allTasks.filter(t =>
-        t.projectId === projectId &&
-        t.completed &&
-        t.completedDate
-    );
-
-    // Извлекаем уникальные даты выполнения, сортируем по возрастанию
-    const dates = [...new Set(projectCompletedTasks.map(t => t.completedDate))].sort();
-
-    let streakCount = 0;
-    let lastStreakDate = null;
-
-    if (dates.length > 0) {
-        const hasToday = dates.includes(todayStr);
-        const hasYesterday = dates.includes(yesterdayStr);
-
-        if (hasToday || hasYesterday) {
-            lastStreakDate = hasToday ? todayStr : yesterdayStr;
-            streakCount = 1;
-
-            // Считаем назад от lastStreakDate
-            let checkDate = new Date(lastStreakDate);
-            while (true) {
-                checkDate.setDate(checkDate.getDate() - 1);
-                const checkDateStr = getLocalDateString(checkDate);
-                if (dates.includes(checkDateStr)) {
-                    streakCount++;
-                } else {
-                    break;
-                }
-            }
-        }
-    }
-
-    // Рассчитываем дни недели для текущей недели (1 = Пн, ..., 7 = Вс)
-    const completedDaysThisWeek = [];
-    const today = new Date();
-    const dayOfWeek = getDayOfWeek(today);
-
-    // Понедельник текущей недели
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - (dayOfWeek - 1));
-
-    for (let i = 0; i < 7; i++) {
-        const weekDay = new Date(monday);
-        weekDay.setDate(monday.getDate() + i);
-        const weekDayStr = getLocalDateString(weekDay);
-
-        if (dates.includes(weekDayStr)) {
-            completedDaysThisWeek.push(i + 1);
-        }
-    }
-
-    const completedToday = dates.includes(todayStr);
-
-    return {
-        streakCount,
-        lastStreakDate: lastStreakDate || "",
-        completedDaysThisWeek,
-        completedToday,
-        streakWeek: currentWeekStr
-    };
-}
-
-async function syncProjectStreak(projectId) {
-    if (!currentUid || !projectId) return;
-    const project = projectsList.find(p => p.id === projectId);
-    if (!project) return;
-
-    const calc = calculateProjectStreak(projectId);
-
-    // Сравниваем с текущими данными проекта, чтобы избежать бесконечных записей
-    if (project.streakCount !== calc.streakCount ||
-        project.lastStreakDate !== calc.lastStreakDate ||
-        project.streakWeek !== calc.streakWeek ||
-        project.completedToday !== calc.completedToday ||
-        JSON.stringify(project.completedDaysThisWeek || []) !== JSON.stringify(calc.completedDaysThisWeek)) {
-
-        try {
-            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
-                streakCount: calc.streakCount,
-                lastStreakDate: calc.lastStreakDate,
-                streakWeek: calc.streakWeek,
-                completedToday: calc.completedToday,
-                completedDaysThisWeek: calc.completedDaysThisWeek
-            });
-        } catch (err) {
-            console.error("Ошибка при синхронизации серии проекта:", err);
-        }
-    }
-}
-
-let currentAnimateRequest = null;
-function animateStreakCounter(target) {
-    const el = document.getElementById('streakNumber');
-    if (!el) return;
-
-    if (currentAnimateRequest) {
-        cancelAnimationFrame(currentAnimateRequest);
-    }
-
-    const currentVal = parseInt(el.textContent, 10) || 0;
-    if (currentVal === target) {
-        el.textContent = target;
-        return;
-    }
-
-    const duration = 800;
-    const startTime = performance.now();
-
-    function animate(time) {
-        const progress = Math.min((time - startTime) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const current = Math.round(currentVal + eased * (target - currentVal));
-        el.textContent = current;
-
-        if (progress < 1) {
-            currentAnimateRequest = requestAnimationFrame(animate);
-        } else {
-            el.textContent = target;
-        }
-    }
-    currentAnimateRequest = requestAnimationFrame(animate);
-}
-
-function updateStreakWidget(project) {
-    const widget = document.getElementById('streakWidget');
-    const divider = document.getElementById('streakDivider');
-    if (!widget) return;
-
-    if (!project) {
-        widget.style.display = 'none';
-        if (divider) divider.style.display = 'none';
-        return;
-    }
-
-    widget.style.display = 'block';
-    if (divider) divider.style.display = 'block';
-
-    const titleEl = document.getElementById('streakTitle');
-    if (titleEl) {
-        if (project && project.name) {
-            titleEl.innerHTML = `Серия дней <span style="font-weight: 400; opacity: 0.8; font-size: 0.85em;">(${escapeHtml(project.name)})</span>`;
-        } else {
-            titleEl.textContent = 'Серия дней';
-        }
-    }
-
-    const streakCount = project.streakCount || 0;
-    animateStreakCounter(streakCount);
-
-    const completedDays = project.completedDaysThisWeek || [];
-
-    const daysGrid = document.getElementById('streakDaysGrid');
-    if (daysGrid) {
-        const daysLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-        daysGrid.innerHTML = daysLabels.map((label, index) => {
-            const dayNum = index + 1;
-            const isDone = completedDays.includes(dayNum);
-            return `
-                <div class="streak-day">
-                    <span>${label}</span>
-                    <div class="streak-circle ${isDone ? 'done' : 'empty'}"></div>
-                </div>
-            `;
-        }).join('');
-    }
-}
 
 // --- ЛОГИКА ДЛЯ МОДАЛЬНОГО ОКНА ДЕТАЛЕЙ ЗАДАЧИ ---
 let currentModalTaskId = null;

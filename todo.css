@@ -1554,12 +1554,14 @@ body.dark .clear-due-icon {
     top: auto !important;
     left: auto !important;
     width: 621px;
-    height: 440px; /* Увеличенная высота для предотвращения скроллинга повторов */
+    height: 440px;
+    /* Увеличенная высота для предотвращения скроллинга повторов */
     display: flex !important;
     flex-direction: row !important;
     overflow: hidden;
     margin: 0 !important;
-    padding: 0 !important; /* Убираем дефолтный паддинг 12px */
+    padding: 0 !important;
+    /* Убираем дефолтный паддинг 12px */
     background-color: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 16px;
@@ -1595,7 +1597,8 @@ body.dark .clear-due-icon {
 .due-column-time-repeat {
     width: 320px;
     min-width: 320px;
-    background-color: var(--sidebar-bg) !important; /* Серый фон правой колонки */
+    background-color: var(--sidebar-bg) !important;
+    /* Серый фон правой колонки */
     position: relative;
     padding: 24px !important;
 }
@@ -1605,7 +1608,8 @@ body.dark .clear-due-icon {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-top: auto; /* Прижимает кнопки к низу серой колонки */
+    margin-top: auto;
+    /* Прижимает кнопки к низу серой колонки */
     padding-top: 16px;
 }
 
@@ -1693,18 +1697,22 @@ body.dark .clear-due-icon {
         max-height: 90vh;
         overflow-y: auto;
     }
+
     .due-column-date {
         width: 100% !important;
     }
+
     .due-vertical-divider {
         display: none !important;
     }
+
     .due-column-time-repeat {
         width: 100% !important;
         min-width: 0 !important;
         border-top: 1px solid var(--border);
         height: auto !important;
     }
+
     .due-modal-footer {
         width: 100% !important;
         box-sizing: border-box;
@@ -4000,254 +4008,6 @@ body.dark .section-actions-btn:hover {
     background-color: var(--hover-bg);
 }
 
-/* --- STREAK WIDGET STYLE --- */
-.streak-widget,
-.streak-divider,
-#mobileStreakWidgetContainer {
-    display: none !important;
-}
-
-.streak-widget {
-    padding: 18px;
-    border-radius: 18px;
-    color: white;
-    background:
-        radial-gradient(circle at 30% 20%, rgba(120, 92, 255, .25), transparent 35%),
-        linear-gradient(160deg, #1b1d44, #10162a);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, .3);
-    animation: streakWidgetPop .45s ease forwards;
-    box-sizing: border-box;
-}
-
-.streak-title {
-    font-size: 14px;
-    color: #c3c6df;
-    margin-bottom: 16px;
-    font-weight: 600;
-}
-
-.streak-main {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.streak-fire {
-    font-size: 31px;
-}
-
-.streak-number {
-    font-size: 46px;
-    font-weight: 800;
-    line-height: 1;
-    min-width: 32px;
-}
-
-.streak-text {
-    font-size: 14px;
-    color: #c3c6df;
-    margin-top: 12px;
-}
-
-.streak-days {
-    display: flex;
-    justify-content: space-between;
-}
-
-.streak-day {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    position: relative;
-}
-
-.streak-day span {
-    color: #8f96b7;
-    font-size: 12px;
-}
-
-.streak-circle {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.streak-circle.done {
-    background: linear-gradient(180deg, #9278ff, #6645ff);
-    transform: translateY(-14px) scale(0);
-    animation: streakDayDrop .55s cubic-bezier(.18, 1.55, .35, 1) forwards;
-}
-
-.streak-circle.done::before {
-    content: "";
-    position: absolute;
-    width: 8px;
-    height: 18px;
-    background: rgba(255, 255, 255, .45);
-    transform: rotate(35deg) translateX(-18px);
-    animation: streakShine .45s ease forwards;
-}
-
-.streak-circle.done::after {
-    content: "✓";
-    font-size: 13px;
-    font-weight: 800;
-    opacity: 0;
-    transform: scale(.4);
-    animation: streakCheckPop .25s ease forwards;
-}
-
-.streak-circle.empty {
-    border: 2px solid #313857;
-    background: rgba(255, 255, 255, .02);
-}
-
-.streak-day:nth-child(1) .streak-circle.done {
-    animation-delay: .05s;
-}
-
-.streak-day:nth-child(2) .streak-circle.done {
-    animation-delay: .20s;
-}
-
-.streak-day:nth-child(3) .streak-circle.done {
-    animation-delay: .35s;
-}
-
-.streak-day:nth-child(4) .streak-circle.done {
-    animation-delay: .50s;
-}
-
-.streak-day:nth-child(5) .streak-circle.done {
-    animation-delay: .65s;
-}
-
-.streak-day:nth-child(6) .streak-circle.done {
-    animation-delay: .80s;
-}
-
-.streak-day:nth-child(7) .streak-circle.done {
-    animation-delay: .95s;
-}
-
-.streak-day:nth-child(1) .streak-circle.done::after {
-    animation-delay: .22s;
-}
-
-.streak-day:nth-child(2) .streak-circle.done::after {
-    animation-delay: .37s;
-}
-
-.streak-day:nth-child(3) .streak-circle.done::after {
-    animation-delay: .52s;
-}
-
-.streak-day:nth-child(4) .streak-circle.done::after {
-    animation-delay: .67s;
-}
-
-.streak-day:nth-child(5) .streak-circle.done::after {
-    animation-delay: .82s;
-}
-
-.streak-day:nth-child(6) .streak-circle.done::after {
-    animation-delay: .97s;
-}
-
-.streak-day:nth-child(7) .streak-circle.done::after {
-    animation-delay: 1.12s;
-}
-
-.streak-day:nth-child(1) .streak-circle.done::before {
-    animation-delay: .30s;
-}
-
-.streak-day:nth-child(2) .streak-circle.done::before {
-    animation-delay: .45s;
-}
-
-.streak-day:nth-child(3) .streak-circle.done::before {
-    animation-delay: .60s;
-}
-
-.streak-day:nth-child(4) .streak-circle.done::before {
-    animation-delay: .75s;
-}
-
-.streak-day:nth-child(5) .streak-circle.done::before {
-    animation-delay: .90s;
-}
-
-.streak-day:nth-child(6) .streak-circle.done::before {
-    animation-delay: 1.05s;
-}
-
-.streak-day:nth-child(7) .streak-circle.done::before {
-    animation-delay: 1.20s;
-}
-
-@keyframes streakDayDrop {
-    0% {
-        opacity: 0;
-        transform: translateY(-14px) scale(0);
-        box-shadow: 0 0 0 rgba(116, 90, 255, 0);
-    }
-
-    65% {
-        opacity: 1;
-        transform: translateY(2px) scale(1.25);
-    }
-
-    100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-        box-shadow: none;
-    }
-}
-
-@keyframes streakCheckPop {
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-@keyframes streakShine {
-    to {
-        transform: rotate(35deg) translateX(18px);
-    }
-}
-
-@keyframes streakFirePulse {
-    from {
-        transform: scale(1);
-        filter: drop-shadow(0 0 0 rgba(255, 130, 40, 0));
-    }
-
-    to {
-        transform: scale(1.08);
-        filter: drop-shadow(0 0 8px rgba(255, 130, 40, .45));
-    }
-}
-
-@keyframes streakWidgetPop {
-    from {
-        opacity: 0;
-        transform: translateY(10px) scale(.96);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
 /* --- СТИЛИ ДЛЯ ВИДЖЕТА ПРОГРЕССА СЕГОДНЯ --- */
 .today-progress-widget {
     background: var(--card-bg);
@@ -5554,6 +5314,7 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
         padding-bottom: 0;
         border-color: transparent;
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -5729,9 +5490,11 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
 /* Кастомный выпадающий список для времени */
 .custom-time-dropdown {
     position: absolute;
-    top: 104px; /* Позиционируем под оберткой полей времени */
+    top: 104px;
+    /* Позиционируем под оберткой полей времени */
     width: 220px;
-    max-height: 200px; /* Ограничиваем высоту прокруткой */
+    max-height: 200px;
+    /* Ограничиваем высоту прокруткой */
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -5788,7 +5551,8 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     color: var(--text-secondary);
     font-size: 13px;
     font-weight: 400;
-    text-align: right; /* Прижимает текст длительности к правой стороне колонки */
+    text-align: right;
+    /* Прижимает текст длительности к правой стороне колонки */
 }
 
 .custom-time-dropdown-item .item-checkmark-wrap {
@@ -5839,4 +5603,45 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
 
 .time-view-ok-btn:hover {
     opacity: 0.9;
+}
+
+/* Pomodoro Embed Container Styles */
+.pomodoro-container {
+    display: none;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.pomodoro-iframe-wrapper {
+    width: 100%;
+    max-width: 1280px;
+    height: 100%;
+    max-height: 720px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border);
+    background-color: var(--card-bg);
+}
+
+.pomodoro-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .pomodoro-container {
+        padding: 12px;
+    }
+
+    .pomodoro-iframe-wrapper {
+        max-height: 100%;
+        border-radius: 12px;
+    }
 }

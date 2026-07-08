@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomofocus Clone Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Nunito', sans-serif;
+            background-color: #ba4949;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding-top: 40px;
+            padding-bottom: 50px;
+            transition: background-color 0.5s ease;
+        }
+
+        /* --- Таймер --- */
+        .timer-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px 0 30px;
+            border-radius: 8px;
+            text-align: center;
+            width: 100%;
+            max-width: 480px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tabs button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-family: 'Nunito', sans-serif;
+            padding: 5px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .tabs button.active {
+            background-color: rgba(0, 0, 0, 0.15);
+            font-weight: bold;
+        }
+
+        .timer {
+            font-size: 120px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1;
+        }
+
+        /* Контролы под таймером (Start + Skip) */
+        .timer-controls {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+        }
+
+        .start-btn {
+            background-color: white;
+            color: #ba4949;
+            border: none;
+            padding: 15px 0;
+            font-size: 22px;
+            font-weight: 800;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 6px 0 #ebebeb;
+            transition: transform 0.1s, box-shadow 0.1s, color 0.5s ease;
+            width: 200px;
+        }
+
+        .start-btn:active, .start-btn.active-press {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #ebebeb;
+        }
+
+        .skip-btn {
+            position: absolute;
+            right: 0;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: none; /* Скрыто по умолчанию */
+            opacity: 0.8;
+            transition: opacity 0.2s, transform 0.2s;
+            padding: 10px;
+        }
+
+        .skip-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        /* --- Активная задача --- */
+        .current-task-display {
+            text-align: center;
+            margin-bottom: 20px;
+            min-height: 40px;
+        }
+        .current-task-display .task-num {
+            color: rgba(255,255,255,0.7);
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .current-task-display .task-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* --- Блок Задач --- */
+        .tasks-container {
+            width: 100%;
+            max-width: 480px;
+            box-sizing: border-box;
+        }
+
+        .tasks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.6);
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .tasks-header button {
+            background-color: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* --- Список задач --- */
+        .task-item {
+            background-color: white;
+            color: #555;
+            padding: 15px 15px 15px 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            border-left: 6px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .task-item.active-task {
+            border-left: 6px solid #222;
+        }
+
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+            color: #bbb;
+        }
+
+        .task-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .check-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #dfdfdf;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 14px;
+        }
+        .task-item.completed .check-circle {
+            background-color: #ba4949;
+        }
+
+        .task-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #bbb;
+            font-size: 15px;
+        }
+        .task-right span {
+            font-weight: bold;
+        }
+        .task-right .act-pomos {
+            color: #555;
+            font-size: 18px;
+        }
+
+        .task-menu-btn {
+            background-color: transparent;
+            border: 1px solid #dfdfdf;
+            border-radius: 4px;
+            color: #555;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* --- Кнопки и Форма --- */
+        .add-task-btn {
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 18px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.2s, opacity 0.2s;
+            font-family: 'Nunito', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            opacity: 0.8;
+        }
+        .add-task-btn:hover {
+            opacity: 1;
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .task-form {
+            display: none;
+            background-color: white;
+            border-radius: 8px;
+            margin-top: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            animation: slideDown 0.2s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .task-form-body { padding: 20px; }
+        
+        .task-form input[type="text"] {
+            width: 100%;
+            padding: 10px 0;
+            font-size: 20px;
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-weight: bold;
+            color: #555;
+            box-sizing: border-box;
+            font-family: 'Nunito', sans-serif;
+            margin-bottom: 15px;
+        }
+        .task-form input[type="text"]:focus {
+            outline: none;
+            border-bottom: 2px solid #ccc;
+        }
+        .task-form input[type="text"]::placeholder {
+            color: #dfdfdf;
+            font-style: italic;
+        }
+
+        .est-pomodoros-label {
+            font-weight: bold;
+            color: #555;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .est-pomodoros-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .est-pomodoros-controls input {
+            width: 60px;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #555;
+            background-color: #efefef;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Nunito', sans-serif;
+        }
+        .est-pomodoros-controls button {
+            background-color: white;
+            border: 1px solid #dfdfdf;
+            color: #555;
+            width: 35px;
+            height: 38px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .task-form-footer {
+            background-color: #efefef;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+        .task-form-footer button {
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Nunito', sans-serif;
+            font-size: 14px;
+        }
+        .btn-cancel { background-color: transparent; color: #888; }
+        .btn-save { background-color: #222; color: white; }
+
+        /* --- Панель статистики --- */
+        .stats-bar {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 0 0 8px 8px;
+            border-top: 1px solid rgba(255,255,255,0.4);
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 15px;
+            color: rgba(255,255,255,0.8);
+        }
+        .stats-bar span strong {
+            color: white;
+            font-size: 20px;
+            margin: 0 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Таймер -->
+    <div class="timer-container">
+        <div class="tabs">
+            <button id="btn-pomodoro" class="active" onclick="setMode('pomodoro')">Pomodoro</button>
+            <button id="btn-short" onclick="setMode('shortBreak')">Short Break</button>
+            <button id="btn-long" onclick="setMode('longBreak')">Long Break</button>
+        </div>
+        
+        <div class="timer" id="time-display">25:00</div>
+        
+        <div class="timer-controls">
+            <button class="start-btn" id="start-btn" onclick="toggleTimer()">START</button>
+            <button class="skip-btn" id="skip-btn" onclick="skipTimer()">
+                <!-- SVG Иконка Skip как на скриншоте -->
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
+                    <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                    <line x1="19" y1="5" x2="19" y2="19"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Индикатор активной задачи -->
+    <div class="current-task-display" id="current-task-display"></div>
+
+    <!-- Блок задач -->
+    <div class="tasks-container">
+        <div class="tasks-header">
+            <span>Tasks</span>
+            <button>⋮</button>
+        </div>
+        
+        <div id="task-list"></div>
+
+        <button class="add-task-btn" id="add-task-btn" onclick="showTaskForm()">
+            <span style="font-size: 20px; margin-right: 5px;">⊕</span> Add Task
+        </button>
+
+        <div class="task-form" id="task-form">
+            <div class="task-form-body">
+                <input type="text" id="task-input" placeholder="What are you working on?">
+                <span class="est-pomodoros-label">Est Pomodoros</span>
+                <div class="est-pomodoros-controls">
+                    <input type="number" id="est-input" value="1" min="1">
+                    <button onclick="changeEst(1)">▲</button>
+                    <button onclick="changeEst(-1)">▼</button>
+                </div>
+            </div>
+            <div class="task-form-footer">
+                <button class="btn-cancel" onclick="hideTaskForm()">Cancel</button>
+                <button class="btn-save" onclick="saveTask()">Save</button>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="stats-bar">
+            <span>Pomos: <strong id="stat-pomos">0</strong> / <span id="stat-est">0</span></span>
+            <span>Finish At: <strong id="stat-finish">--:--</strong></span>
+        </div>
+    </div>
+
+    <script>
+        // --- Звук ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playBeep() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            function createOscillator(timeOffset) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime + timeOffset);
+                osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + timeOffset + 0.3);
+                gain.gain.setValueAtTime(1, audioCtx.currentTime + timeOffset);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + timeOffset + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + timeOffset);
+                osc.stop(audioCtx.currentTime + timeOffset + 0.3);
+            }
+            createOscillator(0);
+            createOscillator(0.4);
+        }
+
+        // --- Глобальные переменные ---
+        const MODES = {
+            pomodoro: { time: 25 * 60, color: '#ba4949' },
+            shortBreak: { time: 5 * 60, color: '#38858a' },
+            longBreak: { time: 15 * 60, color: '#397097' }
+        };
+
+        let currentMode = 'pomodoro';
+        let timeLeft = MODES[currentMode].time;
+        let timerInterval = null;
+        let isRunning = false;
+        
+        let tasks = [];
+        let activeTaskId = null;
+
+        const timeDisplay = document.getElementById('time-display');
+        const startBtn = document.getElementById('start-btn');
+        const skipBtn = document.getElementById('skip-btn');
+        const taskListEl = document.getElementById('task-list');
+        const taskForm = document.getElementById('task-form');
+        const taskInput = document.getElementById('task-input');
+        const estInput = document.getElementById('est-input');
+        const addTaskBtn = document.getElementById('add-task-btn');
+        const currentTaskDisplay = document.getElementById('current-task-display');
+
+        // --- Логика Таймера ---
+        function updateDisplay() {
+            const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const seconds = (timeLeft % 60).toString().padStart(2, '0');
+            timeDisplay.textContent = `${minutes}:${seconds}`;
+            document.title = `${minutes}:${seconds} - Pomofocus`;
+        }
+
+        function setMode(mode) {
+            clearInterval(timerInterval);
+            isRunning = false;
+            currentMode = mode;
+            timeLeft = MODES[currentMode].time;
+            
+            document.body.style.backgroundColor = MODES[currentMode].color;
+            startBtn.style.color = MODES[currentMode].color;
+            startBtn.textContent = 'START';
+            startBtn.classList.remove('active-press');
+            skipBtn.style.display = 'none'; // Прячем скип
+            
+            document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${mode === 'shortBreak' ? 'short' : mode === 'longBreak' ? 'long' : 'pomodoro'}`).classList.add('active');
+            
+            updateDisplay();
+            updateStats(); // Обновляем время Finish At
+        }
+
+        function toggleTimer() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            if (isRunning) {
+                clearInterval(timerInterval);
+                startBtn.textContent = 'START';
+                startBtn.classList.remove('active-press');
+                skipBtn.style.display = 'none';
+            } else {
+                startBtn.textContent = 'PAUSE';
+                startBtn.classList.add('active-press');
+                skipBtn.style.display = 'block'; // Показываем скип
+                
+                timerInterval = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateDisplay();
+                        updateStats(); // Обновляем стату каждую секунду
+                    } else {
+                        handleTimerComplete(false);
+                    }
+                }, 1000);
+            }
+            isRunning = !isRunning;
+        }
+
+        function skipTimer() {
+            handleTimerComplete(true);
+        }
+
+        function handleTimerComplete(isSkip = false) {
+            clearInterval(timerInterval);
+            isRunning = false;
+            
+            // Если закончился Помидор и есть активная задача - плюсуем прогресс
+            if (currentMode === 'pomodoro' && activeTaskId !== null) {
+                const task = tasks.find(t => t.id === activeTaskId);
+                if (task && !task.completed) {
+                    task.actPomos++;
+                }
+            }
+            
+            if (!isSkip) {
+                playBeep();
+                setTimeout(() => alert("Время вышло!"), 50);
+            }
+            
+            // Переключаем режимы
+            if (currentMode === 'pomodoro') setMode('shortBreak');
+            else setMode('pomodoro');
+            
+            renderTasks();
+            updateStats();
+        }
+
+        // --- Логика Задач и Статистики ---
+        function showTaskForm() {
+            taskForm.style.display = 'block';
+            addTaskBtn.style.display = 'none';
+            taskInput.focus();
+        }
+
+        function hideTaskForm() {
+            taskForm.style.display = 'none';
+            addTaskBtn.style.display = 'flex';
+            taskInput.value = '';
+            estInput.value = '1';
+        }
+
+        function changeEst(amount) {
+            let val = parseInt(estInput.value) || 1;
+            val += amount;
+            if (val < 1) val = 1;
+            estInput.value = val;
+        }
+
+        function saveTask() {
+            const title = taskInput.value.trim();
+            const est = parseInt(estInput.value) || 1;
+            if (title) {
+                const newTask = { 
+                    id: Date.now(), 
+                    title: title, 
+                    completed: false,
+                    estPomos: est,
+                    actPomos: 0
+                };
+                tasks.push(newTask);
+                if (tasks.length === 1) setActiveTask(newTask.id);
+                
+                renderTasks();
+                hideTaskForm();
+            }
+        }
+
+        function toggleComplete(id, event) {
+            event.stopPropagation();
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                renderTasks();
+            }
+        }
+
+        function setActiveTask(id) {
+            activeTaskId = id;
+            renderTasks();
+        }
+
+        function renderTasks() {
+            taskListEl.innerHTML = '';
+            let activeTaskTitle = "";
+            let activeTaskIndex = 0;
+
+            tasks.forEach((task, index) => {
+                const isActive = task.id === activeTaskId;
+                if (isActive) {
+                    activeTaskTitle = task.title;
+                    activeTaskIndex = index + 1;
+                }
+
+                const el = document.createElement('div');
+                el.className = `task-item ${task.completed ? 'completed' : ''} ${isActive ? 'active-task' : ''}`;
+                el.onclick = () => setActiveTask(task.id);
+                
+                el.innerHTML = `
+                    <div class="task-left">
+                        <div class="check-circle" onclick="toggleComplete(${task.id}, event)">
+                            ${task.completed ? '✓' : ''}
+                        </div>
+                        <span class="task-title">${task.title}</span>
+                    </div>
+                    <div class="task-right">
+                        <span><span class="act-pomos">${task.actPomos}</span> / ${task.estPomos}</span>
+                        <button class="task-menu-btn" onclick="event.stopPropagation()">⋮</button>
+                    </div>
+                `;
+                taskListEl.appendChild(el);
+            });
+
+            if (activeTaskId && activeTaskTitle) {
+                currentTaskDisplay.innerHTML = `<div class="task-num">#${activeTaskIndex}</div><div class="task-name">${activeTaskTitle}</div>`;
+            } else {
+                currentTaskDisplay.innerHTML = '';
+            }
+
+            updateStats();
+        }
+
+        function updateStats() {
+            let totalEst = 0;
+            let totalAct = 0;
+            tasks.forEach(t => {
+                totalEst += t.estPomos;
+                totalAct += t.actPomos;
+            });
+            
+            document.getElementById('stat-pomos').textContent = totalAct;
+            document.getElementById('stat-est').textContent = totalEst;
+            
+            // Расчет 24ч формата и остатка (зависит от текущих секунд таймера)
+            const remainingPomos = Math.max(0, totalEst - totalAct);
+            if (remainingPomos > 0) {
+                let totalMinutesLeft = (remainingPomos - 1) * 30; // Будущие интервалы (25м + 5м)
+                
+                // Добавляем текущий запущенный таймер
+                if (currentMode === 'pomodoro') {
+                    totalMinutesLeft += (timeLeft / 60) + 5; // Фокус + будущий отдых
+                } else if (currentMode === 'shortBreak') {
+                    totalMinutesLeft += (timeLeft / 60); // Только отдых
+                } else {
+                    totalMinutesLeft += (timeLeft / 60);
+                }
+                
+                const finishTime = new Date(Date.now() + totalMinutesLeft * 60000);
+                const hours = finishTime.getHours().toString().padStart(2, '0');
+                const minutes = finishTime.getMinutes().toString().padStart(2, '0');
+                const decimalHours = (totalMinutesLeft / 60).toFixed(1);
+                
+                document.getElementById('stat-finish').textContent = `${hours}:${minutes} (${decimalHours}h)`;
+            } else {
+                document.getElementById('stat-finish').textContent = '--:--';
+            }
+        }
+
+        // Запуск
+        updateDisplay();
+        updateStats();
+    </script>
+</body>
+</html>

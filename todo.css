@@ -1554,14 +1554,12 @@ body.dark .clear-due-icon {
     top: auto !important;
     left: auto !important;
     width: 621px;
-    height: 440px;
-    /* Увеличенная высота для предотвращения скроллинга повторов */
+    height: 440px; /* Увеличенная высота для предотвращения скроллинга повторов */
     display: flex !important;
     flex-direction: row !important;
     overflow: hidden;
     margin: 0 !important;
-    padding: 0 !important;
-    /* Убираем дефолтный паддинг 12px */
+    padding: 0 !important; /* Убираем дефолтный паддинг 12px */
     background-color: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 16px;
@@ -1597,8 +1595,7 @@ body.dark .clear-due-icon {
 .due-column-time-repeat {
     width: 320px;
     min-width: 320px;
-    background-color: var(--sidebar-bg) !important;
-    /* Серый фон правой колонки */
+    background-color: var(--sidebar-bg) !important; /* Серый фон правой колонки */
     position: relative;
     padding: 24px !important;
 }
@@ -1608,8 +1605,7 @@ body.dark .clear-due-icon {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-top: auto;
-    /* Прижимает кнопки к низу серой колонки */
+    margin-top: auto; /* Прижимает кнопки к низу серой колонки */
     padding-top: 16px;
 }
 
@@ -1697,22 +1693,18 @@ body.dark .clear-due-icon {
         max-height: 90vh;
         overflow-y: auto;
     }
-
     .due-column-date {
         width: 100% !important;
     }
-
     .due-vertical-divider {
         display: none !important;
     }
-
     .due-column-time-repeat {
         width: 100% !important;
         min-width: 0 !important;
         border-top: 1px solid var(--border);
         height: auto !important;
     }
-
     .due-modal-footer {
         width: 100% !important;
         box-sizing: border-box;
@@ -5314,7 +5306,6 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
         padding-bottom: 0;
         border-color: transparent;
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -5490,11 +5481,9 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
 /* Кастомный выпадающий список для времени */
 .custom-time-dropdown {
     position: absolute;
-    top: 104px;
-    /* Позиционируем под оберткой полей времени */
+    top: 104px; /* Позиционируем под оберткой полей времени */
     width: 220px;
-    max-height: 200px;
-    /* Ограничиваем высоту прокруткой */
+    max-height: 200px; /* Ограничиваем высоту прокруткой */
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -5551,8 +5540,7 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     color: var(--text-secondary);
     font-size: 13px;
     font-weight: 400;
-    text-align: right;
-    /* Прижимает текст длительности к правой стороне колонки */
+    text-align: right; /* Прижимает текст длительности к правой стороне колонки */
 }
 
 .custom-time-dropdown-item .item-checkmark-wrap {
@@ -5603,45 +5591,4 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
 
 .time-view-ok-btn:hover {
     opacity: 0.9;
-}
-
-/* Pomodoro Embed Container Styles */
-.pomodoro-container {
-    display: none;
-    flex: 1;
-    justify-content: center;
-    align-items: center;
-    padding: 24px;
-    height: 100%;
-    box-sizing: border-box;
-}
-
-.pomodoro-iframe-wrapper {
-    width: 100%;
-    max-width: 1280px;
-    height: 100%;
-    max-height: 720px;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-    border: 1px solid var(--border);
-    background-color: var(--card-bg);
-}
-
-.pomodoro-iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    display: block;
-}
-
-@media (max-width: 768px) {
-    .pomodoro-container {
-        padding: 12px;
-    }
-
-    .pomodoro-iframe-wrapper {
-        max-height: 100%;
-        border-radius: 12px;
-    }
 }

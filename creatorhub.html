@@ -286,8 +286,11 @@
             <div class="detail-sidebar-content-wrapper" id="detailSidebarContentWrapper" style="display: none;">
                 <!-- Превью видео -->
             <div class="detail-thumbnail-wrapper" style="position: relative;">
-                <img id="detailImage" src="https://placehold.co/600x338?text=Select+Video" alt="Превью"
-                    class="detail-thumbnail">
+                <div class="detail-thumbnail-inner" id="detailThumbnailInner">
+                    <img id="detailImage" src="https://placehold.co/600x338?text=Select+Video" alt="Превью"
+                        class="detail-thumbnail">
+                    <div class="shorts-badge" id="detailShortsBadge" style="display: none;"></div>
+                </div>
                 <button class="btn-change-thumbnail" id="btnChangeThumbnail" style="display: none;"
                     title="Изменить обложку">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"

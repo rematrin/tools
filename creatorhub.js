@@ -23,6 +23,16 @@ let currentMenuRoute = "videos"; // "videos" | "trash"
 let isDeletePermanentMode = false;
 let currentViewMode = localStorage.getItem("creatorhub_view_mode") || "list";
 
+const SHORTS_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="16" height="16" baseProfile="basic" style="vertical-align: middle; margin-right: 6px; flex-shrink: 0; display: inline-block;"><path fill="#ff3d00" d="M29.103,2.631c4.217-2.198,9.438-0.597,11.658,3.577c2.22,4.173,0.6,9.337-3.617,11.534l-3.468,1.823	c2.987,0.109,5.836,1.75,7.328,4.555c2.22,4.173,0.604,9.337-3.617,11.534L18.897,45.37c-4.217,2.198-9.438,0.597-11.658-3.577	s-0.6-9.337,3.617-11.534l3.468-1.823c-2.987-0.109-5.836-1.75-7.328-4.555c-2.22-4.173-0.6-9.337,3.617-11.534	C10.612,12.346,29.103,2.631,29.103,2.631z M19.122,17.12l11.192,6.91l-11.192,6.877C19.122,30.907,19.122,17.12,19.122,17.12z"/><path fill="#fff" d="M19.122,17.12v13.787l11.192-6.877L19.122,17.12z"/></svg>`;
+
+function formatVideoTitle(title) {
+    if (!title) return "";
+    if (title.startsWith("* ")) {
+        return title.slice(2);
+    }
+    return title;
+}
+
 // DOM Элементы
 const videosListContainer = document.getElementById("videosListContainer");
 const videoSearch = document.getElementById("videoSearch");
@@ -367,6 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (detailTitle.getAttribute("contenteditable") === "true") return; // уже редактируется
 
             const oldTitle = selectedVideo.title || "";
+            detailTitle.textContent = oldTitle;
             detailTitle.setAttribute("contenteditable", "true");
             detailTitle.focus();
 
@@ -384,7 +395,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 detailTitle.removeAttribute("contenteditable");
                 const newTitle = detailTitle.textContent.trim() || oldTitle;
-                detailTitle.textContent = newTitle;
+                detailTitle.innerHTML = formatVideoTitle(newTitle);
 
                 if (newTitle !== oldTitle) {
                     selectedVideo.title = newTitle;
@@ -417,7 +428,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     detailTitle.blur();
                 } else if (e.key === "Escape") {
                     e.preventDefault();
-                    detailTitle.textContent = oldTitle;
+                    detailTitle.innerHTML = formatVideoTitle(oldTitle);
                     detailTitle.blur();
                 }
             });
@@ -918,7 +929,7 @@ function renderVideosList() {
 
     function createVideoCard(v) {
         const card = document.createElement("div");
-        card.className = `video-card ${selectedVideo && selectedVideo.id === v.id ? 'active' : ''}`;
+        card.className = `video-card ${selectedVideo && selectedVideo.id === v.id ? 'active' : ''} ${(v.title && v.title.startsWith('* ')) ? 'is-shorts' : ''}`;
         card.dataset.id = v.id;
 
         // Настройка активации draggable при взаимодействии (для десктопа)
@@ -937,9 +948,14 @@ function renderVideosList() {
         if (v.deleted) {
             card.innerHTML = `
                 <div class="video-card-left">
-                    <img src="${v.thumbnail}" alt="Превью" class="video-thumbnail-mini">
+                    <div class="video-thumbnail-container">
+                        <div class="video-thumbnail-inner">
+                            <img src="${v.thumbnail}" alt="Превью" class="video-thumbnail-mini">
+                            ${(v.title && v.title.startsWith('* ')) ? `<div class="shorts-badge">${SHORTS_ICON_SVG}</div>` : ''}
+                        </div>
+                    </div>
                     <div class="video-info-block">
-                        <h4 class="video-title">${v.title}</h4>
+                        <h4 class="video-title">${formatVideoTitle(v.title)}</h4>
                         <div class="video-meta-tags">
                             ${v.tags.map(tag => `<span class="meta-tag ${typeof getTagColorClass === 'function' ? getTagColorClass(tag) : ''}">${tag}</span>`).join('')}
                         </div>
@@ -969,9 +985,14 @@ function renderVideosList() {
         } else {
             card.innerHTML = `
                 <div class="video-card-left">
-                    <img src="${v.thumbnail}" alt="Превью" class="video-thumbnail-mini">
+                    <div class="video-thumbnail-container">
+                        <div class="video-thumbnail-inner">
+                            <img src="${v.thumbnail}" alt="Превью" class="video-thumbnail-mini">
+                            ${(v.title && v.title.startsWith('* ')) ? `<div class="shorts-badge">${SHORTS_ICON_SVG}</div>` : ''}
+                        </div>
+                    </div>
                     <div class="video-info-block">
-                        <h4 class="video-title">${v.title}</h4>
+                        <h4 class="video-title">${formatVideoTitle(v.title)}</h4>
                         <div class="video-meta-tags">
                             ${v.tags.map(tag => `<span class="meta-tag ${typeof getTagColorClass === 'function' ? getTagColorClass(tag) : ''}">${tag}</span>`).join('')}
                         </div>
@@ -1433,9 +1454,28 @@ function selectVideoItem(id) {
 
     if (!selectedVideo) return;
 
+    // Обновляем класс shorts для обложки в сайдбаре
+    const detailThumbnailWrapper = document.querySelector(".detail-thumbnail-wrapper");
+    const detailShortsBadge = document.getElementById("detailShortsBadge");
+    if (detailThumbnailWrapper) {
+        if (selectedVideo.title && selectedVideo.title.startsWith("* ")) {
+            detailThumbnailWrapper.classList.add("is-shorts");
+            if (detailShortsBadge) {
+                detailShortsBadge.innerHTML = SHORTS_ICON_SVG;
+                detailShortsBadge.style.display = "flex";
+            }
+        } else {
+            detailThumbnailWrapper.classList.remove("is-shorts");
+            if (detailShortsBadge) {
+                detailShortsBadge.style.display = "none";
+                detailShortsBadge.innerHTML = "";
+            }
+        }
+    }
+
     // Заполнение детального вида
     detailImage.src = selectedVideo.thumbnail;
-    detailTitle.textContent = selectedVideo.title;
+    detailTitle.innerHTML = formatVideoTitle(selectedVideo.title);
     
     const btnChangeThumbnail = document.getElementById("btnChangeThumbnail");
     if (btnChangeThumbnail) {
@@ -1769,6 +1809,17 @@ if (settingsModal) {
 function clearDetailSidebar() {
     detailImage.src = "https://placehold.co/600x338?text=Select+Video";
     detailTitle.textContent = "Выберите видео из списка";
+    
+    const detailThumbnailWrapper = document.querySelector(".detail-thumbnail-wrapper");
+    if (detailThumbnailWrapper) {
+        detailThumbnailWrapper.classList.remove("is-shorts");
+    }
+    const detailShortsBadge = document.getElementById("detailShortsBadge");
+    if (detailShortsBadge) {
+        detailShortsBadge.style.display = "none";
+        detailShortsBadge.innerHTML = "";
+    }
+
     const btnChangeThumbnail = document.getElementById("btnChangeThumbnail");
     if (btnChangeThumbnail) {
         btnChangeThumbnail.style.display = "none";

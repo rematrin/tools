@@ -557,12 +557,22 @@ body.dark .published .change {
     flex: 1;
 }
 
-.video-thumbnail-mini {
+.video-thumbnail-container {
     width: 90px;
     height: 52px;
-    object-fit: cover;
     border-radius: 8px;
-    background: #e2e8f0;
+    background: transparent;
+    overflow: visible;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.video-thumbnail-mini {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 8px;
 }
 
 .video-info-block {
@@ -820,10 +830,13 @@ body.dark .status-badge.archive {
     max-width: 340px;
     min-width: 240px;
     aspect-ratio: 16/9;
-    background: #e2e8f0;
+    background: transparent;
     border-radius: 14px;
-    overflow: hidden;
+    overflow: visible;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .detail-thumbnail {
@@ -831,6 +844,8 @@ body.dark .status-badge.archive {
     height: 100%;
     object-fit: cover;
     cursor: pointer;
+    display: block;
+    border-radius: 14px;
 }
 
 .detail-title-block {
@@ -3680,10 +3695,21 @@ body.dark .tag-color-gray {
     gap: 12px;
 }
 
-.videos-list.grid-view .video-thumbnail-mini {
+.videos-list.grid-view .video-thumbnail-container {
     width: 100%;
     height: auto;
     aspect-ratio: 16 / 9;
+    border-radius: 10px;
+    background: transparent;
+    overflow: visible;
+    position: relative;
+}
+
+.videos-list.grid-view .video-thumbnail-mini {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
     border-radius: 10px;
 }
 
@@ -3777,4 +3803,53 @@ body.dark .tag-color-gray {
     background-color: var(--ch-border);
     cursor: text;
     border-radius: 4px;
+}
+
+/* --- YT Shorts aspect ratio support --- */
+.video-thumbnail-inner, .detail-thumbnail-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.is-shorts .video-thumbnail-inner,
+.detail-thumbnail-wrapper.is-shorts .detail-thumbnail-inner {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: auto !important;
+    height: 100% !important;
+    aspect-ratio: 9 / 16 !important;
+}
+
+.is-shorts .video-thumbnail-mini,
+.detail-thumbnail-wrapper.is-shorts .detail-thumbnail {
+    width: 100% !important;
+    height: 100% !important;
+    aspect-ratio: auto !important;
+    object-fit: cover !important;
+}
+
+/* Иконка Shorts справа снизу поверх обложки */
+.shorts-badge {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 22px;
+    height: 22px;
+    background: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+}
+
+.shorts-badge svg {
+    width: 15px !important;
+    height: 15px !important;
+    margin: 0 !important;
+    display: block;
 }

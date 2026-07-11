@@ -33,18 +33,20 @@ let isPanning = false;
 let startPanX = 0;
 let startPanY = 0;
 
-// Состояние рисования
+// Состояние сессии рисования (Milanote style)
 let isDrawing = false;
+let localStrokes = []; // Временные штрихи сессии рисования: { color, points: [] }
+let localDrawingTool = 'pencil'; // 'pencil', 'eraser'
 let activeDrawingPoints = [];
 let activeDrawingPathEl = null;
 
 // Состояние редактирования/выделения
 let activeTool = 'select'; // 'select', 'text', 'sticker', 'frame', 'link', 'image', 'draw', 'eraser'
-let activeColor = '#3b82f6';
+let activeColor = '#111827';
 let selectedElementIds = new Set(); // Поддержка множественного выделения
 
 // Временные данные для перетаскивания и ресайза
-let dragStartInfo = null; // { type: 'element'|'resize'|'canvas-resize'|'selection-marquee'|'eraser-drag', id, startX, startY, ... }
+let dragStartInfo = null; // { type: 'element'|'resize'|'canvas-resize'|'selection-marquee', id, startX, startY, ... }
 
 // DOM Элементы
 const dashboardView = document.getElementById('dashboardView');
@@ -86,6 +88,13 @@ const bookmarkUrlInput = document.getElementById('bookmarkUrlInput');
 const btnUrlCancel = document.getElementById('btnUrlCancel');
 const btnUrlConfirm = document.getElementById('btnUrlConfirm');
 const imageFileInput = document.getElementById('imageFileInput');
+
+// DOM Элементы панели режима рисования (Milanote style)
+const drawingModePanel = document.getElementById('drawingModePanel');
+const drawBtnPencil = document.getElementById('drawBtnPencil');
+const drawBtnEraser = document.getElementById('drawBtnEraser');
+const btnDrawDiscard = document.getElementById('btnDrawDiscard');
+const btnDrawSave = document.getElementById('btnDrawSave');
 
 // === РОУТИНГ И ИНИЦИАЛИЗАЦИЯ ===
 
@@ -384,6 +393,10 @@ function setupFirebaseSyncForBoard() {
         renderElements();
         showSaveStatus('Сохранено');
         updateUndoRedoButtons();
+        if (!hasCenteredOnLoad && Object.keys(elements).length > 0) {
+            hasCenteredOnLoad = true;
+            centerBoardOnElements();
+        }
     }, (err) => {
         console.error("Ошибка синхронизации элементов:", err);
         showSaveStatus('Ошибка сети');
@@ -410,6 +423,10 @@ function setupOfflineModeForBoard() {
     }
     renderElements();
     updateUndoRedoButtons();
+    if (!hasCenteredOnLoad && Object.keys(elements).length > 0) {
+        hasCenteredOnLoad = true;
+        centerBoardOnElements();
+    }
 }
 
 function saveBoardInfo() {
@@ -454,9 +471,6 @@ function saveElement(elData) {
 
 function deleteElement(id) {
     saveUndoState();
-
-    const path = document.getElementById(`svg_${id}`);
-    if (path) path.remove();
 
     if (elements[id] && elements[id].type === 'frame') {
         const batchUpdates = [];
@@ -539,12 +553,10 @@ window.addEventListener('keydown', (e) => {
             return;
         }
         if (selectedElementIds.size > 0) {
-            if (confirm(`Удалить выделенные элементы (${selectedElementIds.size})?`)) {
-                selectedElementIds.forEach(id => {
-                    deleteElement(id);
-                });
-                selectedElementIds.clear();
-            }
+            selectedElementIds.forEach(id => {
+                deleteElement(id);
+            });
+            selectedElementIds.clear();
         }
     }
 });
@@ -593,11 +605,17 @@ if (btnRedo) btnRedo.addEventListener('click', redo);
 function updateCanvasSize() {
     boardCanvas.style.width = `${boardConfig.width}px`;
     boardCanvas.style.height = `${boardConfig.height}px`;
+    
+    // ВАЖНО: Задаем размеры SVG слою рисования
+    drawingLayer.setAttribute("width", boardConfig.width);
+    drawingLayer.setAttribute("height", boardConfig.height);
 }
 
 // === ВЫБОР ИНСТРУМЕНТОВ ===
 function setTool(toolName) {
     activeTool = toolName;
+    
+    // Стилизуем кнопки тулбара
     Object.keys(tools).forEach(name => {
         if (tools[name]) {
             if (name === toolName) {
@@ -608,17 +626,33 @@ function setTool(toolName) {
         }
     });
 
-    if (toolName === 'draw' || toolName === 'sticker') {
+    if (toolName === 'draw') {
+        // Входим в сессию рисования Milanote style
+        document.body.classList.add('drawing-mode-active');
+        drawingModePanel.classList.add('active');
+        localStrokes = [];
+        localDrawingTool = 'pencil';
+        drawBtnPencil.classList.add('active');
+        drawBtnEraser.classList.remove('active');
+        
+        drawingLayer.innerHTML = '';
+        boardCanvas.style.cursor = 'crosshair';
+        selectedElementIds.clear();
+        document.querySelectorAll('.board-element').forEach(el => el.classList.remove('selected'));
+    } else {
+        document.body.classList.remove('drawing-mode-active');
+        drawingModePanel.classList.remove('active');
+    }
+
+    if (toolName === 'sticker') {
         colorPickerPanel.classList.add('active');
     } else {
         colorPickerPanel.classList.remove('active');
     }
 
-    if (toolName === 'draw') {
-        boardCanvas.style.cursor = 'crosshair';
-    } else if (toolName === 'eraser') {
+    if (toolName === 'eraser') {
         boardCanvas.style.cursor = 'cell';
-    } else {
+    } else if (toolName !== 'draw') {
         boardCanvas.style.cursor = 'default';
     }
 }
@@ -629,13 +663,111 @@ Object.keys(tools).forEach(name => {
     }
 });
 
-document.querySelectorAll('.color-option').forEach(opt => {
+// Переключение цвета на панели карандаша / стикеров
+document.querySelectorAll('.color-option, .draw-color-opt').forEach(opt => {
     opt.addEventListener('click', (e) => {
-        document.querySelectorAll('.color-option').forEach(o => o.classList.remove('active'));
+        document.querySelectorAll('.color-option, .draw-color-opt').forEach(o => o.classList.remove('active'));
         opt.classList.add('active');
         activeColor = opt.getAttribute('data-color');
     });
 });
+
+// Кнопки управления сессией рисования
+drawBtnPencil.addEventListener('click', () => {
+    localDrawingTool = 'pencil';
+    drawBtnPencil.classList.add('active');
+    drawBtnEraser.classList.remove('active');
+    boardCanvas.style.cursor = 'crosshair';
+});
+
+drawBtnEraser.addEventListener('click', () => {
+    localDrawingTool = 'eraser';
+    drawBtnEraser.classList.add('active');
+    drawBtnPencil.classList.remove('active');
+    boardCanvas.style.cursor = 'cell';
+});
+
+btnDrawDiscard.addEventListener('click', () => {
+    exitDrawingMode(false);
+});
+
+btnDrawSave.addEventListener('click', () => {
+    exitDrawingMode(true);
+});
+
+function exitDrawingMode(save = false) {
+    document.body.classList.remove('drawing-mode-active');
+    drawingModePanel.classList.remove('active');
+    
+    if (save && localStrokes.length > 0) {
+        // Находим bounding box всех нарисованных линий
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        localStrokes.forEach(s => {
+            s.points.forEach(pt => {
+                if (pt.x < minX) minX = pt.x;
+                if (pt.x > maxX) maxX = pt.x;
+                if (pt.y < minY) minY = pt.y;
+                if (pt.y > maxY) maxY = pt.y;
+            });
+        });
+
+        // Смещение всех точек относительно верхнего левого угла (minX, minY)
+        const shiftedStrokes = localStrokes.map(s => {
+            return {
+                color: s.color,
+                points: s.points.map(pt => ({
+                    x: pt.x - minX,
+                    y: pt.y - minY
+                }))
+            };
+        });
+
+        const w = Math.max(40, maxX - minX);
+        const h = Math.max(40, maxY - minY);
+
+        saveUndoState();
+
+        const id = "el_" + Math.random().toString(36).substring(2, 11);
+        const maxZ = Object.values(elements).reduce((max, el) => Math.max(max, el.zIndex || 0), 0);
+        const elData = {
+            id,
+            type: 'drawing',
+            x: minX,
+            y: minY,
+            width: w,
+            height: h,
+            strokes: shiftedStrokes,
+            zIndex: maxZ + 1
+        };
+
+        saveElement(elData);
+    }
+
+    localStrokes = [];
+    drawingLayer.innerHTML = '';
+    setTool('select');
+    renderElements();
+}
+
+function redrawLocalStrokes() {
+    drawingLayer.innerHTML = '';
+    localStrokes.forEach((stroke, strokeIdx) => {
+        if (!stroke.points || stroke.points.length === 0) return;
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("stroke", stroke.color);
+        path.setAttribute("stroke-width", "4");
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke-linecap", "round");
+        path.setAttribute("stroke-linejoin", "round");
+        
+        let d = `M ${stroke.points[0].x} ${stroke.points[0].y}`;
+        for (let i = 1; i < stroke.points.length; i++) {
+            d += ` L ${stroke.points[i].x} ${stroke.points[i].y}`;
+        }
+        path.setAttribute("d", d);
+        drawingLayer.appendChild(path);
+    });
+}
 
 // === СОЗДАНИЕ ЭЛЕМЕНТОВ ===
 function createNewElement(type, x, y, extra = {}) {
@@ -753,7 +885,29 @@ imageFileInput.addEventListener('change', async (e) => {
 function renderElements() {
     const activeTextareaId = document.activeElement ? document.activeElement.getAttribute('data-id') : null;
     elementsLayer.innerHTML = '';
+    
+    // Всегда очищаем SVG-слой перед перерисовкой
     drawingLayer.innerHTML = '';
+
+    // Если мы в режиме активного рисования, рисуем временные штрихи сессии
+    if (activeTool === 'draw') {
+        localStrokes.forEach((stroke) => {
+            if (!stroke.points || stroke.points.length === 0) return;
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("stroke", stroke.color);
+            path.setAttribute("stroke-width", "4");
+            path.setAttribute("fill", "none");
+            path.setAttribute("stroke-linecap", "round");
+            path.setAttribute("stroke-linejoin", "round");
+            
+            let d = `M ${stroke.points[0].x} ${stroke.points[0].y}`;
+            for (let i = 1; i < stroke.points.length; i++) {
+                d += ` L ${stroke.points[i].x} ${stroke.points[i].y}`;
+            }
+            path.setAttribute("d", d);
+            drawingLayer.appendChild(path);
+        });
+    }
 
     const sortedElements = Object.values(elements).sort((a, b) => {
         if (a.type === 'frame' && b.type !== 'frame') return -1;
@@ -762,11 +916,6 @@ function renderElements() {
     });
 
     sortedElements.forEach(el => {
-        if (el.type === 'drawing') {
-            renderDrawing(el);
-            return;
-        }
-
         const elDiv = document.createElement('div');
         elDiv.className = `board-element el-${el.type}`;
         if (selectedElementIds.has(el.id)) {
@@ -793,19 +942,48 @@ function renderElements() {
         });
         elDiv.appendChild(delBtn);
 
-        const resizeHandle = document.createElement('div');
-        resizeHandle.className = 'element-resize-handle handle-se';
-        elDiv.appendChild(resizeHandle);
+        // Для рисунков убираем возможность изменения размера (скрываем ресайзер)
+        if (el.type !== 'drawing') {
+            const resizeHandle = document.createElement('div');
+            resizeHandle.className = 'element-resize-handle handle-se';
+            elDiv.appendChild(resizeHandle);
+        }
 
-        if (el.type === 'text' || el.type === 'sticker') {
+        if (el.type === 'drawing') {
+            const svgEl = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svgEl.setAttribute("viewBox", `0 0 ${el.width} ${el.height}`);
+            svgEl.setAttribute("width", "100%");
+            svgEl.setAttribute("height", "100%");
+
+            if (el.strokes) {
+                el.strokes.forEach(stroke => {
+                    if (!stroke.points || stroke.points.length === 0) return;
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("stroke", stroke.color || "#000");
+                    path.setAttribute("stroke-width", "4");
+                    path.setAttribute("fill", "none");
+                    path.setAttribute("stroke-linecap", "round");
+                    path.setAttribute("stroke-linejoin", "round");
+                    
+                    let d = `M ${stroke.points[0].x} ${stroke.points[0].y}`;
+                    for (let i = 1; i < stroke.points.length; i++) {
+                        d += ` L ${stroke.points[i].x} ${stroke.points[i].y}`;
+                    }
+                    path.setAttribute("d", d);
+                    svgEl.appendChild(path);
+                });
+            }
+            elDiv.appendChild(svgEl);
+        }
+        else if (el.type === 'text' || el.type === 'sticker') {
             const textEl = document.createElement('div');
             textEl.className = 'el-text-content';
             textEl.contentEditable = true;
             textEl.setAttribute('data-id', el.id);
-            textEl.innerText = el.content || '';
+            textEl.innerHTML = el.content || '';
             
             textEl.addEventListener('blur', () => {
-                const newText = textEl.innerText;
+                const newText = textEl.innerHTML;
                 if (el.content !== newText) {
                     saveUndoState();
                     el.content = newText;
@@ -899,38 +1077,6 @@ function renderElements() {
     });
 }
 
-function renderDrawing(el) {
-    if (!el.points || el.points.length === 0) return;
-    
-    let path = document.getElementById(`svg_${el.id}`);
-    if (!path) {
-        path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("id", `svg_${el.id}`);
-        drawingLayer.appendChild(path);
-    }
-    
-    const isSelected = selectedElementIds.has(el.id);
-    path.setAttribute("stroke", isSelected ? "var(--accent-color)" : (el.color || "#000"));
-    path.setAttribute("stroke-width", "4");
-    path.setAttribute("fill", "none");
-    path.setAttribute("stroke-linecap", "round");
-    path.setAttribute("stroke-linejoin", "round");
-    
-    if (isSelected) {
-        path.setAttribute("stroke-dasharray", "4,4");
-        path.classList.add('selected');
-    } else {
-        path.removeAttribute("stroke-dasharray");
-        path.classList.remove('selected');
-    }
-
-    let d = `M ${el.points[0].x} ${el.points[0].y}`;
-    for (let i = 1; i < el.points.length; i++) {
-        d += ` L ${el.points[i].x} ${el.points[i].y}`;
-    }
-    path.setAttribute("d", d);
-}
-
 // === ОБРАБОТКА ДРАГ-Н-ДРОПА, РЕСАЙЗА И РИСОВАНИЯ ===
 
 boardViewport.addEventListener('mousedown', (e) => {
@@ -951,31 +1097,44 @@ boardViewport.addEventListener('mousedown', (e) => {
         window.getSelection().removeAllRanges();
     }
 
-    // 1. Инструмент: Ластик
+    // 1. Рисование внутри сессии (Milanote style)
+    if (activeTool === 'draw') {
+        if (localDrawingTool === 'pencil') {
+            isDrawing = true;
+            activeDrawingPoints = [{ x: clickX, y: clickY }];
+            
+            activeDrawingPathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            activeDrawingPathEl.setAttribute("stroke", activeColor);
+            activeDrawingPathEl.setAttribute("stroke-width", "4");
+            activeDrawingPathEl.setAttribute("fill", "none");
+            activeDrawingPathEl.setAttribute("stroke-linecap", "round");
+            activeDrawingPathEl.setAttribute("stroke-linejoin", "round");
+            activeDrawingPathEl.setAttribute("d", `M ${clickX} ${clickY}`);
+            drawingLayer.appendChild(activeDrawingPathEl);
+        }
+        else if (localDrawingTool === 'eraser') {
+            localStrokes = localStrokes.filter(stroke => {
+                const touched = stroke.points.some(pt => {
+                    const dx = pt.x - clickX;
+                    const dy = pt.y - clickY;
+                    return Math.sqrt(dx*dx + dy*dy) < 20;
+                });
+                return !touched;
+            });
+            redrawLocalStrokes();
+            dragStartInfo = { type: 'local-eraser-drag' };
+        }
+        e.preventDefault();
+        return;
+    }
+
     if (activeTool === 'eraser') {
         const elementDiv = target.closest('.board-element');
         if (elementDiv) {
             const elId = elementDiv.getAttribute('data-id');
             deleteElement(elId);
             e.preventDefault();
-            return;
         }
-
-        Object.values(elements).forEach(el => {
-            if (el.type === 'drawing' && el.points) {
-                const hit = el.points.some(pt => {
-                    const dx = pt.x - clickX;
-                    const dy = pt.y - clickY;
-                    return Math.sqrt(dx*dx + dy*dy) < 20;
-                });
-                if (hit) {
-                    deleteElement(el.id);
-                }
-            }
-        });
-
-        dragStartInfo = { type: 'eraser-drag' };
-        e.preventDefault();
         return;
     }
 
@@ -995,26 +1154,7 @@ boardViewport.addEventListener('mousedown', (e) => {
         return;
     }
 
-    // 3. Рисование
-    if (activeTool === 'draw') {
-        saveUndoState();
-        isDrawing = true;
-        activeDrawingPoints = [{ x: clickX, y: clickY }];
-        
-        activeDrawingPathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        activeDrawingPathEl.setAttribute("stroke", activeColor);
-        activeDrawingPathEl.setAttribute("stroke-width", "4");
-        activeDrawingPathEl.setAttribute("fill", "none");
-        activeDrawingPathEl.setAttribute("stroke-linecap", "round");
-        activeDrawingPathEl.setAttribute("stroke-linejoin", "round");
-        activeDrawingPathEl.setAttribute("d", `M ${clickX} ${clickY}`);
-        drawingLayer.appendChild(activeDrawingPathEl);
-        
-        e.preventDefault();
-        return;
-    }
-
-    // 4. Выделение, изменение размера и перетаскивание элементов
+    // 3. Выделение, изменение размера и перетаскивание элементов
     const elementDiv = target.closest('.board-element');
     
     if (elementDiv) {
@@ -1024,7 +1164,6 @@ boardViewport.addEventListener('mousedown', (e) => {
             if (!e.shiftKey) {
                 selectedElementIds.clear();
                 document.querySelectorAll('.board-element').forEach(el => el.classList.remove('selected'));
-                document.querySelectorAll('path.selected').forEach(p => p.classList.remove('selected'));
             }
             selectedElementIds.add(elId);
             elementDiv.classList.add('selected');
@@ -1065,23 +1204,15 @@ boardViewport.addEventListener('mousedown', (e) => {
             selectedElementIds.forEach(id => {
                 const elObj = elements[id];
                 if (elObj) {
-                    if (elObj.type === 'drawing') {
-                        dragStartInfo.initialPositions[id] = {
-                            points: elObj.points.map(p => ({ x: p.x, y: p.y }))
-                        };
-                    } else {
-                        // ВАЖНО: обновляем фактические размеры из DOM перед началом перетаскивания
-                        const elDiv = document.querySelector(`.board-element[data-id="${id}"]`);
-                        if (elDiv) {
-                            elObj.width = elDiv.offsetWidth;
-                            elObj.height = elDiv.offsetHeight;
-                        }
-
-                        dragStartInfo.initialPositions[id] = {
-                            x: elObj.x,
-                            y: elObj.y
-                        };
+                    const elDiv = document.querySelector(`.board-element[data-id="${id}"]`);
+                    if (elDiv) {
+                        elObj.width = elDiv.offsetWidth;
+                        elObj.height = elDiv.offsetHeight;
                     }
+                    dragStartInfo.initialPositions[id] = {
+                        x: elObj.x,
+                        y: elObj.y
+                    };
                 }
             });
         }
@@ -1091,14 +1222,6 @@ boardViewport.addEventListener('mousedown', (e) => {
         if (e.button === 0 && activeTool === 'select' && (e.target === boardViewport || e.target === boardCanvas)) {
             selectedElementIds.clear();
             document.querySelectorAll('.board-element').forEach(el => el.classList.remove('selected'));
-            document.querySelectorAll('path.selected').forEach(p => {
-                p.classList.remove('selected');
-                p.removeAttribute("stroke-dasharray");
-                const lineId = p.id.replace('svg_', '');
-                if (elements[lineId]) {
-                    p.setAttribute("stroke", elements[lineId].color || "#000");
-                }
-            });
 
             dragStartInfo = {
                 type: 'selection-marquee',
@@ -1134,19 +1257,16 @@ boardViewport.addEventListener('mousemove', (e) => {
     const curX = (e.clientX - rect.left) / zoom;
     const curY = (e.clientY - rect.top) / zoom;
 
-    if (dragStartInfo && dragStartInfo.type === 'eraser-drag') {
-        Object.values(elements).forEach(el => {
-            if (el.type === 'drawing' && el.points) {
-                const hit = el.points.some(pt => {
-                    const dx = pt.x - curX;
-                    const dy = pt.y - curY;
-                    return Math.sqrt(dx*dx + dy*dy) < 20;
-                });
-                if (hit) {
-                    deleteElement(el.id);
-                }
-            }
+    if (dragStartInfo && dragStartInfo.type === 'local-eraser-drag') {
+        localStrokes = localStrokes.filter(stroke => {
+            const touched = stroke.points.some(pt => {
+                const dx = pt.x - curX;
+                const dy = pt.y - curY;
+                return Math.sqrt(dx*dx + dy*dy) < 20;
+            });
+            return !touched;
         });
+        redrawLocalStrokes();
         return;
     }
 
@@ -1164,7 +1284,7 @@ boardViewport.addEventListener('mousemove', (e) => {
     const deltaX = (e.clientX - dragStartInfo.startX) / zoom;
     const deltaY = (e.clientY - dragStartInfo.startY) / zoom;
 
-    // Прямоугольное выделение
+    // Прямоугольное выделение (Marquee)
     if (dragStartInfo.type === 'selection-marquee') {
         const x = Math.min(dragStartInfo.boardStartX, curX);
         const y = Math.min(dragStartInfo.boardStartY, curY);
@@ -1178,36 +1298,15 @@ boardViewport.addEventListener('mousemove', (e) => {
         
         selectedElementIds.clear();
         Object.values(elements).forEach(el => {
-            let overlaps = false;
+            const overlaps = (el.x < x + w && el.x + el.width > x &&
+                              el.y < y + h && el.y + el.height > y);
             
-            if (el.type === 'drawing' && el.points) {
-                overlaps = el.points.some(pt => pt.x >= x && pt.x <= x + w && pt.y >= y && pt.y <= y + h);
-                const path = document.getElementById(`svg_${el.id}`);
-                if (overlaps) {
-                    selectedElementIds.add(el.id);
-                    if (path) {
-                        path.classList.add('selected');
-                        path.setAttribute("stroke", "var(--accent-color)");
-                        path.setAttribute("stroke-dasharray", "4,4");
-                    }
-                } else {
-                    if (path) {
-                        path.classList.remove('selected');
-                        path.removeAttribute("stroke-dasharray");
-                        path.setAttribute("stroke", el.color || "#000");
-                    }
-                }
-            } else if (el.type !== 'drawing') {
-                overlaps = (el.x < x + w && el.x + el.width > x &&
-                            el.y < y + h && el.y + el.height > y);
-                
-                const elDiv = document.querySelector(`.board-element[data-id="${el.id}"]`);
-                if (overlaps) {
-                    selectedElementIds.add(el.id);
-                    if (elDiv) elDiv.classList.add('selected');
-                } else {
-                    if (elDiv) elDiv.classList.remove('selected');
-                }
+            const elDiv = document.querySelector(`.board-element[data-id="${el.id}"]`);
+            if (overlaps) {
+                selectedElementIds.add(el.id);
+                if (elDiv) elDiv.classList.add('selected');
+            } else {
+                if (elDiv) elDiv.classList.remove('selected');
             }
         });
         return;
@@ -1221,35 +1320,23 @@ boardViewport.addEventListener('mousemove', (e) => {
         if (dragStartInfo.edge === 'right') {
             let maxRight = 800;
             Object.values(elements).forEach(el => {
-                if (el.type === 'drawing' && el.points) {
-                    el.points.forEach(pt => { if (pt.x > maxRight) maxRight = pt.x; });
-                } else if (el.type !== 'drawing') {
-                    const r = el.x + el.width;
-                    if (r > maxRight) maxRight = r;
-                }
+                const r = el.x + el.width;
+                if (r > maxRight) maxRight = r;
             });
             boardConfig.width = Math.max(maxRight + 40, dragStartInfo.startWidth + rawDeltaX / zoom);
         }
         else if (dragStartInfo.edge === 'bottom') {
             let maxBottom = 600;
             Object.values(elements).forEach(el => {
-                if (el.type === 'drawing' && el.points) {
-                    el.points.forEach(pt => { if (pt.y > maxBottom) maxBottom = pt.y; });
-                } else if (el.type !== 'drawing') {
-                    const b = el.y + el.height;
-                    if (b > maxBottom) maxBottom = b;
-                }
+                const b = el.y + el.height;
+                if (b > maxBottom) maxBottom = b;
             });
             boardConfig.height = Math.max(maxBottom + 40, dragStartInfo.startHeight + rawDeltaY / zoom);
         }
         else if (dragStartInfo.edge === 'left') {
             let minX = Infinity;
             Object.values(elements).forEach(el => {
-                if (el.type === 'drawing' && el.points) {
-                    el.points.forEach(pt => { if (pt.x < minX) minX = pt.x; });
-                } else if (el.type !== 'drawing') {
-                    if (el.x < minX) minX = el.x;
-                }
+                if (el.x < minX) minX = el.x;
             });
             const allowedShift = minX !== Infinity ? minX - 30 : Infinity;
             const requestedShift = rawDeltaX / zoom;
@@ -1261,11 +1348,7 @@ boardViewport.addEventListener('mousemove', (e) => {
                 panX += shift * zoom;
                 
                 Object.values(elements).forEach(el => {
-                    if (el.type === 'drawing' && el.points) {
-                        el.points.forEach(pt => pt.x -= shift);
-                    } else {
-                        el.x -= shift;
-                    }
+                    el.x -= shift;
                 });
                 dragStartInfo.startX = dragStartInfo.startX + shift * zoom;
                 dragStartInfo.startWidth = newWidth;
@@ -1274,11 +1357,7 @@ boardViewport.addEventListener('mousemove', (e) => {
         else if (dragStartInfo.edge === 'top') {
             let minY = Infinity;
             Object.values(elements).forEach(el => {
-                if (el.type === 'drawing' && el.points) {
-                    el.points.forEach(pt => { if (pt.y < minY) minY = pt.y; });
-                } else if (el.type !== 'drawing') {
-                    if (el.y < minY) minY = el.y;
-                }
+                if (el.y < minY) minY = el.y;
             });
             const allowedShift = minY !== Infinity ? minY - 30 : Infinity;
             const requestedShift = rawDeltaY / zoom;
@@ -1290,11 +1369,7 @@ boardViewport.addEventListener('mousemove', (e) => {
                 panY += shift * zoom;
                 
                 Object.values(elements).forEach(el => {
-                    if (el.type === 'drawing' && el.points) {
-                        el.points.forEach(pt => pt.y -= shift);
-                    } else {
-                        el.y -= shift;
-                    }
+                    el.y -= shift;
                 });
                 dragStartInfo.startY = dragStartInfo.startY + shift * zoom;
                 dragStartInfo.startHeight = newHeight;
@@ -1305,42 +1380,34 @@ boardViewport.addEventListener('mousemove', (e) => {
         renderElements();
     }
 
-    // Групповое перемещение элементов (включая рисунки)
+    // Групповое перемещение элементов
     else if (dragStartInfo.type === 'element') {
         selectedElementIds.forEach(id => {
             const el = elements[id];
             const startPos = dragStartInfo.initialPositions[id];
             if (el && startPos) {
-                if (el.type === 'drawing') {
-                    el.points.forEach((pt, idx) => {
-                        pt.x = Math.max(0, Math.min(startPos.points[idx].x + deltaX, boardConfig.width));
-                        pt.y = Math.max(0, Math.min(startPos.points[idx].y + deltaY, boardConfig.height));
+                const prevX = el.x;
+                const prevY = el.y;
+                
+                el.x = Math.max(0, Math.min(startPos.x + deltaX, boardConfig.width - el.width));
+                el.y = Math.max(0, Math.min(startPos.y + deltaY, boardConfig.height - el.height));
+                
+                if (el.type === 'frame') {
+                    const dX = el.x - prevX;
+                    const dY = el.y - prevY;
+                    Object.values(elements).forEach(child => {
+                        if (child.parentId === el.id) {
+                            child.x += dX;
+                            child.y += dY;
+                            saveElement(child);
+                        }
                     });
-                    renderDrawing(el);
-                } else {
-                    const prevX = el.x;
-                    const prevY = el.y;
-                    
-                    el.x = Math.max(0, Math.min(startPos.x + deltaX, boardConfig.width - el.width));
-                    el.y = Math.max(0, Math.min(startPos.y + deltaY, boardConfig.height - el.height));
-                    
-                    if (el.type === 'frame') {
-                        const dX = el.x - prevX;
-                        const dY = el.y - prevY;
-                        Object.values(elements).forEach(child => {
-                            if (child.parentId === el.id) {
-                                child.x += dX;
-                                child.y += dY;
-                                saveElement(child);
-                            }
-                        });
-                    }
+                }
 
-                    const elDiv = document.querySelector(`.board-element[data-id="${el.id}"]`);
-                    if (elDiv) {
-                        elDiv.style.left = `${el.x}px`;
-                        elDiv.style.top = `${el.y}px`;
-                    }
+                const elDiv = document.querySelector(`.board-element[data-id="${el.id}"]`);
+                if (elDiv) {
+                    elDiv.style.left = `${el.x}px`;
+                    elDiv.style.top = `${el.y}px`;
                 }
             }
         });
@@ -1367,29 +1434,26 @@ boardViewport.addEventListener('mouseup', (e) => {
         return;
     }
 
+    // Завершаем текущую линию в локальной сессии рисования
     if (isDrawing) {
         isDrawing = false;
         if (activeDrawingPoints.length > 1) {
-            const drawId = "el_" + Math.random().toString(36).substring(2, 11);
-            const elData = {
-                id: drawId,
-                type: 'drawing',
-                points: activeDrawingPoints,
+            localStrokes.push({
                 color: activeColor,
-                zIndex: Object.values(elements).length + 1
-            };
-            saveElement(elData);
+                points: activeDrawingPoints
+            });
         }
         if (activeDrawingPathEl) {
             activeDrawingPathEl.remove();
             activeDrawingPathEl = null;
         }
+        redrawLocalStrokes();
         return;
     }
 
     if (!dragStartInfo) return;
 
-    if (dragStartInfo.type === 'eraser-drag') {
+    if (dragStartInfo.type === 'local-eraser-drag') {
         dragStartInfo = null;
         return;
     }
@@ -1457,9 +1521,139 @@ boardTitleInput.addEventListener('keydown', (e) => {
     }
 });
 
-// Первоначальное центрирование доски на экране
-setTimeout(() => {
-    panX = (window.innerWidth - boardConfig.width) / 2;
-    panY = (window.innerHeight - boardConfig.height) / 2;
+// Переменная отслеживания первого центрирования
+let hasCenteredOnLoad = false;
+
+function centerBoardOnElements() {
+    const els = Object.values(elements);
+    const headerEl = document.querySelector('.board-header');
+    const headerHeight = headerEl ? headerEl.offsetHeight : 64;
+    const bannerEl = document.getElementById('mobileReadOnlyBanner');
+    const bannerHeight = (bannerEl && mobileReadOnlyBanner.style.display !== 'none') ? 40 : 0;
+    
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight - headerHeight - bannerHeight;
+
+    if (isMobileOrTablet) {
+        // На мобильных подбираем зум, чтобы уместить все элементы на экране
+        if (els.length > 0) {
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            els.forEach(el => {
+                minX = Math.min(minX, el.x);
+                maxX = Math.max(maxX, el.x + el.width);
+                minY = Math.min(minY, el.y);
+                maxY = Math.max(maxY, el.y + el.height);
+            });
+            const contentWidth = maxX - minX;
+            const contentHeight = maxY - minY;
+            
+            // Задаем масштаб с запасом 80px по бокам
+            zoom = Math.min(viewportWidth / (contentWidth + 80), viewportHeight / (contentHeight + 80));
+            zoom = Math.min(Math.max(zoom, 0.15), 1.2); // Ограничиваем сверху 1.2
+            
+            const centerX = minX + contentWidth / 2;
+            const centerY = minY + contentHeight / 2;
+            
+            panX = viewportWidth / 2 - centerX * zoom;
+            panY = (headerHeight + bannerHeight) + viewportHeight / 2 - centerY * zoom;
+        } else {
+            // Если доска пустая, вмещаем весь холст в экран
+            zoom = Math.min(viewportWidth / boardConfig.width, viewportHeight / boardConfig.height) * 0.95;
+            zoom = Math.min(Math.max(zoom, 0.15), 1.0);
+            
+            panX = (viewportWidth - boardConfig.width * zoom) / 2;
+            panY = (headerHeight + bannerHeight) + (viewportHeight - boardConfig.height * zoom) / 2;
+        }
+    } else {
+        // На десктопе сохраняем текущий масштаб, центрируем с учетом шапки
+        if (els.length > 0) {
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            els.forEach(el => {
+                minX = Math.min(minX, el.x);
+                maxX = Math.max(maxX, el.x + el.width);
+                minY = Math.min(minY, el.y);
+                maxY = Math.max(maxY, el.y + el.height);
+            });
+            const centerX = minX + (maxX - minX) / 2;
+            const centerY = minY + (maxY - minY) / 2;
+            
+            panX = viewportWidth / 2 - centerX * zoom;
+            panY = (headerHeight + bannerHeight) + viewportHeight / 2 - centerY * zoom;
+        } else {
+            panX = (viewportWidth - boardConfig.width * zoom) / 2;
+            panY = (headerHeight + bannerHeight) + (viewportHeight - boardConfig.height * zoom) / 2;
+        }
+    }
     updateTransform();
-}, 200);
+}
+
+// === МОБИЛЬНАЯ АДАПТИВНОСТЬ И ТАЧ-СОБЫТИЯ ===
+const isMobileOrTablet = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+if (isMobileOrTablet) {
+    const mobileReadOnlyBanner = document.getElementById('mobileReadOnlyBanner');
+    if (mobileReadOnlyBanner) {
+        mobileReadOnlyBanner.style.display = 'flex';
+    }
+    
+    // Скрываем маркеры ресайза и тулбары в режиме просмотра
+    document.body.classList.add('mobile-readonly-mode');
+    
+    // Инициализация тач-событий для навигации
+    let startTouchPanX = 0;
+    let startTouchPanY = 0;
+    let isTouchPanning = false;
+    let startTouchDist = 0;
+    let startTouchZoom = 1.0;
+
+    boardViewport.addEventListener('touchstart', (e) => {
+        if (e.target.closest('a') || e.target.closest('button')) {
+            return; 
+        }
+        if (e.touches.length === 1) {
+            isTouchPanning = true;
+            startTouchPanX = e.touches[0].clientX - panX;
+            startTouchPanY = e.touches[0].clientY - panY;
+        } else if (e.touches.length === 2) {
+            isTouchPanning = false;
+            startTouchZoom = zoom;
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            startTouchDist = Math.sqrt(dx * dx + dy * dy);
+        }
+    }, { passive: true });
+
+    boardViewport.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1 && isTouchPanning) {
+            panX = e.touches[0].clientX - startTouchPanX;
+            panY = e.touches[0].clientY - startTouchPanY;
+            updateTransform();
+        } else if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            const factor = dist / startTouchDist;
+            const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            
+            const rect = boardViewport.getBoundingClientRect();
+            const mouseX = centerX - rect.left;
+            const mouseY = centerY - rect.top;
+            
+            zoomTo(startTouchZoom * factor, mouseX, mouseY);
+        }
+    }, { passive: true });
+
+    boardViewport.addEventListener('touchend', (e) => {
+        isTouchPanning = false;
+    }, { passive: true });
+}
+
+// Запуск центрирования при первой загрузке данных
+setTimeout(() => {
+    if (!hasCenteredOnLoad) {
+        hasCenteredOnLoad = true;
+        centerBoardOnElements();
+    }
+}, 600);

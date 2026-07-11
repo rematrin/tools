@@ -323,7 +323,7 @@ body {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 10;
+    z-index: 1000;
 }
 
 /* === СЛОЙ ЭЛЕМЕНТОВ === */
@@ -895,5 +895,189 @@ path.selected {
     color: white;
     border-right: 1px solid var(--border-color);
     flex-shrink: 0;
+}
+
+/* === РЕЖИМ РИСОВАНИЯ MILANOTE === */
+body.drawing-mode-active .board-element {
+    opacity: 0.35 !important;
+    pointer-events: none !important;
+}
+
+body.drawing-mode-active .board-canvas {
+    background-color: #f3f4f6 !important; /* Фокусирующий светло-серый оттенок холста */
+}
+
+.drawing-mode-panel {
+    position: fixed;
+    bottom: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--canvas-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    padding: 8px 18px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    z-index: 10000;
+    transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.drawing-mode-panel.active {
+    bottom: 24px;
+}
+
+.drawing-tools-group {
+    display: flex;
+    gap: 6px;
+}
+
+.drawing-panel-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-sec);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.drawing-panel-btn:hover {
+    background: var(--border-color);
+    color: var(--text-color);
+}
+
+.drawing-panel-btn.active {
+    background: var(--accent-color);
+    color: white;
+}
+
+.drawing-panel-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-color);
+}
+
+.drawing-colors-group {
+    display: flex;
+    gap: 6px;
+}
+
+.draw-color-opt {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.draw-color-opt:hover {
+    transform: scale(1.2);
+}
+
+.draw-color-opt.active {
+    border-color: var(--text-color);
+    box-shadow: 0 0 0 2px var(--canvas-bg) inset;
+}
+
+.drawing-action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-draw-discard, .btn-draw-save {
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.btn-draw-discard {
+    background: var(--border-color);
+    color: var(--text-color);
+}
+.btn-draw-discard:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.btn-draw-save {
+    background: var(--accent-color);
+    color: white;
+}
+.btn-draw-save:hover {
+    filter: brightness(0.95);
+}
+
+/* Стилизация сохраненного шейпа рисунка */
+.board-element.el-drawing {
+    background: transparent;
+    border: 1px solid transparent;
+    box-shadow: none;
+    padding: 0;
+}
+
+.board-element.el-drawing:hover {
+    border-color: var(--accent-color);
+}
+
+.board-element.el-drawing.selected {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
+}
+
+.board-element.el-drawing svg {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    display: block;
+}
+
+/* === МОБИЛЬНАЯ АДАПТИВНОСТЬ И БАННЕР === */
+.mobile-readonly-banner {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: #fef3c7;
+    color: #92400e;
+    border-bottom: 1px solid #fcd34d;
+    padding: 0 16px;
+    font-size: 0.85rem;
+    font-weight: 550;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+body.dark .mobile-readonly-banner {
+    background: #78350f;
+    color: #fef3c7;
+    border-color: #92400e;
+}
+
+@media (max-width: 1024px) {
+    .board-toolbar {
+        display: none !important;
+    }
+    .board-header {
+        padding: 0 8px;
+    }
+    /* Сдвигаем рабочую область ниже, чтобы баннер не перекрывал ее */
+    body.mobile-readonly-mode .board-container {
+        top: 104px !important;
+    }
 }
 

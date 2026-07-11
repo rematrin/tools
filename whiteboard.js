@@ -44,6 +44,8 @@ let activeDrawingPathEl = null;
 let activeTool = 'select'; // 'select', 'text', 'sticker', 'frame', 'link', 'image', 'draw', 'eraser'
 let activeColor = '#111827';
 let selectedElementIds = new Set(); // Поддержка множественного выделения
+let editingElementId = null; // ID элемента, который сейчас редактируется (сразу после создания)
+let savedTextRange = null; // Сохраненное выделение текста для создания ссылок
 
 // Временные данные для перетаскивания и ресайза
 let dragStartInfo = null; // { type: 'element'|'resize'|'canvas-resize'|'selection-marquee', id, startX, startY, ... }
@@ -503,6 +505,12 @@ function deleteElement(id) {
 function updateTransform() {
     canvasHolder.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
     zoomPercent.innerText = `${Math.round(zoom * 100)}%`;
+    if (typeof updateElementOptionsPanel === 'function') {
+        updateElementOptionsPanel();
+    }
+    if (typeof updateTextFormatToolbarPosition === 'function') {
+        updateTextFormatToolbarPosition();
+    }
 }
 
 function zoomTo(newZoom, centerX, centerY) {
@@ -785,7 +793,10 @@ function createNewElement(type, x, y, extra = {}) {
     let width = 180;
     let height = 100;
     
-    if (type === 'sticker') {
+    if (type === 'text') {
+        width = 320;
+        height = 120;
+    } else if (type === 'sticker') {
         width = 160;
         height = 160;
     } else if (type === 'frame') {
@@ -809,9 +820,13 @@ function createNewElement(type, x, y, extra = {}) {
         width,
         height,
         zIndex: maxZ + 1,
-        color: activeColor,
+        color: type === 'text' ? '#ffffff' : activeColor, // Текстовый блок изначально белый
         ...extra
     };
+
+    if (type === 'text' || type === 'sticker') {
+        editingElementId = id;
+    }
 
     saveElement(elData);
     setTool('select');
@@ -819,8 +834,8 @@ function createNewElement(type, x, y, extra = {}) {
     selectedElementIds.add(id);
 }
 
-tools.text.addEventListener('click', () => createNewElement('text', undefined, undefined, { content: "Дважды кликните для ввода текста..." }));
-tools.sticker.addEventListener('click', () => createNewElement('sticker', undefined, undefined, { content: "Заметка..." }));
+tools.text.addEventListener('click', () => createNewElement('text', undefined, undefined, { content: "" }));
+tools.sticker.addEventListener('click', () => createNewElement('sticker', undefined, undefined, { content: "" }));
 tools.frame.addEventListener('click', () => createNewElement('frame', undefined, undefined, { content: "Новая группа" }));
 
 tools.link.addEventListener('click', () => {
@@ -929,8 +944,32 @@ function renderElements() {
         elDiv.style.zIndex = el.zIndex || 1;
         elDiv.setAttribute('data-id', el.id);
 
-        if (el.type === 'sticker') {
-            elDiv.style.backgroundColor = el.color || '#fef08a';
+        // Применяем кастомные цвета, скругление и тени (только не для рисунков)
+        if (el.type === 'drawing') {
+            elDiv.style.backgroundColor = 'transparent';
+            elDiv.style.boxShadow = 'none';
+            elDiv.style.border = 'none';
+            elDiv.style.borderRadius = '0px';
+        } else {
+            elDiv.style.backgroundColor = el.color || (el.type === 'sticker' ? '#fef08a' : '#ffffff');
+            
+            const br = el.borderRadius !== undefined ? el.borderRadius : 8;
+            elDiv.style.borderRadius = `${br}px`;
+
+            elDiv.style.border = ''; // сброс
+            const shadow = el.shadowType || 'box';
+            if (shadow === 'none') {
+                elDiv.style.boxShadow = 'none';
+            } else if (shadow === 'box') {
+                elDiv.style.boxShadow = '0 3px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03)';
+            } else if (shadow === 'sticker') {
+                elDiv.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.16), 0 6px 12px rgba(0, 0, 0, 0.12)';
+            } else if (shadow === 'paper') {
+                elDiv.style.boxShadow = '0 15px 35px rgba(0, 0, 0, 0.22), 0 5px 15px rgba(0, 0, 0, 0.15)';
+            } else if (shadow === 'film') {
+                elDiv.style.boxShadow = '6px 6px 0px 0px #000000';
+                elDiv.style.border = '2px solid #000000';
+            }
         }
 
         const delBtn = document.createElement('button');
@@ -978,11 +1017,12 @@ function renderElements() {
         else if (el.type === 'text' || el.type === 'sticker') {
             const textEl = document.createElement('div');
             textEl.className = 'el-text-content';
-            textEl.contentEditable = true;
+            textEl.contentEditable = "false"; // По умолчанию выключено редактирование
             textEl.setAttribute('data-id', el.id);
             textEl.innerHTML = el.content || '';
             
             textEl.addEventListener('blur', () => {
+                textEl.contentEditable = "false";
                 const newText = textEl.innerHTML;
                 if (el.content !== newText) {
                     saveUndoState();
@@ -996,12 +1036,30 @@ function renderElements() {
                 e.stopPropagation();
             });
 
+            // Двойной клик активирует редактирование
+            elDiv.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                textEl.contentEditable = "true";
+                textEl.focus();
+                
+                // Ставим курсор в конец текста
+                const range = document.createRange();
+                range.selectNodeContents(textEl);
+                range.collapse(false);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            });
+
             elDiv.appendChild(textEl);
 
-            if (activeTextareaId === el.id) {
+            // Если элемент редактируется в данный момент (только что создан)
+            if (editingElementId === el.id) {
+                textEl.contentEditable = "true";
                 setTimeout(() => {
                     textEl.focus();
-                }, 10);
+                    editingElementId = null;
+                }, 50);
             }
         } 
         else if (el.type === 'frame') {
@@ -1075,6 +1133,7 @@ function renderElements() {
 
         elementsLayer.appendChild(elDiv);
     });
+    updateElementOptionsPanel();
 }
 
 // === ОБРАБОТКА ДРАГ-Н-ДРОПА, РЕСАЙЗА И РИСОВАНИЯ ===
@@ -1425,6 +1484,10 @@ boardViewport.addEventListener('mousemove', (e) => {
             elDiv.style.height = `${el.height}px`;
         }
     }
+    
+    if (typeof updateElementOptionsPanel === 'function') {
+        updateElementOptionsPanel();
+    }
 });
 
 boardViewport.addEventListener('mouseup', (e) => {
@@ -1502,6 +1565,9 @@ boardViewport.addEventListener('mouseup', (e) => {
     }
 
     dragStartInfo = null;
+    if (typeof updateElementOptionsPanel === 'function') {
+        updateElementOptionsPanel();
+    }
 });
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
@@ -1657,3 +1723,262 @@ setTimeout(() => {
         centerBoardOnElements();
     }
 }, 600);
+
+// === УПРАВЛЕНИЕ ПАНЕЛЬЮ НАСТРОЕК ЭЛЕМЕНТА ===
+function updateElementOptionsPanel() {
+    const panel = document.getElementById('elementOptionsPanel');
+    const popup = document.getElementById('elementSettingsPopup');
+    
+    if (selectedElementIds.size === 1 && activeTool === 'select') {
+        const id = Array.from(selectedElementIds)[0];
+        const el = elements[id];
+        
+        // Показываем плашку только для настраиваемых типов
+        if (el && (el.type === 'text' || el.type === 'sticker' || el.type === 'frame' || el.type === 'link')) {
+            panel.style.display = 'flex';
+            
+            const elDiv = document.querySelector(`.board-element[data-id="${id}"]`);
+            if (elDiv) {
+                const rect = elDiv.getBoundingClientRect();
+                const viewportRect = boardViewport.getBoundingClientRect();
+                
+                // Вычисляем координаты относительно viewport
+                const top = rect.top - viewportRect.top - 48; // на 48px выше элемента
+                const left = rect.left - viewportRect.left + (rect.width - panel.offsetWidth) / 2;
+                
+                panel.style.top = `${Math.max(10, top)}px`;
+                panel.style.left = `${Math.max(10, left)}px`;
+            }
+            
+            // Синхронизируем цвета
+            popup.querySelectorAll('.popup-color-opt').forEach(opt => {
+                if (opt.getAttribute('data-color') === el.color) {
+                    opt.classList.add('active');
+                } else {
+                    opt.classList.remove('active');
+                }
+            });
+            
+            // Синхронизируем тени
+            popup.querySelectorAll('.shadow-opt-btn').forEach(btn => {
+                if (btn.getAttribute('data-shadow') === (el.shadowType || 'box')) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Синхронизируем скругление
+            const brSlider = document.getElementById('sliderCornerRadius');
+            const brLabel = document.getElementById('lblCornerRadiusValue');
+            const currentBr = el.borderRadius !== undefined ? el.borderRadius : 8;
+            brSlider.value = currentBr;
+            brLabel.innerText = `${currentBr}px`;
+            
+            return;
+        }
+    }
+    
+    panel.style.display = 'none';
+    popup.classList.remove('active');
+}
+
+function initElementOptionsPanel() {
+    const btnColor = document.getElementById('btnOptColor');
+    const popup = document.getElementById('elementSettingsPopup');
+    const sliderBr = document.getElementById('sliderCornerRadius');
+    const labelBr = document.getElementById('lblCornerRadiusValue');
+    const customColorInput = document.getElementById('optCustomColorInput');
+
+    btnColor.addEventListener('click', (e) => {
+        e.stopPropagation();
+        popup.classList.toggle('active');
+    });
+    
+    // Закрытие попапа и сброс выделения при клике вне элементов
+    document.addEventListener('mousedown', (e) => {
+        if (activeTool === 'draw') return; // Не сбрасываем выделение в процессе рисования
+        
+        if (!e.target.closest('#elementOptionsPanel') && 
+            !e.target.closest('#textFormatToolbar') && 
+            !e.target.closest('.board-element') && 
+            !e.target.closest('.board-toolbar') && 
+            !e.target.closest('.board-header')) {
+            selectedElementIds.clear();
+            renderElements();
+        } else if (!e.target.closest('#elementOptionsPanel')) {
+            popup.classList.remove('active');
+        }
+    });
+
+    // Обработка клика по цветам
+    popup.querySelectorAll('.popup-color-opt').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (selectedElementIds.size === 1) {
+                const id = Array.from(selectedElementIds)[0];
+                const color = opt.getAttribute('data-color');
+                saveUndoState();
+                elements[id].color = color;
+                saveElement(elements[id]);
+                
+                popup.querySelectorAll('.popup-color-opt').forEach(o => o.classList.remove('active'));
+                opt.classList.add('active');
+            }
+        });
+    });
+
+    // Кастомный цвет
+    customColorInput.addEventListener('input', (e) => {
+        if (selectedElementIds.size === 1) {
+            const id = Array.from(selectedElementIds)[0];
+            elements[id].color = e.target.value;
+            saveElement(elements[id]);
+        }
+    });
+    customColorInput.addEventListener('change', (e) => {
+        saveUndoState();
+    });
+
+    // Изменение тени
+    popup.querySelectorAll('.shadow-opt-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (selectedElementIds.size === 1) {
+                const id = Array.from(selectedElementIds)[0];
+                const shadow = btn.getAttribute('data-shadow');
+                saveUndoState();
+                elements[id].shadowType = shadow;
+                saveElement(elements[id]);
+                
+                popup.querySelectorAll('.shadow-opt-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+        });
+    });
+
+    // Изменение скругления углов
+    sliderBr.addEventListener('input', (e) => {
+        if (selectedElementIds.size === 1) {
+            const id = Array.from(selectedElementIds)[0];
+            const val = parseInt(e.target.value);
+            labelBr.innerText = `${val}px`;
+            elements[id].borderRadius = val;
+            saveElement(elements[id]);
+        }
+    });
+    sliderBr.addEventListener('change', (e) => {
+        saveUndoState();
+    });
+}
+
+// === УПРАВЛЕНИЕ ТУЛБАРОМ ФОРМАТИРОВАНИЯ ВЫДЕЛЕННОГО ТЕКСТА ===
+function updateTextFormatToolbarPosition() {
+    const toolbar = document.getElementById('textFormatToolbar');
+    if (!toolbar || toolbar.style.display === 'none') return;
+    
+    const selection = window.getSelection();
+    const activeEl = document.activeElement;
+    
+    if (activeEl && activeEl.closest('.el-text-content') && !selection.isCollapsed && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        const viewportRect = boardViewport.getBoundingClientRect();
+        
+        const top = rect.top - viewportRect.top - 46;
+        const left = rect.left - viewportRect.left + (rect.width - toolbar.offsetWidth) / 2;
+        
+        toolbar.style.top = `${Math.max(10, top)}px`;
+        toolbar.style.left = `${Math.max(10, left)}px`;
+    } else {
+        toolbar.style.display = 'none';
+        document.getElementById('formatHighlightPopup').classList.remove('active');
+    }
+}
+
+// Экспортируем функцию в глобальную область, чтобы updateTransform мог ее вызвать
+window.updateTextFormatToolbarPosition = updateTextFormatToolbarPosition;
+
+function initTextFormatToolbar() {
+    const toolbar = document.getElementById('textFormatToolbar');
+    const btnBold = document.getElementById('btnFmtBold');
+    const btnItalic = document.getElementById('btnFmtItalic');
+    const btnUnderline = document.getElementById('btnFmtUnderline');
+    const btnStrike = document.getElementById('btnFmtStrike');
+    const btnHighlight = document.getElementById('btnFmtHighlight');
+    const highlightPopup = document.getElementById('formatHighlightPopup');
+
+    // Предотвращаем потерю фокуса с contenteditable при кликах на панель и поп-апы
+    [btnBold, btnItalic, btnUnderline, btnStrike, btnHighlight, highlightPopup].forEach(el => {
+        if (el) {
+            el.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+            });
+        }
+    });
+
+    btnBold.addEventListener('click', () => {
+        document.execCommand('bold', false, null);
+    });
+
+    btnItalic.addEventListener('click', () => {
+        document.execCommand('italic', false, null);
+    });
+
+    btnUnderline.addEventListener('click', () => {
+        document.execCommand('underline', false, null);
+    });
+
+    btnStrike.addEventListener('click', () => {
+        document.execCommand('strikeThrough', false, null);
+    });
+
+    btnHighlight.addEventListener('click', () => {
+        highlightPopup.classList.toggle('active');
+    });
+
+    highlightPopup.querySelectorAll('.highlight-opt').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            const type = opt.getAttribute('data-type');
+            const color = opt.getAttribute('data-color');
+            if (type === 'fore') {
+                document.execCommand('foreColor', false, color);
+            } else if (type === 'back') {
+                document.execCommand('backColor', false, color);
+            }
+            highlightPopup.classList.remove('active');
+        });
+    });
+
+    // Отслеживание выделения текста внутри блоков
+    document.addEventListener('selectionchange', () => {
+        const selection = window.getSelection();
+        const activeEl = document.activeElement;
+        
+        if (activeEl && activeEl.closest('.el-text-content') && !selection.isCollapsed && selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
+            const viewportRect = boardViewport.getBoundingClientRect();
+            
+            toolbar.style.display = 'flex';
+            
+            const top = rect.top - viewportRect.top - 46;
+            const left = rect.left - viewportRect.left + (rect.width - toolbar.offsetWidth) / 2;
+            
+            toolbar.style.top = `${Math.max(10, top)}px`;
+            toolbar.style.left = `${Math.max(10, left)}px`;
+        } else {
+            // Не прячем тулбар, если пользователь кликает или выбирает цвет
+            const isInteractingWithToolbar = document.activeElement && 
+                document.activeElement.closest('#textFormatToolbar');
+            
+            if (!isInteractingWithToolbar) {
+                toolbar.style.display = 'none';
+                highlightPopup.classList.remove('active');
+            }
+        }
+    });
+}
+
+initElementOptionsPanel();
+initTextFormatToolbar();

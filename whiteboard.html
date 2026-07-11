@@ -259,6 +259,107 @@
         </div>
     </div>
 
+    <!-- Панель параметров элемента (настройки текста/цвета/тени) -->
+    <div class="element-options-panel" id="elementOptionsPanel" style="display: none;">
+        <button class="options-panel-btn" id="btnOptColor" title="Цвет и эффекты">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 2a15.3 15.3 0 0 1 4 7 15.3 15.3 0 0 1-4 7 15.3 15.3 0 0 1-4-7 15.3 15.3 0 0 1 4-7z"></path>
+            </svg>
+        </button>
+
+        <!-- Всплывающее меню настроек цвета, тени и скругления -->
+        <div class="element-settings-popup" id="elementSettingsPopup">
+            <div class="popup-section">
+                <span class="popup-section-title">Fill color</span>
+                <div class="popup-colors-grid">
+                    <div class="popup-color-opt" style="background-color: #fca5a5;" data-color="#fca5a5" title="Красный"></div>
+                    <div class="popup-color-opt" style="background-color: #fdba74;" data-color="#fdba74" title="Оранжевый"></div>
+                    <div class="popup-color-opt" style="background-color: #fef08a;" data-color="#fef08a" title="Желтый"></div>
+                    <div class="popup-color-opt" style="background-color: #86efac;" data-color="#86efac" title="Зеленый"></div>
+                    <div class="popup-color-opt" style="background-color: #93c5fd;" data-color="#93c5fd" title="Синий"></div>
+                    <div class="popup-color-opt" style="background-color: #c084fc;" data-color="#c084fc" title="Фиолетовый"></div>
+                    <div class="popup-color-opt" style="background-color: #f472b6;" data-color="#f472b6" title="Розовый"></div>
+                    <div class="popup-color-opt" style="background-color: #ffffff; border: 1px solid #cbd5e1;" data-color="#ffffff" title="Белый"></div>
+                    <div class="popup-color-opt color-transparent" data-color="transparent" title="Прозрачный"></div>
+                    <div class="popup-color-opt color-custom" id="btnCustomColorPicker" title="Кастомный">
+                        <input type="color" id="optCustomColorInput" style="opacity: 0; width: 100%; height: 100%; cursor: pointer;">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="popup-section">
+                <span class="popup-section-title">Shadow</span>
+                <div class="popup-shadows-list">
+                    <button class="shadow-opt-btn" data-shadow="none" title="No shadow">
+                        <div class="shadow-preview sh-none"></div>
+                    </button>
+                    <button class="shadow-opt-btn" data-shadow="box" title="Box shadow">
+                        <div class="shadow-preview sh-box"></div>
+                    </button>
+                    <button class="shadow-opt-btn" data-shadow="sticker" title="Sticker shadow">
+                        <div class="shadow-preview sh-sticker"></div>
+                    </button>
+                    <button class="shadow-opt-btn" data-shadow="paper" title="Paper shadow">
+                        <div class="shadow-preview sh-paper"></div>
+                    </button>
+                    <button class="shadow-opt-btn" data-shadow="film" title="Film shadow">
+                        <div class="shadow-preview sh-film"></div>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="popup-section">
+                <div class="popup-section-row">
+                    <span class="popup-section-title">Corner Radius</span>
+                    <span id="lblCornerRadiusValue" class="popup-value-label">8px</span>
+                </div>
+                <input type="range" id="sliderCornerRadius" min="0" max="32" value="8" class="popup-slider">
+            </div>
+        </div>
+    </div>
+
+    <!-- Всплывающая панель форматирования выделенного текста -->
+    <div class="text-format-toolbar" id="textFormatToolbar" style="display: none;">
+        <button class="format-btn" id="btnFmtBold" title="Жирный"><b>B</b></button>
+        <button class="format-btn" id="btnFmtItalic" title="Курсив"><i>I</i></button>
+        <button class="format-btn" id="btnFmtUnderline" title="Подчеркнутый"><u>U</u></button>
+        <button class="format-btn" id="btnFmtStrike" title="Зачеркнутый"><s>S</s></button>
+        
+        <div class="format-divider"></div>
+        
+        <button class="format-btn" id="btnFmtHighlight" title="Цвет и фон">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 14.7255 3.09032 17.1962 4.85857 19C5.03457 19.176 5.09343 19.434 5.00643 19.67C4.69843 20.505 4.5 21.43 4.5 22C4.5 22 7 22 8 20.5C8.214 20.4 8.473 20.459 8.65 20.635C10.1962 21.5097 12 22 12 22Z"></path>
+            </svg>
+            <span style="font-size: 8px; margin-left: 2px;">▼</span>
+        </button>
+
+        <!-- Выпадающий список цветов Fore/Back -->
+        <div class="format-highlight-popup" id="formatHighlightPopup">
+            <div class="highlight-group-title">Color</div>
+            <button class="highlight-opt" data-type="fore" data-color="inherit">Default Color</button>
+            <button class="highlight-opt" data-type="fore" data-color="#ef4444" style="color: #ef4444;">Red</button>
+            <button class="highlight-opt" data-type="fore" data-color="#f97316" style="color: #f97316;">Orange</button>
+            <button class="highlight-opt" data-type="fore" data-color="#eab308" style="color: #eab308;">Yellow</button>
+            <button class="highlight-opt" data-type="fore" data-color="#22c55e" style="color: #22c55e;">Green</button>
+            <button class="highlight-opt" data-type="fore" data-color="#14b8a6" style="color: #14b8a6;">Teal</button>
+            <button class="highlight-opt" data-type="fore" data-color="#3b82f6" style="color: #3b82f6;">Blue</button>
+            <button class="highlight-opt" data-type="fore" data-color="#a855f7" style="color: #a855f7;">Purple</button>
+            <button class="highlight-opt" data-type="fore" data-color="#6b7280" style="color: #6b7280;">Grey</button>
+            
+            <div class="highlight-group-title">Background</div>
+            <button class="highlight-opt" data-type="back" data-color="transparent">Default Background</button>
+            <button class="highlight-opt" data-type="back" data-color="#fee2e2" style="background-color: #fee2e2; color: #111827;">Red</button>
+            <button class="highlight-opt" data-type="back" data-color="#ffedd5" style="background-color: #ffedd5; color: #111827;">Orange</button>
+            <button class="highlight-opt" data-type="back" data-color="#fef9c3" style="background-color: #fef9c3; color: #111827;">Yellow</button>
+            <button class="highlight-opt" data-type="back" data-color="#dcfce7" style="background-color: #dcfce7; color: #111827;">Green</button>
+            <button class="highlight-opt" data-type="back" data-color="#ccfbf1" style="background-color: #ccfbf1; color: #111827;">Teal</button>
+            <button class="highlight-opt" data-type="back" data-color="#dbeafe" style="background-color: #dbeafe; color: #111827;">Blue</button>
+            <button class="highlight-opt" data-type="back" data-color="#f3e8ff" style="background-color: #f3e8ff; color: #111827;">Purple</button>
+        </div>
+    </div>
+
     <!-- Скрипты -->
     <script type="module" src="nav-widget.js"></script>
     <script type="module" src="header.js"></script>

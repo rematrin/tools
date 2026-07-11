@@ -213,7 +213,6 @@ body {
 .board-canvas-holder {
     position: absolute;
     transform-origin: 0 0;
-    will-change: transform;
 }
 
 .board-canvas {
@@ -483,8 +482,6 @@ body {
 /* Тип: Текст */
 .board-element.el-text {
     padding: 12px;
-    background: #ffffff !important;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04);
     height: auto !important;
     min-height: 48px;
 }
@@ -502,9 +499,6 @@ body {
 /* Тип: Стикер */
 .el-sticker {
     padding: 16px;
-    border-radius: 4px;
-    box-shadow: var(--shadow-md);
-    background-color: #fef08a; /* По умолчанию желтый */
     border: none;
 }
 
@@ -1079,5 +1073,368 @@ body.dark .mobile-readonly-banner {
     body.mobile-readonly-mode .board-container {
         top: 104px !important;
     }
+}
+
+/* === ПАНЕЛЬ ПАРАМЕТРОВ ЭЛЕМЕНТА (ТЕКСТ/СТИКЕРЫ) === */
+.element-options-panel {
+    position: absolute;
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 5px;
+    display: flex;
+    gap: 5px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    z-index: 10005;
+}
+
+.options-panel-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #f8fafc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.options-panel-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.options-panel-btn.btn-danger:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* Выпадающее поп-ап меню */
+.element-settings-popup {
+    display: none;
+    position: absolute;
+    top: 44px;
+    left: 0;
+    width: 250px;
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    z-index: 10006;
+    flex-direction: column;
+    gap: 16px;
+    color: #f8fafc;
+    box-sizing: border-box;
+}
+
+.element-settings-popup.active {
+    display: flex;
+}
+
+.popup-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.popup-section-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.popup-section-title {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #94a3b8;
+    letter-spacing: 0.05em;
+}
+
+.popup-value-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+/* Цвета заливки */
+.popup-colors-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.popup-color-opt {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.15s ease;
+    box-sizing: border-box;
+}
+
+.popup-color-opt:hover {
+    transform: scale(1.1);
+}
+
+.popup-color-opt.active {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 2px #1e293b inset;
+}
+
+.popup-color-opt.color-transparent {
+    background: linear-gradient(45deg, #475569 25%, transparent 25%), 
+                linear-gradient(-45deg, #475569 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #475569 75%), 
+                linear-gradient(-45deg, transparent 75%, #475569 75%);
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+    background-color: #334155;
+    border: 1px solid #475569;
+}
+
+.popup-color-opt.color-custom {
+    background: conic-gradient(red, yellow, green, cyan, blue, magenta, red);
+    border: 1px solid #475569;
+}
+
+/* Опции теней */
+.popup-shadows-list {
+    display: flex;
+    gap: 6px;
+    justify-content: space-between;
+}
+
+.shadow-opt-btn {
+    width: 38px;
+    height: 38px;
+    background: #334155;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.2s ease;
+}
+
+.shadow-opt-btn:hover {
+    background: #475569;
+}
+
+.shadow-opt-btn.active {
+    border-color: #8b5cf6;
+    background: #475569;
+}
+
+.shadow-preview {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    background: #cbd5e1;
+}
+
+.shadow-preview.sh-none {
+    box-shadow: none;
+    border: 1px dashed #cbd5e1;
+    background: transparent;
+}
+
+.shadow-preview.sh-box {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.shadow-preview.sh-sticker {
+    box-shadow: 0 5px 8px rgba(0, 0, 0, 0.5);
+}
+
+.shadow-preview.sh-paper {
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 3px 5px rgba(0, 0, 0, 0.3);
+}
+
+.shadow-preview.sh-film {
+    box-shadow: 2px 2px 0px 0px #000000;
+    border: 1px solid #000000;
+}
+
+/* Слайдер скругления */
+.popup-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #334155;
+    outline: none;
+    margin: 6px 0;
+}
+
+.popup-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #8b5cf6;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+/* Плейсхолдер для пустых текстовых полей */
+.el-text-content:empty::before {
+    content: "Type '/' for commands, 'space' for AI";
+    color: #94a3b8;
+    font-style: italic;
+    font-weight: normal;
+    cursor: text;
+    pointer-events: none;
+}
+
+/* === ВСПЛЫВАЮЩАЯ ПАНЕЛЬ ФОРМАТИРОВАНИЯ ВЫДЕЛЕННОГО ТЕКСТА === */
+.text-format-toolbar {
+    position: absolute;
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    z-index: 11000;
+}
+
+.format-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #f8fafc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.format-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.format-divider {
+    width: 1px;
+    height: 18px;
+    background: #475569;
+    margin: 0 4px;
+}
+
+/* Всплывающий ввод ссылки */
+.format-link-popover {
+    display: none;
+    position: absolute;
+    top: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 6px 8px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    align-items: center;
+    gap: 6px;
+    z-index: 11001;
+}
+
+.format-link-popover.active {
+    display: flex;
+}
+
+#txtLinkUrl {
+    background: #334155;
+    border: 1px solid #475569;
+    color: #f8fafc;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    outline: none;
+    width: 160px;
+}
+
+#btnConfirmLink {
+    background: #8b5cf6;
+    border: none;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Выпадающий список хайлайтов */
+.format-highlight-popup {
+    display: none;
+    position: absolute;
+    top: 36px;
+    right: 0;
+    background: #1e293b;
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+    z-index: 11002;
+    flex-direction: column;
+    gap: 4px;
+    width: 160px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.format-highlight-popup.active {
+    display: flex;
+}
+
+.highlight-group-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #94a3b8;
+    padding: 4px 6px;
+    letter-spacing: 0.05em;
+}
+
+.highlight-opt {
+    background: transparent;
+    border: none;
+    color: #f8fafc;
+    padding: 6px 8px;
+    text-align: left;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: all 0.15s ease;
+}
+
+.highlight-opt:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* Стилизация inline-ссылок в тексте */
+.el-text-content a {
+    color: #2563eb !important;
+    text-decoration: underline !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+.el-text-content a:hover {
+    color: #1d4ed8 !important;
 }
 

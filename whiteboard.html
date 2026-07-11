@@ -321,12 +321,32 @@
 
     <!-- Всплывающая панель форматирования выделенного текста -->
     <div class="text-format-toolbar" id="textFormatToolbar" style="display: none;">
+        <button class="format-btn" id="btnFmtType" title="Тип текста">
+            <span style="font-weight: 600;">T</span>
+            <span style="font-size: 7px; margin-left: 2px;">▼</span>
+        </button>
+        <div class="format-divider"></div>
+
         <button class="format-btn" id="btnFmtBold" title="Жирный"><b>B</b></button>
         <button class="format-btn" id="btnFmtItalic" title="Курсив"><i>I</i></button>
         <button class="format-btn" id="btnFmtUnderline" title="Подчеркнутый"><u>U</u></button>
         <button class="format-btn" id="btnFmtStrike" title="Зачеркнутый"><s>S</s></button>
         
         <div class="format-divider"></div>
+
+        <!-- Выпадающий список типов текста -->
+        <div class="format-type-popup" id="formatTypePopup">
+            <button class="type-opt" data-command="formatBlock" data-val="div"><span class="type-icon" style="font-weight:bold;">T</span> Text</button>
+            <button class="type-opt" data-command="formatBlock" data-val="h1"><span class="type-icon">H1</span> Heading 1</button>
+            <button class="type-opt" data-command="formatBlock" data-val="h2"><span class="type-icon">H2</span> Heading 2</button>
+            <button class="type-opt" data-command="formatBlock" data-val="h3"><span class="type-icon">H3</span> Heading 3</button>
+            <button class="type-opt" data-command="formatBlock" data-val="h4"><span class="type-icon">H4</span> Heading 4</button>
+            <button class="type-opt" data-command="formatBlock" data-val="h5"><span class="type-icon">H5</span> Heading 5</button>
+            <button class="type-opt" data-command="formatBlock" data-val="h6"><span class="type-icon">H6</span> Heading 6</button>
+            <button class="type-opt" data-command="insertUnorderedList"><span class="type-icon">•</span> Bulleted List</button>
+            <button class="type-opt" data-command="insertOrderedList"><span class="type-icon">1.</span> Numbered List</button>
+            <button class="type-opt" id="btnInsertTodo"><span class="type-icon">☑</span> To-do List</button>
+        </div>
         
         <button class="format-btn" id="btnFmtHighlight" title="Цвет и фон">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

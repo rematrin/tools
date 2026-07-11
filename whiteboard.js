@@ -36,6 +36,7 @@ let startPanY = 0;
 // Состояние сессии рисования (Milanote style)
 let isDrawing = false;
 let localStrokes = []; // Временные штрихи сессии рисования: { color, points: [] }
+let localRedoStrokes = []; // Буфер отмененных штрихов для redo в режиме рисования
 let localDrawingTool = 'pencil'; // 'pencil', 'eraser'
 let activeDrawingPoints = [];
 let activeDrawingPathEl = null;
@@ -544,7 +545,16 @@ window.addEventListener('keydown', (e) => {
             return;
         }
         e.preventDefault();
-        undo();
+        
+        if (activeTool === 'draw') {
+            if (localStrokes.length > 0) {
+                const undone = localStrokes.pop();
+                localRedoStrokes.push(undone);
+                redrawLocalStrokes();
+            }
+        } else {
+            undo();
+        }
     }
 
     // Ctrl+Y / Cmd+Y / Ctrl+Shift+Z / Cmd+Shift+Z (Redo)
@@ -553,7 +563,16 @@ window.addEventListener('keydown', (e) => {
             return;
         }
         e.preventDefault();
-        redo();
+        
+        if (activeTool === 'draw') {
+            if (localRedoStrokes.length > 0) {
+                const redone = localRedoStrokes.pop();
+                localStrokes.push(redone);
+                redrawLocalStrokes();
+            }
+        } else {
+            redo();
+        }
     }
 
     if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -639,6 +658,7 @@ function setTool(toolName) {
         document.body.classList.add('drawing-mode-active');
         drawingModePanel.classList.add('active');
         localStrokes = [];
+        localRedoStrokes = [];
         localDrawingTool = 'pencil';
         drawBtnPencil.classList.add('active');
         drawBtnEraser.classList.remove('active');
@@ -1021,6 +1041,57 @@ function renderElements() {
             textEl.setAttribute('data-id', el.id);
             textEl.innerHTML = el.content || '';
             
+            textEl.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const html = e.clipboardData.getData('text/html');
+                if (html) {
+                    // Очищаем HTML от стилей, шрифтов и размеров, но сохраняем разметку (заголовки, жирность, списки)
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    const cleanNode = (node) => {
+                        if (node.nodeType === Node.ELEMENT_NODE) {
+                            node.removeAttribute('style');
+                            node.removeAttribute('class');
+                            node.removeAttribute('id');
+                            node.removeAttribute('face');
+                            node.removeAttribute('size');
+                            node.removeAttribute('color');
+                            
+                            if (node.tagName.toLowerCase() === 'font') {
+                                const span = document.createElement('span');
+                                span.innerHTML = node.innerHTML;
+                                node.parentNode.replaceChild(span, node);
+                                node = span;
+                            }
+                        }
+                        for (let i = 0; i < node.childNodes.length; i++) {
+                            cleanNode(node.childNodes[i]);
+                        }
+                    };
+                    
+                    cleanNode(doc.body);
+                    document.execCommand('insertHTML', false, doc.body.innerHTML);
+                } else {
+                    const text = e.clipboardData.getData('text/plain');
+                    document.execCommand('insertText', false, text);
+                }
+            });
+
+            // Автосохранение чекбоксов в чеклисте при их клике/изменении
+            textEl.addEventListener('change', (e) => {
+                if (e.target && e.target.type === 'checkbox') {
+                    if (e.target.checked) {
+                        e.target.setAttribute('checked', 'checked');
+                    } else {
+                        e.target.removeAttribute('checked');
+                    }
+                    saveUndoState();
+                    el.content = textEl.innerHTML;
+                    saveElement(el);
+                }
+            });
+
             textEl.addEventListener('blur', () => {
                 textEl.contentEditable = "false";
                 const newText = textEl.innerHTML;
@@ -1036,19 +1107,11 @@ function renderElements() {
                 e.stopPropagation();
             });
 
-            // Двойной клик активирует редактирование
+            // Двойной клик активирует редактирование с размещением курсора в месте клика
             elDiv.addEventListener('dblclick', (e) => {
                 e.stopPropagation();
                 textEl.contentEditable = "true";
                 textEl.focus();
-                
-                // Ставим курсор в конец текста
-                const range = document.createRange();
-                range.selectNodeContents(textEl);
-                range.collapse(false);
-                const sel = window.getSelection();
-                sel.removeAllRanges();
-                sel.addRange(range);
             });
 
             elDiv.appendChild(textEl);
@@ -1505,6 +1568,7 @@ boardViewport.addEventListener('mouseup', (e) => {
                 color: activeColor,
                 points: activeDrawingPoints
             });
+            localRedoStrokes = []; // Очищаем redo-буфер при рисовании нового штриха
         }
         if (activeDrawingPathEl) {
             activeDrawingPathEl.remove();
@@ -1893,6 +1957,7 @@ function updateTextFormatToolbarPosition() {
     } else {
         toolbar.style.display = 'none';
         document.getElementById('formatHighlightPopup').classList.remove('active');
+        document.getElementById('formatTypePopup').classList.remove('active');
     }
 }
 
@@ -1907,9 +1972,13 @@ function initTextFormatToolbar() {
     const btnStrike = document.getElementById('btnFmtStrike');
     const btnHighlight = document.getElementById('btnFmtHighlight');
     const highlightPopup = document.getElementById('formatHighlightPopup');
+    
+    const btnType = document.getElementById('btnFmtType');
+    const typePopup = document.getElementById('formatTypePopup');
+    const btnInsertTodo = document.getElementById('btnInsertTodo');
 
     // Предотвращаем потерю фокуса с contenteditable при кликах на панель и поп-апы
-    [btnBold, btnItalic, btnUnderline, btnStrike, btnHighlight, highlightPopup].forEach(el => {
+    [btnBold, btnItalic, btnUnderline, btnStrike, btnHighlight, highlightPopup, btnType, typePopup, btnInsertTodo].forEach(el => {
         if (el) {
             el.addEventListener('mousedown', (e) => {
                 e.preventDefault();
@@ -1933,8 +2002,28 @@ function initTextFormatToolbar() {
         document.execCommand('strikeThrough', false, null);
     });
 
+    btnType.addEventListener('click', () => {
+        typePopup.classList.toggle('active');
+        highlightPopup.classList.remove('active');
+    });
+
+    typePopup.querySelectorAll('.type-opt[data-command]').forEach(opt => {
+        opt.addEventListener('click', () => {
+            const cmd = opt.getAttribute('data-command');
+            const val = opt.getAttribute('data-val') || null;
+            document.execCommand(cmd, false, val);
+            typePopup.classList.remove('active');
+        });
+    });
+
+    btnInsertTodo.addEventListener('click', () => {
+        document.execCommand('insertHTML', false, '<p class="todo-line"><input type="checkbox">&nbsp;</p>');
+        typePopup.classList.remove('active');
+    });
+
     btnHighlight.addEventListener('click', () => {
         highlightPopup.classList.toggle('active');
+        typePopup.classList.remove('active');
     });
 
     highlightPopup.querySelectorAll('.highlight-opt').forEach(opt => {
@@ -1975,6 +2064,7 @@ function initTextFormatToolbar() {
             if (!isInteractingWithToolbar) {
                 toolbar.style.display = 'none';
                 highlightPopup.classList.remove('active');
+                typePopup.classList.remove('active');
             }
         }
     });

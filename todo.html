@@ -14,6 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <!-- CSS Стили -->
     <link rel="stylesheet" href="theme.css">
@@ -247,6 +248,69 @@
                 <!-- Список активных задач -->
                 <div class="tasks-list" id="activeTasksContainer">
                     <div style="text-align: center; padding: 40px; opacity: 0.5;">Загрузка задач...</div>
+                </div>
+
+                <!-- Блок Помодоро таймера -->
+                <div id="pomodoroContainer" style="display: none;">
+                    <!-- Таймер -->
+                    <div class="timer-container">
+                        <div class="tabs">
+                            <button id="btn-pomodoro" class="active">Pomodoro</button>
+                            <button id="btn-short">Short Break</button>
+                            <button id="btn-long">Long Break</button>
+                        </div>
+                        
+                        <div class="timer" id="time-display">25:00</div>
+                        
+                        <div class="timer-controls">
+                            <button class="start-btn" id="start-btn">START</button>
+                            <button class="skip-btn" id="skip-btn">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
+                                    <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                                    <line x1="19" y1="5" x2="19" y2="19"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Индикатор активной задачи -->
+                    <div class="current-task-display" id="current-task-display"></div>
+
+                    <!-- Блок задач -->
+                    <div class="tasks-container">
+                        <div class="tasks-header">
+                            <span>Tasks</span>
+                            <button class="task-menu-btn" style="border: none; background: transparent; color: white;">⋮</button>
+                        </div>
+                        
+                        <div id="task-list"></div>
+
+                        <button class="add-task-btn" id="add-task-btn">
+                            <span style="font-size: 20px; margin-right: 5px;">⊕</span> Add Task
+                        </button>
+
+                        <div class="task-form" id="task-form">
+                            <div class="task-form-body">
+                                <input type="text" id="task-input" placeholder="What are you working on?">
+                                <span class="est-pomodoros-label">Est Pomodoros</span>
+                                <div class="est-pomodoros-controls">
+                                    <input type="number" id="est-input" value="1" min="1">
+                                    <button type="button" id="btn-est-up">▲</button>
+                                    <button type="button" id="btn-est-down">▼</button>
+                                </div>
+                            </div>
+                            <div class="task-form-footer">
+                                <button class="btn-cancel" id="btn-task-cancel">Cancel</button>
+                                <button class="btn-save" id="btn-task-save">Save</button>
+                            </div>
+                        </div>
+
+                        <!-- Статистика -->
+                        <div class="stats-bar">
+                            <span>Pomos: <strong id="stat-pomos">0</strong> / <span id="stat-est">0</span></span>
+                            <span>Finish At: <strong id="stat-finish">--:--</strong></span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Секция выполненных задач -->

@@ -1447,6 +1447,12 @@ if (sidebarHeader && !document.getElementById('userProfileMenu')) {
                 </svg>
                 <span>Настройки</span>
             </button>
+            <button class="user-menu-item" id="btnUserMenuPomodoro">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                    <path d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12 14.5 13.3807 13.3807 14.5 12 14.5 10.6193 14.5 9.5 13.3807 9.5 12 9.5 10.6193 10.6193 9.5 12 9.5ZM12 2C17.5228 2 22 6.47715 22 12 22 17.5228 17.5228 22 12 22 6.47715 22 2 17.5228 2 12 2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12 4 16.4183 7.58172 20 12 20 16.4183 20 20 16.4183 20 12 20 7.58172 16.4183 4 12 4Z"></path>
+                </svg>
+                <span>Помодоро</span>
+            </button>
             <button class="user-menu-item" id="btnUserMenuTrash">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -1469,6 +1475,7 @@ if (sidebarHeader && !document.getElementById('userProfileMenu')) {
 
 const userProfileMenu = document.getElementById('userProfileMenu');
 const btnUserMenuSettings = document.getElementById('btnUserMenuSettings');
+const btnUserMenuPomodoro = document.getElementById('btnUserMenuPomodoro');
 const btnUserMenuTrash = document.getElementById('btnUserMenuTrash');
 const btnUserMenuLogout = document.getElementById('btnUserMenuLogout');
 
@@ -1495,6 +1502,14 @@ if (sidebarUser && userProfileMenu) {
             e.stopPropagation();
             userProfileMenu.style.display = 'none';
             openSettingsModal();
+        });
+    }
+
+    if (btnUserMenuPomodoro) {
+        btnUserMenuPomodoro.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userProfileMenu.style.display = 'none';
+            window.location.hash = '#pomodoro';
         });
     }
 
@@ -1887,6 +1902,8 @@ function updateBrowserTitle() {
         title = 'Завтра';
     } else if (currentRoute === 'trash') {
         title = 'Корзина';
+    } else if (currentRoute === 'pomodoro') {
+        title = 'Помодоро';
     } else if (currentRoute.startsWith('project/')) {
         const projectId = currentRoute.split('/')[1];
         const proj = projectsList.find(p => p.id === projectId);
@@ -1904,6 +1921,8 @@ function handleRoute() {
         currentRoute = 'tomorrow';
     } else if (hash === 'trash') {
         currentRoute = 'trash';
+    } else if (hash === 'pomodoro') {
+        currentRoute = 'pomodoro';
     } else if (hash.startsWith('project/')) {
         const projectId = hash.split('/')[1];
         if (!projectId) {
@@ -1954,6 +1973,8 @@ function handleRoute() {
         if (titleEl) titleEl.textContent = 'Завтра';
     } else if (currentRoute === 'trash') {
         if (titleEl) titleEl.textContent = 'Корзина';
+    } else if (currentRoute === 'pomodoro') {
+        if (titleEl) titleEl.textContent = 'Помодоро';
     } else if (currentRoute.startsWith('project/')) {
         const projectId = currentRoute.split('/')[1];
         const proj = projectsList.find(p => p.id === projectId);
@@ -3449,7 +3470,7 @@ function renderTasksGroup(tasksGroup, containerEl) {
 // Отрендерить задачи в UI
 function renderTasks() {
     // Устанавливаем класс роута на body
-    document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash');
+    document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash', 'route-pomodoro');
     if (currentRoute === 'today') {
         document.body.classList.add('route-today');
     } else if (currentRoute === 'tomorrow') {
@@ -3458,6 +3479,25 @@ function renderTasks() {
         document.body.classList.add('route-trash');
     } else if (currentRoute === 'inbox') {
         document.body.classList.add('route-inbox');
+    } else if (currentRoute === 'pomodoro') {
+        document.body.classList.add('route-pomodoro');
+    }
+
+    const pomoContainerLocal = document.getElementById('pomodoroContainer');
+    if (pomoContainerLocal) {
+        pomoContainerLocal.style.display = currentRoute === 'pomodoro' ? 'flex' : 'none';
+        if (currentRoute === 'pomodoro') {
+            if (typeof updatePomoActiveTaskUI === 'function') {
+                updatePomoActiveTaskUI();
+            }
+        }
+    }
+    if (activeTasksContainer) {
+        activeTasksContainer.style.display = currentRoute === 'pomodoro' ? 'none' : 'block';
+    }
+    const gcalBannerLocal = document.getElementById('gcalEventsBanner');
+    if (gcalBannerLocal && currentRoute === 'pomodoro') {
+        gcalBannerLocal.style.display = 'none';
     }
 
     const nonDeletedTasks = allTasks.filter(t => !t.deleted);
@@ -3513,12 +3553,12 @@ function renderTasks() {
         trashNoticeBanner.style.display = currentRoute === 'trash' ? 'flex' : 'none';
     }
     if (addTaskFormEl) {
-        addTaskFormEl.style.display = currentRoute === 'trash' ? 'none' : 'flex';
+        addTaskFormEl.style.display = (currentRoute === 'trash' || currentRoute === 'pomodoro') ? 'none' : 'flex';
     }
 
     const projectHeaderActions = document.getElementById('projectHeaderActions');
     if (projectHeaderActions) {
-        projectHeaderActions.style.display = (currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox') ? 'block' : 'none';
+        projectHeaderActions.style.display = (currentRoute === 'pomodoro') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox') ? 'block' : 'none');
     }
 
     // Фильтруем задачи для отображения в зависимости от текущей вкладки (роута)
@@ -4018,7 +4058,9 @@ function renderTasks() {
         }
     }
 
-    if (displayCompletedTasks.length === 0 || isCompletedHiddenForProject) {
+    if (currentRoute === 'pomodoro') {
+        if (completedSection) completedSection.style.display = 'none';
+    } else if (displayCompletedTasks.length === 0 || isCompletedHiddenForProject) {
         if (completedSection) completedSection.style.display = 'none';
     } else {
         if (completedSection) completedSection.style.display = 'block';
@@ -4290,6 +4332,14 @@ function createTaskRowElement(task) {
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
                     <span>Изменить</span>
+                </button>
+
+                <button class="dropdown-item btn-start-pomodoro">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2.5px;" width="14" height="14">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span>Запустить Помодоро</span>
                 </button>
                 
                 ${!isSubtask ? `
@@ -4692,6 +4742,18 @@ function createTaskRowElement(task) {
             actionsDropdown.style.display = 'none';
             item.classList.remove('menu-open');
             enableInlineEdit(item, task, titleSpan);
+        });
+    }
+
+    const btnStartPomodoro = item.querySelector('.btn-start-pomodoro');
+    if (btnStartPomodoro) {
+        btnStartPomodoro.addEventListener('click', (e) => {
+            e.stopPropagation();
+            actionsDropdown.style.display = 'none';
+            item.classList.remove('menu-open');
+            if (typeof startPomodoroForTask === 'function') {
+                startPomodoroForTask(task);
+            }
         });
     }
 
@@ -9690,11 +9752,425 @@ window.addEventListener('googleCalendarTokenChanged', () => {
     updateGCalSettingsUI();
 });
 
+window.addEventListener('googleCalendarTokenChanged', () => {
+    updateGCalSettingsUI();
+});
+
+// === ЛОГИКА ТАЙМЕРА ПОМОДОРО (ИЗ POMODORO.HTML) ===
+const pomoAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function pomoPlayBeep() {
+    if (pomoAudioCtx.state === 'suspended') pomoAudioCtx.resume();
+    function createOscillator(timeOffset) {
+        const osc = pomoAudioCtx.createOscillator();
+        const gain = pomoAudioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, pomoAudioCtx.currentTime + timeOffset);
+        osc.frequency.exponentialRampToValueAtTime(300, pomoAudioCtx.currentTime + timeOffset + 0.3);
+        gain.gain.setValueAtTime(1, pomoAudioCtx.currentTime + timeOffset);
+        gain.gain.exponentialRampToValueAtTime(0.01, pomoAudioCtx.currentTime + timeOffset + 0.3);
+        osc.connect(gain);
+        gain.connect(pomoAudioCtx.destination);
+        osc.start(pomoAudioCtx.currentTime + timeOffset);
+        osc.stop(pomoAudioCtx.currentTime + timeOffset + 0.3);
+    }
+    createOscillator(0);
+    createOscillator(0.4);
+}
+
+const POMO_MODES = {
+    pomodoro: { time: 25 * 60, color: '#ba4949' },
+    shortBreak: { time: 5 * 60, color: '#38858a' },
+    longBreak: { time: 15 * 60, color: '#397097' }
+};
+
+let pomoCurrentMode = 'pomodoro';
+let pomoTimeLeft = POMO_MODES[pomoCurrentMode].time;
+let pomoTimerInterval = null;
+let pomoIsRunning = false;
+
+let pomoTasks = [];
+let pomoActiveTaskId = null;
+
+// Находим элементы на странице
+const pomoTimeDisplay = document.getElementById('time-display');
+const pomoStartBtn = document.getElementById('start-btn');
+const pomoSkipBtn = document.getElementById('skip-btn');
+const pomoTaskListEl = document.getElementById('task-list');
+const pomoTaskForm = document.getElementById('task-form');
+const pomoTaskInput = document.getElementById('task-input');
+const pomoEstInput = document.getElementById('est-input');
+const pomoAddTaskBtn = document.getElementById('add-task-btn');
+const pomoCurrentTaskDisplay = document.getElementById('current-task-display');
+
+function savePomoState() {
+    localStorage.setItem('todo_pomo_mode', pomoCurrentMode);
+    localStorage.setItem('todo_pomo_is_running', pomoIsRunning);
+    localStorage.setItem('todo_pomo_time_left', pomoTimeLeft);
+    if (pomoIsRunning) {
+        localStorage.setItem('todo_pomo_target_timestamp', Date.now() + pomoTimeLeft * 1000);
+    } else {
+        localStorage.removeItem('todo_pomo_target_timestamp');
+    }
+}
+
+function loadPomoState() {
+    const savedMode = localStorage.getItem('todo_pomo_mode');
+    if (savedMode) pomoCurrentMode = savedMode;
+
+    const savedIsRunning = localStorage.getItem('todo_pomo_is_running') === 'true';
+    const savedTimeLeftStr = localStorage.getItem('todo_pomo_time_left');
+    
+    if (savedIsRunning) {
+        const savedTarget = localStorage.getItem('todo_pomo_target_timestamp');
+        if (savedTarget) {
+            const diff = Math.round((parseInt(savedTarget) - Date.now()) / 1000);
+            if (diff > 0) {
+                pomoTimeLeft = diff;
+                pomoIsRunning = true;
+            } else {
+                pomoTimeLeft = POMO_MODES[pomoCurrentMode].time;
+                pomoIsRunning = false;
+            }
+        } else {
+            pomoTimeLeft = savedTimeLeftStr ? parseInt(savedTimeLeftStr) : POMO_MODES[pomoCurrentMode].time;
+            pomoIsRunning = false;
+        }
+    } else {
+        pomoTimeLeft = savedTimeLeftStr ? parseInt(savedTimeLeftStr) : POMO_MODES[pomoCurrentMode].time;
+        pomoIsRunning = false;
+    }
+}
+
+function pomoUpdateDisplay() {
+    const minutes = Math.floor(pomoTimeLeft / 60).toString().padStart(2, '0');
+    const seconds = (pomoTimeLeft % 60).toString().padStart(2, '0');
+    if (pomoTimeDisplay) pomoTimeDisplay.textContent = `${minutes}:${seconds}`;
+    if (currentRoute === 'pomodoro') {
+        document.title = `${minutes}:${seconds} - Pomofocus`;
+    }
+}
+
+function pomoSetMode(mode) {
+    clearInterval(pomoTimerInterval);
+    pomoIsRunning = false;
+    pomoCurrentMode = mode;
+    pomoTimeLeft = POMO_MODES[pomoCurrentMode].time;
+    
+    const container = document.getElementById('pomodoroContainer');
+    if (container) container.style.backgroundColor = POMO_MODES[pomoCurrentMode].color;
+    if (pomoStartBtn) {
+        pomoStartBtn.style.color = POMO_MODES[pomoCurrentMode].color;
+        pomoStartBtn.textContent = 'START';
+        pomoStartBtn.classList.remove('active-press');
+    }
+    if (pomoSkipBtn) pomoSkipBtn.style.display = 'none';
+    
+    document.querySelectorAll('#pomodoroContainer .tabs button').forEach(btn => btn.classList.remove('active'));
+    const activeTabBtn = document.getElementById(`btn-${mode === 'shortBreak' ? 'short' : mode === 'longBreak' ? 'long' : 'pomodoro'}`);
+    if (activeTabBtn) activeTabBtn.classList.add('active');
+    
+    pomoUpdateDisplay();
+    pomoUpdateStats();
+    savePomoState();
+}
+
+function pomoToggleTimer() {
+    if (pomoAudioCtx.state === 'suspended') pomoAudioCtx.resume();
+
+    if (pomoIsRunning) {
+        clearInterval(pomoTimerInterval);
+        pomoIsRunning = false;
+        if (pomoStartBtn) {
+            pomoStartBtn.textContent = 'START';
+            pomoStartBtn.classList.remove('active-press');
+        }
+        if (pomoSkipBtn) pomoSkipBtn.style.display = 'none';
+        savePomoState();
+    } else {
+        pomoIsRunning = true;
+        if (pomoStartBtn) {
+            pomoStartBtn.textContent = 'PAUSE';
+            pomoStartBtn.classList.add('active-press');
+        }
+        if (pomoSkipBtn) pomoSkipBtn.style.display = 'block';
+        savePomoState();
+        
+        pomoTimerInterval = setInterval(() => {
+            if (pomoTimeLeft > 0) {
+                pomoTimeLeft--;
+                pomoUpdateDisplay();
+                savePomoState();
+                pomoUpdateStats();
+            } else {
+                pomoHandleTimerComplete(false);
+            }
+        }, 1000);
+    }
+}
+
+function pomoSkipTimer() {
+    pomoHandleTimerComplete(true);
+}
+
+function pomoHandleTimerComplete(isSkip = false) {
+    clearInterval(pomoTimerInterval);
+    pomoIsRunning = false;
+    
+    if (pomoCurrentMode === 'pomodoro' && pomoActiveTaskId !== null) {
+        const task = pomoTasks.find(t => t.id === pomoActiveTaskId);
+        if (task && !task.completed) {
+            task.actPomos++;
+        }
+    }
+    
+    if (!isSkip) {
+        pomoPlayBeep();
+        setTimeout(() => alert("Время вышло!"), 50);
+    }
+    
+    if (pomoCurrentMode === 'pomodoro') pomoSetMode('shortBreak');
+    else pomoSetMode('pomodoro');
+    
+    pomoRenderTasks();
+    pomoUpdateStats();
+}
+
+function pomoShowTaskForm() {
+    if (pomoTaskForm) pomoTaskForm.style.display = 'block';
+    if (pomoAddTaskBtn) pomoAddTaskBtn.style.display = 'none';
+    if (pomoTaskInput) pomoTaskInput.focus();
+}
+
+function pomoHideTaskForm() {
+    if (pomoTaskForm) pomoTaskForm.style.display = 'none';
+    if (pomoAddTaskBtn) pomoAddTaskBtn.style.display = 'flex';
+    if (pomoTaskInput) pomoTaskInput.value = '';
+    if (pomoEstInput) pomoEstInput.value = '1';
+}
+
+function pomoChangeEst(amount) {
+    if (!pomoEstInput) return;
+    let val = parseInt(pomoEstInput.value) || 1;
+    val += amount;
+    if (val < 1) val = 1;
+    pomoEstInput.value = val;
+}
+
+function pomoSaveTask() {
+    if (!pomoTaskInput || !pomoEstInput) return;
+    const title = pomoTaskInput.value.trim();
+    const est = parseInt(pomoEstInput.value) || 1;
+    if (title) {
+        const newTask = { 
+            id: Date.now(), 
+            title: title, 
+            completed: false,
+            estPomos: est,
+            actPomos: 0
+        };
+        pomoTasks.push(newTask);
+        if (pomoTasks.length === 1) pomoSetActiveTask(newTask.id);
+        
+        pomoRenderTasks();
+        pomoHideTaskForm();
+    }
+}
+
+function pomoToggleComplete(id, event) {
+    if (event) event.stopPropagation();
+    const task = pomoTasks.find(t => t.id === id);
+    if (task) {
+        task.completed = !task.completed;
+        pomoRenderTasks();
+    }
+}
+
+function pomoSetActiveTask(id) {
+    pomoActiveTaskId = id;
+    pomoRenderTasks();
+}
+
+function pomoRenderTasks() {
+    if (!pomoTaskListEl) return;
+    pomoTaskListEl.innerHTML = '';
+    let activeTaskTitle = "";
+    let activeTaskIndex = 0;
+
+    pomoTasks.forEach((task, index) => {
+        const isActive = task.id === pomoActiveTaskId;
+        if (isActive) {
+            activeTaskTitle = task.title;
+            activeTaskIndex = index + 1;
+        }
+
+        const el = document.createElement('div');
+        el.className = `task-item ${task.completed ? 'completed' : ''} ${isActive ? 'active-task' : ''}`;
+        el.onclick = () => pomoSetActiveTask(task.id);
+        
+        el.innerHTML = `
+            <div class="task-left">
+                <div class="check-circle" onclick="pomoToggleComplete(${task.id}, event)">
+                    ${task.completed ? '✓' : ''}
+                </div>
+                <span class="task-title">${task.title}</span>
+            </div>
+            <div class="task-right">
+                <span><span class="act-pomos">${task.actPomos}</span> / ${task.estPomos}</span>
+                <button class="task-menu-btn" onclick="event.stopPropagation()">⋮</button>
+            </div>
+        `;
+        pomoTaskListEl.appendChild(el);
+    });
+
+    if (pomoCurrentTaskDisplay) {
+        if (pomoActiveTaskId && activeTaskTitle) {
+            pomoCurrentTaskDisplay.innerHTML = `<div class="task-num">#${activeTaskIndex}</div><div class="task-name">${activeTaskTitle}</div>`;
+        } else {
+            pomoCurrentTaskDisplay.innerHTML = '';
+        }
+    }
+
+    pomoUpdateStats();
+}
+
+function pomoUpdateStats() {
+    let totalEst = 0;
+    let totalAct = 0;
+    pomoTasks.forEach(t => {
+        totalEst += t.estPomos;
+        totalAct += t.actPomos;
+    });
+    
+    const statPomosEl = document.getElementById('stat-pomos');
+    const statEstEl = document.getElementById('stat-est');
+    const statFinishEl = document.getElementById('stat-finish');
+
+    if (statPomosEl) statPomosEl.textContent = totalAct;
+    if (statEstEl) statEstEl.textContent = totalEst;
+    
+    const remainingPomos = Math.max(0, totalEst - totalAct);
+    if (remainingPomos > 0 && statFinishEl) {
+        let totalMinutesLeft = (remainingPomos - 1) * 30;
+        
+        if (pomoCurrentMode === 'pomodoro') {
+            totalMinutesLeft += (pomoTimeLeft / 60) + 5;
+        } else {
+            totalMinutesLeft += (pomoTimeLeft / 60);
+        }
+        
+        const finishTime = new Date(Date.now() + totalMinutesLeft * 60000);
+        const hours = finishTime.getHours().toString().padStart(2, '0');
+        const minutes = finishTime.getMinutes().toString().padStart(2, '0');
+        const decimalHours = (totalMinutesLeft / 60).toFixed(1);
+        
+        statFinishEl.textContent = `${hours}:${minutes} (${decimalHours}h)`;
+    } else if (statFinishEl) {
+        statFinishEl.textContent = '--:--';
+    }
+}
+
+// Связываем действия с внешними задачами
+function startPomodoroForTask(task) {
+    let existing = pomoTasks.find(t => t.title === task.title);
+    if (!existing) {
+        existing = {
+            id: task.id,
+            title: task.title,
+            completed: task.completed,
+            estPomos: task.estPomos || 1,
+            actPomos: task.actPomos || 0
+        };
+        pomoTasks.push(existing);
+    }
+    pomoSetActiveTask(existing.id);
+    window.location.hash = '#pomodoro';
+    pomoSetMode('pomodoro');
+}
+
+function updatePomoActiveTaskUI() {
+    pomoRenderTasks();
+}
+
+function initPomodoroEvents() {
+    const focusBtn = document.getElementById('btn-pomodoro');
+    const shortBtn = document.getElementById('btn-short');
+    const longBtn = document.getElementById('btn-long');
+    const startBtn = document.getElementById('start-btn');
+    const skipBtn = document.getElementById('skip-btn');
+    
+    const addTaskBtn = document.getElementById('add-task-btn');
+    const taskCancelBtn = document.getElementById('btn-task-cancel');
+    const taskSaveBtn = document.getElementById('btn-task-save');
+    const estUpBtn = document.getElementById('btn-est-up');
+    const estDownBtn = document.getElementById('btn-est-down');
+
+    if (focusBtn) focusBtn.addEventListener('click', () => pomoSetMode('pomodoro'));
+    if (shortBtn) shortBtn.addEventListener('click', () => pomoSetMode('shortBreak'));
+    if (longBtn) longBtn.addEventListener('click', () => pomoSetMode('longBreak'));
+    if (startBtn) startBtn.addEventListener('click', pomoToggleTimer);
+    if (skipBtn) skipBtn.addEventListener('click', pomoSkipTimer);
+    
+    if (addTaskBtn) addTaskBtn.addEventListener('click', pomoShowTaskForm);
+    if (taskCancelBtn) taskCancelBtn.addEventListener('click', pomoHideTaskForm);
+    if (taskSaveBtn) taskSaveBtn.addEventListener('click', pomoSaveTask);
+    if (estUpBtn) estUpBtn.addEventListener('click', () => pomoChangeEst(1));
+    if (estDownBtn) estDownBtn.addEventListener('click', () => pomoChangeEst(-1));
+}
+
+function pomoRestoreTimer() {
+    loadPomoState();
+    
+    const container = document.getElementById('pomodoroContainer');
+    if (container) container.style.backgroundColor = POMO_MODES[pomoCurrentMode].color;
+    
+    document.querySelectorAll('#pomodoroContainer .tabs button').forEach(btn => btn.classList.remove('active'));
+    const activeTabBtn = document.getElementById(`btn-${pomoCurrentMode === 'shortBreak' ? 'short' : pomoCurrentMode === 'longBreak' ? 'long' : 'pomodoro'}`);
+    if (activeTabBtn) activeTabBtn.classList.add('active');
+
+    pomoUpdateDisplay();
+    pomoUpdateStats();
+
+    const startBtn = document.getElementById('start-btn');
+    if (pomoIsRunning) {
+        if (startBtn) {
+            startBtn.style.color = POMO_MODES[pomoCurrentMode].color;
+            startBtn.textContent = 'PAUSE';
+            startBtn.classList.add('active-press');
+        }
+        if (pomoSkipBtn) pomoSkipBtn.style.display = 'block';
+
+        pomoTimerInterval = setInterval(() => {
+            if (pomoTimeLeft > 0) {
+                pomoTimeLeft--;
+                pomoUpdateDisplay();
+                savePomoState();
+                pomoUpdateStats();
+            } else {
+                pomoHandleTimerComplete(false);
+            }
+        }, 1000);
+    } else {
+        if (startBtn) {
+            startBtn.style.color = POMO_MODES[pomoCurrentMode].color;
+            startBtn.textContent = 'START';
+            startBtn.classList.remove('active-press');
+        }
+    }
+}
+
+// Инициализация событий Помодоро
+initPomodoroEvents();
+pomoRestoreTimer();
+
 // Экспортируем функции в глобальную область видимости
 window.handleTaskSync = handleTaskSync;
 window.handleTaskDelete = handleTaskDelete;
 window.updateGCalSettingsUI = updateGCalSettingsUI;
 window.loadGCalConfig = loadGCalConfig;
 window.fetchAndRenderGCalEvents = fetchAndRenderGCalEvents;
+window.startPomodoroForTask = startPomodoroForTask;
+window.updatePomoActiveTaskUI = updatePomoActiveTaskUI;
+window.initPomodoroEvents = initPomodoroEvents;
+window.setPomoMode = pomoSetMode;
 
 

@@ -1554,12 +1554,14 @@ body.dark .clear-due-icon {
     top: auto !important;
     left: auto !important;
     width: 621px;
-    height: 440px; /* Увеличенная высота для предотвращения скроллинга повторов */
+    height: 440px;
+    /* Увеличенная высота для предотвращения скроллинга повторов */
     display: flex !important;
     flex-direction: row !important;
     overflow: hidden;
     margin: 0 !important;
-    padding: 0 !important; /* Убираем дефолтный паддинг 12px */
+    padding: 0 !important;
+    /* Убираем дефолтный паддинг 12px */
     background-color: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 16px;
@@ -1595,7 +1597,8 @@ body.dark .clear-due-icon {
 .due-column-time-repeat {
     width: 320px;
     min-width: 320px;
-    background-color: var(--sidebar-bg) !important; /* Серый фон правой колонки */
+    background-color: var(--sidebar-bg) !important;
+    /* Серый фон правой колонки */
     position: relative;
     padding: 24px !important;
 }
@@ -1605,7 +1608,8 @@ body.dark .clear-due-icon {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-top: auto; /* Прижимает кнопки к низу серой колонки */
+    margin-top: auto;
+    /* Прижимает кнопки к низу серой колонки */
     padding-top: 16px;
 }
 
@@ -1693,18 +1697,22 @@ body.dark .clear-due-icon {
         max-height: 90vh;
         overflow-y: auto;
     }
+
     .due-column-date {
         width: 100% !important;
     }
+
     .due-vertical-divider {
         display: none !important;
     }
+
     .due-column-time-repeat {
         width: 100% !important;
         min-width: 0 !important;
         border-top: 1px solid var(--border);
         height: auto !important;
     }
+
     .due-modal-footer {
         width: 100% !important;
         box-sizing: border-box;
@@ -5306,6 +5314,7 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
         padding-bottom: 0;
         border-color: transparent;
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -5481,9 +5490,11 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
 /* Кастомный выпадающий список для времени */
 .custom-time-dropdown {
     position: absolute;
-    top: 104px; /* Позиционируем под оберткой полей времени */
+    top: 104px;
+    /* Позиционируем под оберткой полей времени */
     width: 220px;
-    max-height: 200px; /* Ограничиваем высоту прокруткой */
+    max-height: 200px;
+    /* Ограничиваем высоту прокруткой */
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -5540,7 +5551,8 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     color: var(--text-secondary);
     font-size: 13px;
     font-weight: 400;
-    text-align: right; /* Прижимает текст длительности к правой стороне колонки */
+    text-align: right;
+    /* Прижимает текст длительности к правой стороне колонки */
 }
 
 .custom-time-dropdown-item .item-checkmark-wrap {
@@ -5591,4 +5603,396 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
 
 .time-view-ok-btn:hover {
     opacity: 0.9;
+}
+
+/* === ПОМОДОРО ТАЙМЕР (ИЗ POMODORO.HTML) === */
+#pomodoroContainer {
+    font-family: 'Nunito', sans-serif !important;
+    background-color: #ba4949;
+    color: white !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 50px;
+    transition: background-color 0.5s ease;
+    border-radius: 20px;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 20px auto 0;
+}
+
+#pomodoroContainer * {
+    box-sizing: border-box;
+}
+
+#pomodoroContainer .timer-container {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 20px 0 30px;
+    border-radius: 8px;
+    text-align: center;
+    width: 100%;
+    max-width: 480px;
+    margin-bottom: 20px;
+}
+
+#pomodoroContainer .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#pomodoroContainer .tabs button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    font-family: 'Nunito', sans-serif;
+    padding: 5px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+#pomodoroContainer .tabs button.active {
+    background-color: rgba(0, 0, 0, 0.15);
+    font-weight: bold;
+}
+
+#pomodoroContainer .timer {
+    font-size: 120px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    line-height: 1;
+}
+
+#pomodoroContainer .timer-controls {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+#pomodoroContainer .start-btn {
+    background-color: white;
+    color: #ba4949;
+    border: none;
+    padding: 15px 0;
+    font-size: 22px;
+    font-weight: 800;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 6px 0 #ebebeb;
+    transition: transform 0.1s, box-shadow 0.1s, color 0.5s ease;
+    width: 200px;
+}
+
+#pomodoroContainer .start-btn:active,
+#pomodoroContainer .start-btn.active-press {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 #ebebeb;
+}
+
+#pomodoroContainer .skip-btn {
+    position: absolute;
+    right: 0;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: none;
+    opacity: 0.8;
+    transition: opacity 0.2s, transform 0.2s;
+    padding: 10px;
+}
+
+#pomodoroContainer .skip-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+#pomodoroContainer .current-task-display {
+    text-align: center;
+    margin-bottom: 20px;
+    min-height: 40px;
+}
+
+#pomodoroContainer .current-task-display .task-num {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+#pomodoroContainer .current-task-display .task-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+}
+
+#pomodoroContainer .tasks-container {
+    width: 100%;
+    max-width: 480px;
+}
+
+#pomodoroContainer .tasks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.6);
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+#pomodoroContainer .tasks-header button {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+#pomodoroContainer .task-item {
+    background-color: white;
+    color: #555;
+    padding: 15px 15px 15px 10px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    border-left: 6px solid transparent;
+    transition: border-color 0.2s;
+    min-height: auto;
+    border-bottom: none;
+    width: 100%;
+}
+
+#pomodoroContainer .task-item.active-task {
+    border-left: 6px solid #222;
+}
+
+#pomodoroContainer .task-item.completed .task-title {
+    text-decoration: line-through;
+    color: #bbb;
+}
+
+#pomodoroContainer .task-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#pomodoroContainer .check-circle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #dfdfdf;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 14px;
+}
+
+#pomodoroContainer .task-item.completed .check-circle {
+    background-color: #ba4949;
+}
+
+#pomodoroContainer .task-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: #bbb;
+    font-size: 15px;
+}
+
+#pomodoroContainer .task-right span {
+    font-weight: bold;
+    color: #bbb;
+}
+
+#pomodoroContainer .task-right .act-pomos {
+    color: #555;
+    font-size: 18px;
+}
+
+#pomodoroContainer .task-menu-btn {
+    background-color: transparent;
+    border: 1px solid #dfdfdf;
+    border-radius: 4px;
+    color: #555;
+    padding: 2px 8px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#pomodoroContainer .add-task-btn {
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.1);
+    border: 2px dashed rgba(255, 255, 255, 0.4);
+    color: white;
+    padding: 18px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.2s, opacity 0.2s;
+    font-family: 'Nunito', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.8;
+}
+
+#pomodoroContainer .add-task-btn:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+#pomodoroContainer .task-form {
+    display: none;
+    background-color: white;
+    border-radius: 8px;
+    margin-top: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    animation: pomoSlideDown 0.2s ease-out;
+}
+
+@keyframes pomoSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#pomodoroContainer .task-form-body {
+    padding: 20px;
+}
+
+#pomodoroContainer .task-form input[type="text"] {
+    width: 100%;
+    padding: 10px 0;
+    font-size: 20px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-weight: bold;
+    color: #555;
+    font-family: 'Nunito', sans-serif;
+    margin-bottom: 15px;
+    background: transparent;
+}
+
+#pomodoroContainer .task-form input[type="text"]:focus {
+    outline: none;
+    border-bottom: 2px solid #ccc;
+}
+
+#pomodoroContainer .task-form input[type="text"]::placeholder {
+    color: #dfdfdf;
+    font-style: italic;
+}
+
+#pomodoroContainer .est-pomodoros-label {
+    font-weight: bold;
+    color: #555;
+    display: block;
+    margin-bottom: 10px;
+}
+
+#pomodoroContainer .est-pomodoros-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#pomodoroContainer .est-pomodoros-controls input {
+    width: 60px;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #555;
+    background-color: #efefef;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Nunito', sans-serif;
+}
+
+#pomodoroContainer .est-pomodoros-controls button {
+    background-color: white;
+    border: 1px solid #dfdfdf;
+    color: #555;
+    width: 35px;
+    height: 38px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#pomodoroContainer .task-form-footer {
+    background-color: #efefef;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+}
+
+#pomodoroContainer .task-form-footer button {
+    padding: 10px 20px;
+    border-radius: 4px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+}
+
+#pomodoroContainer .btn-cancel {
+    background-color: transparent;
+    color: #888;
+}
+
+#pomodoroContainer .btn-save {
+    background-color: #222;
+    color: white;
+}
+
+#pomodoroContainer .stats-bar {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 0 0 8px 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.4);
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.8);
+    width: 100%;
+}
+
+#pomodoroContainer .stats-bar span strong {
+    color: white;
+    font-size: 20px;
+    margin: 0 2px;
 }

@@ -2481,19 +2481,24 @@ async function toggleTaskCompleted(taskId, currentStatus) {
         // 1. Подготавливаем обновление текущей задачи
         const deleteCompletedPref = localStorage.getItem('todo_pref_delete_completed') === 'true';
         let updatePromise;
-        if (!currentStatus && deleteCompletedPref) {
-            updatePromise = updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
-                deleted: true,
-                deletedAt: serverTimestamp(),
-                completed: true,
-                completedDate: todayStr
-            });
-        } else {
-            updatePromise = updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
-                completed: !currentStatus,
-                completedDate: !currentStatus ? todayStr : null
-            });
+        const taskFields = {
+            completed: !currentStatus,
+            completedDate: !currentStatus ? todayStr : null
+        };
+
+        if (!currentStatus && task && (task.estPomos !== undefined || task.inPomodoro)) {
+            const finalAct = task.actPomos || 0;
+            taskFields.estPomos = finalAct;
+            task.estPomos = finalAct;
         }
+
+        if (!currentStatus && deleteCompletedPref) {
+            taskFields.deleted = true;
+            taskFields.deletedAt = serverTimestamp();
+            taskFields.completed = true;
+        }
+
+        updatePromise = updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), taskFields);
         promises.push(updatePromise);
 
         // 1.1. Каскадное выполнение подзадач при завершении родительской задачи
@@ -9813,6 +9818,7 @@ let pomoCurrentMode = 'pomodoro';
 let pomoTimeLeft = POMO_MODES[pomoCurrentMode].time;
 let pomoTimerInterval = null;
 let pomoIsRunning = false;
+let pomoCompletedCount = 0;
 
 let pomoTasks = [];
 let pomoActiveTaskId = null;
@@ -9880,7 +9886,7 @@ function pomoUpdateDisplay() {
     const seconds = (pomoTimeLeft % 60).toString().padStart(2, '0');
     if (pomoTimeDisplay) pomoTimeDisplay.textContent = `${minutes}:${seconds}`;
     if (currentRoute === 'pomodoro') {
-        document.title = `${minutes}:${seconds} - Pomofocus`;
+        document.title = `${minutes}:${seconds} - Помодоро`;
     }
 }
 
@@ -9952,7 +9958,9 @@ function pomoHandleTimerComplete(isSkip = false) {
     clearInterval(pomoTimerInterval);
     pomoIsRunning = false;
     
-    if (pomoCurrentMode === 'pomodoro' && pomoActiveTaskId !== null) {
+    const wasPomodoro = pomoCurrentMode === 'pomodoro';
+    
+    if (wasPomodoro && pomoActiveTaskId !== null) {
         const task = allTasks.find(t => t.id === pomoActiveTaskId && !t.deleted);
         if (task && !task.completed) {
             const newAct = (task.actPomos || 0) + 1;
@@ -9969,8 +9977,18 @@ function pomoHandleTimerComplete(isSkip = false) {
         setTimeout(() => alert("Время вышло!"), 50);
     }
     
-    if (pomoCurrentMode === 'pomodoro') pomoSetMode('shortBreak');
-    else pomoSetMode('pomodoro');
+    if (wasPomodoro) {
+        if (!isSkip) {
+            pomoCompletedCount++;
+        }
+        if (pomoCompletedCount > 0 && pomoCompletedCount % 4 === 0) {
+            pomoSetMode('longBreak');
+        } else {
+            pomoSetMode('shortBreak');
+        }
+    } else {
+        pomoSetMode('pomodoro');
+    }
     
     pomoRenderTasks();
     pomoUpdateStats();
@@ -10207,8 +10225,12 @@ function pomoUpdateStats() {
     let totalEst = 0;
     let totalAct = 0;
     pomoTasks.forEach(t => {
-        totalEst += t.estPomos || 1;
         totalAct += t.actPomos || 0;
+        if (t.completed) {
+            totalEst += t.actPomos || 0;
+        } else {
+            totalEst += t.estPomos || 1;
+        }
     });
 
     const remainingPomos = Math.max(0, totalEst - totalAct);
@@ -10227,7 +10249,7 @@ function pomoUpdateStats() {
 
         statsEl.textContent = `Помидоры: ${totalAct}/${totalEst} Закончим в: ${hours}:${minutes} (${decimalHours}ч)`;
     } else {
-        statsEl.textContent = `Помидоры: ${totalAct}/${totalEst} Закончим в: --:--`;
+        statsEl.textContent = `Помидоры: ${totalAct}/${totalEst}`;
     }
 }
 

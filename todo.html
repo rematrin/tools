@@ -26,9 +26,11 @@
     <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0/index.min.js"></script>
     <script>
         window.addEventListener('touchmove', function () { }, { passive: false });
-        MobileDragDrop.polyfill({
-            dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
-        });
+        if (typeof MobileDragDrop !== 'undefined') {
+            MobileDragDrop.polyfill({
+                dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
+            });
+        }
     </script>
     <!-- Lottie Web Component for progress confetti -->
     <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.14/dist/dotlottie-wc.js" type="module"></script>
@@ -255,15 +257,15 @@
                     <!-- Таймер -->
                     <div class="timer-container">
                         <div class="tabs">
-                            <button id="btn-pomodoro" class="active">Pomodoro</button>
-                            <button id="btn-short">Short Break</button>
-                            <button id="btn-long">Long Break</button>
+                            <button id="btn-pomodoro" class="active">Помодоро</button>
+                            <button id="btn-short">Короткий перерыв</button>
+                            <button id="btn-long">Длинный перерыв</button>
                         </div>
                         
                         <div class="timer" id="time-display">25:00</div>
                         
                         <div class="timer-controls">
-                            <button class="start-btn" id="start-btn">START</button>
+                            <button class="start-btn" id="start-btn">СТАРТ</button>
                             <button class="skip-btn" id="skip-btn">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
                                     <polygon points="5 4 15 12 5 20 5 4"></polygon>
@@ -273,44 +275,11 @@
                         </div>
                     </div>
 
-                    <!-- Индикатор активной задачи -->
-                    <div class="current-task-display" id="current-task-display"></div>
+                    <!-- Список задач Помодоро -->
+                    <div class="tasks-list" id="pomoTasksList" style="margin-top: 30px; width: 100%; max-width: 620px;"></div>
 
-                    <!-- Блок задач -->
-                    <div class="tasks-container">
-                        <div class="tasks-header">
-                            <span>Tasks</span>
-                            <button class="task-menu-btn" style="border: none; background: transparent; color: white;">⋮</button>
-                        </div>
-                        
-                        <div id="task-list"></div>
-
-                        <button class="add-task-btn" id="add-task-btn">
-                            <span style="font-size: 20px; margin-right: 5px;">⊕</span> Add Task
-                        </button>
-
-                        <div class="task-form" id="task-form">
-                            <div class="task-form-body">
-                                <input type="text" id="task-input" placeholder="What are you working on?">
-                                <span class="est-pomodoros-label">Est Pomodoros</span>
-                                <div class="est-pomodoros-controls">
-                                    <input type="number" id="est-input" value="1" min="1">
-                                    <button type="button" id="btn-est-up">▲</button>
-                                    <button type="button" id="btn-est-down">▼</button>
-                                </div>
-                            </div>
-                            <div class="task-form-footer">
-                                <button class="btn-cancel" id="btn-task-cancel">Cancel</button>
-                                <button class="btn-save" id="btn-task-save">Save</button>
-                            </div>
-                        </div>
-
-                        <!-- Статистика -->
-                        <div class="stats-bar">
-                            <span>Pomos: <strong id="stat-pomos">0</strong> / <span id="stat-est">0</span></span>
-                            <span>Finish At: <strong id="stat-finish">--:--</strong></span>
-                        </div>
-                    </div>
+                    <!-- Статистика внизу -->
+                    <div class="pomo-bottom-stats" id="pomoBottomStats" style="margin-top: 30px; color: var(--text-secondary); font-size: 14px; font-weight: 500; text-align: center; width: 100%;"></div>
                 </div>
 
                 <!-- Секция выполненных задач -->

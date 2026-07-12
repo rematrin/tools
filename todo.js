@@ -4334,12 +4334,11 @@ function createTaskRowElement(task) {
                     <span>Изменить</span>
                 </button>
 
-                <button class="dropdown-item btn-start-pomodoro">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2.5px;" width="14" height="14">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
+                <button class="dropdown-item btn-toggle-pomodoro">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="margin-right: 2.5px;" width="14" height="14">
+                        <path d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12 14.5 13.3807 13.3807 14.5 12 14.5 10.6193 14.5 9.5 13.3807 9.5 12 9.5 10.6193 10.6193 9.5 12 9.5ZM12 2C17.5228 2 22 6.47715 22 12 22 17.5228 17.5228 22 12 22 6.47715 22 2 17.5228 2 12 2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12 4 16.4183 7.58172 20 12 20 16.4183 20 20 16.4183 20 12 20 7.58172 16.4183 4 12 4Z"></path>
                     </svg>
-                    <span>Запустить Помодоро</span>
+                    <span>${task.inPomodoro ? 'Удалить из Помодоро' : 'Добавить в Помодоро'}</span>
                 </button>
                 
                 ${!isSubtask ? `
@@ -4745,14 +4744,33 @@ function createTaskRowElement(task) {
         });
     }
 
-    const btnStartPomodoro = item.querySelector('.btn-start-pomodoro');
-    if (btnStartPomodoro) {
-        btnStartPomodoro.addEventListener('click', (e) => {
+    const btnTogglePomodoro = item.querySelector('.btn-toggle-pomodoro');
+    if (btnTogglePomodoro) {
+        btnTogglePomodoro.addEventListener('click', async (e) => {
             e.stopPropagation();
             actionsDropdown.style.display = 'none';
             item.classList.remove('menu-open');
-            if (typeof startPomodoroForTask === 'function') {
-                startPomodoroForTask(task);
+            
+            const newInPomo = !task.inPomodoro;
+            task.inPomodoro = newInPomo;
+            
+            const localTask = allTasks.find(t => t.id === task.id);
+            if (localTask) localTask.inPomodoro = newInPomo;
+            
+            if (newInPomo && !pomoActiveTaskId) {
+                pomoActiveTaskId = task.id;
+            } else if (!newInPomo && pomoActiveTaskId === task.id) {
+                pomoActiveTaskId = null;
+            }
+            
+            renderTasks();
+            
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                    inPomodoro: newInPomo
+                });
+            } catch (err) {
+                console.error("Ошибка при обновлении статуса Помодоро:", err);
             }
         });
     }
@@ -5697,7 +5715,7 @@ function initDragAndDrop() {
     let draggingSection = null;
     let sectionPlaceholder = null;
 
-    const containers = [activeTasksContainer, completedTasksContainer];
+    const containers = [activeTasksContainer, completedTasksContainer, document.getElementById('pomoTasksList')];
 
     containers.forEach(container => {
         if (!container) return;
@@ -9752,29 +9770,37 @@ window.addEventListener('googleCalendarTokenChanged', () => {
     updateGCalSettingsUI();
 });
 
-window.addEventListener('googleCalendarTokenChanged', () => {
-    updateGCalSettingsUI();
-});
-
 // === ЛОГИКА ТАЙМЕРА ПОМОДОРО (ИЗ POMODORO.HTML) ===
-const pomoAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let pomoAudioCtx = null;
 function pomoPlayBeep() {
-    if (pomoAudioCtx.state === 'suspended') pomoAudioCtx.resume();
-    function createOscillator(timeOffset) {
-        const osc = pomoAudioCtx.createOscillator();
-        const gain = pomoAudioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, pomoAudioCtx.currentTime + timeOffset);
-        osc.frequency.exponentialRampToValueAtTime(300, pomoAudioCtx.currentTime + timeOffset + 0.3);
-        gain.gain.setValueAtTime(1, pomoAudioCtx.currentTime + timeOffset);
-        gain.gain.exponentialRampToValueAtTime(0.01, pomoAudioCtx.currentTime + timeOffset + 0.3);
-        osc.connect(gain);
-        gain.connect(pomoAudioCtx.destination);
-        osc.start(pomoAudioCtx.currentTime + timeOffset);
-        osc.stop(pomoAudioCtx.currentTime + timeOffset + 0.3);
+    try {
+        if (!pomoAudioCtx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) {
+                pomoAudioCtx = new AudioContextClass();
+            }
+        }
+        if (pomoAudioCtx) {
+            if (pomoAudioCtx.state === 'suspended') pomoAudioCtx.resume();
+            function createOscillator(timeOffset) {
+                const osc = pomoAudioCtx.createOscillator();
+                const gain = pomoAudioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, pomoAudioCtx.currentTime + timeOffset);
+                osc.frequency.exponentialRampToValueAtTime(300, pomoAudioCtx.currentTime + timeOffset + 0.3);
+                gain.gain.setValueAtTime(1, pomoAudioCtx.currentTime + timeOffset);
+                gain.gain.exponentialRampToValueAtTime(0.01, pomoAudioCtx.currentTime + timeOffset + 0.3);
+                osc.connect(gain);
+                gain.connect(pomoAudioCtx.destination);
+                osc.start(pomoAudioCtx.currentTime + timeOffset);
+                osc.stop(pomoAudioCtx.currentTime + timeOffset + 0.3);
+            }
+            createOscillator(0);
+            createOscillator(0.4);
+        }
+    } catch (e) {
+        console.warn("Web Audio API is not supported or blocked:", e);
     }
-    createOscillator(0);
-    createOscillator(0.4);
 }
 
 const POMO_MODES = {
@@ -9815,7 +9841,15 @@ function savePomoState() {
 
 function loadPomoState() {
     const savedMode = localStorage.getItem('todo_pomo_mode');
-    if (savedMode) pomoCurrentMode = savedMode;
+    if (savedMode) {
+        if (savedMode === 'focus') {
+            pomoCurrentMode = 'pomodoro';
+        } else if (POMO_MODES[savedMode]) {
+            pomoCurrentMode = savedMode;
+        } else {
+            pomoCurrentMode = 'pomodoro';
+        }
+    }
 
     const savedIsRunning = localStorage.getItem('todo_pomo_is_running') === 'true';
     const savedTimeLeftStr = localStorage.getItem('todo_pomo_time_left');
@@ -9857,10 +9891,12 @@ function pomoSetMode(mode) {
     pomoTimeLeft = POMO_MODES[pomoCurrentMode].time;
     
     const container = document.getElementById('pomodoroContainer');
-    if (container) container.style.backgroundColor = POMO_MODES[pomoCurrentMode].color;
+    if (container) container.style.backgroundColor = '';
+    const timerCard = container ? container.querySelector('.timer-container') : null;
+    if (timerCard) timerCard.style.backgroundColor = POMO_MODES[pomoCurrentMode].color;
     if (pomoStartBtn) {
         pomoStartBtn.style.color = POMO_MODES[pomoCurrentMode].color;
-        pomoStartBtn.textContent = 'START';
+        pomoStartBtn.textContent = 'СТАРТ';
         pomoStartBtn.classList.remove('active-press');
     }
     if (pomoSkipBtn) pomoSkipBtn.style.display = 'none';
@@ -9875,13 +9911,13 @@ function pomoSetMode(mode) {
 }
 
 function pomoToggleTimer() {
-    if (pomoAudioCtx.state === 'suspended') pomoAudioCtx.resume();
+    if (pomoAudioCtx && pomoAudioCtx.state === 'suspended') pomoAudioCtx.resume();
 
     if (pomoIsRunning) {
         clearInterval(pomoTimerInterval);
         pomoIsRunning = false;
         if (pomoStartBtn) {
-            pomoStartBtn.textContent = 'START';
+            pomoStartBtn.textContent = 'СТАРТ';
             pomoStartBtn.classList.remove('active-press');
         }
         if (pomoSkipBtn) pomoSkipBtn.style.display = 'none';
@@ -9889,7 +9925,7 @@ function pomoToggleTimer() {
     } else {
         pomoIsRunning = true;
         if (pomoStartBtn) {
-            pomoStartBtn.textContent = 'PAUSE';
+            pomoStartBtn.textContent = 'ПАУЗА';
             pomoStartBtn.classList.add('active-press');
         }
         if (pomoSkipBtn) pomoSkipBtn.style.display = 'block';
@@ -9917,9 +9953,14 @@ function pomoHandleTimerComplete(isSkip = false) {
     pomoIsRunning = false;
     
     if (pomoCurrentMode === 'pomodoro' && pomoActiveTaskId !== null) {
-        const task = pomoTasks.find(t => t.id === pomoActiveTaskId);
+        const task = allTasks.find(t => t.id === pomoActiveTaskId && !t.deleted);
         if (task && !task.completed) {
-            task.actPomos++;
+            const newAct = (task.actPomos || 0) + 1;
+            task.actPomos = newAct;
+            if (currentUid) {
+                updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), { actPomos: newAct })
+                    .catch(err => console.error("Ошибка обновления actPomos:", err));
+            }
         }
     }
     
@@ -9948,141 +9989,250 @@ function pomoHideTaskForm() {
     if (pomoEstInput) pomoEstInput.value = '1';
 }
 
-function pomoChangeEst(amount) {
-    if (!pomoEstInput) return;
-    let val = parseInt(pomoEstInput.value) || 1;
-    val += amount;
-    if (val < 1) val = 1;
-    pomoEstInput.value = val;
-}
-
-function pomoSaveTask() {
-    if (!pomoTaskInput || !pomoEstInput) return;
-    const title = pomoTaskInput.value.trim();
-    const est = parseInt(pomoEstInput.value) || 1;
-    if (title) {
-        const newTask = { 
-            id: Date.now(), 
-            title: title, 
-            completed: false,
-            estPomos: est,
-            actPomos: 0
-        };
-        pomoTasks.push(newTask);
-        if (pomoTasks.length === 1) pomoSetActiveTask(newTask.id);
-        
-        pomoRenderTasks();
-        pomoHideTaskForm();
-    }
-}
-
-function pomoToggleComplete(id, event) {
-    if (event) event.stopPropagation();
-    const task = pomoTasks.find(t => t.id === id);
-    if (task) {
-        task.completed = !task.completed;
-        pomoRenderTasks();
-    }
-}
-
 function pomoSetActiveTask(id) {
     pomoActiveTaskId = id;
     pomoRenderTasks();
 }
 
 function pomoRenderTasks() {
-    if (!pomoTaskListEl) return;
-    pomoTaskListEl.innerHTML = '';
-    let activeTaskTitle = "";
-    let activeTaskIndex = 0;
+    const listEl = document.getElementById('pomoTasksList');
+    if (!listEl) return;
+    listEl.innerHTML = '';
 
-    pomoTasks.forEach((task, index) => {
+    const pomoTasks = allTasks.filter(t => !t.deleted && t.inPomodoro);
+    
+    if (pomoActiveTaskId && !pomoTasks.some(t => t.id === pomoActiveTaskId)) {
+        pomoActiveTaskId = null;
+    }
+    if (!pomoActiveTaskId && pomoTasks.length > 0) {
+        pomoActiveTaskId = pomoTasks[0].id;
+    }
+
+    pomoTasks.forEach((task) => {
+        const itemEl = createTaskRowElement(task);
+        
         const isActive = task.id === pomoActiveTaskId;
         if (isActive) {
-            activeTaskTitle = task.title;
-            activeTaskIndex = index + 1;
+            itemEl.classList.add('active-task');
         }
 
-        const el = document.createElement('div');
-        el.className = `task-item ${task.completed ? 'completed' : ''} ${isActive ? 'active-task' : ''}`;
-        el.onclick = () => pomoSetActiveTask(task.id);
-        
-        el.innerHTML = `
-            <div class="task-left">
-                <div class="check-circle" onclick="pomoToggleComplete(${task.id}, event)">
-                    ${task.completed ? '✓' : ''}
-                </div>
-                <span class="task-title">${task.title}</span>
-            </div>
-            <div class="task-right">
-                <span><span class="act-pomos">${task.actPomos}</span> / ${task.estPomos}</span>
-                <button class="task-menu-btn" onclick="event.stopPropagation()">⋮</button>
-            </div>
-        `;
-        pomoTaskListEl.appendChild(el);
-    });
+        // Создаем кнопку-переключатель (буллит) выбора задачи для Помодоро
+        const targetBtn = document.createElement('button');
+        targetBtn.className = 'pomo-select-target-btn';
+        targetBtn.title = isActive ? 'Текущая задача для фокуса' : 'Выбрать эту задачу для фокуса';
+        targetBtn.style.background = 'none';
+        targetBtn.style.border = 'none';
+        targetBtn.style.cursor = 'pointer';
+        targetBtn.style.padding = '4px';
+        targetBtn.style.display = 'flex';
+        targetBtn.style.alignItems = 'center';
+        targetBtn.style.justifyContent = 'center';
+        targetBtn.style.marginRight = '8px';
+        targetBtn.style.marginLeft = 'auto';
+        targetBtn.style.color = isActive ? 'var(--accent, #4b6bfb)' : 'var(--text-secondary, #818c99)';
+        targetBtn.style.opacity = isActive ? '1' : '0.4';
+        targetBtn.style.transition = 'opacity 0.2s, color 0.2s';
 
-    if (pomoCurrentTaskDisplay) {
-        if (pomoActiveTaskId && activeTaskTitle) {
-            pomoCurrentTaskDisplay.innerHTML = `<div class="task-num">#${activeTaskIndex}</div><div class="task-name">${activeTaskTitle}</div>`;
+        if (isActive) {
+            targetBtn.innerHTML = `
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                    <circle cx="12" cy="12" r="5"></circle>
+                </svg>
+            `;
         } else {
-            pomoCurrentTaskDisplay.innerHTML = '';
+            targetBtn.innerHTML = `
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                </svg>
+            `;
+            
+            targetBtn.addEventListener('mouseenter', () => {
+                targetBtn.style.opacity = '1';
+                targetBtn.style.color = 'var(--accent, #4b6bfb)';
+            });
+            targetBtn.addEventListener('mouseleave', () => {
+                targetBtn.style.opacity = '0.4';
+                targetBtn.style.color = 'var(--text-secondary, #818c99)';
+            });
         }
-    }
+
+        targetBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            pomoActiveTaskId = task.id;
+            pomoRenderTasks();
+        });
+
+        const countBadge = document.createElement('span');
+        countBadge.className = 'pomo-task-count-badge';
+        countBadge.style.marginRight = '12px';
+        countBadge.style.fontFamily = "'Nunito', sans-serif";
+        countBadge.style.fontSize = '14px';
+        countBadge.style.fontWeight = '600';
+        countBadge.style.cursor = 'pointer';
+        countBadge.style.padding = '4px 8px';
+        countBadge.style.borderRadius = '6px';
+        countBadge.style.transition = 'background-color 0.2s';
+        
+        countBadge.addEventListener('mouseenter', () => {
+            countBadge.style.backgroundColor = 'var(--hover-bg, rgba(0,0,0,0.05))';
+        });
+        countBadge.addEventListener('mouseleave', () => {
+            countBadge.style.backgroundColor = 'transparent';
+        });
+
+        const hasEst = task.estPomos !== undefined && task.estPomos !== null;
+        if (!hasEst) {
+            countBadge.textContent = 'Настроить';
+            countBadge.style.color = 'var(--accent, #4b6bfb)';
+        } else {
+            const act = task.actPomos || 0;
+            const est = task.estPomos || 1;
+            countBadge.textContent = `${act}/${est}`;
+            countBadge.style.color = 'var(--text-secondary)';
+        }
+
+        countBadge.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            const currentAct = task.actPomos || 0;
+            const currentEst = task.estPomos !== undefined && task.estPomos !== null ? task.estPomos : 1;
+            const currentRem = Math.max(0, currentEst - currentAct);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'due-modal-overlay';
+            overlay.id = 'pomoSettingsModalOverlay';
+            overlay.style.cssText = 'display: flex; align-items: center; justify-content: center; z-index: 10000; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px);';
+
+            overlay.innerHTML = `
+                <div class="due-modal" style="width: 100%; max-width: 320px; background: var(--card-bg, #ffffff); border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); box-sizing: border-box; font-family: 'Nunito', sans-serif; display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--border, #e7e8ec);">
+                    <div style="font-weight: 700; font-size: 18px; color: var(--text-primary, #000000); text-align: center;">Настройка Помодоро</div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span style="font-size: 14px; font-weight: 600; color: var(--text-secondary, #818c99);">Выполнено:</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button id="pomoModalDecAct" style="background: var(--hover-bg, #f0f2f5); border: none; width: 28px; height: 28px; border-radius: 8px; font-weight: bold; cursor: pointer; color: var(--text-primary);">-</button>
+                                <input id="pomoModalInputAct" type="number" value="${currentAct}" min="0" style="width: 44px; text-align: center; border: 1px solid var(--border, #e7e8ec); border-radius: 8px; padding: 4px; font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: bold; color: var(--text-primary); background: transparent;">
+                                <button id="pomoModalIncAct" style="background: var(--hover-bg, #f0f2f5); border: none; width: 28px; height: 28px; border-radius: 8px; font-weight: bold; cursor: pointer; color: var(--text-primary);">+</button>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span style="font-size: 14px; font-weight: 600; color: var(--text-secondary, #818c99);">Осталось:</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button id="pomoModalDecEst" style="background: var(--hover-bg, #f0f2f5); border: none; width: 28px; height: 28px; border-radius: 8px; font-weight: bold; cursor: pointer; color: var(--text-primary);">-</button>
+                                <input id="pomoModalInputEst" type="number" value="${currentRem}" min="0" style="width: 44px; text-align: center; border: 1px solid var(--border, #e7e8ec); border-radius: 8px; padding: 4px; font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: bold; color: var(--text-primary); background: transparent;">
+                                <button id="pomoModalIncEst" style="background: var(--hover-bg, #f0f2f5); border: none; width: 28px; height: 28px; border-radius: 8px; font-weight: bold; cursor: pointer; color: var(--text-primary);">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px;">
+                        <button id="pomoModalCancel" style="background: transparent; border: none; color: var(--text-secondary, #818c99); font-weight: 600; padding: 8px 16px; cursor: pointer; font-size: 14px;">Отмена</button>
+                        <button id="pomoModalSave" style="background: var(--accent, #4b6bfb); border: none; color: white; font-weight: 600; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; box-shadow: 0 4px 10px rgba(75, 107, 251, 0.2);">Сохранить</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            const inputAct = overlay.querySelector('#pomoModalInputAct');
+            const inputEst = overlay.querySelector('#pomoModalInputEst');
+
+            overlay.querySelector('#pomoModalDecAct').onclick = () => { inputAct.value = Math.max(0, parseInt(inputAct.value) - 1); };
+            overlay.querySelector('#pomoModalIncAct').onclick = () => { inputAct.value = parseInt(inputAct.value) + 1; };
+            overlay.querySelector('#pomoModalDecEst').onclick = () => { inputEst.value = Math.max(0, parseInt(inputEst.value) - 1); };
+            overlay.querySelector('#pomoModalIncEst').onclick = () => { inputEst.value = parseInt(inputEst.value) + 1; };
+
+            const closeModal = () => {
+                overlay.remove();
+            };
+
+            overlay.querySelector('#pomoModalCancel').onclick = closeModal;
+            overlay.onclick = (event) => {
+                if (event.target === overlay) closeModal();
+            };
+
+            overlay.querySelector('#pomoModalSave').onclick = async () => {
+                const act = Math.max(0, parseInt(inputAct.value) || 0);
+                const rem = Math.max(0, parseInt(inputEst.value) || 0);
+                
+                let est = act + rem;
+                if (est < 1) est = 1;
+
+                task.actPomos = act;
+                task.estPomos = est;
+
+                const localTask = allTasks.find(t => t.id === task.id);
+                if (localTask) {
+                    localTask.actPomos = act;
+                    localTask.estPomos = est;
+                }
+
+                pomoRenderTasks();
+                closeModal();
+
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                        actPomos: act,
+                        estPomos: est
+                    });
+                } catch (err) {
+                    console.error("Ошибка при обновлении лимитов Помодоро:", err);
+                }
+            };
+        });
+
+        const taskActions = itemEl.querySelector('.task-actions');
+        if (taskActions) {
+            itemEl.insertBefore(targetBtn, taskActions);
+            itemEl.insertBefore(countBadge, taskActions);
+        } else {
+            itemEl.appendChild(targetBtn);
+            itemEl.appendChild(countBadge);
+        }
+
+        listEl.appendChild(itemEl);
+    });
 
     pomoUpdateStats();
 }
 
 function pomoUpdateStats() {
+    const statsEl = document.getElementById('pomoBottomStats');
+    if (!statsEl) return;
+
+    const pomoTasks = allTasks.filter(t => !t.deleted && t.inPomodoro);
     let totalEst = 0;
     let totalAct = 0;
     pomoTasks.forEach(t => {
-        totalEst += t.estPomos;
-        totalAct += t.actPomos;
+        totalEst += t.estPomos || 1;
+        totalAct += t.actPomos || 0;
     });
-    
-    const statPomosEl = document.getElementById('stat-pomos');
-    const statEstEl = document.getElementById('stat-est');
-    const statFinishEl = document.getElementById('stat-finish');
 
-    if (statPomosEl) statPomosEl.textContent = totalAct;
-    if (statEstEl) statEstEl.textContent = totalEst;
-    
     const remainingPomos = Math.max(0, totalEst - totalAct);
-    if (remainingPomos > 0 && statFinishEl) {
+    if (remainingPomos > 0) {
         let totalMinutesLeft = (remainingPomos - 1) * 30;
-        
         if (pomoCurrentMode === 'pomodoro') {
             totalMinutesLeft += (pomoTimeLeft / 60) + 5;
         } else {
             totalMinutesLeft += (pomoTimeLeft / 60);
         }
-        
+
         const finishTime = new Date(Date.now() + totalMinutesLeft * 60000);
         const hours = finishTime.getHours().toString().padStart(2, '0');
         const minutes = finishTime.getMinutes().toString().padStart(2, '0');
         const decimalHours = (totalMinutesLeft / 60).toFixed(1);
-        
-        statFinishEl.textContent = `${hours}:${minutes} (${decimalHours}h)`;
-    } else if (statFinishEl) {
-        statFinishEl.textContent = '--:--';
+
+        statsEl.textContent = `Помидоры: ${totalAct}/${totalEst} Закончим в: ${hours}:${minutes} (${decimalHours}ч)`;
+    } else {
+        statsEl.textContent = `Помидоры: ${totalAct}/${totalEst} Закончим в: --:--`;
     }
 }
 
-// Связываем действия с внешними задачами
 function startPomodoroForTask(task) {
-    let existing = pomoTasks.find(t => t.title === task.title);
-    if (!existing) {
-        existing = {
-            id: task.id,
-            title: task.title,
-            completed: task.completed,
-            estPomos: task.estPomos || 1,
-            actPomos: task.actPomos || 0
-        };
-        pomoTasks.push(existing);
-    }
-    pomoSetActiveTask(existing.id);
+    pomoSetActiveTask(task.id);
     window.location.hash = '#pomodoro';
     pomoSetMode('pomodoro');
 }
@@ -10097,44 +10247,34 @@ function initPomodoroEvents() {
     const longBtn = document.getElementById('btn-long');
     const startBtn = document.getElementById('start-btn');
     const skipBtn = document.getElementById('skip-btn');
-    
-    const addTaskBtn = document.getElementById('add-task-btn');
-    const taskCancelBtn = document.getElementById('btn-task-cancel');
-    const taskSaveBtn = document.getElementById('btn-task-save');
-    const estUpBtn = document.getElementById('btn-est-up');
-    const estDownBtn = document.getElementById('btn-est-down');
 
     if (focusBtn) focusBtn.addEventListener('click', () => pomoSetMode('pomodoro'));
     if (shortBtn) shortBtn.addEventListener('click', () => pomoSetMode('shortBreak'));
     if (longBtn) longBtn.addEventListener('click', () => pomoSetMode('longBreak'));
     if (startBtn) startBtn.addEventListener('click', pomoToggleTimer);
     if (skipBtn) skipBtn.addEventListener('click', pomoSkipTimer);
-    
-    if (addTaskBtn) addTaskBtn.addEventListener('click', pomoShowTaskForm);
-    if (taskCancelBtn) taskCancelBtn.addEventListener('click', pomoHideTaskForm);
-    if (taskSaveBtn) taskSaveBtn.addEventListener('click', pomoSaveTask);
-    if (estUpBtn) estUpBtn.addEventListener('click', () => pomoChangeEst(1));
-    if (estDownBtn) estDownBtn.addEventListener('click', () => pomoChangeEst(-1));
 }
 
 function pomoRestoreTimer() {
     loadPomoState();
     
     const container = document.getElementById('pomodoroContainer');
-    if (container) container.style.backgroundColor = POMO_MODES[pomoCurrentMode].color;
+    if (container) container.style.backgroundColor = '';
+    const timerCard = container ? container.querySelector('.timer-container') : null;
+    if (timerCard) timerCard.style.backgroundColor = POMO_MODES[pomoCurrentMode].color;
     
     document.querySelectorAll('#pomodoroContainer .tabs button').forEach(btn => btn.classList.remove('active'));
     const activeTabBtn = document.getElementById(`btn-${pomoCurrentMode === 'shortBreak' ? 'short' : pomoCurrentMode === 'longBreak' ? 'long' : 'pomodoro'}`);
     if (activeTabBtn) activeTabBtn.classList.add('active');
 
     pomoUpdateDisplay();
-    pomoUpdateStats();
+    pomoRenderTasks();
 
     const startBtn = document.getElementById('start-btn');
     if (pomoIsRunning) {
         if (startBtn) {
             startBtn.style.color = POMO_MODES[pomoCurrentMode].color;
-            startBtn.textContent = 'PAUSE';
+            startBtn.textContent = 'ПАУЗА';
             startBtn.classList.add('active-press');
         }
         if (pomoSkipBtn) pomoSkipBtn.style.display = 'block';
@@ -10152,7 +10292,7 @@ function pomoRestoreTimer() {
     } else {
         if (startBtn) {
             startBtn.style.color = POMO_MODES[pomoCurrentMode].color;
-            startBtn.textContent = 'START';
+            startBtn.textContent = 'СТАРТ';
             startBtn.classList.remove('active-press');
         }
     }

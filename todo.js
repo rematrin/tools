@@ -51,6 +51,8 @@ let activeContextMenu = null;
 
 let projectsList = [];
 let unsubscribeProjects = null;
+let countdownsList = [];
+let unsubscribeCountdowns = null;
 let sectionsList = [];
 let unsubscribeSections = null;
 
@@ -1453,6 +1455,13 @@ if (sidebarHeader && !document.getElementById('userProfileMenu')) {
                 </svg>
                 <span>Помодоро</span>
             </button>
+            <button class="user-menu-item" id="btnUserMenuCountdown">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>Обратный отсчет</span>
+            </button>
             <button class="user-menu-item" id="btnUserMenuTrash">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -1476,6 +1485,7 @@ if (sidebarHeader && !document.getElementById('userProfileMenu')) {
 const userProfileMenu = document.getElementById('userProfileMenu');
 const btnUserMenuSettings = document.getElementById('btnUserMenuSettings');
 const btnUserMenuPomodoro = document.getElementById('btnUserMenuPomodoro');
+const btnUserMenuCountdown = document.getElementById('btnUserMenuCountdown');
 const btnUserMenuTrash = document.getElementById('btnUserMenuTrash');
 const btnUserMenuLogout = document.getElementById('btnUserMenuLogout');
 
@@ -1510,6 +1520,14 @@ if (sidebarUser && userProfileMenu) {
             e.stopPropagation();
             userProfileMenu.style.display = 'none';
             window.location.hash = '#pomodoro';
+        });
+    }
+
+    if (btnUserMenuCountdown) {
+        btnUserMenuCountdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userProfileMenu.style.display = 'none';
+            window.location.hash = '#countdown';
         });
     }
 
@@ -1904,6 +1922,8 @@ function updateBrowserTitle() {
         title = 'Корзина';
     } else if (currentRoute === 'pomodoro') {
         title = 'Помодоро';
+    } else if (currentRoute === 'countdown') {
+        title = 'Обратный отсчет';
     } else if (currentRoute.startsWith('project/')) {
         const projectId = currentRoute.split('/')[1];
         const proj = projectsList.find(p => p.id === projectId);
@@ -1923,6 +1943,8 @@ function handleRoute() {
         currentRoute = 'trash';
     } else if (hash === 'pomodoro') {
         currentRoute = 'pomodoro';
+    } else if (hash === 'countdown') {
+        currentRoute = 'countdown';
     } else if (hash.startsWith('project/')) {
         const projectId = hash.split('/')[1];
         if (!projectId) {
@@ -1975,6 +1997,8 @@ function handleRoute() {
         if (titleEl) titleEl.textContent = 'Корзина';
     } else if (currentRoute === 'pomodoro') {
         if (titleEl) titleEl.textContent = 'Помодоро';
+    } else if (currentRoute === 'countdown') {
+        if (titleEl) titleEl.textContent = 'Обратный отсчет';
     } else if (currentRoute.startsWith('project/')) {
         const projectId = currentRoute.split('/')[1];
         const proj = projectsList.find(p => p.id === projectId);
@@ -1984,6 +2008,7 @@ function handleRoute() {
     }
 
     updateBrowserTitle();
+    renderTasks();
 
     // Закрываем боковое меню на мобильных после клика
     if (todoSidebar && todoSidebar.classList.contains('mobile-open')) {
@@ -2071,6 +2096,7 @@ window.addEventListener('authChanged', (e) => {
             startTodoForUser(currentUid);
             startProjectsForUser(currentUid);
             startSectionsForUser(currentUid);
+            startCountdownsForUser(currentUid);
             handleRoute();
         });
     } else {
@@ -2083,6 +2109,7 @@ window.addEventListener('authChanged', (e) => {
         stopTodoForUser();
         stopProjectsForUser();
         stopSectionsForUser();
+        stopCountdownsForUser();
     }
 });
 
@@ -3475,7 +3502,7 @@ function renderTasksGroup(tasksGroup, containerEl) {
 // Отрендерить задачи в UI
 function renderTasks() {
     // Устанавливаем класс роута на body
-    document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash', 'route-pomodoro');
+    document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash', 'route-pomodoro', 'route-countdown');
     if (currentRoute === 'today') {
         document.body.classList.add('route-today');
     } else if (currentRoute === 'tomorrow') {
@@ -3486,6 +3513,8 @@ function renderTasks() {
         document.body.classList.add('route-inbox');
     } else if (currentRoute === 'pomodoro') {
         document.body.classList.add('route-pomodoro');
+    } else if (currentRoute === 'countdown') {
+        document.body.classList.add('route-countdown');
     }
 
     const pomoContainerLocal = document.getElementById('pomodoroContainer');
@@ -3497,11 +3526,24 @@ function renderTasks() {
             }
         }
     }
+
+    const countdownContainer = document.getElementById('countdownContainer');
+    const countdownHeaderActions = document.getElementById('countdownHeaderActions');
+    if (countdownContainer) {
+        countdownContainer.style.display = currentRoute === 'countdown' ? 'flex' : 'none';
+        if (currentRoute === 'countdown') {
+            renderCountdowns();
+        }
+    }
+    if (countdownHeaderActions) {
+        countdownHeaderActions.style.display = currentRoute === 'countdown' ? 'flex' : 'none';
+    }
+
     if (activeTasksContainer) {
-        activeTasksContainer.style.display = currentRoute === 'pomodoro' ? 'none' : 'block';
+        activeTasksContainer.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown') ? 'none' : 'block';
     }
     const gcalBannerLocal = document.getElementById('gcalEventsBanner');
-    if (gcalBannerLocal && currentRoute === 'pomodoro') {
+    if (gcalBannerLocal && (currentRoute === 'pomodoro' || currentRoute === 'countdown')) {
         gcalBannerLocal.style.display = 'none';
     }
 
@@ -3558,12 +3600,12 @@ function renderTasks() {
         trashNoticeBanner.style.display = currentRoute === 'trash' ? 'flex' : 'none';
     }
     if (addTaskFormEl) {
-        addTaskFormEl.style.display = (currentRoute === 'trash' || currentRoute === 'pomodoro') ? 'none' : 'flex';
+        addTaskFormEl.style.display = (currentRoute === 'trash' || currentRoute === 'pomodoro' || currentRoute === 'countdown') ? 'none' : 'flex';
     }
 
     const projectHeaderActions = document.getElementById('projectHeaderActions');
     if (projectHeaderActions) {
-        projectHeaderActions.style.display = (currentRoute === 'pomodoro') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox') ? 'block' : 'none');
+        projectHeaderActions.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox') ? 'block' : 'none');
     }
 
     // Фильтруем задачи для отображения в зависимости от текущей вкладки (роута)
@@ -3582,6 +3624,9 @@ function renderTasks() {
         displayCompletedTasks = completedTasks.filter(t => t.projectId === projectId);
     } else if (currentRoute === 'trash') {
         displayActiveTasks = trashTasks;
+        displayCompletedTasks = [];
+    } else if (currentRoute === 'pomodoro' || currentRoute === 'countdown') {
+        displayActiveTasks = [];
         displayCompletedTasks = [];
     } else { // inbox
         displayActiveTasks = activeTasks.filter(t => !t.projectId);
@@ -4063,7 +4108,7 @@ function renderTasks() {
         }
     }
 
-    if (currentRoute === 'pomodoro') {
+    if (currentRoute === 'pomodoro' || currentRoute === 'countdown') {
         if (completedSection) completedSection.style.display = 'none';
     } else if (displayCompletedTasks.length === 0 || isCompletedHiddenForProject) {
         if (completedSection) completedSection.style.display = 'none';
@@ -5086,6 +5131,57 @@ function stopProjectsForUser() {
     }
     projectsList = [];
     if (projectsListContainer) projectsListContainer.innerHTML = '';
+}
+
+function startCountdownsForUser(uid) {
+    if (unsubscribeCountdowns) unsubscribeCountdowns();
+
+    const qCountdowns = query(collection(db, 'users', uid, 'countdowns'));
+
+    unsubscribeCountdowns = onSnapshot(qCountdowns, (snapshot) => {
+        const newCountdownsList = [];
+        snapshot.forEach((docSnap) => {
+            newCountdownsList.push({
+                id: docSnap.id,
+                ...docSnap.data()
+            });
+        });
+
+        // Detect deletions by comparing old countdownsList with newCountdownsList
+        countdownsList.forEach(oldCd => {
+            const stillExists = newCountdownsList.some(newCd => newCd.id === oldCd.id);
+            if (!stillExists) {
+                handleCountdownDelete(oldCd);
+            }
+        });
+
+        countdownsList = newCountdownsList;
+
+        countdownsList.sort((a, b) => {
+            return new Date(a.targetDate) - new Date(b.targetDate);
+        });
+
+        // Trigger sync for all current countdowns
+        countdownsList.forEach(cd => {
+            handleCountdownSync(cd);
+        });
+
+        if (currentRoute === 'countdown') {
+            renderCountdowns();
+        }
+    }, (error) => {
+        console.error("Ошибка при получении списка обратных отсчетов:", error);
+    });
+}
+
+function stopCountdownsForUser() {
+    if (unsubscribeCountdowns) {
+        unsubscribeCountdowns();
+        unsubscribeCountdowns = null;
+    }
+    countdownsList = [];
+    const grid = document.getElementById('countdownGrid');
+    if (grid) grid.innerHTML = '';
 }
 
 function startSectionsForUser(uid) {
@@ -9158,6 +9254,19 @@ function populateLocalProjectsDropdown() {
     });
     menuGCalLocalProject.appendChild(optInbox);
 
+    // Вариант 3: Обратный отсчет
+    const optCountdown = document.createElement('button');
+    optCountdown.type = 'button';
+    optCountdown.className = 'gcal-dropdown-item' + (selectedLocalProjectId === 'countdown' ? ' selected' : '');
+    optCountdown.textContent = 'Обратный отсчет';
+    optCountdown.addEventListener('click', () => {
+        selectedLocalProjectId = 'countdown';
+        btnGCalLocalProject.querySelector('.trigger-text').textContent = 'Обратный отсчет';
+        menuGCalLocalProject.classList.remove('show');
+        populateLocalProjectsDropdown();
+    });
+    menuGCalLocalProject.appendChild(optCountdown);
+
     // Все остальные кастомные проекты
     projectsList.forEach(p => {
         const opt = document.createElement('button');
@@ -10334,5 +10443,978 @@ window.startPomodoroForTask = startPomodoroForTask;
 window.updatePomoActiveTaskUI = updatePomoActiveTaskUI;
 window.initPomodoroEvents = initPomodoroEvents;
 window.setPomoMode = pomoSetMode;
+
+// === ЛОГИКА ОБРАТНОГО ОТСЧЕТА ===
+
+function formatCountdownDate(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+function isColorDark(hex) {
+    if (!hex) return false;
+    hex = hex.replace('#', '');
+    if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    const hsp = Math.sqrt(0.299 * (r * r) + 0.587 * (g * g) + 0.114 * (b * b));
+    return hsp < 155;
+}
+
+function calculateCountdownDiff(targetDateStr) {
+    if (!targetDateStr) return { diff: 0, desc: '' };
+
+    const [y, m, d] = targetDateStr.split('-').map(Number);
+    const targetDate = new Date(y, m - 1, d, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const diffMs = targetDate.getTime() - today.getTime();
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+    const formatted = formatCountdownDate(targetDateStr);
+
+    if (diffDays === 0) {
+        return { diff: 0, display: 'Сегодня', desc: formatted };
+    } else if (diffDays > 0) {
+        return { diff: diffDays, display: String(diffDays), desc: `Дней до ${formatted}` };
+    } else {
+        return { diff: Math.abs(diffDays), display: String(Math.abs(diffDays)), desc: `Дней с ${formatted} прошло` };
+    }
+}
+
+function renderCountdowns() {
+    const grid = document.getElementById('countdownGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    if (countdownsList.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 60px; opacity: 0.5;">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px; color: var(--text-secondary);">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <div style="font-size: 16px; font-weight: 500; color: var(--text-primary);">Нет обратных отсчетов</div>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Нажмите на плюсик справа вверху, чтобы добавить</div>
+            </div>
+        `;
+        return;
+    }
+
+    countdownsList.forEach(cd => {
+        const { display, desc } = calculateCountdownDiff(cd.targetDate);
+        const card = document.createElement('div');
+        
+        let inlineStyle = '';
+        let themeClass = 'contrast-dark';
+        
+        if (cd.style === 'image') {
+            const bgUrl = cd.bgUrl || 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=600&q=80';
+            inlineStyle = `background-image: url('${bgUrl}');`;
+            card.setAttribute('style', inlineStyle);
+            card.className = `countdown-card theme-image ${themeClass}`;
+        } else {
+            const bgColor = cd.bgColor || '#ffffff';
+            const isDark = isColorDark(bgColor);
+            themeClass = isDark ? 'contrast-dark' : 'contrast-light';
+            inlineStyle = `background-color: ${bgColor};`;
+            card.setAttribute('style', inlineStyle);
+            card.className = `countdown-card theme-color ${themeClass}`;
+        }
+
+        let overlayHtml = '';
+        if (cd.style === 'image') {
+            overlayHtml = `<div class="countdown-card-overlay"></div>`;
+        }
+
+        const digitColorStyle = (cd.style !== 'image' && cd.textColor) ? `style="color: ${cd.textColor};"` : '';
+
+        card.innerHTML = `
+            ${overlayHtml}
+            <div class="countdown-actions">
+                <button class="countdown-action-btn btn-edit" title="Редактировать">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+                <button class="countdown-action-btn btn-delete" title="Удалить">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="countdown-card-content">
+                <div class="countdown-title">
+                    <span>${cd.icon || '⏳'}</span>
+                    <span>${cd.title}</span>
+                </div>
+                <div class="countdown-days" ${digitColorStyle}>${display}</div>
+                <div class="countdown-desc">${desc}</div>
+            </div>
+        `;
+
+        // Attach listeners
+        card.querySelector('.btn-edit').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openCountdownModal(cd);
+        });
+
+        card.querySelector('.btn-delete').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            showCustomConfirm(
+                'Удалить событие?',
+                `Вы действительно хотите удалить обратный отсчет <strong>${escapeHtml(cd.title)}</strong>?`,
+                'Удалить',
+                async () => {
+                    try {
+                        await deleteDoc(doc(db, 'users', currentUid, 'countdowns', cd.id));
+                    } catch (err) {
+                        console.error("Ошибка при удалении обратного отсчета:", err);
+                    }
+                }
+            );
+        });
+
+        grid.appendChild(card);
+    });
+}
+
+function openCountdownModal(countdown = null) {
+    const existing = document.querySelector('.countdown-modal-overlay');
+    if (existing) existing.remove();
+
+    const isEdit = !!countdown;
+    let selectedIcon = countdown ? (countdown.icon || '⏳') : '⏳';
+    let selectedStyle = 'color';
+    let bgColor = '#ffffff';
+    let textColor = '#4b6bfb';
+    let customBgUrl = '';
+    let selectedDate = countdown ? countdown.targetDate : new Date().toISOString().split('T')[0];
+
+    const defaultImage = 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=600&q=80';
+
+    if (countdown) {
+        if (countdown.style === 'image' || countdown.style === 'custom') {
+            selectedStyle = 'image';
+            customBgUrl = countdown.bgUrl || '';
+        } else {
+            selectedStyle = 'color';
+            if (countdown.style === 'white') {
+                bgColor = '#ffffff';
+                textColor = '#4b6bfb';
+            } else if (countdown.style === 'dark') {
+                bgColor = '#2c3e50';
+                textColor = '#ffffff';
+            } else if (countdown.style === 'pink') {
+                bgColor = '#f5b2b2';
+                textColor = '#ffffff';
+            } else {
+                bgColor = countdown.bgColor || '#ffffff';
+                textColor = countdown.textColor || '#4b6bfb';
+            }
+        }
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'countdown-modal-overlay';
+    
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const years = [];
+    for (let y = currentYear - 5; y <= currentYear + 15; y++) {
+        years.push(y);
+    }
+    const months = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+
+    const [curY, curM, curD] = selectedDate.split('-').map(Number);
+
+    let dayOptions = '';
+    for (let d = 1; d <= 31; d++) {
+        dayOptions += `<option value="${d}" ${d === curD ? 'selected' : ''}>${d}</option>`;
+    }
+    let monthOptions = '';
+    months.forEach((m, index) => {
+        monthOptions += `<option value="${index + 1}" ${index + 1 === curM ? 'selected' : ''}>${m}</option>`;
+    });
+    let yearOptions = '';
+    years.forEach(y => {
+        yearOptions += `<option value="${y}" ${y === curY ? 'selected' : ''}>${y}</option>`;
+    });
+
+    overlay.innerHTML = `
+        <div class="countdown-modal-card">
+            <div class="countdown-modal-header">
+                <span class="countdown-modal-title">${isEdit ? 'Редактировать' : 'Добавить'}</span>
+                <button class="countdown-modal-close" id="btnCloseCountdownModal">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="countdown-modal-row">
+                <div class="countdown-icon-select" id="btnCountdownIconSelect">
+                    <span id="countdownSelectedIcon">${selectedIcon}</span>
+                    <div class="countdown-icon-edit-badge">✎</div>
+                </div>
+                <div class="countdown-input-wrapper">
+                    <input type="text" class="countdown-input" id="inputCountdownTitle" placeholder="Название" value="${countdown ? countdown.title : ''}" maxlength="40" autocomplete="off">
+                    <svg class="countdown-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="countdown-modal-row">
+                <span class="countdown-label">Дата</span>
+                <div class="countdown-date-picker">
+                    <select id="selectCountdownDay">${dayOptions}</select>
+                    <select id="selectCountdownMonth">${monthOptions}</select>
+                    <select id="selectCountdownYear">${yearOptions}</select>
+                </div>
+            </div>
+
+            <div>
+                <span class="countdown-label" style="display: block; margin-bottom: 8px;">Стиль</span>
+                <div class="countdown-style-options" id="styleOptionsContainer">
+                    <div class="countdown-style-thumb thumb-color ${selectedStyle === 'color' ? 'selected' : ''}" data-style="color" style="background-color: ${bgColor};"></div>
+                    <div class="countdown-style-thumb thumb-image ${selectedStyle === 'image' ? 'selected' : ''}" data-style="image" style="background-image: url('${customBgUrl || defaultImage}');"></div>
+                </div>
+
+                <div class="countdown-color-controls" id="countdownColorControls" style="display: ${selectedStyle === 'color' ? 'flex' : 'none'};">
+                    <div class="countdown-color-row">
+                        <span class="countdown-color-label">Фон</span>
+                        <div class="countdown-color-picker-wrapper">
+                            <div class="countdown-color-preset" style="background-color: #ffffff;" data-color="#ffffff"></div>
+                            <div class="countdown-color-preset" style="background-color: #eef2f7;" data-color="#eef2f7"></div>
+                            <div class="countdown-color-preset" style="background-color: #2c3e50;" data-color="#2c3e50"></div>
+                            <div class="countdown-color-preset" style="background-color: #f5b2b2;" data-color="#f5b2b2"></div>
+                            <div class="countdown-color-preset" style="background-color: #f59e0b;" data-color="#f59e0b"></div>
+                            
+                            <div class="countdown-color-picker-btn" id="btnBgColorPicker" style="background-image: conic-gradient(red, yellow, green, cyan, blue, magenta, red);"></div>
+                            <input type="color" id="inputBgColor" class="countdown-color-input-hidden" value="${bgColor}">
+                        </div>
+                    </div>
+                    <div class="countdown-color-row">
+                        <span class="countdown-color-label">Число</span>
+                        <div class="countdown-color-picker-wrapper">
+                            <div class="countdown-color-preset" style="background-color: #4b6bfb;" data-color="#4b6bfb"></div>
+                            <div class="countdown-color-preset" style="background-color: #ffffff;" data-color="#ffffff"></div>
+                            <div class="countdown-color-preset" style="background-color: #ff5f56;" data-color="#ff5f56"></div>
+                            <div class="countdown-color-preset" style="background-color: #1e1e1e;" data-color="#1e1e1e"></div>
+                            
+                            <div class="countdown-color-picker-btn" id="btnTextColorPicker" style="background-image: conic-gradient(red, yellow, green, cyan, blue, magenta, red);"></div>
+                            <input type="color" id="inputTextColor" class="countdown-color-input-hidden" value="${textColor}">
+                        </div>
+                    </div>
+                </div>
+
+                <button class="countdown-upload-btn" id="btnCountdownUpload" style="margin-top: 10px; display: ${selectedStyle === 'image' ? 'block' : 'none'};">Загрузить изображение</button>
+            </div>
+
+            <div class="countdown-preview-wrapper">
+                <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Предпросмотр</span>
+                <div class="countdown-card" id="countdownPreviewCard" style="width: 100%; pointer-events: none;">
+                    <!-- Preview filled dynamically -->
+                </div>
+            </div>
+
+            <div class="countdown-modal-footer">
+                <button class="countdown-btn-cancel" id="btnCancelCountdown">Отмена</button>
+                <button class="countdown-btn-ok" id="btnSaveCountdown">OK</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const inputTitle = overlay.querySelector('#inputCountdownTitle');
+    const selectDay = overlay.querySelector('#selectCountdownDay');
+    const selectMonth = overlay.querySelector('#selectCountdownMonth');
+    const selectYear = overlay.querySelector('#selectCountdownYear');
+    const btnIconSelect = overlay.querySelector('#btnCountdownIconSelect');
+    const selectedIconEl = overlay.querySelector('#countdownSelectedIcon');
+    const previewCard = overlay.querySelector('#countdownPreviewCard');
+    const styleOptionsContainer = overlay.querySelector('#styleOptionsContainer');
+    const colorControls = overlay.querySelector('#countdownColorControls');
+    const btnUpload = overlay.querySelector('#btnCountdownUpload');
+    const btnClose = overlay.querySelector('#btnCloseCountdownModal');
+    const btnCancel = overlay.querySelector('#btnCancelCountdown');
+    const btnSave = overlay.querySelector('#btnSaveCountdown');
+
+    const inputBgColor = overlay.querySelector('#inputBgColor');
+    const inputTextColor = overlay.querySelector('#inputTextColor');
+    const btnBgColorPicker = overlay.querySelector('#btnBgColorPicker');
+    const btnTextColorPicker = overlay.querySelector('#btnTextColorPicker');
+
+    function updatePreview() {
+        const title = inputTitle.value.trim() || 'Название';
+        const d = String(selectDay.value).padStart(2, '0');
+        const m = String(selectMonth.value).padStart(2, '0');
+        const y = selectYear.value;
+        const dateStr = `${y}-${m}-${d}`;
+        const { display, desc } = calculateCountdownDiff(dateStr);
+
+        previewCard.removeAttribute('style');
+
+        let themeClass = 'contrast-dark';
+        if (selectedStyle === 'image') {
+            const bgUrl = customBgUrl || defaultImage;
+            previewCard.className = `countdown-card theme-image ${themeClass}`;
+            previewCard.setAttribute('style', `background-image: url('${bgUrl}');`);
+        } else {
+            const isDark = isColorDark(bgColor);
+            themeClass = isDark ? 'contrast-dark' : 'contrast-light';
+            previewCard.className = `countdown-card theme-color ${themeClass}`;
+            previewCard.setAttribute('style', `background-color: ${bgColor};`);
+        }
+
+        let overlayHtml = '';
+        if (selectedStyle === 'image') {
+            overlayHtml = `<div class="countdown-card-overlay"></div>`;
+        }
+
+        const digitColorStyle = selectedStyle === 'color' ? `style="color: ${textColor};"` : '';
+
+        previewCard.innerHTML = `
+            ${overlayHtml}
+            <div class="countdown-card-content">
+                <div class="countdown-title">
+                    <span>${selectedIcon}</span>
+                    <span>${title}</span>
+                </div>
+                <div class="countdown-days" ${digitColorStyle}>${display}</div>
+                <div class="countdown-desc">${desc}</div>
+            </div>
+        `;
+
+        const thumbColor = styleOptionsContainer.querySelector('.thumb-color');
+        const thumbImage = styleOptionsContainer.querySelector('.thumb-image');
+        if (thumbColor) thumbColor.style.backgroundColor = bgColor;
+        if (thumbImage) thumbImage.style.backgroundImage = `url('${customBgUrl || defaultImage}')`;
+    }
+
+    // Emoji Popover
+    let activeEmojiPopover = null;
+    btnIconSelect.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (activeEmojiPopover) {
+            activeEmojiPopover.remove();
+            activeEmojiPopover = null;
+            return;
+        }
+
+        const emojis = ['⏳', '🎂', '🍭', '✈️', '🎓', '🏆', '🏠', '🗓️', '💼', '🎉', '🌟', '❤️', '🎈', '🔔', '⚽', '🎯'];
+        const popover = document.createElement('div');
+        popover.className = 'emoji-popover';
+        emojis.forEach(emo => {
+            const item = document.createElement('div');
+            item.className = 'emoji-popover-item';
+            item.innerText = emo;
+            item.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                selectedIcon = emo;
+                selectedIconEl.innerText = emo;
+                popover.remove();
+                activeEmojiPopover = null;
+                updatePreview();
+            });
+            popover.appendChild(item);
+        });
+
+        btnIconSelect.appendChild(popover);
+        activeEmojiPopover = popover;
+    });
+
+    document.addEventListener('click', () => {
+        if (activeEmojiPopover) {
+            activeEmojiPopover.remove();
+            activeEmojiPopover = null;
+        }
+    });
+
+    // Style selections
+    styleOptionsContainer.addEventListener('click', (e) => {
+        const thumb = e.target.closest('.countdown-style-thumb');
+        if (!thumb) return;
+        
+        selectedStyle = thumb.getAttribute('data-style');
+        styleOptionsContainer.querySelectorAll('.countdown-style-thumb').forEach(t => t.classList.remove('selected'));
+        thumb.classList.add('selected');
+
+        if (selectedStyle === 'image') {
+            btnUpload.style.display = 'block';
+            colorControls.style.display = 'none';
+        } else {
+            btnUpload.style.display = 'none';
+            colorControls.style.display = 'flex';
+        }
+        updatePreview();
+    });
+
+    // Custom Color Pickers
+    btnBgColorPicker.addEventListener('click', () => inputBgColor.click());
+    inputBgColor.addEventListener('input', (e) => {
+        bgColor = e.target.value;
+        updatePreview();
+    });
+
+    btnTextColorPicker.addEventListener('click', () => inputTextColor.click());
+    inputTextColor.addEventListener('input', (e) => {
+        textColor = e.target.value;
+        updatePreview();
+    });
+
+    // Preset color clicks
+    overlay.querySelectorAll('.countdown-color-preset').forEach(preset => {
+        preset.addEventListener('click', (e) => {
+            const chosen = preset.getAttribute('data-color');
+            const targetRow = preset.closest('.countdown-color-row');
+            const label = targetRow.querySelector('.countdown-color-label').innerText;
+            if (label === 'Фон') {
+                bgColor = chosen;
+                inputBgColor.value = chosen;
+            } else {
+                textColor = chosen;
+                inputTextColor.value = chosen;
+            }
+            updatePreview();
+        });
+    });
+
+    // Image Upload Click using creatorhub upload modal
+    btnUpload.addEventListener('click', () => {
+        openImageUploadModal((url) => {
+            customBgUrl = url || '';
+            selectedStyle = 'image';
+            
+            styleOptionsContainer.querySelectorAll('.countdown-style-thumb').forEach(t => t.classList.remove('selected'));
+            const imageThumb = styleOptionsContainer.querySelector('.thumb-image');
+            if (imageThumb) imageThumb.classList.add('selected');
+
+            btnUpload.style.display = 'block';
+            colorControls.style.display = 'none';
+            updatePreview();
+        }, customBgUrl);
+    });
+
+    inputTitle.addEventListener('input', updatePreview);
+    selectDay.addEventListener('change', updatePreview);
+    selectMonth.addEventListener('change', updatePreview);
+    selectYear.addEventListener('change', updatePreview);
+
+    const closeModal = () => {
+        overlay.remove();
+    };
+    btnClose.addEventListener('click', closeModal);
+    btnCancel.addEventListener('click', closeModal);
+    
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+
+    btnSave.addEventListener('click', async () => {
+        const title = inputTitle.value.trim();
+        if (!title) {
+            showCustomConfirm('Внимание', 'Пожалуйста, введите название события.', 'OK', () => {});
+            return;
+        }
+
+        const d = String(selectDay.value).padStart(2, '0');
+        const m = String(selectMonth.value).padStart(2, '0');
+        const y = selectYear.value;
+        const targetDateStr = `${y}-${m}-${d}`;
+
+        const data = {
+            title,
+            targetDate: targetDateStr,
+            icon: selectedIcon,
+            style: selectedStyle,
+            bgUrl: selectedStyle === 'image' ? (customBgUrl || defaultImage) : '',
+            bgColor: selectedStyle === 'color' ? bgColor : '',
+            textColor: selectedStyle === 'color' ? textColor : ''
+        };
+
+        try {
+            if (isEdit) {
+                await updateDoc(doc(db, 'users', currentUid, 'countdowns', countdown.id), data);
+            } else {
+                await addDoc(collection(db, 'users', currentUid, 'countdowns'), {
+                    ...data,
+                    createdAt: serverTimestamp()
+                });
+            }
+            closeModal();
+        } catch (err) {
+            console.error("Ошибка при сохранении обратного отсчета:", err);
+            showCustomConfirm('Ошибка', 'Не удалось сохранить. Попробуйте еще раз.', 'OK', () => {});
+        }
+    });
+
+    updatePreview();
+}
+
+function initCountdownEvents() {
+    const btnCountdownAdd = document.getElementById('btnCountdownAdd');
+    if (btnCountdownAdd) {
+        btnCountdownAdd.addEventListener('click', () => {
+            openCountdownModal();
+        });
+    }
+}
+
+// Initialize countdown events
+initCountdownEvents();
+window.renderCountdowns = renderCountdowns;
+window.openCountdownModal = openCountdownModal;
+
+function openImageUploadModal(onUploadSuccess, currentIconUrl = '') {
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-confirm-overlay';
+
+    overlay.innerHTML = `
+        <div class="confirm-box thumbnail-confirm-box" style="padding: 24px;">
+            <div class="confirm-title" style="font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                Обложка
+            </div>
+            
+            <div class="modal-tabs" style="flex-shrink: 0;">
+                <button class="modal-tab active" data-tab="file">Из файла</button>
+                <button class="modal-tab" data-tab="url">По ссылке</button>
+            </div>
+
+            <!-- Вкладка: Из файла -->
+            <div id="tab-content-file" class="tab-content-pane">
+                <div class="confirm-message" style="margin-bottom: 16px; font-size: 13px; opacity: 0.85; line-height: 1.4;">
+                    Загрузите изображение, вставьте из буфера обмена (Ctrl + V) или перетащите файл в область ниже.
+                </div>
+
+                <div id="icon-dropzone" class="icon-dropzone" style="margin-bottom: 16px;">
+                    <div class="dropzone-preview" style="max-width: 100%; display: flex; align-items: center; justify-content: center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-icon lucide-upload" style="opacity: 0.6; color: var(--text-secondary);"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+                    </div>
+                    <div class="dropzone-text" style="font-size: 13px; font-weight: 500; margin-top: 8px;">
+                        Кликните для выбора файла или перетащите его сюда
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вкладка: По ссылке -->
+            <div id="tab-content-url" class="tab-content-pane" style="display: none;">
+                <div class="confirm-message" style="margin-bottom: 16px; font-size: 13px; opacity: 0.85; line-height: 1.4;">
+                    Вставьте прямую ссылку на изображение в поле ниже.
+                </div>
+                
+                <input type="text" id="modal-url-input" class="countdown-input" placeholder="https://site.com/image.png" autocomplete="off" style="width: 100%; margin-bottom: 16px; box-sizing: border-box; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-hover);">
+            </div>
+
+            <!-- Скрытый инпут для выбора файла -->
+            <input type="file" id="modalIconFileInput" accept="image/*" style="display: none;">
+
+            <!-- Общие действия -->
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto; flex-shrink: 0;">
+                <button class="confirm-btn-primary" id="btn-select-file" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Выбрать файл...</button>
+                <button class="confirm-btn-primary" id="btn-load-link" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%; display: none;">Сохранить</button>
+                
+                ${currentIconUrl ? 
+                    `<button class="confirm-btn-delete" id="btn-delete-icon" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Удалить обложку</button>` : 
+                    ''
+                }
+                
+                <button class="confirm-btn-secondary" id="btn-close-icon-modal" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Отмена</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const dropzone = overlay.querySelector('#icon-dropzone');
+    const fileInput = overlay.querySelector('#modalIconFileInput');
+    const selectFileBtn = overlay.querySelector('#btn-select-file');
+    const deleteIconBtn = overlay.querySelector('#btn-delete-icon');
+    const closeBtn = overlay.querySelector('#btn-close-icon-modal');
+    
+    const tabBtns = overlay.querySelectorAll('.modal-tab');
+    const tabPanes = overlay.querySelectorAll('.tab-content-pane');
+    const urlInput = overlay.querySelector('#modal-url-input');
+    const loadLinkBtn = overlay.querySelector('#btn-load-link');
+
+    // Переключение вкладок
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const targetTab = btn.dataset.tab;
+            tabPanes.forEach(pane => pane.style.display = 'none');
+            overlay.querySelector(`#tab-content-${targetTab}`).style.display = 'flex';
+            
+            if (targetTab === 'file') {
+                selectFileBtn.style.display = 'block';
+                loadLinkBtn.style.display = 'none';
+            } else if (targetTab === 'url') {
+                selectFileBtn.style.display = 'none';
+                loadLinkBtn.style.display = 'block';
+                if (urlInput) {
+                    setTimeout(() => urlInput.focus(), 100);
+                }
+            }
+        });
+    });
+
+    // 1. Paste handler (Ctrl + V)
+    async function handlePaste(e) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (const item of items) {
+            if (item.type.indexOf("image") === 0) {
+                const file = item.getAsFile();
+                await processAndUpload(file);
+                break;
+            }
+        }
+    }
+    document.addEventListener('paste', handlePaste);
+
+    // 2. Drag & Drop handler
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#1070e5';
+        dropzone.style.background = 'rgba(16, 112, 229, 0.05)';
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.borderColor = '';
+        dropzone.style.background = '';
+    });
+
+    dropzone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '';
+        dropzone.style.background = '';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            await processAndUpload(file);
+        }
+    });
+
+    // 3. Selection
+    dropzone.addEventListener('click', () => fileInput.click());
+    selectFileBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) await processAndUpload(file);
+    });
+
+    // 4. Link Upload
+    loadLinkBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const urlVal = urlInput.value.trim();
+        if (!urlVal) return;
+
+        try {
+            setLoadingState(true);
+
+            const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(urlVal)}`;
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            
+            img.onload = async () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+                const dataUrl = canvas.toDataURL("image/png");
+                try {
+                    const hostedUrl = await uploadToImgBB(dataUrl);
+                    onUploadSuccess(hostedUrl);
+                    cleanup();
+                } catch (e) {
+                    console.error(e);
+                    showCustomConfirm('Ошибка', 'Не удалось сохранить изображение.', 'OK', () => {});
+                    setLoadingState(false);
+                }
+            };
+
+            img.onerror = () => {
+                const directImg = new Image();
+                directImg.crossOrigin = "anonymous";
+                directImg.onload = async () => {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = directImg.width;
+                    canvas.height = directImg.height;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(directImg, 0, 0);
+                    const dataUrl = canvas.toDataURL("image/png");
+                    try {
+                        const hostedUrl = await uploadToImgBB(dataUrl);
+                        onUploadSuccess(hostedUrl);
+                        cleanup();
+                    } catch (e) {
+                        console.error(e);
+                        showCustomConfirm('Ошибка', 'Не удалось сохранить изображение.', 'OK', () => {});
+                        setLoadingState(false);
+                    }
+                };
+                directImg.onerror = () => {
+                    showCustomConfirm('Ошибка', 'Не удалось загрузить изображение по указанной ссылке.', 'OK', () => {});
+                    setLoadingState(false);
+                };
+                directImg.src = urlVal;
+            };
+
+            img.src = proxyUrl;
+        } catch (err) {
+            console.error(err);
+            showCustomConfirm('Ошибка', 'Ошибка загрузки.', 'OK', () => {});
+            setLoadingState(false);
+        }
+    });
+
+    function setLoadingState(loading) {
+        const tabsContainer = overlay.querySelector('.modal-tabs');
+        if (loading) {
+            loadLinkBtn.disabled = true;
+            loadLinkBtn.innerText = 'Загрузка...';
+            selectFileBtn.disabled = true;
+            selectFileBtn.innerText = 'Загрузка...';
+            if (tabsContainer) {
+                tabsContainer.style.pointerEvents = 'none';
+                tabsContainer.style.opacity = '0.5';
+            }
+            if (deleteIconBtn) deleteIconBtn.style.display = 'none';
+            dropzone.style.pointerEvents = 'none';
+            
+            dropzone.querySelector('.dropzone-preview').innerHTML = `
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation: spin 1s linear infinite;">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="8" fill="none" opacity="0.3"></circle>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+                </svg>
+            `;
+            dropzone.querySelector('.dropzone-text').innerText = 'Загрузка изображения...';
+        } else {
+            loadLinkBtn.disabled = false;
+            loadLinkBtn.innerText = 'Сохранить';
+            selectFileBtn.disabled = false;
+            selectFileBtn.innerText = 'Выбрать файл...';
+            if (tabsContainer) {
+                tabsContainer.style.pointerEvents = 'auto';
+                tabsContainer.style.opacity = '1';
+            }
+            if (deleteIconBtn) deleteIconBtn.style.display = 'block';
+            dropzone.style.pointerEvents = 'auto';
+            
+            dropzone.querySelector('.dropzone-preview').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-icon lucide-upload" style="opacity: 0.6; color: var(--text-secondary);"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>`;
+            dropzone.querySelector('.dropzone-text').innerText = 'Кликните для выбора файла или перетащите его сюда';
+        }
+    }
+
+    function cleanup() {
+        overlay.remove();
+        document.removeEventListener('paste', handlePaste);
+    }
+
+    if (deleteIconBtn) {
+        deleteIconBtn.addEventListener('click', () => {
+            onUploadSuccess('');
+            cleanup();
+        });
+    }
+
+    closeBtn.addEventListener('click', cleanup);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) cleanup();
+    });
+
+    async function processAndUpload(file) {
+        setLoadingState(true);
+        const reader = new FileReader();
+        reader.onload = async function(evt) {
+            try {
+                const img = new Image();
+                img.onload = function() {
+                    let width = img.width;
+                    let height = img.height;
+                    const maxSide = 600;
+
+                    if (width > height) {
+                        if (width > maxSide) {
+                            height = Math.round(height * (maxSide / width));
+                            width = maxSide;
+                        }
+                    } else {
+                        if (height > maxSide) {
+                            width = Math.round(width * (maxSide / height));
+                            height = maxSide;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob(async (blob) => {
+                        const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee';
+                        const formData = new FormData();
+                        formData.append('image', blob);
+
+                        try {
+                            const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const data = await response.json();
+                            if (data && data.data && data.data.url) {
+                                onUploadSuccess(data.data.url);
+                                cleanup();
+                            } else {
+                                throw new Error('Upload failed');
+                            }
+                        } catch (err) {
+                            console.error('Error uploading image:', err);
+                            showCustomConfirm('Ошибка', 'Не удалось загрузить изображение.', 'OK', () => {});
+                            setLoadingState(false);
+                        }
+                    }, 'image/jpeg', 0.85);
+                };
+                img.src = evt.target.result;
+            } catch (err) {
+                console.error(err);
+                showCustomConfirm('Ошибка', 'Не удалось загрузить изображение.', 'OK', () => {});
+                setLoadingState(false);
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+async function uploadToImgBB(base64OrBlob) {
+    const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee';
+    const formData = new FormData();
+    if (typeof base64OrBlob === 'string') {
+        const cleanBase64 = base64OrBlob.split(',')[1];
+        formData.append('image', cleanBase64);
+    } else {
+        formData.append('image', base64OrBlob);
+    }
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+        method: 'POST',
+        body: formData
+    });
+    const result = await response.json();
+    if (result.success) return result.data.url; else throw new Error('ImgBB Upload Failed');
+}
+
+const syncingCountdowns = new Set();
+
+async function handleCountdownSync(cd) {
+    if (!currentUid) return;
+
+    if (syncingCountdowns.has(cd.id)) return;
+
+    const lockKey = `gcal_sync_lock_cd_${cd.id}`;
+    const activeLock = localStorage.getItem(lockKey);
+    if (activeLock && Date.now() - parseInt(activeLock) < 15000) {
+        return;
+    }
+
+    const token = localStorage.getItem('google_calendar_access_token');
+    if (!token) return;
+
+    // Сначала проверяем общую синхронизацию ("all"), затем точечную
+    const mappedCalendarId = gcalMappings['all'] || gcalMappings['countdown'];
+    if (!mappedCalendarId) return;
+
+    // Маппинг полей countdown в формат задачи для GCalendarService
+    const taskObj = {
+        title: `${cd.icon || '⏳'} ${cd.title}`,
+        description: 'Обратный отсчет',
+        dueDate: cd.targetDate,
+        dueTime: null,
+        gcal_event_id: cd.gcal_event_id || null,
+        gcal_calendar_id: cd.gcal_calendar_id || null
+    };
+
+    const currentHash = `${taskObj.title}|${taskObj.dueDate}|${cd.style || ''}|${cd.bgColor || ''}`;
+
+    const shouldHaveEvent = cd.targetDate && mappedCalendarId;
+
+    if (shouldHaveEvent) {
+        if (cd.gcal_event_id && cd.gcal_calendar_id === mappedCalendarId && cd.gcal_last_sync_hash === currentHash) {
+            return;
+        }
+
+        syncingCountdowns.add(cd.id);
+        localStorage.setItem(lockKey, Date.now().toString());
+
+        try {
+            if (cd.gcal_event_id && cd.gcal_calendar_id && cd.gcal_calendar_id !== mappedCalendarId) {
+                try {
+                    await window.GCalendarService.deleteTaskFromGoogle(cd.gcal_event_id, cd.gcal_calendar_id);
+                } catch (e) {
+                    console.error("Ошибка удаления старого события обратного отсчета:", e);
+                }
+                cd.gcal_event_id = null;
+            }
+
+            const eventId = await window.GCalendarService.syncTaskToGoogle(taskObj, mappedCalendarId);
+            if (eventId) {
+                await updateDoc(doc(db, 'users', currentUid, 'countdowns', cd.id), {
+                    gcal_event_id: eventId,
+                    gcal_calendar_id: mappedCalendarId,
+                    gcal_last_sync_hash: currentHash
+                });
+            }
+        } catch (err) {
+            console.error("Ошибка при синхронизации обратного отсчета с Google:", err);
+        } finally {
+            syncingCountdowns.delete(cd.id);
+            localStorage.removeItem(lockKey);
+        }
+    } else {
+        if (cd.gcal_event_id && cd.gcal_calendar_id) {
+            syncingCountdowns.add(cd.id);
+            localStorage.setItem(lockKey, Date.now().toString());
+            try {
+                await window.GCalendarService.deleteTaskFromGoogle(cd.gcal_event_id, cd.gcal_calendar_id);
+                await updateDoc(doc(db, 'users', currentUid, 'countdowns', cd.id), {
+                    gcal_event_id: null,
+                    gcal_calendar_id: null,
+                    gcal_last_sync_hash: null
+                });
+            } catch (err) {
+                console.error("Ошибка при удалении события обратного отсчета из Google:", err);
+            } finally {
+                syncingCountdowns.delete(cd.id);
+                localStorage.removeItem(lockKey);
+            }
+        }
+    }
+}
+
+async function handleCountdownDelete(cd) {
+    if (cd.gcal_event_id && cd.gcal_calendar_id) {
+        try {
+            await window.GCalendarService.deleteTaskFromGoogle(cd.gcal_event_id, cd.gcal_calendar_id);
+        } catch (err) {
+            console.error("Ошибка при удалении события при удалении обратного отсчета:", err);
+        }
+    }
+}
 
 

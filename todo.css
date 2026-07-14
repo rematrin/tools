@@ -5486,6 +5486,21 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     border-color: var(--border);
 }
 
+/* Hide native time picker indicators/spinners and style input.pill-btn */
+input.pill-btn {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    outline: none;
+    text-align: center;
+}
+input.pill-btn::-webkit-calendar-picker-indicator,
+input.pill-btn::-webkit-clear-button,
+input.pill-btn::-webkit-inner-spin-button {
+    display: none;
+    -webkit-appearance: none;
+}
+
 /* Кастомный выпадающий список для времени */
 /* Кастомный выпадающий список для времени */
 .custom-time-dropdown {
@@ -5745,6 +5760,14 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     transform: translateY(-4px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
+.countdown-card.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+.countdown-card.drag-over {
+    border: 2.5px dashed #4c6ef5 !important;
+    transform: scale(0.98);
+}
 .countdown-card.theme-white {
     background: var(--card-bg);
     color: var(--text-primary);
@@ -5840,11 +5863,12 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
 .countdown-action-btn:hover {
     background: rgba(255, 255, 255, 0.4);
 }
-.countdown-card.theme-white .countdown-action-btn {
+.countdown-card.contrast-light .countdown-action-btn {
     background: var(--bg-hover);
     color: var(--text-primary);
+    border: 1px solid var(--border);
 }
-.countdown-card.theme-white .countdown-action-btn:hover {
+.countdown-card.contrast-light .countdown-action-btn:hover {
     background: var(--border);
 }
 

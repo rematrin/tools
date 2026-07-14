@@ -259,6 +259,13 @@
                     </div>
                 </div>
 
+                <!-- Баннер событий обратного отсчета -->
+                <div class="gcal-events-banner countdown-events-banner" id="countdownEventsBanner" style="display: none; position: relative; padding-right: 10px;">
+                    <div class="gcal-banner-events-list" id="countdownBannerEventsList">
+                        <!-- События будут добавляться динамически -->
+                    </div>
+                </div>
+
                 <!-- Список активных задач -->
                 <div class="tasks-list" id="activeTasksContainer">
                     <div style="text-align: center; padding: 40px; opacity: 0.5;">Загрузка задач...</div>
@@ -1130,9 +1137,9 @@
                 <!-- Поля ввода времени (всегда видны) -->
                 <div class="due-time-inputs-wrapper" style="display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-left: 0;">
                     <input type="checkbox" class="due-time-checkbox" id="dueTimeCheckbox" style="margin-right: 2px;">
-                    <button class="pill-btn start-time-btn" type="button">08:00</button>
+                    <input class="pill-btn start-time-btn" type="time" value="08:00">
                     <span class="time-dash">—</span>
-                    <button class="pill-btn end-time-btn disabled" type="button" disabled>09:00</button>
+                    <input class="pill-btn end-time-btn disabled" type="time" value="09:00" disabled>
                     <input type="checkbox" class="end-time-active-checkbox" style="margin-left: 4px;">
                 </div>
 

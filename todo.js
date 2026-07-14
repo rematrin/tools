@@ -1076,6 +1076,7 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                     item.addEventListener('click', (e) => {
                         e.stopPropagation();
                         setSelectedTime(timeStr);
+                        startTimeBtn.value = timeStr;
                         
                         // If end time is active, ensure it is after start time
                         const endActive = !!getSelectedEndTime();
@@ -1090,6 +1091,7 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                                 if (nsh === 23) targetM = 59;
                                 const newEnd = `${String(targetH).padStart(2, '0')}:${String(targetM).padStart(2, '0')}`;
                                 setSelectedEndTime(newEnd);
+                                if (endTimeBtn) endTimeBtn.value = newEnd;
                             }
                         }
                         
@@ -1107,6 +1109,30 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                 }
             }, 10);
         });
+
+        const onStartInput = () => {
+            if (startTimeBtn.value) {
+                setSelectedTime(startTimeBtn.value);
+                // If end time is active, ensure it is after start time
+                const endActive = !!getSelectedEndTime();
+                if (endActive) {
+                    const endTimeVal = getSelectedEndTime() || '09:00';
+                    const [nsh, nsm] = startTimeBtn.value.split(':').map(Number);
+                    const [neh, nem] = endTimeVal.split(':').map(Number);
+                    if (neh * 60 + nem <= nsh * 60 + nsm) {
+                        let targetH = nsh + 1;
+                        if (targetH >= 24) targetH = 23;
+                        let targetM = nsm;
+                        if (nsh === 23) targetM = 59;
+                        const newEnd = `${String(targetH).padStart(2, '0')}:${String(targetM).padStart(2, '0')}`;
+                        setSelectedEndTime(newEnd);
+                        if (endTimeBtn) endTimeBtn.value = newEnd;
+                    }
+                }
+            }
+        };
+        startTimeBtn.addEventListener('input', onStartInput);
+        startTimeBtn.addEventListener('change', onStartInput);
     }
 
     // End Time Button Click
@@ -1136,6 +1162,7 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                 item.addEventListener('click', (e) => {
                     e.stopPropagation();
                     setSelectedEndTime(opt.time);
+                    endTimeBtn.value = opt.time;
                     setSelectedEndDate(getSelectedDate() || getTodayString());
                     customTimeDropdown.style.display = 'none';
                     dropdownEl.initUI();
@@ -1150,6 +1177,15 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                 }
             }, 10);
         });
+
+        const onEndInput = () => {
+            if (endTimeBtn.value) {
+                setSelectedEndTime(endTimeBtn.value);
+                setSelectedEndDate(getSelectedDate() || getTodayString());
+            }
+        };
+        endTimeBtn.addEventListener('input', onEndInput);
+        endTimeBtn.addEventListener('change', onEndInput);
     }
 
     // Close custom time dropdown if clicking elsewhere inside the time/repeat column
@@ -1249,7 +1285,10 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
         // Поля времени и чекбокс всегда видны (display: flex / block), 
         // но их активность зависит от состояния чекбокса
         if (startTimeBtn) {
-            startTimeBtn.textContent = getSelectedTime() || '08:00';
+            const startVal = getSelectedTime() || '08:00';
+            if (startTimeBtn.value !== startVal) {
+                startTimeBtn.value = startVal;
+            }
             if (hasTime) {
                 startTimeBtn.classList.remove('disabled');
                 startTimeBtn.removeAttribute('disabled');
@@ -1270,7 +1309,10 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
         }
 
         if (endTimeBtn) {
-            endTimeBtn.textContent = getSelectedEndTime() || '09:00';
+            const endVal = getSelectedEndTime() || '09:00';
+            if (endTimeBtn.value !== endVal) {
+                endTimeBtn.value = endVal;
+            }
             if (hasTime && endTimeActive) {
                 endTimeBtn.classList.remove('disabled');
                 endTimeBtn.removeAttribute('disabled');
@@ -2680,9 +2722,9 @@ function createDropdownHtml() {
                 <!-- Поля ввода времени (всегда видны) -->
                 <div class="due-time-inputs-wrapper" style="display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-left: 0;">
                     <input type="checkbox" class="due-time-checkbox" style="margin-right: 2px;">
-                    <button class="pill-btn start-time-btn" type="button">08:00</button>
+                    <input class="pill-btn start-time-btn" type="time" value="08:00">
                     <span class="time-dash">—</span>
-                    <button class="pill-btn end-time-btn disabled" type="button" disabled>09:00</button>
+                    <input class="pill-btn end-time-btn disabled" type="time" value="09:00" disabled>
                     <input type="checkbox" class="end-time-active-checkbox" style="margin-left: 4px;">
                 </div>
                 
@@ -3612,6 +3654,8 @@ function renderTasks() {
     let displayActiveTasks = [];
     let displayCompletedTasks = [];
 
+    renderCountdownEventsBanner();
+
     if (currentRoute === 'today') {
         displayActiveTasks = activeTasks.filter(isTodayTask);
         displayCompletedTasks = completedTasks.filter(isTodayTask);
@@ -4199,6 +4243,127 @@ function toggleParentTaskCollapsed(taskId) {
 }
 
 function createTaskRowElement(task) {
+    if (task.isCountdown) {
+        const item = document.createElement('div');
+        item.className = `task-item priority-0`;
+        item.setAttribute('data-id', task.id);
+        
+        item.innerHTML = `
+            <div class="checkbox-wrapper" style="pointer-events: none; margin-left: 8px;">
+                <span style="font-size: 15px; margin-right: 4px; display: inline-block; vertical-align: middle;">${task.icon || '⏳'}</span>
+            </div>
+            <div class="task-content">
+                <span class="task-title-text">${formatTaskTitle(task.title)}</span>
+            </div>
+            <span class="task-due-badge" style="opacity: 0.6; margin-left: auto; margin-right: 8px;">
+                <span style="vertical-align: middle;">Обратный отсчет</span>
+            </span>
+            <div class="task-actions">
+                <button class="action-btn btn-more" title="Действия">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="1.5"></circle>
+                        <circle cx="12" cy="5" r="1.5"></circle>
+                        <circle cx="12" cy="19" r="1.5"></circle>
+                    </svg>
+                </button>
+                <div class="task-actions-dropdown" style="display: none;">
+                    <button class="dropdown-item btn-edit">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        <span>Изменить</span>
+                    </button>
+                    <button class="dropdown-item btn-delete">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        <span>Удалить</span>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        item.addEventListener('click', (e) => {
+            if (e.target.closest('.action-btn') || e.target.closest('.task-actions-dropdown')) {
+                return;
+            }
+            window.location.hash = '#countdown';
+        });
+
+        const btnMore = item.querySelector('.btn-more');
+        const actionsDropdown = item.querySelector('.task-actions-dropdown');
+
+        const openActionsDropdown = (ev = null) => {
+            document.querySelectorAll('.task-actions-dropdown').forEach(d => {
+                if (d !== actionsDropdown) d.style.display = 'none';
+            });
+            document.querySelectorAll('.task-item').forEach(ti => {
+                if (ti !== item) ti.classList.remove('menu-open');
+            });
+
+            if (actionsDropdown.style.display === 'none' || actionsDropdown.style.display === '') {
+                actionsDropdown.style.display = 'block';
+                item.classList.add('menu-open');
+                
+                if (ev) {
+                    const rect = item.getBoundingClientRect();
+                    const x = ev.clientX - rect.left;
+                    const y = ev.clientY - rect.top;
+                    actionsDropdown.style.left = `${x}px`;
+                    actionsDropdown.style.top = `${y}px`;
+                } else {
+                    actionsDropdown.style.left = '';
+                    actionsDropdown.style.top = '';
+                }
+            } else {
+                actionsDropdown.style.display = 'none';
+                item.classList.remove('menu-open');
+            }
+        };
+
+        btnMore.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openActionsDropdown();
+        });
+
+        item.addEventListener('contextmenu', (e) => {
+            if (window.matchMedia('(hover: hover)').matches) {
+                e.preventDefault();
+                e.stopPropagation();
+                openActionsDropdown(e);
+            }
+        });
+
+        actionsDropdown.querySelector('.btn-edit').addEventListener('click', (e) => {
+            e.stopPropagation();
+            actionsDropdown.style.display = 'none';
+            item.classList.remove('menu-open');
+            openCountdownModal(task);
+        });
+
+        actionsDropdown.querySelector('.btn-delete').addEventListener('click', (e) => {
+            e.stopPropagation();
+            actionsDropdown.style.display = 'none';
+            item.classList.remove('menu-open');
+            showCustomConfirm(
+                'Удалить событие?',
+                `Вы действительно хотите удалить обратный отсчет <strong>${escapeHtml(task.title)}</strong>?`,
+                'Удалить',
+                async () => {
+                    try {
+                        await deleteDoc(doc(db, 'users', currentUid, 'countdowns', task.id));
+                    } catch (err) {
+                        console.error("Ошибка при удалении обратного отсчета:", err);
+                    }
+                }
+            );
+        });
+
+        return item;
+    }
+
     const isSubtask = !!task.parentId;
     const hasSubtasks = !isSubtask && allTasks.some(t => t.parentId === task.id && !t.deleted && !t.completed);
     const isCollapsed = hasSubtasks && isParentTaskCollapsed(task.id);
@@ -5158,6 +5323,9 @@ function startCountdownsForUser(uid) {
         countdownsList = newCountdownsList;
 
         countdownsList.sort((a, b) => {
+            if (a.order !== undefined && b.order !== undefined) {
+                return a.order - b.order;
+            }
             return new Date(a.targetDate) - new Date(b.targetDate);
         });
 
@@ -5168,6 +5336,9 @@ function startCountdownsForUser(uid) {
 
         if (currentRoute === 'countdown') {
             renderCountdowns();
+        }
+        if (typeof renderCountdownEventsBanner === 'function') {
+            renderCountdownEventsBanner();
         }
     }, (error) => {
         console.error("Ошибка при получении списка обратных отсчетов:", error);
@@ -10450,7 +10621,7 @@ function formatCountdownDate(dateStr) {
     if (!dateStr) return '';
     const parts = dateStr.split('-');
     if (parts.length !== 3) return dateStr;
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return `${parts[2]}.${parts[1]}.${parts[0]}`;
 }
 
 function isColorDark(hex) {
@@ -10562,6 +10733,9 @@ function renderCountdowns() {
             </div>
         `;
 
+        card.setAttribute('data-id', cd.id);
+        card.setAttribute('draggable', 'true');
+
         // Attach listeners
         card.querySelector('.btn-edit').addEventListener('click', (e) => {
             e.stopPropagation();
@@ -10584,8 +10758,126 @@ function renderCountdowns() {
             );
         });
 
+        // HTML5 Drag & Drop for Desktop
+        card.addEventListener('dragstart', (e) => {
+            window.draggedCountdownCard = card;
+            card.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        card.addEventListener('dragend', () => {
+            card.classList.remove('dragging');
+            window.draggedCountdownCard = null;
+        });
+
+        card.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        card.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            if (window.draggedCountdownCard && window.draggedCountdownCard !== card) {
+                card.classList.add('drag-over');
+            }
+        });
+
+        card.addEventListener('dragleave', () => {
+            card.classList.remove('drag-over');
+        });
+
+        card.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            card.classList.remove('drag-over');
+            if (window.draggedCountdownCard && window.draggedCountdownCard !== card) {
+                const children = [...grid.children];
+                const draggedIdx = children.indexOf(window.draggedCountdownCard);
+                const targetIdx = children.indexOf(card);
+                if (draggedIdx < targetIdx) {
+                    grid.insertBefore(window.draggedCountdownCard, card.nextSibling);
+                } else {
+                    grid.insertBefore(window.draggedCountdownCard, card);
+                }
+                await saveCountdownsOrder();
+            }
+        });
+
+        // Touch Long Press Drag & Drop for Mobile
+        let touchStartTimer = null;
+        card.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) return;
+            const touch = e.touches[0];
+            const startX = touch.clientX;
+            const startY = touch.clientY;
+            
+            let isDraggingActive = false;
+
+            touchStartTimer = setTimeout(() => {
+                isDraggingActive = true;
+                card.classList.add('dragging');
+                if (navigator.vibrate) navigator.vibrate(50);
+            }, 400); // 400ms long press
+
+            const touchMoveHandler = (ev) => {
+                if (!isDraggingActive) {
+                    const moveTouch = ev.touches[0];
+                    if (Math.abs(moveTouch.clientX - startX) > 10 || Math.abs(moveTouch.clientY - startY) > 10) {
+                        clearTimeout(touchStartTimer);
+                    }
+                } else {
+                    // Prevent page scroll during drag
+                    if (ev.cancelable) ev.preventDefault();
+                    
+                    const moveTouch = ev.touches[0];
+                    const elementUnder = document.elementFromPoint(moveTouch.clientX, moveTouch.clientY);
+                    const targetCard = elementUnder ? elementUnder.closest('.countdown-card') : null;
+                    if (targetCard && targetCard !== card) {
+                        const children = [...grid.children];
+                        const activeIdx = children.indexOf(card);
+                        const targetIdx = children.indexOf(targetCard);
+                        if (activeIdx < targetIdx) {
+                            grid.insertBefore(card, targetCard.nextSibling);
+                        } else {
+                            grid.insertBefore(card, targetCard);
+                        }
+                    }
+                }
+            };
+
+            const touchEndHandler = async () => {
+                clearTimeout(touchStartTimer);
+                if (isDraggingActive) {
+                    card.classList.remove('dragging');
+                    await saveCountdownsOrder();
+                }
+                window.removeEventListener('touchmove', touchMoveHandler);
+                window.removeEventListener('touchend', touchEndHandler);
+            };
+
+            window.addEventListener('touchmove', touchMoveHandler, { passive: false });
+            window.addEventListener('touchend', touchEndHandler);
+        }, { passive: true });
+
         grid.appendChild(card);
     });
+}
+
+async function saveCountdownsOrder() {
+    const grid = document.getElementById('countdownGrid');
+    if (!grid) return;
+    const cardEls = [...grid.querySelectorAll('.countdown-card')];
+    const batchPromises = cardEls.map((cardEl, idx) => {
+        const id = cardEl.getAttribute('data-id');
+        if (id) {
+            return updateDoc(doc(db, 'users', currentUid, 'countdowns', id), {
+                order: idx
+            });
+        }
+    });
+    try {
+        await Promise.all(batchPromises);
+    } catch (err) {
+        console.error("Ошибка сохранения порядка обратных отсчетов:", err);
+    }
 }
 
 function openCountdownModal(countdown = null) {
@@ -11416,5 +11708,63 @@ async function handleCountdownDelete(cd) {
         }
     }
 }
+
+function renderCountdownEventsBanner() {
+    const banner = document.getElementById('countdownEventsBanner');
+    const listEl = document.getElementById('countdownBannerEventsList');
+    if (!banner || !listEl) return;
+
+    if (currentRoute !== 'today' && currentRoute !== 'tomorrow') {
+        banner.style.display = 'none';
+        return;
+    }
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+
+    const targetDateStr = currentRoute === 'today' ? todayStr : tomorrowStr;
+    const matchedCDs = countdownsList.filter(cd => cd.targetDate === targetDateStr);
+
+    if (matchedCDs.length === 0) {
+        banner.style.display = 'none';
+        return;
+    }
+
+    banner.style.display = 'block';
+    listEl.innerHTML = '';
+
+    matchedCDs.forEach(cd => {
+        const row = document.createElement('div');
+        row.className = 'gcal-event-row';
+        row.style.cursor = 'pointer';
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.padding = '4px 0';
+
+        let barColor = '#4c6ef5';
+        if (cd.style === 'color' && cd.bgColor) {
+            barColor = cd.bgColor;
+        } else if (cd.style === 'image') {
+            barColor = '#ff5f56';
+        }
+
+        row.innerHTML = `
+            <div class="gcal-event-bar" style="background-color: ${barColor}; height: 12px; width: 3px;"></div>
+            <span class="gcal-event-time" style="color: ${cd.textColor || 'var(--text-secondary)'}; margin-right: 4px; display: inline-flex; align-items: center; justify-content: center;">${cd.icon || '⏳'}</span>
+            <span class="gcal-event-title" style="font-weight: 500;">${cd.title} (Обратный отсчет)</span>
+        `;
+
+        row.addEventListener('click', () => {
+            window.location.hash = '#countdown';
+        });
+
+        listEl.appendChild(row);
+    });
+}
+
+window.renderCountdownEventsBanner = renderCountdownEventsBanner;
 
 

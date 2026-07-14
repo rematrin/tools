@@ -6437,3 +6437,140 @@ body.dark .modal-tab.active {
     display: flex;
     flex-direction: column;
 }
+
+/* Attachments Styles */
+.attachments-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 6px;
+}
+.attachment-thumb-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background-color: var(--hover-bg);
+}
+.attachment-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.2s ease;
+}
+.attachment-thumb-wrapper:hover .attachment-thumb {
+    transform: scale(1.05);
+}
+.attachment-delete-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+    z-index: 2;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1;
+}
+.attachment-thumb-wrapper:hover .attachment-delete-btn {
+    opacity: 1;
+}
+.attachment-delete-btn:hover {
+    background-color: rgba(220, 38, 38, 0.9);
+}
+
+.attachment-upload-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    border: 1.5px dashed var(--border);
+    background-color: var(--card-bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.attachment-upload-btn:hover {
+    background-color: var(--hover-bg);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* Lightbox styles */
+.lightbox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+.lightbox-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+.lightbox-content {
+    max-width: 90vw;
+    max-height: 90vh;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.lightbox-img {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+}
+.lightbox-overlay.active .lightbox-img {
+    transform: scale(1);
+}
+.lightbox-close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    z-index: 10000;
+}
+.lightbox-close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}

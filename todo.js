@@ -8117,6 +8117,112 @@ function updateModalUI(task) {
     }
 
     renderModalSubtasks(task);
+    renderModalAttachments(task);
+}
+
+function renderModalAttachments(task) {
+    const grid = document.getElementById('modalAttachmentsGrid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    const attachments = task.attachments || [];
+
+    attachments.forEach((url, index) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'attachment-thumb-wrapper';
+        
+        const img = document.createElement('img');
+        img.src = url;
+        img.className = 'attachment-thumb';
+        img.alt = `Вложение ${index + 1}`;
+        img.addEventListener('click', () => {
+            openLightbox(url);
+        });
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'attachment-delete-btn';
+        deleteBtn.innerHTML = '&times;';
+        deleteBtn.title = 'Удалить вложение';
+        deleteBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            showCustomConfirm(
+                'Удалить вложение?',
+                'Вы действительно хотите удалить это изображение?',
+                'Удалить',
+                async () => {
+                    const newAttachments = attachments.filter(item => item !== url);
+                    try {
+                        await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                            attachments: newAttachments
+                        });
+                    } catch (err) {
+                        console.error('Ошибка при удалении вложения:', err);
+                    }
+                }
+            );
+        });
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(deleteBtn);
+        grid.appendChild(wrapper);
+    });
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'attachment-upload-btn';
+    addBtn.title = 'Добавить вложение';
+    addBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+    `;
+    addBtn.addEventListener('click', () => {
+        openImageUploadModal(async (url) => {
+            if (!url) return;
+            const newAttachments = [...attachments, url];
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                    attachments: newAttachments
+                });
+            } catch (err) {
+                console.error('Ошибка при добавлении вложения:', err);
+            }
+        });
+    });
+    grid.appendChild(addBtn);
+}
+
+function openLightbox(url) {
+    let overlay = document.getElementById('lightboxOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'lightboxOverlay';
+        overlay.className = 'lightbox-overlay';
+        overlay.innerHTML = `
+            <div class="lightbox-content">
+                <button class="lightbox-close-btn">&times;</button>
+                <img class="lightbox-img" src="" alt="Просмотр">
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay || e.target.classList.contains('lightbox-close-btn')) {
+                closeLightbox();
+            }
+        });
+    }
+
+    const img = overlay.querySelector('.lightbox-img');
+    img.src = url;
+    overlay.classList.add('active');
+}
+
+function closeLightbox() {
+    const overlay = document.getElementById('lightboxOverlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+    }
 }
 
 function updateModalOverflow() {
@@ -10541,6 +10647,13 @@ function pomoUpdateStats() {
             totalEst += t.estPomos || 1;
         }
     });
+
+    if (totalAct === 0 && totalEst === 0) {
+        statsEl.textContent = '';
+        statsEl.style.display = 'none';
+        return;
+    }
+    statsEl.style.display = 'block';
 
     const remainingPomos = Math.max(0, totalEst - totalAct);
     if (remainingPomos > 0) {

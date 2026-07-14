@@ -2813,8 +2813,8 @@ body.dark .modal-tab.active {
     padding: 10px 20px;
     border-radius: 10px;
     text-decoration: none;
-    transition: all 0.2s ease;
-    width: 100%;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    width: auto;
     box-sizing: border-box;
     cursor: pointer;
     border: none;

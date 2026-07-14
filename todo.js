@@ -11143,9 +11143,6 @@ function openCountdownModal(countdown = null) {
                 </div>
                 <div class="countdown-input-wrapper">
                     <input type="text" class="countdown-input" id="inputCountdownTitle" placeholder="Название" value="${countdown ? countdown.title : ''}" maxlength="40" autocomplete="off">
-                    <svg class="countdown-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                    </svg>
                 </div>
             </div>
 
@@ -12055,7 +12052,7 @@ function getDayLabel(offsetDays) {
 }
 
 function formatTotalCheckins(total) {
-    if (total === 0) return 'День 0';
+    if (total === 0) return '0 дней';
     
     const lastDigit = total % 10;
     const lastTwoDigits = total % 100;
@@ -12155,7 +12152,7 @@ function renderHabits() {
                             <span>⚡</span> ${formatTotalCheckins(total)}
                         </div>
                         <div class="habit-stat-item">
-                            <span>🔥</span> День ${streak}
+                            <span>🔥</span> ${formatTotalCheckins(streak)}
                         </div>
                     </div>
                 </div>
@@ -12205,8 +12202,254 @@ function renderHabits() {
             });
         });
         
+        card.addEventListener('click', () => {
+            openHabitStatsModal(habit);
+        });
+        
         grid.appendChild(card);
     });
+}
+
+function openHabitStatsModal(habit) {
+    const existing = document.querySelector('.habit-stats-overlay');
+    if (existing) existing.remove();
+
+    let viewYear = new Date().getFullYear();
+    let viewMonth = new Date().getMonth(); // 0-11
+
+    const overlay = document.createElement('div');
+    overlay.className = 'habit-stats-overlay';
+
+    overlay.innerHTML = `
+        <div class="habit-stats-card">
+            <div class="habit-stats-header">
+                <div class="habit-stats-title-block">
+                    <div class="habit-stats-icon" style="background-color: ${getEmojiBg(habit.icon || '💪')}">
+                        ${habit.icon || '💪'}
+                    </div>
+                    <span class="habit-stats-title">${habit.title}</span>
+                </div>
+                <button class="habit-stats-close" id="btnCloseHabitStats">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="habit-stats-grid">
+                <div class="habit-stat-card">
+                    <div class="habit-stat-label">
+                        <span>⚡</span> Всего регистраций
+                    </div>
+                    <div class="habit-stat-value" id="habitStatTotal">0 дней</div>
+                </div>
+                <div class="habit-stat-card">
+                    <div class="habit-stat-label">
+                        <span>💚</span> В этом месяце
+                    </div>
+                    <div class="habit-stat-value" id="habitStatMonth">0 дней</div>
+                </div>
+                <div class="habit-stat-card">
+                    <div class="habit-stat-label">
+                        <span>✔</span> На этой неделе
+                    </div>
+                    <div class="habit-stat-value" id="habitStatWeek">0 дней</div>
+                </div>
+                <div class="habit-stat-card">
+                    <div class="habit-stat-label">
+                        <span>🔥</span> Текущая серия
+                    </div>
+                    <div class="habit-stat-value" id="habitStatStreak">0 дней</div>
+                </div>
+            </div>
+
+            <div class="habit-cal-section">
+                <div class="habit-cal-header">
+                    <div class="habit-cal-month-title" id="habitCalMonthTitle">июль 2026</div>
+                    <div class="habit-cal-nav">
+                        <button class="habit-cal-nav-btn" id="btnHabitCalPrev">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <button class="habit-cal-nav-btn" id="btnHabitCalNext">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="habit-cal-weekdays">
+                    <span>Пон.</span>
+                    <span>Втр.</span>
+                    <span>Срд.</span>
+                    <span>Чтв.</span>
+                    <span>Птн.</span>
+                    <span>Сбт.</span>
+                    <span>Вск.</span>
+                </div>
+                <div class="habit-cal-grid" id="habitCalGrid"></div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const btnClose = overlay.querySelector('#btnCloseHabitStats');
+    btnClose.addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.remove();
+    });
+
+    const monthNames = [
+        'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+        'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'
+    ];
+
+    function updateStatsAndCalendar() {
+        const currentHabit = habitsList.find(h => h.id === habit.id) || habit;
+        const historyArray = currentHabit.history || [];
+        const historySet = new Set(historyArray);
+
+        overlay.querySelector('#habitStatTotal').innerText = formatTotalCheckins(historySet.size);
+
+        const monthPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-`;
+        let monthlyCount = 0;
+        historyArray.forEach(d => {
+            if (d.startsWith(monthPrefix)) monthlyCount++;
+        });
+        overlay.querySelector('#habitStatMonth').innerText = formatTotalCheckins(monthlyCount);
+
+        overlay.querySelector('#habitStatWeek').innerText = formatTotalCheckins(getCompletionsThisWeek(historySet));
+
+        overlay.querySelector('#habitStatStreak').innerText = formatTotalCheckins(calculateHabitStreak(historySet));
+
+        overlay.querySelector('#habitCalMonthTitle').innerText = `${monthNames[viewMonth]} ${viewYear}`;
+
+        const grid = overlay.querySelector('#habitCalGrid');
+        grid.innerHTML = '';
+
+        const firstDay = new Date(viewYear, viewMonth, 1);
+        let startDay = firstDay.getDay();
+        let mondayIndex = startDay === 0 ? 6 : startDay - 1;
+
+        const totalDays = new Date(viewYear, viewMonth + 1, 0).getDate();
+        const prevTotalDays = new Date(viewYear, viewMonth, 0).getDate();
+
+        for (let i = mondayIndex - 1; i >= 0; i--) {
+            const dayNum = prevTotalDays - i;
+            const cell = document.createElement('div');
+            cell.className = 'calendar-cell muted';
+            cell.innerHTML = `
+                <span class="day-number">${dayNum}</span>
+                <div class="cell-circle"></div>
+            `;
+            grid.appendChild(cell);
+        }
+
+        const today = new Date();
+        for (let d = 1; d <= totalDays; d++) {
+            const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const isCompleted = historySet.has(dateStr);
+            const isToday = (today.getFullYear() === viewYear && today.getMonth() === viewMonth && today.getDate() === d);
+
+            const cell = document.createElement('div');
+            cell.className = `calendar-cell current-month ${isToday ? 'today' : ''} ${isCompleted ? 'checked' : ''}`;
+            cell.innerHTML = `
+                <span class="day-number">${d}</span>
+                <div class="cell-circle">
+                    ${isCompleted ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+                </div>
+            `;
+
+            cell.querySelector('.cell-circle').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (!currentUid) return;
+
+                let newHistory = [...historyArray];
+                if (historySet.has(dateStr)) {
+                    newHistory = newHistory.filter(x => x !== dateStr);
+                } else {
+                    newHistory.push(dateStr);
+                }
+
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'habits', habit.id), {
+                        history: newHistory
+                    });
+                    habit.history = newHistory; 
+                    updateStatsAndCalendar();
+                } catch (err) {
+                    console.error("Ошибка обновления привычки:", err);
+                }
+            });
+
+            grid.appendChild(cell);
+        }
+
+        const totalCells = mondayIndex + totalDays;
+        const remaining = 42 - totalCells;
+        for (let d = 1; d <= remaining; d++) {
+            const cell = document.createElement('div');
+            cell.className = 'calendar-cell muted';
+            cell.innerHTML = `
+                <span class="day-number">${d}</span>
+                <div class="cell-circle"></div>
+            `;
+            grid.appendChild(cell);
+        }
+    }
+
+    function getCompletionsThisWeek(historySet) {
+        const today = new Date();
+        const day = today.getDay();
+        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(today.setDate(diff));
+        monday.setHours(0,0,0,0);
+
+        let count = 0;
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(monday);
+            d.setDate(monday.getDate() + i);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${yyyy}-${mm}-${dd}`;
+            if (historySet.has(dateStr)) count++;
+        }
+        return count;
+    }
+
+    overlay.querySelector('#btnHabitCalPrev').addEventListener('click', (e) => {
+        e.stopPropagation();
+        viewMonth--;
+        if (viewMonth < 0) {
+            viewMonth = 11;
+            viewYear--;
+        }
+        updateStatsAndCalendar();
+    });
+
+    overlay.querySelector('#btnHabitCalNext').addEventListener('click', (e) => {
+        e.stopPropagation();
+        viewMonth++;
+        if (viewMonth > 11) {
+            viewMonth = 0;
+            viewYear++;
+        }
+        updateStatsAndCalendar();
+    });
+
+    updateStatsAndCalendar();
+
+    const observer = setInterval(() => {
+        if (!document.body.contains(overlay)) {
+            clearInterval(observer);
+            return;
+        }
+        updateStatsAndCalendar();
+    }, 500);
 }
 
 function openHabitModal(habit = null) {
@@ -12238,9 +12481,6 @@ function openHabitModal(habit = null) {
                 </div>
                 <div class="countdown-input-wrapper">
                     <input type="text" class="countdown-input" id="inputHabitTitle" placeholder="Название" value="${habit ? habit.title : ''}" maxlength="50" autocomplete="off">
-                    <svg class="countdown-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                    </svg>
                 </div>
             </div>
             
@@ -12349,6 +12589,7 @@ function initHabitEvents() {
 initHabitEvents();
 window.renderHabits = renderHabits;
 window.openHabitModal = openHabitModal;
+window.openHabitStatsModal = openHabitStatsModal;
 window.startHabitsForUser = startHabitsForUser;
 window.stopHabitsForUser = stopHabitsForUser;
 

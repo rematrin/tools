@@ -10118,6 +10118,7 @@ function savePomoState() {
     localStorage.setItem('todo_pomo_mode', pomoCurrentMode);
     localStorage.setItem('todo_pomo_is_running', pomoIsRunning);
     localStorage.setItem('todo_pomo_time_left', pomoTimeLeft);
+    localStorage.setItem('todo_pomo_completed_count', pomoCompletedCount);
     if (pomoIsRunning) {
         localStorage.setItem('todo_pomo_target_timestamp', Date.now() + pomoTimeLeft * 1000);
     } else {
@@ -10135,6 +10136,11 @@ function loadPomoState() {
         } else {
             pomoCurrentMode = 'pomodoro';
         }
+    }
+
+    const savedCompletedCount = localStorage.getItem('todo_pomo_completed_count');
+    if (savedCompletedCount) {
+        pomoCompletedCount = parseInt(savedCompletedCount, 10) || 0;
     }
 
     const savedIsRunning = localStorage.getItem('todo_pomo_is_running') === 'true';
@@ -10170,6 +10176,20 @@ function pomoUpdateDisplay() {
     }
 }
 
+function pomoUpdateActiveTaskNameDisplay() {
+    const activeTaskNameEl = document.getElementById('pomo-active-task-name');
+    if (!activeTaskNameEl) return;
+    
+    const activeTask = allTasks.find(t => t.id === pomoActiveTaskId && !t.deleted);
+    if (activeTask) {
+        activeTaskNameEl.textContent = activeTask.title || '';
+        activeTaskNameEl.style.display = 'block';
+    } else {
+        activeTaskNameEl.textContent = '';
+        activeTaskNameEl.style.display = 'none';
+    }
+}
+
 function pomoSetMode(mode) {
     clearInterval(pomoTimerInterval);
     pomoIsRunning = false;
@@ -10192,6 +10212,7 @@ function pomoSetMode(mode) {
     if (activeTabBtn) activeTabBtn.classList.add('active');
     
     pomoUpdateDisplay();
+    pomoUpdateActiveTaskNameDisplay();
     pomoUpdateStats();
     savePomoState();
 }
@@ -10258,9 +10279,7 @@ function pomoHandleTimerComplete(isSkip = false) {
     }
     
     if (wasPomodoro) {
-        if (!isSkip) {
-            pomoCompletedCount++;
-        }
+        pomoCompletedCount++;
         if (pomoCompletedCount > 0 && pomoCompletedCount % 4 === 0) {
             pomoSetMode('longBreak');
         } else {
@@ -10298,6 +10317,14 @@ function pomoRenderTasks() {
     listEl.innerHTML = '';
 
     const pomoTasks = allTasks.filter(t => !t.deleted && t.inPomodoro);
+    pomoTasks.sort((a, b) => {
+        const orderA = a.order !== undefined ? a.order : 0;
+        const orderB = b.order !== undefined ? b.order : 0;
+        if (orderA !== orderB) return orderA - orderB;
+        const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
+        const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
+        return timeB - timeA;
+    });
     
     if (pomoActiveTaskId && !pomoTasks.some(t => t.id === pomoActiveTaskId)) {
         pomoActiveTaskId = null;
@@ -10305,6 +10332,8 @@ function pomoRenderTasks() {
     if (!pomoActiveTaskId && pomoTasks.length > 0) {
         pomoActiveTaskId = pomoTasks[0].id;
     }
+
+    pomoUpdateActiveTaskNameDisplay();
 
     pomoTasks.forEach((task) => {
         const itemEl = createTaskRowElement(task);

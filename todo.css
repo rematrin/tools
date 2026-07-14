@@ -5638,12 +5638,11 @@ input.pill-btn::-webkit-inner-spin-button {
     font-family: 'Nunito', sans-serif !important;
     background-color: #ba4949;
     color: white !important;
-    padding: 40px 20px 50px;
+    padding: 24px 20px 30px;
     border-radius: 20px;
     text-align: center;
     width: 100%;
-    max-width: 620px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     transition: background-color 0.5s ease;
 }
 
@@ -5651,7 +5650,7 @@ input.pill-btn::-webkit-inner-spin-button {
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
 }
 
 #pomodoroContainer .tabs button {
@@ -5672,9 +5671,9 @@ input.pill-btn::-webkit-inner-spin-button {
 }
 
 #pomodoroContainer .timer {
-    font-size: 120px;
+    font-size: 96px;
     font-weight: 800;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     line-height: 1;
 }
 

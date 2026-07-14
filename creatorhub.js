@@ -130,6 +130,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (typeof initVideoDetailMobileBottomSheet === "function") {
         initVideoDetailMobileBottomSheet();
     }
+    
+    window.addEventListener("hashchange", handleHashRoute);
+    handleHashRoute();
 
     // Восстанавливаем десктопное отображение при масштабировании экрана
     window.addEventListener("resize", () => {
@@ -311,16 +314,11 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.addEventListener("click", () => {
             const filterVal = btn.dataset.filter;
             if (currentFilter === filterVal) {
-                btn.classList.remove("active");
-                currentFilter = "all";
+                history.pushState(null, null, window.location.pathname + window.location.search);
+                handleHashRoute();
             } else {
-                filterButtons.forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-                currentFilter = filterVal;
+                window.location.hash = filterVal;
             }
-            currentMenuRoute = (currentFilter === "trash" ? "trash" : "videos");
-            loadSortForCurrentFilter();
-            updateViewForRoute();
         });
     });
 
@@ -718,6 +716,31 @@ document.addEventListener("DOMContentLoaded", () => {
     initDragAndDrop();
     initTouchDragAndDrop();
 });
+
+function handleHashRoute() {
+    const hash = window.location.hash.replace("#", "");
+    const validFilters = ["idea", "in_progress", "editing", "published", "trash"];
+    
+    if (validFilters.includes(hash)) {
+        currentFilter = hash;
+    } else {
+        currentFilter = "all";
+    }
+    
+    currentMenuRoute = (currentFilter === "trash" ? "trash" : "videos");
+    
+    // Update button states
+    filterButtons.forEach(btn => {
+        if (btn.dataset.filter === currentFilter) {
+            btn.classList.add("active");
+        } else {
+            btn.classList.remove("active");
+        }
+    });
+    
+    loadSortForCurrentFilter();
+    updateViewForRoute();
+}
 
 // Функция обновления интерфейса в зависимости от текущего фильтра
 function updateViewForRoute() {

@@ -57,6 +57,11 @@ const infoCreatedDate = document.getElementById("infoCreatedDate");
 const referencesContent = document.getElementById("referencesContent");
 const settingNotionLink = document.getElementById("settingNotionLink");
 const btnOpenNotion = document.getElementById("btnOpenNotion");
+const settingBoardLink = document.getElementById("settingBoardLink");
+const btnOpenBoard = document.getElementById("btnOpenBoard");
+const videoButtonsContainer = document.getElementById("videoButtonsContainer");
+const settingVideoLink = document.getElementById("settingVideoLink");
+const btnOpenStudio = document.getElementById("btnOpenStudio");
 
 // Элементы календаря в настройках
 const btnDueDate = document.getElementById("btnDueDate");
@@ -629,6 +634,28 @@ document.addEventListener("DOMContentLoaded", () => {
             const newLink = e.target.value;
             selectedVideo.notionLink = newLink;
             saveVideoData("notionLink", newLink);
+            updateNotionButtonState();
+        });
+    }
+
+    // Сохранение ссылки на Доску в настройках
+    if (settingBoardLink) {
+        settingBoardLink.addEventListener("input", (e) => {
+            if (!selectedVideo) return;
+            const newLink = e.target.value;
+            selectedVideo.boardLink = newLink;
+            saveVideoData("boardLink", newLink);
+            updateNotionButtonState();
+        });
+    }
+
+    // Сохранение ссылки на Видео в настройках
+    if (settingVideoLink) {
+        settingVideoLink.addEventListener("input", (e) => {
+            if (!selectedVideo) return;
+            const newLink = e.target.value;
+            selectedVideo.videoLink = newLink;
+            saveVideoData("videoLink", newLink);
             updateNotionButtonState();
         });
     }
@@ -1544,6 +1571,12 @@ function selectVideoItem(id) {
     if (settingNotionLink && document.activeElement !== settingNotionLink) {
         settingNotionLink.value = selectedVideo.notionLink || "";
     }
+    if (settingBoardLink && document.activeElement !== settingBoardLink) {
+        settingBoardLink.value = selectedVideo.boardLink || "";
+    }
+    if (settingVideoLink && document.activeElement !== settingVideoLink) {
+        settingVideoLink.value = selectedVideo.videoLink || "";
+    }
 
     // Обновляем состояние кнопки Notion
     updateNotionButtonState();
@@ -1845,10 +1878,9 @@ function clearDetailSidebar() {
     }
     if (referencesContent) referencesContent.innerHTML = "";
     if (settingNotionLink) settingNotionLink.value = "";
-    if (btnOpenNotion) {
-        btnOpenNotion.classList.add("disabled");
-        btnOpenNotion.href = "#";
-    }
+    if (settingBoardLink) settingBoardLink.value = "";
+    if (settingVideoLink) settingVideoLink.value = "";
+    updateNotionButtonState();
 
     // Снимаем выделение со всех карточек видео
     document.querySelectorAll(".video-card").forEach(card => {
@@ -2304,14 +2336,83 @@ async function saveVideoData(field, value) {
     }
 }
 
+function getYouTubeId(url) {
+    if (!url) return null;
+    try {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        if (match && match[2].length === 11) {
+            return match[2];
+        }
+    } catch (e) {
+        console.error(e);
+    }
+    return null;
+}
+
 function updateNotionButtonState() {
-    if (!btnOpenNotion) return;
+    const activeButtons = [];
+
     if (selectedVideo && selectedVideo.notionLink && selectedVideo.notionLink.trim() !== "") {
-        btnOpenNotion.classList.remove("disabled");
-        btnOpenNotion.href = selectedVideo.notionLink;
+        if (btnOpenNotion) {
+            btnOpenNotion.style.display = "inline-flex";
+            btnOpenNotion.href = selectedVideo.notionLink;
+            activeButtons.push(btnOpenNotion);
+        }
     } else {
-        btnOpenNotion.classList.add("disabled");
-        btnOpenNotion.href = "#";
+        if (btnOpenNotion) {
+            btnOpenNotion.style.display = "none";
+            btnOpenNotion.href = "#";
+        }
+    }
+
+    if (selectedVideo && selectedVideo.boardLink && selectedVideo.boardLink.trim() !== "") {
+        if (btnOpenBoard) {
+            btnOpenBoard.style.display = "inline-flex";
+            btnOpenBoard.href = selectedVideo.boardLink;
+            activeButtons.push(btnOpenBoard);
+        }
+    } else {
+        if (btnOpenBoard) {
+            btnOpenBoard.style.display = "none";
+            btnOpenBoard.href = "#";
+        }
+    }
+
+    let showStudio = false;
+    if (selectedVideo && selectedVideo.videoLink && selectedVideo.videoLink.trim() !== "") {
+        const ytid = getYouTubeId(selectedVideo.videoLink);
+        if (ytid) {
+            if (btnOpenStudio) {
+                btnOpenStudio.href = `https://studio.youtube.com/video/${ytid}/analytics/`;
+                btnOpenStudio.style.display = "inline-flex";
+                activeButtons.push(btnOpenStudio);
+            }
+            showStudio = true;
+        }
+    }
+
+    if (!showStudio) {
+        if (btnOpenStudio) {
+            btnOpenStudio.style.display = "none";
+            btnOpenStudio.href = "#";
+        }
+    }
+
+    // Применяем стили в зависимости от количества видимых кнопок
+    if (activeButtons.length === 1) {
+        activeButtons[0].style.flex = "1 1 100%";
+    } else if (activeButtons.length === 2) {
+        activeButtons[0].style.flex = "1 1 calc(50% - 5px)";
+        activeButtons[1].style.flex = "1 1 calc(50% - 5px)";
+    } else if (activeButtons.length === 3) {
+        activeButtons[0].style.flex = "1 1 calc(50% - 5px)";
+        activeButtons[1].style.flex = "1 1 calc(50% - 5px)";
+        activeButtons[2].style.flex = "1 1 100%";
+    }
+
+    if (videoButtonsContainer) {
+        videoButtonsContainer.style.display = activeButtons.length > 0 ? "flex" : "none";
     }
 }
 

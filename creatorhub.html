@@ -354,16 +354,34 @@
                             <span id="infoCreatedDate" class="info-value">--</span>
                         </div>
 
-                        <div class="info-group"
-                            style="margin-top: 20px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
-                            <a id="btnOpenNotion" href="#" target="_blank" class="btn-notion-link disabled">
+                        <div id="videoButtonsContainer" class="info-group"
+                            style="margin-top: 20px; border-top: 1px solid var(--ch-border); padding-top: 16px; display: none; flex-wrap: wrap; gap: 10px;">
+                            <a id="btnOpenNotion" href="#" target="_blank" class="btn-notion-link" style="display: none;">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
                                     height="16" style="margin-right: 6px; vertical-align: middle;">
                                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                                     <polyline points="15 3 21 3 21 9"></polyline>
                                     <line x1="10" y1="14" x2="21" y2="3"></line>
                                 </svg>
-                                Открыть в Notion
+                                Notion
+                            </a>
+                            <a id="btnOpenBoard" href="#" target="_blank" class="btn-notion-link" style="display: none;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
+                                    height="16" style="margin-right: 6px; vertical-align: middle;">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                                Доска
+                            </a>
+                            <a id="btnOpenStudio" href="#" target="_blank" class="btn-notion-link" style="display: none; box-sizing: border-box;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
+                                    height="16" style="margin-right: 6px; vertical-align: middle;">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                                YouTube Studio
                             </a>
                         </div>
                     </div>
@@ -386,6 +404,22 @@
                             </div>
                             <input type="text" id="settingNotionLink" class="settings-row-input"
                                 placeholder="https://notion.so/...">
+                        </div>
+
+                        <div class="settings-row" style="margin-top: 12px;">
+                            <div class="settings-row-left">
+                                <span class="settings-row-label">Доска</span>
+                            </div>
+                            <input type="text" id="settingBoardLink" class="settings-row-input"
+                                placeholder="Ссылка на доску...">
+                        </div>
+
+                        <div class="settings-row" style="margin-top: 12px;">
+                            <div class="settings-row-left">
+                                <span class="settings-row-label">Ссылка на видео</span>
+                            </div>
+                            <input type="text" id="settingVideoLink" class="settings-row-input"
+                                placeholder="https://www.youtube.com/watch?v=...">
                         </div>
 
                         <div class="settings-row"

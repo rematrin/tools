@@ -203,6 +203,18 @@
                             </svg>
                         </button>
                     </div>
+                    <div class="habit-header-actions" id="habitHeaderActions"
+                        style="display: none; margin-left: auto; align-items: center; gap: 8px;">
+                        <button class="habit-add-btn" id="btnHabitAdd" aria-label="Добавить привычку"
+                            title="Добавить"
+                            style="background: transparent; border: none; color: var(--text-secondary); opacity: 0.7; cursor: pointer; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background-color 0.15s, opacity 0.15s;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                    </div>
                     <div class="project-header-actions" id="projectHeaderActions"
                         style="display: none; margin-left: auto; position: relative;">
                         <button class="project-header-more-btn" id="projectHeaderMoreBtn" aria-label="Действия проекта"
@@ -309,6 +321,14 @@
                     <!-- Сетка обратных отсчетов -->
                     <div class="countdown-grid" id="countdownGrid">
                         <!-- Динамические карточки -->
+                    </div>
+                </div>
+
+                <!-- Блок Привычек -->
+                <div id="habitContainer" style="display: none; flex-direction: column; width: 100%;">
+                    <!-- Сетка привычек -->
+                    <div class="habit-grid" id="habitGrid">
+                        <!-- Динамические карточки привычек -->
                     </div>
                 </div>
 

@@ -53,6 +53,8 @@ let projectsList = [];
 let unsubscribeProjects = null;
 let countdownsList = [];
 let unsubscribeCountdowns = null;
+let habitsList = [];
+let unsubscribeHabits = null;
 let sectionsList = [];
 let unsubscribeSections = null;
 
@@ -1491,6 +1493,13 @@ if (sidebarHeader && !document.getElementById('userProfileMenu')) {
                 </svg>
                 <span>Настройки</span>
             </button>
+            <button class="user-menu-item" id="btnUserMenuHabit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <span>Привычки</span>
+            </button>
             <button class="user-menu-item" id="btnUserMenuPomodoro">
                 <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                     <path d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12 14.5 13.3807 13.3807 14.5 12 14.5 10.6193 14.5 9.5 13.3807 9.5 12 9.5 10.6193 10.6193 9.5 12 9.5ZM12 2C17.5228 2 22 6.47715 22 12 22 17.5228 17.5228 22 12 22 6.47715 22 2 17.5228 2 12 2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12 4 16.4183 7.58172 20 12 20 16.4183 20 20 16.4183 20 12 20 7.58172 16.4183 4 12 4Z"></path>
@@ -1526,6 +1535,7 @@ if (sidebarHeader && !document.getElementById('userProfileMenu')) {
 
 const userProfileMenu = document.getElementById('userProfileMenu');
 const btnUserMenuSettings = document.getElementById('btnUserMenuSettings');
+const btnUserMenuHabit = document.getElementById('btnUserMenuHabit');
 const btnUserMenuPomodoro = document.getElementById('btnUserMenuPomodoro');
 const btnUserMenuCountdown = document.getElementById('btnUserMenuCountdown');
 const btnUserMenuTrash = document.getElementById('btnUserMenuTrash');
@@ -1554,6 +1564,14 @@ if (sidebarUser && userProfileMenu) {
             e.stopPropagation();
             userProfileMenu.style.display = 'none';
             openSettingsModal();
+        });
+    }
+
+    if (btnUserMenuHabit) {
+        btnUserMenuHabit.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userProfileMenu.style.display = 'none';
+            window.location.hash = '#habit';
         });
     }
 
@@ -1966,6 +1984,8 @@ function updateBrowserTitle() {
         title = 'Помодоро';
     } else if (currentRoute === 'countdown') {
         title = 'Обратный отсчет';
+    } else if (currentRoute === 'habit') {
+        title = 'Привычки';
     } else if (currentRoute.startsWith('project/')) {
         const projectId = currentRoute.split('/')[1];
         const proj = projectsList.find(p => p.id === projectId);
@@ -1987,6 +2007,8 @@ function handleRoute() {
         currentRoute = 'pomodoro';
     } else if (hash === 'countdown') {
         currentRoute = 'countdown';
+    } else if (hash === 'habit') {
+        currentRoute = 'habit';
     } else if (hash.startsWith('project/')) {
         const projectId = hash.split('/')[1];
         if (!projectId) {
@@ -2041,6 +2063,8 @@ function handleRoute() {
         if (titleEl) titleEl.textContent = 'Помодоро';
     } else if (currentRoute === 'countdown') {
         if (titleEl) titleEl.textContent = 'Обратный отсчет';
+    } else if (currentRoute === 'habit') {
+        if (titleEl) titleEl.textContent = 'Привычки';
     } else if (currentRoute.startsWith('project/')) {
         const projectId = currentRoute.split('/')[1];
         const proj = projectsList.find(p => p.id === projectId);
@@ -2139,6 +2163,7 @@ window.addEventListener('authChanged', (e) => {
             startProjectsForUser(currentUid);
             startSectionsForUser(currentUid);
             startCountdownsForUser(currentUid);
+            startHabitsForUser(currentUid);
             handleRoute();
         });
     } else {
@@ -2152,6 +2177,7 @@ window.addEventListener('authChanged', (e) => {
         stopProjectsForUser();
         stopSectionsForUser();
         stopCountdownsForUser();
+        stopHabitsForUser();
     }
 });
 
@@ -3544,7 +3570,7 @@ function renderTasksGroup(tasksGroup, containerEl) {
 // Отрендерить задачи в UI
 function renderTasks() {
     // Устанавливаем класс роута на body
-    document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash', 'route-pomodoro', 'route-countdown');
+    document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash', 'route-pomodoro', 'route-countdown', 'route-habit');
     if (currentRoute === 'today') {
         document.body.classList.add('route-today');
     } else if (currentRoute === 'tomorrow') {
@@ -3557,6 +3583,8 @@ function renderTasks() {
         document.body.classList.add('route-pomodoro');
     } else if (currentRoute === 'countdown') {
         document.body.classList.add('route-countdown');
+    } else if (currentRoute === 'habit') {
+        document.body.classList.add('route-habit');
     }
 
     const pomoContainerLocal = document.getElementById('pomodoroContainer');
@@ -3581,11 +3609,23 @@ function renderTasks() {
         countdownHeaderActions.style.display = currentRoute === 'countdown' ? 'flex' : 'none';
     }
 
+    const habitContainer = document.getElementById('habitContainer');
+    const habitHeaderActions = document.getElementById('habitHeaderActions');
+    if (habitContainer) {
+        habitContainer.style.display = currentRoute === 'habit' ? 'flex' : 'none';
+        if (currentRoute === 'habit') {
+            renderHabits();
+        }
+    }
+    if (habitHeaderActions) {
+        habitHeaderActions.style.display = currentRoute === 'habit' ? 'flex' : 'none';
+    }
+
     if (activeTasksContainer) {
-        activeTasksContainer.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown') ? 'none' : 'block';
+        activeTasksContainer.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit') ? 'none' : 'block';
     }
     const gcalBannerLocal = document.getElementById('gcalEventsBanner');
-    if (gcalBannerLocal && (currentRoute === 'pomodoro' || currentRoute === 'countdown')) {
+    if (gcalBannerLocal && (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit')) {
         gcalBannerLocal.style.display = 'none';
     }
 
@@ -3642,12 +3682,12 @@ function renderTasks() {
         trashNoticeBanner.style.display = currentRoute === 'trash' ? 'flex' : 'none';
     }
     if (addTaskFormEl) {
-        addTaskFormEl.style.display = (currentRoute === 'trash' || currentRoute === 'pomodoro' || currentRoute === 'countdown') ? 'none' : 'flex';
+        addTaskFormEl.style.display = (currentRoute === 'trash' || currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit') ? 'none' : 'flex';
     }
 
     const projectHeaderActions = document.getElementById('projectHeaderActions');
     if (projectHeaderActions) {
-        projectHeaderActions.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox') ? 'block' : 'none');
+        projectHeaderActions.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox') ? 'block' : 'none');
     }
 
     // Фильтруем задачи для отображения в зависимости от текущей вкладки (роута)
@@ -3669,7 +3709,7 @@ function renderTasks() {
     } else if (currentRoute === 'trash') {
         displayActiveTasks = trashTasks;
         displayCompletedTasks = [];
-    } else if (currentRoute === 'pomodoro' || currentRoute === 'countdown') {
+    } else if (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit') {
         displayActiveTasks = [];
         displayCompletedTasks = [];
     } else { // inbox
@@ -11908,5 +11948,409 @@ function renderCountdownEventsBanner() {
 }
 
 window.renderCountdownEventsBanner = renderCountdownEventsBanner;
+
+// === ЛОГИКА ПРИВЫЧЕК ===
+function startHabitsForUser(uid) {
+    if (unsubscribeHabits) unsubscribeHabits();
+
+    const qHabits = query(collection(db, 'users', uid, 'habits'));
+
+    unsubscribeHabits = onSnapshot(qHabits, (snapshot) => {
+        const newHabitsList = [];
+        snapshot.forEach((docSnap) => {
+            newHabitsList.push({
+                id: docSnap.id,
+                ...docSnap.data()
+            });
+        });
+
+        habitsList = newHabitsList;
+
+        habitsList.sort((a, b) => {
+            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
+            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
+            return timeA - timeB;
+        });
+
+        if (currentRoute === 'habit') {
+            renderHabits();
+        }
+    }, (error) => {
+        console.error("Ошибка при получении списка привычек:", error);
+    });
+}
+
+function stopHabitsForUser() {
+    if (unsubscribeHabits) {
+        unsubscribeHabits();
+        unsubscribeHabits = null;
+    }
+    habitsList = [];
+    const grid = document.getElementById('habitGrid');
+    if (grid) grid.innerHTML = '';
+}
+
+function getHabitDateString(offsetDays = 0) {
+    const d = new Date();
+    d.setDate(d.getDate() - offsetDays);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+function calculateHabitStreak(historySet) {
+    if (!historySet || historySet.size === 0) return 0;
+    
+    const todayStr = getHabitDateString(0);
+    const yesterdayStr = getHabitDateString(1);
+    
+    if (!historySet.has(todayStr) && !historySet.has(yesterdayStr)) {
+        return 0;
+    }
+    
+    let startOffset = historySet.has(todayStr) ? 0 : 1;
+    let streak = 0;
+    
+    while (true) {
+        const dateStr = getHabitDateString(startOffset);
+        if (historySet.has(dateStr)) {
+            streak++;
+            startOffset++;
+        } else {
+            break;
+        }
+    }
+    return streak;
+}
+
+function getEmojiBg(emoji) {
+    const map = {
+        '💪': '#a855f7',
+        '🏋️': '#a855f7',
+        '🏃': '#10b981',
+        '💧': '#3b82f6',
+        '📖': '#0284c7',
+        '🍏': '#22c55e',
+        '😴': '#6366f1',
+        '🧘': '#8b5cf6',
+        '👂': '#f59e0b',
+        '💻': '#64748b',
+        '✍️': '#0d9488',
+        '🪥': '#ec4899',
+        '💵': '#10b981',
+        '🎵': '#f43f5e',
+        '🚭': '#ef4444',
+        '☕': '#854d0e',
+        '🌟': '#eab308'
+    };
+    return map[emoji] || '#a855f7';
+}
+
+const WEEKDAYS_SHORT = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+function getDayLabel(offsetDays) {
+    const d = new Date();
+    d.setDate(d.getDate() - offsetDays);
+    return WEEKDAYS_SHORT[d.getDay()];
+}
+
+function formatTotalCheckins(total) {
+    if (total === 0) return 'День 0';
+    
+    const lastDigit = total % 10;
+    const lastTwoDigits = total % 100;
+    
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+        return `${total} дней`;
+    }
+    if (lastDigit === 1) {
+        return `${total} день`;
+    }
+    if (lastDigit >= 2 && lastDigit <= 4) {
+        return `${total} дня`;
+    }
+    return `${total} дней`;
+}
+
+function renderHabits() {
+    const grid = document.getElementById('habitGrid');
+    if (!grid) return;
+    
+    if (habitsList.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-secondary); opacity: 0.6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <div style="font-size: 16px; font-weight: 600;">У вас пока нет привычек</div>
+                <div style="font-size: 13px;">Создайте новую привычку, нажав кнопку «+» вверху.</div>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = '';
+    
+    habitsList.forEach(habit => {
+        const historyArray = habit.history || [];
+        const historySet = new Set(historyArray);
+        
+        const total = historySet.size;
+        const streak = calculateHabitStreak(historySet);
+        
+        const card = document.createElement('div');
+        card.className = 'habit-card';
+        
+        const actionsHtml = `
+            <div class="habit-actions">
+                <button class="habit-action-btn btn-edit" title="Редактировать">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+                <button class="habit-action-btn btn-delete" title="Удалить">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        let circlesHtml = '';
+        for (let i = 6; i >= 0; i--) {
+            const dateStr = getHabitDateString(i);
+            const isCompleted = historySet.has(dateStr);
+            const isTodayDay = i === 0;
+            const dayLabel = getDayLabel(i);
+            
+            circlesHtml += `
+                <div class="habit-circle-wrapper">
+                    <span class="habit-circle-day-label">${dayLabel}</span>
+                    <button class="habit-circle ${isCompleted ? 'checked' : ''} ${isTodayDay ? 'today' : ''}" 
+                            data-date="${dateStr}" 
+                            title="${dateStr}">
+                        ${isCompleted ? `
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        ` : ''}
+                    </button>
+                </div>
+            `;
+        }
+        
+        card.innerHTML = `
+            ${actionsHtml}
+            <div class="habit-header">
+                <div class="habit-icon-circle" style="background-color: ${getEmojiBg(habit.icon || '💪')}">
+                    ${habit.icon || '💪'}
+                </div>
+                <div class="habit-title-container">
+                    <div class="habit-title" title="${habit.title}">${habit.title}</div>
+                    <div class="habit-stats">
+                        <div class="habit-stat-item">
+                            <span>⚡</span> ${formatTotalCheckins(total)}
+                        </div>
+                        <div class="habit-stat-item">
+                            <span>🔥</span> День ${streak}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="habit-circles-row">
+                ${circlesHtml}
+            </div>
+        `;
+        
+        card.querySelectorAll('.habit-circle').forEach(circleBtn => {
+            circleBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (!currentUid) return;
+                
+                const targetDate = circleBtn.getAttribute('data-date');
+                let newHistory = [...historyArray];
+                
+                if (historySet.has(targetDate)) {
+                    newHistory = newHistory.filter(d => d !== targetDate);
+                } else {
+                    newHistory.push(targetDate);
+                }
+                
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'habits', habit.id), {
+                        history: newHistory
+                    });
+                } catch (err) {
+                    console.error("Ошибка при обновлении привычки:", err);
+                }
+            });
+        });
+        
+        card.querySelector('.btn-edit').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openHabitModal(habit);
+        });
+        
+        card.querySelector('.btn-delete').addEventListener('click', (e) => {
+            e.stopPropagation();
+            showCustomConfirm('Удаление', `Вы действительно хотите удалить привычку "${habit.title}"?`, 'Удалить', async () => {
+                try {
+                    await deleteDoc(doc(db, 'users', currentUid, 'habits', habit.id));
+                } catch (err) {
+                    console.error("Ошибка при удалении привычки:", err);
+                }
+            });
+        });
+        
+        grid.appendChild(card);
+    });
+}
+
+function openHabitModal(habit = null) {
+    const existing = document.querySelector('.habit-modal-overlay');
+    if (existing) existing.remove();
+    
+    const isEdit = !!habit;
+    let selectedIcon = habit ? (habit.icon || '💪') : '💪';
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'habit-modal-overlay countdown-modal-overlay';
+    
+    overlay.innerHTML = `
+        <div class="countdown-modal-card">
+            <div class="countdown-modal-header">
+                <span class="countdown-modal-title">${isEdit ? 'Редактировать' : 'Добавить'} привычку</span>
+                <button class="countdown-modal-close" id="btnCloseHabitModal">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="countdown-modal-row" style="margin-top: 16px; margin-bottom: 24px;">
+                <div class="countdown-icon-select" id="btnHabitIconSelect">
+                    <span id="habitSelectedIcon">${selectedIcon}</span>
+                    <div class="countdown-icon-edit-badge">✎</div>
+                </div>
+                <div class="countdown-input-wrapper">
+                    <input type="text" class="countdown-input" id="inputHabitTitle" placeholder="Название" value="${habit ? habit.title : ''}" maxlength="50" autocomplete="off">
+                    <svg class="countdown-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="countdown-modal-footer">
+                <button class="countdown-btn-cancel" id="btnCancelHabit">Отмена</button>
+                <button class="countdown-btn-ok" id="btnSaveHabit">OK</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    const inputTitle = overlay.querySelector('#inputHabitTitle');
+    const btnIconSelect = overlay.querySelector('#btnHabitIconSelect');
+    const selectedIconEl = overlay.querySelector('#habitSelectedIcon');
+    const btnClose = overlay.querySelector('#btnCloseHabitModal');
+    const btnCancel = overlay.querySelector('#btnCancelHabit');
+    const btnSave = overlay.querySelector('#btnSaveHabit');
+    
+    let activeEmojiPopover = null;
+    btnIconSelect.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (activeEmojiPopover) {
+            activeEmojiPopover.remove();
+            activeEmojiPopover = null;
+            return;
+        }
+        
+        const emojis = ['💪', '🏃', '💧', '📖', '🍏', '😴', '🧘', '👂', '💻', '✍️', '🪥', '💵', '🎵', '🚭', '☕', '🌟'];
+        const popover = document.createElement('div');
+        popover.className = 'emoji-popover';
+        emojis.forEach(emo => {
+            const item = document.createElement('div');
+            item.className = 'emoji-popover-item';
+            item.innerText = emo;
+            item.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                selectedIcon = emo;
+                selectedIconEl.innerText = emo;
+                popover.remove();
+                activeEmojiPopover = null;
+            });
+            popover.appendChild(item);
+        });
+        
+        btnIconSelect.appendChild(popover);
+        activeEmojiPopover = popover;
+    });
+    
+    document.addEventListener('click', () => {
+        if (activeEmojiPopover) {
+            activeEmojiPopover.remove();
+            activeEmojiPopover = null;
+        }
+    });
+    
+    const closeModal = () => {
+        overlay.remove();
+    };
+    
+    btnClose.addEventListener('click', closeModal);
+    btnCancel.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+    
+    btnSave.addEventListener('click', async () => {
+        const title = inputTitle.value.trim();
+        if (!title) {
+            showCustomConfirm('Внимание', 'Пожалуйста, введите название привычки.', 'OK', () => {});
+            return;
+        }
+        
+        const data = {
+            title,
+            icon: selectedIcon,
+        };
+        
+        try {
+            if (isEdit) {
+                await updateDoc(doc(db, 'users', currentUid, 'habits', habit.id), data);
+            } else {
+                await addDoc(collection(db, 'users', currentUid, 'habits'), {
+                    ...data,
+                    history: [],
+                    createdAt: serverTimestamp()
+                });
+            }
+            closeModal();
+        } catch (err) {
+            console.error("Ошибка при сохранении привычки:", err);
+            showCustomConfirm('Ошибка', 'Не удалось сохранить. Попробуйте еще раз.', 'OK', () => {});
+        }
+    });
+}
+
+function initHabitEvents() {
+    const btnHabitAdd = document.getElementById('btnHabitAdd');
+    if (btnHabitAdd) {
+        btnHabitAdd.addEventListener('click', () => {
+            openHabitModal();
+        });
+    }
+}
+
+initHabitEvents();
+window.renderHabits = renderHabits;
+window.openHabitModal = openHabitModal;
+window.startHabitsForUser = startHabitsForUser;
+window.stopHabitsForUser = stopHabitsForUser;
+
 
 

@@ -764,6 +764,8 @@ function exitDrawingMode(save = false) {
             y: minY,
             width: w,
             height: h,
+            originalWidth: w,
+            originalHeight: h,
             strokes: shiftedStrokes,
             zIndex: maxZ + 1
         };
@@ -1010,7 +1012,9 @@ function renderElements() {
 
         if (el.type === 'drawing') {
             const svgEl = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-            svgEl.setAttribute("viewBox", `0 0 ${el.width} ${el.height}`);
+            const viewW = el.originalWidth || el.width;
+            const viewH = el.originalHeight || el.height;
+            svgEl.setAttribute("viewBox", `0 0 ${viewW} ${viewH}`);
             svgEl.setAttribute("width", "100%");
             svgEl.setAttribute("height", "100%");
 
@@ -1107,11 +1111,20 @@ function renderElements() {
                 e.stopPropagation();
             });
 
-            // Двойной клик активирует редактирование с размещением курсора в месте клика
             elDiv.addEventListener('dblclick', (e) => {
                 e.stopPropagation();
                 textEl.contentEditable = "true";
                 textEl.focus();
+                
+                // Перемещаем курсор в конец текста
+                if (window.getSelection && document.createRange) {
+                    const range = document.createRange();
+                    range.selectNodeContents(textEl);
+                    range.collapse(false); // false означает схлопнуть в конец
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
             });
 
             elDiv.appendChild(textEl);
@@ -1197,6 +1210,7 @@ function renderElements() {
         elementsLayer.appendChild(elDiv);
     });
     updateElementOptionsPanel();
+    updateSelectionOverlay();
 }
 
 // === ОБРАБОТКА ДРАГ-Н-ДРОПА, РЕСАЙЗА И РИСОВАНИЯ ===
@@ -1272,6 +1286,29 @@ boardViewport.addEventListener('mousedown', (e) => {
             startWidth: boardConfig.width,
             startHeight: boardConfig.height
         };
+        e.preventDefault();
+        return;
+    }
+
+    // 2.5. Ресайз через оверлей (selection overlay)
+    if (target.classList.contains('selection-overlay-handle')) {
+        saveUndoState();
+        const handleType = target.className.split(' ').find(c => c.startsWith('handle-')).replace('handle-', '');
+        
+        if (selectedElementIds.size === 1) {
+            const singleId = Array.from(selectedElementIds)[0];
+            dragStartInfo = {
+                type: 'resize',
+                id: singleId,
+                handle: handleType,
+                startX: e.clientX,
+                startY: e.clientY,
+                startW: elements[singleId].width,
+                startH: elements[singleId].height,
+                startXPos: elements[singleId].x,
+                startYPos: elements[singleId].y
+            };
+        }
         e.preventDefault();
         return;
     }
@@ -1365,6 +1402,7 @@ boardViewport.addEventListener('mousedown', (e) => {
             e.preventDefault();
         }
     }
+    updateSelectionOverlay();
 });
 
 boardViewport.addEventListener('mousemove', (e) => {
@@ -1538,22 +1576,108 @@ boardViewport.addEventListener('mousemove', (e) => {
     // Ресайз элемента (одиночный)
     else if (dragStartInfo.type === 'resize') {
         const el = elements[dragStartInfo.id];
-        el.width = Math.max(60, dragStartInfo.startW + deltaX);
-        el.height = Math.max(40, dragStartInfo.startH + deltaY);
+        const handle = dragStartInfo.handle;
+        
+        let minW = 60;
+        let minH = 40;
+        if (el.type === 'text') {
+            minW = 160;
+            minH = 48;
+        } else if (el.type === 'sticker') {
+            minW = 80;
+            minH = 80;
+        }
+        
+        let newWidth = el.width;
+        let newHeight = el.height;
+        let newX = el.x;
+        let newY = el.y;
+        
+        const lockAspectRatio = (el.type === 'drawing' || el.type === 'image');
+        const ratio = dragStartInfo.startW / dragStartInfo.startH;
+        
+        if (lockAspectRatio) {
+            let targetWidth = dragStartInfo.startW;
+            if (handle === 'br' || handle === 'tr') {
+                targetWidth = dragStartInfo.startW + deltaX;
+            } else {
+                targetWidth = dragStartInfo.startW - deltaX;
+            }
+            
+            let targetHeight = targetWidth / ratio;
+            if (targetWidth < minW) {
+                targetWidth = minW;
+                targetHeight = targetWidth / ratio;
+            }
+            if (targetHeight < minH) {
+                targetHeight = minH;
+                targetWidth = targetHeight * ratio;
+            }
+            
+            newWidth = targetWidth;
+            newHeight = targetHeight;
+            
+            if (handle === 'bl' || handle === 'tl') {
+                newX = dragStartInfo.startXPos + (dragStartInfo.startW - newWidth);
+            }
+            if (handle === 'tr' || handle === 'tl') {
+                newY = dragStartInfo.startYPos + (dragStartInfo.startH - newHeight);
+            }
+        } else {
+            if (handle === 'br') {
+                newWidth = Math.max(minW, dragStartInfo.startW + deltaX);
+                newHeight = Math.max(minH, dragStartInfo.startH + deltaY);
+            } else if (handle === 'bl') {
+                newWidth = Math.max(minW, dragStartInfo.startW - deltaX);
+                newHeight = Math.max(minH, dragStartInfo.startH + deltaY);
+                if (newWidth > minW) {
+                    newX = dragStartInfo.startXPos + deltaX;
+                }
+            } else if (handle === 'tr') {
+                newWidth = Math.max(minW, dragStartInfo.startW + deltaX);
+                newHeight = Math.max(minH, dragStartInfo.startH - deltaY);
+                if (newHeight > minH) {
+                    newY = dragStartInfo.startYPos + deltaY;
+                }
+            } else if (handle === 'tl') {
+                newWidth = Math.max(minW, dragStartInfo.startW - deltaX);
+                newHeight = Math.max(minH, dragStartInfo.startH - deltaY);
+                if (newWidth > minW) {
+                    newX = dragStartInfo.startXPos + deltaX;
+                }
+                if (newHeight > minH) {
+                    newY = dragStartInfo.startYPos + deltaY;
+                }
+            }
+        }
+        
+        el.width = newWidth;
+        el.height = newHeight;
+        el.x = newX;
+        el.y = newY;
 
         const elDiv = document.querySelector(`.board-element[data-id="${el.id}"]`);
         if (elDiv) {
             elDiv.style.width = `${el.width}px`;
             elDiv.style.height = `${el.height}px`;
+            elDiv.style.left = `${el.x}px`;
+            elDiv.style.top = `${el.y}px`;
         }
     }
     
     if (typeof updateElementOptionsPanel === 'function') {
         updateElementOptionsPanel();
     }
+    updateSelectionOverlay();
 });
 
 boardViewport.addEventListener('mouseup', (e) => {
+    setTimeout(() => {
+        updateSelectionOverlay();
+        if (typeof updateElementOptionsPanel === 'function') {
+            updateElementOptionsPanel();
+        }
+    }, 0);
     if (isPanning) {
         isPanning = false;
         boardViewport.style.cursor = isSpacePressed ? 'grab' : 'default';
@@ -1632,6 +1756,7 @@ boardViewport.addEventListener('mouseup', (e) => {
     if (typeof updateElementOptionsPanel === 'function') {
         updateElementOptionsPanel();
     }
+    updateSelectionOverlay();
 });
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
@@ -1792,52 +1917,74 @@ setTimeout(() => {
 function updateElementOptionsPanel() {
     const panel = document.getElementById('elementOptionsPanel');
     const popup = document.getElementById('elementSettingsPopup');
+    const btnColor = document.getElementById('btnOptColor');
     
-    if (selectedElementIds.size === 1 && activeTool === 'select') {
-        const id = Array.from(selectedElementIds)[0];
-        const el = elements[id];
+    if (selectedElementIds.size >= 1 && activeTool === 'select') {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        let hasValidElement = false;
         
-        // Показываем плашку только для настраиваемых типов
-        if (el && (el.type === 'text' || el.type === 'sticker' || el.type === 'frame' || el.type === 'link')) {
+        selectedElementIds.forEach(id => {
+            const el = elements[id];
+            if (el) {
+                hasValidElement = true;
+                minX = Math.min(minX, el.x);
+                minY = Math.min(minY, el.y);
+                maxX = Math.max(maxX, el.x + el.width);
+                maxY = Math.max(maxY, el.y + el.height);
+            }
+        });
+        
+        if (hasValidElement) {
             panel.style.display = 'flex';
             
-            const elDiv = document.querySelector(`.board-element[data-id="${id}"]`);
-            if (elDiv) {
-                const rect = elDiv.getBoundingClientRect();
-                const viewportRect = boardViewport.getBoundingClientRect();
-                
-                // Вычисляем координаты относительно viewport
-                const top = rect.top - viewportRect.top - 48; // на 48px выше элемента
-                const left = rect.left - viewportRect.left + (rect.width - panel.offsetWidth) / 2;
-                
-                panel.style.top = `${Math.max(10, top)}px`;
-                panel.style.left = `${Math.max(10, left)}px`;
+            const isMultiSelect = selectedElementIds.size > 1;
+            let singleEl = null;
+            if (!isMultiSelect) {
+                singleEl = elements[Array.from(selectedElementIds)[0]];
             }
             
-            // Синхронизируем цвета
-            popup.querySelectorAll('.popup-color-opt').forEach(opt => {
-                if (opt.getAttribute('data-color') === el.color) {
-                    opt.classList.add('active');
-                } else {
-                    opt.classList.remove('active');
-                }
-            });
+            if (isMultiSelect || (singleEl && (singleEl.type === 'drawing' || singleEl.type === 'image'))) {
+                btnColor.style.display = 'none';
+                popup.classList.remove('active');
+            } else {
+                btnColor.style.display = 'block';
+            }
             
-            // Синхронизируем тени
-            popup.querySelectorAll('.shadow-opt-btn').forEach(btn => {
-                if (btn.getAttribute('data-shadow') === (el.shadowType || 'box')) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
+            const canvasRect = boardCanvas.getBoundingClientRect();
+            const viewportRect = boardViewport.getBoundingClientRect();
             
-            // Синхронизируем скругление
-            const brSlider = document.getElementById('sliderCornerRadius');
-            const brLabel = document.getElementById('lblCornerRadiusValue');
-            const currentBr = el.borderRadius !== undefined ? el.borderRadius : 8;
-            brSlider.value = currentBr;
-            brLabel.innerText = `${currentBr}px`;
+            const left = canvasRect.left - viewportRect.left + minX * zoom + ((maxX - minX) * zoom - panel.offsetWidth) / 2;
+            const top = canvasRect.top - viewportRect.top + minY * zoom - 48;
+            
+            panel.style.top = `${Math.max(10, top)}px`;
+            panel.style.left = `${Math.max(10, left)}px`;
+            
+            if (!isMultiSelect && singleEl && singleEl.type !== 'drawing' && singleEl.type !== 'image') {
+                // Синхронизируем цвета
+                popup.querySelectorAll('.popup-color-opt').forEach(opt => {
+                    if (opt.getAttribute('data-color') === singleEl.color) {
+                        opt.classList.add('active');
+                    } else {
+                        opt.classList.remove('active');
+                    }
+                });
+                
+                // Синхронизируем тени
+                popup.querySelectorAll('.shadow-opt-btn').forEach(btn => {
+                    if (btn.getAttribute('data-shadow') === (singleEl.shadowType || 'box')) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+                
+                // Синхронизируем скругление
+                const brSlider = document.getElementById('sliderCornerRadius');
+                const brLabel = document.getElementById('lblCornerRadiusValue');
+                const currentBr = singleEl.borderRadius !== undefined ? singleEl.borderRadius : 8;
+                brSlider.value = currentBr;
+                brLabel.innerText = `${currentBr}px`;
+            }
             
             return;
         }
@@ -1849,6 +1996,7 @@ function updateElementOptionsPanel() {
 
 function initElementOptionsPanel() {
     const btnColor = document.getElementById('btnOptColor');
+    const btnDelete = document.getElementById('btnOptDelete');
     const popup = document.getElementById('elementSettingsPopup');
     const sliderBr = document.getElementById('sliderCornerRadius');
     const labelBr = document.getElementById('lblCornerRadiusValue');
@@ -1858,6 +2006,21 @@ function initElementOptionsPanel() {
         e.stopPropagation();
         popup.classList.toggle('active');
     });
+
+    if (btnDelete) {
+        btnDelete.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (selectedElementIds.size > 0) {
+                saveUndoState();
+                const ids = Array.from(selectedElementIds);
+                ids.forEach(id => {
+                    deleteElement(id);
+                });
+                selectedElementIds.clear();
+                renderElements();
+            }
+        });
+    }
     
     // Закрытие попапа и сброс выделения при клике вне элементов
     document.addEventListener('mousedown', (e) => {
@@ -1867,7 +2030,9 @@ function initElementOptionsPanel() {
             !e.target.closest('#textFormatToolbar') && 
             !e.target.closest('.board-element') && 
             !e.target.closest('.board-toolbar') && 
-            !e.target.closest('.board-header')) {
+            !e.target.closest('.board-header') &&
+            !e.target.closest('.selection-overlay-box') &&
+            !e.target.closest('.selection-overlay-handle')) {
             selectedElementIds.clear();
             renderElements();
         } else if (!e.target.closest('#elementOptionsPanel')) {
@@ -2072,3 +2237,51 @@ function initTextFormatToolbar() {
 
 initElementOptionsPanel();
 initTextFormatToolbar();
+
+function updateSelectionOverlay() {
+    let overlay = document.getElementById('selectionOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'selectionOverlay';
+        overlay.className = 'selection-overlay-box';
+        
+        const handles = ['tl', 'tr', 'bl', 'br'];
+        handles.forEach(h => {
+            const handleEl = document.createElement('div');
+            handleEl.className = `selection-overlay-handle handle-${h}`;
+            overlay.appendChild(handleEl);
+        });
+        
+        boardCanvas.appendChild(overlay);
+    }
+    
+    if (selectedElementIds.size === 0) {
+        overlay.style.display = 'none';
+        return;
+    }
+    
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let hasValidElement = false;
+    
+    selectedElementIds.forEach(id => {
+        const el = elements[id];
+        if (el) {
+            hasValidElement = true;
+            minX = Math.min(minX, el.x);
+            minY = Math.min(minY, el.y);
+            maxX = Math.max(maxX, el.x + el.width);
+            maxY = Math.max(maxY, el.y + el.height);
+        }
+    });
+    
+    if (!hasValidElement) {
+        overlay.style.display = 'none';
+        return;
+    }
+    
+    overlay.style.display = 'block';
+    overlay.style.left = `${minX}px`;
+    overlay.style.top = `${minY}px`;
+    overlay.style.width = `${maxX - minX}px`;
+    overlay.style.height = `${maxY - minY}px`;
+}

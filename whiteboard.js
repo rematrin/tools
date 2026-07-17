@@ -834,13 +834,16 @@ function createNewElement(type, x, y, extra = {}) {
 
     const maxZ = Object.values(elements).reduce((max, el) => Math.max(max, el.zIndex || 0), 0);
 
+    const finalWidth = extra.width || width;
+    const finalHeight = extra.height || height;
+
     const elData = {
         id,
         type,
-        x: Math.max(0, Math.min(x - width / 2, boardConfig.width - width)),
-        y: Math.max(0, Math.min(y - height / 2, boardConfig.height - height)),
-        width,
-        height,
+        x: Math.max(0, Math.min(x - finalWidth / 2, boardConfig.width - finalWidth)),
+        y: Math.max(0, Math.min(y - finalHeight / 2, boardConfig.height - finalHeight)),
+        width: finalWidth,
+        height: finalHeight,
         zIndex: maxZ + 1,
         color: type === 'text' ? '#ffffff' : activeColor, // Текстовый блок изначально белый
         ...extra
@@ -884,38 +887,306 @@ btnUrlConfirm.addEventListener('click', async () => {
     });
 });
 
-tools.image.addEventListener('click', () => {
-    imageFileInput.click();
-});
-
-imageFileInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    showSaveStatus("Загрузка картинки...");
-
-    try {
-        const formData = new FormData();
-        formData.append('image', file);
-
-        const res = await fetch('https://api.imgbb.com/1/upload?key=fbd88ce7045582e4c4176c67de93ceee', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!res.ok) throw new Error("Ошибка сервера Imgbb");
-
-        const data = await res.json();
-        const imageUrl = data.data.url;
-
-        createNewElement('image', undefined, undefined, {
-            imageUrl: imageUrl
-        });
-    } catch (err) {
-        console.error("Ошибка загрузки изображения:", err);
-        alert("Не удалось загрузить изображение. Пожалуйста, попробуйте снова.");
-        showSaveStatus("Ошибка загрузки");
+async function uploadToImgBB(base64OrBlob) {
+    const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee';
+    const formData = new FormData();
+    if (typeof base64OrBlob === 'string') {
+        const cleanBase64 = base64OrBlob.split(',')[1];
+        formData.append('image', cleanBase64);
+    } else {
+        formData.append('image', base64OrBlob);
     }
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+        method: 'POST',
+        body: formData
+    });
+    const result = await response.json();
+    if (result.success) return result.data.url; else throw new Error('ImgBB Upload Failed');
+}
+
+function openImageUploadModal(onUploadSuccess) {
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-confirm-overlay';
+
+    overlay.innerHTML = `
+        <div class="confirm-box thumbnail-confirm-box" style="padding: 24px;">
+            <div class="confirm-title" style="font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                Картинка
+            </div>
+            
+            <div class="modal-tabs" style="flex-shrink: 0;">
+                <button class="modal-tab active" data-tab="file">Из файла</button>
+                <button class="modal-tab" data-tab="url">По ссылке</button>
+            </div>
+
+            <!-- Вкладка: Из файла -->
+            <div id="tab-content-file" class="tab-content-pane">
+                <div class="confirm-message" style="margin-bottom: 16px; font-size: 13px; opacity: 0.85; line-height: 1.4;">
+                    Загрузите изображение, вставьте из буфера обмена (Ctrl + V) или перетащите файл в область ниже.
+                </div>
+
+                <div id="icon-dropzone" class="icon-dropzone" style="margin-bottom: 16px;">
+                    <div class="dropzone-preview" style="max-width: 100%; display: flex; align-items: center; justify-content: center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-icon lucide-upload" style="opacity: 0.6; color: var(--text-sec);"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+                    </div>
+                    <div class="dropzone-text" style="font-size: 13px; font-weight: 500; margin-top: 8px;">
+                        Кликните для выбора файла или перетащите его сюда
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вкладка: По ссылке -->
+            <div id="tab-content-url" class="tab-content-pane" style="display: none;">
+                <div class="confirm-message" style="margin-bottom: 16px; font-size: 13px; opacity: 0.85; line-height: 1.4;">
+                    Вставьте прямую ссылку на изображение в поле ниже.
+                </div>
+                
+                <input type="text" id="modal-url-input" class="modal-url-input-field" placeholder="https://site.com/image.png" autocomplete="off">
+            </div>
+
+            <!-- Скрытый инпут для выбора файла -->
+            <input type="file" id="modalIconFileInput" accept="image/*" style="display: none;">
+
+            <!-- Общие действия -->
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto; flex-shrink: 0;">
+                <button class="confirm-btn-primary" id="btn-select-file" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Выбрать файл...</button>
+                <button class="confirm-btn-primary" id="btn-load-link" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%; display: none;">Сохранить</button>
+                
+                <button class="confirm-btn-secondary" id="btn-close-icon-modal" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Отмена</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const dropzone = overlay.querySelector('#icon-dropzone');
+    const fileInput = overlay.querySelector('#modalIconFileInput');
+    const selectFileBtn = overlay.querySelector('#btn-select-file');
+    const closeBtn = overlay.querySelector('#btn-close-icon-modal');
+    
+    const tabBtns = overlay.querySelectorAll('.modal-tab');
+    const tabPanes = overlay.querySelectorAll('.tab-content-pane');
+    const urlInput = overlay.querySelector('#modal-url-input');
+    const loadLinkBtn = overlay.querySelector('#btn-load-link');
+
+    // Переключение вкладок
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const targetTab = btn.dataset.tab;
+            tabPanes.forEach(pane => pane.style.display = 'none');
+            overlay.querySelector(`#tab-content-${targetTab}`).style.display = 'flex';
+            
+            if (targetTab === 'file') {
+                selectFileBtn.style.display = 'block';
+                loadLinkBtn.style.display = 'none';
+            } else if (targetTab === 'url') {
+                selectFileBtn.style.display = 'none';
+                loadLinkBtn.style.display = 'block';
+                if (urlInput) {
+                    setTimeout(() => urlInput.focus(), 100);
+                }
+            }
+        });
+    });
+
+    // 1. Paste handler (Ctrl + V)
+    async function handlePaste(e) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (const item of items) {
+            if (item.type.indexOf("image") === 0) {
+                const file = item.getAsFile();
+                await processAndUpload(file);
+                break;
+            }
+        }
+    }
+    document.addEventListener('paste', handlePaste);
+
+    // 2. Drag & Drop handler
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#1070e5';
+        dropzone.style.background = 'rgba(16, 112, 229, 0.05)';
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.borderColor = '';
+        dropzone.style.background = '';
+    });
+
+    dropzone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '';
+        dropzone.style.background = '';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            await processAndUpload(file);
+        }
+    });
+
+    // 3. Selection
+    dropzone.addEventListener('click', () => fileInput.click());
+    selectFileBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) await processAndUpload(file);
+    });
+
+    // 4. Link Upload
+    loadLinkBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const urlVal = urlInput.value.trim();
+        if (!urlVal) return;
+
+        try {
+            setLoadingState(true);
+
+            const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(urlVal)}`;
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            
+            img.onload = async () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+                const dataUrl = canvas.toDataURL("image/png");
+                try {
+                    const hostedUrl = await uploadToImgBB(dataUrl);
+                    onUploadSuccess(hostedUrl);
+                    cleanup();
+                } catch (e) {
+                    console.error(e);
+                    alert('Не удалось сохранить изображение.');
+                    setLoadingState(false);
+                }
+            };
+
+            img.onerror = () => {
+                const directImg = new Image();
+                directImg.crossOrigin = "anonymous";
+                directImg.onload = async () => {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = directImg.width;
+                    canvas.height = directImg.height;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(directImg, 0, 0);
+                    const dataUrl = canvas.toDataURL("image/png");
+                    try {
+                        const hostedUrl = await uploadToImgBB(dataUrl);
+                        onUploadSuccess(hostedUrl);
+                        cleanup();
+                    } catch (e) {
+                        console.error(e);
+                        alert('Не удалось сохранить изображение.');
+                        setLoadingState(false);
+                    }
+                };
+                directImg.onerror = () => {
+                    alert('Не удалось загрузить изображение по указанной ссылке.');
+                    setLoadingState(false);
+                };
+                directImg.src = urlVal;
+            };
+
+            img.src = proxyUrl;
+        } catch (err) {
+            console.error(err);
+            alert('Ошибка загрузки.');
+            setLoadingState(false);
+        }
+    });
+
+    function setLoadingState(loading) {
+        const tabsContainer = overlay.querySelector('.modal-tabs');
+        if (loading) {
+            loadLinkBtn.disabled = true;
+            loadLinkBtn.innerText = 'Загрузка...';
+            selectFileBtn.disabled = true;
+            selectFileBtn.innerText = 'Загрузка...';
+            if (tabsContainer) {
+                tabsContainer.style.pointerEvents = 'none';
+                tabsContainer.style.opacity = '0.5';
+            }
+            dropzone.style.pointerEvents = 'none';
+            
+            dropzone.querySelector('.dropzone-preview').innerHTML = `
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation: spin 1s linear infinite;">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="8" fill="none" opacity="0.3"></circle>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+                </svg>
+            `;
+            dropzone.querySelector('.dropzone-text').innerText = 'Загрузка изображения...';
+        } else {
+            loadLinkBtn.disabled = false;
+            loadLinkBtn.innerText = 'Сохранить';
+            selectFileBtn.disabled = false;
+            selectFileBtn.innerText = 'Выбрать файл...';
+            if (tabsContainer) {
+                tabsContainer.style.pointerEvents = 'auto';
+                tabsContainer.style.opacity = '1';
+            }
+            dropzone.style.pointerEvents = 'auto';
+            
+            dropzone.querySelector('.dropzone-preview').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-icon lucide-upload" style="opacity: 0.6; color: var(--text-sec);"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>`;
+            dropzone.querySelector('.dropzone-text').innerText = 'Кликните для выбора файла или перетащите его сюда';
+        }
+    }
+
+    function cleanup() {
+        overlay.remove();
+        document.removeEventListener('paste', handlePaste);
+    }
+
+    closeBtn.addEventListener('click', cleanup);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) cleanup();
+    });
+
+    async function processAndUpload(file) {
+        setLoadingState(true);
+        try {
+            const hostedUrl = await uploadToImgBB(file);
+            onUploadSuccess(hostedUrl);
+            cleanup();
+        } catch (err) {
+            console.error('Error uploading image:', err);
+            alert('Не удалось загрузить изображение.');
+            setLoadingState(false);
+        }
+    }
+}
+
+tools.image.addEventListener('click', () => {
+    openImageUploadModal((imageUrl) => {
+        if (imageUrl) {
+            showSaveStatus("Загрузка картинки...");
+            const img = new Image();
+            img.onload = () => {
+                const aspect = img.width / img.height;
+                const targetWidth = 300;
+                const targetHeight = Math.round(targetWidth / aspect);
+                createNewElement('image', undefined, undefined, {
+                    imageUrl: imageUrl,
+                    width: targetWidth,
+                    height: targetHeight
+                });
+            };
+            img.onerror = () => {
+                createNewElement('image', undefined, undefined, {
+                    imageUrl: imageUrl
+                });
+            };
+            img.src = imageUrl;
+        }
+    });
 });
 
 // === РЕНДЕРИНГ ЭЛЕМЕНТОВ ===
@@ -1098,6 +1369,8 @@ function renderElements() {
 
             textEl.addEventListener('blur', () => {
                 textEl.contentEditable = "false";
+                const cleanHTML = linkifyHTML(textEl.innerHTML);
+                textEl.innerHTML = cleanHTML;
                 const newText = textEl.innerHTML;
                 if (el.content !== newText) {
                     saveUndoState();
@@ -1154,9 +1427,49 @@ function renderElements() {
             elDiv.appendChild(frameTitle);
         }
         else if (el.type === 'image') {
+            elDiv.style.display = 'flex';
+            elDiv.style.flexDirection = 'column';
+            
             const img = document.createElement('img');
             img.src = el.imageUrl;
+            img.style.flex = '1';
+            img.style.minHeight = '0';
+            img.style.width = '100%';
+            img.style.objectFit = 'cover';
+            img.style.pointerEvents = 'none';
             elDiv.appendChild(img);
+            
+            if (el.hasCaption) {
+                const capContainer = document.createElement('div');
+                capContainer.className = 'image-caption-container';
+                
+                const caption = document.createElement('div');
+                caption.className = 'image-caption';
+                caption.contentEditable = 'true';
+                caption.setAttribute('placeholder', 'Описание картинки...');
+                caption.innerHTML = el.caption || '';
+                
+                caption.addEventListener('blur', () => {
+                    saveUndoState();
+                    const cleanHTML = linkifyHTML(caption.innerHTML);
+                    caption.innerHTML = cleanHTML;
+                    el.caption = caption.innerHTML;
+                    saveElement(el);
+                });
+                
+                caption.addEventListener('keydown', (e) => {
+                    e.stopPropagation();
+                });
+
+                caption.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const text = e.clipboardData.getData('text/plain');
+                    document.execCommand('insertText', false, text);
+                });
+                
+                capContainer.appendChild(caption);
+                elDiv.appendChild(capContainer);
+            }
         }
         else if (el.type === 'link') {
             elDiv.innerHTML = '';
@@ -1594,7 +1907,12 @@ boardViewport.addEventListener('mousemove', (e) => {
         let newY = el.y;
         
         const lockAspectRatio = (el.type === 'drawing' || el.type === 'image');
-        const ratio = dragStartInfo.startW / dragStartInfo.startH;
+        let ratio;
+        if (el.type === 'image' && el.hasCaption) {
+            ratio = dragStartInfo.startW / Math.max(1, dragStartInfo.startH - 48);
+        } else {
+            ratio = dragStartInfo.startW / dragStartInfo.startH;
+        }
         
         if (lockAspectRatio) {
             let targetWidth = dragStartInfo.startW;
@@ -1604,14 +1922,30 @@ boardViewport.addEventListener('mousemove', (e) => {
                 targetWidth = dragStartInfo.startW - deltaX;
             }
             
-            let targetHeight = targetWidth / ratio;
-            if (targetWidth < minW) {
-                targetWidth = minW;
+            let targetHeight;
+            if (el.type === 'image' && el.hasCaption) {
+                targetHeight = (targetWidth / ratio) + 48;
+            } else {
                 targetHeight = targetWidth / ratio;
             }
-            if (targetHeight < minH) {
-                targetHeight = minH;
-                targetWidth = targetHeight * ratio;
+            
+            if (targetWidth < minW) {
+                targetWidth = minW;
+                if (el.type === 'image' && el.hasCaption) {
+                    targetHeight = (targetWidth / ratio) + 48;
+                } else {
+                    targetHeight = targetWidth / ratio;
+                }
+            }
+            
+            const minHeightLimit = el.type === 'image' && el.hasCaption ? (minH + 48) : minH;
+            if (targetHeight < minHeightLimit) {
+                targetHeight = minHeightLimit;
+                if (el.type === 'image' && el.hasCaption) {
+                    targetWidth = (targetHeight - 48) * ratio;
+                } else {
+                    targetWidth = targetHeight * ratio;
+                }
             }
             
             newWidth = targetWidth;
@@ -1943,11 +2277,22 @@ function updateElementOptionsPanel() {
                 singleEl = elements[Array.from(selectedElementIds)[0]];
             }
             
+            const btnAddText = document.getElementById('btnOptAddText');
+            const btnEditImage = document.getElementById('btnOptEditImage');
+
             if (isMultiSelect || (singleEl && (singleEl.type === 'drawing' || singleEl.type === 'image'))) {
                 btnColor.style.display = 'none';
                 popup.classList.remove('active');
             } else {
                 btnColor.style.display = 'block';
+            }
+
+            if (!isMultiSelect && singleEl && singleEl.type === 'image') {
+                if (btnAddText) btnAddText.style.display = 'block';
+                if (btnEditImage) btnEditImage.style.display = 'block';
+            } else {
+                if (btnAddText) btnAddText.style.display = 'none';
+                if (btnEditImage) btnEditImage.style.display = 'none';
             }
             
             const canvasRect = boardCanvas.getBoundingClientRect();
@@ -1997,6 +2342,8 @@ function updateElementOptionsPanel() {
 function initElementOptionsPanel() {
     const btnColor = document.getElementById('btnOptColor');
     const btnDelete = document.getElementById('btnOptDelete');
+    const btnAddText = document.getElementById('btnOptAddText');
+    const btnEditImage = document.getElementById('btnOptEditImage');
     const popup = document.getElementById('elementSettingsPopup');
     const sliderBr = document.getElementById('sliderCornerRadius');
     const labelBr = document.getElementById('lblCornerRadiusValue');
@@ -2006,6 +2353,58 @@ function initElementOptionsPanel() {
         e.stopPropagation();
         popup.classList.toggle('active');
     });
+
+    if (btnAddText) {
+        btnAddText.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (selectedElementIds.size === 1) {
+                const id = Array.from(selectedElementIds)[0];
+                const el = elements[id];
+                if (el && el.type === 'image') {
+                    saveUndoState();
+                    el.hasCaption = !el.hasCaption;
+                    if (el.hasCaption) {
+                        el.caption = el.caption || "";
+                        el.height += 48;
+                    } else {
+                        el.height = Math.max(80, el.height - 48);
+                    }
+                    saveElement(el);
+                    renderElements();
+                }
+            }
+        });
+    }
+
+    if (btnEditImage) {
+        btnEditImage.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (selectedElementIds.size === 1) {
+                const id = Array.from(selectedElementIds)[0];
+                const el = elements[id];
+                if (el && el.type === 'image') {
+                    openImageUploadModal((newUrl) => {
+                        if (newUrl) {
+                            saveUndoState();
+                            el.imageUrl = newUrl;
+                            const img = new Image();
+                            img.onload = () => {
+                                const aspect = img.width / img.height;
+                                el.height = Math.round(el.width / aspect) + (el.hasCaption ? 48 : 0);
+                                saveElement(el);
+                                renderElements();
+                            };
+                            img.onerror = () => {
+                                saveElement(el);
+                                renderElements();
+                            };
+                            img.src = newUrl;
+                        }
+                    });
+                }
+            }
+        });
+    }
 
     if (btnDelete) {
         btnDelete.addEventListener('click', (e) => {
@@ -2194,10 +2593,16 @@ function initTextFormatToolbar() {
     highlightPopup.querySelectorAll('.highlight-opt').forEach(opt => {
         opt.addEventListener('click', (e) => {
             const type = opt.getAttribute('data-type');
-            const color = opt.getAttribute('data-color');
+            let color = opt.getAttribute('data-color');
             if (type === 'fore') {
+                if (color === 'inherit') {
+                    color = getComputedStyle(document.body).getPropertyValue('--text-color').trim() || '#0f172a';
+                }
                 document.execCommand('foreColor', false, color);
             } else if (type === 'back') {
+                if (color === 'transparent') {
+                    color = 'rgba(0,0,0,0)';
+                }
                 document.execCommand('backColor', false, color);
             }
             highlightPopup.classList.remove('active');
@@ -2285,3 +2690,73 @@ function updateSelectionOverlay() {
     overlay.style.width = `${maxX - minX}px`;
     overlay.style.height = `${maxY - minY}px`;
 }
+
+function linkifyHTML(html) {
+    if (!html) return '';
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    const walk = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT, {
+        acceptNode: function(node) {
+            let parent = node.parentNode;
+            while (parent && parent !== tempDiv) {
+                if (parent.tagName === 'A') {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                parent = parent.parentNode;
+            }
+            return NodeFilter.FILTER_ACCEPT;
+        }
+    });
+
+    const urlRegex = /(https?:\/\/[^\s<]+)/gi;
+    const nodesToReplace = [];
+    
+    let textNode;
+    while (textNode = walk.nextNode()) {
+        if (urlRegex.test(textNode.nodeValue)) {
+            nodesToReplace.push(textNode);
+        }
+        urlRegex.lastIndex = 0;
+    }
+
+    nodesToReplace.forEach(node => {
+        const text = node.nodeValue;
+        const fragment = document.createDocumentFragment();
+        let lastIndex = 0;
+        
+        text.replace(urlRegex, (url, index) => {
+            if (index > lastIndex) {
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex, index)));
+            }
+            const a = document.createElement('a');
+            a.href = url.trim();
+            a.target = '_blank';
+            a.innerText = url;
+            a.setAttribute('draggable', 'false');
+            fragment.appendChild(a);
+            lastIndex = index + url.length;
+            return url;
+        });
+        
+        if (lastIndex < text.length) {
+            fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+        }
+        
+        if (node.parentNode) {
+            node.parentNode.replaceChild(fragment, node);
+        }
+    });
+    
+    return tempDiv.innerHTML;
+}
+
+// Глобальный перехватчик кликов по авто-ссылкам в текстовых редакторах
+document.addEventListener('click', (e) => {
+    const a = e.target.closest('a');
+    if (a && (e.target.closest('.el-text-content') || e.target.closest('.image-caption'))) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(a.href, '_blank');
+    }
+});

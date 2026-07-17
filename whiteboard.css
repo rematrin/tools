@@ -569,13 +569,47 @@ path.selected {
 .el-image {
     padding: 0;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .el-image img {
+    flex: 1;
+    min-height: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     pointer-events: none;
+}
+
+.image-caption-container {
+    background: #ffffff;
+    border-top: 1px solid var(--border-color);
+    padding: 8px;
+    box-sizing: border-box;
+    display: flex;
+    flex-shrink: 0;
+    width: 100%;
+}
+body.dark .image-caption-container {
+    background: #1e293b;
+}
+.image-caption {
+    width: 100%;
+    outline: none;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text-color);
+    cursor: text;
+    text-align: center;
+}
+.image-caption[contenteditable="true"]:empty:before {
+    content: attr(placeholder);
+    display: block;
+    color: var(--text-sec);
+    opacity: 0.7;
 }
 
 /* === ПАНЕЛЬ ВЫБОРА ЦВЕТА === */
@@ -1567,5 +1601,269 @@ body.dark .mobile-readonly-banner {
     cursor: pointer;
     margin-right: 6px;
     flex-shrink: 0;
+}
+
+/* --- СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА КАРТИНКИ --- */
+.custom-confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirm-box {
+    background: #f4f4f4;
+    width: 320px;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(0);
+    animation: scaleBounce 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+body.dark .confirm-box {
+    background: #1e1e1e;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+@keyframes scaleBounce {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.confirm-title {
+    font-weight: 700;
+    font-size: 16px;
+    color: #000;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+body.dark .confirm-title {
+    color: #fff;
+}
+
+.confirm-message {
+    font-size: 14px;
+    color: #444;
+    line-height: 1.4;
+    margin-bottom: 20px;
+}
+
+body.dark .confirm-message {
+    color: #aaa;
+}
+
+.confirm-btn-primary {
+    background: #397ce6;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: background 0.1s;
+    text-align: center;
+}
+
+.confirm-btn-primary:hover {
+    background: #0d5ec4;
+}
+
+.confirm-btn-secondary {
+    background: #fff;
+    border: 1px solid #dcdcdc;
+    color: #333;
+    border-radius: 8px;
+    padding: 10px;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.1s;
+    text-align: center;
+}
+
+body.dark .confirm-btn-secondary {
+    background: #333;
+    border-color: #444;
+    color: #fff;
+}
+
+.confirm-btn-secondary:hover {
+    background: #f9f9f9;
+}
+
+body.dark .confirm-btn-secondary:hover {
+    background: #3a3a3a;
+}
+
+.confirm-btn-delete {
+    background: #fff5f5;
+    border: 1px solid rgba(255, 95, 86, 0.15);
+    color: #ff5f56;
+    border-radius: 8px;
+    padding: 10px;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: background 0.1s;
+    text-align: center;
+}
+
+.confirm-btn-delete:hover {
+    background: #ffebeb;
+}
+
+body.dark .confirm-btn-delete {
+    background: rgba(255, 95, 86, 0.1);
+    border-color: rgba(255, 95, 86, 0.2);
+    color: #ff5f56;
+}
+
+body.dark .confirm-btn-delete:hover {
+    background: rgba(255, 95, 86, 0.15);
+}
+
+.icon-dropzone {
+    border: 2px dashed rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.2s ease;
+    background: rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: #444;
+}
+
+body.dark .icon-dropzone {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.02);
+    color: #aaa;
+}
+
+.icon-dropzone:hover {
+    border-color: #1070e5;
+    background: rgba(16, 112, 229, 0.05);
+}
+
+/* Modal Tabs */
+.modal-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    margin-bottom: 16px;
+    gap: 8px;
+}
+
+body.dark .modal-tabs {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.modal-tab {
+    flex: 1;
+    padding: 8px 0 10px 0;
+    background: none;
+    border: none;
+    font-weight: 500;
+    font-size: 14px;
+    color: #888;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s ease;
+    text-align: center;
+}
+
+.modal-tab:hover {
+    color: #444;
+}
+
+body.dark .modal-tab:hover {
+    color: #ccc;
+}
+
+.modal-tab.active {
+    font-weight: 600;
+    color: #3b62db;
+    border-bottom-color: #3b62db;
+}
+
+body.dark .modal-tab.active {
+    color: #3b62db;
+    border-bottom-color: #3b62db;
+}
+
+.tab-content-pane {
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+}
+
+.thumbnail-confirm-box {
+    width: 360px !important;
+    height: 510px !important;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Spin animation for spinner */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Modal Input for URLs */
+.modal-url-input-field {
+    width: 100%;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #dcdcdc;
+    background: #fff;
+    color: #000;
+}
+
+body.dark .modal-url-input-field {
+    border-color: #444;
+    background: #252525;
+    color: #fff;
+}
+
+/* Стилизация ссылок в тексте и описаниях картинок */
+.el-text-content a, .image-caption a {
+    color: #2563eb !important;
+    text-decoration: underline !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+body.dark .el-text-content a, body.dark .image-caption a {
+    color: #60a5fa !important;
 }
 

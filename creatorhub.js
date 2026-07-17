@@ -1545,7 +1545,7 @@ function selectVideoItem(id) {
     }
     if (infoDescriptionViewer) {
         updateDescriptionViewer(selectedVideo.description);
-        infoDescription.style.display = "none";
+        if (infoDescription) infoDescription.style.display = "none";
         infoDescriptionViewer.style.display = "block";
     }
     
@@ -1884,7 +1884,7 @@ function clearDetailSidebar() {
         detailStatusSelect.value = "idea";
     }
     detailStatusDot.className = "status-dot";
-    infoDescription.value = "";
+    if (infoDescription) infoDescription.value = "";
     if (infoDescriptionViewer) {
         infoDescriptionViewer.innerHTML = "";
     }

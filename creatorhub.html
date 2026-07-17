@@ -304,21 +304,12 @@
             <!-- Заголовок и статус -->
             <div class="detail-title-block">
                 <h3 id="detailTitle">Выберите видео из списка</h3>
-                <div class="detail-status-wrapper">
-                    <span id="detailStatusDot" class="status-dot"></span>
-                    <select id="detailStatusSelect" class="status-select">
-                        <option value="idea">Идея</option>
-                        <option value="in_progress">Черновик</option>
-                        <option value="editing">В процессе</option>
-                        <option value="published">Опубликовано</option>
-                    </select>
-                </div>
             </div>
 
             <!-- Вкладки деталей -->
             <div class="detail-tabs">
                 <button class="detail-tab-btn active" data-tab="info">Информация</button>
-                <button class="detail-tab-btn" data-tab="references">Референсы</button>
+                <button class="detail-tab-btn" data-tab="references">Описание</button>
                 <button class="detail-tab-btn" data-tab="settings">Настройки</button>
             </div>
 
@@ -328,12 +319,16 @@
                 <div class="tab-pane active" id="pane-info">
                     <!-- Блок: Описание и свойства -->
                     <div class="detail-card">
-                        <div class="info-group" style="position: relative;">
-                            <label class="info-label">Описание</label>
-                            <textarea id="infoDescription" class="info-description-textarea"
-                                placeholder="Напишите здесь описание видео..." style="display: none;"></textarea>
-                            <div id="infoDescriptionViewer" class="info-description-textarea info-description-viewer"
-                                style="min-height: 100px; cursor: pointer; white-space: pre-wrap; overflow-y: auto;">
+                        <div class="info-group flex-row">
+                            <span class="info-label">Статус</span>
+                            <div class="detail-status-wrapper">
+                                <span id="detailStatusDot" class="status-dot"></span>
+                                <select id="detailStatusSelect" class="status-select">
+                                    <option value="idea">Идея</option>
+                                    <option value="in_progress">Черновик</option>
+                                    <option value="editing">В процессе</option>
+                                    <option value="published">Опубликовано</option>
+                                </select>
                             </div>
                         </div>
 

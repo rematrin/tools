@@ -1,5 +1,5 @@
 const fs = require('fs');
-const html = fs.readFileSync('crossfade.html', 'utf8');
+const html = fs.readFileSync('playlists.html', 'utf8');
 
 // Quick and dirty testing of the extract logic
 function extractVideoId(url) {

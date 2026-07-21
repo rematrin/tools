@@ -2158,14 +2158,21 @@
         }
 
         function extractVideoId(url) {
-
-            var regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+            url = url.trim();
+            if (/^[a-zA-Z0-9_-]{11}$/.test(url)) {
+                return url;
+            }
+            var regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=|shorts\/)|youtu\.be\/)([^"&?\/ ]{11})/;
             var match = url.match(regExp);
-            return (match && match[7].length == 11) ? match[7] : false;
+            return (match && match[1]) ? match[1] : false;
         }
 
         function extractListId(url) {
-            let reg = /[?&]list=([^#\&\?]+)/;
+            url = url.trim();
+            if (/^(PL|UU|LL|RD|FL|OLAK5uy_)[a-zA-Z0-9_-]{12,}$/.test(url)) {
+                return url;
+            }
+            let reg = /[?&]list=([^#\&\? ]+)/;
             let match = url.match(reg);
             return (match && match[1]) ? match[1] : null;
         }
@@ -2276,7 +2283,20 @@
                     } else {
                         window.currentListId = null;
                     }
-                    ids.forEach(vid => playlist.push({ id: vid, title: "Video ID: " + vid }));
+
+                    let cachedMap = null;
+                    if (window.currentSavedPlaylists && window.scanningListId) {
+                        let foundP = window.currentSavedPlaylists.find(p => p.url && p.url.includes(`list=${window.scanningListId}`));
+                        if (foundP && foundP.cached_tracks) {
+                            cachedMap = foundP.cached_tracks;
+                        }
+                    }
+
+                    ids.forEach(vid => {
+                        let title = (cachedMap && cachedMap[vid]) ? cachedMap[vid] : ("Video ID: " + vid);
+                        playlist.push({ id: vid, title: title });
+                    });
+
                     renderPlaylist();
                     window.isScanning = false;
                     window.autoReplacePlaylist = false;
@@ -2305,14 +2325,17 @@
         }
 
         async function fetchTitlesForPlaylist() {
+            let newlyFetched = {};
+            let currentListId = window.currentListId;
 
             for (let i = 0; i < playlist.length; i++) {
                 if (playlist[i] && (playlist[i].title.startsWith("Video ID") || playlist[i].title === "Загрузка...")) {
                     try {
                         const response = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${playlist[i].id}`);
                         const data = await response.json();
-                        if (data.title) {
+                        if (data && data.title) {
                             playlist[i].title = data.title;
+                            newlyFetched[playlist[i].id] = data.title;
                             renderPlaylist();
                             if (i === trackIndex) updateUI();
                         } else {
@@ -2325,6 +2348,10 @@
                         }
                     } catch (e) { }
                 }
+            }
+
+            if (Object.keys(newlyFetched).length > 0 && currentListId) {
+                saveCachedTracksToFirebase(currentListId, newlyFetched);
             }
         }
 
@@ -2427,6 +2454,15 @@
             const listId = url.searchParams.get('list');
             const vIds = url.searchParams.get('v');
             if (listId) {
+                if (window.currentSavedPlaylists) {
+                    const foundP = window.currentSavedPlaylists.find(p => p.url && p.url.includes(`list=${listId}`));
+                    if (foundP && foundP.cached_tracks && Object.keys(foundP.cached_tracks).length > 0) {
+                        let cachedEntries = Object.entries(foundP.cached_tracks);
+                        playlist = cachedEntries.map(([id, title]) => ({ id, title }));
+                        trackIndex = 0;
+                        renderPlaylist();
+                    }
+                }
                 importPlaylist(listId, true);
             } else if (vIds) {
                 let ids = vIds.split(',');
@@ -2439,6 +2475,33 @@
                 loadDeck(p1, 0);
                 prepareNext();
                 updateUI();
+            }
+        }
+
+        async function saveCachedTracksToFirebase(listId, tracksMap) {
+            if (!window.currentUser || !window.db || !listId || !tracksMap || Object.keys(tracksMap).length === 0) return;
+            try {
+                const userDoc = window.doc(window.db, "users", window.currentUser.uid);
+                const docSnap = await window.getDoc(userDoc);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
+                        let updated = false;
+                        data.saved_playlists.forEach(p => {
+                            if (p.url && p.url.includes(`list=${listId}`)) {
+                                if (!p.cached_tracks) p.cached_tracks = {};
+                                Object.assign(p.cached_tracks, tracksMap);
+                                updated = true;
+                            }
+                        });
+                        if (updated) {
+                            await window.updateDoc(userDoc, { saved_playlists: data.saved_playlists });
+                            window.currentSavedPlaylists = data.saved_playlists;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Ошибка сохранения кэша названий треков:", e);
             }
         }
 
@@ -2554,6 +2617,7 @@
         }
 
         function renderSavedPlaylists(list) {
+            window.currentSavedPlaylists = list || [];
             const container = document.getElementById('saved-playlists-section');
             const listContainer = document.getElementById('saved-playlists-list');
             if (!listContainer) return;

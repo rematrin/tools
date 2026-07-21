@@ -2284,8 +2284,8 @@
                         window.currentListId = null;
                     }
 
-                    let cachedMap = null;
-                    if (window.currentSavedPlaylists && window.scanningListId) {
+                    let cachedMap = window.activePlaylistCachedTracks;
+                    if (!cachedMap && window.currentSavedPlaylists && window.scanningListId) {
                         let foundP = window.currentSavedPlaylists.find(p => p.url && p.url.includes(`list=${window.scanningListId}`));
                         if (foundP && foundP.cached_tracks) {
                             cachedMap = foundP.cached_tracks;
@@ -2523,6 +2523,13 @@
 
                 if (window.currentPlaylistId && getPlaylistIdByListId(window.currentPlaylistId) === playlistId) {
                     window.activePlaylistCachedTracks = mergedTracks;
+                }
+
+                if (window.currentSavedPlaylists) {
+                    const localP = window.currentSavedPlaylists.find(p => p.id === playlistId);
+                    if (localP) {
+                        localP.cached_tracks = mergedTracks;
+                    }
                 }
             } catch (e) {
                 console.error("Ошибка сохранения кэша названий треков:", e);

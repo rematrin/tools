@@ -1,16 +1,10 @@
 // nav-widget.js
 
 const servicesLinks = [
-    // Обычные иконки (линейные, stroke)
     {
         href: "index.html",
         title: "Главная",
         icon: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'
-    },
-    {
-        href: "creatorhub.html",
-        title: "CreatorHub",
-        icon: '<polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>'
     },
     {
         href: "calc.html", title: "Умные калькуляторы",
@@ -28,7 +22,6 @@ const servicesLinks = [
         href: "thumbnail.html", title: "YouTube превью",
         icon: '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>'
     },
-
     {
         href: "case_converter.html", title: "Конвертер регистров",
         icon: '<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>'
@@ -46,30 +39,31 @@ const servicesLinks = [
         filled: true,
         icon: '<path d="M10.875 3.375H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969V4.969h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688V4.969h4.688v4.688zM10.875 12.75H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969v-4.688h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688v-4.688h4.688v4.688z"/>'
     },
-
     {
-        href: "todo.html", title: "Туду лист",
-        icon: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'
+        href: "playlists.html", title: "YouTube Плейлисты",
+        icon: '<path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>'
     },
     {
         href: "folderico.html", title: "Folder Icon Maker",
         icon: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>'
     },
-
     {
         href: "eleven_reader.html", title: "Eleven Reader",
         icon: '<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line>'
     },
     {
-        href: "bookmarks.html", title: "Мои закладки",
-        icon: '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>'
+        href: "creatorhub.html",
+        title: "CreatorHub",
+        icon: '<polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>'
     },
     {
-        href: "playlists.html", title: "YouTube Плейлисты",
-        icon: '<path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>'
+        href: "todo.html", title: "Туду лист",
+        icon: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'
     },
-
-
+    {
+        href: "whiteboard.html", title: "Интерактивная доска",
+        icon: '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line>'
+    }
 ];
 
 const linksHTML = servicesLinks.map(link => {

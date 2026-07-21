@@ -2747,6 +2747,7 @@
                 return;
             }
 
+            let saved = false;
             try {
                 const userDoc = window.doc(window.db, "users", window.currentUser.uid);
                 const docSnap = await window.getDoc(userDoc);
@@ -2773,10 +2774,18 @@
 
                 renderSavedPlaylists(savedPlaylists);
                 closeAddPlaylistModal();
-                loadSavedPlaylist(pathUrl, finalName);
+                saved = true;
             } catch (e) {
                 console.error("Ошибка при сохранении плейлиста в Firebase:", e);
                 alert("Не удалось сохранить плейлист.");
+            }
+
+            if (saved) {
+                try {
+                    loadSavedPlaylist(pathUrl, finalName);
+                } catch (err) {
+                    console.error("Ошибка при авто-открытии плейлиста:", err);
+                }
             }
         }
 

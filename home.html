@@ -2216,13 +2216,28 @@
             color: #FF453A;
         }
 
-        /* --- ДЕСКТОПНЫЙ ВИДЖЕТ ИНТЕРЕСНЫХ ФАКТОВ (СЛЕВА) --- */
-        .desktop-fact-widget {
+        /* --- ДЕСКТОПНЫЙ ВИДЖЕТ ИНТЕРЕСНЫХ ФАКТОВ И ДОПОЛНИТЕЛЬНЫЕ ВИДЖЕТЫ (СЛЕВА) --- */
+        .desktop-left-column {
             display: none;
             position: fixed;
             left: 45px;
             top: 100px;
             width: 280px;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 10;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .desktop-left-column::-webkit-scrollbar {
+            display: none;
+        }
+
+        .desktop-fact-widget {
+            display: none;
+            width: 100%;
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -2231,10 +2246,28 @@
             padding: 20px;
             color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            z-index: 10;
             transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             box-sizing: border-box;
             user-select: text;
+        }
+        body.show-facts-widget-enabled .desktop-fact-widget {
+            display: block;
+        }
+
+        .desktop-sidebar-iframe {
+            display: none;
+            width: 330px;
+            height: 160px;
+            border: none;
+            border-radius: 24px;
+            background: transparent;
+            transform: scale(0.84848); /* 280px / 330px */
+            transform-origin: left top;
+            margin-right: -50px;
+            margin-bottom: -24px;
+        }
+        body.show-sidebar-widgets-enabled .desktop-sidebar-iframe {
+            display: block;
         }
 
         .desktop-fact-widget.fade-out {
@@ -2297,8 +2330,9 @@
         }
 
         @media (min-width: 1450px) {
-            body.show-facts-widget-enabled:not(.bookmarks-view-active) .desktop-fact-widget {
-                display: block;
+            body.show-facts-widget-enabled:not(.bookmarks-view-active) .desktop-left-column,
+            body.show-sidebar-widgets-enabled:not(.bookmarks-view-active) .desktop-left-column {
+                display: flex;
             }
         }
     </style>
@@ -2319,20 +2353,29 @@
         </div>
     </div>
 
-    <!-- Десктопный виджет с фактами/словами дня (слева) -->
-    <div id="desktopFactWidget" class="desktop-fact-widget">
-        <div class="fact-widget-header">
-            <span class="fact-widget-icon" id="factWidgetIcon">💡</span>
-            <span class="fact-widget-title" id="factWidgetTitle">Слово часа</span>
-            <button id="factWidgetRefresh" class="fact-widget-refresh-btn" title="Сменить факт">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
-                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
-                </svg>
-            </button>
+    <!-- Десктопная левая колонка с виджетами -->
+    <div id="desktopLeftColumn" class="desktop-left-column">
+        <!-- Десктопный виджет с фактами/словами дня -->
+        <div id="desktopFactWidget" class="desktop-fact-widget">
+            <div class="fact-widget-header">
+                <span class="fact-widget-icon" id="factWidgetIcon">💡</span>
+                <span class="fact-widget-title" id="factWidgetTitle">Слово часа</span>
+                <button id="factWidgetRefresh" class="fact-widget-refresh-btn" title="Сменить факт">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="fact-widget-body" id="factWidgetContent">
+                Загрузка...
+            </div>
         </div>
-        <div class="fact-widget-body" id="factWidgetContent">
-            Загрузка...
-        </div>
+
+        <!-- Виджет часов -->
+        <iframe src="widgets/clock_wide.html" class="desktop-sidebar-iframe" scrolling="no" loading="lazy"></iframe>
+
+        <!-- Виджет погоды -->
+        <iframe src="widgets/weather_wide.html" class="desktop-sidebar-iframe" scrolling="no" loading="lazy"></iframe>
     </div>
 
     <div class="iphone-screen">
@@ -2475,6 +2518,11 @@
         const savedShowFacts = localStorage.getItem('showFactsWidget') !== 'false';
         if (savedShowFacts) {
             document.body.classList.add('show-facts-widget-enabled');
+        }
+
+        const savedShowSidebarWidgets = localStorage.getItem('showSidebarWidgets') === 'true';
+        if (savedShowSidebarWidgets) {
+            document.body.classList.add('show-sidebar-widgets-enabled');
         }
 
         const savedCols = localStorage.getItem('gridColumns') || '4';
@@ -3375,6 +3423,17 @@
                                     const toggle = document.getElementById('showFactsWidgetToggle');
                                     if (toggle) toggle.checked = showFacts;
                                 }
+
+                                    // Загрузка виджетов
+                                    if (typeof cloudSettings.showSidebarWidgets !== 'undefined') {
+                                        const showWidgets = cloudSettings.showSidebarWidgets;
+                                        localStorage.setItem('showSidebarWidgets', showWidgets.toString());
+                                        if (showWidgets) document.body.classList.add('show-sidebar-widgets-enabled');
+                                        else document.body.classList.remove('show-sidebar-widgets-enabled');
+
+                                        const toggle = document.getElementById('showSidebarWidgetsToggle');
+                                        if (toggle) toggle.checked = showWidgets;
+                                    }
 
                                 // Загрузка Колонок
                                 if (typeof cloudSettings.gridColumns !== 'undefined') {

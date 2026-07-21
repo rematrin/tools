@@ -376,8 +376,7 @@ export function initSidebarManager(context) {
         const isGlassEnabled = localStorage.getItem('glassEffect') === 'true';
         const openInNewTab = localStorage.getItem('openInNewTab') === 'true';
         const expandedFolders = localStorage.getItem('expandedFolders') === 'true';
-        const showBookmarksBeta = localStorage.getItem('showBookmarksBeta') === 'true';
-        const showTodoist = localStorage.getItem('showTodoist') === 'true';
+        const showTodo = localStorage.getItem('showTodo') === 'true';
         const showFactsWidget = localStorage.getItem('showFactsWidget') !== 'false';
 
         const glassSettingsHTML = `
@@ -405,16 +404,9 @@ export function initSidebarManager(context) {
                     </label>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
-                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Использовать закладки (beta)</span>
+                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Использовать ToDo</span>
                     <label class="switch" style="transform: scale(0.85); transform-origin: right;">
-                        <input type="checkbox" id="showBookmarksBetaToggle" ${showBookmarksBeta ? 'checked' : ''}>
-                        <span class="slider-toggle"></span>
-                    </label>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
-                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Использовать Todoist</span>
-                    <label class="switch" style="transform: scale(0.85); transform-origin: right;">
-                        <input type="checkbox" id="showTodoistToggle" ${showTodoist ? 'checked' : ''}>
+                        <input type="checkbox" id="showTodoToggle" ${showTodo ? 'checked' : ''}>
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
@@ -549,24 +541,15 @@ export function initSidebarManager(context) {
             };
         }
 
-        // Использовать закладки (beta)
-        const showBookmarksBetaToggle = document.getElementById('showBookmarksBetaToggle');
-        if (showBookmarksBetaToggle) {
-            showBookmarksBetaToggle.onchange = (e) => {
-                const isEnabled = e.target.checked;
-                localStorage.setItem('showBookmarksBeta', isEnabled.toString());
-                if (auth.currentUser) window.dbApi.saveSettings({ showBookmarksBeta: isEnabled });
-                if (window.renderCategoryBar) window.renderCategoryBar();
-            };
-        }
 
-        // Использовать Todoist
-        const showTodoistToggle = document.getElementById('showTodoistToggle');
-        if (showTodoistToggle) {
-            showTodoistToggle.onchange = (e) => {
+
+        // Использовать ToDo
+        const showTodoToggle = document.getElementById('showTodoToggle');
+        if (showTodoToggle) {
+            showTodoToggle.onchange = (e) => {
                 const isEnabled = e.target.checked;
-                localStorage.setItem('showTodoist', isEnabled.toString());
-                if (auth.currentUser) window.dbApi.saveSettings({ showTodoist: isEnabled });
+                localStorage.setItem('showTodo', isEnabled.toString());
+                if (auth.currentUser) window.dbApi.saveSettings({ showTodo: isEnabled });
                 if (window.renderCategoryBar) window.renderCategoryBar();
             };
         }
@@ -633,8 +616,7 @@ export function initSidebarManager(context) {
                     glassEffect: localStorage.getItem('glassEffect') === 'true',
                     openInNewTab: localStorage.getItem('openInNewTab') === 'true',
                     expandedFolders: localStorage.getItem('expandedFolders') === 'true',
-                    showBookmarksBeta: localStorage.getItem('showBookmarksBeta') === 'true',
-                    showTodoist: localStorage.getItem('showTodoist') === 'true',
+                    showTodo: localStorage.getItem('showTodo') === 'true',
                     wallpaper: JSON.parse(localStorage.getItem('user_wallpaper_settings_v1') || '{}')
                 };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -736,15 +718,11 @@ export function initSidebarManager(context) {
                                 else document.body.classList.remove('expanded-folders');
                             }
 
-                            // Импорт настройки использования закладок (beta)
-                            if (typeof data.showBookmarksBeta !== 'undefined') {
-                                localStorage.setItem('showBookmarksBeta', data.showBookmarksBeta.toString());
-                                if (window.renderCategoryBar) window.renderCategoryBar();
-                            }
 
-                            // Импорт настройки использования Todoist
-                            if (typeof data.showTodoist !== 'undefined') {
-                                localStorage.setItem('showTodoist', data.showTodoist.toString());
+
+                            // Импорт настройки использования ToDo
+                            if (typeof data.showTodo !== 'undefined') {
+                                localStorage.setItem('showTodo', data.showTodo.toString());
                                 if (window.renderCategoryBar) window.renderCategoryBar();
                             }
 

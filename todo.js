@@ -3830,7 +3830,7 @@ function renderTasks() {
     // 1. РЕНДЕРИМ АКТИВНЫЕ ЗАДАЧИ
     activeTasksContainer.innerHTML = '';
 
-    if (displayActiveTasks.length === 0) {
+    if (displayActiveTasks.length === 0 && !currentRoute.startsWith('project/')) {
         if (currentRoute === 'trash') {
             activeTasksContainer.innerHTML = `
                 <div class="empty-state">
@@ -3931,6 +3931,21 @@ function renderTasks() {
             if (currentRoute.startsWith('project/')) {
                 const projectId = currentRoute.split('/')[1];
                 const projectSections = sectionsList.filter(s => s.projectId === projectId);
+
+                if (displayActiveTasks.length === 0) {
+                    const emptyStateEl = document.createElement('div');
+                    emptyStateEl.className = 'empty-state';
+                    emptyStateEl.style.marginTop = '20px';
+                    emptyStateEl.style.marginBottom = '20px';
+                    emptyStateEl.innerHTML = `
+                        <svg width="48" height="48" viewBox="0 0 640 640" fill="currentColor">
+                            <path d="M155.8 96C123.9 96 96.9 119.4 92.4 150.9L64.6 345.2C64.2 348.2 64 351.2 64 354.3L64 480C64 515.3 92.7 544 128 544L512 544C547.3 544 576 515.3 576 480L576 354.3C576 351.3 575.8 348.2 575.4 345.2L547.6 150.9C543.1 119.4 516.1 96 484.2 96L155.8 96zM155.8 160L484.3 160L511.7 352L451.8 352C439.7 352 428.6 358.8 423.2 369.7L408.9 398.3C403.5 409.1 392.4 416 380.3 416L259.9 416C247.8 416 236.7 409.2 231.3 398.3L217 369.7C211.6 358.9 200.5 352 188.4 352L128.3 352L155.8 160z"/>
+                        </svg>
+                        <h3 class="empty-title">Все дела сделаны!</h3>
+                        <p class="empty-text">Добавьте новую задачу выше, чтобы спланировать свой день.</p>
+                    `;
+                    activeTasksContainer.appendChild(emptyStateEl);
+                }
 
                 const unsectionedTasks = displayActiveTasks.filter(t => !t.sectionId || !projectSections.some(s => s.id === t.sectionId));
 

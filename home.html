@@ -2355,15 +2355,11 @@
             <div id="categoryBar" class="category-bar" style="display: none;"></div>
             <div id="pagesContainer" class="pages-container"></div>
             <div id="paginationDots" class="pagination-dots"></div>
-            <!-- Embedded Bookmarks Panel (IFrame) -->
-            <div id="homeBookmarksPanel" class="home-bookmarks-panel" style="display: none;">
-                <iframe id="hbIframe" src=""
+
+            <!-- Embedded Todo Panel (IFrame) -->
+            <div id="homeTodoPanel" class="home-bookmarks-panel" style="display: none;">
+                <iframe id="todoIframe" src=""
                     style="width: 100%; height: 100%; border: none; background: transparent; border-radius: 24px;"></iframe>
-            </div>
-            <!-- Embedded Todoist Panel (IFrame) -->
-            <div id="homeTodoistPanel" class="home-bookmarks-panel" style="display: none;">
-                <iframe id="todoistIframe" src=""
-                    style="width: 100%; height: 100%; border: none; background: white; border-radius: 24px;"></iframe>
             </div>
         </div>
         <div id="pageNavLeft" class="page-nav-zone left">
@@ -2515,19 +2511,15 @@
         window.userCategories = [];
         let currentCategoryFilter = null;
 
-        window.bookmarksActive = false;
-        window.todoistActive = false;
+        window.todoActive = false;
 
-        window.toggleBookmarksView = function (active) {
-            window.bookmarksActive = active;
-            if (active && window.todoistActive) {
-                window.toggleTodoistView(false);
-            }
-            const panel = document.getElementById('homeBookmarksPanel');
+        window.toggleTodoView = function (active) {
+            window.todoActive = active;
+            const panel = document.getElementById('homeTodoPanel');
             const pagesContainer = document.getElementById('pagesContainer');
             const paginationDots = document.getElementById('paginationDots');
             const categoryBar = document.getElementById('categoryBar');
-            const iframe = document.getElementById('hbIframe');
+            const iframe = document.getElementById('todoIframe');
 
             if (active) {
                 document.body.classList.add('bookmarks-view-active');
@@ -2544,71 +2536,22 @@
                 if (navLeft) navLeft.style.display = 'none';
                 if (navRight) navRight.style.display = 'none';
 
-                if (iframe && iframe.getAttribute('src') !== 'bookmarks.html?embedded=true') {
-                    iframe.src = 'bookmarks.html?embedded=true';
+                if (iframe && iframe.getAttribute('src') !== 'todo.html?embedded=true') {
+                    iframe.src = 'todo.html?embedded=true';
                 }
             } else {
                 panel.style.display = 'none';
-                if (!window.todoistActive) {
-                    document.body.classList.remove('bookmarks-view-active');
-                    pagesContainer.style.display = '';
-                    if (paginationDots) paginationDots.style.display = 'flex';
-                    if (categoryBar) categoryBar.classList.remove('category-bar-fixed');
-
-                    const navLeft = document.getElementById('pageNavLeft');
-                    const navRight = document.getElementById('pageNavRight');
-                    if (navLeft) navLeft.style.display = '';
-                    if (navRight) navRight.style.display = '';
-
-                    if (window.renderCategoryBar) window.renderCategoryBar();
-                }
-            }
-        };
-
-        window.toggleTodoistView = function (active) {
-            window.todoistActive = active;
-            if (active && window.bookmarksActive) {
-                window.toggleBookmarksView(false);
-            }
-            const panel = document.getElementById('homeTodoistPanel');
-            const pagesContainer = document.getElementById('pagesContainer');
-            const paginationDots = document.getElementById('paginationDots');
-            const categoryBar = document.getElementById('categoryBar');
-            const iframe = document.getElementById('todoistIframe');
-
-            if (active) {
-                document.body.classList.add('bookmarks-view-active');
-                pagesContainer.style.display = 'none';
-                if (paginationDots) paginationDots.style.display = 'none';
-                panel.style.display = 'flex';
-                if (categoryBar) {
-                    categoryBar.style.display = 'flex';
-                    categoryBar.classList.add('category-bar-fixed');
-                }
+                document.body.classList.remove('bookmarks-view-active');
+                pagesContainer.style.display = '';
+                if (paginationDots) paginationDots.style.display = 'flex';
+                if (categoryBar) categoryBar.classList.remove('category-bar-fixed');
 
                 const navLeft = document.getElementById('pageNavLeft');
                 const navRight = document.getElementById('pageNavRight');
-                if (navLeft) navLeft.style.display = 'none';
-                if (navRight) navRight.style.display = 'none';
+                if (navLeft) navLeft.style.display = '';
+                if (navRight) navRight.style.display = '';
 
-                if (iframe && iframe.getAttribute('src') !== 'https://app.todoist.com/app/today') {
-                    iframe.src = 'https://app.todoist.com/app/today';
-                }
-            } else {
-                panel.style.display = 'none';
-                if (!window.bookmarksActive) {
-                    document.body.classList.remove('bookmarks-view-active');
-                    pagesContainer.style.display = '';
-                    if (paginationDots) paginationDots.style.display = 'flex';
-                    if (categoryBar) categoryBar.classList.remove('category-bar-fixed');
-
-                    const navLeft = document.getElementById('pageNavLeft');
-                    const navRight = document.getElementById('pageNavRight');
-                    if (navLeft) navLeft.style.display = '';
-                    if (navRight) navRight.style.display = '';
-
-                    if (window.renderCategoryBar) window.renderCategoryBar();
-                }
+                if (window.renderCategoryBar) window.renderCategoryBar();
             }
         };
 
@@ -2621,14 +2564,11 @@
 
             window.userCategories.forEach(cat => {
                 const capsule = document.createElement('div');
-                capsule.className = 'category-capsule' + (currentCategoryFilter === cat && !window.bookmarksActive && !window.todoistActive ? ' active' : '');
+                capsule.className = 'category-capsule' + (currentCategoryFilter === cat && !window.todoActive ? ' active' : '');
                 capsule.innerText = cat;
                 capsule.onclick = () => {
-                    if (window.bookmarksActive) {
-                        window.toggleBookmarksView(false);
-                    }
-                    if (window.todoistActive) {
-                        window.toggleTodoistView(false);
+                    if (window.todoActive) {
+                        window.toggleTodoView(false);
                     }
                     if (currentCategoryFilter === cat) {
                         currentCategoryFilter = null;
@@ -2641,55 +2581,26 @@
                 bar.appendChild(capsule);
             });
 
-            // Dedicated static Bookmarks category capsule always remains
-            const showBookmarksBeta = localStorage.getItem('showBookmarksBeta') === 'true';
-            if (showBookmarksBeta) {
-                const bmarkCapsule = document.createElement('div');
-                bmarkCapsule.className = 'category-capsule' + (window.bookmarksActive ? ' active' : '');
-                bmarkCapsule.innerText = 'Закладки (beta)';
-                bmarkCapsule.onclick = () => {
-                    if (window.bookmarksActive) {
-                        window.toggleBookmarksView(false);
+            // Dedicated static Todo category capsule always remains
+            const showTodo = localStorage.getItem('showTodo') === 'true';
+            if (showTodo) {
+                const todoCapsule = document.createElement('div');
+                todoCapsule.className = 'category-capsule' + (window.todoActive ? ' active' : '');
+                todoCapsule.innerText = 'ToDo';
+                todoCapsule.onclick = () => {
+                    if (window.todoActive) {
+                        window.toggleTodoView(false);
                     } else {
                         currentCategoryFilter = null;
-                        if (window.todoistActive) {
-                            window.toggleTodoistView(false);
-                        }
-                        window.toggleBookmarksView(true);
+                        window.toggleTodoView(true);
                     }
                     renderCategoryBar();
                     renderAppsToDOM(currentApps);
                 };
-                bar.appendChild(bmarkCapsule);
+                bar.appendChild(todoCapsule);
             } else {
-                if (window.bookmarksActive) {
-                    window.toggleBookmarksView(false);
-                }
-            }
-
-            // Dedicated static Todoist category capsule always remains
-            const showTodoist = localStorage.getItem('showTodoist') === 'true';
-            if (showTodoist) {
-                const todoistCapsule = document.createElement('div');
-                todoistCapsule.className = 'category-capsule' + (window.todoistActive ? ' active' : '');
-                todoistCapsule.innerText = 'Todoist';
-                todoistCapsule.onclick = () => {
-                    if (window.todoistActive) {
-                        window.toggleTodoistView(false);
-                    } else {
-                        currentCategoryFilter = null;
-                        if (window.bookmarksActive) {
-                            window.toggleBookmarksView(false);
-                        }
-                        window.toggleTodoistView(true);
-                    }
-                    renderCategoryBar();
-                    renderAppsToDOM(currentApps);
-                };
-                bar.appendChild(todoistCapsule);
-            } else {
-                if (window.todoistActive) {
-                    window.toggleTodoistView(false);
+                if (window.todoActive) {
+                    window.toggleTodoView(false);
                 }
             }
         };
@@ -3429,25 +3340,16 @@
                                     if (toggle) toggle.checked = isGlass;
                                 }
 
-                                // Загрузка Использовать закладки (beta)
-                                if (typeof cloudSettings.showBookmarksBeta !== 'undefined') {
-                                    const isBmark = cloudSettings.showBookmarksBeta;
-                                    localStorage.setItem('showBookmarksBeta', isBmark.toString());
+
+
+                                // Загрузка Использовать Список дел
+                                if (typeof cloudSettings.showTodo !== 'undefined') {
+                                    const isTodo = cloudSettings.showTodo;
+                                    localStorage.setItem('showTodo', isTodo.toString());
 
                                     // Обновляем UI чекбокса, если он сейчас отрендерен
-                                    const toggle = document.getElementById('showBookmarksBetaToggle');
-                                    if (toggle) toggle.checked = isBmark;
-                                    if (window.renderCategoryBar) window.renderCategoryBar();
-                                }
-
-                                // Загрузка Использовать Todoist
-                                if (typeof cloudSettings.showTodoist !== 'undefined') {
-                                    const isTodoist = cloudSettings.showTodoist;
-                                    localStorage.setItem('showTodoist', isTodoist.toString());
-
-                                    // Обновляем UI чекбокса, если он сейчас отрендерен
-                                    const toggle = document.getElementById('showTodoistToggle');
-                                    if (toggle) toggle.checked = isTodoist;
+                                    const toggle = document.getElementById('showTodoToggle');
+                                    if (toggle) toggle.checked = isTodo;
                                     if (window.renderCategoryBar) window.renderCategoryBar();
                                 }
 
@@ -3527,21 +3429,14 @@
                                 if (window.renderCategoryBar) window.renderCategoryBar();
                             }
 
-                            const iframe = document.getElementById('hbIframe');
-                            if (iframe && iframe.getAttribute('src') !== 'bookmarks.html?embedded=true') {
-                                iframe.src = 'bookmarks.html?embedded=true';
-                            }
                         }
                     } else {
                         console.log("User logged out");
                         renderAppsToDOM(DEFAULT_APPS);
                         localStorage.removeItem(STORAGE_KEY);
 
-                        const iframe = document.getElementById('hbIframe');
-                        if (iframe) iframe.src = '';
-
-                        const todoistIframe = document.getElementById('todoistIframe');
-                        if (todoistIframe) todoistIframe.src = '';
+                        const todoIframe = document.getElementById('todoIframe');
+                        if (todoIframe) todoIframe.src = '';
 
                         if (window.renderCategoryBar) window.renderCategoryBar();
                     }

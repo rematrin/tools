@@ -1473,7 +1473,7 @@
         <div class="saved-playlists-section" id="saved-playlists-section">
             <div class="saved-playlists-header">
                 <div class="saved-playlists-title">Мои плейлисты</div>
-                <button class="icon-action-btn" onclick="openAddPlaylistModal()" title="Добавить плейлист" data-tooltip="Добавить плейлист">
+                <button class="icon-action-btn" onclick="openAddPlaylistModal()" data-tooltip="Добавить плейлист">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -2451,6 +2451,8 @@
                     const data = docSnap.data();
                     if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
                         let updated = false;
+                        let playlistToUpdateTitle = null;
+
                         const newList = data.saved_playlists.map(p => {
                             if (p.url.includes(`list=${listId}`)) {
                                 if (p.first_video_id !== firstVideoId || p.tracks_count !== count) {
@@ -2458,9 +2460,29 @@
                                     p.tracks_count = count;
                                     updated = true;
                                 }
+                                if (!p.name || p.name === "YouTube Плейлист" || p.name === "Плейлист YouTube" || p.name === "Загрузка...") {
+                                    playlistToUpdateTitle = p;
+                                }
                             }
                             return p;
                         });
+
+                        if (playlistToUpdateTitle && firstVideoId) {
+                            try {
+                                const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${firstVideoId}`);
+                                const fetchedData = await res.json();
+                                if (fetchedData && fetchedData.title) {
+                                    playlistToUpdateTitle.name = fetchedData.title;
+                                    updated = true;
+                                    if (window.loadedPlaylistUrl === playlistToUpdateTitle.url) {
+                                        window.loadedPlaylistName = fetchedData.title;
+                                        const titleEl = document.getElementById('playlist-title-text');
+                                        if (titleEl) titleEl.innerText = fetchedData.title;
+                                    }
+                                }
+                            } catch (e) {}
+                        }
+
                         if (updated) {
                             await window.updateDoc(userDoc, { saved_playlists: newList });
                             renderSavedPlaylists(newList);
@@ -2677,16 +2699,13 @@
                 setTimeout(() => {
                     modal.style.display = 'none';
                     document.getElementById('modalPlaylistUrl').value = '';
-                    document.getElementById('modalPlaylistName').value = '';
                 }, 250);
             }
         }
 
         async function submitNewPlaylist() {
             const urlInput = document.getElementById('modalPlaylistUrl');
-            const nameInput = document.getElementById('modalPlaylistName');
             const urlValue = urlInput.value.trim();
-            let nameValue = nameInput.value.trim();
 
             if (!urlValue) {
                 alert("Пожалуйста, введите ссылку на плейлист или видео.");
@@ -2702,16 +2721,26 @@
             }
 
             let pathUrl = "";
-            let defaultName = "";
+            let defaultName = listId ? "YouTube Плейлист" : "YouTube Видео";
             if (listId) {
                 pathUrl = `crossfade.html?list=${listId}`;
-                defaultName = "YouTube Плейлист";
             } else {
                 pathUrl = `crossfade.html?v=${videoId}`;
-                defaultName = "YouTube Видео";
             }
 
-            let finalName = nameValue || defaultName;
+            let finalName = defaultName;
+
+            if (videoId) {
+                try {
+                    const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+                    const data = await res.json();
+                    if (data && data.title) {
+                        finalName = data.title;
+                    }
+                } catch (e) {
+                    console.error("Не удалось автоматически получить название:", e);
+                }
+            }
 
             if (!window.currentUser) {
                 alert("Необходимо войти в аккаунт.");
@@ -2744,6 +2773,7 @@
 
                 renderSavedPlaylists(savedPlaylists);
                 closeAddPlaylistModal();
+                loadSavedPlaylist(pathUrl, finalName);
             } catch (e) {
                 console.error("Ошибка при сохранении плейлиста в Firebase:", e);
                 alert("Не удалось сохранить плейлист.");
@@ -2819,11 +2849,7 @@
             <div class="modal-body">
                 <div class="modal-field">
                     <label for="modalPlaylistUrl">Ссылка на YouTube плейлист или видео</label>
-                    <input type="text" id="modalPlaylistUrl" class="modal-input" placeholder="https://www.youtube.com/playlist?list=..." autocomplete="off">
-                </div>
-                <div class="modal-field">
-                    <label for="modalPlaylistName">Название плейлиста (необязательно)</label>
-                    <input type="text" id="modalPlaylistName" class="modal-input" placeholder="Мой плейлист" autocomplete="off">
+                    <input type="text" id="modalPlaylistUrl" class="modal-input" placeholder="https://www.youtube.com/playlist?list=..." autocomplete="off" onkeydown="if(event.key==='Enter') submitNewPlaylist()">
                 </div>
             </div>
             <div class="modal-footer">

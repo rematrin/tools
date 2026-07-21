@@ -33,6 +33,9 @@ const firebaseConfig = {
 window.doc = doc;
 window.setDoc = setDoc;
 window.getDoc = getDoc;
+window.deleteDoc = deleteDoc;
+window.collection = collection;
+window.getDocs = getDocs;
 window.updateDoc = (d, data) => setDoc(d, data, { merge: true }); // Упрощенный update
 window.serverTimestamp = serverTimestamp;
 

@@ -2302,7 +2302,7 @@
                     window.autoReplacePlaylist = false;
 
                     if (window.currentUser && window.db && window.scanningListId) {
-                        updateSavedPlaylistInfo(window.scanningListId, ids[0], ids.length);
+                        updateSavedPlaylistInfo(window.scanningListId, ids[0], ids.length, ids);
                     }
 
                     window.scanningListId = null;
@@ -2351,7 +2351,10 @@
             }
 
             if (Object.keys(newlyFetched).length > 0 && currentListId) {
-                saveCachedTracksToFirebase(currentListId, newlyFetched);
+                let playlistId = getPlaylistIdByListId(currentListId);
+                if (playlistId) {
+                    saveCachedTracksToFirebase(playlistId, newlyFetched);
+                }
             }
         }
 
@@ -2412,23 +2415,16 @@
         async function submitDeletePlaylist() {
             if (!activeDeleteId) return;
             try {
-                const userDoc = window.doc(window.db, "users", window.currentUser.uid);
-                const docSnap = await window.getDoc(userDoc);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
-                        let savedPlaylists = data.saved_playlists;
-                        const playlistToDelete = savedPlaylists.find(p => p.id === activeDeleteId);
-                        if (playlistToDelete) {
-                            savedPlaylists = savedPlaylists.filter(p => p.id !== activeDeleteId);
-                            await window.updateDoc(userDoc, {
-                                saved_playlists: savedPlaylists
-                            });
-                            if (window.loadedPlaylistUrl === playlistToDelete.url) {
-                                closePlayerCard();
-                            }
-                            renderSavedPlaylists(savedPlaylists);
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", activeDeleteId);
+                if (window.currentSavedPlaylists) {
+                    const playlistToDelete = window.currentSavedPlaylists.find(p => p.id === activeDeleteId);
+                    if (playlistToDelete) {
+                        await window.deleteDoc(docRef);
+                        window.currentSavedPlaylists = window.currentSavedPlaylists.filter(p => p.id !== activeDeleteId);
+                        if (window.loadedPlaylistUrl === playlistToDelete.url) {
+                            closePlayerCard();
                         }
+                        renderSavedPlaylists(window.currentSavedPlaylists);
                     }
                 }
                 closeDeletePlaylistModal();
@@ -2436,6 +2432,12 @@
                 console.error("Ошибка удаления плейлиста:", e);
                 alert("Не удалось удалить плейлист.");
             }
+        }
+
+        function getPlaylistIdByListId(listId) {
+            if (!window.currentSavedPlaylists) return null;
+            const p = window.currentSavedPlaylists.find(x => x.url && x.url.includes(`list=${listId}`));
+            return p ? p.id : null;
         }
 
         function loadSavedPlaylist(urlStr, name) {
@@ -2449,18 +2451,42 @@
 
             window.loadedPlaylistName = name;
             window.loadedPlaylistUrl = urlStr;
+            window.activePlaylistCachedTracks = null;
 
             const url = new URL(urlStr, window.location.origin);
             const listId = url.searchParams.get('list');
             const vIds = url.searchParams.get('v');
             if (listId) {
-                if (window.currentSavedPlaylists) {
+                if (window.currentUser && window.db && window.currentSavedPlaylists) {
                     const foundP = window.currentSavedPlaylists.find(p => p.url && p.url.includes(`list=${listId}`));
-                    if (foundP && foundP.cached_tracks && Object.keys(foundP.cached_tracks).length > 0) {
-                        let cachedEntries = Object.entries(foundP.cached_tracks);
-                        playlist = cachedEntries.map(([id, title]) => ({ id, title }));
-                        trackIndex = 0;
-                        renderPlaylist();
+                    if (foundP) {
+                        const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", foundP.id);
+                        window.getDoc(docRef).then(docSnap => {
+                            if (docSnap.exists()) {
+                                const docData = docSnap.data();
+                                if (docData && docData.cached_tracks) {
+                                    window.activePlaylistCachedTracks = docData.cached_tracks;
+                                }
+                                if (docData && docData.video_ids && Array.isArray(docData.video_ids) && docData.video_ids.length > 0) {
+                                    if (window.loadedPlaylistUrl === urlStr) {
+                                        const cachedMap = docData.cached_tracks || {};
+                                        playlist = docData.video_ids.map(id => ({
+                                            id: id,
+                                            title: cachedMap[id] || ("Video ID: " + id)
+                                        }));
+                                        trackIndex = 0;
+                                        renderPlaylist();
+                                    }
+                                } else if (docData && docData.cached_tracks && window.loadedPlaylistUrl === urlStr) {
+                                    let cachedEntries = Object.entries(docData.cached_tracks);
+                                    if (cachedEntries.length > 0) {
+                                        playlist = cachedEntries.map(([id, title]) => ({ id, title }));
+                                        trackIndex = 0;
+                                        renderPlaylist();
+                                    }
+                                }
+                            }
+                        }).catch(err => console.error("Ошибка при чтении кэша плейлиста:", err));
                     }
                 }
                 importPlaylist(listId, true);
@@ -2478,79 +2504,79 @@
             }
         }
 
-        async function saveCachedTracksToFirebase(listId, tracksMap) {
-            if (!window.currentUser || !window.db || !listId || !tracksMap || Object.keys(tracksMap).length === 0) return;
+        async function saveCachedTracksToFirebase(playlistId, tracksMap) {
+            if (!window.currentUser || !window.db || !playlistId || !tracksMap || Object.keys(tracksMap).length === 0) return;
             try {
-                const userDoc = window.doc(window.db, "users", window.currentUser.uid);
-                const docSnap = await window.getDoc(userDoc);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
-                        let updated = false;
-                        data.saved_playlists.forEach(p => {
-                            if (p.url && p.url.includes(`list=${listId}`)) {
-                                if (!p.cached_tracks) p.cached_tracks = {};
-                                Object.assign(p.cached_tracks, tracksMap);
-                                updated = true;
-                            }
-                        });
-                        if (updated) {
-                            await window.updateDoc(userDoc, { saved_playlists: data.saved_playlists });
-                            window.currentSavedPlaylists = data.saved_playlists;
-                        }
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", playlistId);
+                let existingTracks = {};
+                if (window.activePlaylistCachedTracks && window.currentPlaylistId && getPlaylistIdByListId(window.currentPlaylistId) === playlistId) {
+                    existingTracks = window.activePlaylistCachedTracks;
+                } else {
+                    const snap = await window.getDoc(docRef);
+                    if (snap.exists() && snap.data().cached_tracks) {
+                        existingTracks = snap.data().cached_tracks;
                     }
+                }
+
+                const mergedTracks = Object.assign({}, existingTracks, tracksMap);
+                await window.updateDoc(docRef, { cached_tracks: mergedTracks });
+
+                if (window.currentPlaylistId && getPlaylistIdByListId(window.currentPlaylistId) === playlistId) {
+                    window.activePlaylistCachedTracks = mergedTracks;
                 }
             } catch (e) {
                 console.error("Ошибка сохранения кэша названий треков:", e);
             }
         }
 
-        async function updateSavedPlaylistInfo(listId, firstVideoId, count) {
+        async function updateSavedPlaylistInfo(listId, firstVideoId, count, videoIds) {
             if (!window.currentUser || !window.db) return;
+            const playlistId = getPlaylistIdByListId(listId);
+            if (!playlistId) return;
+
             try {
-                const userDoc = window.doc(window.db, "users", window.currentUser.uid);
-                const docSnap = await window.getDoc(userDoc);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
-                        let updated = false;
-                        let playlistToUpdateTitle = null;
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", playlistId);
+                let updatedData = {
+                    first_video_id: firstVideoId,
+                    tracks_count: count
+                };
+                if (videoIds && Array.isArray(videoIds)) {
+                    updatedData.video_ids = videoIds;
+                }
 
-                        const newList = data.saved_playlists.map(p => {
-                            if (p.url.includes(`list=${listId}`)) {
-                                if (p.first_video_id !== firstVideoId || p.tracks_count !== count) {
-                                    p.first_video_id = firstVideoId;
-                                    p.tracks_count = count;
-                                    updated = true;
-                                }
-                                if (!p.name || p.name === "YouTube Плейлист" || p.name === "Плейлист YouTube" || p.name === "Загрузка...") {
-                                    playlistToUpdateTitle = p;
-                                }
+                let fetchedTitle = null;
+                if (window.currentSavedPlaylists) {
+                    const p = window.currentSavedPlaylists.find(x => x.id === playlistId);
+                    if (p && (!p.name || p.name === "YouTube Плейлист" || p.name === "Плейлист YouTube" || p.name === "Загрузка...")) {
+                        try {
+                            const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${firstVideoId}`);
+                            const fetchedData = await res.json();
+                            if (fetchedData && fetchedData.title) {
+                                updatedData.name = fetchedData.title;
+                                fetchedTitle = fetchedData.title;
                             }
-                            return p;
-                        });
+                        } catch(e) {}
+                    }
+                }
 
-                        if (playlistToUpdateTitle && firstVideoId) {
-                            try {
-                                const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${firstVideoId}`);
-                                const fetchedData = await res.json();
-                                if (fetchedData && fetchedData.title) {
-                                    playlistToUpdateTitle.name = fetchedData.title;
-                                    updated = true;
-                                    if (window.loadedPlaylistUrl === playlistToUpdateTitle.url) {
-                                        window.loadedPlaylistName = fetchedData.title;
-                                        const titleEl = document.getElementById('playlist-title-text');
-                                        if (titleEl) titleEl.innerText = fetchedData.title;
-                                    }
-                                }
-                            } catch (e) {}
-                        }
+                await window.updateDoc(docRef, updatedData);
 
-                        if (updated) {
-                            await window.updateDoc(userDoc, { saved_playlists: newList });
-                            renderSavedPlaylists(newList);
+                if (window.currentSavedPlaylists) {
+                    const p = window.currentSavedPlaylists.find(x => x.id === playlistId);
+                    if (p) {
+                        p.first_video_id = firstVideoId;
+                        p.tracks_count = count;
+                        if (videoIds) p.video_ids = videoIds;
+                        if (fetchedTitle) {
+                            p.name = fetchedTitle;
+                            if (window.loadedPlaylistUrl === p.url) {
+                                window.loadedPlaylistName = fetchedTitle;
+                                const titleEl = document.getElementById('playlist-title-text');
+                                if (titleEl) titleEl.innerText = fetchedTitle;
+                            }
                         }
                     }
+                    renderSavedPlaylists(window.currentSavedPlaylists);
                 }
             } catch (e) {
                 console.error("Ошибка при обновлении информации о плейлисте:", e);
@@ -2589,24 +2615,18 @@
                 return;
             }
             try {
-                const userDoc = window.doc(window.db, "users", window.currentUser.uid);
-                const docSnap = await window.getDoc(userDoc);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
-                        let savedPlaylists = data.saved_playlists;
-                        let playlistToEdit = savedPlaylists.find(p => p.id === activeRenameId);
-                        if (playlistToEdit) {
-                            playlistToEdit.name = newName;
-                            await window.updateDoc(userDoc, {
-                                saved_playlists: savedPlaylists
-                            });
-                            if (window.loadedPlaylistUrl === playlistToEdit.url) {
-                                window.loadedPlaylistName = newName;
-                                document.getElementById('playlist-title-text').innerText = newName;
-                            }
-                            renderSavedPlaylists(savedPlaylists);
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", activeRenameId);
+                await window.updateDoc(docRef, { name: newName });
+
+                if (window.currentSavedPlaylists) {
+                    let playlistToEdit = window.currentSavedPlaylists.find(p => p.id === activeRenameId);
+                    if (playlistToEdit) {
+                        playlistToEdit.name = newName;
+                        if (window.loadedPlaylistUrl === playlistToEdit.url) {
+                            window.loadedPlaylistName = newName;
+                            document.getElementById('playlist-title-text').innerText = newName;
                         }
+                        renderSavedPlaylists(window.currentSavedPlaylists);
                     }
                 }
                 closeRenamePlaylistModal();
@@ -2718,20 +2738,18 @@
         }
 
         async function loadSavedPlaylistsFromFirebase(uid) {
-            if (!window.db) return;
+            if (!window.db || !window.collection || !window.getDocs) return;
             try {
-                const userDoc = window.doc(window.db, "users", uid);
-                const docSnap = await window.getDoc(userDoc);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
-                        renderSavedPlaylists(data.saved_playlists);
-                    } else {
-                        renderSavedPlaylists([]);
+                const colRef = window.collection(window.db, "users", uid, "playlists");
+                const docSnaps = await window.getDocs(colRef);
+                let savedPlaylists = [];
+                docSnaps.forEach(docSnap => {
+                    if (docSnap.exists()) {
+                        savedPlaylists.push(docSnap.data());
                     }
-                } else {
-                    renderSavedPlaylists([]);
-                }
+                });
+                savedPlaylists.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                renderSavedPlaylists(savedPlaylists);
             } catch (e) {
                 console.error("Ошибка загрузки сохраненных плейлистов:", e);
             }
@@ -2812,31 +2830,25 @@
             }
 
             let saved = false;
+            const playlistId = Date.now().toString();
             try {
-                const userDoc = window.doc(window.db, "users", window.currentUser.uid);
-                const docSnap = await window.getDoc(userDoc);
-                let savedPlaylists = [];
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.saved_playlists && Array.isArray(data.saved_playlists)) {
-                        savedPlaylists = data.saved_playlists;
-                    }
-                }
-
-                savedPlaylists.unshift({
-                    id: Date.now().toString(),
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", playlistId);
+                const newPlaylist = {
+                    id: playlistId,
                     name: finalName,
                     url: pathUrl,
                     first_video_id: videoId || null,
                     tracks_count: listId ? null : 1,
+                    video_ids: videoId ? [videoId] : [],
+                    cached_tracks: {},
                     created_at: new Date().toISOString()
-                });
+                };
 
-                await window.updateDoc(userDoc, {
-                    saved_playlists: savedPlaylists
-                });
+                await window.setDoc(docRef, newPlaylist);
 
-                renderSavedPlaylists(savedPlaylists);
+                if (!window.currentSavedPlaylists) window.currentSavedPlaylists = [];
+                window.currentSavedPlaylists.unshift(newPlaylist);
+                renderSavedPlaylists(window.currentSavedPlaylists);
                 closeAddPlaylistModal();
                 saved = true;
             } catch (e) {

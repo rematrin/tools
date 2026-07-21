@@ -79,19 +79,19 @@ const linksHTML = servicesLinks.map(link => {
         : 'fill="none" stroke="currentColor"';
 
     return `
-    <a href="${link.href}" class="vk-menu-item">
-        <svg class="vk-menu-icon" viewBox="0 0 24 24" ${svgAttrs} stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <a href="${link.href}" class="vk-menu-grid-item">
+        <svg class="vk-menu-grid-icon" viewBox="0 0 24 24" ${svgAttrs} stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             ${link.icon}
         </svg>
-        <span class="vk-menu-text">${link.title}</span>
+        <span class="vk-menu-grid-text">${link.title}</span>
     </a>
     `;
 }).join('');
 
 const navModalHTML = `
 <div class="auth-overlay" id="navOverlay">
-    <div class="auth-modal" id="navModal">
-        <div class="vk-menu-list">
+    <div class="auth-modal nav-grid-modal" id="navModal">
+        <div class="vk-menu-grid">
             ${linksHTML}
         </div>
     </div>

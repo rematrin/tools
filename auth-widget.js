@@ -172,15 +172,9 @@ function initAuthWidget() {
             const modalHeight = modal.offsetHeight || 300; // Rough estimate if not rendered
 
             // Если снизу мало места, открываем над кнопкой
-            if (rect.bottom + modalHeight > window.innerHeight) {
-                modal.style.top = 'auto';
-                modal.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
-                modal.style.transformOrigin = 'bottom left';
-            } else {
-                modal.style.top = (rect.bottom + 8) + 'px';
-                modal.style.bottom = 'auto';
-                modal.style.transformOrigin = 'top left';
-            }
+            modal.style.top = '49px';
+            modal.style.bottom = 'auto';
+            modal.style.transformOrigin = 'top left';
 
             const centerX = window.innerWidth / 2;
             if (rect.left < centerX) {

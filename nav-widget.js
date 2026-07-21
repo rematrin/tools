@@ -102,7 +102,7 @@ function initNavWidget() {
     const recalcPosition = () => {
         if (activeTrigger && overlay.classList.contains('open')) {
             const rect = activeTrigger.getBoundingClientRect();
-            modal.style.top = (rect.bottom + 8) + 'px';
+            modal.style.top = '49px';
 
             const centerX = window.innerWidth / 2;
             if (rect.left < centerX) {

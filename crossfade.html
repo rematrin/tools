@@ -42,6 +42,11 @@
             padding: 80px 14px 20px 14px;
             flex-grow: 1;
             /* Чтобы футер прибивался */
+            transition: max-width 0.35s ease;
+        }
+
+        .wrap.wrap-native-video {
+            max-width: 1240px;
         }
 
         h1 {
@@ -744,6 +749,54 @@
         }
 
 
+        /* --- Переключатель режима плеера (Музыка / Нативное Видео) --- */
+        .player-view-header {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+        }
+
+        .player-view-toggle {
+            display: inline-flex;
+            background: var(--bg);
+            padding: 3px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            gap: 2px;
+        }
+
+        .player-view-btn {
+            border: none;
+            background: transparent;
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .player-view-btn:hover {
+            color: var(--text);
+        }
+
+        .player-view-btn.active {
+            background: var(--card-bg);
+            color: var(--accent);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+        }
+
+        .player-view-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
         /* 2. Визуальный контейнер */
         #visual-container {
             width: 100%;
@@ -756,6 +809,50 @@
             background: #000;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Нативный режим плеера */
+        .wrap-native-video #playlist-sidebar {
+            width: 320px;
+            flex: 0 0 320px;
+            height: auto;
+            max-height: calc((1240px - 320px - 20px - 32px) * 9 / 16 + 32px);
+        }
+
+        #main-player-area.player-view-native-video {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        #main-player-area.player-view-native-video #visual-container {
+            max-width: 100%;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            height: auto;
+            min-height: 0;
+            margin-bottom: 0;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        #main-player-area.player-view-native-video #native-player-wrapper {
+            pointer-events: auto !important;
+        }
+
+        #main-player-area.player-view-native-video #native-player-wrapper iframe {
+            pointer-events: auto !important;
+        }
+
+        #main-player-area.player-view-native-video #cover-overlay {
+            display: none !important;
+        }
+
+        #main-player-area.player-view-native-video .mode-switcher,
+        #main-player-area.player-view-native-video #current-track-info,
+        #main-player-area.player-view-native-video #meta-info-row,
+        #main-player-area.player-view-native-video .seek-container,
+        #main-player-area.player-view-native-video #controls {
+            display: none !important;
         }
 
         .deck-wrapper {
@@ -1224,12 +1321,35 @@
 
                 <div id="main-player-area" class="mode-video">
 
+                    <div class="player-view-header">
+                        <div class="player-view-toggle">
+                            <button class="player-view-btn active" id="btn-view-music" onclick="setPlayerViewMode('music')" title="Музыкальный режим со спецэффектом Crossfade">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 18V5l12-2v13"></path>
+                                    <circle cx="6" cy="18" r="3"></circle>
+                                    <circle cx="18" cy="16" r="3"></circle>
+                                </svg>
+                                <span>Музыка</span>
+                            </button>
+                            <button class="player-view-btn" id="btn-view-video" onclick="setPlayerViewMode('native-video')" title="Видео режим с нативным плеером YouTube">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="4" width="20" height="16" rx="3" ry="3"></rect>
+                                    <polygon points="10,9 16,12 10,15" fill="currentColor"></polygon>
+                                </svg>
+                                <span>Видео</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <div id="visual-container">
                         <div id="wrapper1" class="deck-wrapper deck-active">
                             <div id="player1" style="width:100%; height:100%;"></div>
                         </div>
                         <div id="wrapper2" class="deck-wrapper deck-bg">
                             <div id="player2" style="width:100%; height:100%;"></div>
+                        </div>
+                        <div id="native-player-wrapper" class="deck-wrapper" style="display:none; z-index:30;">
+                            <div id="playerNative" style="width:100%; height:100%;"></div>
                         </div>
                         <img id="cover-overlay" src="" alt="Cover" draggable="false">
                     </div>
@@ -1502,10 +1622,74 @@
                     updateUI();
                     loadDeck(p1, trackIndex);
                 }
+                // Принудительно применяем сохраненный режим плеера (Музыка/Нативное Видео) после инициализации
+                setPlayerViewMode(currentPlayerViewMode);
             }
         }
 
         // --- UI LOGIC ---
+
+        let currentPlayerViewMode = localStorage.getItem('crossfade-player-view-mode') || 'music';
+        var pNative = null;
+
+        function setPlayerViewMode(mode) {
+            currentPlayerViewMode = mode;
+            localStorage.setItem('crossfade-player-view-mode', mode);
+
+            const container = document.getElementById('main-player-area');
+            const wrapEl = document.querySelector('.wrap');
+            const btnMusic = document.getElementById('btn-view-music');
+            const btnVideo = document.getElementById('btn-view-video');
+            const nativeWrapper = document.getElementById('native-player-wrapper');
+
+            if (mode === 'native-video') {
+                container.classList.add('player-view-native-video');
+                if (wrapEl) wrapEl.classList.add('wrap-native-video');
+                btnMusic.classList.remove('active');
+                btnVideo.classList.add('active');
+                if (nativeWrapper) nativeWrapper.style.display = 'block';
+
+                // Приостанавливаем dj-плееры
+                if (p1 && typeof p1.pauseVideo === 'function') p1.pauseVideo();
+                if (p2 && typeof p2.pauseVideo === 'function') p2.pauseVideo();
+
+                // Инициализируем нативный плеер с controls: 1 если еще не создан
+                const currentVideoId = (playlist && playlist[trackIndex]) ? playlist[trackIndex].id : '';
+                if (!pNative && typeof YT !== 'undefined' && YT.Player && currentVideoId) {
+                    pNative = new YT.Player('playerNative', {
+                        height: '100%', width: '100%',
+                        videoId: currentVideoId,
+                        playerVars: {
+                            controls: 1,
+                            disablekb: 0,
+                            rel: 0,
+                            iv_load_policy: 3,
+                            origin: window.location.origin
+                        }
+                    });
+                } else if (pNative && currentVideoId) {
+                    let curData = pNative.getVideoData ? pNative.getVideoData() : null;
+                    if (!curData || curData.video_id !== currentVideoId) {
+                        pNative.cueVideoById(currentVideoId);
+                    }
+                }
+            } else {
+                container.classList.remove('player-view-native-video');
+                if (wrapEl) wrapEl.classList.remove('wrap-native-video');
+                btnMusic.classList.add('active');
+                btnVideo.classList.remove('active');
+                if (nativeWrapper) nativeWrapper.style.display = 'none';
+
+                if (pNative && typeof pNative.pauseVideo === 'function') {
+                    pNative.pauseVideo();
+                }
+            }
+        }
+
+        // Вызываем при загрузке страницы для установки сохранённого режима
+        document.addEventListener('DOMContentLoaded', () => {
+            setPlayerViewMode(currentPlayerViewMode);
+        });
 
         function setMode(mode) {
             currentMode = mode;
@@ -1619,6 +1803,7 @@
             updatePlayPauseIcon();
             updateDeckVisibility();
             updateButtons();
+            setPlayerViewMode(currentPlayerViewMode);
         }
 
         function updateButtons() {
@@ -1782,9 +1967,17 @@
         }
 
         function jumpToTrack(index) {
-            if (isCrossfading || index === trackIndex) return;
+            if (isCrossfading) return;
             trackIndex = index;
-            startMix();
+            if (currentPlayerViewMode === 'native-video') {
+                if (pNative && playlist[trackIndex]) {
+                    pNative.loadVideoById(playlist[trackIndex].id);
+                } else if (!pNative && playlist[trackIndex]) {
+                    setPlayerViewMode('native-video');
+                }
+            } else {
+                startMix();
+            }
             updateUI();
         }
 

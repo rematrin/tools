@@ -378,7 +378,6 @@ export function initSidebarManager(context) {
         const expandedFolders = localStorage.getItem('expandedFolders') === 'true';
         const showTodo = localStorage.getItem('showTodo') === 'true';
         const showFactsWidget = localStorage.getItem('showFactsWidget') !== 'false';
-        const showSidebarWidgets = localStorage.getItem('showSidebarWidgets') === 'true';
 
         const glassSettingsHTML = `
             <div class="profile-card" style="gap: 8px; padding: 12px 16px;">
@@ -415,13 +414,6 @@ export function initSidebarManager(context) {
                     <span style="font-size: 14px; flex: 1; padding-right: 10px;">Интересные факты и цитаты</span>
                     <label class="switch" style="transform: scale(0.85); transform-origin: right;">
                         <input type="checkbox" id="showFactsWidgetToggle" ${showFactsWidget ? 'checked' : ''}>
-                        <span class="slider-toggle"></span>
-                    </label>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
-                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Виджеты (часы и погода)</span>
-                    <label class="switch" style="transform: scale(0.85); transform-origin: right;">
-                        <input type="checkbox" id="showSidebarWidgetsToggle" ${showSidebarWidgets ? 'checked' : ''}>
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
@@ -571,18 +563,6 @@ export function initSidebarManager(context) {
                 if (auth.currentUser) window.dbApi.saveSettings({ showFactsWidget: isEnabled });
                 if (isEnabled) document.body.classList.add('show-facts-widget-enabled');
                 else document.body.classList.remove('show-facts-widget-enabled');
-            };
-        }
-
-        // Виджеты (часы и погода)
-        const showSidebarWidgetsToggle = document.getElementById('showSidebarWidgetsToggle');
-        if (showSidebarWidgetsToggle) {
-            showSidebarWidgetsToggle.onchange = (e) => {
-                const isEnabled = e.target.checked;
-                localStorage.setItem('showSidebarWidgets', isEnabled.toString());
-                if (auth.currentUser) window.dbApi.saveSettings({ showSidebarWidgets: isEnabled });
-                if (isEnabled) document.body.classList.add('show-sidebar-widgets-enabled');
-                else document.body.classList.remove('show-sidebar-widgets-enabled');
             };
         }
 

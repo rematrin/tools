@@ -56,6 +56,11 @@ const dashboardView = document.getElementById('dashboardView');
 const boardActiveView = document.getElementById('boardActiveView');
 const boardsGrid = document.getElementById('boardsGrid');
 const btnCreateBoard = document.getElementById('btnCreateBoard');
+const boardSortSelect = document.getElementById('boardSortSelect');
+
+let loadedBoardsList = [];
+let currentSortOption = localStorage.getItem('board_sort_option') || 'updatedDesc';
+
 
 const boardViewport = document.getElementById('boardViewport');
 const canvasHolder = document.getElementById('canvasHolder');
@@ -266,20 +271,112 @@ function setupOfflineModeForDashboard() {
 }
 
 function renderBoardsGrid(boardsList) {
+    if (boardsList) {
+        loadedBoardsList = boardsList;
+    }
+    
+    // Сортировка loadedBoardsList
+    const sorted = [...loadedBoardsList];
+    sorted.sort((a, b) => {
+        const titleA = (a.title || '').toLowerCase();
+        const titleB = (b.title || '').toLowerCase();
+        const createdA = a.createdAt || a.updatedAt || 0;
+        const createdB = b.createdAt || b.updatedAt || 0;
+        const updatedA = a.updatedAt || 0;
+        const updatedB = b.updatedAt || 0;
+
+        if (currentSortOption === 'alphabeticalAsc') {
+            return titleA.localeCompare(titleB, 'ru');
+        } else if (currentSortOption === 'alphabeticalDesc') {
+            return titleB.localeCompare(titleA, 'ru');
+        } else if (currentSortOption === 'createdAsc') {
+            return createdA - createdB;
+        } else if (currentSortOption === 'createdDesc') {
+            return createdB - createdA;
+        } else if (currentSortOption === 'updatedAsc') {
+            return updatedA - updatedB;
+        } else { // updatedDesc
+            return updatedB - updatedA;
+        }
+    });
+
     boardsGrid.innerHTML = '';
     
-    if (boardsList.length === 0) {
+    if (sorted.length === 0) {
         boardsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-sec); padding: 40px;">
             У вас пока нет досок. Нажмите "Создать доску", чтобы начать!
         </div>`;
         return;
     }
 
-    boardsList.forEach(board => {
+    sorted.forEach(board => {
         const card = document.createElement('div');
         card.className = 'board-card';
+        
+        // Создаем выпадающее меню действий
+        const dropdown = document.createElement('div');
+        dropdown.className = 'board-actions-dropdown';
+        dropdown.style.display = 'none';
+        
+        const renameBtn = document.createElement('button');
+        renameBtn.className = 'board-dropdown-item';
+        renameBtn.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Переименовать</span>
+        `;
+        renameBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.style.display = 'none';
+            showRenameBoardModal(board.id, board.title);
+        });
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'board-dropdown-item btn-delete';
+        deleteBtn.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Удалить</span>
+        `;
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.style.display = 'none';
+            showDeleteBoardModal(board.id, board.title);
+        });
+        
+        dropdown.appendChild(renameBtn);
+        dropdown.appendChild(deleteBtn);
+        card.appendChild(dropdown);
+
+        const openMenu = () => {
+            document.querySelectorAll('.board-actions-dropdown').forEach(dd => {
+                if (dd !== dropdown) dd.style.display = 'none';
+            });
+            
+            const isHidden = dropdown.style.display === 'none';
+            if (isHidden) {
+                dropdown.style.display = 'flex';
+                dropdown.style.position = 'absolute';
+                dropdown.style.left = 'auto';
+                dropdown.style.right = '16px';
+                dropdown.style.top = '48px';
+            } else {
+                dropdown.style.display = 'none';
+            }
+        };
+
+        card.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openMenu();
+        });
+
         card.addEventListener('click', (e) => {
-            if (e.target.closest('.board-card-delete')) return;
+            if (e.target.closest('.board-card-more') || e.target.closest('.board-actions-dropdown')) return;
             window.location.search = `?id=${board.id}`;
         });
 
@@ -294,15 +391,21 @@ function renderBoardsGrid(boardsList) {
         date.innerText = `Изменено: ${dateStr}`;
         card.appendChild(date);
 
-        const delBtn = document.createElement('button');
-        delBtn.className = 'board-card-delete';
-        delBtn.innerHTML = '&times;';
-        delBtn.title = 'Удалить доску';
-        delBtn.addEventListener('click', (e) => {
+        const moreBtn = document.createElement('button');
+        moreBtn.className = 'board-card-more';
+        moreBtn.title = 'Действия';
+        moreBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="1.5"></circle>
+                <circle cx="12" cy="5" r="1.5"></circle>
+                <circle cx="12" cy="19" r="1.5"></circle>
+            </svg>
+        `;
+        moreBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            deleteBoard(board.id);
+            openMenu();
         });
-        card.appendChild(delBtn);
+        card.appendChild(moreBtn);
 
         boardsGrid.appendChild(card);
     });
@@ -315,6 +418,7 @@ btnCreateBoard.addEventListener('click', () => {
         title: "Новая доска",
         width: 2400,
         height: 1600,
+        createdAt: Date.now(),
         updatedAt: Date.now()
     };
 
@@ -331,9 +435,31 @@ btnCreateBoard.addEventListener('click', () => {
     }
 });
 
-async function deleteBoard(boardId) {
-    if (!confirm("Вы уверены, что хотите полностью удалить эту доску со всеми элементами?")) return;
+function showDeleteBoardModal(boardId, boardTitle) {
+    const modal = document.getElementById('confirmDeleteBoardModal');
+    const titleSpan = document.getElementById('confirmDeleteBoardTitle');
+    const cancelBtn = document.getElementById('btnConfirmDeleteBoardCancel');
+    const confirmBtn = document.getElementById('btnConfirmDeleteBoardConfirm');
 
+    titleSpan.innerText = `«${boardTitle || 'Без названия'}»`;
+    modal.style.display = 'flex';
+
+    const newCancel = cancelBtn.cloneNode(true);
+    const newConfirm = confirmBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+    confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+
+    newCancel.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    newConfirm.addEventListener('click', async () => {
+        modal.style.display = 'none';
+        await executeDeleteBoard(boardId);
+    });
+}
+
+async function executeDeleteBoard(boardId) {
     if (currentUid && db) {
         const elementsCollRef = collection(db, "users", currentUid, "whiteboards", boardId, "elements");
         const snap = await getDocs(elementsCollRef);
@@ -356,6 +482,100 @@ async function deleteBoard(boardId) {
     }
 }
 
+function showRenameBoardModal(boardId, currentTitle) {
+    const modal = document.getElementById('renameBoardModal');
+    const input = document.getElementById('renameBoardInput');
+    const cancelBtn = document.getElementById('btnRenameBoardCancel');
+    const confirmBtn = document.getElementById('btnRenameBoardConfirm');
+
+    input.value = currentTitle || "";
+    modal.style.display = 'flex';
+    input.focus();
+    input.select();
+
+    const newCancel = cancelBtn.cloneNode(true);
+    const newConfirm = confirmBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+    confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+
+    const handleSave = async () => {
+        const trimmedTitle = input.value.trim();
+        if (!trimmedTitle) {
+            alert("Название не может быть пустым!");
+            return;
+        }
+        modal.style.display = 'none';
+        await executeRenameBoard(boardId, trimmedTitle);
+    };
+
+    newCancel.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    newConfirm.addEventListener('click', handleSave);
+
+    const handleKeydown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSave();
+        } else if (e.key === 'Escape') {
+            modal.style.display = 'none';
+        }
+    };
+    input.removeEventListener('keydown', input._keydownHandler);
+    input._keydownHandler = handleKeydown;
+    input.addEventListener('keydown', handleKeydown);
+}
+
+async function executeRenameBoard(boardId, trimmedTitle) {
+    if (currentUid && db) {
+        const boardDocRef = doc(db, "users", currentUid, "whiteboards", boardId);
+        await setDoc(boardDocRef, {
+            title: trimmedTitle,
+            updatedAt: Date.now()
+        }, { merge: true });
+    } else {
+        const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+        const idx = localBoards.findIndex(b => b.id === boardId);
+        if (idx !== -1) {
+            localBoards[idx].title = trimmedTitle;
+            localBoards[idx].updatedAt = Date.now();
+            localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+        }
+        
+        const boardConfigLoc = JSON.parse(localStorage.getItem(`board_config_${boardId}`) || '{}');
+        boardConfigLoc.title = trimmedTitle;
+        localStorage.setItem(`board_config_${boardId}`, JSON.stringify(boardConfigLoc));
+
+        setupOfflineModeForDashboard();
+    }
+}
+
+if (boardSortSelect) {
+    boardSortSelect.value = currentSortOption;
+    boardSortSelect.addEventListener('change', (e) => {
+        currentSortOption = e.target.value;
+        localStorage.setItem('board_sort_option', currentSortOption);
+        renderBoardsGrid();
+    });
+}
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.board-card-more') && !e.target.closest('.board-actions-dropdown')) {
+        document.querySelectorAll('.board-actions-dropdown').forEach(dd => {
+            dd.style.display = 'none';
+        });
+    }
+});
+
+// Закрытие модалок по клику вне контента
+document.querySelectorAll('.confirm-modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.style.display = 'none';
+        }
+    });
+});
 // === ЛОГИКА ДЛЯ АКТИВНОЙ ДОСКИ ===
 
 function setupFirebaseSyncForBoard() {

@@ -9,7 +9,8 @@ import {
     deleteDoc,
     doc,
     updateDoc,
-    serverTimestamp
+    serverTimestamp,
+    where
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // Изначальные данные видео
@@ -22,6 +23,16 @@ let searchQuery = "";
 let currentMenuRoute = "videos"; // "videos" | "trash"
 let isDeletePermanentMode = false;
 let currentViewMode = localStorage.getItem("creatorhub_view_mode") || "list";
+
+// Переменные для интеграции с todo.html
+let youtubeProjectId = null;
+let videoSectionId = null;
+let unsubscribeTasks = null;
+let unsubscribeProjects = null;
+let unsubscribeSections = null;
+let projectsList = [];
+let sectionsList = [];
+let chTasksCompletedCollapsed = localStorage.getItem("ch_tasks_completed_collapsed") === "true";
 
 const SHORTS_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="16" height="16" baseProfile="basic" style="vertical-align: middle; margin-right: 6px; flex-shrink: 0; display: inline-block;"><path fill="#ff3d00" d="M29.103,2.631c4.217-2.198,9.438-0.597,11.658,3.577c2.22,4.173,0.6,9.337-3.617,11.534l-3.468,1.823	c2.987,0.109,5.836,1.75,7.328,4.555c2.22,4.173,0.604,9.337-3.617,11.534L18.897,45.37c-4.217,2.198-9.438,0.597-11.658-3.577	s-0.6-9.337,3.617-11.534l3.468-1.823c-2.987-0.109-5.836-1.75-7.328-4.555c-2.22-4.173-0.6-9.337,3.617-11.534	C10.612,12.346,29.103,2.631,29.103,2.631z M19.122,17.12l11.192,6.91l-11.192,6.877C19.122,30.907,19.122,17.12,19.122,17.12z"/><path fill="#fff" d="M19.122,17.12v13.787l11.192-6.877L19.122,17.12z"/></svg>`;
 
@@ -1620,6 +1631,12 @@ function selectVideoItem(id) {
             detailSidebarResizer.style.display = "block";
         }
     }
+
+    if (currentUid) {
+        ensureVideoSection(selectedVideo);
+    } else {
+        renderLocalTasks();
+    }
 }
 
 // Функция рендера файлов удалена так как вкладка файлы заменена на референсы
@@ -1637,6 +1654,33 @@ window.addEventListener('authChanged', (e) => {
     db = window.db || getFirestore();
 
     if (currentUid) {
+        // Подписка на проекты
+        const qProj = query(collection(db, 'users', currentUid, 'projects'));
+        if (unsubscribeProjects) unsubscribeProjects();
+        unsubscribeProjects = onSnapshot(qProj, (snapshot) => {
+            projectsList = [];
+            snapshot.forEach(docSnap => {
+                projectsList.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            const ytProj = projectsList.find(p => p.name && p.name.toLowerCase() === 'youtube');
+            if (ytProj) {
+                youtubeProjectId = ytProj.id;
+            }
+        });
+
+        // Подписка на разделы
+        const qSec = query(collection(db, 'users', currentUid, 'sections'));
+        if (unsubscribeSections) unsubscribeSections();
+        unsubscribeSections = onSnapshot(qSec, (snapshot) => {
+            sectionsList = [];
+            snapshot.forEach(docSnap => {
+                sectionsList.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            if (selectedVideo) {
+                ensureVideoSection(selectedVideo);
+            }
+        });
+
         // Подписка на коллекцию видео в Firestore
         const q = query(collection(db, "users", currentUid, "videos"), orderBy("createdAt", "asc"));
         if (unsubscribeVideos) unsubscribeVideos();
@@ -1701,6 +1745,13 @@ window.addEventListener('authChanged', (e) => {
             unsubscribeVideos();
             unsubscribeVideos = null;
         }
+        if (unsubscribeProjects) { unsubscribeProjects(); unsubscribeProjects = null; }
+        if (unsubscribeSections) { unsubscribeSections(); unsubscribeSections = null; }
+        if (unsubscribeTasks) { unsubscribeTasks(); unsubscribeTasks = null; }
+        youtubeProjectId = null;
+        videoSectionId = null;
+        projectsList = [];
+        sectionsList = [];
         // Загрузка локальных данных с автоудалением
         let localData = JSON.parse(localStorage.getItem("local_videos")) || [];
         const now = Date.now();
@@ -1919,6 +1970,10 @@ function clearDetailSidebar() {
     } else {
         if (emptyStateEl) emptyStateEl.style.display = "none";
         if (contentWrapperEl) contentWrapperEl.style.display = "block";
+    }
+    if (unsubscribeTasks) {
+        unsubscribeTasks();
+        unsubscribeTasks = null;
     }
 }
 
@@ -3553,4 +3608,440 @@ function initVideoDetailMobileBottomSheet() {
         titleBlock.addEventListener("touchend", onTouchEnd);
     }
 }
+
+// === Интеграция задач Мои Задачи (todo.html) ===
+async function getOrCreateYouTubeProjectAndSection(video) {
+    if (!currentUid || !db || !video) return null;
+
+    // 1. Убедимся, что проект "YouTube" существует в БД
+    let projectId = youtubeProjectId;
+    if (!projectId) {
+        const ytProj = projectsList.find(p => p.name && p.name.toLowerCase() === 'youtube');
+        if (ytProj) {
+            projectId = ytProj.id;
+            youtubeProjectId = projectId;
+        } else {
+            try {
+                const docRef = await addDoc(collection(db, 'users', currentUid, 'projects'), {
+                    name: 'YouTube',
+                    createdAt: serverTimestamp(),
+                    order: 0
+                });
+                projectId = docRef.id;
+                youtubeProjectId = projectId;
+            } catch (err) {
+                console.error("Ошибка при создании проекта YouTube:", err);
+                return null;
+            }
+        }
+    }
+
+    // 2. Убедимся, что раздел для видео существует
+    let sectionId = videoSectionId;
+    let sec = sectionsList.find(s => s.projectId === projectId && s.videoId === video.id);
+    if (!sec) {
+        const cleanTitle = formatVideoTitle(video.title);
+        sec = sectionsList.find(s => s.projectId === projectId && s.name === cleanTitle && !s.videoId);
+        if (sec) {
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'sections', sec.id), {
+                    videoId: video.id
+                });
+                sectionId = sec.id;
+                videoSectionId = sectionId;
+            } catch (err) {
+                console.error("Ошибка при привязке videoId к разделу:", err);
+            }
+        }
+    } else {
+        sectionId = sec.id;
+        videoSectionId = sectionId;
+    }
+
+    if (!sec) {
+        try {
+            const cleanTitle = formatVideoTitle(video.title);
+            const maxOrder = sectionsList
+                .filter(s => s.projectId === projectId)
+                .reduce((max, s) => Math.max(max, s.order !== undefined ? s.order : 0), 0);
+
+            const docRef = await addDoc(collection(db, 'users', currentUid, 'sections'), {
+                name: cleanTitle,
+                projectId: projectId,
+                videoId: video.id,
+                order: maxOrder + 1,
+                createdAt: serverTimestamp()
+            });
+            sectionId = docRef.id;
+            videoSectionId = sectionId;
+        } catch (err) {
+            console.error("Ошибка при создании раздела для видео:", err);
+            return null;
+        }
+    } else {
+        const cleanTitle = formatVideoTitle(video.title);
+        if (sec.name !== cleanTitle) {
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'sections', sec.id), {
+                    name: cleanTitle
+                });
+            } catch (err) {
+                console.error("Ошибка при обновлении названия раздела:", err);
+            }
+        }
+    }
+
+    return { projectId, sectionId };
+}
+
+async function ensureVideoSection(video) {
+    if (!currentUid || !db || !video) return;
+    const res = await getOrCreateYouTubeProjectAndSection(video);
+    if (res) {
+        subscribeToTasks(res.sectionId);
+    }
+}
+
+function subscribeToTasks(sectionId) {
+    if (unsubscribeTasks) {
+        unsubscribeTasks();
+        unsubscribeTasks = null;
+    }
+    
+    if (!currentUid || !sectionId) {
+        renderLocalTasks();
+        return;
+    }
+    
+    const qTasks = query(
+        collection(db, 'users', currentUid, 'tasks'),
+        where('projectId', '==', youtubeProjectId),
+        where('sectionId', '==', sectionId)
+    );
+    
+    unsubscribeTasks = onSnapshot(qTasks, (snapshot) => {
+        const tasksList = [];
+        snapshot.forEach(docSnap => {
+            tasksList.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        renderTasksUI(tasksList);
+    }, (error) => {
+        console.error("Ошибка при получении задач видео:", error);
+    });
+}
+
+function renderTasksUI(tasksList) {
+    const activeListEl = document.getElementById("chActiveTasksList");
+    const completedListEl = document.getElementById("chCompletedTasksList");
+    const completedHeader = document.getElementById("chCompletedHeader");
+    const completedCountEl = document.getElementById("chCompletedCount");
+    
+    if (!activeListEl || !completedListEl) return;
+    
+    activeListEl.innerHTML = "";
+    completedListEl.innerHTML = "";
+    
+    const activeTasks = tasksList.filter(t => !t.completed && !t.deleted);
+    const completedTasks = tasksList.filter(t => t.completed && !t.deleted);
+    
+    if (activeTasks.length === 0) {
+        activeListEl.innerHTML = `<div style="text-align: center; color: var(--ch-text-gray); padding: 20px 0; font-size: 0.9rem;">Нет активных задач</div>`;
+    } else {
+        // Сортируем задачи по createdAt (новые внизу, чтобы совпадало с поведением добавления)
+        activeTasks.sort((a, b) => {
+            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
+            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+            return timeA - timeB;
+        });
+        activeTasks.forEach(task => {
+            activeListEl.appendChild(createTaskDOMElement(task));
+        });
+    }
+    
+    if (completedTasks.length > 0) {
+        if (completedHeader) completedHeader.style.display = "block";
+        if (completedCountEl) completedCountEl.textContent = completedTasks.length;
+        
+        completedTasks.sort((a, b) => {
+            const timeA = a.completedAt ? (a.completedAt.toDate ? a.completedAt.toDate().getTime() : new Date(a.completedAt).getTime()) : 0;
+            const timeB = b.completedAt ? (b.completedAt.toDate ? b.completedAt.toDate().getTime() : new Date(b.completedAt).getTime()) : 0;
+            return timeB - timeA; // Недавно выполненные сверху
+        });
+        
+        completedTasks.forEach(task => {
+            completedListEl.appendChild(createTaskDOMElement(task));
+        });
+        
+        if (chTasksCompletedCollapsed) {
+            if (completedHeader) completedHeader.classList.add("collapsed");
+            completedListEl.style.display = "none";
+        } else {
+            if (completedHeader) completedHeader.classList.remove("collapsed");
+            completedListEl.style.display = "block";
+        }
+    } else {
+        if (completedHeader) completedHeader.style.display = "none";
+        completedListEl.style.display = "none";
+    }
+}
+
+function createTaskDOMElement(task) {
+    const item = document.createElement("div");
+    item.className = `ch-task-item ${task.completed ? 'completed' : ''} priority-${task.priority || 0}`;
+    item.setAttribute("data-id", task.id);
+    
+    const priorityColors = {
+        0: "inherit",
+        1: "#2563eb",
+        2: "#d97706",
+        3: "#dc2626"
+    };
+    const priorityColor = priorityColors[task.priority || 0];
+
+    item.innerHTML = `
+        <button class="ch-task-checkbox" type="button" aria-label="Отметить задачу">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </button>
+        <div class="ch-task-content">${escapeHTML(task.title)}</div>
+        <div class="ch-task-actions">
+            <button class="ch-task-action-btn btn-priority-task" title="Изменить приоритет" type="button" style="color: ${priorityColor};">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15"></line>
+                </svg>
+            </button>
+            <button class="ch-task-action-btn btn-delete-task" title="Удалить задачу" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+        </div>
+    `;
+    
+    // Клик по чекбоксу
+    const checkbox = item.querySelector(".ch-task-checkbox");
+    checkbox.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        await toggleTaskCompleted(task);
+    });
+    
+    // Клик по приоритету (циклическая смена: 0 -> 1 -> 2 -> 3 -> 0)
+    const btnPriority = item.querySelector(".btn-priority-task");
+    btnPriority.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const nextPriority = ((task.priority || 0) + 1) % 4;
+        if (currentUid) {
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                    priority: nextPriority
+                });
+            } catch (err) {
+                console.error("Ошибка при обновлении приоритета задачи:", err);
+            }
+        } else {
+            if (!selectedVideo) return;
+            const localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
+            const t = localTasks.find(item => item.id === task.id);
+            if (t) {
+                t.priority = nextPriority;
+                localStorage.setItem(`local_tasks_${selectedVideo.id}`, JSON.stringify(localTasks));
+                renderLocalTasks();
+            }
+        }
+    });
+
+    // Редактирование по двойному клику
+    const contentEl = item.querySelector(".ch-task-content");
+    contentEl.addEventListener("dblclick", (e) => {
+        if (task.completed) return;
+        e.stopPropagation();
+        
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "ch-task-edit-input";
+        input.value = task.title;
+        
+        input.style.width = "100%";
+        input.style.font = "inherit";
+        input.style.color = "var(--ch-text-dark)";
+        input.style.background = "var(--ch-bg)";
+        input.style.border = "1px solid var(--ch-purple)";
+        input.style.borderRadius = "4px";
+        input.style.padding = "4px 8px";
+        input.style.boxSizing = "border-box";
+        input.style.outline = "none";
+        
+        contentEl.innerHTML = "";
+        contentEl.appendChild(input);
+        input.focus();
+        
+        let finished = false;
+        const saveEdit = async () => {
+            if (finished) return;
+            finished = true;
+            const newTitle = input.value.trim();
+            if (newTitle && newTitle !== task.title) {
+                if (currentUid) {
+                    try {
+                        await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                            title: newTitle
+                        });
+                    } catch (err) {
+                        console.error("Ошибка при изменении названия задачи:", err);
+                        contentEl.textContent = task.title;
+                    }
+                } else {
+                    const localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
+                    const t = localTasks.find(item => item.id === task.id);
+                    if (t) {
+                        t.title = newTitle;
+                        localStorage.setItem(`local_tasks_${selectedVideo.id}`, JSON.stringify(localTasks));
+                        renderLocalTasks();
+                    }
+                }
+            } else {
+                contentEl.textContent = task.title;
+            }
+        };
+        
+        input.addEventListener("blur", saveEdit);
+        input.addEventListener("keydown", (ev) => {
+            if (ev.key === "Enter") {
+                ev.preventDefault();
+                saveEdit();
+            } else if (ev.key === "Escape") {
+                ev.preventDefault();
+                finished = true;
+                contentEl.textContent = task.title;
+            }
+        });
+    });
+    
+    // Клик по кнопке удаления
+    const btnDelete = item.querySelector(".btn-delete-task");
+    btnDelete.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        await deleteTask(task.id);
+    });
+    
+    return item;
+}
+
+async function toggleTaskCompleted(task) {
+    const nextState = !task.completed;
+    if (currentUid) {
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                completed: nextState,
+                completedAt: nextState ? serverTimestamp() : null
+            });
+        } catch (err) {
+            console.error("Ошибка при обновлении статуса задачи:", err);
+        }
+    } else {
+        if (!selectedVideo) return;
+        const localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
+        const t = localTasks.find(item => item.id === task.id);
+        if (t) {
+            t.completed = nextState;
+            t.completedAt = nextState ? Date.now() : null;
+            localStorage.setItem(`local_tasks_${selectedVideo.id}`, JSON.stringify(localTasks));
+            renderLocalTasks();
+        }
+    }
+}
+
+async function deleteTask(taskId) {
+    if (currentUid) {
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
+                deleted: true,
+                deletedAt: serverTimestamp()
+            });
+        } catch (err) {
+            console.error("Ошибка при удалении задачи:", err);
+        }
+    } else {
+        if (!selectedVideo) return;
+        let localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
+        localTasks = localTasks.filter(item => item.id !== taskId);
+        localStorage.setItem(`local_tasks_${selectedVideo.id}`, JSON.stringify(localTasks));
+        renderLocalTasks();
+    }
+}
+
+function renderLocalTasks() {
+    if (!selectedVideo) return;
+    const localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
+    renderTasksUI(localTasks);
+}
+
+function escapeHTML(str) {
+    if (!str) return "";
+    return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+}
+
+// Слушатели событий
+const chAddTaskInput = document.getElementById("chAddTaskInput");
+if (chAddTaskInput) {
+    chAddTaskInput.addEventListener("keydown", async (e) => {
+        if (e.key === "Enter") {
+            const title = chAddTaskInput.value.trim();
+            if (!title) return;
+            chAddTaskInput.value = "";
+
+            if (currentUid) {
+                const res = await getOrCreateYouTubeProjectAndSection(selectedVideo);
+                if (!res) return;
+                try {
+                    await addDoc(collection(db, 'users', currentUid, 'tasks'), {
+                        title: title,
+                        completed: false,
+                        projectId: res.projectId,
+                        sectionId: res.sectionId,
+                        priority: 0,
+                        createdAt: serverTimestamp()
+                    });
+                } catch (err) {
+                    console.error("Ошибка при добавлении задачи:", err);
+                }
+            } else {
+                if (!selectedVideo) return;
+                const localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
+                localTasks.push({
+                    id: "local_task_" + Date.now(),
+                    title: title,
+                    completed: false,
+                    createdAt: Date.now()
+                });
+                localStorage.setItem(`local_tasks_${selectedVideo.id}`, JSON.stringify(localTasks));
+                renderLocalTasks();
+            }
+        }
+    });
+}
+
+const chToggleCompletedBtn = document.getElementById("chToggleCompletedBtn");
+if (chToggleCompletedBtn) {
+    chToggleCompletedBtn.addEventListener("click", () => {
+        chTasksCompletedCollapsed = !chTasksCompletedCollapsed;
+        localStorage.setItem("ch_tasks_completed_collapsed", chTasksCompletedCollapsed);
+        
+        const completedHeader = document.getElementById("chCompletedHeader");
+        const completedListEl = document.getElementById("chCompletedTasksList");
+        if (chTasksCompletedCollapsed) {
+            if (completedHeader) completedHeader.classList.add("collapsed");
+            if (completedListEl) completedListEl.style.display = "none";
+        } else {
+            if (completedHeader) completedHeader.classList.remove("collapsed");
+            if (completedListEl) completedListEl.style.display = "block";
+        }
+    });
+}
+
 

@@ -32,9 +32,11 @@
     <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0/index.min.js"></script>
     <script>
         window.addEventListener('touchmove', function () { }, { passive: false });
-        MobileDragDrop.polyfill({
-            dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
-        });
+        if (typeof MobileDragDrop !== 'undefined') {
+            MobileDragDrop.polyfill({
+                dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
+            });
+        }
     </script>
 </head>
 
@@ -318,6 +320,7 @@
             <div class="detail-tabs">
                 <button class="detail-tab-btn active" data-tab="info">Информация</button>
                 <button class="detail-tab-btn" data-tab="references">Описание</button>
+                <button class="detail-tab-btn" data-tab="tasks">Задачи</button>
                 <button class="detail-tab-btn" data-tab="settings">Настройки</button>
             </div>
 
@@ -472,6 +475,33 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка: Задачи -->
+                <div class="tab-pane" id="pane-tasks">
+                    <div class="detail-card ch-tasks-card">
+                        <!-- Добавить задачу -->
+                        <div class="ch-add-task-container">
+                            <input type="text" id="chAddTaskInput" class="ch-task-input" placeholder="Добавить задачу..." autocomplete="off">
+                        </div>
+                        
+                        <!-- Список невыполненных задач -->
+                        <div id="chActiveTasksList" class="ch-tasks-list"></div>
+                        
+                        <!-- Разделитель выполненных задач -->
+                        <div id="chCompletedHeader" class="ch-completed-header" style="display: none;">
+                            <button id="chToggleCompletedBtn" class="ch-toggle-completed-btn" type="button">
+                                <svg class="ch-chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                                <span>Выполненные</span>
+                                <span id="chCompletedCount" class="ch-completed-count">0</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Список выполненных задач -->
+                        <div id="chCompletedTasksList" class="ch-tasks-list ch-completed-list" style="display: none;"></div>
                     </div>
                 </div>
             </div>

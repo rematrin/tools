@@ -3853,3 +3853,261 @@ body.dark .tag-color-gray {
     margin: 0 !important;
     display: block;
 }
+
+/* === Вкладка задач (Tasks Tab) === */
+#pane-tasks {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+}
+
+#pane-tasks.active {
+    display: flex;
+}
+
+.ch-tasks-card {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    background: var(--ch-card-bg);
+    border-radius: var(--ch-radius);
+    border: 1px solid var(--ch-border);
+    box-shadow: var(--ch-shadow);
+    gap: 16px;
+    height: 100%;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.ch-add-task-container {
+    width: 100%;
+}
+
+.ch-task-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--ch-border);
+    border-radius: 8px;
+    background: var(--ch-bg);
+    color: var(--ch-text-dark);
+    font-family: var(--ch-font);
+    font-size: 0.95rem;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ch-task-input:focus {
+    border-color: var(--ch-purple);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.ch-tasks-list {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.ch-task-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 8px;
+    gap: 12px;
+    border-bottom: 1px solid var(--ch-border);
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+.ch-task-item:hover {
+    background-color: var(--ch-bg);
+}
+
+/* Кастомный чекбокс */
+.ch-task-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid #b8bac2;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, border-color 0.2s;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    flex-shrink: 0;
+    outline: none;
+}
+
+body.dark .ch-task-checkbox {
+    border-color: #555964;
+}
+
+.ch-task-checkbox:hover {
+    border-color: var(--ch-purple);
+}
+
+.ch-task-checkbox svg {
+    width: 12px;
+    height: 12px;
+    stroke-width: 3.5px;
+    color: transparent;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.ch-task-checkbox:hover svg {
+    opacity: 0.5;
+    transform: scale(1);
+    color: var(--ch-text-gray);
+}
+
+.ch-task-item.completed .ch-task-checkbox {
+    background-color: var(--ch-purple);
+    border-color: var(--ch-purple);
+}
+
+.ch-task-item.completed .ch-task-checkbox svg {
+    opacity: 1;
+    transform: scale(1);
+    color: #ffffff !important;
+}
+
+.ch-task-content {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: var(--ch-text-dark);
+    word-break: break-word;
+    user-select: text;
+}
+
+.ch-task-item.completed .ch-task-content {
+    text-decoration: line-through;
+    color: var(--ch-text-gray);
+    opacity: 0.7;
+}
+
+.ch-task-actions {
+    display: flex;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.ch-task-item:hover .ch-task-actions {
+    opacity: 1;
+}
+
+.ch-task-action-btn {
+    background: transparent;
+    border: none;
+    color: var(--ch-text-gray);
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.ch-task-action-btn:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+/* Секция выполненных задач */
+.ch-completed-header {
+    border-top: 1px solid var(--ch-border);
+    margin-top: 8px;
+    padding-top: 12px;
+    width: 100%;
+}
+
+.ch-toggle-completed-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    color: var(--ch-text-gray);
+    font-family: var(--ch-font);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.ch-toggle-completed-btn:hover {
+    background-color: var(--ch-bg);
+}
+
+.ch-chevron-icon {
+    transition: transform 0.2s;
+}
+
+.ch-completed-header.collapsed .ch-chevron-icon {
+    transform: rotate(-90deg);
+}
+
+.ch-completed-count {
+    background-color: var(--ch-bg);
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+}
+
+.ch-completed-list {
+    margin-top: 4px;
+}
+
+/* Priority system checkbox styling */
+.ch-task-item.priority-3 .ch-task-checkbox {
+    border-color: #dc2626 !important;
+    background-color: rgba(220, 38, 38, 0.08) !important;
+}
+.ch-task-item.priority-3 .ch-task-checkbox:hover {
+    background-color: rgba(220, 38, 38, 0.15) !important;
+}
+.ch-task-item.priority-3 .ch-task-checkbox svg {
+    color: #dc2626 !important;
+}
+.ch-task-item.completed.priority-3 .ch-task-checkbox {
+    background-color: #dc2626 !important;
+    border-color: #dc2626 !important;
+}
+
+.ch-task-item.priority-2 .ch-task-checkbox {
+    border-color: #d97706 !important;
+    background-color: rgba(217, 119, 6, 0.08) !important;
+}
+.ch-task-item.priority-2 .ch-task-checkbox:hover {
+    background-color: rgba(217, 119, 6, 0.15) !important;
+}
+.ch-task-item.priority-2 .ch-task-checkbox svg {
+    color: #d97706 !important;
+}
+.ch-task-item.completed.priority-2 .ch-task-checkbox {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+}
+
+.ch-task-item.priority-1 .ch-task-checkbox {
+    border-color: #2563eb !important;
+    background-color: rgba(37, 99, 235, 0.08) !important;
+}
+.ch-task-item.priority-1 .ch-task-checkbox:hover {
+    background-color: rgba(37, 99, 235, 0.15) !important;
+}
+.ch-task-item.priority-1 .ch-task-checkbox svg {
+    color: #2563eb !important;
+}
+.ch-task-item.completed.priority-1 .ch-task-checkbox {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+}

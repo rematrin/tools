@@ -77,15 +77,12 @@ const btnRedo = document.getElementById('btnRedo');
 const tools = {
     select: document.getElementById('toolSelect'),
     text: document.getElementById('toolText'),
-    sticker: document.getElementById('toolSticker'),
-    frame: document.getElementById('toolFrame'),
     link: document.getElementById('toolLink'),
     image: document.getElementById('toolImage'),
     draw: document.getElementById('toolDraw'),
     eraser: document.getElementById('toolEraser')
 };
 
-const colorPickerPanel = document.getElementById('colorPickerPanel');
 const urlInputModal = document.getElementById('urlInputModal');
 const bookmarkUrlInput = document.getElementById('bookmarkUrlInput');
 const btnUrlCancel = document.getElementById('btnUrlCancel');
@@ -528,8 +525,16 @@ boardViewport.addEventListener('wheel', (e) => {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
     
-    const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
-    zoomTo(zoom * factor, mouseX, mouseY);
+    if (e.ctrlKey) {
+        // Pinch-to-zoom (touchpad pinch) or Ctrl + scroll wheel
+        const factor = Math.exp(-e.deltaY * 0.01);
+        zoomTo(zoom * factor, mouseX, mouseY);
+    } else {
+        // Panning (two-finger scroll or standard scroll wheel)
+        panX -= e.deltaX;
+        panY -= e.deltaY;
+        updateTransform();
+    }
 }, { passive: false });
 
 let isSpacePressed = false;
@@ -672,11 +677,7 @@ function setTool(toolName) {
         drawingModePanel.classList.remove('active');
     }
 
-    if (toolName === 'sticker') {
-        colorPickerPanel.classList.add('active');
-    } else {
-        colorPickerPanel.classList.remove('active');
-    }
+
 
     if (toolName === 'eraser') {
         boardCanvas.style.cursor = 'cell';
@@ -691,10 +692,10 @@ Object.keys(tools).forEach(name => {
     }
 });
 
-// Переключение цвета на панели карандаша / стикеров
-document.querySelectorAll('.color-option, .draw-color-opt').forEach(opt => {
+// Переключение цвета на панели карандаша
+document.querySelectorAll('.draw-color-opt').forEach(opt => {
     opt.addEventListener('click', (e) => {
-        document.querySelectorAll('.color-option, .draw-color-opt').forEach(o => o.classList.remove('active'));
+        document.querySelectorAll('.draw-color-opt').forEach(o => o.classList.remove('active'));
         opt.classList.add('active');
         activeColor = opt.getAttribute('data-color');
     });
@@ -860,8 +861,6 @@ function createNewElement(type, x, y, extra = {}) {
 }
 
 tools.text.addEventListener('click', () => createNewElement('text', undefined, undefined, { content: "" }));
-tools.sticker.addEventListener('click', () => createNewElement('sticker', undefined, undefined, { content: "" }));
-tools.frame.addEventListener('click', () => createNewElement('frame', undefined, undefined, { content: "Новая группа" }));
 
 tools.link.addEventListener('click', () => {
     urlInputModal.classList.add('active');

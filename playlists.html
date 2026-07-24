@@ -1171,7 +1171,8 @@
         }
 
         .volume-container,
-        .crossfade-container {
+        .crossfade-container,
+        .turbo-mix-container {
             position: relative;
             display: flex;
             align-items: center;
@@ -1179,7 +1180,8 @@
         }
 
         .volume-popover,
-        .crossfade-popover {
+        .crossfade-popover,
+        .turbo-mix-popover {
             position: absolute;
             bottom: calc(100% + 12px);
             left: 50%;
@@ -1204,14 +1206,16 @@
 
 
         .volume-container:hover .volume-popover,
-        .crossfade-container:hover .crossfade-popover {
+        .crossfade-container:hover .crossfade-popover,
+        .turbo-mix-container:hover .turbo-mix-popover {
             opacity: 1;
             visibility: visible;
             transform: translateX(-50%) translateY(0);
         }
 
         .volume-popover::after,
-        .crossfade-popover::after {
+        .crossfade-popover::after,
+        .turbo-mix-popover::after {
             content: '';
             position: absolute;
             top: 100%;
@@ -1252,13 +1256,21 @@
             transform: scale(1.05);
         }
 
+        .volume-btn.active {
+            color: var(--accent);
+            border-color: var(--accent);
+            background: rgba(122, 162, 255, 0.15);
+            box-shadow: 0 0 12px rgba(122, 162, 255, 0.3);
+        }
+
         .volume-btn svg {
             width: 20px;
             height: 20px;
         }
 
         #volumeSlider,
-        #crossfadeSlider {
+        #crossfadeSlider,
+        #turboMixSlider {
             width: 120px;
             /* Чуть шире */
             height: 4px;
@@ -1374,6 +1386,18 @@
                                 </svg>
                                 <span>Музыка</span>
                             </button>
+                            <button class="player-view-btn" id="btn-view-turbo"
+                                onclick="setPlayerViewMode('turbo-mix')"
+                                title="Режим Турбо-микс (Случайный запуск и быстрая смена)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="16 3 21 3 21 8"></polyline>
+                                    <line x1="4" y1="20" x2="21" y2="3"></line>
+                                    <polyline points="21 16 21 21 16 21"></polyline>
+                                    <line x1="15" y1="15" x2="21" y2="21"></line>
+                                    <line x1="4" y1="4" x2="9" y2="9"></line>
+                                </svg>
+                                <span>Турбо-микс</span>
+                            </button>
                             <button class="player-view-btn" id="btn-view-video"
                                 onclick="setPlayerViewMode('native-video')"
                                 title="Видео режим с нативным плеером YouTube">
@@ -1445,11 +1469,37 @@
                                     <input type="range" id="crossfadeSlider" min="5" max="15" value="8"
                                         oninput="changeCrossfade(this.value)">
                                 </div>
+                                <div class="popover-label" style="margin-top: 8px; font-size: 0.65rem;">Эффект:</div>
+                                <select id="crossfadeTypeSelect" onchange="changeCrossfadeType(this.value)" style="width: 120px; font-size: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 4px; outline: none; cursor: pointer; font-weight: 500;">
+                                    <option value="standard">Стандартный</option>
+                                    <option value="smart">Smart Crossfade</option>
+                                    <option value="speed">Speed Transition</option>
+                                    <option value="beat-pulse">Beat Pulse</option>
+                                    <option value="random">Случайный</option>
+                                </select>
                             </div>
 
-                            <button class="volume-btn" id="crossfadeBtn">
+                            <button class="volume-btn" id="crossfadeBtn" title="Музыкальный режим со спецэффектом Crossfade">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="turbo-mix-container" style="display: none;">
+                            <div class="turbo-mix-popover">
+                                <div class="popover-label">Турбо-микс: <span id="turboMixDurationValue">45</span>с</div>
+                                <div class="slider-wrapper">
+                                    <div class="default-tick" title="По умолчанию (45с)" style="left: 40%;"></div>
+                                    <input type="range" id="turboMixSlider" min="15" max="90" value="45"
+                                        oninput="changeTurboMixDuration(this.value)">
+                                </div>
+                            </div>
+
+                            <button class="volume-btn" id="turboMixBtn" title="Настройки режима Турбо-микс">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                                 </svg>
                             </button>
                         </div>
@@ -1542,6 +1592,9 @@
 
 
         let crossfadeDuration = parseInt(localStorage.getItem('crossfade-duration')) || 8;
+        let crossfadeType = localStorage.getItem('crossfade-type') || 'standard';
+        let turboMixDuration = parseInt(localStorage.getItem('turbo-mix-duration')) || 45;
+        let isTurboMixEnabled = (localStorage.getItem('crossfade-player-view-mode') || 'music') === 'turbo-mix';
 
         // --- YOUTUBE API ---
         var tag = document.createElement('script');
@@ -1602,6 +1655,10 @@
 
             document.getElementById('crossfadeSlider').value = crossfadeDuration;
             document.getElementById('crossfadeValue').innerText = crossfadeDuration;
+            document.getElementById('crossfadeTypeSelect').value = crossfadeType;
+
+            document.getElementById('turboMixSlider').value = turboMixDuration;
+            document.getElementById('turboMixDurationValue').innerText = turboMixDuration;
 
 
             const range = document.getElementById('progressBar');
@@ -1689,14 +1746,21 @@
             const wrapEl = document.querySelector('.wrap');
             const btnMusic = document.getElementById('btn-view-music');
             const btnVideo = document.getElementById('btn-view-video');
+            const btnTurbo = document.getElementById('btn-view-turbo');
             const nativeWrapper = document.getElementById('native-player-wrapper');
+            const turboMixContainer = document.querySelector('.turbo-mix-container');
+
+            // Обновляем флаг активности Турбо-микса
+            isTurboMixEnabled = (mode === 'turbo-mix');
 
             if (mode === 'native-video') {
                 container.classList.add('player-view-native-video');
                 if (wrapEl) wrapEl.classList.add('wrap-native-video');
-                btnMusic.classList.remove('active');
-                btnVideo.classList.add('active');
+                if (btnMusic) btnMusic.classList.remove('active');
+                if (btnTurbo) btnTurbo.classList.remove('active');
+                if (btnVideo) btnVideo.classList.add('active');
                 if (nativeWrapper) nativeWrapper.style.display = 'block';
+                if (turboMixContainer) turboMixContainer.style.display = 'none';
 
                 // Приостанавливаем dj-плееры
                 if (p1 && typeof p1.pauseVideo === 'function') p1.pauseVideo();
@@ -1725,12 +1789,33 @@
             } else {
                 container.classList.remove('player-view-native-video');
                 if (wrapEl) wrapEl.classList.remove('wrap-native-video');
-                btnMusic.classList.add('active');
-                btnVideo.classList.remove('active');
+                if (btnVideo) btnVideo.classList.remove('active');
                 if (nativeWrapper) nativeWrapper.style.display = 'none';
 
                 if (pNative && typeof pNative.pauseVideo === 'function') {
                     pNative.pauseVideo();
+                }
+
+                if (mode === 'turbo-mix') {
+                    if (btnMusic) btnMusic.classList.remove('active');
+                    if (btnTurbo) btnTurbo.classList.add('active');
+                    if (turboMixContainer) turboMixContainer.style.display = 'flex';
+
+                    // Если музыка играет при переключении режима, то сразу настраиваем таймкоды
+                    if (isPlaying) {
+                        let activeP = (currentDeck === 1) ? p1 : p2;
+                        if (activeP && !activeP.hasRandomized) {
+                            applyRandomMixSettings(activeP);
+                        }
+                    }
+                } else { // music
+                    if (btnMusic) btnMusic.classList.add('active');
+                    if (btnTurbo) btnTurbo.classList.remove('active');
+                    if (turboMixContainer) turboMixContainer.style.display = 'none';
+
+                    // Сбрасываем цели таймкодов при возврате в обычный режим
+                    if (p1) p1.randomMixTargetEnd = null;
+                    if (p2) p2.randomMixTargetEnd = null;
                 }
             }
         }
@@ -1898,6 +1983,14 @@
             let activeP = (currentDeck === 1) ? p1 : p2;
 
             activeP.setVolume(100);
+            activeP.hasRandomized = false;
+            activeP.randomMixTargetEnd = null;
+            activeP.lastRandomStart = undefined;
+            
+            if (activeP && typeof activeP.setPlaybackRate === 'function') {
+                try { activeP.setPlaybackRate(1.0); } catch(e){}
+            }
+            
             loadDeck(activeP, trackIndex);
 
             activeP.playVideo();
@@ -1948,6 +2041,14 @@
                 if (nextP && typeof nextP.stopVideo === 'function') nextP.stopVideo();
             }
 
+            // Сбрасываем скорость плееров на нормальную (1.0x) при ошибке
+            if (p1 && typeof p1.setPlaybackRate === 'function') {
+                try { p1.setPlaybackRate(1.0); } catch(e){}
+            }
+            if (p2 && typeof p2.setPlaybackRate === 'function') {
+                try { p2.setPlaybackRate(1.0); } catch(e){}
+            }
+
             // Check if all tracks in the playlist are marked as error
             const allErrors = playlist.every(t => t.isError);
             if (allErrors) {
@@ -1996,6 +2097,10 @@
         function prepareNext() {
             if (playlist.length < 2) return;
             let nextP = (currentDeck === 1) ? p2 : p1;
+
+            nextP.hasRandomized = false;
+            nextP.randomMixTargetEnd = null;
+            nextP.lastRandomStart = undefined;
 
             let startIndex = trackIndex;
             let nextIndex = (trackIndex + 1) % playlist.length;
@@ -2084,11 +2189,20 @@
                 document.getElementById('progressBar').value = pct;
             }
 
-            if (!isCrossfading &&
-                (duration - current) < crossfadeDuration &&
-                (duration - current) > 0.5 &&
-                playlist.length > 1) {
-                performCrossfade();
+            if (!isCrossfading && playlist.length > 1) {
+                let triggerCrossfade = false;
+                if (isTurboMixEnabled && activeP.randomMixTargetEnd) {
+                    if (current >= activeP.randomMixTargetEnd - crossfadeDuration || (duration - current) < crossfadeDuration) {
+                        triggerCrossfade = true;
+                    }
+                } else {
+                    if ((duration - current) < crossfadeDuration && (duration - current) > 0.5) {
+                        triggerCrossfade = true;
+                    }
+                }
+                if (triggerCrossfade) {
+                    performCrossfade();
+                }
             }
         }
 
@@ -2106,6 +2220,13 @@
                 startVideoLoadingTimeout(window.nextTrackIndex);
             }
 
+            // Выбираем конкретный эффект перехода, если установлен случайный режим
+            let activeType = crossfadeType;
+            if (activeType === 'random') {
+                const types = ['standard', 'smart', 'speed', 'beat-pulse'];
+                activeType = types[Math.floor(Math.random() * types.length)];
+            }
+
             let steps = 40;
             let stepTime = (crossfadeDuration * 1000) / steps;
             let vol = 0;
@@ -2115,12 +2236,61 @@
                 vol += (100 / steps);
                 if (vol > 100) vol = 100;
 
-                let realNextVol = (vol / 100) * playerVolume;
-                let realActiveVol = ((100 - vol) / 100) * playerVolume;
+                let p = vol / 100; // Прогресс перехода от 0.0 до 1.0
+                let nextVolFactor = p;
+                let activeVolFactor = 1 - p;
+
+                if (activeType === 'smart') {
+                    // Smart Crossfade: нелинейный спад и подъем
+                    // Уходящий трек быстро падает до 40%, потом плавно до 0%
+                    if (p <= 0.3) {
+                        activeVolFactor = 1.0 - (p / 0.3) * 0.6;
+                    } else {
+                        activeVolFactor = 0.4 - ((p - 0.3) / 0.7) * 0.4;
+                    }
+                    // Входящий трек сначала еле слышно, потом быстро нарастает
+                    if (p <= 0.7) {
+                        nextVolFactor = (p / 0.7) * 0.3;
+                    } else {
+                        nextVolFactor = 0.3 + ((p - 0.7) / 0.3) * 0.7;
+                    }
+                } else if (activeType === 'speed') {
+                    // Speed Transition: ступенчатое изменение скорости воспроизведения
+                    let activeRate = 1.0;
+                    let nextRate = 1.0;
+
+                    if (p < 0.25) {
+                        activeRate = 1.0;
+                        nextRate = 1.5;
+                    } else if (p >= 0.25 && p < 0.5) {
+                        activeRate = 1.25;
+                        nextRate = 1.5;
+                    } else if (p >= 0.5 && p < 0.75) {
+                        activeRate = 1.5;
+                        nextRate = 1.25;
+                    } else {
+                        activeRate = 1.5;
+                        nextRate = 1.0;
+                    }
+
+                    if (activeP && typeof activeP.setPlaybackRate === 'function') {
+                        try { activeP.setPlaybackRate(activeRate); } catch(e){}
+                    }
+                    if (nextP && typeof nextP.setPlaybackRate === 'function') {
+                        try { nextP.setPlaybackRate(nextRate); } catch(e){}
+                    }
+                } else if (activeType === 'beat-pulse') {
+                    // Beat Pulse: синусоидальная пульсация громкости
+                    let pulse = 1.0 - 0.15 * Math.abs(Math.sin(p * Math.PI * 10));
+                    activeVolFactor *= pulse;
+                    nextVolFactor *= pulse;
+                }
+
+                let realNextVol = nextVolFactor * playerVolume;
+                let realActiveVol = activeVolFactor * playerVolume;
 
                 nextP.setVolume(realNextVol);
                 activeP.setVolume(realActiveVol);
-
 
                 if (vol >= 100) {
                     clearInterval(activeCrossfadeInterval);
@@ -2141,12 +2311,18 @@
             });
         }
 
-
-
         function finishMix(oldP) {
             oldP.stopVideo();
             isCrossfading = false;
             setMixStatus(false);
+
+            // Сбрасываем скорость воспроизведения на нормальную (1.0x)
+            if (p1 && typeof p1.setPlaybackRate === 'function') {
+                try { p1.setPlaybackRate(1.0); } catch(e){}
+            }
+            if (p2 && typeof p2.setPlaybackRate === 'function') {
+                try { p2.setPlaybackRate(1.0); } catch(e){}
+            }
 
             currentDeck = (currentDeck === 1) ? 2 : 1;
             if (window.nextTrackIndex !== null && window.nextTrackIndex !== undefined) {
@@ -2168,6 +2344,27 @@
             crossfadeDuration = parseInt(val);
             localStorage.setItem('crossfade-duration', crossfadeDuration);
             document.getElementById('crossfadeValue').innerText = val;
+        }
+
+        function changeCrossfadeType(val) {
+            crossfadeType = val;
+            localStorage.setItem('crossfade-type', crossfadeType);
+        }
+
+
+
+        function changeTurboMixDuration(val) {
+            turboMixDuration = parseInt(val);
+            localStorage.setItem('turbo-mix-duration', turboMixDuration);
+            document.getElementById('turboMixDurationValue').innerText = val;
+            
+            if (isPlaying && isTurboMixEnabled) {
+                let activeP = (currentDeck === 1) ? p1 : p2;
+                if (activeP && typeof activeP.getCurrentTime === 'function') {
+                    let start = activeP.lastRandomStart !== undefined ? activeP.lastRandomStart : activeP.getCurrentTime();
+                    activeP.randomMixTargetEnd = start + turboMixDuration;
+                }
+            }
         }
 
         function changeVolume(val) {
@@ -2279,6 +2476,22 @@
             window.history.replaceState({}, '', url);
         }
 
+        function applyRandomMixSettings(player) {
+            if (!isTurboMixEnabled || player.hasRandomized) return;
+            let duration = player.getDuration();
+            if (duration && duration > 0) {
+                let maxStart = duration - turboMixDuration - crossfadeDuration - 5;
+                let startAt = 0;
+                if (maxStart > 0) {
+                    startAt = Math.floor(Math.random() * maxStart);
+                }
+                player.seekTo(startAt, true);
+                player.randomMixTargetEnd = startAt + turboMixDuration;
+                player.lastRandomStart = startAt;
+                player.hasRandomized = true;
+            }
+        }
+
         function onPlayerStateChange(event) {
             // --- 1. ЛОГИКА СИНХРОНИЗАЦИИ КНОПКИ ---
             let activePlayer = (currentDeck === 1) ? p1 : p2;
@@ -2287,6 +2500,9 @@
             if (event.target === activePlayer) {
                 if (event.data === YT.PlayerState.PLAYING) {
                     clearVideoLoadingTimeout();
+                    
+                    applyRandomMixSettings(activePlayer);
+
                     if (!isPlaying) {
                         isPlaying = true;
                         updatePlayPauseIcon();
@@ -2306,6 +2522,8 @@
             } else if (event.target === nextPlayer && isCrossfading) {
                 if (event.data === YT.PlayerState.PLAYING) {
                     clearVideoLoadingTimeout();
+                    
+                    applyRandomMixSettings(nextPlayer);
                 }
             }
 

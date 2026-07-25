@@ -592,6 +592,7 @@ function setupFirebaseSyncForBoard() {
             boardConfig.height = data.height || 1600;
             if (data.title) {
                 boardTitleInput.value = data.title;
+                adjustTitleInputWidth();
             }
             updateCanvasSize();
         } else {
@@ -632,6 +633,7 @@ function setupOfflineModeForBoard() {
         boardConfig.width = data.width || 2400;
         boardConfig.height = data.height || 1600;
         boardTitleInput.value = data.title || "Моя доска идей";
+        adjustTitleInputWidth();
     }
     updateCanvasSize();
 
@@ -745,16 +747,8 @@ boardViewport.addEventListener('wheel', (e) => {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
     
-    if (e.ctrlKey) {
-        // Pinch-to-zoom (touchpad pinch) or Ctrl + scroll wheel
-        const factor = Math.exp(-e.deltaY * 0.01);
-        zoomTo(zoom * factor, mouseX, mouseY);
-    } else {
-        // Panning (two-finger scroll or standard scroll wheel)
-        panX -= e.deltaX;
-        panY -= e.deltaY;
-        updateTransform();
-    }
+    const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
+    zoomTo(zoom * factor, mouseX, mouseY);
 }, { passive: false });
 
 let isSpacePressed = false;
@@ -1444,6 +1438,7 @@ function renderElements() {
 
     sortedElements.forEach(el => {
         const elDiv = document.createElement('div');
+        let resizeHandle = null;
         elDiv.className = `board-element el-${el.type}`;
         if (selectedElementIds.has(el.id)) {
             elDiv.classList.add('selected');
@@ -1495,7 +1490,7 @@ function renderElements() {
 
         // Для рисунков убираем возможность изменения размера (скрываем ресайзер)
         if (el.type !== 'drawing') {
-            const resizeHandle = document.createElement('div');
+            resizeHandle = document.createElement('div');
             resizeHandle.className = 'element-resize-handle handle-se';
             elDiv.appendChild(resizeHandle);
         }
@@ -2322,6 +2317,24 @@ btnToggleGrid.addEventListener('click', () => {
     boardCanvas.classList.toggle('no-grid');
 });
 
+function adjustTitleInputWidth() {
+    if (!boardTitleInput) return;
+    const tempSpan = document.createElement('span');
+    tempSpan.style.visibility = 'hidden';
+    tempSpan.style.position = 'absolute';
+    tempSpan.style.whiteSpace = 'pre';
+    const style = window.getComputedStyle(boardTitleInput);
+    tempSpan.style.fontSize = style.fontSize;
+    tempSpan.style.fontWeight = style.fontWeight;
+    tempSpan.style.fontFamily = style.fontFamily;
+    tempSpan.style.letterSpacing = style.letterSpacing;
+    tempSpan.innerText = boardTitleInput.value || boardTitleInput.placeholder || '';
+    document.body.appendChild(tempSpan);
+    boardTitleInput.style.width = Math.min(Math.max(tempSpan.getBoundingClientRect().width + 24, 120), 450) + 'px';
+    document.body.removeChild(tempSpan);
+}
+
+boardTitleInput.addEventListener('input', adjustTitleInputWidth);
 boardTitleInput.addEventListener('blur', saveBoardInfo);
 boardTitleInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {

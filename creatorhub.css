@@ -542,6 +542,7 @@ body.dark .published .change {
 
 .video-card:hover {
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+    background: var(--hover-bg, rgba(0, 0, 0, 0.03));
 }
 
 .video-card.active {
@@ -803,8 +804,15 @@ body.dark .status-badge.archive {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .detail-sidebar-resizer {
@@ -1399,7 +1407,7 @@ body.dark .btn-add-tag:hover {
         background-color: rgba(0, 0, 0, 0.45);
         z-index: 1005;
     }
-    
+
     .sidebar-overlay.active {
         display: block;
     }
@@ -1440,11 +1448,11 @@ body.dark .btn-add-tag:hover {
         transition: background-color 0.3s ease-out;
         z-index: 999;
     }
-    
+
     .detail-sidebar-overlay.active {
         background-color: rgba(0, 0, 0, 0.45);
     }
-    
+
     .detail-sidebar {
         position: fixed;
         bottom: 0;
@@ -1458,21 +1466,22 @@ body.dark .btn-add-tag:hover {
         background-color: var(--ch-bg);
         transform: translateY(100%);
         transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-        display: none; /* controlled by JS */
+        display: none;
+        /* controlled by JS */
         flex-direction: column;
         z-index: 1000;
         box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.18);
         overflow-y: auto;
     }
-    
+
     .detail-sidebar.active {
         display: flex !important;
     }
-    
+
     .detail-sidebar.collapsed {
         transform: translateY(40vh) !important;
     }
-    
+
     .detail-sidebar.expanded {
         transform: translateY(0vh) !important;
     }
@@ -1480,12 +1489,12 @@ body.dark .btn-add-tag:hover {
     .detail-sidebar-empty-state {
         display: none !important;
     }
-    
+
     .detail-sidebar-content-wrapper {
         display: flex !important;
         flex-direction: column;
     }
-    
+
     .detail-sidebar-drag-handle-container {
         display: flex;
         justify-content: center;
@@ -1496,11 +1505,11 @@ body.dark .btn-add-tag:hover {
         touch-action: none;
         flex-shrink: 0;
     }
-    
+
     .detail-sidebar-drag-handle-container:active {
         cursor: grabbing;
     }
-    
+
     .detail-sidebar-drag-handle {
         width: 40px;
         height: 5px;
@@ -1541,19 +1550,19 @@ body.dark .btn-add-tag:hover {
         width: 100% !important;
         box-sizing: border-box !important;
     }
-    
+
     .video-card-left {
         gap: 10px !important;
         min-width: 0 !important;
         flex: 1 !important;
     }
-    
+
     .video-thumbnail-mini {
         width: 70px !important;
         height: 40px !important;
         flex-shrink: 0 !important;
     }
-    
+
     .video-title {
         font-size: 0.85rem !important;
         white-space: normal !important;
@@ -1563,21 +1572,21 @@ body.dark .btn-add-tag:hover {
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-    
+
     .video-card-right {
         gap: 8px !important;
     }
-    
+
     .video-status-date-block {
         min-width: auto !important;
         align-items: flex-end !important;
     }
-    
+
     .status-badge {
         font-size: 0.72rem !important;
         padding: 2px 6px !important;
     }
-    
+
     .video-date {
         font-size: 0.7rem !important;
     }
@@ -3764,7 +3773,7 @@ body.dark .tag-color-gray {
         grid-template-columns: 1fr !important;
         gap: 10px !important;
     }
-    
+
     .stat-card {
         height: 90px !important;
         padding: 12px 14px !important;
@@ -3806,7 +3815,8 @@ body.dark .tag-color-gray {
 }
 
 /* --- YT Shorts aspect ratio support --- */
-.video-thumbnail-inner, .detail-thumbnail-inner {
+.video-thumbnail-inner,
+.detail-thumbnail-inner {
     position: absolute;
     top: 0;
     left: 0;
@@ -4071,12 +4081,15 @@ body.dark .ch-task-checkbox {
     border-color: #dc2626 !important;
     background-color: rgba(220, 38, 38, 0.08) !important;
 }
+
 .ch-task-item.priority-3 .ch-task-checkbox:hover {
     background-color: rgba(220, 38, 38, 0.15) !important;
 }
+
 .ch-task-item.priority-3 .ch-task-checkbox svg {
     color: #dc2626 !important;
 }
+
 .ch-task-item.completed.priority-3 .ch-task-checkbox {
     background-color: #dc2626 !important;
     border-color: #dc2626 !important;
@@ -4086,12 +4099,15 @@ body.dark .ch-task-checkbox {
     border-color: #d97706 !important;
     background-color: rgba(217, 119, 6, 0.08) !important;
 }
+
 .ch-task-item.priority-2 .ch-task-checkbox:hover {
     background-color: rgba(217, 119, 6, 0.15) !important;
 }
+
 .ch-task-item.priority-2 .ch-task-checkbox svg {
     color: #d97706 !important;
 }
+
 .ch-task-item.completed.priority-2 .ch-task-checkbox {
     background-color: #d97706 !important;
     border-color: #d97706 !important;
@@ -4101,12 +4117,15 @@ body.dark .ch-task-checkbox {
     border-color: #2563eb !important;
     background-color: rgba(37, 99, 235, 0.08) !important;
 }
+
 .ch-task-item.priority-1 .ch-task-checkbox:hover {
     background-color: rgba(37, 99, 235, 0.15) !important;
 }
+
 .ch-task-item.priority-1 .ch-task-checkbox svg {
     color: #2563eb !important;
 }
+
 .ch-task-item.completed.priority-1 .ch-task-checkbox {
     background-color: #2563eb !important;
     border-color: #2563eb !important;

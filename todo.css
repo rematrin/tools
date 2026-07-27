@@ -4237,7 +4237,8 @@ body.dark .progress-bg-circle {
     background: transparent;
     border: none;
     padding: 6px 0;
-    cursor: pointer;
+    cursor: default;
+    pointer-events: none;
     display: flex;
     align-items: center;
     color: var(--text);
@@ -4247,11 +4248,14 @@ body.dark .progress-bg-circle {
     outline: none;
 }
 
+.modal-subtasks-toggle .chevron-icon {
+    display: none !important;
+}
+
 .modal-subtasks-list {
     display: flex;
     flex-direction: column;
     gap: 0;
-    border-top: 1px solid var(--border-light, rgba(0, 0, 0, 0.04));
 }
 
 .modal-subtask-item {
@@ -4259,8 +4263,11 @@ body.dark .progress-bg-circle {
     align-items: center;
     padding: 10px 4px;
     gap: 12px;
-    border-bottom: 1px solid var(--border);
     transition: background-color 0.15s;
+}
+
+.modal-subtask-item:not(:last-child):not(:has(+ .modal-subtask-add-row)) {
+    border-bottom: 1px solid var(--border);
 }
 
 .modal-subtask-item:hover {
@@ -4457,12 +4464,31 @@ body.dark .progress-bg-circle {
     z-index: 5 !important;
 }
 
+.task-details-mobile-close-btn,
+.task-details-mobile-more-btn {
+    display: none;
+}
+
+.modal-subtasks-card {
+    background: transparent;
+    border: none;
+    padding: 0;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
 .task-details-drag-handle-container {
     display: none;
 }
 
 /* Адаптивность для модального окна */
 @media (max-width: 768px) {
+    .task-item .btn-more {
+        display: none !important;
+    }
+
     .task-details-modal-overlay {
         padding: 0;
         align-items: flex-end;
@@ -4487,6 +4513,7 @@ body.dark .progress-bg-circle {
         display: flex;
         box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.18);
         overflow: visible;
+        background-color: var(--hover-bg) !important;
     }
 
     .task-details-modal-overlay.active .task-details-modal-card {
@@ -4503,10 +4530,11 @@ body.dark .progress-bg-circle {
     }
 
     .task-details-drag-handle-container {
-        display: flex;
-        justify-content: center;
+        display: flex !important;
         align-items: center;
-        padding: 12px 0 6px 0;
+        justify-content: space-between;
+        padding: 14px 20px 8px 20px !important;
+        position: relative;
         cursor: grab;
         user-select: none;
         touch-action: none;
@@ -4518,11 +4546,77 @@ body.dark .progress-bg-circle {
     }
 
     .task-details-drag-handle {
-        width: 40px;
+        width: 36px;
         height: 5px;
         background-color: var(--border);
         border-radius: 3px;
         opacity: 0.8;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .task-details-mobile-close-btn,
+    .task-details-mobile-more-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text);
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+        padding: 0;
+        z-index: 10;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .task-details-mobile-close-btn:active,
+    .task-details-mobile-more-btn:active {
+        background-color: var(--border);
+    }
+
+    .task-details-mobile-close-btn svg,
+    .task-details-mobile-more-btn svg {
+        color: var(--text);
+    }
+
+    .task-details-title-row {
+        background-color: var(--card-bg) !important;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        padding: 16px 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        margin-bottom: 4px;
+    }
+
+    .modal-subtasks-card {
+        background-color: var(--card-bg) !important;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        padding: 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .task-details-mobile-more-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    .modal-actions-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px) !important;
+        right: 0 !important;
+        left: auto !important;
+        z-index: 1001 !important;
+        width: 230px !important;
     }
 
     .task-details-close-btn {
@@ -4532,7 +4626,7 @@ body.dark .progress-bg-circle {
     .task-details-main-content {
         max-height: 100%;
         flex: 1;
-        padding: 16px 20px;
+        padding: 4px 20px 24px 20px !important;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         min-height: 0;

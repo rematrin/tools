@@ -8292,6 +8292,389 @@ function updateModalUI(task) {
 
     renderModalSubtasks(task);
     renderModalAttachments(task);
+    populateModalActionsDropdown(task);
+}
+
+function populateModalActionsDropdown(task) {
+    const modalActionsDropdown = document.getElementById('modalActionsDropdown');
+    if (!modalActionsDropdown) return;
+
+    const isSubtask = !!task.parentId;
+
+    modalActionsDropdown.innerHTML = task.completed ? `
+        <button class="dropdown-item btn-delete">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Удалить</span>
+        </button>
+    ` : `
+        <button class="dropdown-item btn-edit">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Изменить</span>
+        </button>
+
+        <button class="dropdown-item btn-toggle-pomodoro">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="margin-right: 2.5px;" width="14" height="14">
+                <path d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12 14.5 13.3807 13.3807 14.5 12 14.5 10.6193 14.5 9.5 13.3807 9.5 12 9.5 10.6193 10.6193 9.5 12 9.5ZM12 2C17.5228 2 22 6.47715 22 12 22 17.5228 17.5228 22 12 22 6.47715 22 2 17.5228 2 12 2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12 4 16.4183 7.58172 20 12 20 16.4183 20 20 16.4183 20 12 20 7.58172 16.4183 4 12 4Z"></path>
+            </svg>
+            <span>${task.inPomodoro ? 'Удалить из Помодоро' : 'Добавить в Помодоро'}</span>
+        </button>
+        
+        ${!isSubtask ? `
+        <button class="dropdown-item btn-add-subtask">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Добавить подзадачу</span>
+        </button>
+        ` : ''}
+        
+        <div class="dropdown-divider"></div>
+        
+        <div class="dropdown-section dropdown-section-due">
+            <div class="dropdown-section-title">Срок</div>
+            <div class="due-options-row">
+                <button class="due-opt-btn btn-due-today" type="button" data-tooltip="Сегодня">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                        <text x="12" y="19" font-size="8.5" font-family="-apple-system, system-ui, sans-serif" font-weight="bold" fill="currentColor" stroke="none" text-anchor="middle">${new Date().getDate()}</text>
+                    </svg>
+                </button>
+                <button class="due-opt-btn btn-due-tomorrow" type="button" data-tooltip="Завтра">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="4"></circle>
+                        <line x1="12" y1="1" x2="12" y2="4"></line>
+                        <line x1="12" y1="20" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"></line>
+                        <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="4" y2="12"></line>
+                        <line x1="20" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"></line>
+                        <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+                <button class="due-opt-btn btn-due-select" type="button" data-tooltip="Выбрать дату...">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                        <rect x="6.5" y="12.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
+                        <rect x="11.25" y="12.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
+                        <rect x="16" y="12.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
+                        <rect x="6.5" y="16.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
+                        <rect x="11.25" y="16.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
+                        <rect x="16" y="16.5" width="1.5" height="1.5" rx="0.3" fill="currentColor" stroke="none"></rect>
+                    </svg>
+                </button>
+                <button class="due-opt-btn btn-due-none" type="button" data-tooltip="Без срока">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <line x1="5.64" y1="5.64" x2="18.36" y2="18.36"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <div class="dropdown-divider"></div>
+        
+        <div class="dropdown-section dropdown-section-priority">
+            <div class="dropdown-section-title">Приоритет</div>
+            <div class="priority-options-row">
+                <button class="prio-opt-btn flag-red ${task.priority === 3 ? 'active' : ''}" type="button" data-priority="3" data-tooltip="Приоритет 1">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="currentColor"></path>
+                        <line x1="4" y1="22" x2="4" y2="15"></line>
+                    </svg>
+                </button>
+                <button class="prio-opt-btn flag-orange ${task.priority === 2 ? 'active' : ''}" type="button" data-priority="2" data-tooltip="Приоритет 2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="currentColor"></path>
+                        <line x1="4" y1="22" x2="4" y2="15"></line>
+                    </svg>
+                </button>
+                <button class="prio-opt-btn flag-blue ${task.priority === 1 ? 'active' : ''}" type="button" data-priority="1" data-tooltip="Приоритет 3">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="currentColor"></path>
+                        <line x1="4" y1="22" x2="4" y2="15"></line>
+                    </svg>
+                </button>
+                <button class="prio-opt-btn flag-white ${task.priority === 0 || !task.priority ? 'active' : ''}" type="button" data-priority="0" data-tooltip="Приоритет 4">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                        <line x1="4" y1="22" x2="4" y2="15"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <div class="dropdown-divider"></div>
+        
+        <div class="dropdown-submenu-container">
+            <button class="dropdown-item btn-move-project" type="button" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Перенести в..</span>
+                </span>
+                <svg class="submenu-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 4px; transition: transform 0.2s;">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+            <div class="dropdown-submenu" style="display: none;">
+                <button class="dropdown-item btn-select-project ${!task.projectId ? 'selected' : ''}" data-project-id="">
+                    <span class="project-dot" style="background-color: #71717a;"></span>
+                    <span>Входящие</span>
+                    ${!task.projectId ? '<span class="project-checkmark">✓</span>' : ''}
+                </button>
+                ${projectsList.map(proj => `
+                <button class="dropdown-item btn-select-project ${task.projectId === proj.id ? 'selected' : ''}" data-project-id="${proj.id}">
+                    <span class="project-dot" style="background-color: ${proj.color || '#71717a'};"></span>
+                    <span>${escapeHtml(proj.name)}</span>
+                    ${task.projectId === proj.id ? '<span class="project-checkmark">✓</span>' : ''}
+                </button>
+                `).join('')}
+            </div>
+        </div>
+        
+        <button class="dropdown-item btn-duplicate-task">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>Дублировать</span>
+        </button>
+        
+        <div class="dropdown-divider"></div>
+        
+        <button class="dropdown-item btn-delete">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Удалить</span>
+        </button>
+    `;
+
+    // Bind listeners
+    const btnDelete = modalActionsDropdown.querySelector('.btn-delete');
+    if (btnDelete) {
+        btnDelete.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modalActionsDropdown.style.display = 'none';
+            showCustomConfirm(
+                "Переместить в корзину?",
+                `Задача <strong>${escapeHtml(task.title)}</strong> будет перемещена в корзину.`,
+                "Удалить",
+                () => {
+                    deleteTask(task.id);
+                    closeTaskDetailsModal();
+                }
+            );
+        });
+    }
+
+    const btnEdit = modalActionsDropdown.querySelector('.btn-edit');
+    if (btnEdit) {
+        btnEdit.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modalActionsDropdown.style.display = 'none';
+            const input = document.getElementById('modalTaskTitle');
+            if (input) input.focus();
+        });
+    }
+
+    const btnTogglePomodoro = modalActionsDropdown.querySelector('.btn-toggle-pomodoro');
+    if (btnTogglePomodoro) {
+        btnTogglePomodoro.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            modalActionsDropdown.style.display = 'none';
+            const newInPomo = !task.inPomodoro;
+            task.inPomodoro = newInPomo;
+            const localTask = allTasks.find(t => t.id === task.id);
+            if (localTask) localTask.inPomodoro = newInPomo;
+
+            if (newInPomo && !pomoActiveTaskId) {
+                pomoActiveTaskId = task.id;
+            } else if (!newInPomo && pomoActiveTaskId === task.id) {
+                pomoActiveTaskId = null;
+            }
+
+            renderTasks();
+
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                    inPomodoro: newInPomo
+                });
+            } catch (err) {
+                console.error("Ошибка при обновлении статуса Помодоро:", err);
+            }
+        });
+    }
+
+    const btnAddSubtask = modalActionsDropdown.querySelector('.btn-add-subtask');
+    if (btnAddSubtask) {
+        btnAddSubtask.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modalActionsDropdown.style.display = 'none';
+            const addBtn = document.getElementById('btnModalAddSubtask');
+            if (addBtn) addBtn.click();
+        });
+    }
+
+    if (!task.completed) {
+        const btnDueToday = modalActionsDropdown.querySelector('.btn-due-today');
+        const btnDueTomorrow = modalActionsDropdown.querySelector('.btn-due-tomorrow');
+        const btnDueSelect = modalActionsDropdown.querySelector('.btn-due-select');
+        const btnDueNone = modalActionsDropdown.querySelector('.btn-due-none');
+
+        const tdyObj = new Date();
+        const todayStr = `${tdyObj.getFullYear()}-${String(tdyObj.getMonth() + 1).padStart(2, '0')}-${String(tdyObj.getDate()).padStart(2, '0')}`;
+
+        const tmwObj = new Date();
+        tmwObj.setDate(tmwObj.getDate() + 1);
+        const tomorrowStr = `${tmwObj.getFullYear()}-${String(tmwObj.getMonth() + 1).padStart(2, '0')}-${String(tmwObj.getDate()).padStart(2, '0')}`;
+
+        if (btnDueToday) {
+            btnDueToday.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                modalActionsDropdown.style.display = 'none';
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                        dueDate: todayStr
+                    });
+                } catch (err) {
+                    console.error("Ошибка обновления даты:", err);
+                }
+            });
+        }
+
+        if (btnDueTomorrow) {
+            btnDueTomorrow.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                modalActionsDropdown.style.display = 'none';
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                        dueDate: tomorrowStr
+                    });
+                } catch (err) {
+                    console.error("Ошибка обновления даты:", err);
+                }
+            });
+        }
+
+        if (btnDueSelect) {
+            btnDueSelect.addEventListener('click', (e) => {
+                e.stopPropagation();
+                modalActionsDropdown.style.display = 'none';
+                calendarTargetTask = {
+                    id: task.id,
+                    dueDate: task.dueDate || null,
+                    dueTime: task.dueTime || null,
+                    dueRepeat: task.dueRepeat || null,
+                    dueEndDate: task.dueEndDate || null,
+                    dueEndTime: task.dueEndTime || null
+                };
+                openDueDateDropdown();
+            });
+        }
+
+        if (btnDueNone) {
+            btnDueNone.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                modalActionsDropdown.style.display = 'none';
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                        dueDate: null,
+                        dueTime: null,
+                        dueRepeat: null,
+                        dueEndDate: null,
+                        dueEndTime: null
+                    });
+                } catch (err) {
+                    console.error("Ошибка очистки даты:", err);
+                }
+            });
+        }
+
+        modalActionsDropdown.querySelectorAll('.prio-opt-btn').forEach(prioBtn => {
+            prioBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const priorityVal = parseInt(prioBtn.getAttribute('data-priority'), 10);
+                modalActionsDropdown.style.display = 'none';
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                        priority: priorityVal
+                    });
+                } catch (err) {
+                    console.error("Ошибка обновления приоритета:", err);
+                }
+            });
+        });
+    }
+
+    const btnDuplicate = modalActionsDropdown.querySelector('.btn-duplicate-task');
+    if (btnDuplicate) {
+        btnDuplicate.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            modalActionsDropdown.style.display = 'none';
+            await duplicateTask(task);
+            closeTaskDetailsModal();
+        });
+    }
+
+    const btnMoveProject = modalActionsDropdown.querySelector('.btn-move-project');
+    if (btnMoveProject) {
+        btnMoveProject.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const submenu = btnMoveProject.nextElementSibling;
+            if (submenu && submenu.classList.contains('dropdown-submenu')) {
+                const isHidden = getComputedStyle(submenu).display === 'none';
+                submenu.style.display = isHidden ? 'flex' : 'none';
+                const arrowIcon = btnMoveProject.querySelector('svg:last-child');
+                if (arrowIcon) {
+                    arrowIcon.style.transform = isHidden ? 'rotate(90deg)' : 'none';
+                }
+            }
+        });
+    }
+
+    modalActionsDropdown.querySelectorAll('.btn-select-project').forEach(projBtn => {
+        projBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const targetProjId = projBtn.getAttribute('data-project-id') || null;
+            modalActionsDropdown.style.display = 'none';
+
+            if (targetProjId !== task.projectId) {
+                const localTask = allTasks.find(t => t.id === task.id);
+                if (localTask) {
+                    localTask.projectId = targetProjId;
+                    localTask.order = 0;
+                }
+                renderProjects();
+                renderTasks();
+
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
+                        projectId: targetProjId,
+                        order: 0
+                    });
+                } catch (err) {
+                    console.error("Ошибка при переносе задачи в другой проект:", err);
+                }
+            }
+        });
+    });
 }
 
 function renderModalAttachments(task) {
@@ -8861,12 +9244,14 @@ function renderModalSubtasks(task) {
     modalSubtasksCounter.textContent = `${completedCount}/${subtasks.length}`;
 
     const chevronIcon = modalSubtasksToggle.querySelector('.chevron-icon');
+    if (chevronIcon) chevronIcon.style.display = 'none';
 
     if (subtasks.length === 0) {
         modalSubtasksToggle.style.display = 'none';
         modalSubtasksList.style.display = 'flex';
 
         const addRow = document.createElement('div');
+        addRow.className = 'modal-subtask-add-row';
         addRow.style.padding = '4px 0';
         addRow.appendChild(btnModalAddSubtask);
         addRow.appendChild(modalNewSubtaskContainer);
@@ -8875,35 +9260,36 @@ function renderModalSubtasks(task) {
     }
 
     modalSubtasksToggle.style.display = 'flex';
-
-    if (isModalSubtasksCollapsed) {
-        modalSubtasksList.style.display = 'none';
-        if (chevronIcon) chevronIcon.style.transform = 'rotate(-90deg)';
-        return;
-    }
-
     modalSubtasksList.style.display = 'flex';
-    if (chevronIcon) chevronIcon.style.transform = 'rotate(0deg)';
 
     // Split subtasks: active vs completed
     const activeSubs = subtasks.filter(s => !s.completed);
     const completedSubs = subtasks.filter(s => s.completed);
 
     // 1. Render active subtasks
-    activeSubs.forEach(sub => {
-        modalSubtasksList.appendChild(createSubtaskElement(sub));
+    activeSubs.forEach((sub, index) => {
+        const el = createSubtaskElement(sub);
+        if (index === activeSubs.length - 1) {
+            el.style.borderBottom = 'none';
+        }
+        modalSubtasksList.appendChild(el);
     });
 
     // 2. Render Add Subtask trigger/container row directly in the middle!
     const addRow = document.createElement('div');
+    addRow.className = 'modal-subtask-add-row';
     addRow.style.padding = '4px 0';
     addRow.appendChild(btnModalAddSubtask);
     addRow.appendChild(modalNewSubtaskContainer);
     modalSubtasksList.appendChild(addRow);
 
     // 3. Render completed subtasks below the add form
-    completedSubs.forEach(sub => {
-        modalSubtasksList.appendChild(createSubtaskElement(sub));
+    completedSubs.forEach((sub, index) => {
+        const el = createSubtaskElement(sub);
+        if (index === completedSubs.length - 1) {
+            el.style.borderBottom = 'none';
+        }
+        modalSubtasksList.appendChild(el);
     });
 }
 
@@ -8911,6 +9297,28 @@ function renderModalSubtasks(task) {
 
 if (btnTaskDetailsClose) {
     btnTaskDetailsClose.addEventListener('click', closeTaskDetailsModal);
+}
+const btnTaskDetailsMobileClose = document.getElementById('btnTaskDetailsMobileClose');
+if (btnTaskDetailsMobileClose) {
+    btnTaskDetailsMobileClose.addEventListener('click', closeTaskDetailsModal);
+}
+
+const btnTaskDetailsMobileMore = document.getElementById('btnTaskDetailsMobileMore');
+const modalActionsDropdown = document.getElementById('modalActionsDropdown');
+if (btnTaskDetailsMobileMore && modalActionsDropdown) {
+    btnTaskDetailsMobileMore.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = modalActionsDropdown.style.display === 'none';
+        if (isHidden) {
+            // Close other dropdowns globally
+            document.querySelectorAll('.due-date-dropdown, .priority-dropdown, .project-dropdown, .task-actions-dropdown').forEach(d => {
+                if (d !== modalActionsDropdown) d.style.display = 'none';
+            });
+            modalActionsDropdown.style.display = 'flex';
+        } else {
+            modalActionsDropdown.style.display = 'none';
+        }
+    });
 }
 if (taskDetailsModal) {
     taskDetailsModal.addEventListener('click', (e) => {
@@ -9338,6 +9746,11 @@ document.addEventListener('click', (e) => {
             document.querySelectorAll('.modal-subtask-item').forEach(item => {
                 item.classList.remove('menu-open');
             });
+        }
+
+        const modalActionsDropdown = document.getElementById('modalActionsDropdown');
+        if (modalActionsDropdown && !e.target.closest('.task-details-mobile-more-wrapper')) {
+            modalActionsDropdown.style.display = 'none';
         }
 
         updateModalOverflow();

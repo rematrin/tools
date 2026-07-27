@@ -1358,6 +1358,18 @@ body.dark .dropdown-submenu {
         display: none !important;
         /* Нам больше не нужен полупрозрачный оверлей, так как меню на весь экран */
     }
+
+    .project-actions-btn {
+        display: none !important;
+    }
+
+    .project-item-container .menu-item {
+        padding-right: 14px !important;
+    }
+
+    .project-item-container .menu-counter {
+        margin-right: 0 !important;
+    }
 }
 
 /* --- СТИЛИ ДЛЯ НИЖНЕГО МЕНЮ НА МОБИЛЬНЫХ --- */
@@ -4724,22 +4736,96 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     opacity: 0.6;
 }
 
+.task-mobile-meta {
+    display: none;
+}
+
 @media (max-width: 480px) {
-    .task-due-badge {
-        max-width: 140px;
-        flex-shrink: 1;
-        min-width: 0;
+    .task-item {
+        align-items: flex-start;
     }
 
-    .task-due-badge span {
-        max-width: 90px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: inline-block;
-        vertical-align: middle;
+    .checkbox-wrapper {
+        margin-top: 2px;
+    }
+
+    .task-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1px;
+    }
+
+    .task-title-text {
+        padding: 2px 0 !important;
+    }
+
+    .task-due-badge {
+        display: none !important;
+    }
+
+    .task-mobile-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-top: 2px;
+        user-select: none;
+    }
+
+    .mobile-meta-left {
+        display: flex;
+        align-items: center;
+    }
+
+    .mobile-meta-right {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+    }
+
+    .mobile-due-time {
+        font-size: 11px !important;
+        font-weight: 500 !important;
+        color: #2563eb;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+    }
+
+    .mobile-project-label {
+        font-size: 11px !important;
+        font-weight: 500 !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        opacity: 0.8;
+    }
+
+    body.dark .mobile-due-time {
+        color: #60a5fa;
+    }
+
+    .mobile-due-time.today {
+        color: #16a34a;
+    }
+
+    .mobile-due-time.overdue {
+        color: #ef4444;
+    }
+
+    .mobile-due-icon-cal {
+        color: inherit;
+    }
+
+    .mobile-due-icon-clock {
+        color: #71717a;
+    }
+
+    body.dark .mobile-due-icon-clock {
+        color: #a1a1aa;
     }
 }
+
 
 /* --- Project Colors Styles --- */
 .project-color-dot {

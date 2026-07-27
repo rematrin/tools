@@ -4628,6 +4628,92 @@ function createTaskRowElement(task) {
         return item;
     }
 
+    const projectName = project ? project.name : 'Входящие';
+    const projectColor = project && project.color ? project.color : '#71717a';
+    
+    let projectIconHtml = '';
+    if (project && project.iconUrl) {
+        projectIconHtml = `<img src="${project.iconUrl}" style="width: 11px; height: 11px; object-fit: contain; border-radius: 2px; vertical-align: middle; display: inline-block;">`;
+    } else if (project) {
+        projectIconHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align: middle; display: inline-block;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+    } else {
+        projectIconHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align: middle; display: inline-block;"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>`;
+    }
+
+    const projectStyle = `style="color: ${projectColor};"`;
+
+    // Only show project name under task on mobile when in 'today' or 'tomorrow' views (not inside a specific project)
+    const showProjectOnMobile = (currentRoute === 'today' || currentRoute === 'tomorrow');
+    const mobileProjectHtml = showProjectOnMobile ? `
+        <div class="mobile-meta-right mobile-project-label" ${projectStyle}>
+            <span>${projectName}</span>
+            ${projectIconHtml}
+        </div>
+    ` : '';
+
+    let mobileDueHtml = '';
+    if (task.dueDate) {
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+
+        const isTodayOrTomorrow = (task.dueDate === todayStr || task.dueDate === tomorrowStr);
+        const isTodayTomorrowRoute = (currentRoute === 'today' || currentRoute === 'tomorrow');
+
+        const repeatIconHtml = task.dueRepeat ? `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+            </svg>
+        ` : '';
+
+        if (isTodayOrTomorrow && isTodayTomorrowRoute) {
+            if (task.dueTime) {
+                let timeStr = task.dueTime;
+                if (task.dueEndTime) {
+                    timeStr += `-${task.dueEndTime}`;
+                }
+                mobileDueHtml = `
+                    <span class="mobile-due-time ${isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '')}">
+                        <svg class="mobile-due-icon-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span style="vertical-align: middle; font-weight: 600;">${timeStr}</span>
+                        ${repeatIconHtml}
+                    </span>
+                `;
+            }
+        } else {
+            const rawDueLabel = formatDueDateDisplay(task.dueDate, task.dueTime, task.dueRepeat, task.dueEndDate, task.dueEndTime);
+            mobileDueHtml = `
+                <span class="mobile-due-time ${isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '')}">
+                    <svg class="mobile-due-icon-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span style="vertical-align: middle; font-weight: 600;">${rawDueLabel}</span>
+                    ${repeatIconHtml}
+                </span>
+            `;
+        }
+    }
+
+    let mobileMetaHtml = '';
+    if (mobileDueHtml || mobileProjectHtml) {
+        mobileMetaHtml = `
+            <div class="task-mobile-meta">
+                <div class="mobile-meta-left">${mobileDueHtml}</div>
+                ${mobileProjectHtml}
+            </div>
+        `;
+    }
+
     item.innerHTML = `
         <button class="task-drag-handle" aria-label="Перетащить задачу" title="Перетащить">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
@@ -4644,6 +4730,7 @@ function createTaskRowElement(task) {
         </div>
         <div class="task-content">
             <span class="task-title-text">${formatTaskTitle(task.title)}</span>
+            ${mobileMetaHtml}
         </div>
         ${task.dueDate ? (() => {
             let isProj = false;

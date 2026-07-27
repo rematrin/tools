@@ -28,8 +28,8 @@
     </style>
 
     <!-- Polyfill for Mobile Drag and Drop -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0/default.css">
-    <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0/index.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
+    <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
     <script>
         window.addEventListener('touchmove', function () { }, { passive: false });
         if (typeof MobileDragDrop !== 'undefined') {
@@ -298,7 +298,10 @@
             <div class="detail-thumbnail-wrapper" style="position: relative;">
                 <div class="detail-thumbnail-inner" id="detailThumbnailInner">
                     <img id="detailImage" src="https://placehold.co/600x338?text=Select+Video" alt="Превью"
-                        class="detail-thumbnail">
+                        class="detail-thumbnail" draggable="false">
+                    <div class="video-thumbnail-placeholder idea-placeholder" id="detailImagePlaceholder" style="display: none; width: 100%; height: 100%;">
+                        <img src="idea-bulb-128x128.png" alt="Идея" class="idea-bulb-icon" draggable="false">
+                    </div>
                     <div class="shorts-badge" id="detailShortsBadge" style="display: none;"></div>
                 </div>
                 <button class="btn-change-thumbnail" id="btnChangeThumbnail" style="display: none;"
@@ -699,6 +702,63 @@
     </div>
 
 
+
+    <!-- Модальное окно редактирования задачи -->
+    <div class="confirm-modal-overlay" id="chTaskEditModal" style="display: none;">
+        <div class="confirm-modal-card ch-task-edit-card">
+            <div class="ch-modal-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <h3 class="confirm-modal-title">Редактирование задачи</h3>
+                <button type="button" class="ch-modal-close-btn" id="btnChTaskEditClose" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--ch-text-gray); line-height: 1; padding: 0 4px;">&times;</button>
+            </div>
+            
+            <div class="ch-modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+                <!-- Переименование задачи -->
+                <div class="ch-modal-field">
+                    <label style="font-size: 0.82rem; font-weight: 600; color: var(--ch-text-gray); display: block; margin-bottom: 6px;">Название задачи</label>
+                    <textarea id="chTaskEditTitle" style="width: 100%; border: 1px solid var(--ch-border); border-radius: 8px; padding: 10px 12px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 0.95rem; resize: vertical; box-sizing: border-box; outline: none; transition: border-color 0.2s;" rows="3" placeholder="Введите название задачи..."></textarea>
+                </div>
+                
+                <!-- Выбор срока -->
+                <div class="ch-modal-field">
+                    <label style="font-size: 0.82rem; font-weight: 600; color: var(--ch-text-gray); display: block; margin-bottom: 6px;">Срок выполнения</label>
+                    <input type="date" id="chTaskEditDueDate" style="width: 100%; border: 1px solid var(--ch-border); border-radius: 8px; padding: 8px 12px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 0.95rem; box-sizing: border-box; outline: none; transition: border-color 0.2s;">
+                </div>
+                
+                <!-- Выбор приоритета -->
+                <div class="ch-modal-field">
+                    <label style="font-size: 0.82rem; font-weight: 600; color: var(--ch-text-gray); display: block; margin-bottom: 8px;">Приоритет</label>
+                    <div class="ch-priority-selector" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                        <button type="button" class="priority-btn" data-priority="0" style="padding: 8px; border: 1px solid var(--ch-border); border-radius: 8px; background: var(--ch-bg); color: var(--ch-text-dark); font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+                            Без
+                        </button>
+                        <button type="button" class="priority-btn" data-priority="1" style="padding: 8px; border: 1px solid var(--ch-border); border-radius: 8px; background: var(--ch-bg); color: var(--ch-text-dark); font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+                            <span style="display:inline-block; width: 8px; height: 8px; border-radius: 50%; background: #2563eb;"></span> Низкий
+                        </button>
+                        <button type="button" class="priority-btn" data-priority="2" style="padding: 8px; border: 1px solid var(--ch-border); border-radius: 8px; background: var(--ch-bg); color: var(--ch-text-dark); font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+                            <span style="display:inline-block; width: 8px; height: 8px; border-radius: 50%; background: #d97706;"></span> Средний
+                        </button>
+                        <button type="button" class="priority-btn" data-priority="3" style="padding: 8px; border: 1px solid var(--ch-border); border-radius: 8px; background: var(--ch-bg); color: var(--ch-text-dark); font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+                            <span style="display:inline-block; width: 8px; height: 8px; border-radius: 50%; background: #dc2626;"></span> Высокий
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="confirm-modal-actions" style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px;">
+                <button class="confirm-btn-cancel btn-task-delete" id="btnChTaskEditDelete" style="background: none; color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.2); border-radius: 8px; padding: 10px 16px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Удалить
+                </button>
+                <div style="display: flex; gap: 12px;">
+                    <button class="confirm-btn-cancel" id="btnChTaskEditCancel" style="border-radius: 8px; padding: 10px 16px;">Отмена</button>
+                    <button class="confirm-btn-danger" id="btnChTaskEditSave" style="background: var(--ch-purple); color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 500; cursor: pointer; transition: opacity 0.2s;">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Скрытые элементы для обложки -->
     <input type="file" id="thumbnailFileInput" accept="image/*" style="display: none;">

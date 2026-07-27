@@ -11,10 +11,23 @@ import {
     updateDoc,
     doc,
     serverTimestamp,
-    writeBatch
+    writeBatch,
+    enableMultiTabIndexedDbPersistence
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const db = getFirestore();
+
+try {
+    enableMultiTabIndexedDbPersistence(db).catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.warn("Firestore multi-tab persistence failed-precondition:", err);
+        } else if (err.code == 'unimplemented') {
+            console.warn("Firestore persistence is unimplemented:", err);
+        }
+    });
+} catch (e) {
+    console.error("Error enabling Firestore persistence:", e);
+}
 
 function getCalendarSvg(day) {
     return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3567,6 +3580,71 @@ function renderTasksGroup(tasksGroup, containerEl) {
     });
 }
 
+function getEmptyStateHtml() {
+    if (!navigator.onLine) {
+        return `
+            <div class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #f97316; opacity: 0.8; margin-bottom: 16px;">
+                    <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.5M5 12.5a10.94 10.94 0 0 1 5.83-2.84M8.5 16.5a6.75 6.75 0 0 1 7 0M10.5 19.5a2 2 0 0 1 3 0"></path>
+                </svg>
+                <h3 class="empty-title">Вы оффлайн</h3>
+                <p class="empty-text">Подключение к сети отсутствует. Задачи загрузятся из локального кэша, если они были ранее синхронизированы.</p>
+            </div>
+        `;
+    }
+    return `
+        <div class="empty-state">
+            <svg width="48" height="48" viewBox="0 0 640 640" fill="currentColor">
+                <path d="M155.8 96C123.9 96 96.9 119.4 92.4 150.9L64.6 345.2C64.2 348.2 64 351.2 64 354.3L64 480C64 515.3 92.7 544 128 544L512 544C547.3 544 576 515.3 576 480L576 354.3C576 351.3 575.8 348.2 575.4 345.2L547.6 150.9C543.1 119.4 516.1 96 484.2 96L155.8 96zM155.8 160L484.3 160L511.7 352L451.8 352C439.7 352 428.6 358.8 423.2 369.7L408.9 398.3C403.5 409.1 392.4 416 380.3 416L259.9 416C247.8 416 236.7 409.2 231.3 398.3L217 369.7C211.6 358.9 200.5 352 188.4 352L128.3 352L155.8 160z"/>
+            </svg>
+            <h3 class="empty-title">Все дела сделаны!</h3>
+            <p class="empty-text">Добавьте новую задачу выше, чтобы спланировать свой день.</p>
+        </div>
+    `;
+}
+
+function updateNetworkStatus() {
+    const isOnline = navigator.onLine;
+    const offlineBanner = document.getElementById('offlineBanner');
+    const sidebarStatusBadge = document.getElementById('sidebarStatusBadge');
+
+    if (offlineBanner) {
+        if (!isOnline) {
+            offlineBanner.classList.add('visible');
+        } else {
+            offlineBanner.classList.remove('visible');
+        }
+    }
+
+    if (sidebarStatusBadge) {
+        if (!isOnline) {
+            sidebarStatusBadge.className = 'sidebar-status-badge offline';
+            sidebarStatusBadge.innerHTML = `
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-right: 2.5px; vertical-align: middle;">
+                    <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.5M5 12.5a10.94 10.94 0 0 1 5.83-2.84M8.5 16.5a6.75 6.75 0 0 1 7 0M10.5 19.5a2 2 0 0 1 3 0"></path>
+                </svg>Оффлайн`;
+            sidebarStatusBadge.style.display = 'inline-flex';
+        } else {
+            sidebarStatusBadge.style.display = 'none';
+        }
+    }
+}
+
+window.addEventListener('online', () => {
+    updateNetworkStatus();
+    renderProjects();
+    renderTasks();
+});
+
+window.addEventListener('offline', () => {
+    updateNetworkStatus();
+    renderProjects();
+    renderTasks();
+});
+
+// Run status update after DOM initialization
+setTimeout(updateNetworkStatus, 100);
+
 // Отрендерить задачи в UI
 function renderTasks() {
     // Устанавливаем класс роута на body
@@ -3879,37 +3957,14 @@ function renderTasks() {
 
                 // Add empty state below overdue tasks
                 const emptyStateEl = document.createElement('div');
-                emptyStateEl.className = 'empty-state';
                 emptyStateEl.style.marginTop = '20px';
-                emptyStateEl.innerHTML = `
-                    <svg width="48" height="48" viewBox="0 0 640 640" fill="currentColor">
-                        <path d="M155.8 96C123.9 96 96.9 119.4 92.4 150.9L64.6 345.2C64.2 348.2 64 351.2 64 354.3L64 480C64 515.3 92.7 544 128 544L512 544C547.3 544 576 515.3 576 480L576 354.3C576 351.3 575.8 348.2 575.4 345.2L547.6 150.9C543.1 119.4 516.1 96 484.2 96L155.8 96zM155.8 160L484.3 160L511.7 352L451.8 352C439.7 352 428.6 358.8 423.2 369.7L408.9 398.3C403.5 409.1 392.4 416 380.3 416L259.9 416C247.8 416 236.7 409.2 231.3 398.3L217 369.7C211.6 358.9 200.5 352 188.4 352L128.3 352L155.8 160z"/>
-                    </svg>
-                    <h3 class="empty-title">Все дела сделаны!</h3>
-                    <p class="empty-text">Добавьте новую задачу выше, чтобы спланировать свой день.</p>
-                `;
+                emptyStateEl.innerHTML = getEmptyStateHtml();
                 activeTasksContainer.appendChild(emptyStateEl);
             } else {
-                activeTasksContainer.innerHTML = `
-                    <div class="empty-state">
-                        <svg width="48" height="48" viewBox="0 0 640 640" fill="currentColor">
-                            <path d="M155.8 96C123.9 96 96.9 119.4 92.4 150.9L64.6 345.2C64.2 348.2 64 351.2 64 354.3L64 480C64 515.3 92.7 544 128 544L512 544C547.3 544 576 515.3 576 480L576 354.3C576 351.3 575.8 348.2 575.4 345.2L547.6 150.9C543.1 119.4 516.1 96 484.2 96L155.8 96zM155.8 160L484.3 160L511.7 352L451.8 352C439.7 352 428.6 358.8 423.2 369.7L408.9 398.3C403.5 409.1 392.4 416 380.3 416L259.9 416C247.8 416 236.7 409.2 231.3 398.3L217 369.7C211.6 358.9 200.5 352 188.4 352L128.3 352L155.8 160z"/>
-                        </svg>
-                        <h3 class="empty-title">Все дела сделаны!</h3>
-                        <p class="empty-text">Добавьте новую задачу выше, чтобы спланировать свой день.</p>
-                    </div>
-                `;
+                activeTasksContainer.innerHTML = getEmptyStateHtml();
             }
         } else {
-            activeTasksContainer.innerHTML = `
-                <div class="empty-state">
-                    <svg width="48" height="48" viewBox="0 0 640 640" fill="currentColor">
-                        <path d="M155.8 96C123.9 96 96.9 119.4 92.4 150.9L64.6 345.2C64.2 348.2 64 351.2 64 354.3L64 480C64 515.3 92.7 544 128 544L512 544C547.3 544 576 515.3 576 480L576 354.3C576 351.3 575.8 348.2 575.4 345.2L547.6 150.9C543.1 119.4 516.1 96 484.2 96L155.8 96zM155.8 160L484.3 160L511.7 352L451.8 352C439.7 352 428.6 358.8 423.2 369.7L408.9 398.3C403.5 409.1 392.4 416 380.3 416L259.9 416C247.8 416 236.7 409.2 231.3 398.3L217 369.7C211.6 358.9 200.5 352 188.4 352L128.3 352L155.8 160z"/>
-                    </svg>
-                    <h3 class="empty-title">Все дела сделаны!</h3>
-                    <p class="empty-text">Добавьте новую задачу выше, чтобы спланировать свой день.</p>
-                </div>
-            `;
+            activeTasksContainer.innerHTML = getEmptyStateHtml();
         }
     } else {
         if (currentRoute === 'trash') {
@@ -3934,16 +3989,9 @@ function renderTasks() {
 
                 if (displayActiveTasks.length === 0) {
                     const emptyStateEl = document.createElement('div');
-                    emptyStateEl.className = 'empty-state';
                     emptyStateEl.style.marginTop = '20px';
                     emptyStateEl.style.marginBottom = '20px';
-                    emptyStateEl.innerHTML = `
-                        <svg width="48" height="48" viewBox="0 0 640 640" fill="currentColor">
-                            <path d="M155.8 96C123.9 96 96.9 119.4 92.4 150.9L64.6 345.2C64.2 348.2 64 351.2 64 354.3L64 480C64 515.3 92.7 544 128 544L512 544C547.3 544 576 515.3 576 480L576 354.3C576 351.3 575.8 348.2 575.4 345.2L547.6 150.9C543.1 119.4 516.1 96 484.2 96L155.8 96zM155.8 160L484.3 160L511.7 352L451.8 352C439.7 352 428.6 358.8 423.2 369.7L408.9 398.3C403.5 409.1 392.4 416 380.3 416L259.9 416C247.8 416 236.7 409.2 231.3 398.3L217 369.7C211.6 358.9 200.5 352 188.4 352L128.3 352L155.8 160z"/>
-                        </svg>
-                        <h3 class="empty-title">Все дела сделаны!</h3>
-                        <p class="empty-text">Добавьте новую задачу выше, чтобы спланировать свой день.</p>
-                    `;
+                    emptyStateEl.innerHTML = getEmptyStateHtml();
                     activeTasksContainer.appendChild(emptyStateEl);
                 }
 
@@ -5506,6 +5554,19 @@ function stopSectionsForUser() {
 function renderProjects() {
     if (!projectsListContainer) return;
     projectsListContainer.innerHTML = '';
+
+    if (projectsList.length === 0 && !navigator.onLine) {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'projects-offline-placeholder';
+        placeholder.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="offline-placeholder-icon">
+                <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.5M5 12.5a10.94 10.94 0 0 1 5.83-2.84M8.5 16.5a6.75 6.75 0 0 1 7 0M10.5 19.5a2 2 0 0 1 3 0"></path>
+            </svg>
+            <div class="offline-placeholder-text">Устройство оффлайн.<br>Списки загрузятся при подключении к сети.</div>
+        `;
+        projectsListContainer.appendChild(placeholder);
+        return;
+    }
 
     projectsList.forEach(project => {
         const itemContainer = document.createElement('div');

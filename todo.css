@@ -6942,3 +6942,172 @@ body.dark .calendar-cell .cell-circle {
 .calendar-cell.muted .day-number {
     opacity: 0.3;
 }
+
+/* === ОФФЛАЙН РЕЖИМ СТИЛИ === */
+
+/* Боковой бейдж статуса */
+.sidebar-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    width: fit-content;
+    transition: all 0.3s ease;
+}
+
+.sidebar-status-badge::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.sidebar-status-badge.offline {
+    color: #f97316; /* Amber color for warnings, less aggressive than red but clear */
+    background: rgba(249, 115, 22, 0.1);
+    border-color: rgba(249, 115, 22, 0.2);
+}
+
+.sidebar-status-badge.offline::before {
+    background-color: #f97316;
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.6);
+    animation: offline-pulse 2s infinite alternate;
+}
+
+.sidebar-status-badge.online {
+    color: #10b981; /* Emerald green */
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.sidebar-status-badge.online::before {
+    background-color: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+@keyframes offline-pulse {
+    0% { opacity: 0.6; }
+    100% { opacity: 1; transform: scale(1.1); }
+}
+
+/* Всплывающий баннер оффлайн режима */
+.offline-notification-banner {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(120px);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    padding: 12px 18px;
+    border-radius: 16px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    z-index: 10000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+    opacity: 0;
+    pointer-events: none;
+    max-width: 90%;
+    width: 420px;
+}
+
+body.dark .offline-notification-banner {
+    background: rgba(30, 32, 38, 0.8);
+    border-color: rgba(249, 115, 22, 0.25);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.offline-notification-banner.visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.offline-banner-icon {
+    color: #f97316;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(249, 115, 22, 0.15);
+    padding: 8px;
+    border-radius: 10px;
+}
+
+.offline-banner-content {
+    flex: 1;
+}
+
+.offline-banner-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+
+.offline-banner-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
+.offline-banner-close {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.offline-banner-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text);
+}
+
+body.dark .offline-banner-close:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Оффлайн заглушка в боковом меню */
+.projects-offline-placeholder {
+    padding: 24px 12px;
+    text-align: center;
+    background: rgba(249, 115, 22, 0.03);
+    border: 1px dashed rgba(249, 115, 22, 0.15);
+    border-radius: 12px;
+    margin: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.offline-placeholder-icon {
+    color: #f97316;
+    opacity: 0.7;
+    width: 24px;
+    height: 24px;
+}
+
+.offline-placeholder-text {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}

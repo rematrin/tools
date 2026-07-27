@@ -38,6 +38,11 @@ body {
     overflow: hidden;
 }
 
+img {
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
 .creatorhub-app {
     display: flex;
     width: 100vw;
@@ -574,6 +579,29 @@ body.dark .published .change {
     object-fit: cover;
     display: block;
     border-radius: 8px;
+}
+
+/* Lightbulb placeholder for ideas */
+.video-thumbnail-placeholder.idea-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    box-sizing: border-box;
+}
+
+body.dark .video-thumbnail-placeholder.idea-placeholder {
+    background: transparent;
+    border: none;
+}
+
+.idea-bulb-icon {
+    max-width: 80%;
+    max-height: 80%;
+    object-fit: contain;
 }
 
 .video-info-block {
@@ -4129,4 +4157,108 @@ body.dark .ch-task-checkbox {
 .ch-task-item.completed.priority-1 .ch-task-checkbox {
     background-color: #2563eb !important;
     border-color: #2563eb !important;
+}
+
+/* --- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ ЗАДАЧИ --- */
+.ch-task-edit-card {
+    max-width: 480px;
+    width: 95%;
+}
+
+.ch-priority-selector .priority-btn {
+    border: 1px solid var(--ch-border) !important;
+    background: var(--ch-card-bg) !important;
+    color: var(--ch-text-dark) !important;
+}
+
+.ch-priority-selector .priority-btn:hover {
+    background: var(--ch-bg) !important;
+}
+
+.ch-priority-selector .priority-btn.active {
+    border-color: var(--ch-purple) !important;
+    background: var(--ch-purple-light) !important;
+    color: var(--ch-purple) !important;
+    font-weight: 600 !important;
+}
+
+.ch-modal-close-btn:hover {
+    color: var(--ch-text-dark) !important;
+}
+
+#btnChTaskEditDelete:hover {
+    background-color: rgba(220, 38, 38, 0.08) !important;
+}
+
+#chTaskEditDueDate:focus, #chTaskEditTitle:focus {
+    border-color: var(--ch-purple) !important;
+}
+
+/* --- DRAG AND DROP ЗАДАЧ --- */
+.ch-task-item.dragging {
+    opacity: 0.3 !important;
+    background-color: var(--ch-bg) !important;
+}
+
+.task-drag-placeholder {
+    box-sizing: border-box;
+    border-radius: 8px;
+    background-color: var(--ch-border);
+    border: 1.5px dashed var(--ch-purple);
+    margin: 4px 0;
+    width: 100%;
+}
+
+body.dark .task-drag-placeholder {
+    background-color: #1e293b;
+}
+
+/* --- ПЛАШКА СРОКА ЗАДАЧИ --- */
+.ch-task-due-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #2563eb;
+    background-color: rgba(37, 99, 235, 0.05);
+    border: 1px solid rgba(37, 99, 235, 0.12);
+    padding: 2px 8px;
+    border-radius: 6px;
+    user-select: none;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+body.dark .ch-task-due-badge {
+    color: #60a5fa;
+    background-color: rgba(96, 165, 250, 0.1);
+    border-color: rgba(96, 165, 250, 0.15);
+}
+
+.ch-task-due-badge.today {
+    color: #16a34a;
+    background-color: rgba(22, 163, 74, 0.05);
+    border-color: rgba(22, 163, 74, 0.15);
+}
+
+body.dark .ch-task-due-badge.today {
+    background-color: rgba(22, 163, 74, 0.12);
+}
+
+.ch-task-due-badge.overdue {
+    color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.06);
+    border-color: rgba(239, 68, 68, 0.15);
+}
+
+body.dark .ch-task-due-badge.overdue {
+    background-color: rgba(239, 68, 68, 0.12);
+}
+
+.ch-task-item.completed .ch-task-due-badge {
+    color: var(--ch-text-gray) !important;
+    background-color: var(--ch-border) !important;
+    border-color: var(--ch-border) !important;
+    opacity: 0.6;
 }

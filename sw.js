@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tools-pwa-v17';
+const CACHE_NAME = 'tools-pwa-v20';
 const DYNAMIC_CACHE = 'tools-dynamic-image-cache-v1';
 const ASSETS = [
     './fx_converter.html',
@@ -53,6 +53,9 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
     const url = new URL(event.request.url);
+
+    // Skip non-http/https requests (like chrome-extension://)
+    if (!url.protocol.startsWith('http')) return;
 
     // Skip caching for Firebase APIs and Auth to ensure logic doesn't break
     if (url.hostname.includes('firebaseio.com') || url.hostname.includes('googleapis.com') || url.hostname.includes('identitytoolkit')) {

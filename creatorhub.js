@@ -34,6 +34,11 @@ let projectsList = [];
 let sectionsList = [];
 let chTasksCompletedCollapsed = localStorage.getItem("ch_tasks_completed_collapsed") === "true";
 
+// Переменные для редактирования задачи в CreatorHub
+let currentEditingTask = null;
+let chTaskEditModalSelectedPriority = 0;
+let currentTasksList = [];
+
 const SHORTS_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="16" height="16" baseProfile="basic" style="vertical-align: middle; margin-right: 6px; flex-shrink: 0; display: inline-block;"><path fill="#ff3d00" d="M29.103,2.631c4.217-2.198,9.438-0.597,11.658,3.577c2.22,4.173,0.6,9.337-3.617,11.534l-3.468,1.823	c2.987,0.109,5.836,1.75,7.328,4.555c2.22,4.173,0.604,9.337-3.617,11.534L18.897,45.37c-4.217,2.198-9.438,0.597-11.658-3.577	s-0.6-9.337,3.617-11.534l3.468-1.823c-2.987-0.109-5.836-1.75-7.328-4.555c-2.22-4.173-0.6-9.337,3.617-11.534	C10.612,12.346,29.103,2.631,29.103,2.631z M19.122,17.12l11.192,6.91l-11.192,6.877C19.122,30.907,19.122,17.12,19.122,17.12z"/><path fill="#fff" d="M19.122,17.12v13.787l11.192-6.877L19.122,17.12z"/></svg>`;
 
 function formatVideoTitle(title) {
@@ -367,6 +372,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (detailStatusSelect) {
                 detailStatusSelect.className = `status-select ${newStatus}`;
             }
+            updateDetailThumbnailPlaceholder();
 
             if (currentUid) {
                 try {
@@ -726,6 +732,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Инициализация Drag and Drop
     initDragAndDrop();
     initTouchDragAndDrop();
+
+    // Инициализация модального окна редактирования задач CreatorHub
+    initChTaskEditModal();
 });
 
 function handleHashRoute() {
@@ -748,6 +757,10 @@ function handleHashRoute() {
             btn.classList.remove("active");
         }
     });
+    
+    // Восстанавливаем сохраненный вид (список/сетка) для текущей вкладки
+    const savedTabMode = localStorage.getItem(`creatorhub_view_mode_${currentFilter}`) || localStorage.getItem("creatorhub_view_mode") || "list";
+    currentViewMode = savedTabMode;
     
     loadSortForCurrentFilter();
     updateViewForRoute();
@@ -1006,12 +1019,21 @@ function renderVideosList() {
             });
         }
         
+        const isIdeaPlaceholder = (v.status || "idea") === "idea" && (!v.thumbnail || v.thumbnail.includes("placehold.co"));
+        const thumbnailHtml = isIdeaPlaceholder ? `
+            <div class="video-thumbnail-placeholder idea-placeholder">
+                <img src="idea-bulb-128x128.png" alt="Идея" class="idea-bulb-icon" draggable="false">
+            </div>
+        ` : `
+            <img src="${v.thumbnail}" alt="Превью" class="video-thumbnail-mini" draggable="false">
+        `;
+        
         if (v.deleted) {
             card.innerHTML = `
                 <div class="video-card-left">
                     <div class="video-thumbnail-container">
                         <div class="video-thumbnail-inner">
-                            <img src="${v.thumbnail}" alt="Превью" class="video-thumbnail-mini">
+                            ${thumbnailHtml}
                             ${(v.title && v.title.startsWith('* ')) ? `<div class="shorts-badge">${SHORTS_ICON_SVG}</div>` : ''}
                         </div>
                     </div>
@@ -1048,7 +1070,7 @@ function renderVideosList() {
                 <div class="video-card-left">
                     <div class="video-thumbnail-container">
                         <div class="video-thumbnail-inner">
-                            <img src="${v.thumbnail}" alt="Превью" class="video-thumbnail-mini">
+                            ${thumbnailHtml}
                             ${(v.title && v.title.startsWith('* ')) ? `<div class="shorts-badge">${SHORTS_ICON_SVG}</div>` : ''}
                         </div>
                     </div>
@@ -1162,8 +1184,7 @@ async function updateVideoThumbnail(imageUrl) {
     if (!selectedVideo) return;
     selectedVideo.thumbnail = imageUrl;
     
-    const detailImage = document.getElementById("detailImage");
-    if (detailImage) detailImage.src = imageUrl;
+    updateDetailThumbnailPlaceholder();
     
     if (currentUid) {
         try {
@@ -1535,7 +1556,7 @@ function selectVideoItem(id) {
     }
 
     // Заполнение детального вида
-    detailImage.src = selectedVideo.thumbnail;
+    updateDetailThumbnailPlaceholder();
     detailTitle.innerHTML = formatVideoTitle(selectedVideo.title);
     
     const btnChangeThumbnail = document.getElementById("btnChangeThumbnail");
@@ -1636,6 +1657,25 @@ function selectVideoItem(id) {
         ensureVideoSection(selectedVideo);
     } else {
         renderLocalTasks();
+    }
+}
+
+function updateDetailThumbnailPlaceholder() {
+    if (!selectedVideo) return;
+    const detailImage = document.getElementById("detailImage");
+    const detailImagePlaceholder = document.getElementById("detailImagePlaceholder");
+    
+    const isDetailIdeaPlaceholder = (selectedVideo.status || "idea") === "idea" && (!selectedVideo.thumbnail || selectedVideo.thumbnail.includes("placehold.co"));
+    
+    if (isDetailIdeaPlaceholder) {
+        if (detailImage) detailImage.style.display = "none";
+        if (detailImagePlaceholder) detailImagePlaceholder.style.display = "flex";
+    } else {
+        if (detailImage) {
+            detailImage.style.display = "block";
+            detailImage.src = selectedVideo.thumbnail;
+        }
+        if (detailImagePlaceholder) detailImagePlaceholder.style.display = "none";
     }
 }
 
@@ -2380,6 +2420,7 @@ statusOptButtons.forEach(btn => {
                 detailStatusSelect.className = `status-select ${newStatus}`;
             }
             detailStatusDot.className = `status-dot ${newStatus}`;
+            updateDetailThumbnailPlaceholder();
         }
         
         if (currentUid) {
@@ -2804,6 +2845,125 @@ function initDragAndDrop() {
         }
         draggingElement = null;
     });
+
+    // --- DRAG AND DROP ДЛЯ ЗАДАЧ ---
+    const activeTasksContainer = document.getElementById("chActiveTasksList");
+    if (activeTasksContainer) {
+        let taskDraggingElement = null;
+        let taskPlaceholder = null;
+
+        activeTasksContainer.addEventListener('dragstart', (e) => {
+            const taskItem = e.target.closest('.ch-task-item');
+            if (!taskItem || taskItem.classList.contains('completed')) {
+                e.preventDefault();
+                return;
+            }
+            taskDraggingElement = taskItem;
+            taskItem.classList.add('dragging');
+
+            taskPlaceholder = document.createElement('div');
+            taskPlaceholder.className = 'task-drag-placeholder';
+            taskPlaceholder.style.height = `${taskDraggingElement.offsetHeight}px`;
+
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', taskItem.getAttribute('data-id'));
+
+            setTimeout(() => {
+                if (taskDraggingElement) {
+                    taskDraggingElement.style.display = 'none';
+                }
+            }, 0);
+        });
+
+        activeTasksContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (!taskDraggingElement || !taskPlaceholder) return;
+
+            const afterElement = getDragAfterTask(activeTasksContainer, e.clientY);
+            if (afterElement) {
+                activeTasksContainer.insertBefore(taskPlaceholder, afterElement);
+            } else {
+                activeTasksContainer.appendChild(taskPlaceholder);
+            }
+        });
+
+        activeTasksContainer.addEventListener('dragend', () => {
+            if (taskDraggingElement) {
+                taskDraggingElement.style.display = '';
+                taskDraggingElement.classList.remove('dragging');
+                taskDraggingElement.removeAttribute('draggable');
+            }
+            if (taskPlaceholder && taskPlaceholder.parentNode) {
+                taskPlaceholder.remove();
+            }
+            taskPlaceholder = null;
+            taskDraggingElement = null;
+        });
+
+        activeTasksContainer.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            if (!taskDraggingElement || !taskPlaceholder) return;
+
+            const prevElement = taskPlaceholder.previousElementSibling;
+            const nextElement = taskPlaceholder.nextElementSibling;
+
+            taskPlaceholder.remove();
+            taskPlaceholder = null;
+
+            if (taskDraggingElement) {
+                taskDraggingElement.style.display = '';
+                taskDraggingElement.classList.remove('dragging');
+            }
+
+            const taskId = taskDraggingElement.getAttribute('data-id');
+            const task = currentTasksList.find(t => t.id === taskId);
+            if (!task) {
+                taskDraggingElement = null;
+                return;
+            }
+
+            const prevTaskId = prevElement ? prevElement.getAttribute('data-id') : null;
+            const nextTaskId = nextElement ? nextElement.getAttribute('data-id') : null;
+
+            const prevTask = currentTasksList.find(t => t.id === prevTaskId);
+            const nextTask = currentTasksList.find(t => t.id === nextTaskId);
+
+            let newOrder = 0;
+            if (!prevTask && !nextTask) {
+                newOrder = 0;
+            } else if (!prevTask) {
+                newOrder = (nextTask.order !== undefined ? nextTask.order : 0) - 1000;
+            } else if (!nextTask) {
+                newOrder = (prevTask.order !== undefined ? prevTask.order : 0) + 1000;
+            } else {
+                const prevOrder = prevTask.order !== undefined ? prevTask.order : 0;
+                const nextOrder = nextTask.order !== undefined ? nextTask.order : 0;
+                newOrder = (prevOrder + nextOrder) / 2;
+            }
+
+            task.order = newOrder;
+
+            if (currentUid) {
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
+                        order: newOrder
+                    });
+                } catch (err) {
+                    console.error("Ошибка при переупорядочивании задачи в Firestore:", err);
+                }
+            } else {
+                if (!selectedVideo) return;
+                const localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
+                const t = localTasks.find(item => item.id === taskId);
+                if (t) {
+                    t.order = newOrder;
+                    localStorage.setItem(`local_tasks_${selectedVideo.id}`, JSON.stringify(localTasks));
+                    renderLocalTasks();
+                }
+            }
+            taskDraggingElement = null;
+        });
+    }
 }
 
 function getDragAfterVideo(container, x, y) {
@@ -2839,6 +2999,21 @@ function getDragAfterVideo(container, x, y) {
             return closest.element.nextElementSibling;
         }
     }
+}
+
+function getDragAfterTask(container, y) {
+    const dragElements = [...container.querySelectorAll('.ch-task-item:not(.dragging):not(.task-drag-placeholder)')];
+    if (dragElements.length === 0) return null;
+
+    return dragElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
 function initTouchDragAndDrop() {
@@ -3399,6 +3574,9 @@ async function deleteTagGlobally(oldTag) {
 function setViewMode(mode) {
     currentViewMode = mode;
     localStorage.setItem("creatorhub_view_mode", mode);
+    if (typeof currentFilter !== "undefined") {
+        localStorage.setItem(`creatorhub_view_mode_${currentFilter}`, mode);
+    }
     
     const container = document.getElementById("videosListContainer");
     const btnList = document.getElementById("btnListView");
@@ -3696,9 +3874,58 @@ async function getOrCreateYouTubeProjectAndSection(video) {
 
 async function ensureVideoSection(video) {
     if (!currentUid || !db || !video) return;
-    const res = await getOrCreateYouTubeProjectAndSection(video);
-    if (res) {
-        subscribeToTasks(res.sectionId);
+    
+    // 1. Ищем ID проекта YouTube
+    let projectId = youtubeProjectId;
+    if (!projectId) {
+        const ytProj = projectsList.find(p => p.name && p.name.toLowerCase() === 'youtube');
+        if (ytProj) {
+            projectId = ytProj.id;
+            youtubeProjectId = projectId;
+        }
+    }
+
+    if (!projectId) {
+        videoSectionId = null;
+        subscribeToTasks(null);
+        return;
+    }
+
+    // 2. Ищем, существует ли раздел для этого видео
+    let sec = sectionsList.find(s => s.projectId === projectId && s.videoId === video.id);
+    if (!sec) {
+        const cleanTitle = formatVideoTitle(video.title);
+        sec = sectionsList.find(s => s.projectId === projectId && s.name === cleanTitle && !s.videoId);
+        if (sec) {
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'sections', sec.id), {
+                    videoId: video.id
+                });
+                videoSectionId = sec.id;
+            } catch (err) {
+                console.error("Ошибка при привязке videoId к разделу:", err);
+            }
+        }
+    } else {
+        videoSectionId = sec.id;
+    }
+
+    if (sec) {
+        subscribeToTasks(sec.id);
+        
+        const cleanTitle = formatVideoTitle(video.title);
+        if (sec.name !== cleanTitle) {
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'sections', sec.id), {
+                    name: cleanTitle
+                });
+            } catch (err) {
+                console.error("Ошибка при обновлении названия раздела:", err);
+            }
+        }
+    } else {
+        videoSectionId = null;
+        subscribeToTasks(null);
     }
 }
 
@@ -3709,7 +3936,11 @@ function subscribeToTasks(sectionId) {
     }
     
     if (!currentUid || !sectionId) {
-        renderLocalTasks();
+        if (!currentUid) {
+            renderLocalTasks();
+        } else {
+            renderTasksUI([]);
+        }
         return;
     }
     
@@ -3719,11 +3950,33 @@ function subscribeToTasks(sectionId) {
         where('sectionId', '==', sectionId)
     );
     
-    unsubscribeTasks = onSnapshot(qTasks, (snapshot) => {
+    unsubscribeTasks = onSnapshot(qTasks, async (snapshot) => {
         const tasksList = [];
         snapshot.forEach(docSnap => {
             tasksList.push({ id: docSnap.id, ...docSnap.data() });
         });
+
+        // Проверяем наличие не удаленных задач
+        const nonDeletedTasks = tasksList.filter(t => !t.deleted);
+        if (nonDeletedTasks.length === 0 && sectionId) {
+            // Удаляем раздел, если не осталось активных/выполненных задач
+            const secToDel = sectionId;
+            if (videoSectionId === secToDel) {
+                videoSectionId = null;
+            }
+            try {
+                if (unsubscribeTasks) {
+                    unsubscribeTasks();
+                    unsubscribeTasks = null;
+                }
+                await deleteDoc(doc(db, 'users', currentUid, 'sections', secToDel));
+            } catch (err) {
+                console.error("Ошибка при удалении пустого раздела:", err);
+            }
+            renderTasksUI([]);
+            return;
+        }
+        
         renderTasksUI(tasksList);
     }, (error) => {
         console.error("Ошибка при получении задач видео:", error);
@@ -3731,6 +3984,7 @@ function subscribeToTasks(sectionId) {
 }
 
 function renderTasksUI(tasksList) {
+    currentTasksList = tasksList;
     const activeListEl = document.getElementById("chActiveTasksList");
     const completedListEl = document.getElementById("chCompletedTasksList");
     const completedHeader = document.getElementById("chCompletedHeader");
@@ -3747,8 +4001,13 @@ function renderTasksUI(tasksList) {
     if (activeTasks.length === 0) {
         activeListEl.innerHTML = `<div style="text-align: center; color: var(--ch-text-gray); padding: 20px 0; font-size: 0.9rem;">Нет активных задач</div>`;
     } else {
-        // Сортируем задачи по createdAt (новые внизу, чтобы совпадало с поведением добавления)
+        // Сортируем задачи по order, затем по createdAt
         activeTasks.sort((a, b) => {
+            const orderA = a.order !== undefined ? a.order : 0;
+            const orderB = b.order !== undefined ? b.order : 0;
+            if (orderA !== orderB) {
+                return orderA - orderB;
+            }
             const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
             const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
             return timeA - timeB;
@@ -3789,14 +4048,8 @@ function createTaskDOMElement(task) {
     const item = document.createElement("div");
     item.className = `ch-task-item ${task.completed ? 'completed' : ''} priority-${task.priority || 0}`;
     item.setAttribute("data-id", task.id);
-    
-    const priorityColors = {
-        0: "inherit",
-        1: "#2563eb",
-        2: "#d97706",
-        3: "#dc2626"
-    };
-    const priorityColor = priorityColors[task.priority || 0];
+
+    const badgeHtml = getDueDateBadgeHtml(task.dueDate);
 
     item.innerHTML = `
         <button class="ch-task-checkbox" type="button" aria-label="Отметить задачу">
@@ -3805,17 +4058,12 @@ function createTaskDOMElement(task) {
             </svg>
         </button>
         <div class="ch-task-content">${escapeHTML(task.title)}</div>
+        ${badgeHtml}
         <div class="ch-task-actions">
-            <button class="ch-task-action-btn btn-priority-task" title="Изменить приоритет" type="button" style="color: ${priorityColor};">
+            <button class="ch-task-action-btn btn-edit-task" title="Редактировать задачу" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                    <line x1="4" y1="22" x2="4" y2="15"></line>
-                </svg>
-            </button>
-            <button class="ch-task-action-btn btn-delete-task" title="Удалить задачу" type="button">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 </svg>
             </button>
         </div>
@@ -3828,103 +4076,29 @@ function createTaskDOMElement(task) {
         await toggleTaskCompleted(task);
     });
     
-    // Клик по приоритету (циклическая смена: 0 -> 1 -> 2 -> 3 -> 0)
-    const btnPriority = item.querySelector(".btn-priority-task");
-    btnPriority.addEventListener("click", async (e) => {
+    // Клик по кнопке редактирования (открывает модалку)
+    const btnEdit = item.querySelector(".btn-edit-task");
+    btnEdit.addEventListener("click", (e) => {
         e.stopPropagation();
-        const nextPriority = ((task.priority || 0) + 1) % 4;
-        if (currentUid) {
-            try {
-                await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
-                    priority: nextPriority
-                });
-            } catch (err) {
-                console.error("Ошибка при обновлении приоритета задачи:", err);
-            }
-        } else {
-            if (!selectedVideo) return;
-            const localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
-            const t = localTasks.find(item => item.id === task.id);
-            if (t) {
-                t.priority = nextPriority;
-                localStorage.setItem(`local_tasks_${selectedVideo.id}`, JSON.stringify(localTasks));
-                renderLocalTasks();
-            }
+        openChTaskEditModal(task);
+    });
+
+    // Открытие модалки при клике на элемент задачи
+    item.addEventListener("click", (e) => {
+        if (!e.target.closest(".ch-task-checkbox") && !e.target.closest(".ch-task-actions")) {
+            openChTaskEditModal(task);
         }
     });
 
-    // Редактирование по двойному клику
-    const contentEl = item.querySelector(".ch-task-content");
-    contentEl.addEventListener("dblclick", (e) => {
-        if (task.completed) return;
-        e.stopPropagation();
-        
-        const input = document.createElement("input");
-        input.type = "text";
-        input.className = "ch-task-edit-input";
-        input.value = task.title;
-        
-        input.style.width = "100%";
-        input.style.font = "inherit";
-        input.style.color = "var(--ch-text-dark)";
-        input.style.background = "var(--ch-bg)";
-        input.style.border = "1px solid var(--ch-purple)";
-        input.style.borderRadius = "4px";
-        input.style.padding = "4px 8px";
-        input.style.boxSizing = "border-box";
-        input.style.outline = "none";
-        
-        contentEl.innerHTML = "";
-        contentEl.appendChild(input);
-        input.focus();
-        
-        let finished = false;
-        const saveEdit = async () => {
-            if (finished) return;
-            finished = true;
-            const newTitle = input.value.trim();
-            if (newTitle && newTitle !== task.title) {
-                if (currentUid) {
-                    try {
-                        await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
-                            title: newTitle
-                        });
-                    } catch (err) {
-                        console.error("Ошибка при изменении названия задачи:", err);
-                        contentEl.textContent = task.title;
-                    }
-                } else {
-                    const localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
-                    const t = localTasks.find(item => item.id === task.id);
-                    if (t) {
-                        t.title = newTitle;
-                        localStorage.setItem(`local_tasks_${selectedVideo.id}`, JSON.stringify(localTasks));
-                        renderLocalTasks();
-                    }
-                }
-            } else {
-                contentEl.textContent = task.title;
-            }
-        };
-        
-        input.addEventListener("blur", saveEdit);
-        input.addEventListener("keydown", (ev) => {
-            if (ev.key === "Enter") {
-                ev.preventDefault();
-                saveEdit();
-            } else if (ev.key === "Escape") {
-                ev.preventDefault();
-                finished = true;
-                contentEl.textContent = task.title;
-            }
-        });
+    // Настройка активации draggable при взаимодействии (для десктопа)
+    item.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button, input, textarea, a, select')) {
+            return;
+        }
+        item.setAttribute('draggable', 'true');
     });
-    
-    // Клик по кнопке удаления
-    const btnDelete = item.querySelector(".btn-delete-task");
-    btnDelete.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        await deleteTask(task.id);
+    item.addEventListener('mouseup', () => {
+        item.removeAttribute('draggable');
     });
     
     return item;
@@ -4042,6 +4216,227 @@ if (chToggleCompletedBtn) {
             if (completedListEl) completedListEl.style.display = "block";
         }
     });
+}
+
+// === ЛОГИКА РЕДАКТИРОВАНИЯ ЗАДАЧ В CREATORHUB ===
+function initChTaskEditModal() {
+    const modal = document.getElementById("chTaskEditModal");
+    const btnClose = document.getElementById("btnChTaskEditClose");
+    const btnCancel = document.getElementById("btnChTaskEditCancel");
+    const btnSave = document.getElementById("btnChTaskEditSave");
+    const btnDelete = document.getElementById("btnChTaskEditDelete");
+    const priorityButtons = document.querySelectorAll("#chTaskEditModal .priority-btn");
+
+    if (!modal) return;
+
+    // Выбор приоритета
+    priorityButtons.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const priorityVal = parseInt(btn.getAttribute("data-priority"), 10);
+            chTaskEditModalSelectedPriority = priorityVal;
+            
+            priorityButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+        });
+    });
+
+    // Кнопка закрытия (крестик)
+    if (btnClose) {
+        btnClose.addEventListener("click", (e) => {
+            e.stopPropagation();
+            closeChTaskEditModal();
+        });
+    }
+
+    // Кнопка Отмена
+    if (btnCancel) {
+        btnCancel.addEventListener("click", (e) => {
+            e.stopPropagation();
+            closeChTaskEditModal();
+        });
+    }
+
+    // Кнопка Удалить
+    if (btnDelete) {
+        btnDelete.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            if (currentEditingTask) {
+                if (confirm("Вы уверены, что хотите удалить эту задачу?")) {
+                    await deleteTask(currentEditingTask.id);
+                    closeChTaskEditModal();
+                }
+            }
+        });
+    }
+
+    // Кнопка Сохранить
+    if (btnSave) {
+        btnSave.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            await saveChTaskEditModal();
+        });
+    }
+
+    // Клик по оверлею для закрытия
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+            closeChTaskEditModal();
+        }
+    });
+
+    // Нажатие клавиши Escape
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+            closeChTaskEditModal();
+        }
+    });
+}
+
+function openChTaskEditModal(task) {
+    currentEditingTask = task;
+    chTaskEditModalSelectedPriority = task.priority || 0;
+
+    const modal = document.getElementById("chTaskEditModal");
+    const titleInput = document.getElementById("chTaskEditTitle");
+    const dueDateInput = document.getElementById("chTaskEditDueDate");
+    const priorityButtons = document.querySelectorAll("#chTaskEditModal .priority-btn");
+
+    if (!modal) return;
+
+    // Заполняем поля
+    if (titleInput) titleInput.value = task.title || "";
+    if (dueDateInput) {
+        dueDateInput.value = task.dueDate || "";
+    }
+
+    // Устанавливаем активный приоритет
+    priorityButtons.forEach(b => {
+        const val = parseInt(b.getAttribute("data-priority"), 10);
+        if (val === chTaskEditModalSelectedPriority) {
+            b.classList.add("active");
+        } else {
+            b.classList.remove("active");
+        }
+    });
+
+    modal.style.display = "flex";
+}
+
+function closeChTaskEditModal() {
+    const modal = document.getElementById("chTaskEditModal");
+    if (modal) {
+        modal.style.display = "none";
+    }
+    currentEditingTask = null;
+}
+
+async function saveChTaskEditModal() {
+    if (!currentEditingTask) return;
+
+    const titleInput = document.getElementById("chTaskEditTitle");
+    const dueDateInput = document.getElementById("chTaskEditDueDate");
+
+    const newTitle = titleInput ? titleInput.value.trim() : "";
+    const newDueDate = dueDateInput ? dueDateInput.value || null : null;
+    const newPriority = chTaskEditModalSelectedPriority;
+
+    if (!newTitle) {
+        alert("Название задачи не может быть пустым!");
+        return;
+    }
+
+    if (currentUid) {
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'tasks', currentEditingTask.id), {
+                title: newTitle,
+                dueDate: newDueDate,
+                priority: newPriority
+            });
+        } catch (err) {
+            console.error("Ошибка при обновлении задачи в Firestore:", err);
+        }
+    } else {
+        if (!selectedVideo) return;
+        const localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
+        const t = localTasks.find(item => item.id === currentEditingTask.id);
+        if (t) {
+            t.title = newTitle;
+            t.dueDate = newDueDate;
+            t.priority = newPriority;
+            localStorage.setItem(`local_tasks_${selectedVideo.id}`, JSON.stringify(localTasks));
+            renderLocalTasks();
+        }
+    }
+
+    closeChTaskEditModal();
+}
+
+// Вспомогательные функции для плашки срока задачи
+function isDateOverdue(dueDateStr) {
+    if (!dueDateStr) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [year, month, day] = dueDateStr.split('-');
+    const dueDate = new Date(year, month - 1, day);
+    return dueDate < today;
+}
+
+function getDueDateBadgeHtml(dueDateStr) {
+    if (!dueDateStr) return "";
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+    let label = "";
+    let badgeClass = "";
+
+    if (dueDateStr === todayStr) {
+        label = "Сегодня";
+        badgeClass = "today";
+    } else if (dueDateStr === tomorrowStr) {
+        label = "Завтра";
+        badgeClass = "tomorrow";
+    } else if (dueDateStr === yesterdayStr) {
+        label = "Вчера";
+        badgeClass = "overdue";
+    } else if (isDateOverdue(dueDateStr)) {
+        const [year, month, day] = dueDateStr.split('-');
+        const monthsRuShort = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+        label = `${parseInt(day, 10)} ${monthsRuShort[parseInt(month, 10) - 1]}`;
+        if (parseInt(year, 10) !== today.getFullYear()) {
+            label += ` ${year}`;
+        }
+        badgeClass = "overdue";
+    } else {
+        const [year, month, day] = dueDateStr.split('-');
+        const monthsRuShort = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+        label = `${parseInt(day, 10)} ${monthsRuShort[parseInt(month, 10) - 1]}`;
+        if (parseInt(year, 10) !== today.getFullYear()) {
+            label += ` ${year}`;
+        }
+        badgeClass = "future";
+    }
+
+    return `
+        <span class="ch-task-due-badge ${badgeClass}" style="margin-left: auto; margin-right: 8px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span style="vertical-align: middle;">${label}</span>
+        </span>
+    `;
 }
 
 

@@ -311,14 +311,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Выбираем первое видео по умолчанию (отключено по запросу пользователя)
 
-    // Слушатель добавления видео
-    const btnAddVideo = document.querySelector(".btn-add-video");
-    if (btnAddVideo) {
-        btnAddVideo.addEventListener("click", (e) => {
-            e.stopPropagation();
-            addVideo();
-        });
-    }
+
 
     // Слушатели поиска и фильтров
     videoSearch.addEventListener("input", (e) => {
@@ -1121,7 +1114,7 @@ function renderVideosList() {
             card.addEventListener("dblclick", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                enableInlineRename(card, v.id, v.title);
+                renameVideoInSidebar(v.id);
             });
 
             // Правый клик (контекстное меню)
@@ -2018,7 +2011,7 @@ function clearDetailSidebar() {
 
 // === Создание нового видео ===
 async function addVideo() {
-    const maxOrder = videos.length > 0 ? Math.max(...videos.map(v => v.order || 0)) : 0;
+    const minOrder = videos.length > 0 ? Math.min(...videos.map(v => v.order || 0)) : 0;
     const defaultStatus = currentFilter !== "all" ? currentFilter : "idea";
     let statusText = "Идея";
     if (defaultStatus === "in_progress") statusText = "Черновик";
@@ -2033,7 +2026,7 @@ async function addVideo() {
         date: "не запланировано",
         dateLabel: "не запланировано",
         publishDate: "",
-        order: maxOrder + 1000,
+        order: minOrder - 1000,
         thumbnail: "https://placehold.co/600x338/e2e8f0/475569?text=New+Video",
         description: "",
         playlist: "",
@@ -2049,15 +2042,7 @@ async function addVideo() {
                 ...newVideoData,
                 createdAt: serverTimestamp()
             });
-            // Выбираем созданное видео
-            selectVideoItem(docRef.id);
-            // Активируем инлайн-переименование
-            setTimeout(() => {
-                const card = document.querySelector(`.video-card[data-id="${docRef.id}"]`);
-                if (card) {
-                    enableInlineRename(card, docRef.id, newVideoData.title);
-                }
-            }, 100);
+            renameVideoInSidebar(docRef.id);
         } catch (err) {
             console.error("Ошибка при создании видео в Firestore:", err);
         }
@@ -2068,14 +2053,18 @@ async function addVideo() {
         videos.push(localVideo);
         localStorage.setItem("local_videos", JSON.stringify(videos));
         renderVideosList();
-        selectVideoItem(id);
-        setTimeout(() => {
-            const card = document.querySelector(`.video-card[data-id="${id}"]`);
-            if (card) {
-                enableInlineRename(card, id, localVideo.title);
-            }
-        }, 100);
+        renameVideoInSidebar(id);
     }
+}
+
+// === Переименование видео в сайдбаре ===
+function renameVideoInSidebar(id) {
+    selectVideoItem(id);
+    setTimeout(() => {
+        if (detailTitle) {
+            detailTitle.click();
+        }
+    }, 150);
 }
 
 // === Инлайн переименование видео ===
@@ -2212,11 +2201,7 @@ document.getElementById("btnVideoRename").addEventListener("click", (e) => {
     e.stopPropagation();
     videoActionsDropdown.style.display = "none";
     if (activeMenuVideoId) {
-        const card = document.querySelector(`.video-card[data-id="${activeMenuVideoId}"]`);
-        const video = videos.find(v => v.id === activeMenuVideoId);
-        if (card && video) {
-            enableInlineRename(card, activeMenuVideoId, video.title);
-        }
+        renameVideoInSidebar(activeMenuVideoId);
     }
 });
 
@@ -3213,11 +3198,19 @@ function updateTabCounts() {
         published: "Опубликовано"
     };
 
+    const tabIcons = {
+        idea: `<svg class="tab-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M16,7a8.36,8.36,0,0,0-8,8,8.4,8.4,0,0,0,2.29,5.7A4.56,4.56,0,0,1,12,24a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1,4.46,4.46,0,0,1,1.69-3.28A7.87,7.87,0,0,0,24,15a8.17,8.17,0,0,0-2.44-5.83A7.67,7.67,0,0,0,16,7Zm4.34,12.28A6.87,6.87,0,0,0,18.09,23H13.91a7,7,0,0,0-2.2-3.71A6.41,6.41,0,0,1,10,15a6.29,6.29,0,0,1,6-6,5.63,5.63,0,0,1,4.13,1.6A6.16,6.16,0,0,1,22,15,5.93,5.93,0,0,1,20.31,19.28Z"></path><path d="M19,26H13a1,1,0,0,0,0,2h6a1,1,0,0,0,0-2Z"></path><path d="M18,29H14a1,1,0,0,0,0,2h4a1,1,0,0,0,0-2Z"></path><path d="M16,5a1,1,0,0,0,1-1V2a1,1,0,0,0-2,0V4A1,1,0,0,0,16,5Z"></path><path d="M5,14H3a1,1,0,0,0,0,2H5a1,1,0,0,0,0-2Z"></path><path d="M29,14H27a1,1,0,0,0,0,2h2a1,1,0,0,0,0-2Z"></path><path d="M25.9,5.1a1,1,0,0,0-1.41,0L23.07,6.51a1,1,0,0,0,0,1.42,1,1,0,0,0,.71.29,1,1,0,0,0,.71-.29L25.9,6.51A1,1,0,0,0,25.9,5.1Z"></path><path d="M8.93,7.93a1,1,0,0,0,0-1.42L7.51,5.1A1,1,0,0,0,6.1,6.51L7.51,7.93a1,1,0,0,0,.71.29A1,1,0,0,0,8.93,7.93Z"></path></svg>`,
+        in_progress: `<svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`,
+        editing: `<svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.296 3.464 3.02 3.956"></path><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"></path><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="m6.18 5.276 3.1 3.899"></path></svg>`,
+        published: `<svg class="tab-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" /><path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05" /></svg>`
+    };
+
     const tabBtns = document.querySelectorAll(".filters-tabs .tab-btn");
     tabBtns.forEach(btn => {
         const filterVal = btn.dataset.filter;
         if (tabLabels[filterVal] !== undefined) {
-            btn.innerHTML = `${tabLabels[filterVal]} <span class="tab-count">${countMap[filterVal]}</span>`;
+            const iconHtml = tabIcons[filterVal] || "";
+            btn.innerHTML = `${iconHtml}<span>${tabLabels[filterVal]}</span> <span class="tab-count">${countMap[filterVal]}</span>`;
         }
     });
 }

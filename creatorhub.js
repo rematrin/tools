@@ -18,7 +18,7 @@ const initialVideos = [];
 
 let videos = [...initialVideos];
 let selectedVideo = null;
-let currentFilter = "all";
+let currentFilter = "idea";
 let searchQuery = "";
 let currentMenuRoute = "videos"; // "videos" | "trash"
 let isDeletePermanentMode = false;
@@ -329,10 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
     filterButtons.forEach(btn => {
         btn.addEventListener("click", () => {
             const filterVal = btn.dataset.filter;
-            if (currentFilter === filterVal) {
-                history.pushState(null, null, window.location.pathname + window.location.search);
-                handleHashRoute();
-            } else {
+            if (currentFilter !== filterVal) {
                 window.location.hash = filterVal;
             }
         });
@@ -744,7 +741,9 @@ function handleHashRoute() {
     if (validFilters.includes(hash)) {
         currentFilter = hash;
     } else {
-        currentFilter = "all";
+        currentFilter = "idea";
+        window.location.hash = "idea";
+        return;
     }
     
     currentMenuRoute = (currentFilter === "trash" ? "trash" : "videos");

@@ -1572,26 +1572,26 @@ body.dark .btn-add-tag:hover {
         box-sizing: border-box !important;
     }
 
-    .video-card {
+    .videos-list:not(.grid-view) .video-card {
         padding: 8px 10px !important;
         gap: 8px !important;
         width: 100% !important;
         box-sizing: border-box !important;
     }
 
-    .video-card-left {
+    .videos-list:not(.grid-view) .video-card-left {
         gap: 10px !important;
         min-width: 0 !important;
         flex: 1 !important;
     }
 
-    .video-thumbnail-mini {
+    .videos-list:not(.grid-view) .video-thumbnail-mini {
         width: 70px !important;
         height: 40px !important;
         flex-shrink: 0 !important;
     }
 
-    .video-title {
+    .videos-list:not(.grid-view) .video-title {
         font-size: 0.85rem !important;
         white-space: normal !important;
         word-break: break-word !important;
@@ -1601,21 +1601,21 @@ body.dark .btn-add-tag:hover {
         overflow: hidden;
     }
 
-    .video-card-right {
+    .videos-list:not(.grid-view) .video-card-right {
         gap: 8px !important;
     }
 
-    .video-status-date-block {
+    .videos-list:not(.grid-view) .video-status-date-block {
         min-width: auto !important;
         align-items: flex-end !important;
     }
 
-    .status-badge {
+    .videos-list:not(.grid-view) .status-badge {
         font-size: 0.72rem !important;
         padding: 2px 6px !important;
     }
 
-    .video-date {
+    .videos-list:not(.grid-view) .video-date {
         font-size: 0.7rem !important;
     }
 
@@ -3710,8 +3710,12 @@ body.dark .tag-color-gray {
 /* --- GRID VIEW LAYOUT FOR VIDEOS LIST --- */
 .videos-list.grid-view {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 220px));
     gap: 16px;
+    max-width: 928px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .videos-list.grid-view .video-card {

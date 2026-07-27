@@ -1081,7 +1081,10 @@ function renderVideosList() {
                             else if (v.status === "editing") displayStatusText = "В процессе";
                             return `<span class="status-badge ${v.status}">${displayStatusText}</span>`;
                         })()}
-                        <span class="video-date">${formatDateToRussian(v.publishDate)}</span>
+                        ${(() => {
+                            const formattedDate = formatDateToRussian(v.publishDate);
+                            return formattedDate && formattedDate !== "не запланировано" ? `<span class="video-date">${formattedDate}</span>` : "";
+                        })()}
                     </div>
                     <button class="video-options-btn" title="Опции">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">

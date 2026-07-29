@@ -727,32 +727,64 @@ document.addEventListener("DOMContentLoaded", () => {
                     referencesContent.dispatchEvent(new Event("input"));
                 }
             } else if (e.key === "Backspace") {
-                const blockText = lineElement.textContent || "";
-                const cleanText = blockText.replace(/\u200B/g, '').trim();
-                
-                // Если строка пустая
-                if (cleanText === "") {
-                    const prev = lineElement.previousSibling;
-                    // Если предыдущий элемент — нередактируемый блок (сепаратор или плашка)
-                    if (prev && prev.nodeType === Node.ELEMENT_NODE && prev.getAttribute("contenteditable") === "false") {
-                        e.preventDefault();
-                        
-                        // Ищем первую редактируемую строку перед этим нередактируемым элементом
-                        let target = prev.previousSibling;
-                        while (target && target.nodeType === Node.ELEMENT_NODE && target.getAttribute("contenteditable") === "false") {
-                            target = target.previousSibling;
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    // Проверяем, стоит ли курсор в самом начале строки (offset === 0)
+                    if (range.startOffset === 0) {
+                        const prev = lineElement.previousSibling;
+                        // Если предыдущий элемент — плашка видео
+                        if (prev && prev.nodeType === Node.ELEMENT_NODE && prev.classList.contains("yt-link-card")) {
+                            e.preventDefault();
+                            
+                            const blockText = lineElement.textContent || "";
+                            const cleanText = blockText.replace(/\u200B/g, '').trim();
+                            
+                            // Если строка пустая, удаляем её и переносим курсор выше плашки
+                            if (cleanText === "") {
+                                let target = prev.previousSibling;
+                                while (target && target.nodeType === Node.ELEMENT_NODE && target.getAttribute("contenteditable") === "false") {
+                                    target = target.previousSibling;
+                                }
+                                
+                                lineElement.parentNode.removeChild(lineElement);
+                                
+                                if (target) {
+                                    focusAtEndOfBlock(target);
+                                }
+                                
+                                referencesContent.dispatchEvent(new Event("input"));
+                            } else {
+                                // Если строка не пустая, просто переносим фокус перед видео
+                                let target = prev.previousSibling;
+                                while (target && target.nodeType === Node.ELEMENT_NODE && target.getAttribute("contenteditable") === "false") {
+                                    target = target.previousSibling;
+                                }
+                                if (target) {
+                                    focusAtEndOfBlock(target);
+                                }
+                            }
+                        } else if (prev && prev.nodeType === Node.ELEMENT_NODE && prev.classList.contains("references-separator")) {
+                            // Для сепараторов сохраняем стандартное удаление и поведение переноса
+                            const blockText = lineElement.textContent || "";
+                            const cleanText = blockText.replace(/\u200B/g, '').trim();
+                            
+                            if (cleanText === "") {
+                                e.preventDefault();
+                                let target = prev.previousSibling;
+                                while (target && target.nodeType === Node.ELEMENT_NODE && target.getAttribute("contenteditable") === "false") {
+                                    target = target.previousSibling;
+                                }
+                                
+                                lineElement.parentNode.removeChild(lineElement);
+                                
+                                if (target) {
+                                    focusAtEndOfBlock(target);
+                                }
+                                
+                                referencesContent.dispatchEvent(new Event("input"));
+                            }
                         }
-                        
-                        // Удаляем пустую строку
-                        lineElement.parentNode.removeChild(lineElement);
-                        
-                        // Если нашли редактируемый элемент перед плашкой/сепаратором, ставим курсор туда
-                        if (target) {
-                            focusAtEndOfBlock(target);
-                        }
-                        
-                        // Инициируем сохранение изменений
-                        referencesContent.dispatchEvent(new Event("input"));
                     }
                 }
             } else if (e.key === "ArrowDown") {

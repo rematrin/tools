@@ -5,6 +5,7 @@ import {
     collection,
     doc,
     setDoc,
+    getDoc,
     deleteDoc,
     onSnapshot,
     getDocs,
@@ -84,6 +85,8 @@ const tools = {
     text: document.getElementById('toolText'),
     link: document.getElementById('toolLink'),
     image: document.getElementById('toolImage'),
+    board: document.getElementById('toolBoard'),
+    column: document.getElementById('toolColumn'),
     draw: document.getElementById('toolDraw'),
     eraser: document.getElementById('toolEraser')
 };
@@ -300,16 +303,18 @@ function renderBoardsGrid(boardsList) {
         }
     });
 
+    const topLevelBoards = sorted.filter(board => !board.parentBoardId);
+
     boardsGrid.innerHTML = '';
     
-    if (sorted.length === 0) {
+    if (topLevelBoards.length === 0) {
         boardsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-sec); padding: 40px;">
             У вас пока нет досок. Нажмите "Создать доску", чтобы начать!
         </div>`;
         return;
     }
 
-    sorted.forEach(board => {
+    topLevelBoards.forEach(board => {
         const card = document.createElement('div');
         card.className = 'board-card';
         
@@ -461,24 +466,52 @@ function showDeleteBoardModal(boardId, boardTitle) {
 
 async function executeDeleteBoard(boardId) {
     if (currentUid && db) {
-        const elementsCollRef = collection(db, "users", currentUid, "whiteboards", boardId, "elements");
-        const snap = await getDocs(elementsCollRef);
-        const batch = writeBatch(db);
-        snap.forEach(docSnap => {
-            batch.delete(docSnap.ref);
-        });
-        await batch.commit();
+        try {
+            const elementsCollRef = collection(db, "users", currentUid, "whiteboards", boardId, "elements");
+            const snap = await getDocs(elementsCollRef);
+            
+            // Recursively delete sub-boards first
+            for (let docSnap of snap.docs) {
+                const el = docSnap.data();
+                if (el.type === 'board' && el.targetBoardId) {
+                    await executeDeleteBoard(el.targetBoardId);
+                }
+            }
+            
+            // Delete all elements of the current board
+            const batch = writeBatch(db);
+            snap.forEach(docSnap => {
+                batch.delete(docSnap.ref);
+            });
+            await batch.commit();
 
-        const boardDocRef = doc(db, "users", currentUid, "whiteboards", boardId);
-        await deleteDoc(boardDocRef);
+            // Delete the board config / doc itself
+            const boardDocRef = doc(db, "users", currentUid, "whiteboards", boardId);
+            await deleteDoc(boardDocRef);
+        } catch (err) {
+            console.error("Error during cascading board deletion:", err);
+        }
     } else {
+        const elementsKey = `board_elements_${boardId}`;
+        const localElements = JSON.parse(localStorage.getItem(elementsKey) || '{}');
+        
+        // Recursively delete sub-boards first
+        for (let el of Object.values(localElements)) {
+            if (el.type === 'board' && el.targetBoardId) {
+                await executeDeleteBoard(el.targetBoardId);
+            }
+        }
+        
         let localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
         localBoards = localBoards.filter(b => b.id !== boardId);
         localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
 
         localStorage.removeItem(`board_config_${boardId}`);
-        localStorage.removeItem(`board_elements_${boardId}`);
-        setupOfflineModeForDashboard();
+        localStorage.removeItem(elementsKey);
+        
+        if (typeof setupOfflineModeForDashboard === 'function') {
+            setupOfflineModeForDashboard();
+        }
     }
 }
 
@@ -595,6 +628,7 @@ function setupFirebaseSyncForBoard() {
                 adjustTitleInputWidth();
             }
             updateCanvasSize();
+            renderBreadcrumbs();
         } else {
             setDoc(boardDocRef, {
                 width: 2400,
@@ -636,6 +670,7 @@ function setupOfflineModeForBoard() {
         adjustTitleInputWidth();
     }
     updateCanvasSize();
+    renderBreadcrumbs();
 
     const localElements = localStorage.getItem(`board_elements_${activeBoardId}`);
     if (localElements) {
@@ -677,6 +712,7 @@ function saveBoardInfo() {
 
         showSaveStatus('Сохранено локально');
     }
+    updateParentBoardElementTitle(boardTitleInput.value);
 }
 
 function saveElement(elData) {
@@ -694,7 +730,12 @@ function saveElement(elData) {
 function deleteElement(id) {
     saveUndoState();
 
-    if (elements[id] && elements[id].type === 'frame') {
+    const el = elements[id];
+    if (el && el.type === 'board' && el.targetBoardId) {
+        executeDeleteBoard(el.targetBoardId);
+    }
+
+    if (el && (el.type === 'frame' || el.type === 'column')) {
         const batchUpdates = [];
         Object.values(elements).forEach(child => {
             if (child.parentId === id) {
@@ -1045,6 +1086,12 @@ function createNewElement(type, x, y, extra = {}) {
     } else if (type === 'link') {
         width = 280;
         height = 110;
+    } else if (type === 'board') {
+        width = 220;
+        height = 80;
+    } else if (type === 'column') {
+        width = 240;
+        height = 300;
     }
 
     const maxZ = Object.values(elements).reduce((max, el) => Math.max(max, el.zIndex || 0), 0);
@@ -1060,7 +1107,7 @@ function createNewElement(type, x, y, extra = {}) {
         width: finalWidth,
         height: finalHeight,
         zIndex: maxZ + 1,
-        color: type === 'text' ? '#ffffff' : activeColor, // Текстовый блок изначально белый
+        color: (type === 'text' || type === 'board' || type === 'column' || type === 'frame' || type === 'link') ? '#ffffff' : activeColor, // Текстовый блок, встроенная доска, столбец, группа и ссылка изначально белые
         ...extra
     };
 
@@ -1075,6 +1122,42 @@ function createNewElement(type, x, y, extra = {}) {
 }
 
 tools.text.addEventListener('click', () => createNewElement('text', undefined, undefined, { content: "" }));
+
+if (tools.board) {
+    tools.board.addEventListener('click', async () => {
+        const newSubBoardId = "board_" + Math.random().toString(36).substring(2, 11);
+        const newBoardData = {
+            id: newSubBoardId,
+            parentBoardId: activeBoardId,
+            title: "Встроенная доска",
+            width: 2400,
+            height: 1600,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+
+        showSaveStatus("Создание встроенной доски...");
+
+        if (currentUid && db) {
+            const boardDocRef = doc(db, "users", currentUid, "whiteboards", newSubBoardId);
+            await setDoc(boardDocRef, newBoardData);
+        } else {
+            const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+            localBoards.push(newBoardData);
+            localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+        }
+
+        createNewElement('board', undefined, undefined, {
+            targetBoardId: newSubBoardId,
+            content: "Встроенная доска"
+        });
+        showSaveStatus("Встроенная доска создана");
+    });
+}
+
+if (tools.column) {
+    tools.column.addEventListener('click', () => createNewElement('column', undefined, undefined, { content: "Новая колонка" }));
+}
 
 tools.link.addEventListener('click', () => {
     urlInputModal.classList.add('active');
@@ -1404,6 +1487,9 @@ tools.image.addEventListener('click', () => {
 
 // === РЕНДЕРИНГ ЭЛЕМЕНТОВ ===
 function renderElements() {
+    if (typeof layoutColumns === 'function') {
+        layoutColumns(false);
+    }
     const activeTextareaId = document.activeElement ? document.activeElement.getAttribute('data-id') : null;
     elementsLayer.innerHTML = '';
     
@@ -1431,8 +1517,10 @@ function renderElements() {
     }
 
     const sortedElements = Object.values(elements).sort((a, b) => {
-        if (a.type === 'frame' && b.type !== 'frame') return -1;
-        if (a.type !== 'frame' && b.type === 'frame') return 1;
+        const isAContainer = (a.type === 'frame' || a.type === 'column');
+        const isBContainer = (b.type === 'frame' || b.type === 'column');
+        if (isAContainer && !isBContainer) return -1;
+        if (!isAContainer && isBContainer) return 1;
         return (a.zIndex || 0) - (b.zIndex || 0);
     });
 
@@ -1444,11 +1532,18 @@ function renderElements() {
             elDiv.classList.add('selected');
         }
         
+        if (el.parentId) {
+            const parentEl = elements[el.parentId];
+            if (parentEl && parentEl.type === 'column') {
+                elDiv.classList.add('in-column');
+            }
+        }
+        
         elDiv.style.left = `${el.x}px`;
         elDiv.style.top = `${el.y}px`;
         elDiv.style.width = `${el.width}px`;
         elDiv.style.height = `${el.height}px`;
-        elDiv.style.zIndex = el.zIndex || 1;
+        elDiv.style.zIndex = (el.type === 'frame' || el.type === 'column') ? 1 : (el.zIndex || 2);
         elDiv.setAttribute('data-id', el.id);
 
         // Применяем кастомные цвета, скругление и тени (только не для рисунков)
@@ -1457,6 +1552,26 @@ function renderElements() {
             elDiv.style.boxShadow = 'none';
             elDiv.style.border = 'none';
             elDiv.style.borderRadius = '0px';
+        } else if (el.type === 'column' || el.type === 'frame') {
+            elDiv.style.backgroundColor = '';
+            
+            const br = el.borderRadius !== undefined ? el.borderRadius : 12;
+            elDiv.style.borderRadius = `${br}px`;
+
+            elDiv.style.border = ''; // сброс
+            const shadow = el.shadowType || 'box';
+            if (shadow === 'none') {
+                elDiv.style.boxShadow = 'none';
+            } else if (shadow === 'box') {
+                elDiv.style.boxShadow = '0 3px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03)';
+            } else if (shadow === 'sticker') {
+                elDiv.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.16), 0 6px 12px rgba(0, 0, 0, 0.12)';
+            } else if (shadow === 'paper') {
+                elDiv.style.boxShadow = '0 15px 35px rgba(0, 0, 0, 0.22), 0 5px 15px rgba(0, 0, 0, 0.15)';
+            } else if (shadow === 'film') {
+                elDiv.style.boxShadow = '6px 6px 0px 0px #000000';
+                elDiv.style.border = '2px solid #000000';
+            }
         } else {
             elDiv.style.backgroundColor = el.color || (el.type === 'sticker' ? '#fef08a' : '#ffffff');
             
@@ -1488,8 +1603,8 @@ function renderElements() {
         });
         elDiv.appendChild(delBtn);
 
-        // Для рисунков убираем возможность изменения размера (скрываем ресайзер)
-        if (el.type !== 'drawing') {
+        // Для рисунков и встроенных досок убираем возможность изменения размера (скрываем ресайзер)
+        if (el.type !== 'drawing' && el.type !== 'board') {
             resizeHandle = document.createElement('div');
             resizeHandle.className = 'element-resize-handle handle-se';
             elDiv.appendChild(resizeHandle);
@@ -1640,6 +1755,52 @@ function renderElements() {
             });
             elDiv.appendChild(frameTitle);
         }
+        else if (el.type === 'column') {
+            elDiv.innerHTML = '';
+            elDiv.appendChild(delBtn);
+            elDiv.appendChild(resizeHandle);
+
+            const colHeader = document.createElement('div');
+            colHeader.className = 'column-header';
+
+            const colTitle = document.createElement('div');
+            colTitle.className = 'column-title';
+            colTitle.contentEditable = true;
+            colTitle.innerText = el.content || 'Название столбца';
+            colTitle.addEventListener('blur', () => {
+                const newContent = colTitle.innerText.trim();
+                if (el.content !== newContent) {
+                    saveUndoState();
+                    el.content = newContent;
+                    saveElement(el);
+                }
+            });
+            colTitle.addEventListener('keydown', (e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    colTitle.blur();
+                }
+            });
+            colHeader.appendChild(colTitle);
+
+            const childrenCount = Object.values(elements).filter(child => child.parentId === el.id).length;
+            const colSubtitle = document.createElement('div');
+            colSubtitle.className = 'column-subtitle';
+            
+            let countText = '';
+            if (childrenCount === 1) {
+                countText = '1 элемент';
+            } else if (childrenCount >= 2 && childrenCount <= 4) {
+                countText = `${childrenCount} элемента`;
+            } else {
+                countText = `${childrenCount} элементов`;
+            }
+            colSubtitle.innerText = countText;
+            colHeader.appendChild(colSubtitle);
+
+            elDiv.appendChild(colHeader);
+        }
         else if (el.type === 'image') {
             elDiv.style.display = 'flex';
             elDiv.style.flexDirection = 'column';
@@ -1733,6 +1894,42 @@ function renderElements() {
             aLink.appendChild(contentDiv);
             elDiv.appendChild(aLink);
         }
+        else if (el.type === 'board') {
+            elDiv.innerHTML = '';
+            elDiv.appendChild(delBtn);
+
+            const boardLink = document.createElement('div');
+            boardLink.className = 'el-board-link';
+            
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'board-link-icon';
+            iconDiv.innerHTML = `
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                    <line x1="15" y1="3" x2="15" y2="21"></line>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="3" y1="15" x2="21" y2="15"></line>
+                </svg>
+            `;
+            boardLink.appendChild(iconDiv);
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'board-link-content';
+
+            const title = document.createElement('div');
+            title.className = 'board-link-title';
+            title.innerText = el.content || 'Встроенная доска';
+            contentDiv.appendChild(title);
+
+            boardLink.appendChild(contentDiv);
+            elDiv.appendChild(boardLink);
+
+            elDiv.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                window.location.search = `?id=${el.targetBoardId}`;
+            });
+        }
 
         elementsLayer.appendChild(elDiv);
     });
@@ -1824,6 +2021,10 @@ boardViewport.addEventListener('mousedown', (e) => {
         
         if (selectedElementIds.size === 1) {
             const singleId = Array.from(selectedElementIds)[0];
+            if (elements[singleId] && elements[singleId].type === 'board') {
+                e.preventDefault();
+                return;
+            }
             dragStartInfo = {
                 type: 'resize',
                 id: singleId,
@@ -2079,14 +2280,19 @@ boardViewport.addEventListener('mousemove', (e) => {
                 el.x = Math.max(0, Math.min(startPos.x + deltaX, boardConfig.width - el.width));
                 el.y = Math.max(0, Math.min(startPos.y + deltaY, boardConfig.height - el.height));
                 
-                if (el.type === 'frame') {
+                if (el.type === 'frame' || el.type === 'column') {
                     const dX = el.x - prevX;
                     const dY = el.y - prevY;
                     Object.values(elements).forEach(child => {
                         if (child.parentId === el.id) {
                             child.x += dX;
                             child.y += dY;
-                            saveElement(child);
+                            
+                            const childDiv = document.querySelector(`.board-element[data-id="${child.id}"]`);
+                            if (childDiv) {
+                                childDiv.style.left = `${child.x}px`;
+                                childDiv.style.top = `${child.y}px`;
+                            }
                         }
                     });
                 }
@@ -2279,13 +2485,13 @@ boardViewport.addEventListener('mouseup', (e) => {
             if (el) {
                 if (selectedElementIds.size === 1) {
                     let newParentId = null;
-                    if (el.type !== 'frame') {
+                    if (el.type !== 'frame' && el.type !== 'column') {
                         const elCenter = { x: el.x + el.width / 2, y: el.y + el.height / 2 };
-                        const frames = Object.values(elements).filter(f => f.type === 'frame' && f.id !== el.id);
-                        for (let frame of frames) {
-                            if (elCenter.x >= frame.x && elCenter.x <= frame.x + frame.width &&
-                                elCenter.y >= frame.y && elCenter.y <= frame.y + frame.height) {
-                                newParentId = frame.id;
+                        const containers = Object.values(elements).filter(f => (f.type === 'frame' || f.type === 'column') && f.id !== el.id);
+                        for (let container of containers) {
+                            if (elCenter.x >= container.x && elCenter.x <= container.x + container.width &&
+                                elCenter.y >= container.y && elCenter.y <= container.y + container.height) {
+                                newParentId = container.id;
                                 break;
                             }
                         }
@@ -2293,8 +2499,19 @@ boardViewport.addEventListener('mouseup', (e) => {
                     el.parentId = newParentId;
                 }
                 saveElement(el);
+                if (el.type === 'frame' || el.type === 'column') {
+                    Object.values(elements).forEach(child => {
+                        if (child.parentId === el.id) {
+                            saveElement(child);
+                        }
+                    });
+                }
             }
         });
+
+        if (typeof layoutColumns === 'function') {
+            layoutColumns(true);
+        }
     } 
     else if (dragStartInfo.type === 'resize') {
         saveElement(elements[dragStartInfo.id]);
@@ -2921,6 +3138,19 @@ function updateSelectionOverlay() {
     overlay.style.top = `${minY}px`;
     overlay.style.width = `${maxX - minX}px`;
     overlay.style.height = `${maxY - minY}px`;
+
+    let isResizable = true;
+    if (selectedElementIds.size === 1) {
+        const singleId = Array.from(selectedElementIds)[0];
+        const el = elements[singleId];
+        if (el && el.type === 'board') {
+            isResizable = false;
+        }
+    }
+    const overlayHandles = overlay.querySelectorAll('.selection-overlay-handle');
+    overlayHandles.forEach(h => {
+        h.style.display = isResizable ? 'block' : 'none';
+    });
 }
 
 function linkifyHTML(html) {
@@ -2992,3 +3222,161 @@ document.addEventListener('click', (e) => {
         window.open(a.href, '_blank');
     }
 });
+
+async function getBoardTitleAndParent(boardId) {
+    if (!boardId) return null;
+    if (currentUid && db) {
+        try {
+            const docRef = doc(db, "users", currentUid, "whiteboards", boardId);
+            const snap = await getDoc(docRef);
+            if (snap.exists()) {
+                const data = snap.data();
+                return { title: data.title || "Без названия", parentBoardId: data.parentBoardId };
+            }
+        } catch (err) {
+            console.error("Error loading board info for breadcrumbs:", err);
+        }
+    } else {
+        const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+        const b = localBoards.find(x => x.id === boardId);
+        if (b) {
+            return { title: b.title || "Без названия", parentBoardId: b.parentBoardId };
+        }
+    }
+    return null;
+}
+
+async function renderBreadcrumbs() {
+    const breadcrumbsContainer = document.getElementById('boardBreadcrumbs');
+    if (!breadcrumbsContainer) return;
+
+    breadcrumbsContainer.innerHTML = '';
+
+    const homeLink = document.createElement('a');
+    homeLink.href = 'whiteboard.html';
+    homeLink.className = 'breadcrumb-item';
+    homeLink.innerText = 'Мои доски';
+    breadcrumbsContainer.appendChild(homeLink);
+
+    if (!activeBoardId) return;
+
+    const parentChain = [];
+    let currentId = activeBoardId;
+    
+    try {
+        while (currentId) {
+            const boardInfo = await getBoardTitleAndParent(currentId);
+            if (!boardInfo) break;
+            
+            if (currentId !== activeBoardId) {
+                parentChain.unshift({
+                    id: currentId,
+                    title: boardInfo.title
+                });
+            }
+            currentId = boardInfo.parentBoardId;
+        }
+
+        parentChain.forEach(item => {
+            const separator = document.createElement('span');
+            separator.className = 'breadcrumb-separator';
+            separator.innerText = '/';
+            breadcrumbsContainer.appendChild(separator);
+
+            const link = document.createElement('a');
+            link.href = `whiteboard.html?id=${item.id}`;
+            link.className = 'breadcrumb-item';
+            link.innerText = item.title;
+            breadcrumbsContainer.appendChild(link);
+        });
+
+        const finalSeparator = document.createElement('span');
+        finalSeparator.className = 'breadcrumb-separator';
+        finalSeparator.innerText = '/';
+        breadcrumbsContainer.appendChild(finalSeparator);
+
+    } catch (err) {
+        console.error("Error building breadcrumbs:", err);
+    }
+}
+
+async function updateParentBoardElementTitle(newTitle) {
+    const currentBoard = await getBoardTitleAndParent(activeBoardId);
+    if (!currentBoard || !currentBoard.parentBoardId) return;
+
+    const parentId = currentBoard.parentBoardId;
+    if (currentUid && db) {
+        try {
+            const elementsCollRef = collection(db, "users", currentUid, "whiteboards", parentId, "elements");
+            const snap = await getDocs(elementsCollRef);
+            const batch = writeBatch(db);
+            let hasUpdate = false;
+            snap.forEach(docSnap => {
+                const el = docSnap.data();
+                if (el.type === 'board' && el.targetBoardId === activeBoardId) {
+                    const elDocRef = doc(db, "users", currentUid, "whiteboards", parentId, "elements", el.id);
+                    batch.set(elDocRef, { content: newTitle }, { merge: true });
+                    hasUpdate = true;
+                }
+            });
+            if (hasUpdate) {
+                await batch.commit();
+            }
+        } catch (err) {
+            console.error("Error updating parent board element title:", err);
+        }
+    } else {
+        const parentElementsKey = `board_elements_${parentId}`;
+        const parentElements = JSON.parse(localStorage.getItem(parentElementsKey) || '{}');
+        let updated = false;
+        Object.values(parentElements).forEach(el => {
+            if (el.type === 'board' && el.targetBoardId === activeBoardId) {
+                el.content = newTitle;
+                updated = true;
+            }
+        });
+        if (updated) {
+            localStorage.setItem(parentElementsKey, JSON.stringify(parentElements));
+        }
+    }
+}
+
+function layoutColumns(shouldSave = false) {
+    const allElements = Object.values(elements);
+    const columns = allElements.filter(el => el.type === 'column');
+    
+    columns.forEach(col => {
+        const children = allElements.filter(el => el.parentId === col.id);
+        
+        children.sort((a, b) => a.y - b.y);
+        
+        const colWidth = col.width || 240;
+        let currentY = col.y + 72;
+        
+        children.forEach(child => {
+            const targetX = col.x + 12;
+            const targetY = currentY;
+            const targetWidth = colWidth - 24;
+            
+            if (child.x !== targetX || child.y !== targetY || child.width !== targetWidth) {
+                child.x = targetX;
+                child.y = targetY;
+                child.width = targetWidth;
+                if (shouldSave) {
+                    saveElement(child);
+                }
+            }
+            currentY += child.height + 12;
+        });
+        
+        const targetHeight = Math.max(120, currentY - col.y + 12);
+        if (col.height !== targetHeight) {
+            col.height = targetHeight;
+            if (shouldSave) {
+                saveElement(col);
+            }
+        }
+    });
+}
+
+

@@ -2834,6 +2834,7 @@ body.dark .references-editor hr.references-separator {
 
 /* --- YOUTUBE PREVIEW CARDS --- */
 .yt-link-card {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 16px;
@@ -2852,6 +2853,39 @@ body.dark .references-editor hr.references-separator {
 .yt-link-card:hover {
     background: var(--ch-purple-light);
     border-color: var(--ch-purple);
+}
+
+.yt-link-card-delete {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.06);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ch-text-gray);
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 10;
+    padding: 0;
+}
+
+body.dark .yt-link-card-delete {
+    background: rgba(248, 250, 252, 0.08);
+}
+
+.yt-link-card:hover .yt-link-card-delete {
+    opacity: 1;
+}
+
+.yt-link-card-delete:hover {
+    background: #ef4444 !important;
+    color: #ffffff !important;
 }
 
 .yt-link-card-thumbnail {

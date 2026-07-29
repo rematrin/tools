@@ -611,6 +611,18 @@
         </div>
     </div>
 
+    <!-- Модальное окно подтверждения удаления ссылки/сепаратора из описания -->
+    <div class="confirm-modal-overlay" id="confirmDeleteLinkModal" style="display: none; z-index: 1100;">
+        <div class="confirm-modal-card">
+            <h3 class="confirm-modal-title" id="confirmDeleteLinkTitle">Удалить ссылку?</h3>
+            <p class="confirm-modal-desc" id="confirmDeleteLinkDesc">Вы действительно хотите удалить эту ссылку на видео из описания?</p>
+            <div class="confirm-modal-actions">
+                <button class="confirm-btn-cancel" id="btnConfirmDeleteLinkCancel">Отмена</button>
+                <button class="confirm-btn-danger" id="btnConfirmDeleteLinkConfirm">Удалить</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Модальное окно настроек -->
     <div class="settings-modal-overlay" id="settingsModal" style="display: none;">
         <div class="settings-modal-card">

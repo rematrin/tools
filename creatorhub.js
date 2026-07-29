@@ -104,14 +104,14 @@ async function getYouTubeCardData(videoId) {
 
 function ensureEditableSiblings(element, container) {
     if (!element.parentNode) return;
-    // Проверяем следующий сиблинг
-    if (!element.nextSibling || (element.nextSibling.nodeType === Node.ELEMENT_NODE && element.nextSibling.getAttribute("contenteditable") === "false")) {
+    // Проверяем следующий сиблинг (только если его вообще нет)
+    if (!element.nextSibling) {
         const nextBlock = document.createElement("div");
         nextBlock.innerHTML = "<br>";
-        element.parentNode.insertBefore(nextBlock, element.nextSibling);
+        element.parentNode.appendChild(nextBlock);
     }
-    // Проверяем предыдущий сиблинг
-    if (!element.previousSibling || (element.previousSibling.nodeType === Node.ELEMENT_NODE && element.previousSibling.getAttribute("contenteditable") === "false")) {
+    // Проверяем предыдущий сиблинг (только если его вообще нет)
+    if (!element.previousSibling) {
         const prevBlock = document.createElement("div");
         prevBlock.innerHTML = "<br>";
         element.parentNode.insertBefore(prevBlock, element);
@@ -123,6 +123,14 @@ function normalizeEditorContent(container) {
     const blocks = container.querySelectorAll('.yt-link-card, .references-separator');
     blocks.forEach(block => {
         ensureEditableSiblings(block, container);
+        // Добавляем кнопку удаления для карточек, если её нет
+        if (block.classList.contains('yt-link-card') && !block.querySelector('.yt-link-card-delete')) {
+            const btn = document.createElement('button');
+            btn.className = 'yt-link-card-delete';
+            btn.title = 'Удалить';
+            btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+            block.insertBefore(btn, block.firstChild);
+        }
     });
 }
 
@@ -131,6 +139,27 @@ function focusOnBlock(block) {
     const range = document.createRange();
     range.setStart(block, 0);
     range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+function focusAtEndOfBlock(block) {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    
+    let lastNode = block;
+    while (lastNode.lastChild) {
+        lastNode = lastNode.lastChild;
+    }
+    
+    if (lastNode.nodeType === Node.TEXT_NODE) {
+        range.setStart(lastNode, lastNode.length);
+        range.setEnd(lastNode, lastNode.length);
+    } else {
+        range.selectNodeContents(lastNode);
+        range.collapse(false);
+    }
+    
     selection.removeAllRanges();
     selection.addRange(range);
 }
@@ -164,6 +193,12 @@ const btnOpenBoard = document.getElementById("btnOpenBoard");
 const videoButtonsContainer = document.getElementById("videoButtonsContainer");
 const settingVideoLink = document.getElementById("settingVideoLink");
 const btnOpenStudio = document.getElementById("btnOpenStudio");
+
+// Элементы модального окна удаления ссылки из описания
+const confirmDeleteLinkModal = document.getElementById("confirmDeleteLinkModal");
+const btnConfirmDeleteLinkCancel = document.getElementById("btnConfirmDeleteLinkCancel");
+const btnConfirmDeleteLinkConfirm = document.getElementById("btnConfirmDeleteLinkConfirm");
+let cardToDelete = null;
 
 // Элементы календаря в настройках
 const btnDueDate = document.getElementById("btnDueDate");
@@ -649,23 +684,23 @@ document.addEventListener("DOMContentLoaded", () => {
             saveVideoData("references", selectedVideo.references);
         });
 
-        // Замена дефисов на сепаратор при нажатии Enter
+        // Замена дефисов на сепаратор при нажатии Enter, защита от удаления при Backspace и навигация ArrowUp/ArrowDown
         referencesContent.addEventListener("keydown", (e) => {
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+            const range = selection.getRangeAt(0);
+            
+            if (range.startContainer === referencesContent) return;
+            
+            // Находим элемент строки — непосредственного потомка referencesContent
+            let lineElement = range.startContainer;
+            while (lineElement && lineElement.parentNode && lineElement.parentNode !== referencesContent) {
+                lineElement = lineElement.parentNode;
+            }
+            
+            if (!lineElement) return;
+
             if (e.key === "Enter") {
-                const selection = window.getSelection();
-                if (!selection.rangeCount) return;
-                const range = selection.getRangeAt(0);
-                
-                if (range.startContainer === referencesContent) return;
-                
-                // Находим элемент строки — непосредственного потомка referencesContent
-                let lineElement = range.startContainer;
-                while (lineElement && lineElement.parentNode && lineElement.parentNode !== referencesContent) {
-                    lineElement = lineElement.parentNode;
-                }
-                
-                if (!lineElement) return;
-                
                 const blockText = lineElement.textContent || "";
                 const cleanText = blockText.replace(/\u200B/g, '').trim();
                 
@@ -691,11 +726,99 @@ document.addEventListener("DOMContentLoaded", () => {
                     // Инициируем сохранение изменений
                     referencesContent.dispatchEvent(new Event("input"));
                 }
+            } else if (e.key === "Backspace") {
+                const blockText = lineElement.textContent || "";
+                const cleanText = blockText.replace(/\u200B/g, '').trim();
+                
+                // Если строка пустая
+                if (cleanText === "") {
+                    const prev = lineElement.previousSibling;
+                    // Если предыдущий элемент — нередактируемый блок (сепаратор или плашка)
+                    if (prev && prev.nodeType === Node.ELEMENT_NODE && prev.getAttribute("contenteditable") === "false") {
+                        e.preventDefault();
+                        
+                        // Ищем первую редактируемую строку перед этим нередактируемым элементом
+                        let target = prev.previousSibling;
+                        while (target && target.nodeType === Node.ELEMENT_NODE && target.getAttribute("contenteditable") === "false") {
+                            target = target.previousSibling;
+                        }
+                        
+                        // Удаляем пустую строку
+                        lineElement.parentNode.removeChild(lineElement);
+                        
+                        // Если нашли редактируемый элемент перед плашкой/сепаратором, ставим курсор туда
+                        if (target) {
+                            focusAtEndOfBlock(target);
+                        }
+                        
+                        // Инициируем сохранение изменений
+                        referencesContent.dispatchEvent(new Event("input"));
+                    }
+                }
+            } else if (e.key === "ArrowDown") {
+                let next = lineElement.nextSibling;
+                // Если следующий элемент — нередактируемый блок (или последовательность блоков)
+                if (next && next.nodeType === Node.ELEMENT_NODE && next.getAttribute("contenteditable") === "false") {
+                    e.preventDefault();
+                    
+                    // Ищем первый редактируемый блок после нередактируемых элементов
+                    let target = next;
+                    while (target && target.nodeType === Node.ELEMENT_NODE && target.getAttribute("contenteditable") === "false") {
+                        target = target.nextSibling;
+                    }
+                    
+                    if (!target) {
+                        // Если в конце ничего нет, создаем пустую редактируемую строку
+                        target = document.createElement("div");
+                        target.innerHTML = "<br>";
+                        referencesContent.appendChild(target);
+                    }
+                    
+                    focusOnBlock(target);
+                }
+            } else if (e.key === "ArrowUp") {
+                let prev = lineElement.previousSibling;
+                // Если предыдущий элемент — нередактируемый блок (или последовательность блоков)
+                if (prev && prev.nodeType === Node.ELEMENT_NODE && prev.getAttribute("contenteditable") === "false") {
+                    e.preventDefault();
+                    
+                    // Ищем первый редактируемый блок перед нередактируемыми элементами
+                    let target = prev;
+                    while (target && target.nodeType === Node.ELEMENT_NODE && target.getAttribute("contenteditable") === "false") {
+                        target = target.previousSibling;
+                    }
+                    
+                    if (!target) {
+                        // Если в начале ничего нет, создаем пустую редактируемую строку
+                        target = document.createElement("div");
+                        target.innerHTML = "<br>";
+                        referencesContent.insertBefore(target, prev);
+                    }
+                    
+                    focusAtEndOfBlock(target);
+                }
             }
         });
 
         // Просмотр картинок в полный размер (лайтбокс) при клике, а также переход по ссылкам
         referencesContent.addEventListener("click", (e) => {
+            const deleteBtn = e.target.closest(".yt-link-card-delete");
+            if (deleteBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const card = deleteBtn.closest(".yt-link-card");
+                if (card) {
+                    cardToDelete = card;
+                    const videoTitle = card.querySelector(".yt-link-card-title")?.textContent || "видео";
+                    document.getElementById("confirmDeleteLinkTitle").innerText = "Удалить ссылку?";
+                    document.getElementById("confirmDeleteLinkDesc").innerHTML = `Вы действительно хотите удалить ссылку на видео <strong style="color: var(--ch-text-dark);">${escapeHtml(videoTitle)}</strong> из описания?`;
+                    if (confirmDeleteLinkModal) {
+                        confirmDeleteLinkModal.style.display = "flex";
+                    }
+                }
+                return;
+            }
+
             const cardLink = e.target.closest(".yt-link-card");
             if (cardLink) {
                 e.preventDefault();
@@ -2535,6 +2658,40 @@ confirmDeleteVideoModal.addEventListener("click", (e) => {
         confirmDeleteVideoModal.style.display = "none";
     }
 });
+
+// Обработчики для модального окна подтверждения удаления ссылки/карточки из описания
+if (confirmDeleteLinkModal) {
+    btnConfirmDeleteLinkCancel.addEventListener("click", () => {
+        confirmDeleteLinkModal.style.display = "none";
+        cardToDelete = null;
+    });
+
+    btnConfirmDeleteLinkConfirm.addEventListener("click", () => {
+        if (cardToDelete) {
+            const parent = cardToDelete.parentNode;
+            cardToDelete.parentNode.removeChild(cardToDelete);
+            
+            // Если после удаления карточки родительский блок остался пустым, нормализуем его
+            if (parent && parent.textContent.trim() === "" && parent.innerHTML.trim() === "") {
+                parent.innerHTML = "<br>";
+            }
+            
+            normalizeEditorContent(referencesContent);
+            
+            selectedVideo.references = referencesContent.innerHTML;
+            saveVideoData("references", selectedVideo.references);
+        }
+        confirmDeleteLinkModal.style.display = "none";
+        cardToDelete = null;
+    });
+
+    confirmDeleteLinkModal.addEventListener("click", (e) => {
+        if (e.target === confirmDeleteLinkModal) {
+            confirmDeleteLinkModal.style.display = "none";
+            cardToDelete = null;
+        }
+    });
+}
 
 // === ЛОГИКА РЕЗАЙЗЕРА ПРАВОГО САЙДБАРА ===
 function initDetailSidebarResizer() {

@@ -2820,6 +2820,77 @@ body.dark .modal-tab.active {
     font-weight: 500;
 }
 
+.references-editor hr.references-separator {
+    border: none;
+    height: 1px;
+    background-color: rgba(15, 23, 42, 0.12);
+    margin: 16px 0;
+    display: block;
+}
+
+body.dark .references-editor hr.references-separator {
+    background-color: rgba(248, 250, 252, 0.15);
+}
+
+/* --- YOUTUBE PREVIEW CARDS --- */
+.yt-link-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid var(--ch-border);
+    margin: 12px 0;
+    text-decoration: none !important;
+    color: inherit !important;
+    user-select: none;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.yt-link-card:hover {
+    background: var(--ch-purple-light);
+    border-color: var(--ch-purple);
+}
+
+.yt-link-card-thumbnail {
+    width: 120px;
+    height: 68px;
+    border-radius: 6px;
+    object-fit: cover;
+    background-color: rgba(15, 23, 42, 0.05);
+    flex-shrink: 0;
+}
+
+body.dark .yt-link-card-thumbnail {
+    background-color: rgba(248, 250, 252, 0.05);
+}
+
+.yt-link-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+}
+
+.yt-link-card-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--ch-text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.yt-link-card-url {
+    font-size: 0.8rem;
+    color: var(--ch-text-gray);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .settings-row {
     display: flex;
     justify-content: space-between;

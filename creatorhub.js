@@ -49,6 +49,92 @@ function formatVideoTitle(title) {
     return title;
 }
 
+// --- YOUTUBE API HELPER FUNCTIONS ---
+const YOUTUBE_API_KEY = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
+
+function parseYouTubeId(url) {
+    if (!url) return null;
+    try {
+        const u = new URL(url.trim());
+        if (u.hostname.endsWith('youtu.be')) return u.pathname.split('/')[1] || null;
+        if (u.searchParams.get('v')) return u.searchParams.get('v');
+        if (u.pathname.startsWith('/shorts/')) return u.pathname.split('/')[2] || null;
+        if (u.pathname.startsWith('/embed/'))  return u.pathname.split('/')[2] || null;
+        return null;
+    } catch {
+        const match = url.trim().match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtu\.be\/embed\/|youtu\.be\/shorts\/)([a-zA-Z0-9_-]{11})/);
+        return match ? match[1] : null;
+    }
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[m]);
+}
+
+async function fetchYouTubeVideoInfo(videoId) {
+    const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${YOUTUBE_API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("API request failed");
+    const data = await res.json();
+    if (!data.items || data.items.length === 0) throw new Error("Video not found");
+    const snippet = data.items[0].snippet;
+    return {
+        title: snippet.title,
+        thumbnail: snippet.thumbnails?.medium?.url || snippet.thumbnails?.default?.url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
+    };
+}
+
+async function getYouTubeCardData(videoId) {
+    try {
+        return await fetchYouTubeVideoInfo(videoId);
+    } catch (e) {
+        console.warn("Failed to fetch YouTube info, using fallback:", e);
+        return {
+            title: "YouTube Video",
+            thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
+        };
+    }
+}
+
+function ensureEditableSiblings(element, container) {
+    if (!element.parentNode) return;
+    // Проверяем следующий сиблинг
+    if (!element.nextSibling || (element.nextSibling.nodeType === Node.ELEMENT_NODE && element.nextSibling.getAttribute("contenteditable") === "false")) {
+        const nextBlock = document.createElement("div");
+        nextBlock.innerHTML = "<br>";
+        element.parentNode.insertBefore(nextBlock, element.nextSibling);
+    }
+    // Проверяем предыдущий сиблинг
+    if (!element.previousSibling || (element.previousSibling.nodeType === Node.ELEMENT_NODE && element.previousSibling.getAttribute("contenteditable") === "false")) {
+        const prevBlock = document.createElement("div");
+        prevBlock.innerHTML = "<br>";
+        element.parentNode.insertBefore(prevBlock, element);
+    }
+}
+
+function normalizeEditorContent(container) {
+    if (!container) return;
+    const blocks = container.querySelectorAll('.yt-link-card, .references-separator');
+    blocks.forEach(block => {
+        ensureEditableSiblings(block, container);
+    });
+}
+
+function focusOnBlock(block) {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.setStart(block, 0);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
 // DOM Элементы
 const videosListContainer = document.getElementById("videosListContainer");
 const videoSearch = document.getElementById("videoSearch");
@@ -554,16 +640,69 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Сохранение референсов при изменении
     if (referencesContent) {
+        // Сохранение референсов при изменении
         referencesContent.addEventListener("input", () => {
             if (!selectedVideo) return;
+            normalizeEditorContent(referencesContent);
             selectedVideo.references = referencesContent.innerHTML;
             saveVideoData("references", selectedVideo.references);
         });
 
+        // Замена дефисов на сепаратор при нажатии Enter
+        referencesContent.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                const selection = window.getSelection();
+                if (!selection.rangeCount) return;
+                const range = selection.getRangeAt(0);
+                
+                if (range.startContainer === referencesContent) return;
+                
+                // Находим элемент строки — непосредственного потомка referencesContent
+                let lineElement = range.startContainer;
+                while (lineElement && lineElement.parentNode && lineElement.parentNode !== referencesContent) {
+                    lineElement = lineElement.parentNode;
+                }
+                
+                if (!lineElement) return;
+                
+                const blockText = lineElement.textContent || "";
+                const cleanText = blockText.replace(/\u200B/g, '').trim();
+                
+                // Проверяем, состоит ли строка ровно из 2 или более знаков "-"
+                if (/^--+$/.test(cleanText)) {
+                    e.preventDefault();
+                    
+                    // Создаем минималистичный сепаратор
+                    const hr = document.createElement("hr");
+                    hr.setAttribute("contenteditable", "false");
+                    hr.className = "references-separator";
+                    
+                    referencesContent.replaceChild(hr, lineElement);
+                    
+                    // Обеспечиваем наличие редактируемых блоков вокруг сепаратора
+                    ensureEditableSiblings(hr, referencesContent);
+                    
+                    // Переносим курсор в новый блок после сепаратора
+                    if (hr.nextSibling) {
+                        focusOnBlock(hr.nextSibling);
+                    }
+                    
+                    // Инициируем сохранение изменений
+                    referencesContent.dispatchEvent(new Event("input"));
+                }
+            }
+        });
+
         // Просмотр картинок в полный размер (лайтбокс) при клике, а также переход по ссылкам
         referencesContent.addEventListener("click", (e) => {
+            const cardLink = e.target.closest(".yt-link-card");
+            if (cardLink) {
+                e.preventDefault();
+                window.open(cardLink.href, "_blank");
+                return;
+            }
+
             if (e.target.tagName === "IMG") {
                 openImageLightbox(e.target.src);
             } else if (e.target.tagName === "A") {
@@ -614,7 +753,68 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // 2. Обрабатываем текст и автолинкуем
-            const text = clipboardData.getData("text/plain");
+            const text = clipboardData.getData("text/plain") || "";
+            const trimmedText = text.trim();
+            const isSingleUrl = /^https?:\/\/[^\s]+$/.test(trimmedText);
+            const youtubeId = isSingleUrl ? parseYouTubeId(trimmedText) : null;
+
+            if (youtubeId) {
+                const tempId = "yt-card-loading-" + Date.now();
+                const loadingHtml = `<span id="${tempId}" class="yt-card-loading-placeholder" style="color: var(--ch-text-gray); font-style: italic;">Загрузка превью видео...</span>`;
+                document.execCommand("insertHTML", false, loadingHtml);
+                
+                const originalUrl = trimmedText;
+
+                getYouTubeCardData(youtubeId).then(data => {
+                    const placeholder = document.getElementById(tempId);
+                    if (placeholder) {
+                        const card = document.createElement("a");
+                        card.href = originalUrl;
+                        card.target = "_blank";
+                        card.contentEditable = "false";
+                        card.className = "yt-link-card";
+                        
+                        card.innerHTML = `
+                            <img class="yt-link-card-thumbnail" src="${data.thumbnail}" alt="Thumbnail">
+                            <div class="yt-link-card-info">
+                                <div class="yt-link-card-title">${escapeHtml(data.title)}</div>
+                                <div class="yt-link-card-url">${escapeHtml(originalUrl)}</div>
+                            </div>
+                        `;
+                        
+                        // Находим элемент строки — непосредственного потомка referencesContent
+                        let lineElement = placeholder;
+                        while (lineElement && lineElement.parentNode && lineElement.parentNode !== referencesContent) {
+                            lineElement = lineElement.parentNode;
+                        }
+                        
+                        const lineText = lineElement ? lineElement.textContent.replace(/\u200B/g, '').trim() : "";
+                        const placeholderText = placeholder.textContent.replace(/\u200B/g, '').trim();
+                        
+                        if (lineElement && lineText === placeholderText) {
+                            // Если плейсхолдер — единственное содержимое строки, заменяем всю строку
+                            referencesContent.replaceChild(card, lineElement);
+                        } else {
+                            // Иначе заменяем только плейсхолдер
+                            placeholder.parentNode.replaceChild(card, placeholder);
+                        }
+                        
+                        // Обеспечиваем наличие редактируемых блоков вокруг плашки
+                        ensureEditableSiblings(card, referencesContent);
+                        
+                        // Переносим фокус на блок после плашки
+                        if (card.nextSibling) {
+                            focusOnBlock(card.nextSibling);
+                        }
+                        
+                        // Сохраняем изменения
+                        selectedVideo.references = referencesContent.innerHTML;
+                        saveVideoData("references", selectedVideo.references);
+                    }
+                });
+                return;
+            }
+
             if (text) {
                 const urlRegex = /(https?:\/\/[^\s]+)/g;
                 let htmlText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -1615,6 +1815,7 @@ function selectVideoItem(id) {
     // Вкладка: Референсы
     if (referencesContent && document.activeElement !== referencesContent) {
         referencesContent.innerHTML = selectedVideo.references || "";
+        normalizeEditorContent(referencesContent);
     }
 
     // Вкладка: Настройки

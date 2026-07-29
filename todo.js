@@ -17,6 +17,17 @@ import {
 
 const db = getFirestore();
 
+// Helper to get HTML for project icon (supports both image URLs and emojis)
+function getProjectIconHtml(iconUrl, defaultSvgHtml, sizeStyle = '') {
+    if (!iconUrl) {
+        return defaultSvgHtml;
+    }
+    if (iconUrl.startsWith('http://') || iconUrl.startsWith('https://') || iconUrl.startsWith('data:')) {
+        return `<img src="${iconUrl}" style="${sizeStyle}">`;
+    }
+    return `<span class="project-emoji-icon" style="${sizeStyle}">${iconUrl}</span>`;
+}
+
 try {
     enableMultiTabIndexedDbPersistence(db).catch((err) => {
         if (err.code == 'failed-precondition') {
@@ -581,9 +592,8 @@ function setAddTaskProject(projectId) {
         if (project) {
             if (addTaskProjectText) addTaskProjectText.textContent = project.name;
             if (addTaskProjectIcon) {
-                addTaskProjectIcon.innerHTML = project.iconUrl ?
-                    `<img src="${project.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 4px; display: block;">` :
-                    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+                const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+                addTaskProjectIcon.innerHTML = getProjectIconHtml(project.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 4px; display: block; font-size: 13px; line-height: 1;');
             }
         } else {
             setAddTaskProject(null);
@@ -623,9 +633,8 @@ function renderAddTaskProjectDropdown() {
         projectItem.className = 'dropdown-item';
         projectItem.type = 'button';
 
-        const iconHtml = project.iconUrl ?
-            `<img src="${project.iconUrl}">` :
-            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+        const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+        const iconHtml = getProjectIconHtml(project.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 3px; font-size: 13px; line-height: 1;');
 
         projectItem.innerHTML = `
             <span class="dropdown-item-left">
@@ -3267,7 +3276,7 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
                 if (project) {
                     editProjectText.textContent = project.name;
                     if (project.iconUrl) {
-                        editProjectIcon.innerHTML = `<img src="${project.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 2px;">`;
+                        editProjectIcon.innerHTML = getProjectIconHtml(project.iconUrl, '', 'width: 14px; height: 14px; object-fit: contain; border-radius: 2px; font-size: 13px; line-height: 1;');
                     } else {
                         editProjectIcon.innerHTML = `
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block;">
@@ -3322,9 +3331,8 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
                 projectItem.className = 'dropdown-item';
                 projectItem.type = 'button';
 
-                const iconHtml = project.iconUrl ?
-                    `<img src="${project.iconUrl}">` :
-                    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+                const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+                const iconHtml = getProjectIconHtml(project.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 3px; font-size: 13px; line-height: 1;');
 
                 projectItem.innerHTML = `
                     <span class="dropdown-item-left">
@@ -4060,14 +4068,8 @@ function renderTasks() {
                                             <div class="dropdown-submenu">
                                                 ${projectsList.map(proj => {
                                 const isCurrent = projectId === proj.id;
-                                const iconHtml = proj.iconUrl ?
-                                    `<img src="${proj.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 0;">` :
-                                    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0;">
-                                                            <line x1="4" y1="9" x2="20" y2="9"></line>
-                                                            <line x1="4" y1="15" x2="20" y2="15"></line>
-                                                            <line x1="10" y1="3" x2="8" y2="21"></line>
-                                                            <line x1="16" y1="3" x2="14" y2="21"></line>
-                                                        </svg>`;
+                                const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+                                const iconHtml = getProjectIconHtml(proj.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 0; font-size: 13px; line-height: 1;');
                                 return `
                                                         <button class="dropdown-item btn-select-project-for-section ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}" type="button">
                                                             ${iconHtml}
@@ -4632,10 +4634,9 @@ function createTaskRowElement(task) {
     const projectColor = project && project.color ? project.color : '#71717a';
     
     let projectIconHtml = '';
-    if (project && project.iconUrl) {
-        projectIconHtml = `<img src="${project.iconUrl}" style="width: 11px; height: 11px; object-fit: contain; border-radius: 2px; vertical-align: middle; display: inline-block;">`;
-    } else if (project) {
-        projectIconHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align: middle; display: inline-block;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+    if (project) {
+        const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align: middle; display: inline-block;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+        projectIconHtml = getProjectIconHtml(project.iconUrl, defaultSvg, 'width: 11px; height: 11px; object-fit: contain; border-radius: 2px; vertical-align: middle; display: inline-block; font-size: 10px; line-height: 1;');
     } else {
         projectIconHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align: middle; display: inline-block;"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>`;
     }
@@ -4924,14 +4925,8 @@ function createTaskRowElement(task) {
                         </button>
                         ${projectsList.map(proj => {
             const isCurrent = task.projectId === proj.id;
-            const iconHtml = proj.iconUrl ?
-                `<img src="${proj.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 0;">` :
-                `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0;">
-                                    <line x1="4" y1="9" x2="20" y2="9"></line>
-                                    <line x1="4" y1="15" x2="20" y2="15"></line>
-                                    <line x1="10" y1="3" x2="8" y2="21"></line>
-                                    <line x1="16" y1="3" x2="14" y2="21"></line>
-                                </svg>`;
+            const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+            const iconHtml = getProjectIconHtml(proj.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 0; font-size: 13px; line-height: 1;');
             return `
                                     <button class="dropdown-item btn-select-project ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}">
                                         ${iconHtml}
@@ -5665,14 +5660,8 @@ function renderProjects() {
         // Calculate task count for this project
         const projectTaskCount = allTasks.filter(t => !t.deleted && !t.completed && t.projectId === project.id).length;
 
-        const iconHtml = project.iconUrl ?
-            `<img src="${project.iconUrl}" style="width: 16px; height: 16px; object-fit: contain; border-radius: 4px; flex-shrink: 0;">` :
-            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="4" y1="9" x2="20" y2="9"></line>
-                <line x1="4" y1="15" x2="20" y2="15"></line>
-                <line x1="10" y1="3" x2="8" y2="21"></line>
-                <line x1="16" y1="3" x2="14" y2="21"></line>
-            </svg>`;
+        const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+        const iconHtml = getProjectIconHtml(project.iconUrl, defaultSvg, 'width: 16px; height: 16px; object-fit: contain; border-radius: 4px; flex-shrink: 0; font-size: 14px; line-height: 1;');
 
         const showCounters = localStorage.getItem('todo_show_sidebar_counters') !== 'hide';
         const hideProjectCount = project.hideCount === true;
@@ -6714,10 +6703,6 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="5" fill="currentColor"></circle></svg>
             <span>Изменить цвет</span>
         </div>
-        <div class="ctx-item" id="ctx-rename-project">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-            <span>Переименовать</span>
-        </div>
         <div class="ctx-item" id="ctx-toggle-count-project">
             ${isCountHidden ? `
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -6807,13 +6792,7 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
         );
     });
 
-    // Обработчик переименования проекта
-    menu.querySelector('#ctx-rename-project').addEventListener('click', (evt) => {
-        evt.stopPropagation();
-        menu.remove();
-        activeContextMenu = null;
-        enableProjectInlineEdit(itemContainer, projectId, projectName);
-    });
+
 
     // Обработчик изменения иконки проекта
     menu.querySelector('#ctx-change-icon-project').addEventListener('click', (evt) => {
@@ -6832,6 +6811,24 @@ function showProjectIconModal(projectId, projectName) {
     const overlay = document.createElement('div');
     overlay.className = 'custom-confirm-overlay';
 
+    let previewHtml = '';
+    if (currentIconUrl) {
+        if (currentIconUrl.startsWith('http') || currentIconUrl.startsWith('data:')) {
+            previewHtml = `<img src="${currentIconUrl}" style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;">`;
+        } else {
+            previewHtml = `<span style="font-size: 32px; line-height: 1;">${currentIconUrl}</span>`;
+        }
+    } else {
+        previewHtml = `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5;">
+                            <line x1="4" y1="9" x2="20" y2="9"></line>
+                            <line x1="4" y1="15" x2="20" y2="15"></line>
+                            <line x1="10" y1="3" x2="8" y2="21"></line>
+                            <line x1="16" y1="3" x2="14" y2="21"></line>
+                        </svg>`;
+    }
+
+    const isEmojiVal = currentIconUrl && !currentIconUrl.startsWith('http') && !currentIconUrl.startsWith('data:');
+
     overlay.innerHTML = `
         <div class="confirm-box" style="width: 360px; padding: 24px;">
             <div class="confirm-title" style="font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
@@ -6844,17 +6841,9 @@ function showProjectIconModal(projectId, projectName) {
             </div>
 
             <!-- Drag and Drop / Paste Area -->
-            <div id="icon-dropzone" class="icon-dropzone">
+            <div id="icon-dropzone" class="icon-dropzone" style="margin-bottom: 16px;">
                 <div class="dropzone-preview" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
-                    ${currentIconUrl ?
-            `<img src="${currentIconUrl}" style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;">` :
-            `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5;">
-                            <line x1="4" y1="9" x2="20" y2="9"></line>
-                            <line x1="4" y1="15" x2="20" y2="15"></line>
-                            <line x1="10" y1="3" x2="8" y2="21"></line>
-                            <line x1="16" y1="3" x2="14" y2="21"></line>
-                        </svg>`
-        }
+                    ${previewHtml}
                 </div>
                 <div class="dropzone-text" style="font-size: 13px; font-weight: 500;">
                     Кликните для выбора файла или перетащите его сюда
@@ -6867,6 +6856,17 @@ function showProjectIconModal(projectId, projectName) {
             <!-- Actions -->
             <div style="display: flex; flex-direction: column; gap: 8px;">
                 <button class="confirm-btn-primary" id="btn-select-file" style="margin: 0; padding: 10px; border-radius: 8px;">Выбрать файл...</button>
+                
+                <button class="confirm-btn-secondary" id="btn-show-emoji-input" style="margin: 0; padding: 10px; border-radius: 8px;">Ввести эмодзи...</button>
+
+                <!-- Emoji Input Area (Hidden by default) -->
+                <div id="emoji-input-container" style="display: none; margin-bottom: 8px; margin-top: 4px;">
+                    <label for="modalEmojiInput" style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Введите один эмодзи:</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="modalEmojiInput" placeholder="Например, 🎯" autocomplete="off" style="flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background-color: var(--hover-bg); color: var(--text); font-size: 15px; outline: none; font-family: inherit; transition: border-color 0.2s;" value="${isEmojiVal ? currentIconUrl : ''}">
+                        <button class="confirm-btn-primary" id="btn-save-emoji" style="margin: 0; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;">ОК</button>
+                    </div>
+                </div>
                 
                 ${currentIconUrl ?
             `<button class="confirm-btn-secondary" id="btn-delete-icon" style="margin: 0; padding: 10px; border-radius: 8px; color: #ff5f56; border-color: rgba(255, 95, 86, 0.2);">Удалить иконку</button>` :
@@ -6885,6 +6885,45 @@ function showProjectIconModal(projectId, projectName) {
     const selectFileBtn = overlay.querySelector('#btn-select-file');
     const deleteIconBtn = overlay.querySelector('#btn-delete-icon');
     const closeBtn = overlay.querySelector('#btn-close-icon-modal');
+    const emojiInput = overlay.querySelector('#modalEmojiInput');
+    const saveEmojiBtn = overlay.querySelector('#btn-save-emoji');
+    const showEmojiBtn = overlay.querySelector('#btn-show-emoji-input');
+    const emojiInputContainer = overlay.querySelector('#emoji-input-container');
+
+    // Show emoji input listener
+    showEmojiBtn.addEventListener('click', () => {
+        emojiInputContainer.style.display = 'block';
+        showEmojiBtn.style.display = 'none';
+        emojiInput.focus();
+    });
+
+    // Prevent typing/pasting more than a single user-perceived character (grapheme / emoji)
+    emojiInput.addEventListener('input', () => {
+        const val = emojiInput.value;
+        if (val) {
+            const segments = [...new Intl.Segmenter().segment(val)];
+            emojiInput.value = segments.length > 0 ? segments[0].segment : '';
+        }
+    });
+
+    // Emoji OK handler
+    saveEmojiBtn.addEventListener('click', async () => {
+        const emojiVal = emojiInput.value.trim();
+        if (emojiVal) {
+            overlay.remove();
+            document.removeEventListener('paste', handlePaste);
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                    iconUrl: emojiVal
+                });
+            } catch (err) {
+                console.error("Error saving emoji icon:", err);
+                alert("Не удалось сохранить эмодзи как иконку.");
+            }
+        } else {
+            alert("Пожалуйста, введите эмодзи.");
+        }
+    });
 
     // 1. Paste handler (Ctrl + V)
     function handlePaste(e) {
@@ -7037,7 +7076,9 @@ function showProjectIconModal(projectId, projectName) {
                         if (deleteIconBtn) deleteIconBtn.style.display = 'block';
 
                         dropzone.querySelector('.dropzone-preview').innerHTML = currentIconUrl ?
-                            `<img src="${currentIconUrl}" style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;">` :
+                            (currentIconUrl.startsWith('http') || currentIconUrl.startsWith('data:') ?
+                                `<img src="${currentIconUrl}" style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;">` :
+                                `<span style="font-size: 32px; line-height: 1;">${currentIconUrl}</span>`) :
                             `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5;">
                                 <line x1="4" y1="9" x2="20" y2="9"></line>
                                 <line x1="4" y1="15" x2="20" y2="15"></line>
@@ -9758,9 +9799,8 @@ if (modalProjectBtn) {
 
                 projectsList.forEach(proj => {
                     const isCurrent = currentTask.projectId === proj.id;
-                    const iconHtml = proj.iconUrl ?
-                        `<img src="${proj.iconUrl}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 3px;">` :
-                        `<span style="font-weight: bold; color: var(--text-secondary);">#</span>`;
+                    const defaultHtml = `<span style="font-weight: bold; color: var(--text-secondary);">#</span>`;
+                    const iconHtml = getProjectIconHtml(proj.iconUrl, defaultHtml, 'width: 14px; height: 14px; object-fit: contain; border-radius: 3px; font-size: 13px; line-height: 1;');
                     html += `
                         <button class="dropdown-item ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}" style="display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 8px 12px; cursor: pointer; text-align: left; color: var(--text);">
                             ${iconHtml}

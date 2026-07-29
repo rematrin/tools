@@ -127,7 +127,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 14px;
+    padding: 6px 12px;
     border-radius: 12px;
     color: var(--text);
     text-decoration: none;
@@ -506,7 +506,7 @@ body.dark .add-task-form.expanded {
     border: none;
     border-bottom: 1px solid var(--border);
     border-radius: 0;
-    padding: 8px 6px;
+    padding: 6px 6px;
     gap: 12px;
     transition: background-color 0.2s ease, border-color 0.2s ease, margin 0.2s ease;
     position: relative;
@@ -530,6 +530,11 @@ body.route-tomorrow .task-item.subtask {
 }
 
 .task-collapse-btn {
+    position: absolute;
+    left: -18px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 6;
     background: transparent;
     border: none;
     cursor: pointer;
@@ -2573,6 +2578,11 @@ body.dark .btn-empty-trash:hover {
     }
 }
 
+/* Shift drag handle to the left if the task has a collapse button to prevent overlap */
+.task-item:has(.task-collapse-btn) .task-drag-handle {
+    left: -42px;
+}
+
 /* Элемент в процессе перетаскивания */
 .task-item.dragging {
     opacity: 0.3;
@@ -4273,7 +4283,7 @@ body.dark .progress-bg-circle {
 .modal-subtask-item {
     display: flex;
     align-items: center;
-    padding: 10px 4px;
+    padding: 6px 4px;
     gap: 12px;
     transition: background-color 0.15s;
 }
@@ -4336,7 +4346,7 @@ body.dark .progress-bg-circle {
     font-family: inherit;
     font-size: 0.9rem;
     cursor: pointer;
-    padding: 8px 4px;
+    padding: 6px 4px;
     font-weight: 500;
     width: fit-content;
     border-radius: 6px;
@@ -4352,7 +4362,7 @@ body.dark .progress-bg-circle {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 8px 4px;
+    padding: 6px 4px;
 }
 
 .modal-new-subtask-input-container input {
@@ -7284,4 +7294,20 @@ body.dark .offline-banner-close:hover {
     font-size: 0.75rem;
     color: var(--text-secondary);
     line-height: 1.4;
+}
+
+/* Стили для создания подзадачи перетаскиванием */
+.task-item.drag-subtask-target {
+    background-color: var(--active-bg) !important;
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 2px var(--accent) !important;
+    transition: background-color 0.15s, box-shadow 0.15s;
+}
+
+.drag-placeholder.subtask-placeholder {
+    margin-left: 36px !important;
+    width: calc(100% - 36px) !important;
+    background-color: var(--active-bg) !important;
+    opacity: 0.6;
+    border: 2px dashed var(--accent) !important;
 }

@@ -6328,41 +6328,85 @@ function initDragAndDrop() {
             // Handle Task dragging
             if (!draggingElement || !placeholder) return;
 
-            let targetContainer = container;
-            if (container === activeTasksContainer && (currentRoute.startsWith('project/') || (currentRoute === 'today' && activeTasksContainer.querySelector('.section-tasks-container')))) {
-                // Determine which section or unsectioned container the cursor is hovering over
-                targetContainer = e.target.closest('.unsectioned-tasks-container, .section-tasks-container');
-                if (!targetContainer) {
-                    const sectHeader = e.target.closest('.project-section-header');
-                    if (sectHeader) {
-                        targetContainer = sectHeader.nextElementSibling;
-                    }
-                }
-                if (!targetContainer) {
-                    // Fallback to closest sub-container by vertical coordinate
-                    const subContainers = [...activeTasksContainer.querySelectorAll('.unsectioned-tasks-container, .section-tasks-container')];
-                    if (subContainers.length > 0) {
-                        let closestContainer = subContainers[0];
-                        let minDistance = Number.MAX_VALUE;
-                        subContainers.forEach(c => {
-                            const rect = c.getBoundingClientRect();
-                            const dist = Math.abs(e.clientY - (rect.top + rect.height / 2));
-                            if (dist < minDistance) {
-                                minDistance = dist;
-                                closestContainer = c;
-                            }
-                        });
-                        targetContainer = closestContainer;
+            let isSubtaskTarget = false;
+            let targetParentId = null;
+            const hoveredTaskEl = e.target.closest('.task-item:not(.dragging)');
+
+            if (hoveredTaskEl && window.innerWidth >= 769) {
+                const hoveredTaskId = hoveredTaskEl.getAttribute('data-id');
+                const hoveredTask = allTasks.find(t => t.id === hoveredTaskId);
+                
+                // Only allow if the hovered task is not already a subtask
+                if (hoveredTask && !hoveredTask.parentId) {
+                    const rect = hoveredTaskEl.getBoundingClientRect();
+                    // Right part is the right 50% of the task width
+                    const isRightPart = (e.clientX - rect.left) > (rect.width * 0.5);
+                    
+                    if (isRightPart) {
+                        isSubtaskTarget = true;
+                        targetParentId = hoveredTaskId;
                     }
                 }
             }
 
-            if (targetContainer) {
-                const afterElement = getDragAfterElement(targetContainer, e.clientY);
-                if (afterElement) {
-                    targetContainer.insertBefore(placeholder, afterElement);
-                } else {
-                    targetContainer.appendChild(placeholder);
+            // Clear hover styles from all tasks in all containers first
+            containers.forEach(c => {
+                if (c) {
+                    c.querySelectorAll('.task-item.drag-subtask-target').forEach(itemEl => {
+                        if (itemEl !== hoveredTaskEl || !isSubtaskTarget) {
+                            itemEl.classList.remove('drag-subtask-target');
+                        }
+                    });
+                }
+            });
+
+            if (isSubtaskTarget && hoveredTaskEl) {
+                hoveredTaskEl.classList.add('drag-subtask-target');
+                placeholder.classList.add('subtask-placeholder');
+                placeholder.setAttribute('data-target-parent-id', targetParentId);
+                
+                // Insert placeholder right after the hovered task in the DOM
+                hoveredTaskEl.parentNode.insertBefore(placeholder, hoveredTaskEl.nextSibling);
+            } else {
+                placeholder.classList.remove('subtask-placeholder');
+                placeholder.removeAttribute('data-target-parent-id');
+
+                let targetContainer = container;
+                if (container === activeTasksContainer && (currentRoute.startsWith('project/') || (currentRoute === 'today' && activeTasksContainer.querySelector('.section-tasks-container')))) {
+                    // Determine which section or unsectioned container the cursor is hovering over
+                    targetContainer = e.target.closest('.unsectioned-tasks-container, .section-tasks-container');
+                    if (!targetContainer) {
+                        const sectHeader = e.target.closest('.project-section-header');
+                        if (sectHeader) {
+                            targetContainer = sectHeader.nextElementSibling;
+                        }
+                    }
+                    if (!targetContainer) {
+                        // Fallback to closest sub-container by vertical coordinate
+                        const subContainers = [...activeTasksContainer.querySelectorAll('.unsectioned-tasks-container, .section-tasks-container')];
+                        if (subContainers.length > 0) {
+                            let closestContainer = subContainers[0];
+                            let minDistance = Number.MAX_VALUE;
+                            subContainers.forEach(c => {
+                                const rect = c.getBoundingClientRect();
+                                const dist = Math.abs(e.clientY - (rect.top + rect.height / 2));
+                                if (dist < minDistance) {
+                                    minDistance = dist;
+                                    closestContainer = c;
+                                }
+                            });
+                            targetContainer = closestContainer;
+                        }
+                    }
+                }
+
+                if (targetContainer) {
+                    const afterElement = getDragAfterElement(targetContainer, e.clientY);
+                    if (afterElement) {
+                        targetContainer.insertBefore(placeholder, afterElement);
+                    } else {
+                        targetContainer.appendChild(placeholder);
+                    }
                 }
             }
         });
@@ -6394,6 +6438,15 @@ function initDragAndDrop() {
             placeholder = null;
             container.classList.remove('drag-active');
             draggingElement = null;
+
+            // Clear any subtask target styles
+            containers.forEach(c => {
+                if (c) {
+                    c.querySelectorAll('.task-item.drag-subtask-target').forEach(el => {
+                        el.classList.remove('drag-subtask-target');
+                    });
+                }
+            });
         });
 
         container.addEventListener('drop', async (e) => {
@@ -6470,6 +6523,9 @@ function initDragAndDrop() {
             const prevElement = placeholder.previousElementSibling;
             const nextElement = placeholder.nextElementSibling;
 
+            // Get target parent ID from the placeholder before removing it
+            const targetParentIdAttr = placeholder.getAttribute('data-target-parent-id');
+
             placeholder.remove();
             placeholder = null;
 
@@ -6494,70 +6550,81 @@ function initDragAndDrop() {
                 }
             }
 
-            // 1. Determine targetParentId based on adjacent items inside the same parent container
-            let targetParentId = null;
-            if (prevElement) {
-                const prevTaskId = prevElement.getAttribute('data-id');
-                const prevTask = allTasks.find(t => t.id === prevTaskId);
-                if (prevTask) {
-                    if (prevElement.classList.contains('subtask')) {
-                        targetParentId = prevTask.parentId || null;
-                    } else {
-                        if (nextElement && nextElement.classList.contains('subtask')) {
-                            const nextTaskId = nextElement.getAttribute('data-id');
-                            const nextTask = allTasks.find(t => t.id === nextTaskId);
-                            if (nextTask && nextTask.parentId === prevTask.id) {
-                                targetParentId = prevTask.id;
-                            }
-                        } else {
-                            targetParentId = null;
-                        }
-                    }
-                }
-            } else {
-                targetParentId = null;
-            }
-
-            const findSiblingTask = (startNode, direction, parentId) => {
-                let curr = direction === 'up' ? startNode.previousElementSibling : startNode.nextElementSibling;
-                while (curr) {
-                    if (curr.classList.contains('task-item') && curr !== draggingElement) {
-                        const id = curr.getAttribute('data-id');
-                        const t = allTasks.find(item => item.id === id);
-                        if (t) {
-                            const pId = t.parentId || null;
-                            if (pId === parentId) {
-                                return t;
-                            }
-                        }
-                    }
-                    curr = direction === 'up' ? curr.previousElementSibling : curr.nextElementSibling;
-                }
-                return null;
-            };
-
-            const tempNode = document.createElement('div');
-            if (nextElement) {
-                parentContainer.insertBefore(tempNode, nextElement);
-            } else {
-                parentContainer.appendChild(tempNode);
-            }
-
-            const prevSibling = findSiblingTask(tempNode, 'up', targetParentId);
-            const nextSibling = findSiblingTask(tempNode, 'down', targetParentId);
-            tempNode.remove();
-
+            // Determine targetParentId and newOrder
+            let targetParentId = targetParentIdAttr || null;
             let newOrder = 0;
-            if (!prevSibling && !nextSibling) {
-                newOrder = 0;
-            } else if (!prevSibling) {
-                newOrder = (nextSibling.order !== undefined ? nextSibling.order : 0) - 1000;
-            } else if (!nextSibling) {
-                newOrder = (prevSibling.order !== undefined ? prevSibling.order : 0) + 1000;
+
+            if (targetParentIdAttr) {
+                const siblingSubtasks = allTasks.filter(t => t.parentId === targetParentIdAttr && !t.deleted);
+                if (siblingSubtasks.length > 0) {
+                    const maxOrder = siblingSubtasks.reduce((max, t) => Math.max(max, t.order || 0), 0);
+                    newOrder = maxOrder + 1000;
+                } else {
+                    newOrder = 1000;
+                }
             } else {
-                const prevOrder = prevSibling.order !== undefined ? prevSibling.order : 0;
-                const nextOrder = nextSibling.order !== undefined ? nextSibling.order : 0;
-                newOrder = (prevOrder + nextOrder) / 2;
+                if (prevElement) {
+                    const prevTaskId = prevElement.getAttribute('data-id');
+                    const prevTask = allTasks.find(t => t.id === prevTaskId);
+                    if (prevTask) {
+                        if (prevElement.classList.contains('subtask')) {
+                            targetParentId = prevTask.parentId || null;
+                        } else {
+                            if (nextElement && nextElement.classList.contains('subtask')) {
+                                const nextTaskId = nextElement.getAttribute('data-id');
+                                const nextTask = allTasks.find(t => t.id === nextTaskId);
+                                if (nextTask && nextTask.parentId === prevTask.id) {
+                                    targetParentId = prevTask.id;
+                                }
+                            } else {
+                                targetParentId = null;
+                            }
+                        }
+                    }
+                } else {
+                    targetParentId = null;
+                }
+
+                const findSiblingTask = (startNode, direction, parentId) => {
+                    let curr = direction === 'up' ? startNode.previousElementSibling : startNode.nextElementSibling;
+                    while (curr) {
+                        if (curr.classList.contains('task-item') && curr !== draggingElement) {
+                            const id = curr.getAttribute('data-id');
+                            const t = allTasks.find(item => item.id === id);
+                            if (t) {
+                                const pId = t.parentId || null;
+                                if (pId === parentId) {
+                                    return t;
+                                }
+                            }
+                        }
+                        curr = direction === 'up' ? curr.previousElementSibling : curr.nextElementSibling;
+                    }
+                    return null;
+                };
+
+                const tempNode = document.createElement('div');
+                if (nextElement) {
+                    parentContainer.insertBefore(tempNode, nextElement);
+                } else {
+                    parentContainer.appendChild(tempNode);
+                }
+
+                const prevSibling = findSiblingTask(tempNode, 'up', targetParentId);
+                const nextSibling = findSiblingTask(tempNode, 'down', targetParentId);
+                tempNode.remove();
+
+                if (!prevSibling && !nextSibling) {
+                    newOrder = 0;
+                } else if (!prevSibling) {
+                    newOrder = (nextSibling.order !== undefined ? nextSibling.order : 0) - 1000;
+                } else if (!nextSibling) {
+                    newOrder = (prevSibling.order !== undefined ? prevSibling.order : 0) + 1000;
+                } else {
+                    const prevOrder = prevSibling.order !== undefined ? prevSibling.order : 0;
+                    const nextOrder = nextSibling.order !== undefined ? nextSibling.order : 0;
+                    newOrder = (prevOrder + nextOrder) / 2;
+                }
             }
 
             const updateFields = {

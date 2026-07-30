@@ -3739,18 +3739,21 @@ function renderTasks() {
     const tomorrowActiveCount = activeTasks.filter(isTomorrowTask).length;
 
     const showCounters = localStorage.getItem('todo_show_sidebar_counters') !== 'hide';
+    const hideInboxCount = localStorage.getItem('todo_hide_counter_inbox') === 'true';
+    const hideTodayCount = localStorage.getItem('todo_hide_counter_today') === 'true';
+    const hideTomorrowCount = localStorage.getItem('todo_hide_counter_tomorrow') === 'true';
 
     if (inboxCounter) {
         inboxCounter.textContent = inboxActiveCount;
-        inboxCounter.style.display = (showCounters && inboxActiveCount > 0) ? 'inline-block' : 'none';
+        inboxCounter.style.display = (showCounters && !hideInboxCount && inboxActiveCount > 0) ? 'inline-block' : 'none';
     }
     if (todayCounter) {
         todayCounter.textContent = todayActiveCount;
-        todayCounter.style.display = (showCounters && todayActiveCount > 0) ? 'inline-block' : 'none';
+        todayCounter.style.display = (showCounters && !hideTodayCount && todayActiveCount > 0) ? 'inline-block' : 'none';
     }
     if (tomorrowCounter) {
         tomorrowCounter.textContent = tomorrowActiveCount;
-        tomorrowCounter.style.display = (showCounters && tomorrowActiveCount > 0) ? 'inline-block' : 'none';
+        tomorrowCounter.style.display = (showCounters && !hideTomorrowCount && tomorrowActiveCount > 0) ? 'inline-block' : 'none';
     }
 
     const trashCounter = document.getElementById('trashCounter');
@@ -3773,7 +3776,7 @@ function renderTasks() {
 
     const projectHeaderActions = document.getElementById('projectHeaderActions');
     if (projectHeaderActions) {
-        projectHeaderActions.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox') ? 'block' : 'none');
+        projectHeaderActions.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') ? 'block' : 'none');
     }
 
     // Фильтруем задачи для отображения в зависимости от текущей вкладки (роута)
@@ -4309,7 +4312,7 @@ function renderTasks() {
         if (project && project.hideCompleted === true) {
             isCompletedHiddenForProject = true;
         }
-    } else if (currentRoute === 'today' || currentRoute === 'inbox') {
+    } else if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
         if (localStorage.getItem(`todo_hide_completed_${currentRoute}`) === 'true') {
             isCompletedHiddenForProject = true;
         }
@@ -5917,9 +5920,12 @@ function addSectionForCurrentProject() {
 function renderProjectHeaderDropdown() {
     if (!projectHeaderDropdown) return;
 
-    if (currentRoute === 'today' || currentRoute === 'inbox') {
-        const key = `todo_hide_completed_${currentRoute}`;
-        const isCompletedHidden = localStorage.getItem(key) === 'true';
+    if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
+        const keyCompleted = `todo_hide_completed_${currentRoute}`;
+        const isCompletedHidden = localStorage.getItem(keyCompleted) === 'true';
+
+        const keyCount = `todo_hide_counter_${currentRoute}`;
+        const isCountHidden = localStorage.getItem(keyCount) === 'true';
 
         projectHeaderDropdown.innerHTML = `
             <button class="dropdown-item" id="btnProjectToggleCompleted">
@@ -5937,12 +5943,34 @@ function renderProjectHeaderDropdown() {
                     <span>Скрыть выполненные</span>
                 `}
             </button>
+            <button class="dropdown-item" id="btnProjectToggleCount">
+                ${isCountHidden ? `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>Показать количество в боковом меню</span>
+                ` : `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                    <span>Скрыть количество в боковом меню</span>
+                `}
+            </button>
         `;
 
         document.getElementById('btnProjectToggleCompleted').addEventListener('click', (e) => {
             e.stopPropagation();
             projectHeaderDropdown.style.display = 'none';
-            localStorage.setItem(key, isCompletedHidden ? 'false' : 'true');
+            localStorage.setItem(keyCompleted, isCompletedHidden ? 'false' : 'true');
+            renderTasks();
+        });
+
+        document.getElementById('btnProjectToggleCount').addEventListener('click', (e) => {
+            e.stopPropagation();
+            projectHeaderDropdown.style.display = 'none';
+            localStorage.setItem(keyCount, isCountHidden ? 'false' : 'true');
             renderTasks();
         });
         return;
@@ -5954,6 +5982,7 @@ function renderProjectHeaderDropdown() {
     if (!project) return;
 
     const isCompletedHidden = project.hideCompleted === true;
+    const isCountHidden = project.hideCount === true;
 
     projectHeaderDropdown.innerHTML = `
         <button class="dropdown-item" id="btnProjectAddSection">
@@ -5987,6 +6016,21 @@ function renderProjectHeaderDropdown() {
                     <line x1="1" y1="1" x2="23" y2="23"></line>
                 </svg>
                 <span>Скрыть выполненные</span>
+            `}
+        </button>
+        <button class="dropdown-item" id="btnProjectToggleCount">
+            ${isCountHidden ? `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Показать количество в боковом меню</span>
+            ` : `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+                <span>Скрыть количество в боковом меню</span>
             `}
         </button>
         <div class="dropdown-divider"></div>
@@ -6026,6 +6070,18 @@ function renderProjectHeaderDropdown() {
             });
         } catch (err) {
             console.error("Ошибка при изменении видимости выполненных задач:", err);
+        }
+    });
+
+    document.getElementById('btnProjectToggleCount').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        projectHeaderDropdown.style.display = 'none';
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                hideCount: !isCountHidden
+            });
+        } catch (err) {
+            console.error("Ошибка при изменении видимости счетчика проекта:", err);
         }
     });
 
@@ -9503,6 +9559,17 @@ const modalActionsDropdown = document.getElementById('modalActionsDropdown');
 if (btnTaskDetailsMobileMore && modalActionsDropdown) {
     btnTaskDetailsMobileMore.addEventListener('click', (e) => {
         e.stopPropagation();
+
+        if (window.innerWidth <= 768 && taskDetailsModal) {
+            const card = taskDetailsModal.querySelector('.task-details-modal-card');
+            if (card && !card.classList.contains('expanded')) {
+                card.classList.add('expanded');
+                card.classList.remove('collapsed');
+                card.style.transform = ''; // reset touch-drag inline styles
+                card.style.transition = ''; // restore default CSS transition animation
+            }
+        }
+
         const isHidden = modalActionsDropdown.style.display === 'none';
         if (isHidden) {
             // Close other dropdowns globally
@@ -13725,6 +13792,133 @@ window.openHabitModal = openHabitModal;
 window.openHabitStatsModal = openHabitStatsModal;
 window.startHabitsForUser = startHabitsForUser;
 window.stopHabitsForUser = stopHabitsForUser;
+
+// === ЛОГИКА ДЕЙСТВИЙ ДЛЯ СИСТЕМНЫХ ПАПОК (Входящие, Сегодня, Завтра) ===
+function showSystemRouteContextMenu(e, routeId, routeName, itemContainer) {
+    if (activeContextMenu) activeContextMenu.remove();
+
+    const keyCount = `todo_hide_counter_${routeId}`;
+    const isCountHidden = localStorage.getItem(keyCount) === 'true';
+
+    const menu = document.createElement('div');
+    menu.className = 'custom-context-menu';
+    menu.innerHTML = `
+        <div class="ctx-item" id="ctx-toggle-count-system">
+            ${isCountHidden ? `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Показать количество</span>
+            ` : `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+                <span>Скрыть количество</span>
+            `}
+        </div>
+    `;
+
+    document.body.appendChild(menu);
+    activeContextMenu = menu;
+
+    // Позиционирование меню
+    let x = 0;
+    let y = 0;
+
+    if (e.clientX && e.clientY && e.type === 'contextmenu') {
+        x = e.clientX;
+        y = e.clientY + window.scrollY;
+
+        if (x + 150 > window.innerWidth) {
+            x = window.innerWidth - 160;
+        }
+        if (x < 10) x = 10;
+    } else {
+        const rect = e.currentTarget.getBoundingClientRect();
+        x = rect.left - 130;
+        y = rect.bottom + window.scrollY + 4;
+
+        if (x + 150 > window.innerWidth) {
+            x = window.innerWidth - 160;
+        }
+        if (x < 10) x = 10;
+    }
+
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+
+    menu.querySelector('#ctx-toggle-count-system').addEventListener('click', (evt) => {
+        evt.stopPropagation();
+        menu.remove();
+        activeContextMenu = null;
+        localStorage.setItem(keyCount, isCountHidden ? 'false' : 'true');
+        renderTasks();
+    });
+}
+
+function initSystemRouteActions() {
+    const inboxActionsBtn = document.getElementById('inboxActionsBtn');
+    const todayActionsBtn = document.getElementById('todayActionsBtn');
+    const tomorrowActionsBtn = document.getElementById('tomorrowActionsBtn');
+
+    const inboxSidebarContainer = document.getElementById('inboxSidebarContainer');
+    const todaySidebarContainer = document.getElementById('todaySidebarContainer');
+    const tomorrowSidebarContainer = document.getElementById('tomorrowSidebarContainer');
+
+    if (inboxActionsBtn) {
+        inboxActionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            showSystemRouteContextMenu(e, 'inbox', 'Входящие', inboxSidebarContainer);
+        });
+    }
+    if (todayActionsBtn) {
+        todayActionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            showSystemRouteContextMenu(e, 'today', 'Сегодня', todaySidebarContainer);
+        });
+    }
+    if (tomorrowActionsBtn) {
+        tomorrowActionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            showSystemRouteContextMenu(e, 'tomorrow', 'Завтра', tomorrowSidebarContainer);
+        });
+    }
+
+    if (inboxSidebarContainer) {
+        inboxSidebarContainer.addEventListener('contextmenu', (e) => {
+            if (window.matchMedia('(hover: hover)').matches) {
+                e.preventDefault();
+                e.stopPropagation();
+                showSystemRouteContextMenu(e, 'inbox', 'Входящие', inboxSidebarContainer);
+            }
+        });
+    }
+    if (todaySidebarContainer) {
+        todaySidebarContainer.addEventListener('contextmenu', (e) => {
+            if (window.matchMedia('(hover: hover)').matches) {
+                e.preventDefault();
+                e.stopPropagation();
+                showSystemRouteContextMenu(e, 'today', 'Сегодня', todaySidebarContainer);
+            }
+        });
+    }
+    if (tomorrowSidebarContainer) {
+        tomorrowSidebarContainer.addEventListener('contextmenu', (e) => {
+            if (window.matchMedia('(hover: hover)').matches) {
+                e.preventDefault();
+                e.stopPropagation();
+                showSystemRouteContextMenu(e, 'tomorrow', 'Завтра', tomorrowSidebarContainer);
+            }
+        });
+    }
+}
+
+initSystemRouteActions();
 
 
 

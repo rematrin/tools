@@ -7321,3 +7321,218 @@ body.dark .offline-banner-close:hover {
     font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
     vertical-align: middle;
 }
+
+/* Предложенные эмодзи для привычек */
+.suggested-emoji-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.suggested-emoji-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--text-secondary);
+}
+
+.suggested-emoji-btn.active {
+    border-color: #4c6ef5;
+    background: rgba(76, 110, 245, 0.08);
+}
+
+.custom-emoji-input {
+    text-align: center;
+    font-size: 18px !important;
+}
+
+.custom-emoji-input::placeholder {
+    font-size: 11px !important;
+}
+
+/* === СТИЛИ ДЛЯ НОВОГО ОКНА ДОБАВЛЕНИЯ ПРИВЫЧЕК === */
+.habit-modal-card {
+    max-width: 420px !important;
+    border-radius: 20px !important;
+    gap: 12px !important;
+    padding: 20px !important;
+}
+
+.habit-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.habit-icon-circle-large {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    color: #fff;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.habit-modal-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.habit-emoji-buttons-container {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.habit-emoji-buttons-container .suggested-emoji-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 22px;
+    border-radius: 10px;
+    position: relative;
+    border: 1.5px solid var(--border);
+    background: var(--card-bg);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.habit-emoji-buttons-container .suggested-emoji-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--text-secondary);
+}
+
+.habit-emoji-buttons-container .suggested-emoji-btn.active {
+    border-color: #5035e1;
+    background: rgba(80, 53, 225, 0.06);
+}
+
+.habit-emoji-buttons-container .suggested-emoji-btn .active-checkmark {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    background-color: #5035e1;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    border: 2px solid var(--card-bg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.habit-emoji-buttons-container .suggested-emoji-btn.custom-btn {
+    border: 1.5px dashed var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0px;
+    padding: 2px;
+    color: var(--text-secondary);
+    background: transparent;
+}
+
+.habit-emoji-buttons-container .suggested-emoji-btn.custom-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--text-secondary);
+}
+
+.habit-emoji-buttons-container .suggested-emoji-btn.custom-btn .plus-icon {
+    font-size: 16px;
+    line-height: 1;
+    font-weight: 500;
+}
+
+.habit-emoji-buttons-container .suggested-emoji-btn.custom-btn .btn-text {
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.habit-color-presets {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 2px;
+}
+
+.habit-color-presets .habit-color-circle {
+    width: 26px !important;
+    height: 26px !important;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.habit-color-presets .habit-color-circle:hover {
+    transform: scale(1.1);
+}
+
+.habit-color-presets .habit-color-circle.active {
+    box-shadow: 0 0 0 2px var(--card-bg), 0 0 0 4px var(--active-color) !important;
+    transform: scale(1.1);
+    border: none;
+}
+
+/* rainbow custom color btn */
+.habit-color-presets .custom-color-btn {
+    background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+    border: 1px solid var(--border) !important;
+}
+
+.habit-color-presets .custom-color-btn.active {
+    box-shadow: 0 0 0 2px var(--card-bg), 0 0 0 4px var(--active-color) !important;
+}
+
+.habit-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.habit-modal-footer .countdown-btn-cancel {
+    border-radius: 12px;
+}
+
+.habit-modal-footer .countdown-btn-ok {
+    background: #5035e1 !important;
+    border-radius: 12px;
+}
+
+.habit-modal-footer .countdown-btn-ok:hover {
+    background: #4028c4 !important;
+}
+
+/* Custom Emoji Popover styling */
+.custom-emoji-popover {
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2) !important;
+}

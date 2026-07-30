@@ -1080,6 +1080,147 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Инициализация модального окна редактирования задач CreatorHub
     initChTaskEditModal();
+
+    // Клавиатурная навигация по списку видео стрелочками (вверх/вниз, для сетки также влево/вправо)
+    let activeNavigationPanel = 'list'; // 'list' или 'sidebar'
+
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#detailSidebar')) {
+            activeNavigationPanel = 'sidebar';
+        } else {
+            activeNavigationPanel = 'list';
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        // Пропускаем, если фокус на редактируемых текстовых полях/элементах
+        const activeEl = document.activeElement;
+        if (activeEl && (
+            activeEl.tagName === 'INPUT' ||
+            activeEl.tagName === 'TEXTAREA' ||
+            activeEl.tagName === 'SELECT' ||
+            activeEl.isContentEditable ||
+            activeEl.closest('[contenteditable="true"]')
+        )) {
+            return;
+        }
+
+        // Пропускаем, если открыто какое-либо модальное окно или dropdown меню опций
+        const isModalOpen = Array.from(document.querySelectorAll('.confirm-modal-overlay, .settings-modal-overlay'))
+            .some(modal => modal.style.display !== 'none');
+        if (isModalOpen) return;
+
+        const actionsDropdown = document.getElementById("videoActionsDropdown");
+        if (actionsDropdown && actionsDropdown.style.display !== "none") return;
+
+        const sortDropdown = document.getElementById("sortDropdown");
+        const periodDropdown = document.getElementById("periodDropdown");
+        if (sortDropdown && sortDropdown.style.display === "flex") return;
+        if (periodDropdown && periodDropdown.style.display === "flex") return;
+
+        const isArrowUp = e.key === 'ArrowUp';
+        const isArrowDown = e.key === 'ArrowDown';
+        const isArrowLeft = e.key === 'ArrowLeft';
+        const isArrowRight = e.key === 'ArrowRight';
+
+        if (!isArrowUp && !isArrowDown && !isArrowLeft && !isArrowRight) {
+            return;
+        }
+
+        // Работает только если активная панель - это список видео слева
+        if (activeNavigationPanel !== 'list') {
+            return;
+        }
+
+        const container = document.getElementById("videosListContainer");
+        if (!container) return;
+
+        const cards = Array.from(container.querySelectorAll('.video-card'));
+        if (cards.length === 0) return;
+
+        // Блокируем стандартную прокрутку страницы от стрелок
+        e.preventDefault();
+
+        let currentIndex = cards.findIndex(card => card.classList.contains('active'));
+        let nextCard = null;
+
+        if (currentViewMode === 'grid') {
+            if (isArrowRight) {
+                const nextIndex = currentIndex === -1 ? 0 : Math.min(currentIndex + 1, cards.length - 1);
+                nextCard = cards[nextIndex];
+            } else if (isArrowLeft) {
+                const prevIndex = currentIndex === -1 ? 0 : Math.max(currentIndex - 1, 0);
+                nextCard = cards[prevIndex];
+            } else if (isArrowDown || isArrowUp) {
+                if (currentIndex === -1) {
+                    nextCard = cards[0];
+                } else {
+                    const activeCard = cards[currentIndex];
+                    const activeRect = activeCard.getBoundingClientRect();
+                    const activeCenterX = activeRect.left + activeRect.width / 2;
+
+                    if (isArrowDown) {
+                        const candidates = cards.filter(card => {
+                            const rect = card.getBoundingClientRect();
+                            return rect.top >= activeRect.bottom - 10;
+                        });
+                        if (candidates.length > 0) {
+                            const minTop = Math.min(...candidates.map(c => c.getBoundingClientRect().top));
+                            const rowCandidates = candidates.filter(c => Math.abs(c.getBoundingClientRect().top - minTop) < 15);
+                            let bestCard = rowCandidates[0];
+                            let minDiffX = Math.abs((bestCard.getBoundingClientRect().left + bestCard.getBoundingClientRect().width / 2) - activeCenterX);
+                            for (const c of rowCandidates) {
+                                const cRect = c.getBoundingClientRect();
+                                const cCenterX = cRect.left + cRect.width / 2;
+                                const diffX = Math.abs(cCenterX - activeCenterX);
+                                if (diffX < minDiffX) {
+                                    minDiffX = diffX;
+                                    bestCard = c;
+                                }
+                            }
+                            nextCard = bestCard;
+                        }
+                    } else if (isArrowUp) {
+                        const candidates = cards.filter(card => {
+                            const rect = card.getBoundingClientRect();
+                            return rect.bottom <= activeRect.top + 10;
+                        });
+                        if (candidates.length > 0) {
+                            const maxBottom = Math.max(...candidates.map(c => c.getBoundingClientRect().bottom));
+                            const rowCandidates = candidates.filter(c => Math.abs(c.getBoundingClientRect().bottom - maxBottom) < 15);
+                            let bestCard = rowCandidates[0];
+                            let minDiffX = Math.abs((bestCard.getBoundingClientRect().left + bestCard.getBoundingClientRect().width / 2) - activeCenterX);
+                            for (const c of rowCandidates) {
+                                const cRect = c.getBoundingClientRect();
+                                const cCenterX = cRect.left + cRect.width / 2;
+                                const diffX = Math.abs(cCenterX - activeCenterX);
+                                if (diffX < minDiffX) {
+                                    minDiffX = diffX;
+                                    bestCard = c;
+                                }
+                            }
+                            nextCard = bestCard;
+                        }
+                    }
+                }
+            }
+        } else {
+            // Обычный список (list view) - переходим по вертикали
+            if (isArrowDown) {
+                const nextIndex = currentIndex === -1 ? 0 : Math.min(currentIndex + 1, cards.length - 1);
+                nextCard = cards[nextIndex];
+            } else if (isArrowUp) {
+                const prevIndex = currentIndex === -1 ? 0 : Math.max(currentIndex - 1, 0);
+                nextCard = cards[prevIndex];
+            }
+        }
+
+        if (nextCard) {
+            const nextId = nextCard.dataset.id;
+            selectVideoItem(nextId);
+            nextCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    });
 });
 
 function handleHashRoute() {

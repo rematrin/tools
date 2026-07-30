@@ -308,7 +308,7 @@ if (dueDateDropdown) {
                     }
                 }
                 closeDueDateDropdown();
- 
+
                 // Close all actions menus
                 document.querySelectorAll('.task-actions-dropdown, .modal-subtask-item .task-actions-dropdown').forEach(dd => {
                     dd.style.display = 'none';
@@ -736,7 +736,7 @@ function setDueDate(dateStr, timeStr = undefined, repeatStr = undefined, endDate
         if (btnClearDueDate) btnClearDueDate.style.display = 'inline-flex';
         if (btnDueDate) btnDueDate.classList.add('active');
     }
-    
+
     if (dueDateDropdown && typeof dueDateDropdown.initUI === 'function') {
         tempSelectedDueDate = selectedDueDate;
         tempSelectedDueTime = selectedDueTime;
@@ -971,7 +971,7 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
         const [sh, sm] = startStr.split(':').map(Number);
         const startMin = sh * 60 + sm;
         const opts = [];
-        
+
         const shortOffsets = [15, 30, 45];
         shortOffsets.forEach(off => {
             const targetMin = startMin + off;
@@ -982,7 +982,7 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                 });
             }
         });
-        
+
         for (let h = 1; h <= 24; h += 0.5) {
             const off = h * 60;
             const targetMin = startMin + off;
@@ -1101,7 +1101,7 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                         e.stopPropagation();
                         setSelectedTime(timeStr);
                         startTimeBtn.value = timeStr;
-                        
+
                         // If end time is active, ensure it is after start time
                         const endActive = !!getSelectedEndTime();
                         if (endActive) {
@@ -1118,7 +1118,7 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                                 if (endTimeBtn) endTimeBtn.value = newEnd;
                             }
                         }
-                        
+
                         customTimeDropdown.style.display = 'none';
                         dropdownEl.initUI();
                     });
@@ -1305,7 +1305,7 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
         if (timeCheckbox) {
             timeCheckbox.checked = hasTime;
         }
-        
+
         // Поля времени и чекбокс всегда видны (display: flex / block), 
         // но их активность зависит от состояния чекбокса
         if (startTimeBtn) {
@@ -1321,7 +1321,7 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                 startTimeBtn.setAttribute('disabled', 'true');
             }
         }
-        
+
         const endTimeActive = !!getSelectedEndTime();
         if (endTimeCheckbox) {
             endTimeCheckbox.checked = endTimeActive;
@@ -1345,7 +1345,7 @@ function setupNestedViews(dropdownEl, getSelectedDate, setSelectedDate, getSelec
                 endTimeBtn.setAttribute('disabled', 'true');
             }
         }
-        
+
         if (customTimeDropdown) {
             customTimeDropdown.style.display = 'none';
         }
@@ -4410,7 +4410,7 @@ function createTaskRowElement(task) {
         const item = document.createElement('div');
         item.className = `task-item priority-0`;
         item.setAttribute('data-id', task.id);
-        
+
         item.innerHTML = `
             <div class="checkbox-wrapper" style="pointer-events: none; margin-left: 8px;">
                 <span style="font-size: 15px; margin-right: 4px; display: inline-block; vertical-align: middle;">${task.icon || '⏳'}</span>
@@ -4447,7 +4447,7 @@ function createTaskRowElement(task) {
                 </div>
             </div>
         `;
-        
+
         item.addEventListener('click', (e) => {
             if (e.target.closest('.action-btn') || e.target.closest('.task-actions-dropdown')) {
                 return;
@@ -4469,7 +4469,7 @@ function createTaskRowElement(task) {
             if (actionsDropdown.style.display === 'none' || actionsDropdown.style.display === '') {
                 actionsDropdown.style.display = 'block';
                 item.classList.add('menu-open');
-                
+
                 if (ev) {
                     const rect = item.getBoundingClientRect();
                     const x = ev.clientX - rect.left;
@@ -4632,7 +4632,7 @@ function createTaskRowElement(task) {
 
     const projectName = project ? project.name : 'Входящие';
     const projectColor = project && project.color ? project.color : '#71717a';
-    
+
     let projectIconHtml = '';
     if (project) {
         const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align: middle; display: inline-block;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
@@ -5208,21 +5208,21 @@ function createTaskRowElement(task) {
             e.stopPropagation();
             actionsDropdown.style.display = 'none';
             item.classList.remove('menu-open');
-            
+
             const newInPomo = !task.inPomodoro;
             task.inPomodoro = newInPomo;
-            
+
             const localTask = allTasks.find(t => t.id === task.id);
             if (localTask) localTask.inPomodoro = newInPomo;
-            
+
             if (newInPomo && !pomoActiveTaskId) {
                 pomoActiveTaskId = task.id;
             } else if (!newInPomo && pomoActiveTaskId === task.id) {
                 pomoActiveTaskId = null;
             }
-            
+
             renderTasks();
-            
+
             try {
                 await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                     inPomodoro: newInPomo
@@ -6324,13 +6324,13 @@ function initDragAndDrop() {
             if (hoveredTaskEl && window.innerWidth >= 769) {
                 const hoveredTaskId = hoveredTaskEl.getAttribute('data-id');
                 const hoveredTask = allTasks.find(t => t.id === hoveredTaskId);
-                
+
                 // Only allow if the hovered task is not already a subtask
                 if (hoveredTask && !hoveredTask.parentId) {
                     const rect = hoveredTaskEl.getBoundingClientRect();
                     // Right part is the right 50% of the task width
                     const isRightPart = (e.clientX - rect.left) > (rect.width * 0.5);
-                    
+
                     if (isRightPart) {
                         isSubtaskTarget = true;
                         targetParentId = hoveredTaskId;
@@ -6353,7 +6353,7 @@ function initDragAndDrop() {
                 hoveredTaskEl.classList.add('drag-subtask-target');
                 placeholder.classList.add('subtask-placeholder');
                 placeholder.setAttribute('data-target-parent-id', targetParentId);
-                
+
                 // Insert placeholder right after the hovered task in the DOM
                 hoveredTaskEl.parentNode.insertBefore(placeholder, hoveredTaskEl.nextSibling);
             } else {
@@ -8882,7 +8882,7 @@ function renderModalAttachments(task) {
     attachments.forEach((url, index) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'attachment-thumb-wrapper';
-        
+
         const img = document.createElement('img');
         img.src = url;
         img.className = 'attachment-thumb';
@@ -11032,7 +11032,7 @@ function loadPomoState() {
 
     const savedIsRunning = localStorage.getItem('todo_pomo_is_running') === 'true';
     const savedTimeLeftStr = localStorage.getItem('todo_pomo_time_left');
-    
+
     if (savedIsRunning) {
         const savedTarget = localStorage.getItem('todo_pomo_target_timestamp');
         if (savedTarget) {
@@ -11066,7 +11066,7 @@ function pomoUpdateDisplay() {
 function pomoUpdateActiveTaskNameDisplay() {
     const activeTaskNameEl = document.getElementById('pomo-active-task-name');
     if (!activeTaskNameEl) return;
-    
+
     const activeTask = allTasks.find(t => t.id === pomoActiveTaskId && !t.deleted);
     if (activeTask) {
         activeTaskNameEl.textContent = activeTask.title || '';
@@ -11082,7 +11082,7 @@ function pomoSetMode(mode) {
     pomoIsRunning = false;
     pomoCurrentMode = mode;
     pomoTimeLeft = POMO_MODES[pomoCurrentMode].time;
-    
+
     const container = document.getElementById('pomodoroContainer');
     if (container) container.style.backgroundColor = '';
     const timerCard = container ? container.querySelector('.timer-container') : null;
@@ -11093,11 +11093,11 @@ function pomoSetMode(mode) {
         pomoStartBtn.classList.remove('active-press');
     }
     if (pomoSkipBtn) pomoSkipBtn.style.display = 'none';
-    
+
     document.querySelectorAll('#pomodoroContainer .tabs button').forEach(btn => btn.classList.remove('active'));
     const activeTabBtn = document.getElementById(`btn-${mode === 'shortBreak' ? 'short' : mode === 'longBreak' ? 'long' : 'pomodoro'}`);
     if (activeTabBtn) activeTabBtn.classList.add('active');
-    
+
     pomoUpdateDisplay();
     pomoUpdateActiveTaskNameDisplay();
     pomoUpdateStats();
@@ -11124,7 +11124,7 @@ function pomoToggleTimer() {
         }
         if (pomoSkipBtn) pomoSkipBtn.style.display = 'block';
         savePomoState();
-        
+
         pomoTimerInterval = setInterval(() => {
             if (pomoTimeLeft > 0) {
                 pomoTimeLeft--;
@@ -11145,9 +11145,9 @@ function pomoSkipTimer() {
 function pomoHandleTimerComplete(isSkip = false) {
     clearInterval(pomoTimerInterval);
     pomoIsRunning = false;
-    
+
     const wasPomodoro = pomoCurrentMode === 'pomodoro';
-    
+
     if (wasPomodoro && pomoActiveTaskId !== null) {
         const task = allTasks.find(t => t.id === pomoActiveTaskId && !t.deleted);
         if (task && !task.completed) {
@@ -11159,12 +11159,12 @@ function pomoHandleTimerComplete(isSkip = false) {
             }
         }
     }
-    
+
     if (!isSkip) {
         pomoPlayBeep();
         setTimeout(() => alert("Время вышло!"), 50);
     }
-    
+
     if (wasPomodoro) {
         pomoCompletedCount++;
         if (pomoCompletedCount > 0 && pomoCompletedCount % 4 === 0) {
@@ -11175,7 +11175,7 @@ function pomoHandleTimerComplete(isSkip = false) {
     } else {
         pomoSetMode('pomodoro');
     }
-    
+
     pomoRenderTasks();
     pomoUpdateStats();
 }
@@ -11212,7 +11212,7 @@ function pomoRenderTasks() {
         const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
         return timeB - timeA;
     });
-    
+
     if (pomoActiveTaskId && !pomoTasks.some(t => t.id === pomoActiveTaskId)) {
         pomoActiveTaskId = null;
     }
@@ -11224,7 +11224,7 @@ function pomoRenderTasks() {
 
     pomoTasks.forEach((task) => {
         const itemEl = createTaskRowElement(task);
-        
+
         const isActive = task.id === pomoActiveTaskId;
         if (isActive) {
             itemEl.classList.add('active-task');
@@ -11260,7 +11260,7 @@ function pomoRenderTasks() {
                     <circle cx="12" cy="12" r="10"></circle>
                 </svg>
             `;
-            
+
             targetBtn.addEventListener('mouseenter', () => {
                 targetBtn.style.opacity = '1';
                 targetBtn.style.color = 'var(--accent, #4b6bfb)';
@@ -11287,7 +11287,7 @@ function pomoRenderTasks() {
         countBadge.style.padding = '4px 8px';
         countBadge.style.borderRadius = '6px';
         countBadge.style.transition = 'background-color 0.2s';
-        
+
         countBadge.addEventListener('mouseenter', () => {
             countBadge.style.backgroundColor = 'var(--hover-bg, rgba(0,0,0,0.05))';
         });
@@ -11308,7 +11308,7 @@ function pomoRenderTasks() {
 
         countBadge.addEventListener('click', (e) => {
             e.stopPropagation();
-            
+
             const currentAct = task.actPomos || 0;
             const currentEst = task.estPomos !== undefined && task.estPomos !== null ? task.estPomos : 1;
             const currentRem = Math.max(0, currentEst - currentAct);
@@ -11371,7 +11371,7 @@ function pomoRenderTasks() {
             overlay.querySelector('#pomoModalSave').onclick = async () => {
                 const act = Math.max(0, parseInt(inputAct.value) || 0);
                 const rem = Math.max(0, parseInt(inputEst.value) || 0);
-                
+
                 let est = act + rem;
                 if (est < 1) est = 1;
 
@@ -11482,12 +11482,12 @@ function initPomodoroEvents() {
 
 function pomoRestoreTimer() {
     loadPomoState();
-    
+
     const container = document.getElementById('pomodoroContainer');
     if (container) container.style.backgroundColor = '';
     const timerCard = container ? container.querySelector('.timer-container') : null;
     if (timerCard) timerCard.style.backgroundColor = POMO_MODES[pomoCurrentMode].color;
-    
+
     document.querySelectorAll('#pomodoroContainer .tabs button').forEach(btn => btn.classList.remove('active'));
     const activeTabBtn = document.getElementById(`btn-${pomoCurrentMode === 'shortBreak' ? 'short' : pomoCurrentMode === 'longBreak' ? 'long' : 'pomodoro'}`);
     if (activeTabBtn) activeTabBtn.classList.add('active');
@@ -11605,10 +11605,10 @@ function renderCountdowns() {
     countdownsList.forEach(cd => {
         const { display, desc } = calculateCountdownDiff(cd.targetDate);
         const card = document.createElement('div');
-        
+
         let inlineStyle = '';
         let themeClass = 'contrast-dark';
-        
+
         if (cd.style === 'image') {
             const bgUrl = cd.bgUrl || 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=600&q=80';
             inlineStyle = `background-image: url('${bgUrl}');`;
@@ -11731,7 +11731,7 @@ function renderCountdowns() {
             const touch = e.touches[0];
             const startX = touch.clientX;
             const startY = touch.clientY;
-            
+
             let isDraggingActive = false;
 
             touchStartTimer = setTimeout(() => {
@@ -11749,7 +11749,7 @@ function renderCountdowns() {
                 } else {
                     // Prevent page scroll during drag
                     if (ev.cancelable) ev.preventDefault();
-                    
+
                     const moveTouch = ev.touches[0];
                     const elementUnder = document.elementFromPoint(moveTouch.clientX, moveTouch.clientY);
                     const targetCard = elementUnder ? elementUnder.closest('.countdown-card') : null;
@@ -11841,7 +11841,7 @@ function openCountdownModal(countdown = null) {
 
     const overlay = document.createElement('div');
     overlay.className = 'countdown-modal-overlay';
-    
+
     const today = new Date();
     const currentYear = today.getFullYear();
     const years = [];
@@ -12059,7 +12059,7 @@ function openCountdownModal(countdown = null) {
     styleOptionsContainer.addEventListener('click', (e) => {
         const thumb = e.target.closest('.countdown-style-thumb');
         if (!thumb) return;
-        
+
         selectedStyle = thumb.getAttribute('data-style');
         styleOptionsContainer.querySelectorAll('.countdown-style-thumb').forEach(t => t.classList.remove('selected'));
         thumb.classList.add('selected');
@@ -12109,7 +12109,7 @@ function openCountdownModal(countdown = null) {
         openImageUploadModal((url) => {
             customBgUrl = url || '';
             selectedStyle = 'image';
-            
+
             styleOptionsContainer.querySelectorAll('.countdown-style-thumb').forEach(t => t.classList.remove('selected'));
             const imageThumb = styleOptionsContainer.querySelector('.thumb-image');
             if (imageThumb) imageThumb.classList.add('selected');
@@ -12130,7 +12130,7 @@ function openCountdownModal(countdown = null) {
     };
     btnClose.addEventListener('click', closeModal);
     btnCancel.addEventListener('click', closeModal);
-    
+
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) closeModal();
     });
@@ -12138,7 +12138,7 @@ function openCountdownModal(countdown = null) {
     btnSave.addEventListener('click', async () => {
         const title = inputTitle.value.trim();
         if (!title) {
-            showCustomConfirm('Внимание', 'Пожалуйста, введите название события.', 'OK', () => {});
+            showCustomConfirm('Внимание', 'Пожалуйста, введите название события.', 'OK', () => { });
             return;
         }
 
@@ -12169,7 +12169,7 @@ function openCountdownModal(countdown = null) {
             closeModal();
         } catch (err) {
             console.error("Ошибка при сохранении обратного отсчета:", err);
-            showCustomConfirm('Ошибка', 'Не удалось сохранить. Попробуйте еще раз.', 'OK', () => {});
+            showCustomConfirm('Ошибка', 'Не удалось сохранить. Попробуйте еще раз.', 'OK', () => { });
         }
     });
 
@@ -12239,10 +12239,10 @@ function openImageUploadModal(onUploadSuccess, currentIconUrl = '') {
                 <button class="confirm-btn-primary" id="btn-select-file" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Выбрать файл...</button>
                 <button class="confirm-btn-primary" id="btn-load-link" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%; display: none;">Сохранить</button>
                 
-                ${currentIconUrl ? 
-                    `<button class="confirm-btn-delete" id="btn-delete-icon" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Удалить картинку</button>` : 
-                    ''
-                }
+                ${currentIconUrl ?
+            `<button class="confirm-btn-delete" id="btn-delete-icon" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Удалить картинку</button>` :
+            ''
+        }
                 
                 <button class="confirm-btn-secondary" id="btn-close-icon-modal" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Отмена</button>
             </div>
@@ -12256,7 +12256,7 @@ function openImageUploadModal(onUploadSuccess, currentIconUrl = '') {
     const selectFileBtn = overlay.querySelector('#btn-select-file');
     const deleteIconBtn = overlay.querySelector('#btn-delete-icon');
     const closeBtn = overlay.querySelector('#btn-close-icon-modal');
-    
+
     const tabBtns = overlay.querySelectorAll('.modal-tab');
     const tabPanes = overlay.querySelectorAll('.tab-content-pane');
     const urlInput = overlay.querySelector('#modal-url-input');
@@ -12268,11 +12268,11 @@ function openImageUploadModal(onUploadSuccess, currentIconUrl = '') {
             e.stopPropagation();
             tabBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
+
             const targetTab = btn.dataset.tab;
             tabPanes.forEach(pane => pane.style.display = 'none');
             overlay.querySelector(`#tab-content-${targetTab}`).style.display = 'flex';
-            
+
             if (targetTab === 'file') {
                 selectFileBtn.style.display = 'block';
                 loadLinkBtn.style.display = 'none';
@@ -12342,7 +12342,7 @@ function openImageUploadModal(onUploadSuccess, currentIconUrl = '') {
             const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(urlVal)}`;
             const img = new Image();
             img.crossOrigin = "anonymous";
-            
+
             img.onload = async () => {
                 const canvas = document.createElement("canvas");
                 canvas.width = img.width;
@@ -12356,7 +12356,7 @@ function openImageUploadModal(onUploadSuccess, currentIconUrl = '') {
                     cleanup();
                 } catch (e) {
                     console.error(e);
-                    showCustomConfirm('Ошибка', 'Не удалось сохранить изображение.', 'OK', () => {});
+                    showCustomConfirm('Ошибка', 'Не удалось сохранить изображение.', 'OK', () => { });
                     setLoadingState(false);
                 }
             };
@@ -12377,12 +12377,12 @@ function openImageUploadModal(onUploadSuccess, currentIconUrl = '') {
                         cleanup();
                     } catch (e) {
                         console.error(e);
-                        showCustomConfirm('Ошибка', 'Не удалось сохранить изображение.', 'OK', () => {});
+                        showCustomConfirm('Ошибка', 'Не удалось сохранить изображение.', 'OK', () => { });
                         setLoadingState(false);
                     }
                 };
                 directImg.onerror = () => {
-                    showCustomConfirm('Ошибка', 'Не удалось загрузить изображение по указанной ссылке.', 'OK', () => {});
+                    showCustomConfirm('Ошибка', 'Не удалось загрузить изображение по указанной ссылке.', 'OK', () => { });
                     setLoadingState(false);
                 };
                 directImg.src = urlVal;
@@ -12391,7 +12391,7 @@ function openImageUploadModal(onUploadSuccess, currentIconUrl = '') {
             img.src = proxyUrl;
         } catch (err) {
             console.error(err);
-            showCustomConfirm('Ошибка', 'Ошибка загрузки.', 'OK', () => {});
+            showCustomConfirm('Ошибка', 'Ошибка загрузки.', 'OK', () => { });
             setLoadingState(false);
         }
     });
@@ -12409,7 +12409,7 @@ function openImageUploadModal(onUploadSuccess, currentIconUrl = '') {
             }
             if (deleteIconBtn) deleteIconBtn.style.display = 'none';
             dropzone.style.pointerEvents = 'none';
-            
+
             dropzone.querySelector('.dropzone-preview').innerHTML = `
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation: spin 1s linear infinite;">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="8" fill="none" opacity="0.3"></circle>
@@ -12428,7 +12428,7 @@ function openImageUploadModal(onUploadSuccess, currentIconUrl = '') {
             }
             if (deleteIconBtn) deleteIconBtn.style.display = 'block';
             dropzone.style.pointerEvents = 'auto';
-            
+
             dropzone.querySelector('.dropzone-preview').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-icon lucide-upload" style="opacity: 0.6; color: var(--text-secondary);"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>`;
             dropzone.querySelector('.dropzone-text').innerText = 'Кликните для выбора файла или перетащите его сюда';
         }
@@ -12454,10 +12454,10 @@ function openImageUploadModal(onUploadSuccess, currentIconUrl = '') {
     async function processAndUpload(file) {
         setLoadingState(true);
         const reader = new FileReader();
-        reader.onload = async function(evt) {
+        reader.onload = async function (evt) {
             try {
                 const img = new Image();
-                img.onload = function() {
+                img.onload = function () {
                     let width = img.width;
                     let height = img.height;
                     const maxSide = 600;
@@ -12499,7 +12499,7 @@ function openImageUploadModal(onUploadSuccess, currentIconUrl = '') {
                             }
                         } catch (err) {
                             console.error('Error uploading image:', err);
-                            showCustomConfirm('Ошибка', 'Не удалось загрузить изображение.', 'OK', () => {});
+                            showCustomConfirm('Ошибка', 'Не удалось загрузить изображение.', 'OK', () => { });
                             setLoadingState(false);
                         }
                     }, 'image/jpeg', 0.85);
@@ -12507,7 +12507,7 @@ function openImageUploadModal(onUploadSuccess, currentIconUrl = '') {
                 img.src = evt.target.result;
             } catch (err) {
                 console.error(err);
-                showCustomConfirm('Ошибка', 'Не удалось загрузить изображение.', 'OK', () => {});
+                showCustomConfirm('Ошибка', 'Не удалось загрузить изображение.', 'OK', () => { });
                 setLoadingState(false);
             }
         };
@@ -12739,17 +12739,17 @@ function getHabitDateString(offsetDays = 0) {
 
 function calculateHabitStreak(historySet) {
     if (!historySet || historySet.size === 0) return 0;
-    
+
     const todayStr = getHabitDateString(0);
     const yesterdayStr = getHabitDateString(1);
-    
+
     if (!historySet.has(todayStr) && !historySet.has(yesterdayStr)) {
         return 0;
     }
-    
+
     let startOffset = historySet.has(todayStr) ? 0 : 1;
     let streak = 0;
-    
+
     while (true) {
         const dateStr = getHabitDateString(startOffset);
         if (historySet.has(dateStr)) {
@@ -12794,10 +12794,10 @@ function getDayLabel(offsetDays) {
 
 function formatTotalCheckins(total) {
     if (total === 0) return '0 дней';
-    
+
     const lastDigit = total % 10;
     const lastTwoDigits = total % 100;
-    
+
     if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
         return `${total} дней`;
     }
@@ -12813,7 +12813,7 @@ function formatTotalCheckins(total) {
 function renderHabits() {
     const grid = document.getElementById('habitGrid');
     if (!grid) return;
-    
+
     if (habitsList.length === 0) {
         grid.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-secondary); opacity: 0.6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;">
@@ -12827,19 +12827,19 @@ function renderHabits() {
         `;
         return;
     }
-    
+
     grid.innerHTML = '';
-    
+
     habitsList.forEach(habit => {
         const historyArray = habit.history || [];
         const historySet = new Set(historyArray);
-        
+
         const total = historySet.size;
         const streak = calculateHabitStreak(historySet);
-        
+
         const card = document.createElement('div');
         card.className = 'habit-card';
-        
+
         const actionsHtml = `
             <div class="habit-actions">
                 <button class="habit-action-btn btn-edit" title="Редактировать">
@@ -12856,14 +12856,14 @@ function renderHabits() {
                 </button>
             </div>
         `;
-        
+
         let circlesHtml = '';
         for (let i = 6; i >= 0; i--) {
             const dateStr = getHabitDateString(i);
             const isCompleted = historySet.has(dateStr);
             const isTodayDay = i === 0;
             const dayLabel = getDayLabel(i);
-            
+
             circlesHtml += `
                 <div class="habit-circle-wrapper">
                     <span class="habit-circle-day-label">${dayLabel}</span>
@@ -12879,11 +12879,11 @@ function renderHabits() {
                 </div>
             `;
         }
-        
+
         card.innerHTML = `
             ${actionsHtml}
             <div class="habit-header">
-                <div class="habit-icon-circle" style="background-color: ${getEmojiBg(habit.icon || '💪')}">
+                <div class="habit-icon-circle" style="background-color: ${habit.color || getEmojiBg(habit.icon || '💪')}">
                     ${habit.icon || '💪'}
                 </div>
                 <div class="habit-title-container">
@@ -12902,21 +12902,21 @@ function renderHabits() {
                 ${circlesHtml}
             </div>
         `;
-        
+
         card.querySelectorAll('.habit-circle').forEach(circleBtn => {
             circleBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 if (!currentUid) return;
-                
+
                 const targetDate = circleBtn.getAttribute('data-date');
                 let newHistory = [...historyArray];
-                
+
                 if (historySet.has(targetDate)) {
                     newHistory = newHistory.filter(d => d !== targetDate);
                 } else {
                     newHistory.push(targetDate);
                 }
-                
+
                 try {
                     await updateDoc(doc(db, 'users', currentUid, 'habits', habit.id), {
                         history: newHistory
@@ -12926,12 +12926,12 @@ function renderHabits() {
                 }
             });
         });
-        
+
         card.querySelector('.btn-edit').addEventListener('click', (e) => {
             e.stopPropagation();
             openHabitModal(habit);
         });
-        
+
         card.querySelector('.btn-delete').addEventListener('click', (e) => {
             e.stopPropagation();
             showCustomConfirm('Удаление', `Вы действительно хотите удалить привычку "${habit.title}"?`, 'Удалить', async () => {
@@ -12942,11 +12942,11 @@ function renderHabits() {
                 }
             });
         });
-        
+
         card.addEventListener('click', () => {
             openHabitStatsModal(habit);
         });
-        
+
         grid.appendChild(card);
     });
 }
@@ -12965,7 +12965,7 @@ function openHabitStatsModal(habit) {
         <div class="habit-stats-card">
             <div class="habit-stats-header">
                 <div class="habit-stats-title-block">
-                    <div class="habit-stats-icon" style="background-color: ${getEmojiBg(habit.icon || '💪')}">
+                    <div class="habit-stats-icon" style="background-color: ${habit.color || getEmojiBg(habit.icon || '💪')}">
                         ${habit.icon || '💪'}
                     </div>
                     <span class="habit-stats-title">${habit.title}</span>
@@ -13119,7 +13119,7 @@ function openHabitStatsModal(habit) {
                     await updateDoc(doc(db, 'users', currentUid, 'habits', habit.id), {
                         history: newHistory
                     });
-                    habit.history = newHistory; 
+                    habit.history = newHistory;
                     updateStatsAndCalendar();
                 } catch (err) {
                     console.error("Ошибка обновления привычки:", err);
@@ -13147,7 +13147,7 @@ function openHabitStatsModal(habit) {
         const day = today.getDay();
         const diff = today.getDate() - day + (day === 0 ? -6 : 1);
         const monday = new Date(today.setDate(diff));
-        monday.setHours(0,0,0,0);
+        monday.setHours(0, 0, 0, 0);
 
         let count = 0;
         for (let i = 0; i < 7; i++) {
@@ -13196,15 +13196,26 @@ function openHabitStatsModal(habit) {
 function openHabitModal(habit = null) {
     const existing = document.querySelector('.habit-modal-overlay');
     if (existing) existing.remove();
-    
+
     const isEdit = !!habit;
     let selectedIcon = habit ? (habit.icon || '💪') : '💪';
-    
+    let selectedColor = habit ? (habit.color || getEmojiBg(selectedIcon)) : getEmojiBg(selectedIcon);
+
+    const presets = [
+        '#dc2626',
+        '#f97316',
+        '#eab308',
+        '#84cc16',
+        '#22c55e',
+        '#3b82f6',
+        '#a855f7'
+    ];
+
     const overlay = document.createElement('div');
     overlay.className = 'habit-modal-overlay countdown-modal-overlay';
-    
+
     overlay.innerHTML = `
-        <div class="countdown-modal-card">
+        <div class="countdown-modal-card habit-modal-card">
             <div class="countdown-modal-header">
                 <span class="countdown-modal-title">${isEdit ? 'Редактировать' : 'Добавить'} привычку</span>
                 <button class="countdown-modal-close" id="btnCloseHabitModal">
@@ -13215,91 +13226,469 @@ function openHabitModal(habit = null) {
                 </button>
             </div>
             
-            <div class="countdown-modal-row" style="margin-top: 16px; margin-bottom: 24px;">
-                <div class="countdown-icon-select" id="btnHabitIconSelect">
-                    <span id="habitSelectedIcon">${selectedIcon}</span>
-                    <div class="countdown-icon-edit-badge">✎</div>
+            <!-- First Row: Preview on the Left, Name Input on the Right -->
+            <div class="habit-preview-row">
+                <div class="habit-icon-circle-large" id="habitIconPreview">
+                    ${selectedIcon}
                 </div>
-                <div class="countdown-input-wrapper">
-                    <input type="text" class="countdown-input" id="inputHabitTitle" placeholder="Название" value="${habit ? habit.title : ''}" maxlength="50" autocomplete="off">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                    <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); display: block;">Название привычки</label>
+                    <input type="text" class="countdown-input" id="inputHabitTitle" placeholder="Например: Тренировка" value="${habit ? habit.title : ''}" maxlength="50" autocomplete="off" style="width: 100%; box-sizing: border-box; height: 42px; border-radius: 12px;">
+                    <span class="habit-title-error" style="display: none; color: #ef4444; font-size: 11px; font-weight: 600; margin-top: -2px;">Пожалуйста, введите название привычки</span>
                 </div>
             </div>
             
-            <div class="countdown-modal-footer">
+            <hr style="border: none; border-top: 1px solid var(--border); margin: 0;">
+
+            <!-- Second Row: Emoji selector -->
+            <div>
+                <span class="habit-modal-section-title">Иконка</span>
+                <div class="habit-emoji-buttons-container">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Third Row: Color presets -->
+            <div>
+                <span class="habit-modal-section-title">Цвет</span>
+                <div class="habit-color-presets">
+                    ${presets.map(color => `
+                        <div class="color-circle habit-color-circle ${selectedColor === color ? 'active' : ''}" data-color="${color}" style="background-color: ${color}; --active-color: ${color};"></div>
+                    `).join('')}
+                    <div class="color-circle habit-color-circle custom-color-btn ${selectedColor && !presets.includes(selectedColor) ? 'active' : ''}" id="habit-custom-color-trigger" style="--active-color: ${selectedColor && !presets.includes(selectedColor) ? selectedColor : '#3b82f6'};"></div>
+                </div>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid var(--border); margin: 0;">
+            
+            <div class="habit-modal-footer">
                 <button class="countdown-btn-cancel" id="btnCancelHabit">Отмена</button>
-                <button class="countdown-btn-ok" id="btnSaveHabit">OK</button>
+                <button class="countdown-btn-ok" id="btnSaveHabit">Сохранить</button>
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(overlay);
-    
+
     const inputTitle = overlay.querySelector('#inputHabitTitle');
-    const btnIconSelect = overlay.querySelector('#btnHabitIconSelect');
-    const selectedIconEl = overlay.querySelector('#habitSelectedIcon');
+    const colorCircles = overlay.querySelectorAll('.habit-color-circle:not(.custom-color-btn)');
+    const customColorTrigger = overlay.querySelector('#habit-custom-color-trigger');
+    const iconPreview = overlay.querySelector('#habitIconPreview');
     const btnClose = overlay.querySelector('#btnCloseHabitModal');
     const btnCancel = overlay.querySelector('#btnCancelHabit');
     const btnSave = overlay.querySelector('#btnSaveHabit');
-    
-    let activeEmojiPopover = null;
-    btnIconSelect.addEventListener('click', (e) => {
+    const modalBox = overlay.querySelector('.countdown-modal-card');
+
+    inputTitle.addEventListener('input', () => {
+        inputTitle.style.borderColor = '';
+        const errorEl = overlay.querySelector('.habit-title-error');
+        if (errorEl) errorEl.style.display = 'none';
+    });
+
+    let customColorPopover = null;
+    let tempCustomColor = selectedColor && !presets.includes(selectedColor) ? selectedColor : '#ff0000';
+
+    function updatePreview() {
+        if (iconPreview) {
+            iconPreview.innerText = selectedIcon;
+            iconPreview.style.backgroundColor = selectedColor;
+        }
+    }
+
+    function updateActiveColorState(activeCircle) {
+        overlay.querySelectorAll('.habit-color-circle').forEach(c => c.classList.remove('active'));
+        activeCircle.classList.add('active');
+        if (activeCircle === customColorTrigger) {
+            customColorTrigger.style.setProperty('--active-color', tempCustomColor);
+            selectedColor = tempCustomColor;
+        } else {
+            selectedColor = activeCircle.getAttribute('data-color');
+        }
+        updatePreview();
+    }
+
+    function restoreActiveColorCircle(colorVal) {
+        overlay.querySelectorAll('.habit-color-circle').forEach(c => {
+            const cColor = c.getAttribute('data-color');
+            if (cColor === colorVal) {
+                c.classList.add('active');
+            } else {
+                c.classList.remove('active');
+            }
+        });
+        if (!presets.includes(colorVal)) {
+            customColorTrigger.classList.add('active');
+            customColorTrigger.style.setProperty('--active-color', colorVal);
+        } else {
+            customColorTrigger.classList.remove('active');
+        }
+    }
+
+    colorCircles.forEach(circle => {
+        circle.addEventListener('click', () => {
+            if (customColorPopover) {
+                customColorPopover.remove();
+                customColorPopover = null;
+            }
+            updateActiveColorState(circle);
+        });
+    });
+
+    customColorTrigger.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (activeEmojiPopover) {
-            activeEmojiPopover.remove();
-            activeEmojiPopover = null;
+        if (customColorPopover) {
+            customColorPopover.remove();
+            customColorPopover = null;
             return;
         }
-        
-        const emojis = ['💪', '🏃', '💧', '📖', '🍏', '😴', '🧘', '👂', '💻', '✍️', '🪥', '💵', '🎵', '🚭', '☕', '🌟'];
-        const popover = document.createElement('div');
-        popover.className = 'emoji-popover';
-        emojis.forEach(emo => {
-            const item = document.createElement('div');
-            item.className = 'emoji-popover-item';
-            item.innerText = emo;
-            item.addEventListener('click', (ev) => {
-                ev.stopPropagation();
-                selectedIcon = emo;
-                selectedIconEl.innerText = emo;
-                popover.remove();
-                activeEmojiPopover = null;
-            });
-            popover.appendChild(item);
-        });
-        
-        btnIconSelect.appendChild(popover);
-        activeEmojiPopover = popover;
-    });
-    
-    document.addEventListener('click', () => {
-        if (activeEmojiPopover) {
-            activeEmojiPopover.remove();
-            activeEmojiPopover = null;
+
+        const originalColorBeforePicker = selectedColor;
+
+        customColorPopover = document.createElement('div');
+        customColorPopover.className = 'custom-color-picker-popover';
+        customColorPopover.style.position = 'fixed';
+        customColorPopover.style.background = 'var(--card-bg)';
+        customColorPopover.style.border = '1px solid var(--border)';
+        customColorPopover.style.borderRadius = '16px';
+        customColorPopover.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.15)';
+        customColorPopover.style.width = '220px';
+        customColorPopover.style.padding = '12px';
+        customColorPopover.style.display = 'flex';
+        customColorPopover.style.flexDirection = 'column';
+        customColorPopover.style.gap = '10px';
+        customColorPopover.style.zIndex = '2200';
+
+        const rect = modalBox.getBoundingClientRect();
+        let left = rect.right + 12;
+        let top = rect.top;
+        if (left + 240 > window.innerWidth) {
+            left = Math.max(10, rect.left + (rect.width - 220) / 2);
+            top = rect.bottom + 12;
+            if (top + 280 > window.innerHeight) {
+                top = Math.max(10, rect.top - 290);
+            }
         }
+
+        customColorPopover.style.left = left + 'px';
+        customColorPopover.style.top = top + 'px';
+
+        customColorPopover.innerHTML = '<div class="sv-canvas" style="width: 100%; height: 120px; border-radius: 8px; position: relative; cursor: crosshair; overflow: hidden;">' +
+            '<div style="position: absolute; inset: 0; background: linear-gradient(to right, #fff, transparent);"></div>' +
+            '<div style="position: absolute; inset: 0; background: linear-gradient(to top, #000, transparent);"></div>' +
+            '<div class="sv-handle" style="position: absolute; width: 8px; height: 8px; border: 1.5px solid #fff; border-radius: 50%; box-shadow: 0 0 2px rgba(0,0,0,0.5); transform: translate(-50%, -50%); pointer-events: none;"></div>' +
+            '</div>' +
+            '<div style="display: flex; align-items: center; gap: 8px;">' +
+            '<div class="color-preview-circle" style="width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.1);"></div>' +
+            '<input type="range" class="hue-slider" min="0" max="360" value="0" style="flex-grow: 1; margin: 0;">' +
+            '</div>' +
+            '<div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">' +
+            '<input type="text" class="hex-input" style="width: 100%; text-align: center; border: 1px solid var(--border); border-radius: 6px; padding: 4px; font-size: 12px; font-family: monospace; background: var(--bg-hover) !important; color: var(--text);">' +
+            '<span style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase;">HEX</span>' +
+            '</div>' +
+            '<div style="display: flex; justify-content: space-between; gap: 6px;">' +
+            '<button class="picker-btn-cancel" style="flex: 1; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text); font-size: 12px; cursor: pointer;">Отмена</button>' +
+            '<button class="picker-btn-save" style="flex: 1; padding: 6px; border-radius: 6px; border: none; background: #4c6ef5; color: #fff; font-size: 12px; cursor: pointer;">Сохранить</button>' +
+            '</div>';
+
+        document.body.appendChild(customColorPopover);
+
+        const popHsv = hexToHsv(tempCustomColor);
+        let curHue = popHsv.h;
+        let curSat = popHsv.s;
+        let curVal = popHsv.v;
+
+        const svCanvas = customColorPopover.querySelector('.sv-canvas');
+        const svHandle = customColorPopover.querySelector('.sv-handle');
+        const previewCircle = customColorPopover.querySelector('.color-preview-circle');
+        const hueSlider = customColorPopover.querySelector('.hue-slider');
+        const hexInput = customColorPopover.querySelector('.hex-input');
+
+        hueSlider.value = curHue;
+
+        function updatePickerUI() {
+            svCanvas.style.backgroundColor = 'hsl(' + curHue + ', 100%, 50%)';
+            svHandle.style.left = curSat + '%';
+            svHandle.style.top = (100 - curVal) + '%';
+
+            const rgb = hsvToRgb(curHue, curSat, curVal);
+            const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+
+            previewCircle.style.backgroundColor = hex;
+            if (document.activeElement !== hexInput) {
+                hexInput.value = hex;
+            }
+
+            // Real-time update preview background!
+            selectedColor = hex;
+            updatePreview();
+        }
+
+        function updateSVFromEvent(evt) {
+            const rect = svCanvas.getBoundingClientRect();
+            let x = evt.clientX - rect.left;
+            let y = evt.clientY - rect.top;
+            x = Math.max(0, Math.min(rect.width, x));
+            y = Math.max(0, Math.min(rect.height, y));
+            curSat = Math.round((x / rect.width) * 100);
+            curVal = Math.round((1 - y / rect.height) * 100);
+            updatePickerUI();
+        }
+
+        function onMouseDown(evt) {
+            updateSVFromEvent(evt);
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        }
+        function onMouseMove(evt) {
+            updateSVFromEvent(evt);
+        }
+        function onMouseUp() {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+
+        svCanvas.addEventListener('mousedown', onMouseDown);
+
+        hueSlider.addEventListener('input', (evt) => {
+            curHue = parseInt(evt.target.value);
+            updatePickerUI();
+        });
+
+        hexInput.addEventListener('input', (evt) => {
+            const val = evt.target.value;
+            if (/^#[0-9A-F]{6}$/i.test(val)) {
+                const hsv = hexToHsv(val);
+                curHue = hsv.h;
+                curSat = hsv.s;
+                curVal = hsv.v;
+                hueSlider.value = curHue;
+                updatePickerUI();
+            }
+        });
+
+        customColorPopover.querySelector('.picker-btn-save').addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            const rgb = hsvToRgb(curHue, curSat, curVal);
+            tempCustomColor = rgbToHex(rgb.r, rgb.g, rgb.b);
+            updateActiveColorState(customColorTrigger);
+            customColorPopover.remove();
+            customColorPopover = null;
+        });
+
+        customColorPopover.querySelector('.picker-btn-cancel').addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            selectedColor = originalColorBeforePicker;
+            restoreActiveColorCircle(originalColorBeforePicker);
+            updatePreview();
+            customColorPopover.remove();
+            customColorPopover = null;
+        });
+
+        customColorPopover.addEventListener('click', (evt) => {
+            evt.stopPropagation();
+        });
+
+        updatePickerUI();
     });
-    
+
+    function autoUpdateColor(emoji) {
+        const defaultBg = getEmojiBg(emoji);
+        if (presets.includes(defaultBg)) {
+            const targetCircle = overlay.querySelector(`.habit-color-circle[data-color="${defaultBg}"]`);
+            if (targetCircle) {
+                updateActiveColorState(targetCircle);
+            }
+        } else {
+            tempCustomColor = defaultBg;
+            updateActiveColorState(customColorTrigger);
+        }
+    }
+
+    function showCustomEmojiPopover(triggerEl) {
+        const existing = document.querySelector('.custom-emoji-popover');
+        if (existing) existing.remove();
+
+        const popover = document.createElement('div');
+        popover.className = 'custom-emoji-popover';
+        popover.style.position = 'fixed';
+        popover.style.background = 'var(--card-bg)';
+        popover.style.border = '1px solid var(--border)';
+        popover.style.borderRadius = '16px';
+        popover.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.15)';
+        popover.style.width = '200px';
+        popover.style.padding = '12px';
+        popover.style.display = 'flex';
+        popover.style.flexDirection = 'column';
+        popover.style.gap = '8px';
+        popover.style.zIndex = '2200';
+
+        const rect = triggerEl.getBoundingClientRect();
+        let left = rect.left + (rect.width - 200) / 2;
+        let top = rect.top - 100;
+        if (left < 10) left = 10;
+        if (left + 200 > window.innerWidth) left = window.innerWidth - 210;
+        if (top < 10) top = rect.bottom + 8;
+
+        popover.style.left = left + 'px';
+        popover.style.top = top + 'px';
+
+        popover.innerHTML = `
+            <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); font-family: inherit;">Введите эмодзи:</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" class="countdown-input custom-emoji-popover-input" placeholder="" style="flex: 1; height: 36px; padding: 6px 8px; font-size: 16px; text-align: center; border-radius: 8px; font-family: inherit;" maxlength="10">
+                <button class="countdown-btn-ok btn-popover-emoji-ok" style="padding: 0 12px; height: 36px; font-size: 13px; border-radius: 8px; background: #5035e1; color: white; border: none; cursor: pointer; font-weight: 600; font-family: inherit;">OK</button>
+            </div>
+        `;
+
+        document.body.appendChild(popover);
+
+        const input = popover.querySelector('.custom-emoji-popover-input');
+        const btnOk = popover.querySelector('.btn-popover-emoji-ok');
+
+        input.focus();
+
+        input.addEventListener('input', () => {
+            const val = input.value;
+            if (val) {
+                const segments = [...new Intl.Segmenter().segment(val)];
+                const singleEmoji = segments.length > 0 ? segments[0].segment : '';
+                input.value = singleEmoji;
+            }
+        });
+
+        const applyEmoji = () => {
+            const emo = input.value.trim();
+            if (emo) {
+                selectedIcon = emo;
+                renderEmojiButtons();
+                autoUpdateColor(selectedIcon);
+                updatePreview();
+            }
+            popover.remove();
+        };
+
+        btnOk.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            applyEmoji();
+        });
+
+        input.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') {
+                ev.stopPropagation();
+                applyEmoji();
+            }
+        });
+
+        popover.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+        });
+
+        const closeOnOutsideClick = (ev) => {
+            if (!popover.contains(ev.target) && ev.target !== triggerEl) {
+                popover.remove();
+                document.removeEventListener('click', closeOnOutsideClick);
+            }
+        };
+        setTimeout(() => {
+            document.addEventListener('click', closeOnOutsideClick);
+        }, 50);
+    }
+
+    function renderEmojiButtons() {
+        const container = overlay.querySelector('.habit-emoji-buttons-container');
+        if (!container) return;
+
+        const presetsList = ['💪', '💻', '📖', '🌟'];
+        let html = '';
+
+        presetsList.forEach(emoji => {
+            const isActive = selectedIcon === emoji;
+            html += `
+                <button type="button" class="suggested-emoji-btn ${isActive ? 'active' : ''}" data-emoji="${emoji}">
+                    ${emoji}
+                    ${isActive ? '<div class="active-checkmark">✓</div>' : ''}
+                </button>
+            `;
+        });
+
+        const isCustom = !presetsList.includes(selectedIcon);
+
+        if (isCustom) {
+            html += `
+                <button type="button" class="suggested-emoji-btn active" id="btnCustomEmojiSelected" data-emoji="${selectedIcon}">
+                    ${selectedIcon}
+                    <div class="active-checkmark" style="font-size: 10px; font-weight: normal;">✎</div>
+                </button>
+            `;
+        } else {
+            html += `
+                <button type="button" class="suggested-emoji-btn custom-btn" id="btnHabitCustomEmoji">
+                    <span class="plus-icon">+</span>
+                    <span class="btn-text">Своя</span>
+                </button>
+            `;
+        }
+
+        container.innerHTML = html;
+
+        container.querySelectorAll('.suggested-emoji-btn:not(.custom-btn):not(#btnCustomEmojiSelected)').forEach(btn => {
+            btn.addEventListener('click', () => {
+                selectedIcon = btn.getAttribute('data-emoji');
+                renderEmojiButtons();
+                autoUpdateColor(selectedIcon);
+                updatePreview();
+            });
+        });
+
+        const customSelectedBtn = container.querySelector('#btnCustomEmojiSelected');
+        if (customSelectedBtn) {
+            customSelectedBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showCustomEmojiPopover(customSelectedBtn);
+            });
+        }
+
+        const customBtn = container.querySelector('#btnHabitCustomEmoji');
+        if (customBtn) {
+            customBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showCustomEmojiPopover(customBtn);
+            });
+        }
+    }
+
     const closeModal = () => {
+        if (customColorPopover) {
+            customColorPopover.remove();
+            customColorPopover = null;
+        }
+        const existingEmojiPopover = document.querySelector('.custom-emoji-popover');
+        if (existingEmojiPopover) existingEmojiPopover.remove();
         overlay.remove();
     };
-    
+
     btnClose.addEventListener('click', closeModal);
     btnCancel.addEventListener('click', closeModal);
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) closeModal();
     });
-    
+
     btnSave.addEventListener('click', async () => {
         const title = inputTitle.value.trim();
         if (!title) {
-            showCustomConfirm('Внимание', 'Пожалуйста, введите название привычки.', 'OK', () => {});
+            inputTitle.style.borderColor = '#ef4444';
+            const errorEl = overlay.querySelector('.habit-title-error');
+            if (errorEl) errorEl.style.display = 'block';
+            inputTitle.focus();
             return;
         }
-        
+
         const data = {
             title,
             icon: selectedIcon,
+            color: selectedColor
         };
-        
+
         try {
             if (isEdit) {
                 await updateDoc(doc(db, 'users', currentUid, 'habits', habit.id), data);
@@ -13313,9 +13702,12 @@ function openHabitModal(habit = null) {
             closeModal();
         } catch (err) {
             console.error("Ошибка при сохранении привычки:", err);
-            showCustomConfirm('Ошибка', 'Не удалось сохранить. Попробуйте еще раз.', 'OK', () => {});
+            showCustomConfirm('Ошибка', 'Не удалось сохранить. Попробуйте еще раз.', 'OK', () => { });
         }
     });
+
+    renderEmojiButtons();
+    updatePreview();
 }
 
 function initHabitEvents() {

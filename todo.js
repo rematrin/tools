@@ -2050,45 +2050,10 @@ if (btnPrefHome) {
             });
             if (isClosed) {
                 dropdown.style.display = 'flex';
-                const searchInput = document.getElementById('prefHomeSearch');
-                if (searchInput) {
-                    searchInput.value = '';
-                }
                 renderPrefHomeDropdown();
-                if (searchInput) {
-                    searchInput.focus();
-                }
             } else {
                 dropdown.style.display = 'none';
             }
-        }
-    });
-}
-
-const prefHomeSearch = document.getElementById('prefHomeSearch');
-if (prefHomeSearch) {
-    prefHomeSearch.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase().trim();
-        const items = document.querySelectorAll('#prefHomeOptions .dropdown-item');
-        let visibleProjectsCount = 0;
-        
-        items.forEach(item => {
-            const name = item.dataset.name.toLowerCase();
-            const id = item.dataset.id;
-            
-            if (name.includes(query)) {
-                item.style.display = 'flex';
-                if (id && id.startsWith('project/')) {
-                    visibleProjectsCount++;
-                }
-            } else {
-                item.style.display = 'none';
-            }
-        });
-        
-        const projectsHeader = document.querySelector('.pref-home-projects-header');
-        if (projectsHeader) {
-            projectsHeader.style.display = visibleProjectsCount > 0 ? 'block' : 'none';
         }
     });
 }

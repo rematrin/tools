@@ -620,6 +620,32 @@
                                 <option value="bottom">Снизу списка</option>
                             </select>
                         </div>
+                        <div class="settings-field"
+                            style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--border); position: relative;">
+                            <div class="settings-field-info">
+                                <label
+                                    style="display: block; font-weight: 600; font-size: 0.95rem; color: var(--text); margin-bottom: 2px;">Главный экран</label>
+                                <span style="font-size: 0.82rem; color: var(--text-secondary);">Выберите экран по умолчанию при запуске</span>
+                            </div>
+                            <div class="add-task-project-wrapper" id="prefHomeWrapper" style="position: relative;">
+                                <button class="btn-due-date" id="btnPrefHome" type="button" style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; background: var(--hover-bg); border: 1px solid var(--border); color: var(--text); cursor: pointer;">
+                                    <span class="project-icon" id="prefHomeIcon"
+                                        style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; flex-shrink: 0;">
+                                    </span>
+                                    <span id="prefHomeText">Входящие</span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; opacity: 0.6; margin-left: 2px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                </button>
+                                <div class="due-date-dropdown project-dropdown" id="prefHomeDropdown"
+                                    style="display: none; position: absolute; right: 0; top: calc(100% + 6px); width: 240px; max-height: 280px; overflow-y: auto; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px; flex-direction: column; gap: 4px;">
+                                    <div style="padding: 4px 6px; border-bottom: 1px solid var(--border); margin-bottom: 4px;">
+                                        <input type="text" id="prefHomeSearch" placeholder="Введите отображение" style="width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--hover-bg); color: var(--text); font-size: 0.85rem; outline: none; box-sizing: border-box;">
+                                    </div>
+                                    <div id="prefHomeOptions" style="display: flex; flex-direction: column; gap: 2px;">
+                                        <!-- Сюда будут рендериться варианты динамически -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

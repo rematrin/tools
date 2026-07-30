@@ -1746,6 +1746,10 @@ function openSettingsModal() {
         addTaskPositionSelect.value = addTaskPositionPref;
     }
 
+    // Подставляем значение настройки главного экрана
+    const defaultHomePref = localStorage.getItem('todo_pref_default_home') || 'inbox';
+    updatePrefHomeButton(defaultHomePref);
+
     // Подсвечиваем сохраненную карточку настройки счетчиков
     const currentCountersPref = localStorage.getItem('todo_show_sidebar_counters') || 'show';
     const cardShow = document.getElementById('pref-counters-show');
@@ -1862,6 +1866,230 @@ const prefAddTaskPosition = document.getElementById('prefAddTaskPosition');
 if (prefAddTaskPosition) {
     prefAddTaskPosition.addEventListener('change', (e) => {
         localStorage.setItem('todo_pref_add_task_position', e.target.value);
+    });
+}
+
+// === НАСТРОЙКА ГЛАВНОГО ЭКРАНА ===
+function updatePrefHomeButton(selectedVal) {
+    const prefHomeIcon = document.getElementById('prefHomeIcon');
+    const prefHomeText = document.getElementById('prefHomeText');
+    if (!prefHomeIcon || !prefHomeText) return;
+
+    if (selectedVal === 'inbox') {
+        prefHomeText.textContent = 'Входящие';
+        prefHomeIcon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block;"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>`;
+    } else if (selectedVal === 'today') {
+        prefHomeText.textContent = 'Сегодня';
+        prefHomeIcon.innerHTML = getCalendarSvg(new Date().getDate());
+        const todaySvg = prefHomeIcon.querySelector('svg');
+        if (todaySvg) {
+            todaySvg.style.width = '14px';
+            todaySvg.style.height = '14px';
+            todaySvg.style.display = 'block';
+        }
+    } else if (selectedVal === 'tomorrow') {
+        prefHomeText.textContent = 'Завтра';
+        prefHomeIcon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block;"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="6.34" y1="17.66" x2="4.93" y2="19.07"></line><line x1="19.07" y1="4.93" x2="17.66" y2="6.34"></line></svg>`;
+    } else if (selectedVal && selectedVal.startsWith('project/')) {
+        const projectId = selectedVal.split('/')[1];
+        const project = projectsList.find(p => p.id === projectId);
+        if (project) {
+            prefHomeText.textContent = project.name;
+            const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+            prefHomeIcon.innerHTML = getProjectIconHtml(project.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 4px; display: block; font-size: 13px; line-height: 1;');
+        } else {
+            prefHomeText.textContent = 'Входящие';
+            prefHomeIcon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block;"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>`;
+            localStorage.setItem('todo_pref_default_home', 'inbox');
+        }
+    }
+}
+
+function renderPrefHomeDropdown() {
+    const dropdown = document.getElementById('prefHomeDropdown');
+    const optionsContainer = document.getElementById('prefHomeOptions');
+    if (!dropdown || !optionsContainer) return;
+
+    optionsContainer.innerHTML = '';
+    const selectedVal = localStorage.getItem('todo_pref_default_home') || 'inbox';
+    const checkmarkHtml = '<span class="dropdown-item-checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10"><polyline points="20 6 9 17 4 12"></polyline></svg></span>';
+
+    // 1. Входящие
+    const isInboxSelected = selectedVal === 'inbox';
+    const inboxItem = document.createElement('button');
+    inboxItem.className = 'dropdown-item';
+    inboxItem.type = 'button';
+    inboxItem.dataset.id = 'inbox';
+    inboxItem.dataset.name = 'Входящие';
+    inboxItem.innerHTML = `
+        <span class="dropdown-item-left">
+            <span class="dropdown-item-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+            </span>
+            <span>Входящие</span>
+        </span>
+        ${isInboxSelected ? checkmarkHtml : ''}
+    `;
+    inboxItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        localStorage.setItem('todo_pref_default_home', 'inbox');
+        updatePrefHomeButton('inbox');
+        dropdown.style.display = 'none';
+    });
+    optionsContainer.appendChild(inboxItem);
+
+    // 2. Сегодня
+    const isTodaySelected = selectedVal === 'today';
+    const todayItem = document.createElement('button');
+    todayItem.className = 'dropdown-item';
+    todayItem.type = 'button';
+    todayItem.dataset.id = 'today';
+    todayItem.dataset.name = 'Сегодня';
+    
+    const todaySvgHtml = getCalendarSvg(new Date().getDate());
+    todayItem.innerHTML = `
+        <span class="dropdown-item-left">
+            <span class="dropdown-item-icon pref-today-icon-wrapper">
+                ${todaySvgHtml}
+            </span>
+            <span>Сегодня</span>
+        </span>
+        ${isTodaySelected ? checkmarkHtml : ''}
+    `;
+    const todaySvg = todayItem.querySelector('.pref-today-icon-wrapper svg');
+    if (todaySvg) {
+        todaySvg.style.width = '16px';
+        todaySvg.style.height = '16px';
+        todaySvg.style.display = 'block';
+    }
+
+    todayItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        localStorage.setItem('todo_pref_default_home', 'today');
+        updatePrefHomeButton('today');
+        dropdown.style.display = 'none';
+    });
+    optionsContainer.appendChild(todayItem);
+
+    // 3. Завтра
+    const isTomorrowSelected = selectedVal === 'tomorrow';
+    const tomorrowItem = document.createElement('button');
+    tomorrowItem.className = 'dropdown-item';
+    tomorrowItem.type = 'button';
+    tomorrowItem.dataset.id = 'tomorrow';
+    tomorrowItem.dataset.name = 'Завтра';
+    tomorrowItem.innerHTML = `
+        <span class="dropdown-item-left">
+            <span class="dropdown-item-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="6.34" y1="17.66" x2="4.93" y2="19.07"></line><line x1="19.07" y1="4.93" x2="17.66" y2="6.34"></line></svg>
+            </span>
+            <span>Завтра</span>
+        </span>
+        ${isTomorrowSelected ? checkmarkHtml : ''}
+    `;
+    tomorrowItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        localStorage.setItem('todo_pref_default_home', 'tomorrow');
+        updatePrefHomeButton('tomorrow');
+        dropdown.style.display = 'none';
+    });
+    optionsContainer.appendChild(tomorrowItem);
+
+    // 4. Проекты
+    if (projectsList.length > 0) {
+        const header = document.createElement('div');
+        header.className = 'pref-home-projects-header';
+        header.textContent = 'Проекты';
+        header.style.cssText = 'padding: 6px 12px 2px; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;';
+        optionsContainer.appendChild(header);
+
+        projectsList.forEach(project => {
+            const projectRoute = `project/${project.id}`;
+            const isSelected = selectedVal === projectRoute;
+            const projectItem = document.createElement('button');
+            projectItem.className = 'dropdown-item';
+            projectItem.type = 'button';
+            projectItem.dataset.id = projectRoute;
+            projectItem.dataset.name = project.name;
+
+            const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+            const iconHtml = getProjectIconHtml(project.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 3px; font-size: 13px; line-height: 1;');
+
+            projectItem.innerHTML = `
+                <span class="dropdown-item-left">
+                    <span class="dropdown-item-icon" style="color: ${project.color || 'var(--text-secondary)'};">
+                        ${iconHtml}
+                    </span>
+                    <span>${escapeHtml(project.name)}</span>
+                </span>
+                ${isSelected ? checkmarkHtml : ''}
+            `;
+            projectItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                localStorage.setItem('todo_pref_default_home', projectRoute);
+                updatePrefHomeButton(projectRoute);
+                dropdown.style.display = 'none';
+            });
+            optionsContainer.appendChild(projectItem);
+        });
+    }
+}
+
+// Слушатели для выпадающего списка «Главный экран»
+const btnPrefHome = document.getElementById('btnPrefHome');
+if (btnPrefHome) {
+    btnPrefHome.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdown = document.getElementById('prefHomeDropdown');
+        if (dropdown) {
+            const isClosed = dropdown.style.display === 'none';
+            document.querySelectorAll('.due-date-dropdown').forEach(d => {
+                if (d.id !== 'prefHomeDropdown') {
+                    d.style.display = 'none';
+                }
+            });
+            if (isClosed) {
+                dropdown.style.display = 'flex';
+                const searchInput = document.getElementById('prefHomeSearch');
+                if (searchInput) {
+                    searchInput.value = '';
+                }
+                renderPrefHomeDropdown();
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+    });
+}
+
+const prefHomeSearch = document.getElementById('prefHomeSearch');
+if (prefHomeSearch) {
+    prefHomeSearch.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const items = document.querySelectorAll('#prefHomeOptions .dropdown-item');
+        let visibleProjectsCount = 0;
+        
+        items.forEach(item => {
+            const name = item.dataset.name.toLowerCase();
+            const id = item.dataset.id;
+            
+            if (name.includes(query)) {
+                item.style.display = 'flex';
+                if (id && id.startsWith('project/')) {
+                    visibleProjectsCount++;
+                }
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        const projectsHeader = document.querySelector('.pref-home-projects-header');
+        if (projectsHeader) {
+            projectsHeader.style.display = visibleProjectsCount > 0 ? 'block' : 'none';
+        }
     });
 }
 
@@ -2023,6 +2251,8 @@ function handleRoute() {
         currentRoute = 'today';
     } else if (hash === 'tomorrow') {
         currentRoute = 'tomorrow';
+    } else if (hash === 'inbox') {
+        currentRoute = 'inbox';
     } else if (hash === 'trash') {
         currentRoute = 'trash';
     } else if (hash === 'pomodoro') {
@@ -2040,10 +2270,11 @@ function handleRoute() {
             currentRoute = hash;
         }
     } else {
-        currentRoute = 'inbox';
-        // Если хэш пустой или некорректный, устанавливаем дефолтный #inbox
+        const defaultHome = localStorage.getItem('todo_pref_default_home') || 'inbox';
+        currentRoute = defaultHome;
+        // Если хэш пустой или некорректный, устанавливаем дефолтный хэш из настроек
         if (!window.location.hash || window.location.hash === '#') {
-            history.replaceState(null, null, '#inbox');
+            history.replaceState(null, null, `#${defaultHome}`);
         }
     }
 

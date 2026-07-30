@@ -2320,7 +2320,7 @@ function handleRoute() {
 function updateBackButtonVisibility() {
     const contentBackBtn = document.getElementById('contentBackBtn');
     if (!contentBackBtn) return;
-    if (window.innerWidth <= 768 && (currentRoute === 'trash' || currentRoute === 'tomorrow' || currentRoute.startsWith('project/'))) {
+    if (window.innerWidth <= 768 && (currentRoute === 'trash' || currentRoute.startsWith('project/'))) {
         contentBackBtn.style.display = 'inline-flex';
     } else {
         contentBackBtn.style.display = 'none';
@@ -2328,18 +2328,22 @@ function updateBackButtonVisibility() {
 }
 
 function updateMobileBottomNavActiveState() {
+    const mobileNavTomorrow = document.getElementById('mobileNavTomorrow');
     const mobileNavToday = document.getElementById('mobileNavToday');
     const mobileNavInbox = document.getElementById('mobileNavInbox');
     const mobileNavMore = document.getElementById('mobileNavMore');
 
     if (!mobileNavToday || !mobileNavInbox || !mobileNavMore) return;
 
+    if (mobileNavTomorrow) mobileNavTomorrow.classList.remove('active');
     mobileNavToday.classList.remove('active');
     mobileNavInbox.classList.remove('active');
     mobileNavMore.classList.remove('active');
 
     if (todoSidebar && todoSidebar.classList.contains('mobile-open')) {
         mobileNavMore.classList.add('active');
+    } else if (currentRoute === 'tomorrow') {
+        if (mobileNavTomorrow) mobileNavTomorrow.classList.add('active');
     } else if (currentRoute === 'today') {
         mobileNavToday.classList.add('active');
     } else if (currentRoute === 'inbox') {

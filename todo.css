@@ -1322,6 +1322,22 @@ body.dark .dropdown-submenu {
         transform: translateX(0);
     }
 
+    #inboxSidebarContainer,
+    #todaySidebarContainer,
+    #tomorrowSidebarContainer {
+        display: none !important;
+    }
+
+    .todo-sidebar .sidebar-menu {
+        padding-top: 8px !important;
+    }
+
+    .todo-sidebar .sidebar-section-title {
+        border-top: none !important;
+        margin-top: 0 !important;
+        padding-top: 8px !important;
+    }
+
     .sidebar-resizer {
         display: none !important;
     }
@@ -5679,6 +5695,7 @@ input.pill-btn {
     outline: none;
     text-align: center;
 }
+
 input.pill-btn::-webkit-calendar-picker-indicator,
 input.pill-btn::-webkit-clear-button,
 input.pill-btn::-webkit-inner-spin-button {
@@ -5918,12 +5935,14 @@ input.pill-btn::-webkit-inner-spin-button {
     display: none;
     width: 100%;
 }
+
 .countdown-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
     width: 100%;
 }
+
 .countdown-card {
     position: relative;
     border-radius: 16px;
@@ -5940,40 +5959,50 @@ input.pill-btn::-webkit-inner-spin-button {
     transition: transform 0.2s, box-shadow 0.2s;
     cursor: default;
 }
+
 .countdown-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
+
 .countdown-card.dragging {
     opacity: 0.5;
     transform: scale(0.95);
 }
+
 .countdown-card.drag-over {
     border: 2.5px dashed #4c6ef5 !important;
     transform: scale(0.98);
 }
+
 .countdown-card.theme-white {
     background: var(--card-bg);
     color: var(--text-primary);
     border: 1px solid var(--border);
 }
+
 .countdown-card.theme-white .countdown-days {
     color: #4c6ef5;
 }
+
 .countdown-card.theme-white .countdown-desc {
     color: var(--text-secondary);
 }
+
 .countdown-card.theme-dark {
     background: linear-gradient(135deg, #2c3e50, #34495e);
 }
+
 .countdown-card.theme-pink {
     background: linear-gradient(135deg, #f5b2b2, #f39c9c);
 }
+
 .countdown-card.theme-image,
 .countdown-card.theme-custom {
     background-size: cover;
     background-position: center;
 }
+
 /* Overlay for image backgrounds to keep text readable */
 .countdown-card-overlay {
     position: absolute;
@@ -5984,6 +6013,7 @@ input.pill-btn::-webkit-inner-spin-button {
     background: rgba(0, 0, 0, 0.4);
     z-index: 1;
 }
+
 .countdown-card-content {
     position: relative;
     z-index: 2;
@@ -5994,6 +6024,7 @@ input.pill-btn::-webkit-inner-spin-button {
     justify-content: space-between;
     align-items: center;
 }
+
 .countdown-title {
     font-size: 1rem;
     font-weight: 600;
@@ -6007,15 +6038,18 @@ input.pill-btn::-webkit-inner-spin-button {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
 .countdown-days {
     font-size: 2.5rem;
     font-weight: 800;
     letter-spacing: -1px;
 }
+
 .countdown-desc {
     font-size: 0.75rem;
     opacity: 0.8;
 }
+
 /* Hover action buttons */
 .countdown-actions {
     position: absolute;
@@ -6027,9 +6061,11 @@ input.pill-btn::-webkit-inner-spin-button {
     opacity: 0;
     transition: opacity 0.2s;
 }
+
 .countdown-card:hover .countdown-actions {
     opacity: 1;
 }
+
 .countdown-action-btn {
     background: rgba(255, 255, 255, 0.2);
     border: none;
@@ -6044,14 +6080,17 @@ input.pill-btn::-webkit-inner-spin-button {
     backdrop-filter: blur(4px);
     transition: background 0.2s;
 }
+
 .countdown-action-btn:hover {
     background: rgba(255, 255, 255, 0.4);
 }
+
 .countdown-card.contrast-light .countdown-action-btn {
     background: var(--bg-hover);
     color: var(--text-primary);
     border: 1px solid var(--border);
 }
+
 .countdown-card.contrast-light .countdown-action-btn:hover {
     background: var(--border);
 }
@@ -6069,6 +6108,7 @@ input.pill-btn::-webkit-inner-spin-button {
     justify-content: center;
     z-index: 2100;
 }
+
 .countdown-modal-card {
     background: var(--card-bg);
     border-radius: 20px;
@@ -6081,16 +6121,19 @@ input.pill-btn::-webkit-inner-spin-button {
     gap: 16px;
     box-sizing: border-box;
 }
+
 .countdown-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
+
 .countdown-modal-title {
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--text-primary);
 }
+
 .countdown-modal-close {
     background: none;
     border: none;
@@ -6102,14 +6145,17 @@ input.pill-btn::-webkit-inner-spin-button {
     align-items: center;
     justify-content: center;
 }
+
 .countdown-modal-close:hover {
     background: var(--bg-hover);
 }
+
 .countdown-modal-row {
     display: flex;
     align-items: center;
     gap: 12px;
 }
+
 .countdown-icon-select {
     width: 48px;
     height: 48px;
@@ -6123,9 +6169,11 @@ input.pill-btn::-webkit-inner-spin-button {
     position: relative;
     border: 2px solid transparent;
 }
+
 .countdown-icon-select:hover {
     border-color: #4c6ef5;
 }
+
 .countdown-icon-edit-badge {
     position: absolute;
     bottom: -2px;
@@ -6135,17 +6183,19 @@ input.pill-btn::-webkit-inner-spin-button {
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 50%;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 10px;
     color: var(--text-secondary);
 }
+
 .countdown-input-wrapper {
     flex: 1;
     position: relative;
 }
+
 .countdown-input {
     width: 100%;
     padding: 12px 36px 12px 16px;
@@ -6157,9 +6207,11 @@ input.pill-btn::-webkit-inner-spin-button {
     color: var(--text-primary);
     box-sizing: border-box;
 }
+
 .countdown-input:focus {
     border-color: #4c6ef5;
 }
+
 .countdown-input-icon {
     position: absolute;
     right: 12px;
@@ -6167,17 +6219,20 @@ input.pill-btn::-webkit-inner-spin-button {
     transform: translateY(-50%);
     color: var(--text-secondary);
 }
+
 .countdown-label {
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-primary);
     width: 50px;
 }
+
 .countdown-date-picker {
     flex: 1;
     display: flex;
     gap: 8px;
 }
+
 .countdown-date-picker select {
     flex: 1;
     padding: 10px;
@@ -6189,9 +6244,11 @@ input.pill-btn::-webkit-inner-spin-button {
     outline: none;
     box-sizing: border-box;
 }
+
 .countdown-date-picker select:focus {
     border-color: #4c6ef5;
 }
+
 /* Style thumbnails */
 .countdown-style-options {
     display: flex;
@@ -6200,6 +6257,7 @@ input.pill-btn::-webkit-inner-spin-button {
     overflow-x: auto;
     padding-bottom: 4px;
 }
+
 .countdown-style-thumb {
     width: 64px;
     height: 44px;
@@ -6209,11 +6267,13 @@ input.pill-btn::-webkit-inner-spin-button {
     border: 2px solid transparent;
     overflow: hidden;
     flex-shrink: 0;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
+
 .countdown-style-thumb.selected {
     border-color: #4c6ef5;
 }
+
 .countdown-style-thumb.selected::after {
     content: "✓";
     position: absolute;
@@ -6230,9 +6290,11 @@ input.pill-btn::-webkit-inner-spin-button {
     justify-content: center;
     font-weight: bold;
 }
+
 .countdown-style-thumb.thumb-color {
     border: 1px solid var(--border);
 }
+
 .countdown-style-thumb.thumb-image {
     background-size: cover;
     background-position: center;
@@ -6249,22 +6311,26 @@ input.pill-btn::-webkit-inner-spin-button {
     border-radius: 12px;
     border: 1px solid var(--border);
 }
+
 .countdown-color-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
 }
+
 .countdown-color-label {
     font-size: 0.85rem;
     font-weight: 500;
     color: var(--text-secondary);
 }
+
 .countdown-color-picker-wrapper {
     display: flex;
     align-items: center;
     gap: 6px;
 }
+
 .countdown-color-input-hidden {
     position: absolute;
     opacity: 0;
@@ -6272,19 +6338,22 @@ input.pill-btn::-webkit-inner-spin-button {
     height: 0;
     pointer-events: none;
 }
+
 .countdown-color-picker-btn {
     width: 24px;
     height: 24px;
     border-radius: 50%;
     cursor: pointer;
     border: 2px solid var(--card-bg);
-    box-shadow: 0 0 0 1px var(--border), 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 0 0 1px var(--border), 0 2px 4px rgba(0, 0, 0, 0.1);
     background-size: cover;
     transition: transform 0.1s;
 }
+
 .countdown-color-picker-btn:hover {
     transform: scale(1.1);
 }
+
 .countdown-color-preset {
     width: 18px;
     height: 18px;
@@ -6294,6 +6363,7 @@ input.pill-btn::-webkit-inner-spin-button {
     box-shadow: 0 0 0 1px var(--border);
     transition: transform 0.1s;
 }
+
 .countdown-color-preset:hover {
     transform: scale(1.15);
 }
@@ -6301,21 +6371,27 @@ input.pill-btn::-webkit-inner-spin-button {
 .countdown-card.contrast-light {
     color: #1e1e1e !important;
 }
+
 .countdown-card.contrast-light .countdown-title {
     color: #1e1e1e !important;
 }
+
 .countdown-card.contrast-light .countdown-desc {
     color: #555555 !important;
 }
+
 .countdown-card.contrast-dark {
     color: #ffffff !important;
 }
+
 .countdown-card.contrast-dark .countdown-title {
     color: #ffffff !important;
 }
+
 .countdown-card.contrast-dark .countdown-desc {
     color: rgba(255, 255, 255, 0.75) !important;
 }
+
 .countdown-upload-btn {
     display: block;
     width: 100%;
@@ -6330,9 +6406,11 @@ input.pill-btn::-webkit-inner-spin-button {
     cursor: pointer;
     transition: background 0.2s;
 }
+
 .countdown-upload-btn:hover {
     background: rgba(80, 150, 255, 0.1);
 }
+
 /* Preview card in modal */
 .countdown-preview-wrapper {
     display: flex;
@@ -6341,6 +6419,7 @@ input.pill-btn::-webkit-inner-spin-button {
     gap: 8px;
     width: 100%;
 }
+
 /* Bottom buttons */
 .countdown-modal-footer {
     display: flex;
@@ -6348,6 +6427,7 @@ input.pill-btn::-webkit-inner-spin-button {
     gap: 12px;
     margin-top: 8px;
 }
+
 .countdown-btn-cancel {
     padding: 10px 20px;
     border: 1.5px solid var(--border);
@@ -6357,9 +6437,11 @@ input.pill-btn::-webkit-inner-spin-button {
     font-weight: 600;
     cursor: pointer;
 }
+
 .countdown-btn-cancel:hover {
     background: var(--bg-hover);
 }
+
 .countdown-btn-ok {
     padding: 10px 24px;
     border: none;
@@ -6369,6 +6451,7 @@ input.pill-btn::-webkit-inner-spin-button {
     font-weight: 600;
     cursor: pointer;
 }
+
 .countdown-btn-ok:hover {
     background: #3b5bdb;
 }
@@ -6385,9 +6468,10 @@ input.pill-btn::-webkit-inner-spin-button {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 6px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     z-index: 2200;
 }
+
 .emoji-popover-item {
     font-size: 20px;
     padding: 6px;
@@ -6395,6 +6479,7 @@ input.pill-btn::-webkit-inner-spin-button {
     border-radius: 6px;
     text-align: center;
 }
+
 .emoji-popover-item:hover {
     background: var(--bg-hover);
 }
@@ -6436,6 +6521,7 @@ body.dark .confirm-box {
         transform: scale(0.9);
         opacity: 0;
     }
+
     to {
         transform: scale(1);
         opacity: 1;
@@ -6629,6 +6715,7 @@ body.dark .modal-tab.active {
     gap: 10px;
     margin-top: 6px;
 }
+
 .attachment-thumb-wrapper {
     position: relative;
     width: 100%;
@@ -6639,6 +6726,7 @@ body.dark .modal-tab.active {
     border: 1px solid var(--border);
     background-color: var(--hover-bg);
 }
+
 .attachment-thumb {
     width: 100%;
     height: 100%;
@@ -6646,9 +6734,11 @@ body.dark .modal-tab.active {
     display: block;
     transition: transform 0.2s ease;
 }
+
 .attachment-thumb-wrapper:hover .attachment-thumb {
     transform: scale(1.05);
 }
+
 .attachment-delete-btn {
     position: absolute;
     top: 6px;
@@ -6670,9 +6760,11 @@ body.dark .modal-tab.active {
     font-size: 14px;
     line-height: 1;
 }
+
 .attachment-thumb-wrapper:hover .attachment-delete-btn {
     opacity: 1;
 }
+
 .attachment-delete-btn:hover {
     background-color: rgba(220, 38, 38, 0.9);
 }
@@ -6691,6 +6783,7 @@ body.dark .modal-tab.active {
     cursor: pointer;
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
+
 .attachment-upload-btn:hover {
     background-color: var(--hover-bg);
     border-color: var(--accent);
@@ -6713,10 +6806,12 @@ body.dark .modal-tab.active {
     pointer-events: none;
     transition: opacity 0.2s ease;
 }
+
 .lightbox-overlay.active {
     opacity: 1;
     pointer-events: auto;
 }
+
 .lightbox-content {
     max-width: 90vw;
     max-height: 90vh;
@@ -6725,18 +6820,21 @@ body.dark .modal-tab.active {
     align-items: center;
     justify-content: center;
 }
+
 .lightbox-img {
     max-width: 90vw;
     max-height: 90vh;
     object-fit: contain;
     border-radius: 8px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
     transform: scale(0.95);
     transition: transform 0.2s ease;
 }
+
 .lightbox-overlay.active .lightbox-img {
     transform: scale(1);
 }
+
 .lightbox-close-btn {
     position: absolute;
     top: 16px;
@@ -6755,6 +6853,7 @@ body.dark .modal-tab.active {
     transition: background-color 0.2s;
     z-index: 10000;
 }
+
 .lightbox-close-btn:hover {
     background-color: rgba(255, 255, 255, 0.2);
 }
@@ -6766,12 +6865,14 @@ body.dark .modal-tab.active {
     display: none;
     width: 100%;
 }
+
 .habit-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
     width: 100%;
 }
+
 .habit-card {
     position: relative;
     background-color: var(--card-bg);
@@ -6786,12 +6887,14 @@ body.dark .modal-tab.active {
     overflow: hidden;
     cursor: pointer;
 }
+
 .habit-header {
     display: flex;
     align-items: center;
     gap: 12px;
     width: 100%;
 }
+
 .habit-icon-circle {
     width: 40px;
     height: 40px;
@@ -6803,6 +6906,7 @@ body.dark .modal-tab.active {
     color: #fff;
     flex-shrink: 0;
 }
+
 .habit-title-container {
     display: flex;
     flex-direction: column;
@@ -6810,6 +6914,7 @@ body.dark .modal-tab.active {
     flex-grow: 1;
     min-width: 0;
 }
+
 .habit-title {
     font-size: 0.95rem;
     font-weight: 600;
@@ -6818,6 +6923,7 @@ body.dark .modal-tab.active {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
 .habit-stats {
     display: flex;
     align-items: center;
@@ -6826,12 +6932,14 @@ body.dark .modal-tab.active {
     color: var(--text-secondary);
     font-weight: 500;
 }
+
 .habit-stat-item {
     display: flex;
     align-items: center;
     gap: 3px;
     opacity: 0.85;
 }
+
 .habit-circles-row {
     display: flex;
     justify-content: space-between;
@@ -6839,6 +6947,7 @@ body.dark .modal-tab.active {
     margin-top: 16px;
     gap: 4px;
 }
+
 .habit-circle-wrapper {
     display: flex;
     flex-direction: column;
@@ -6846,6 +6955,7 @@ body.dark .modal-tab.active {
     gap: 4px;
     flex: 1;
 }
+
 .habit-circle {
     width: 32px;
     height: 32px;
@@ -6859,30 +6969,37 @@ body.dark .modal-tab.active {
     transition: background-color 0.2s, transform 0.1s, border-color 0.2s;
     color: transparent;
 }
+
 .habit-circle:hover {
     background-color: var(--border);
 }
+
 .habit-circle:active {
     transform: scale(0.9);
 }
+
 .habit-circle.checked {
     background-color: #3b82f6;
     border-color: #3b82f6;
     color: #fff;
 }
+
 .habit-circle.today {
     border-width: 2px;
     border-color: var(--text-secondary);
 }
+
 .habit-circle.checked.today {
     border-color: #3b82f6;
 }
+
 .habit-circle-day-label {
     font-size: 0.65rem;
     color: var(--text-secondary);
     font-weight: 500;
     text-transform: uppercase;
 }
+
 .habit-actions {
     position: absolute;
     top: 8px;
@@ -6893,9 +7010,11 @@ body.dark .modal-tab.active {
     opacity: 0;
     transition: opacity 0.2s;
 }
+
 .habit-card:hover .habit-actions {
     opacity: 1;
 }
+
 .habit-action-btn {
     background: rgba(128, 128, 128, 0.1);
     border: none;
@@ -6909,6 +7028,7 @@ body.dark .modal-tab.active {
     justify-content: center;
     transition: background-color 0.2s, color 0.2s;
 }
+
 .habit-action-btn:hover {
     background-color: rgba(128, 128, 128, 0.2);
     color: var(--text);
@@ -6927,6 +7047,7 @@ body.dark .modal-tab.active {
     justify-content: center;
     z-index: 1000;
 }
+
 .habit-stats-card {
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -6935,27 +7056,31 @@ body.dark .modal-tab.active {
     max-width: 90%;
     padding: 24px;
     box-sizing: border-box;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
     gap: 20px;
     color: var(--text);
 }
+
 body.dark .habit-stats-card {
     background: #1e1e1e;
     border-color: #2e2e2e;
 }
+
 .habit-stats-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     width: 100%;
 }
+
 .habit-stats-title-block {
     display: flex;
     align-items: center;
     gap: 12px;
 }
+
 .habit-stats-icon {
     width: 44px;
     height: 44px;
@@ -6966,11 +7091,13 @@ body.dark .habit-stats-card {
     font-size: 22px;
     color: #fff;
 }
+
 .habit-stats-title {
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--text);
 }
+
 .habit-stats-close {
     background: transparent;
     border: none;
@@ -6983,6 +7110,7 @@ body.dark .habit-stats-card {
     justify-content: center;
     transition: background-color 0.2s;
 }
+
 .habit-stats-close:hover {
     background-color: var(--bg-hover);
 }
@@ -6992,6 +7120,7 @@ body.dark .habit-stats-card {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
 }
+
 .habit-stat-card {
     background: var(--bg-hover);
     border: 1px solid var(--border);
@@ -7001,10 +7130,12 @@ body.dark .habit-stats-card {
     flex-direction: column;
     gap: 6px;
 }
+
 body.dark .habit-stat-card {
     background: #252525;
     border-color: #333;
 }
+
 .habit-stat-label {
     font-size: 0.78rem;
     color: var(--text-secondary);
@@ -7013,6 +7144,7 @@ body.dark .habit-stat-card {
     align-items: center;
     gap: 6px;
 }
+
 .habit-stat-value {
     font-size: 1.1rem;
     font-weight: 700;
@@ -7024,21 +7156,25 @@ body.dark .habit-stat-card {
     flex-direction: column;
     gap: 12px;
 }
+
 .habit-cal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 4px;
 }
+
 .habit-cal-month-title {
     font-size: 0.95rem;
     font-weight: 600;
     text-transform: capitalize;
 }
+
 .habit-cal-nav {
     display: flex;
     gap: 4px;
 }
+
 .habit-cal-nav-btn {
     background: transparent;
     border: none;
@@ -7052,6 +7188,7 @@ body.dark .habit-stat-card {
     justify-content: center;
     transition: background-color 0.2s;
 }
+
 .habit-cal-nav-btn:hover {
     background-color: var(--bg-hover);
 }
@@ -7065,33 +7202,40 @@ body.dark .habit-stat-card {
     font-weight: 600;
     padding-bottom: 4px;
 }
+
 .habit-cal-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     row-gap: 12px;
 }
+
 .calendar-cell {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 4px;
 }
+
 .calendar-cell.current-month,
 .calendar-cell.current-month * {
     cursor: pointer;
 }
+
 .calendar-cell .day-number {
     font-size: 0.78rem;
     font-weight: 500;
     color: var(--text-secondary);
 }
+
 .calendar-cell.current-month .day-number {
     color: var(--text);
 }
+
 .calendar-cell.today .day-number {
     color: #3b82f6;
     font-weight: 700;
 }
+
 .calendar-cell .cell-circle {
     width: 28px;
     height: 28px;
@@ -7105,24 +7249,30 @@ body.dark .habit-stat-card {
     transition: background-color 0.2s, border-color 0.2s, transform 0.1s;
     color: transparent;
 }
+
 body.dark .calendar-cell .cell-circle {
     background-color: #2a2a2a;
 }
+
 .calendar-cell.current-month:hover .cell-circle {
     background-color: var(--border);
 }
+
 .calendar-cell.current-month:active .cell-circle {
     transform: scale(0.9);
 }
+
 .calendar-cell.checked .cell-circle {
     background-color: #3b82f6 !important;
     border-color: #3b82f6 !important;
     color: #fff !important;
 }
+
 .calendar-cell.muted .cell-circle {
     opacity: 0.3;
     pointer-events: none;
 }
+
 .calendar-cell.muted .day-number {
     opacity: 0.3;
 }
@@ -7156,7 +7306,8 @@ body.dark .calendar-cell .cell-circle {
 }
 
 .sidebar-status-badge.offline {
-    color: #f97316; /* Amber color for warnings, less aggressive than red but clear */
+    color: #f97316;
+    /* Amber color for warnings, less aggressive than red but clear */
     background: rgba(249, 115, 22, 0.1);
     border-color: rgba(249, 115, 22, 0.2);
 }
@@ -7168,7 +7319,8 @@ body.dark .calendar-cell .cell-circle {
 }
 
 .sidebar-status-badge.online {
-    color: #10b981; /* Emerald green */
+    color: #10b981;
+    /* Emerald green */
     background: rgba(16, 185, 129, 0.1);
     border-color: rgba(16, 185, 129, 0.2);
 }
@@ -7179,8 +7331,14 @@ body.dark .calendar-cell .cell-circle {
 }
 
 @keyframes offline-pulse {
-    0% { opacity: 0.6; }
-    100% { opacity: 1; transform: scale(1.1); }
+    0% {
+        opacity: 0.6;
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
 }
 
 /* Всплывающий баннер оффлайн режима */

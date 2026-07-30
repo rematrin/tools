@@ -2423,7 +2423,41 @@
             return (match && match[1]) ? match[1] : null;
         }
 
-        function importPlaylist(listId, autoReplace = false) {
+        async function fetchPlaylistVideos(listId) {
+            const apiKey = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
+            let videoItems = [];
+            let nextPageToken = "";
+            let pagesFetched = 0;
+            // Limit to 4 pages (200 videos) to avoid long wait times
+            while (pagesFetched < 4) {
+                const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${listId}&key=${apiKey}${nextPageToken ? `&pageToken=${nextPageToken}` : ""}`;
+                try {
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    if (data && data.items && data.items.length > 0) {
+                        data.items.forEach(item => {
+                            if (item.snippet && item.snippet.resourceId && item.snippet.resourceId.videoId) {
+                                videoItems.push({
+                                    id: item.snippet.resourceId.videoId,
+                                    title: item.snippet.title || "Без названия"
+                                });
+                            }
+                        });
+                        nextPageToken = data.nextPageToken;
+                        if (!nextPageToken) break;
+                        pagesFetched++;
+                    } else {
+                        break;
+                    }
+                } catch (e) {
+                    console.error("Ошибка при получении видео плейлиста:", e);
+                    break;
+                }
+            }
+            return videoItems;
+        }
+
+        async function importPlaylist(listId, autoReplace = false) {
             if (isPlaying && isCrossfading) { alert("Подождите конца перехода"); return; }
 
             window.isScanning = true;
@@ -2431,6 +2465,76 @@
             window.scanningListId = listId;
             document.getElementById('current-track-info').innerText = "Сканирую плейлист...";
 
+            // Create a timeout to prevent getting stuck
+            const scanTimeout = setTimeout(() => {
+                if (window.isScanning && window.scanningListId === listId) {
+                    window.isScanning = false;
+                    window.autoReplacePlaylist = false;
+                    window.scanningListId = null;
+                    document.getElementById('current-track-info').innerText = "Превышено время ожидания при сканировании.";
+                    alert("Не удалось загрузить плейлист. Возможно, он пустой, приватный или содержит заблокированные видео.");
+                    updateUI();
+                }
+            }, 12000);
+
+            // Try to use Google YouTube API first
+            const apiTracks = await fetchPlaylistVideos(listId);
+            if (apiTracks && apiTracks.length > 0) {
+                clearTimeout(scanTimeout);
+                playlist = [];
+                trackIndex = 0;
+                currentDeck = 1;
+                p1.stopVideo(); p2.stopVideo();
+                isPlaying = false;
+                updatePlayPauseIcon();
+
+                const isSaved = window.loadedPlaylistUrl && window.loadedPlaylistUrl.includes(`list=${listId}`);
+                if (!isSaved) {
+                    window.loadedPlaylistName = null;
+                    window.loadedPlaylistUrl = null;
+                }
+
+                window.currentListId = listId;
+
+                apiTracks.forEach(track => {
+                    playlist.push(track);
+                });
+
+                renderPlaylist();
+                window.isScanning = false;
+                window.autoReplacePlaylist = false;
+
+                // Save titles to cache
+                let newlyFetched = {};
+                apiTracks.forEach(track => {
+                    newlyFetched[track.id] = track.title;
+                });
+                window.activePlaylistCachedTracks = Object.assign({}, window.activePlaylistCachedTracks || {}, newlyFetched);
+
+                const pId = getPlaylistIdByListId(listId);
+                if (pId) {
+                    saveCachedTracksToFirebase(pId, newlyFetched);
+                }
+
+                if (window.currentUser && window.db) {
+                    const videoIds = apiTracks.map(t => t.id);
+                    updateSavedPlaylistInfo(listId, videoIds[0], videoIds.length, videoIds);
+                }
+
+                window.scanningListId = null;
+                updateUrlState();
+
+                if (!isPlaying) {
+                    loadDeck(p1, 0);
+                    prepareNext();
+                    updateUI();
+                }
+                document.getElementById('importBox').classList.remove('show');
+                return;
+            }
+
+            // Fallback: If YouTube Data API failed or returned 0 items, use the hidden player scanner
+            console.log("Fallback to hidden player scanner...");
             if (window.scannerPlayer) {
                 try {
                     window.scannerPlayer.destroy();
@@ -2451,7 +2555,22 @@
                 playerVars: { origin: window.location.origin },
                 events: {
                     'onReady': (e) => { e.target.cuePlaylist({ list: listId }); },
-                    'onStateChange': onPlayerStateChange
+                    'onStateChange': (e) => {
+                        if (e.data === 5) {
+                            clearTimeout(scanTimeout);
+                        }
+                        onPlayerStateChange(e);
+                    },
+                    'onError': (e) => {
+                        console.error("Scanner player error:", e.data);
+                        clearTimeout(scanTimeout);
+                        window.isScanning = false;
+                        window.autoReplacePlaylist = false;
+                        window.scanningListId = null;
+                        document.getElementById('current-track-info').innerText = "Ошибка сканирования.";
+                        alert("Ошибка проигрывателя при сканировании плейлиста.");
+                        updateUI();
+                    }
                 }
             });
 

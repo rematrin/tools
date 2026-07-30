@@ -543,15 +543,7 @@
             <div class="settings-modal-sidebar">
                 <h2 class="settings-sidebar-title">Настройки</h2>
                 <nav class="settings-sidebar-menu">
-                    <button class="settings-menu-item active" data-tab="account">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
-                            height="16">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                        <span>Аккаунт</span>
-                    </button>
-                    <button class="settings-menu-item" data-tab="general">
+                    <button class="settings-menu-item active" data-tab="general">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
                             height="16">
                             <circle cx="12" cy="12" r="3"></circle>
@@ -587,7 +579,7 @@
                 <button class="settings-close-btn" id="btnSettingsClose" aria-label="Закрыть настройки">&times;</button>
 
                 <!-- Вкладка: Основное -->
-                <div class="settings-tab-pane" id="tab-general" style="display: none;">
+                <div class="settings-tab-pane active" id="tab-general">
                     <h3 style="margin-top: 0; font-size: 1.1rem; font-weight: 600; color: var(--text);">Общие настройки
                     </h3>
                     <div class="settings-section">
@@ -642,36 +634,6 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Вкладка: Временная замена Аккаунт -->
-                <div class="settings-tab-pane active" id="tab-account">
-                    <div class="settings-profile-header">
-                        <div class="settings-avatar-wrapper">
-                            <img src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" alt="Avatar"
-                                class="settings-profile-avatar" id="settingsProfileAvatar">
-                        </div>
-                        <div class="settings-profile-info">
-                            <h3 class="settings-profile-name" id="settingsProfileName">martin</h3>
-                        </div>
-                    </div>
-
-                    <div class="settings-section">
-                        <div class="settings-field">
-                            <div class="settings-field-info">
-                                <label>Электронная почта</label>
-                                <span id="settingsEmailText">rematrin@gmail.com</span>
-                            </div>
-                        </div>
-                        <div class="settings-field">
-                            <div class="settings-field-info">
-                                <label>Пароль</label>
-                                <span>••••••••</span>
-                            </div>
-                            <button class="settings-field-action-btn" id="btnSettingsChangePassword">Изменить
-                                пароль</button>
                         </div>
                     </div>
                 </div>

@@ -2821,15 +2821,23 @@
                 let fetchedTitle = null;
                 if (window.currentSavedPlaylists) {
                     const p = window.currentSavedPlaylists.find(x => x.id === playlistId);
-                    if (p && (!p.name || p.name === "YouTube Плейлист" || p.name === "Плейлист YouTube" || p.name === "Загрузка...")) {
-                        try {
-                            const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${firstVideoId}`);
-                            const fetchedData = await res.json();
-                            if (fetchedData && fetchedData.title) {
-                                updatedData.name = fetchedData.title;
-                                fetchedTitle = fetchedData.title;
+                    if (p && (!p.name || p.name === "YouTube Плейлист" || p.name === "Плейлист YouTube" || p.name === "Загрузка..." || p.name === "YouTube Видео")) {
+                        if (listId) {
+                            const plTitle = await fetchPlaylistTitle(listId);
+                            if (plTitle) {
+                                updatedData.name = plTitle;
+                                fetchedTitle = plTitle;
                             }
-                        } catch (e) { }
+                        } else {
+                            try {
+                                const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${firstVideoId}`);
+                                const fetchedData = await res.json();
+                                if (fetchedData && fetchedData.title) {
+                                    updatedData.name = fetchedData.title;
+                                    fetchedTitle = fetchedData.title;
+                                }
+                            } catch (e) { }
+                        }
                     }
                 }
 
@@ -3059,6 +3067,22 @@
             }
         }
 
+        async function fetchPlaylistTitle(listId) {
+            if (!listId) return null;
+            const apiKey = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
+            const url = `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${listId}&key=${apiKey}`;
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data && data.items && data.items.length > 0 && data.items[0].snippet) {
+                    return data.items[0].snippet.title;
+                }
+            } catch (e) {
+                console.error("Ошибка при получении названия плейлиста:", e);
+            }
+            return null;
+        }
+
         async function submitNewPlaylist() {
             const urlInput = document.getElementById('modalPlaylistUrl');
             const urlValue = urlInput.value.trim();
@@ -3086,7 +3110,12 @@
 
             let finalName = defaultName;
 
-            if (videoId) {
+            if (listId) {
+                const fetchedPlTitle = await fetchPlaylistTitle(listId);
+                if (fetchedPlTitle) {
+                    finalName = fetchedPlTitle;
+                }
+            } else if (videoId) {
                 try {
                     const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
                     const data = await res.json();

@@ -11028,6 +11028,8 @@ async function fetchAndRenderGCalEvents(force = false, allowInteractive = false)
         return;
     }
 
+    const routeAtStart = currentRoute;
+
     const now = Date.now();
     const isCacheValid = !force &&
         (now - gcalLastFetchTime < 60 * 1000) &&
@@ -11049,18 +11051,25 @@ async function fetchAndRenderGCalEvents(force = false, allowInteractive = false)
 
     try {
         const calendars = await window.GCalendarService.fetchCalendars(allowInteractive);
+        if (currentRoute !== routeAtStart) {
+            if (currentRoute !== 'today' && currentRoute !== 'tomorrow') {
+                banner.style.display = 'none';
+            }
+            return;
+        }
+
         const visibleCalendars = calendars.filter(c => !gcalHiddenCalendars.includes(c.id));
 
         if (visibleCalendars.length === 0) {
             gcalCachedEvents = [];
-            gcalCachedDate = currentRoute;
+            gcalCachedDate = routeAtStart;
             gcalLastFetchTime = Date.now();
             renderGCalEventsBanner([]);
             return;
         }
 
         const targetDate = new Date();
-        if (currentRoute === 'tomorrow') {
+        if (routeAtStart === 'tomorrow') {
             targetDate.setDate(targetDate.getDate() + 1);
         }
 
@@ -11085,6 +11094,13 @@ async function fetchAndRenderGCalEvents(force = false, allowInteractive = false)
         });
 
         const results = await Promise.all(fetchPromises);
+        if (currentRoute !== routeAtStart) {
+            if (currentRoute !== 'today' && currentRoute !== 'tomorrow') {
+                banner.style.display = 'none';
+            }
+            return;
+        }
+
         const allEvents = results.flat();
 
         allEvents.sort((a, b) => {
@@ -11102,11 +11118,17 @@ async function fetchAndRenderGCalEvents(force = false, allowInteractive = false)
         });
 
         gcalCachedEvents = allEvents;
-        gcalCachedDate = currentRoute;
+        gcalCachedDate = routeAtStart;
         gcalLastFetchTime = Date.now();
 
         renderGCalEventsBanner(allEvents);
     } catch (err) {
+        if (currentRoute !== routeAtStart) {
+            if (currentRoute !== 'today' && currentRoute !== 'tomorrow') {
+                banner.style.display = 'none';
+            }
+            return;
+        }
         console.error("Error fetching calendar events:", err);
         const listEl = document.getElementById('gcalBannerEventsList');
         const toggleBtn = document.getElementById('btnGCalBannerToggle');
@@ -11160,6 +11182,11 @@ function renderGCalEventsBanner(events) {
     const toggleBtn = document.getElementById('btnGCalBannerToggle');
 
     if (!banner) return;
+
+    if (currentRoute !== 'today' && currentRoute !== 'tomorrow') {
+        banner.style.display = 'none';
+        return;
+    }
 
     if (!events || events.length === 0) {
         banner.style.display = 'none';

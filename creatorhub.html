@@ -421,26 +421,51 @@
 
                         <div class="settings-row">
                             <div class="settings-row-left">
-                                <span class="settings-row-label">Notion</span>
-                            </div>
-                            <input type="text" id="settingNotionLink" class="settings-row-input"
-                                placeholder="https://notion.so/..." autocomplete="off">
-                        </div>
-
-                        <div class="settings-row" style="margin-top: 12px;">
-                            <div class="settings-row-left">
-                                <span class="settings-row-label">Доска</span>
-                            </div>
-                            <input type="text" id="settingBoardLink" class="settings-row-input"
-                                placeholder="Ссылка на доску..." autocomplete="off">
-                        </div>
-
-                        <div class="settings-row" style="margin-top: 12px;">
-                            <div class="settings-row-left">
                                 <span class="settings-row-label">Ссылка на видео</span>
                             </div>
                             <input type="text" id="settingVideoLink" class="settings-row-input"
                                 placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+                        </div>
+
+                        <!-- Кнопки и ссылки -->
+                        <div class="settings-buttons-section" style="margin-top: 16px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
+                            <div class="settings-buttons-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="info-label" style="font-weight: 700; margin-bottom: 0;">Кнопки и ссылки</span>
+                                    <button id="btnOpenGlobalButtons" type="button" class="btn-gear-settings" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 4px; display: flex; align-items: center; transition: color 0.2s;" title="База кнопок">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                
+                                <div class="add-button-dropdown-wrapper" style="position: relative;">
+                                    <button id="btnSelectButtonToAdd" type="button" class="btn-add-button-dropdown">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        </svg>
+                                        Добавить кнопку
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left: 2px;">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </button>
+                                    <div id="dropdownAddButtonOptions" class="add-button-dropdown-menu" style="display: none;">
+                                        <!-- Кнопки добавятся динамически -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <p style="font-size: 0.82rem; color: var(--ch-text-gray); margin-bottom: 12px; margin-top: 0;">Добавьте кнопки, которые будут отображаться в этом видео.</p>
+                            
+                            <div style="font-size: 0.88rem; font-weight: 600; color: var(--ch-text-dark); margin-bottom: 10px;">Добавленные кнопки</div>
+                            
+                            <div id="selectedVideoButtonsContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
+                                <!-- Сюда будут рендериться добавленные кнопки для видео -->
+                            </div>
+                            
+                            <p style="font-size: 0.82rem; color: var(--ch-text-gray); margin-top: 12px; margin-bottom: 0;">Эти кнопки будут отображаться на вкладке «Информация» в этом видео.</p>
                         </div>
 
                         <div class="settings-row"
@@ -619,6 +644,38 @@
             <div class="confirm-modal-actions">
                 <button class="confirm-btn-cancel" id="btnConfirmDeleteLinkCancel">Отмена</button>
                 <button class="confirm-btn-danger" id="btnConfirmDeleteLinkConfirm">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: База кнопок -->
+    <div class="confirm-modal-overlay" id="globalButtonsModal" style="display: none; z-index: 2100;">
+        <div class="confirm-modal-card" style="max-width: 500px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <h3 class="confirm-modal-title">База кнопок</h3>
+                <button type="button" id="btnGlobalButtonsCloseX" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--ch-text-gray); line-height: 1; padding: 0 4px;">&times;</button>
+            </div>
+            
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px;">
+                <p class="confirm-modal-desc" style="font-size: 0.88rem; margin: 0; line-height: 1.4;">
+                    Здесь хранятся все ваши кнопки.<br>Они доступны для добавления в любые видео.
+                </p>
+                <button id="btnCreateGlobalButton" class="confirm-btn-danger" style="background: none; border: 1px solid var(--ch-purple); color: var(--ch-purple); padding: 8px 14px; border-radius: 8px; font-weight: 500; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Создать кнопку
+                </button>
+            </div>
+            
+            <!-- Список кнопок в базе -->
+            <div id="globalButtonsListContainer" style="border: 1px solid var(--ch-border); border-radius: 12px; overflow-y: auto; flex-grow: 1; min-height: 200px; max-height: 350px; background: var(--ch-bg);">
+                <!-- Элементы базы кнопок будут рендериться здесь динамически -->
+            </div>
+            
+            <div class="confirm-modal-actions" style="margin-top: 20px; justify-content: flex-end;">
+                <button class="confirm-btn-cancel" id="btnGlobalButtonsClose" style="border-radius: 8px; padding: 10px 20px; font-weight: 500;">Закрыть</button>
             </div>
         </div>
     </div>

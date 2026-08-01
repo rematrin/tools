@@ -186,13 +186,20 @@ const infoTags = document.getElementById("infoTags");
 const infoDate = document.getElementById("infoDate");
 const infoCreatedDate = document.getElementById("infoCreatedDate");
 const referencesContent = document.getElementById("referencesContent");
-const settingNotionLink = document.getElementById("settingNotionLink");
-const btnOpenNotion = document.getElementById("btnOpenNotion");
-const settingBoardLink = document.getElementById("settingBoardLink");
-const btnOpenBoard = document.getElementById("btnOpenBoard");
 const videoButtonsContainer = document.getElementById("videoButtonsContainer");
 const settingVideoLink = document.getElementById("settingVideoLink");
 const btnOpenStudio = document.getElementById("btnOpenStudio");
+
+// Новые динамические элементы кнопок
+const btnOpenGlobalButtons = document.getElementById("btnOpenGlobalButtons");
+const globalButtonsModal = document.getElementById("globalButtonsModal");
+const btnGlobalButtonsCloseX = document.getElementById("btnGlobalButtonsCloseX");
+const btnGlobalButtonsClose = document.getElementById("btnGlobalButtonsClose");
+const btnCreateGlobalButton = document.getElementById("btnCreateGlobalButton");
+const globalButtonsListContainer = document.getElementById("globalButtonsListContainer");
+const btnSelectButtonToAdd = document.getElementById("btnSelectButtonToAdd");
+const dropdownAddButtonOptions = document.getElementById("dropdownAddButtonOptions");
+const selectedVideoButtonsContainer = document.getElementById("selectedVideoButtonsContainer");
 
 // Элементы модального окна удаления ссылки из описания
 const confirmDeleteLinkModal = document.getElementById("confirmDeleteLinkModal");
@@ -264,6 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (typeof loadTagConfigs === "function") {
         loadTagConfigs();
     }
+    loadGlobalButtons();
     if (typeof initVideoDetailMobileBottomSheet === "function") {
         initVideoDetailMobileBottomSheet();
     }
@@ -987,27 +995,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Сохранение ссылки Notion в настройках
-    if (settingNotionLink) {
-        settingNotionLink.addEventListener("input", (e) => {
-            if (!selectedVideo) return;
-            const newLink = e.target.value;
-            selectedVideo.notionLink = newLink;
-            saveVideoData("notionLink", newLink);
-            updateNotionButtonState();
-        });
-    }
 
-    // Сохранение ссылки на Доску в настройках
-    if (settingBoardLink) {
-        settingBoardLink.addEventListener("input", (e) => {
-            if (!selectedVideo) return;
-            const newLink = e.target.value;
-            selectedVideo.boardLink = newLink;
-            saveVideoData("boardLink", newLink);
-            updateNotionButtonState();
-        });
-    }
 
     // Сохранение ссылки на Видео в настройках
     if (settingVideoLink) {
@@ -2115,17 +2103,14 @@ function selectVideoItem(id) {
     }
 
     // Вкладка: Настройки
-    if (settingNotionLink && document.activeElement !== settingNotionLink) {
-        settingNotionLink.value = selectedVideo.notionLink || "";
-    }
-    if (settingBoardLink && document.activeElement !== settingBoardLink) {
-        settingBoardLink.value = selectedVideo.boardLink || "";
-    }
     if (settingVideoLink && document.activeElement !== settingVideoLink) {
         settingVideoLink.value = selectedVideo.videoLink || "";
     }
 
-    // Обновляем состояние кнопки Notion
+    migrateVideosData(videos);
+    renderSelectedVideoButtons();
+
+    // Обновляем состояние кнопок
     updateNotionButtonState();
 
     // Показываем контент, скрываем заглушку
@@ -2483,9 +2468,8 @@ function clearDetailSidebar() {
         dueDateBtnText.textContent = "Выбрать дату";
     }
     if (referencesContent) referencesContent.innerHTML = "";
-    if (settingNotionLink) settingNotionLink.value = "";
-    if (settingBoardLink) settingBoardLink.value = "";
     if (settingVideoLink) settingVideoLink.value = "";
+    renderSelectedVideoButtons();
     updateNotionButtonState();
 
     // Снимаем выделение со всех карточек видео
@@ -2987,56 +2971,503 @@ function getYouTubeId(url) {
     return null;
 }
 
+// === ГЛОБАЛЬНАЯ БАЗА ПОЛЬЗОВАТЕЛЬСКИХ КНОПОК ===
+let globalButtons = [];
+
+function loadGlobalButtons() {
+    try {
+        const stored = localStorage.getItem("creatorhub_global_buttons");
+        if (stored) {
+            globalButtons = JSON.parse(stored);
+            
+            // Clean up example buttons if we haven't done it yet
+            if (!localStorage.getItem("creatorhub_global_buttons_cleaned")) {
+                const usedButtonIds = new Set();
+                if (Array.isArray(videos)) {
+                    videos.forEach(v => {
+                        if (v.buttons) {
+                            v.buttons.forEach(vb => usedButtonIds.add(vb.buttonId));
+                        }
+                    });
+                }
+                
+                globalButtons = globalButtons.filter(b => {
+                    if (usedButtonIds.has(b.id)) return true;
+                    if (["gb_script", "gb_figma", "gb_github"].includes(b.id)) return false;
+                    return true;
+                });
+                
+                saveGlobalButtons();
+                localStorage.setItem("creatorhub_global_buttons_cleaned", "true");
+            }
+        } else {
+            globalButtons = [];
+            saveGlobalButtons();
+            localStorage.setItem("creatorhub_global_buttons_cleaned", "true");
+        }
+    } catch (e) {
+        console.error("Error loading global buttons", e);
+    }
+}
+
+function saveGlobalButtons() {
+    try {
+        localStorage.setItem("creatorhub_global_buttons", JSON.stringify(globalButtons));
+    } catch (e) {
+        console.error("Error saving global buttons", e);
+    }
+}
+
+// Migration logic for legacy videos (Notion and Board)
+function migrateVideosData(videosList) {
+    if (!videosList) return;
+    loadGlobalButtons(); // Ensure global buttons are loaded
+    let migratedAny = false;
+    let globalButtonsChanged = false;
+
+    videosList.forEach((video) => {
+        if (!video.buttons) {
+            video.buttons = [];
+            let changed = false;
+
+            if (video.notionLink && video.notionLink.trim() !== "") {
+                let notionBtn = globalButtons.find(b => b.name.toLowerCase() === "notion" || b.id === "gb_notion");
+                if (!notionBtn) {
+                    notionBtn = { id: "gb_notion", name: "Notion" };
+                    globalButtons.push(notionBtn);
+                    globalButtonsChanged = true;
+                }
+                video.buttons.push({ buttonId: notionBtn.id, url: video.notionLink });
+                changed = true;
+            }
+
+            if (video.boardLink && video.boardLink.trim() !== "") {
+                let boardBtn = globalButtons.find(b => b.name.toLowerCase() === "доска" || b.id === "gb_board");
+                if (!boardBtn) {
+                    boardBtn = { id: "gb_board", name: "Доска" };
+                    globalButtons.push(boardBtn);
+                    globalButtonsChanged = true;
+                }
+                video.buttons.push({ buttonId: boardBtn.id, url: video.boardLink });
+                changed = true;
+            }
+
+            if (changed) {
+                migratedAny = true;
+                if (currentUid) {
+                    try {
+                        updateDoc(doc(db, "users", currentUid, "videos", video.id), {
+                            buttons: video.buttons
+                        });
+                    } catch (err) {
+                        console.error("Migration Firestore error for video " + video.id, err);
+                    }
+                }
+            }
+        }
+    });
+
+    if (globalButtonsChanged) {
+        saveGlobalButtons();
+    }
+
+    if (migratedAny && !currentUid) {
+        localStorage.setItem("local_videos", JSON.stringify(videosList));
+    }
+}
+
+
+// Render dynamic buttons for the selected video inside Settings
+function renderSelectedVideoButtons() {
+    if (!selectedVideoButtonsContainer) return;
+
+    if (!selectedVideo) {
+        selectedVideoButtonsContainer.innerHTML = "";
+        return;
+    }
+
+    // Guard: if user is currently typing in one of these inputs, do not re-render and lose focus
+    const activeEl = document.activeElement;
+    if (activeEl && activeEl.classList.contains("video-button-url-input") && selectedVideoButtonsContainer.contains(activeEl)) {
+        const row = activeEl.closest(".video-button-row");
+        if (row && selectedVideo && selectedVideo.buttons) {
+            const buttonId = row.dataset.buttonId;
+            const currentVidBtn = selectedVideo.buttons.find(b => b.buttonId === buttonId);
+            if (currentVidBtn) {
+                currentVidBtn.url = activeEl.value;
+            }
+        }
+        return;
+    }
+
+    selectedVideoButtonsContainer.innerHTML = "";
+    
+    if (!selectedVideo.buttons) {
+        selectedVideo.buttons = [];
+    }
+
+    selectedVideo.buttons.forEach((vidBtn, idx) => {
+        const globalBtn = globalButtons.find(b => b.id === vidBtn.buttonId);
+        if (!globalBtn) return; // Skip if button was deleted globally
+
+        const row = document.createElement("div");
+        row.className = "video-button-row";
+        row.style.marginTop = idx > 0 ? "8px" : "0";
+        row.dataset.buttonId = vidBtn.buttonId;
+
+        row.innerHTML = `
+            <div class="video-button-name-label" title="${globalBtn.name}">${globalBtn.name}</div>
+            <input type="text" class="video-button-url-input" placeholder="Введите ссылку для ${globalBtn.name}..." value="${vidBtn.url || ''}" autocomplete="off">
+            <button class="video-button-remove-btn" type="button" title="Убрать из видео">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+        `;
+
+        const urlInput = row.querySelector(".video-button-url-input");
+        urlInput.addEventListener("input", (e) => {
+            if (selectedVideo && selectedVideo.buttons) {
+                const currentVidBtn = selectedVideo.buttons.find(b => b.buttonId === vidBtn.buttonId);
+                if (currentVidBtn) {
+                    currentVidBtn.url = e.target.value;
+                }
+                saveVideoData("buttons", selectedVideo.buttons);
+            }
+            updateNotionButtonState(); // Update Info tab links
+        });
+
+        const removeBtn = row.querySelector(".video-button-remove-btn");
+        removeBtn.addEventListener("click", () => {
+            selectedVideo.buttons = selectedVideo.buttons.filter(b => b.buttonId !== vidBtn.buttonId);
+            saveVideoData("buttons", selectedVideo.buttons);
+            renderSelectedVideoButtons();
+            updateNotionButtonState(); // Update Info tab links
+        });
+
+        selectedVideoButtonsContainer.appendChild(row);
+    });
+}
+
+// Render dynamic dropdown options to add buttons to current video
+function renderAddButtonDropdown() {
+    if (!dropdownAddButtonOptions) return;
+    dropdownAddButtonOptions.innerHTML = "";
+
+    if (!selectedVideo) return;
+    if (!selectedVideo.buttons) selectedVideo.buttons = [];
+
+    const availableButtons = globalButtons.filter(gb => {
+        return !selectedVideo.buttons.some(vb => vb.buttonId === gb.id);
+    });
+
+    if (availableButtons.length === 0) {
+        dropdownAddButtonOptions.innerHTML = `<div style="padding: 8px 12px; font-size: 0.82rem; color: var(--ch-text-gray); text-align: center;">Нет доступных кнопок</div>`;
+        return;
+    }
+
+    availableButtons.forEach(btn => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "add-button-dropdown-item";
+        item.textContent = btn.name;
+        
+        item.addEventListener("click", () => {
+            selectedVideo.buttons.push({
+                buttonId: btn.id,
+                url: ""
+            });
+            saveVideoData("buttons", selectedVideo.buttons);
+            renderSelectedVideoButtons();
+            dropdownAddButtonOptions.style.display = "none";
+            updateNotionButtonState();
+        });
+
+        dropdownAddButtonOptions.appendChild(item);
+    });
+}
+
+// Setup Event Listeners for Add Button Dropdown
+if (btnSelectButtonToAdd) {
+    btnSelectButtonToAdd.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (dropdownAddButtonOptions.style.display === "flex") {
+            dropdownAddButtonOptions.style.display = "none";
+        } else {
+            renderAddButtonDropdown();
+            dropdownAddButtonOptions.style.display = "flex";
+        }
+    });
+}
+
+document.addEventListener("click", (e) => {
+    if (dropdownAddButtonOptions && !dropdownAddButtonOptions.contains(e.target) && e.target !== btnSelectButtonToAdd) {
+        dropdownAddButtonOptions.style.display = "none";
+    }
+});
+
+// Setup Event Listeners for Global Buttons Modal
+if (btnOpenGlobalButtons) {
+    btnOpenGlobalButtons.addEventListener("click", () => {
+        loadGlobalButtons();
+        renderGlobalButtonsList();
+        if (globalButtonsModal) globalButtonsModal.style.display = "flex";
+    });
+}
+
+const closeGlobalButtonsModal = () => {
+    if (globalButtonsModal) globalButtonsModal.style.display = "none";
+};
+if (btnGlobalButtonsCloseX) btnGlobalButtonsCloseX.addEventListener("click", closeGlobalButtonsModal);
+if (btnGlobalButtonsClose) btnGlobalButtonsClose.addEventListener("click", closeGlobalButtonsModal);
+
+if (btnCreateGlobalButton) {
+    btnCreateGlobalButton.addEventListener("click", () => {
+        const createRow = document.getElementById("createGlobalButtonRow");
+        if (createRow) {
+            createRow.style.display = "flex";
+            const input = createRow.querySelector("#inputNewGlobalButtonName");
+            if (input) input.focus();
+        }
+    });
+}
+
+// Render Global Buttons list inside the database manager modal
+function renderGlobalButtonsList() {
+    if (!globalButtonsListContainer) return;
+    globalButtonsListContainer.innerHTML = "";
+
+    // Add Creation Row first (hidden by default)
+    const createRow = document.createElement("div");
+    createRow.id = "createGlobalButtonRow";
+    createRow.style.display = "none";
+    createRow.style.padding = "12px 16px";
+    createRow.style.borderBottom = "1px solid var(--ch-border)";
+    createRow.style.alignItems = "center";
+    createRow.style.gap = "10px";
+    createRow.style.background = "var(--ch-bg)";
+    createRow.innerHTML = `
+        <input type="text" id="inputNewGlobalButtonName" placeholder="Название кнопки (например, Figma)..." style="flex-grow: 1; border: 1px solid var(--ch-border); border-radius: 8px; padding: 6px 12px; font-family: inherit; font-size: 0.9rem; background: var(--ch-card-bg); color: var(--ch-text-dark); outline: none;">
+        <button id="btnSaveNewGlobalButton" style="background: var(--ch-purple); color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">Сохранить</button>
+        <button id="btnCancelNewGlobalButton" style="background: none; border: 1px solid var(--ch-border); color: var(--ch-text-dark); border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; cursor: pointer;">Отмена</button>
+    `;
+
+    const saveNewBtn = createRow.querySelector("#btnSaveNewGlobalButton");
+    const cancelNewBtn = createRow.querySelector("#btnCancelNewGlobalButton");
+    const newNameInput = createRow.querySelector("#inputNewGlobalButtonName");
+
+    const saveAction = () => {
+        const nameVal = newNameInput.value.trim();
+        if (!nameVal) return;
+        
+        if (globalButtons.some(b => b.name.toLowerCase() === nameVal.toLowerCase())) {
+            alert("Кнопка с таким названием уже существует!");
+            return;
+        }
+
+        const newBtn = {
+            id: "gb_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9),
+            name: nameVal
+        };
+
+        globalButtons.push(newBtn);
+        saveGlobalButtons();
+        renderGlobalButtonsList();
+        renderSelectedVideoButtons(); // Update settings list view immediately
+    };
+
+    saveNewBtn.addEventListener("click", saveAction);
+    newNameInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") saveAction();
+    });
+
+    cancelNewBtn.addEventListener("click", () => {
+        createRow.style.display = "none";
+        newNameInput.value = "";
+    });
+
+    globalButtonsListContainer.appendChild(createRow);
+
+    if (globalButtons.length === 0) {
+        const emptyMsg = document.createElement("div");
+        emptyMsg.style.padding = "20px";
+        emptyMsg.style.textAlign = "center";
+        emptyMsg.style.color = "var(--ch-text-gray)";
+        emptyMsg.style.fontSize = "0.9rem";
+        emptyMsg.textContent = "Нет созданных кнопок";
+        globalButtonsListContainer.appendChild(emptyMsg);
+        return;
+    }
+
+    globalButtons.forEach(btn => {
+        const count = videos.reduce((acc, v) => {
+            if (v.buttons && v.buttons.some(vb => vb.buttonId === btn.id)) {
+                return acc + 1;
+            }
+            return acc;
+        }, 0);
+
+        const item = document.createElement("div");
+        item.className = "global-button-item";
+        item.dataset.id = btn.id;
+
+        item.innerHTML = `
+            <div class="button-item-view-mode" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <span class="button-item-name" style="font-size: 0.95rem; color: var(--ch-text-dark); font-weight: 500;">
+                    ${btn.name} 
+                    <span style="font-size: 0.8rem; color: var(--ch-text-gray); font-weight: 400; margin-left: 8px;">(использовано в ${count} видео)</span>
+                </span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="btn-edit-global-button" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 6px; display: flex; align-items: center; justify-content: center; transition: color 0.2s;" title="Редактировать">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="btn-delete-global-button" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 6px; display: flex; align-items: center; justify-content: center; transition: color 0.2s;" title="Удалить">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="button-item-edit-mode" style="display: none; align-items: center; gap: 10px; width: 100%;">
+                <input type="text" class="input-edit-global-button-name" value="${btn.name}" style="flex-grow: 1; border: 1px solid var(--ch-border); border-radius: 8px; padding: 6px 12px; font-family: inherit; font-size: 0.9rem; background: var(--ch-bg); color: var(--ch-text-dark); outline: none;">
+                <button class="btn-save-edit-global-button" style="background: var(--ch-purple); color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">Сохранить</button>
+                <button class="btn-cancel-edit-global-button" style="background: none; border: 1px solid var(--ch-border); color: var(--ch-text-dark); border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; cursor: pointer;">Отмена</button>
+            </div>
+        `;
+
+        const viewModeDiv = item.querySelector(".button-item-view-mode");
+        const editModeDiv = item.querySelector(".button-item-edit-mode");
+        const editInput = item.querySelector(".input-edit-global-button-name");
+        
+        item.querySelector(".btn-edit-global-button").addEventListener("click", () => {
+            viewModeDiv.style.display = "none";
+            editModeDiv.style.display = "flex";
+            editInput.focus();
+        });
+
+        item.querySelector(".btn-cancel-edit-global-button").addEventListener("click", () => {
+            viewModeDiv.style.display = "flex";
+            editModeDiv.style.display = "none";
+            editInput.value = btn.name;
+        });
+
+        const saveEditAction = () => {
+            const newName = editInput.value.trim();
+            if (!newName) return;
+            if (newName.toLowerCase() !== btn.name.toLowerCase() && globalButtons.some(b => b.name.toLowerCase() === newName.toLowerCase())) {
+                alert("Кнопка с таким названием уже существует!");
+                return;
+            }
+
+            btn.name = newName;
+            saveGlobalButtons();
+            
+            renderGlobalButtonsList();
+            renderSelectedVideoButtons();
+            updateNotionButtonState();
+        };
+
+        item.querySelector(".btn-save-edit-global-button").addEventListener("click", saveEditAction);
+        editInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") saveEditAction();
+        });
+
+        item.querySelector(".btn-delete-global-button").addEventListener("click", () => {
+            if (confirm(`Удалить кнопку "${btn.name}" из глобальной базы? Она также исчезнет из настроек и вкладок "Информация" во всех видео.`)) {
+                globalButtons = globalButtons.filter(b => b.id !== btn.id);
+                saveGlobalButtons();
+
+                videos.forEach(v => {
+                    if (v.buttons) {
+                        const origLen = v.buttons.length;
+                        v.buttons = v.buttons.filter(vb => vb.buttonId !== btn.id);
+                        if (v.buttons.length !== origLen) {
+                            if (currentUid) {
+                                try {
+                                    updateDoc(doc(db, "users", currentUid, "videos", v.id), {
+                                        buttons: v.buttons
+                                    });
+                                } catch (e) {
+                                    console.error("Firestore sync error", e);
+                                }
+                            }
+                        }
+                    }
+                });
+
+                if (!currentUid) {
+                    localStorage.setItem("local_videos", JSON.stringify(videos));
+                }
+
+                renderGlobalButtonsList();
+                renderSelectedVideoButtons();
+                updateNotionButtonState();
+            }
+        });
+
+        globalButtonsListContainer.appendChild(item);
+    });
+}
+
+// Render dynamic links in Information tab
 function updateNotionButtonState() {
+    if (!videoButtonsContainer) return;
+    videoButtonsContainer.innerHTML = "";
+
     const activeButtons = [];
 
-    if (selectedVideo && selectedVideo.notionLink && selectedVideo.notionLink.trim() !== "") {
-        if (btnOpenNotion) {
-            btnOpenNotion.style.display = "inline-flex";
-            btnOpenNotion.href = selectedVideo.notionLink;
-            activeButtons.push(btnOpenNotion);
+    if (selectedVideo) {
+        if (selectedVideo.buttons) {
+            selectedVideo.buttons.forEach(vidBtn => {
+                if (vidBtn.url && vidBtn.url.trim() !== "") {
+                    const globalBtn = globalButtons.find(b => b.id === vidBtn.buttonId);
+                    if (globalBtn) {
+                        const linkEl = document.createElement("a");
+                        linkEl.href = vidBtn.url.trim();
+                        linkEl.target = "_blank";
+                        linkEl.className = "btn-notion-link";
+                        linkEl.innerHTML = `
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
+                                height="16" style="margin-right: 6px; vertical-align: middle;">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                            ${globalBtn.name}
+                        `;
+                        activeButtons.push(linkEl);
+                    }
+                }
+            });
         }
-    } else {
-        if (btnOpenNotion) {
-            btnOpenNotion.style.display = "none";
-            btnOpenNotion.href = "#";
-        }
-    }
 
-    if (selectedVideo && selectedVideo.boardLink && selectedVideo.boardLink.trim() !== "") {
-        if (btnOpenBoard) {
-            btnOpenBoard.style.display = "inline-flex";
-            btnOpenBoard.href = selectedVideo.boardLink;
-            activeButtons.push(btnOpenBoard);
-        }
-    } else {
-        if (btnOpenBoard) {
-            btnOpenBoard.style.display = "none";
-            btnOpenBoard.href = "#";
-        }
-    }
-
-    let showStudio = false;
-    if (selectedVideo && selectedVideo.videoLink && selectedVideo.videoLink.trim() !== "") {
-        const ytid = getYouTubeId(selectedVideo.videoLink);
-        if (ytid) {
-            if (btnOpenStudio) {
-                btnOpenStudio.href = `https://studio.youtube.com/video/${ytid}/analytics/`;
-                btnOpenStudio.style.display = "inline-flex";
-                activeButtons.push(btnOpenStudio);
+        if (selectedVideo.videoLink && selectedVideo.videoLink.trim() !== "") {
+            const ytid = getYouTubeId(selectedVideo.videoLink);
+            if (ytid) {
+                const studioEl = document.createElement("a");
+                studioEl.href = `https://studio.youtube.com/video/${ytid}/analytics/`;
+                studioEl.target = "_blank";
+                studioEl.className = "btn-notion-link";
+                studioEl.style.boxSizing = "border-box";
+                studioEl.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
+                        height="16" style="margin-right: 6px; vertical-align: middle;">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    YouTube Studio
+                `;
+                activeButtons.push(studioEl);
             }
-            showStudio = true;
         }
     }
 
-    if (!showStudio) {
-        if (btnOpenStudio) {
-            btnOpenStudio.style.display = "none";
-            btnOpenStudio.href = "#";
-        }
-    }
-
-    // Применяем стили в зависимости от количества видимых кнопок
     if (activeButtons.length === 1) {
         activeButtons[0].style.flex = "1 1 100%";
     } else if (activeButtons.length === 2) {
@@ -3046,11 +3477,17 @@ function updateNotionButtonState() {
         activeButtons[0].style.flex = "1 1 calc(50% - 5px)";
         activeButtons[1].style.flex = "1 1 calc(50% - 5px)";
         activeButtons[2].style.flex = "1 1 100%";
+    } else if (activeButtons.length > 3) {
+        activeButtons.forEach(btn => {
+            btn.style.flex = "1 1 calc(50% - 5px)";
+        });
     }
 
-    if (videoButtonsContainer) {
-        videoButtonsContainer.style.display = activeButtons.length > 0 ? "flex" : "none";
-    }
+    activeButtons.forEach(btn => {
+        videoButtonsContainer.appendChild(btn);
+    });
+
+    videoButtonsContainer.style.display = activeButtons.length > 0 ? "flex" : "none";
 }
 
 function openImageLightbox(src) {

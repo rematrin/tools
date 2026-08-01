@@ -4397,3 +4397,163 @@ body.dark .ch-task-due-badge.overdue {
     border-color: var(--ch-border) !important;
     opacity: 0.6;
 }
+
+/* --- ДИНАМИЧЕСКИЕ КНОПКИ И ССЫЛКИ НАСТРОЕК --- */
+.btn-gear-settings:hover {
+    color: var(--ch-purple) !important;
+    transform: rotate(30deg);
+}
+
+.btn-add-button-dropdown {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid var(--ch-purple);
+    color: var(--ch-purple);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-add-button-dropdown:hover {
+    background-color: var(--ch-purple-light);
+}
+
+.add-button-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: var(--ch-card-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    min-width: 160px;
+    z-index: 100;
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    gap: 2px;
+}
+
+body.dark .add-button-dropdown-menu {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.add-button-dropdown-item {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ch-text-dark);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.add-button-dropdown-item:hover {
+    background-color: var(--ch-bg);
+    color: var(--ch-purple);
+}
+
+.video-button-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--ch-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    transition: border-color 0.2s;
+}
+
+.video-button-row:focus-within {
+    border-color: var(--ch-purple);
+}
+
+.video-button-name-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ch-text-dark);
+    min-width: 100px;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.video-button-url-input {
+    flex-grow: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: var(--ch-text-dark);
+    padding: 0;
+}
+
+.video-button-url-input::placeholder {
+    color: var(--ch-text-gray);
+    opacity: 0.6;
+}
+
+.video-button-remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ch-text-gray);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.15s;
+}
+
+.video-button-remove-btn:hover {
+    color: #dc2626;
+    background-color: rgba(220, 38, 38, 0.08);
+}
+
+/* --- МОДАЛЬНОЕ ОКНО: БАЗА КНОПОК --- */
+.global-button-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ch-border);
+    background: var(--ch-card-bg);
+    transition: background-color 0.15s;
+}
+
+.global-button-item:last-child {
+    border-bottom: none;
+}
+
+.global-button-item:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+body.dark .global-button-item:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.btn-edit-global-button:hover {
+    color: var(--ch-purple) !important;
+    background-color: var(--ch-purple-light);
+    border-radius: 6px;
+}
+
+.btn-delete-global-button:hover {
+    color: #dc2626 !important;
+    background-color: rgba(220, 38, 38, 0.08);
+    border-radius: 6px;
+}

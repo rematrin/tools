@@ -8403,6 +8403,7 @@ window.addEventListener('resize', adjustAddTaskFormLocation);
 
 // --- ЛОГИКА ДЛЯ МОДАЛЬНОГО ОКНА ДЕТАЛЕЙ ЗАДАЧИ ---
 let currentModalTaskId = null;
+let draggingSubtaskElement = null;
 let isModalSubtasksCollapsed = false;
 let modalCalendarInstance = null;
 
@@ -8505,6 +8506,8 @@ const modalPriorityBtn = document.getElementById('modalPriorityBtn');
 const modalPriorityText = document.getElementById('modalPriorityText');
 const modalPriorityIcon = document.getElementById('modalPriorityIcon');
 const modalPriorityDropdown = document.getElementById('modalPriorityDropdown');
+
+initSubtasksDragAndDrop();
 
 function autoResizeTextarea(textarea) {
     if (!textarea) return;
@@ -9248,6 +9251,8 @@ function updateModalOverflow() {
 function createSubtaskElement(subtask) {
     const itemEl = document.createElement('div');
     itemEl.className = `modal-subtask-item ${subtask.completed ? 'completed' : ''} priority-${subtask.priority || 0}`;
+    itemEl.setAttribute('draggable', 'true');
+    itemEl.setAttribute('data-id', subtask.id);
 
     // Генерируем плашку срока, если она установлена
     let dueHtml = '';
@@ -9285,7 +9290,10 @@ function createSubtaskElement(subtask) {
                 </svg>
             </button>
         </div>
-        <input type="text" class="modal-subtask-title" value="${escapeHtml(displayTitle)}" style="flex-grow: 1; min-width: 0; margin-right: 8px;">
+        <div class="modal-subtask-title-wrapper" style="flex-grow: 1; min-width: 0; margin-right: 8px; display: flex; flex-direction: column;">
+            <span class="modal-subtask-title modal-subtask-title-text" style="word-break: break-word; white-space: pre-wrap; cursor: pointer; font-size: 0.92rem; line-height: 1.4;">${escapeHtml(displayTitle)}</span>
+            <textarea class="modal-subtask-title-input" style="display: none; width: 100%; min-height: 24px; max-height: 120px; background: transparent; border: none; outline: none; resize: none; font-family: inherit; color: var(--text); padding: 0; box-sizing: border-box; font-size: 0.92rem; line-height: 1.4; overflow-y: hidden;"></textarea>
+        </div>
         ${dueHtml}
         <div class="task-actions" style="position: relative; margin-left: ${subtask.dueDate ? '0' : 'auto'};">
             <button class="action-btn btn-more" title="Действия">
@@ -9432,19 +9440,55 @@ function createSubtaskElement(subtask) {
         });
     }
 
-    const titleInput = itemEl.querySelector('.modal-subtask-title');
-    if (titleInput) {
-        titleInput.addEventListener('focus', () => {
-            if (subtask.title && subtask.title.startsWith('* ')) {
-                titleInput.value = subtask.title;
-            }
+    itemEl.addEventListener('dragstart', (e) => {
+        if (itemEl.classList.contains('editing')) {
+            e.preventDefault();
+            return;
+        }
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', subtask.id);
+        itemEl.classList.add('dragging');
+        draggingSubtaskElement = itemEl;
+    });
+
+    const titleSpan = itemEl.querySelector('.modal-subtask-title-text');
+    const titleInput = itemEl.querySelector('.modal-subtask-title-input');
+
+    const enterEditMode = () => {
+        if (itemEl.classList.contains('editing')) return;
+        itemEl.classList.add('editing');
+        itemEl.setAttribute('draggable', 'false');
+
+        titleSpan.style.display = 'none';
+        titleInput.style.display = 'block';
+        
+        const hasAsteriskNow = subtask.title && subtask.title.startsWith('* ');
+        titleInput.value = hasAsteriskNow ? subtask.title : displayTitle;
+
+        titleInput.focus();
+        titleInput.select();
+
+        // Автовысота при входе
+        titleInput.style.height = 'auto';
+        titleInput.style.height = titleInput.scrollHeight + 'px';
+    };
+
+    if (titleInput && titleSpan) {
+        titleInput.addEventListener('input', () => {
+            titleInput.style.height = 'auto';
+            titleInput.style.height = titleInput.scrollHeight + 'px';
         });
+
         titleInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 titleInput.blur();
+            } else if (e.key === 'Escape') {
+                titleInput.value = subtask.title && subtask.title.startsWith('* ') ? subtask.title : displayTitle;
+                titleInput.blur();
             }
         });
+
         titleInput.addEventListener('blur', async () => {
             const newTitle = titleInput.value.trim();
             if (newTitle && newTitle !== subtask.title) {
@@ -9455,10 +9499,12 @@ function createSubtaskElement(subtask) {
                 } catch (err) {
                     console.error("Ошибка при обновлении подзадачи:", err);
                 }
-            } else {
-                const hasAsteriskNow = subtask.title && subtask.title.startsWith('* ');
-                titleInput.value = hasAsteriskNow ? subtask.title.slice(2) : (subtask.title || '');
             }
+            
+            itemEl.classList.remove('editing');
+            titleSpan.style.display = '';
+            titleInput.style.display = 'none';
+            itemEl.setAttribute('draggable', 'true');
         });
     }
 
@@ -9645,10 +9691,7 @@ function createSubtaskElement(subtask) {
             if (actionsDropdown) actionsDropdown.style.display = 'none';
             itemEl.classList.remove('menu-open');
             updateModalOverflow();
-            if (titleInput) {
-                titleInput.focus();
-                titleInput.select();
-            }
+            enterEditMode();
         });
     }
 
@@ -9681,6 +9724,92 @@ function createSubtaskElement(subtask) {
         });
     }
     return itemEl;
+}
+
+function getDragAfterSubtaskElement(container, y) {
+    const dragElements = [...container.querySelectorAll('.modal-subtask-item:not(.dragging)')];
+
+    return dragElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - (box.top + box.height / 2);
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function initSubtasksDragAndDrop() {
+    if (!modalSubtasksList) return;
+
+    modalSubtasksList.addEventListener('dragover', (e) => {
+        if (!draggingSubtaskElement) return;
+        e.preventDefault();
+
+        const afterElement = getDragAfterSubtaskElement(modalSubtasksList, e.clientY);
+        if (afterElement) {
+            modalSubtasksList.insertBefore(draggingSubtaskElement, afterElement);
+        } else {
+            const addRow = modalSubtasksList.querySelector('.modal-subtask-add-row');
+            if (addRow && !draggingSubtaskElement.classList.contains('completed')) {
+                modalSubtasksList.insertBefore(draggingSubtaskElement, addRow);
+            } else {
+                modalSubtasksList.appendChild(draggingSubtaskElement);
+            }
+        }
+    });
+
+    modalSubtasksList.addEventListener('drop', async (e) => {
+        if (!draggingSubtaskElement) return;
+        e.preventDefault();
+
+        const subtaskId = draggingSubtaskElement.getAttribute('data-id');
+        draggingSubtaskElement.classList.remove('dragging');
+
+        const subtaskItems = [...modalSubtasksList.querySelectorAll('.modal-subtask-item')];
+        const draggedIndex = subtaskItems.indexOf(draggingSubtaskElement);
+
+        if (draggedIndex !== -1) {
+            const prevItem = subtaskItems[draggedIndex - 1];
+            const nextItem = subtaskItems[draggedIndex + 1];
+
+            const prevSubtask = prevItem ? allTasks.find(t => t.id === prevItem.getAttribute('data-id')) : null;
+            const nextSubtask = nextItem ? allTasks.find(t => t.id === nextItem.getAttribute('data-id')) : null;
+
+            let newOrder = 0;
+            if (!prevSubtask && !nextSubtask) {
+                newOrder = 0;
+            } else if (!prevSubtask) {
+                newOrder = (nextSubtask.order !== undefined ? nextSubtask.order : 0) - 1000;
+            } else if (!nextSubtask) {
+                newOrder = (prevSubtask.order !== undefined ? prevSubtask.order : 0) + 1000;
+            } else {
+                const prevOrder = prevSubtask.order !== undefined ? prevSubtask.order : 0;
+                const nextOrder = nextSubtask.order !== undefined ? nextSubtask.order : 0;
+                newOrder = (prevOrder + nextOrder) / 2;
+            }
+
+            if (currentUid && subtaskId) {
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'tasks', subtaskId), {
+                        order: newOrder
+                    });
+                } catch (err) {
+                    console.error("Ошибка при изменении порядка подзадачи:", err);
+                }
+            }
+        }
+
+        draggingSubtaskElement = null;
+    });
+
+    modalSubtasksList.addEventListener('dragend', (e) => {
+        if (draggingSubtaskElement) {
+            draggingSubtaskElement.classList.remove('dragging');
+            draggingSubtaskElement = null;
+        }
+    });
 }
 
 function renderModalSubtasks(task) {

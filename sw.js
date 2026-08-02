@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tools-pwa-v23';
+const CACHE_NAME = 'tools-pwa-v24';
 const DYNAMIC_CACHE = 'tools-dynamic-image-cache-v1';
 const ASSETS = [
     './fx_converter.html',
@@ -11,6 +11,12 @@ const ASSETS = [
     './creatorhub.html',
     './creatorhub.js',
     './creatorhub.css',
+    './teleprompter.html',
+    './teleprompter.css',
+    './teleprompter.js',
+    './teleprompter_manifest.json',
+    './teleprompter128.png',
+    './teleprompter256.png',
     './theme.css',
     './theme-loader.js',
     './footer.css',

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Профессиональный Телесуфлер</title>
+
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="teleprompter_manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/png" href="teleprompter128.png">
+    <link rel="apple-touch-icon" href="teleprompter256.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS (via official Play CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0b0f19',
+                        darkCard: '#111827',
+                        accentBlue: '#3b82f6',
+                        accentHover: '#2563eb'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Global App Styles -->
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="auth-widget.css">
+    
+    <!-- Custom Teleprompter Styles -->
+    <link rel="stylesheet" href="teleprompter.css">
+</head>
+<body class="bg-darkBg text-gray-100 min-h-screen flex flex-col pt-[50px] transition-colors duration-300">
+
+    <!-- Global Navigation Header Container -->
+    <div id="header-container"></div>
+
+    <!-- Theme Loader (prevents flash of wrong theme in Edit Mode) -->
+    <script src="theme-loader.js"></script>
+
+    <!-- === EDIT MODE CONTAINER === -->
+    <main id="edit-container" class="edit-container flex-1 py-8">
+        <div class="editor-card">
+            <!-- Header Info -->
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-800">
+                <div>
+                    <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                        <svg class="w-6 h-6 text-accentBlue" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0V18m0-3v3m7.5-3v3m0-3h-7.5m0 0V9m7.5 0V9M9 5.25h6M9 9h6M9 12.75h3"></path>
+                        </svg>
+                        Телесуфлер
+                    </h1>
+                    <p class="text-sm text-gray-400 mt-1">Вставьте сценарий и настройте параметры для плавной записи</p>
+                </div>
+            </div>
+
+            <!-- Script Templates Presets -->
+            <div class="mb-4">
+                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Шаблоны сценариев</label>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" class="preset-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition" data-preset="test">
+                        Тестовый текст
+                    </button>
+                    <button type="button" class="preset-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition" data-preset="pitch">
+                        Презентация продукта
+                    </button>
+                    <button type="button" class="preset-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition" data-preset="speech">
+                        Торжественная речь
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Input Textarea -->
+            <div class="mb-6">
+                <label for="script-input" class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Текст сценария</label>
+                <textarea id="script-input" class="w-full textarea-custom" placeholder="Введите или вставьте текст вашего выступления здесь..."></textarea>
+            </div>
+
+            <!-- Launch Action Button -->
+            <button id="launch-btn" class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-indigo-500/10 active:scale-[0.99] transition transform duration-150">
+                Запустить суфлер 🚀
+            </button>
+        </div>
+    </main>
+
+    <!-- === PROMPTER MODE CONTAINER (FULLSCREEN) === -->
+    <div id="prompter-container" class="prompter-container hidden">
+        <!-- Visual Guideline Highlighter -->
+        <div id="reading-guide" class="reading-guide">
+            <div class="guide-arrow guide-arrow-left"></div>
+            <div class="guide-arrow guide-arrow-right"></div>
+        </div>
+
+        <!-- Scrolling Text Wrapper -->
+        <div id="prompter-scroll-wrapper" class="prompter-scroll-wrapper">
+            <div id="prompter-text" class="prompter-text"></div>
+        </div>
+
+        <!-- Floating Glassmorphic Control Panel -->
+        <div id="control-panel" class="control-panel control-panel-fade flex flex-col gap-4">
+            <!-- Top Panel: Status Bar & Exit Button -->
+            <div class="flex items-center justify-between border-b border-gray-800/40 pb-2">
+                <div id="wakelock-status" class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1 text-xs text-slate-500 font-normal">
+                        Суфлер
+                    </span>
+                </div>
+                <button id="exit-btn" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-600/30 text-red-200 text-xs font-bold rounded-lg transition duration-150 flex items-center gap-1" aria-label="Выйти из режима суфлера">
+                    <span>Выйти</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Middle Panel: Adjustable Settings (Grid layout) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 text-xs">
+                <!-- Speed Control -->
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center text-gray-400">
+                        <span class="font-medium">Скорость прокрутки</span>
+                        <span id="speed-val" class="text-white font-semibold">5</span>
+                    </div>
+                    <input id="speed-slider" type="range" min="1" max="20" step="1" value="5" aria-label="Настройка скорости прокрутки">
+                </div>
+
+                <!-- Font Size Control -->
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center text-gray-400">
+                        <span class="font-medium">Размер шрифта</span>
+                        <span id="font-size-val" class="text-white font-semibold">48px</span>
+                    </div>
+                    <input id="font-size-slider" type="range" min="24" max="110" step="2" value="48" aria-label="Настройка размера шрифта">
+                </div>
+
+                <!-- Margins Column Control -->
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center text-gray-400">
+                        <span class="font-medium">Отступы по бокам</span>
+                        <span id="margin-val" class="text-white font-semibold">15%</span>
+                    </div>
+                    <input id="margin-slider" type="range" min="5" max="35" step="1" value="15" aria-label="Настройка боковых полей">
+                </div>
+            </div>
+
+            <!-- Bottom Panel: Layout options & Big Play Button -->
+            <div class="flex items-center justify-between border-t border-gray-800/40 pt-3">
+                <!-- Toggles Column -->
+                <div class="flex gap-4">
+                    <!-- Mirror Mode Switch -->
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="mirror-toggle" class="switch-input">
+                        <label for="mirror-toggle" class="switch-label" aria-label="Включить горизонтальное отзеркаливание"></label>
+                        <span class="text-xs text-gray-400 font-medium">Отзеркалить</span>
+                    </div>
+
+                    <!-- Highlight Guideline Switch -->
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="guide-toggle" class="switch-input" checked>
+                        <label for="guide-toggle" class="switch-label" aria-label="Включить подсветку направляющей строки"></label>
+                        <span class="text-xs text-gray-400 font-medium">Разметка</span>
+                    </div>
+                </div>
+
+                <!-- Centralized Big Play Button -->
+                <button id="play-pause-btn" class="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg active:scale-95 transition duration-150" aria-label="Старт">
+                    <!-- Play icon -->
+                    <svg id="play-icon" class="w-6 h-6 fill-current ml-0.5" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    <!-- Pause icon -->
+                    <svg id="pause-icon" class="w-6 h-6 fill-current hidden" viewBox="0 0 24 24">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core App Module Scripts -->
+    <script type="module" src="nav-widget.js"></script>
+    <script type="module" src="auth-widget.js"></script>
+    <script type="module" src="header.js"></script>
+    
+    <!-- Local Application Script -->
+    <script src="teleprompter.js"></script>
+</body>
+</html>

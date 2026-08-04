@@ -50,52 +50,386 @@
     <script src="theme-loader.js"></script>
 
     <!-- === EDIT MODE CONTAINER === -->
-    <main id="edit-container" class="edit-container flex-1 py-8">
-        <div class="editor-card">
-            <!-- Header Info -->
-            <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-800">
-                <div>
-                    <h1 class="text-2xl font-bold text-white flex items-center gap-2">
-                        <svg class="w-6 h-6 text-accentBlue" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0V18m0-3v3m7.5-3v3m0-3h-7.5m0 0V9m7.5 0V9M9 5.25h6M9 9h6M9 12.75h3"></path>
-                        </svg>
-                        Телесуфлер
-                    </h1>
-                    <p class="text-sm text-gray-400 mt-1">Вставьте сценарий и настройте параметры для плавной записи</p>
-                </div>
+    <main id="edit-container" class="edit-container flex-1 py-4 pb-20">
+        <!-- 1. TEXTS TAB -->
+        <div id="texts-tab" class="tab-content flex flex-col gap-6 animate-fade">
+            <!-- Logo SUFLER.PRO -->
+            <div class="flex justify-center my-2">
+                <span class="text-3xl font-extrabold text-white tracking-tight">SUFLER<span class="text-red-500">.PRO</span></span>
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="relative w-full max-w-lg mx-auto px-2">
+                <input id="search-input" type="text" class="w-full bg-[#1e1e20] border border-gray-800 focus:border-red-500 focus:outline-none text-white text-sm px-4 py-3 pr-10 rounded-xl" placeholder="Поиск текстов и папок">
+                <span class="absolute inset-y-0 right-0 flex items-center pr-5 pointer-events-none text-gray-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </span>
             </div>
 
-            <!-- Script Templates Presets -->
-            <div class="mb-4">
-                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Шаблоны сценариев</label>
-                <div class="flex flex-wrap gap-2">
-                    <button type="button" class="preset-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition" data-preset="test">
-                        Тестовый текст
-                    </button>
-                    <button type="button" class="preset-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition" data-preset="pitch">
-                        Презентация продукта
-                    </button>
-                    <button type="button" class="preset-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition" data-preset="speech">
-                        Торжественная речь
-                    </button>
-                </div>
+            <!-- Scripts List -->
+            <div id="scripts-list" class="w-full max-w-xl mx-auto flex flex-col gap-3 mt-2 px-2 pb-6">
+                <!-- Cards rendered dynamically -->
             </div>
-
-            <!-- Main Input Textarea -->
-            <div class="mb-6">
-                <label for="script-input" class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Текст сценария</label>
-                <textarea id="script-input" class="w-full textarea-custom" placeholder="Введите или вставьте текст вашего выступления здесь..."></textarea>
-            </div>
-
-            <!-- Launch Action Button -->
-            <button id="launch-btn" class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-indigo-500/10 active:scale-[0.99] transition transform duration-150">
-                Запустить суфлер 🚀
+            
+            <!-- Floating Add Button -->
+            <button id="fab-add-btn" class="fixed bottom-20 right-6 w-14 h-14 rounded-full bg-[#ff3b30] hover:bg-[#ff453a] text-white flex items-center justify-center shadow-lg active:scale-95 transition-all z-40" title="Создать сценарий">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
+                </svg>
             </button>
+        </div>
+
+        <!-- 2. HELP TAB -->
+        <div id="help-tab" class="tab-content hidden max-w-xl mx-auto flex flex-col gap-6 px-2 animate-fade">
+            <div class="pb-2 border-b border-gray-800 mt-4">
+                <h1 class="text-xl font-bold text-white">Помощь и поддержка</h1>
+            </div>
+            <div class="flex flex-col gap-4 text-sm text-gray-300">
+                <div class="bg-[#1e1e20] p-4 rounded-xl border border-gray-800">
+                    <h3 class="font-bold text-white mb-2">Как пользоваться телесуфлером?</h3>
+                    <p class="leading-relaxed">Создайте сценарий, разбейте его на главы для удобства, настройте скорость прокрутки и нажмите «Запустить». Читайте текст с экрана, глядя в камеру.</p>
+                </div>
+                <div class="bg-[#1e1e20] p-4 rounded-xl border border-gray-800">
+                    <h3 class="font-bold text-white mb-2">Управление горячими клавишами</h3>
+                    <p class="leading-relaxed">Вы можете управлять прокруткой с помощью клавиатуры: Пробел — старт/пауза, Стрелочки вверх/вниз — скорость, Стрелочки влево/вправо — переключение глав, Esc — выход.</p>
+                </div>
+                <div class="bg-[#1e1e20] p-4 rounded-xl border border-gray-800">
+                    <h3 class="font-bold text-white mb-2">Дистанционное управление (ДУ)</h3>
+                    <p class="leading-relaxed">Поддерживается управление через внешние Bluetooth-устройства (пульты презентаций, геймпады) или через локальную Wi-Fi сеть со второго устройства.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. REMOTE TAB -->
+        <div id="remote-tab" class="tab-content hidden max-w-xl mx-auto flex flex-col gap-6 px-2 animate-fade">
+            <div class="pb-2 border-b border-gray-800 mt-4">
+                <h1 class="text-xl font-bold text-white">Дистанционное управление (ДУ)</h1>
+            </div>
+            <div class="flex flex-col gap-4 text-sm text-gray-300">
+                <div class="bg-[#1e1e20] p-5 rounded-xl border border-gray-800 flex flex-col gap-3">
+                    <h3 class="font-bold text-white text-base">Подключение пульта</h3>
+                    <p class="leading-relaxed text-gray-400">Используйте стандартные Bluetooth-кликеры или клавиатуру для управления суфлером во время записи.</p>
+                    <div class="flex items-center justify-between border-t border-gray-800/60 pt-3 mt-1 text-xs">
+                        <span>Поддержка медиа-клавиш</span>
+                        <span class="text-green-400 font-semibold">Активно</span>
+                    </div>
+                </div>
+                <div class="bg-[#1e1e20] p-5 rounded-xl border border-gray-800 flex flex-col gap-3">
+                    <h3 class="font-bold text-white text-base">Управление по Wi-Fi</h3>
+                    <p class="leading-relaxed text-gray-400">Управляйте прокруткой на этом экране с помощью другого телефона или компьютера в той же Wi-Fi сети.</p>
+                    <div class="p-3 bg-[#111112] rounded-lg border border-gray-800 flex items-center justify-between text-xs mt-1">
+                        <span class="text-gray-500">Локальный IP-адрес:</span>
+                        <span class="font-mono text-white">Определяется...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. ACCOUNT TAB -->
+        <div id="account-tab" class="tab-content hidden max-w-xl mx-auto flex flex-col gap-6 px-2 animate-fade">
+            <div class="pb-2 border-b border-gray-800 mt-4">
+                <h1 class="text-xl font-bold text-white">Личный кабинет</h1>
+            </div>
+            
+            <!-- User Profile Card (visible when logged in) -->
+            <div id="account-profile-card" class="bg-[#1e1e20] p-5 rounded-xl border border-gray-800 flex flex-col gap-4 hidden">
+                <div class="flex items-center gap-4">
+                    <img id="account-avatar" src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" class="w-16 h-16 rounded-full border-2 border-red-500">
+                    <div>
+                        <h3 id="account-name" class="font-bold text-white text-lg">Загрузка...</h3>
+                        <p id="account-email" class="text-gray-400 text-xs">...</p>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-2 mt-2">
+                    <div class="flex justify-between text-xs py-2 border-b border-gray-800">
+                        <span class="text-gray-400">Тип аккаунта:</span>
+                        <span class="text-red-500 font-bold">Базовый (Облако активно)</span>
+                    </div>
+                    <div class="flex justify-between text-xs py-2">
+                        <span class="text-gray-400">Синхронизация текстов:</span>
+                        <span class="text-green-400 font-semibold">Включена</span>
+                    </div>
+                </div>
+                <button id="account-logout-btn" class="w-full py-2.5 bg-red-600/20 hover:bg-red-600/40 text-red-200 border border-red-600/30 text-sm font-bold rounded-lg transition duration-150 mt-2">
+                    Выйти из аккаунта
+                </button>
+            </div>
+
+            <!-- Login Prompt Card (visible when logged out) -->
+            <div id="account-login-card" class="bg-[#1e1e20] p-6 rounded-xl border border-gray-800 text-center flex flex-col gap-4">
+                <div class="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto text-red-500">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white text-lg">Облачная синхронизация</h3>
+                    <p class="text-gray-400 text-sm mt-1">Войдите в аккаунт, чтобы ваши сценарии автоматически сохранялись в облаке и были доступны на всех ваших устройствах.</p>
+                </div>
+                <button id="account-login-btn" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-xl shadow-lg active:scale-95 transition-all mt-2">
+                    Войти или Зарегистрироваться
+                </button>
+            </div>
+        </div>
+
+        <!-- 5. PREMIUM TAB -->
+        <div id="premium-tab" class="tab-content hidden max-w-xl mx-auto flex flex-col gap-6 px-2 animate-fade">
+            <div class="pb-2 border-b border-gray-800 mt-4">
+                <h1 class="text-xl font-bold text-white">Тарифы и Подписка</h1>
+            </div>
+            <div class="bg-gradient-to-br from-[#ff3b30] to-[#ff9500] p-6 rounded-2xl text-white shadow-xl flex flex-col gap-4 relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white/10 blur-2xl"></div>
+                
+                <div>
+                    <span class="text-xs font-bold uppercase bg-white/20 px-2 py-1 rounded-full">Премиум доступ</span>
+                    <h2 class="text-2xl font-black mt-2">SUFLER.PRO PREMIUM</h2>
+                    <p class="text-white/80 text-sm mt-1">Раскройте полный потенциал телесуфлера для ваших съемок</p>
+                </div>
+                
+                <ul class="text-sm flex flex-col gap-2 border-t border-white/20 pt-4 mt-2">
+                    <li class="flex items-center gap-2">
+                        <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                        <span>Голосовая прокрутка (речь управляет скоростью)</span>
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                        <span>Управление с Apple Watch / Wear OS</span>
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                        <span>Неограниченное число сценариев и глав</span>
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                        <span>Многокамерная синхронизация экранов</span>
+                    </li>
+                </ul>
+
+                <div class="mt-4 flex items-center justify-between bg-black/10 p-3 rounded-xl border border-white/10">
+                    <div>
+                        <span class="text-xs text-white/70">Стоимость подписки:</span>
+                        <div class="font-extrabold text-lg">299 руб / месяц</div>
+                    </div>
+                    <button class="bg-white text-red-600 font-bold px-4 py-2 rounded-lg text-sm hover:bg-white/90 active:scale-95 transition shadow-md">
+                        Оформить
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. DETAIL SCRIPT EDITOR VIEW -->
+        <div id="editor-view" class="hidden flex flex-col gap-6">
+            <!-- Editor Back Button Header -->
+            <div class="flex items-center justify-between pb-4 border-b border-gray-800">
+                <button id="editor-back-btn" class="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    <span>Назад к текстам</span>
+                </button>
+                <input id="script-title-input" type="text" class="bg-transparent text-white font-bold text-right text-xs focus:outline-none border-b border-transparent focus:border-gray-700 w-48 uppercase tracking-wider" placeholder="Название сценария">
+            </div>
+
+            <!-- Three-column layout inside detail editor -->
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- LEFT PANEL: CHAPTERS & STATS -->
+                <div class="lg:col-span-1 flex flex-col gap-6">
+                    <!-- Chapters Card -->
+                    <div class="editor-card flex flex-col h-[380px]">
+                        <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-800">
+                            <h2 class="text-xs font-semibold text-white uppercase tracking-wider">Главы сценария</h2>
+                            <button id="add-chapter-btn" class="p-1 text-accentBlue hover:text-blue-400 transition" title="Добавить новую главу">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <!-- Chapters List Wrapper -->
+                        <div id="chapters-list" class="flex-1 overflow-y-auto pr-1 flex flex-col gap-1">
+                            <!-- Rendered dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Statistics Card -->
+                    <div class="editor-card">
+                        <div class="mb-2 pb-2 border-b border-gray-800">
+                            <h2 class="text-xs font-semibold text-white uppercase tracking-wider">Статистика</h2>
+                        </div>
+                        <div class="flex flex-col gap-2 text-xs text-gray-400">
+                            <div class="flex justify-between">
+                                <span>Символов (глава / всего):</span>
+                                <span class="text-white font-medium"><span id="stat-chars-chapter">0</span> / <span id="stat-chars">0</span></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Слов (глава / всего):</span>
+                                <span class="text-white font-medium"><span id="stat-words-chapter">0</span> / <span id="stat-words">0</span></span>
+                            </div>
+                            <div class="flex justify-between border-t border-gray-800/50 pt-2 mt-1">
+                                <span>Хронометраж (всего):</span>
+                                <span id="stat-time" class="text-accentBlue font-bold">0:00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CENTER PANEL: MAIN EDITOR -->
+                <div class="lg:col-span-2 flex flex-col gap-6">
+                    <div class="editor-card flex-1 flex flex-col">
+                        <!-- Editor Header / Rename Chapter -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+                            <input id="chapter-title-input" type="text" class="bg-gray-900 border border-gray-800 focus:border-accentBlue focus:outline-none text-white text-base font-bold px-3 py-2 rounded-lg flex-1" placeholder="Название главы">
+                            
+                            <!-- Script Templates Presets -->
+                            <div class="flex items-center gap-1.5 self-start">
+                                <span class="text-[10px] text-gray-500 font-semibold uppercase hidden xl:inline">Шаблон:</span>
+                                <button type="button" class="preset-btn px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition" data-preset="test">Тестовый</button>
+                                <button type="button" class="preset-btn px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition" data-preset="pitch">Презентация</button>
+                                <button type="button" class="preset-btn px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition" data-preset="speech">Речь</button>
+                            </div>
+                        </div>
+
+                        <!-- Main Textarea -->
+                        <div class="flex-1 flex flex-col min-h-[350px]">
+                            <textarea id="script-input" class="w-full flex-1 textarea-custom" placeholder="Введите или вставьте текст вашей главы здесь..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT PANEL: SETTINGS PREVIEW -->
+                <div class="lg:col-span-1 flex flex-col gap-6">
+                    <div class="editor-card flex flex-col gap-5">
+                        <div class="pb-2 border-b border-gray-800">
+                            <h2 class="text-xs font-semibold text-white uppercase tracking-wider">Параметры суфлера</h2>
+                        </div>
+
+                        <!-- Speed Control -->
+                        <div class="flex flex-col gap-1.5 text-xs">
+                            <div class="flex justify-between items-center text-gray-400">
+                                <span class="font-medium">Скорость прокрутки</span>
+                                <span id="editor-speed-val" class="text-white font-semibold">5</span>
+                            </div>
+                            <input id="editor-speed-slider" type="range" min="1" max="20" step="1" value="5" aria-label="Настройка скорости прокрутки">
+                        </div>
+
+                        <!-- Font Size Control -->
+                        <div class="flex flex-col gap-1.5 text-xs">
+                            <div class="flex justify-between items-center text-gray-400">
+                                <span class="font-medium">Размер шрифта</span>
+                                <span id="editor-font-size-val" class="text-white font-semibold">48px</span>
+                            </div>
+                            <input id="editor-font-size-slider" type="range" min="24" max="110" step="2" value="48" aria-label="Настройка размера шрифта">
+                        </div>
+
+                        <!-- Margins Column Control -->
+                        <div class="flex flex-col gap-1.5 text-xs">
+                            <div class="flex justify-between items-center text-gray-400">
+                                <span class="font-medium">Отступы по бокам</span>
+                                <span id="editor-margin-val" class="text-white font-semibold">15%</span>
+                            </div>
+                            <input id="editor-margin-slider" type="range" min="5" max="35" step="1" value="15" aria-label="Настройка боковых полей">
+                        </div>
+
+                        <!-- Line Height Control -->
+                        <div class="flex flex-col gap-1.5 text-xs">
+                            <div class="flex justify-between items-center text-gray-400">
+                                <span class="font-medium">Интервал строк</span>
+                                <span id="editor-line-height-val" class="text-white font-semibold">1.5</span>
+                            </div>
+                            <input id="editor-line-height-slider" type="range" min="1.0" max="2.5" step="0.1" value="1.5" aria-label="Настройка межстрочного интервала">
+                        </div>
+
+                        <!-- Text Alignment -->
+                        <div class="flex flex-col gap-1.5 text-xs">
+                            <span class="font-medium text-gray-400">Выравнивание текста</span>
+                            <div class="flex bg-gray-800/60 p-0.5 rounded-lg border border-gray-700/50">
+                                <button id="editor-align-left-btn" type="button" class="flex-1 py-1.5 rounded-md text-gray-400 hover:text-white transition font-medium" data-align="left">Влево</button>
+                                <button id="editor-align-center-btn" type="button" class="flex-1 py-1.5 rounded-md bg-blue-600 text-white transition font-medium" data-align="center">Центр</button>
+                                <button id="editor-align-right-btn" type="button" class="flex-1 py-1.5 rounded-md text-gray-400 hover:text-white transition font-medium" data-align="right">Вправо</button>
+                            </div>
+                        </div>
+
+                        <!-- Countdown Start Delay -->
+                        <div class="flex flex-col gap-1.5 text-xs">
+                            <span class="font-medium text-gray-400">Задержка запуска</span>
+                            <div class="flex bg-gray-800/60 p-0.5 rounded-lg border border-gray-700/50">
+                                <button id="editor-delay-0-btn" type="button" class="flex-1 py-1.5 rounded-md text-gray-400 hover:text-white transition font-medium text-center" data-delay="0">0с</button>
+                                <button id="editor-delay-3-btn" type="button" class="flex-1 py-1.5 rounded-md text-gray-400 hover:text-white transition font-medium text-center font-bold" data-delay="3">3с</button>
+                                <button id="editor-delay-5-btn" type="button" class="flex-1 py-1.5 rounded-md text-gray-400 hover:text-white transition font-medium text-center" data-delay="5">5с</button>
+                                <button id="editor-delay-10-btn" type="button" class="flex-1 py-1.5 rounded-md text-gray-400 hover:text-white transition font-medium text-center" data-delay="10">10с</button>
+                            </div>
+                        </div>
+
+                        <!-- Toggles Column -->
+                        <div class="flex flex-col gap-3 text-xs pt-1 border-t border-gray-800/40">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-400 font-medium">Отзеркалить текст</span>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="editor-mirror-toggle" class="switch-input">
+                                    <label for="editor-mirror-toggle" class="switch-label" aria-label="Включить горизонтальное отзеркаливание"></label>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-400 font-medium">Показывать разметку</span>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="editor-guide-toggle" class="switch-input" checked>
+                                    <label for="editor-guide-toggle" class="switch-label" aria-label="Включить подсветку направляющей строки"></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Launch Action Button -->
+                        <button id="launch-btn" class="w-full mt-2 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-base rounded-xl shadow-lg hover:shadow-indigo-500/10 active:scale-[0.99] transition transform duration-150">
+                            Запустить суфлер 🚀
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
+    <!-- Bottom Navigation Bar (Mobile App Style) -->
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-[#16181d] border-t border-gray-800/60 flex justify-around py-2 z-50">
+        <button class="nav-tab active flex flex-col items-center gap-1 text-[10px] text-red-500 font-semibold" data-tab="texts">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+            </svg>
+            <span>Текст</span>
+        </button>
+        <button class="nav-tab flex flex-col items-center gap-1 text-[10px] text-gray-400 font-medium hover:text-white transition" data-tab="help">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+            </svg>
+            <span>Помощь</span>
+        </button>
+        <button class="nav-tab flex flex-col items-center gap-1 text-[10px] text-gray-400 font-medium hover:text-white transition" data-tab="remote">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12c0 2.76 1.12 5.26 2.93 7.07l1.41-1.41C4.95 16.27 4 14.24 4 12c0-4.42 3.58-8 8-8s8 3.58 8 8c0 2.24-.95 4.27-2.34 5.66l1.41 1.41C20.88 17.26 22 14.76 22 12c0-5.52-4.48-10-10-10zm0 4c-3.31 0-6 2.69-6 6 0 1.66.68 3.15 1.76 4.24l1.42-1.42C8.45 14.07 8 13.09 8 12c0-2.21 1.79-4 4-4s4 1.79 4 4c0 1.09-.45 2.07-1.18 2.82l1.42 1.42C17.32 15.15 18 13.66 18 12c0-3.31-2.69-6-6-6zm0 4c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+            </svg>
+            <span>ДУ</span>
+        </button>
+        <button class="nav-tab flex flex-col items-center gap-1 text-[10px] text-gray-400 font-medium hover:text-white transition" data-tab="account">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+            <span>Аккаунт</span>
+        </button>
+        <button class="nav-tab flex flex-col items-center gap-1 text-[10px] text-gray-400 font-medium hover:text-white transition" data-tab="premium">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M5 16h14v2H5zm16-9l-3 5-3-7-3 7-3-7-3 7-3-5v11h18V7z"/>
+            </svg>
+            <span>Подписка</span>
+        </button>
+    </nav>
+
     <!-- === PROMPTER MODE CONTAINER (FULLSCREEN) === -->
     <div id="prompter-container" class="prompter-container hidden">
+        <!-- Countdown Overlay -->
+        <div id="countdown-overlay" class="countdown-overlay hidden">
+            <div id="countdown-number" class="countdown-number">3</div>
+        </div>
+
         <!-- Visual Guideline Highlighter -->
         <div id="reading-guide" class="reading-guide">
             <div class="guide-arrow guide-arrow-left"></div>
@@ -104,6 +438,8 @@
 
         <!-- Scrolling Text Wrapper -->
         <div id="prompter-scroll-wrapper" class="prompter-scroll-wrapper">
+            <!-- Active Chapter Indicator inside prompter -->
+            <div id="prompter-chapter-indicator" class="text-center text-xs text-blue-400/70 font-semibold tracking-wider uppercase mb-6 mt-4">Глава 1</div>
             <div id="prompter-text" class="prompter-text"></div>
         </div>
 
@@ -125,7 +461,7 @@
             </div>
 
             <!-- Middle Panel: Adjustable Settings (Grid layout) -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 text-xs">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 text-xs">
                 <!-- Speed Control -->
                 <div class="flex flex-col gap-1.5">
                     <div class="flex justify-between items-center text-gray-400">
@@ -152,6 +488,36 @@
                     </div>
                     <input id="margin-slider" type="range" min="5" max="35" step="1" value="15" aria-label="Настройка боковых полей">
                 </div>
+
+                <!-- Line Height Control -->
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center text-gray-400">
+                        <span class="font-medium">Интервал строк</span>
+                        <span id="line-height-val" class="text-white font-semibold">1.5</span>
+                    </div>
+                    <input id="line-height-slider" type="range" min="1.0" max="2.5" step="0.1" value="1.5" aria-label="Настройка межстрочного интервала">
+                </div>
+
+                <!-- Text Alignment Control -->
+                <div class="flex flex-col gap-1.5">
+                    <span class="font-medium text-gray-400">Выравнивание</span>
+                    <div class="flex bg-gray-800/60 p-0.5 rounded-lg border border-gray-700/50">
+                        <button id="align-left-btn" type="button" class="flex-1 py-1 rounded-md text-gray-400 hover:text-white transition font-semibold text-[10px]" data-align="left">Влево</button>
+                        <button id="align-center-btn" type="button" class="flex-1 py-1 rounded-md text-gray-400 hover:text-white transition font-semibold text-[10px]" data-align="center">Центр</button>
+                        <button id="align-right-btn" type="button" class="flex-1 py-1 rounded-md text-gray-400 hover:text-white transition font-semibold text-[10px]" data-align="right">Вправо</button>
+                    </div>
+                </div>
+
+                <!-- Start Delay Control -->
+                <div class="flex flex-col gap-1.5">
+                    <span class="font-medium text-gray-400">Запуск с задержкой</span>
+                    <div class="flex bg-gray-800/60 p-0.5 rounded-lg border border-gray-700/50">
+                        <button id="delay-0-btn" type="button" class="flex-1 py-1 rounded-md text-gray-400 hover:text-white transition font-semibold text-[10px]" data-delay="0">0с</button>
+                        <button id="delay-3-btn" type="button" class="flex-1 py-1 rounded-md text-gray-400 hover:text-white transition font-semibold text-[10px]" data-delay="3">3с</button>
+                        <button id="delay-5-btn" type="button" class="flex-1 py-1 rounded-md text-gray-400 hover:text-white transition font-semibold text-[10px]" data-delay="5">5с</button>
+                        <button id="delay-10-btn" type="button" class="flex-1 py-1 rounded-md text-gray-400 hover:text-white transition font-semibold text-[10px]" data-delay="10">10с</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Bottom Panel: Layout options & Big Play Button -->
@@ -173,17 +539,69 @@
                     </div>
                 </div>
 
-                <!-- Centralized Big Play Button -->
-                <button id="play-pause-btn" class="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg active:scale-95 transition duration-150" aria-label="Старт">
-                    <!-- Play icon -->
-                    <svg id="play-icon" class="w-6 h-6 fill-current ml-0.5" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                    </svg>
-                    <!-- Pause icon -->
-                    <svg id="pause-icon" class="w-6 h-6 fill-current hidden" viewBox="0 0 24 24">
-                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-                    </svg>
-                </button>
+                <!-- Centralized Big Play Button with Chapter Navigation -->
+                <div class="flex items-center gap-4">
+                    <!-- Prev Chapter Button -->
+                    <button id="prev-chapter-btn" class="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 flex items-center justify-center border border-gray-700/60 active:scale-95 transition" title="Предыдущая глава">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+
+                    <button id="play-pause-btn" class="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg active:scale-95 transition duration-150" aria-label="Старт">
+                        <!-- Play icon -->
+                        <svg id="play-icon" class="w-6 h-6 fill-current ml-0.5" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        <!-- Pause icon -->
+                        <svg id="pause-icon" class="w-6 h-6 fill-current hidden" viewBox="0 0 24 24">
+                            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                        </svg>
+                    </button>
+
+                    <!-- Next Chapter Button -->
+                    <button id="next-chapter-btn" class="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 flex items-center justify-center border border-gray-700/60 active:scale-95 transition" title="Следующая глава">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Add Sheet Overlay (Mobile App Style) -->
+    <div id="add-sheet-overlay" class="add-sheet-overlay hidden">
+        <div id="add-sheet" class="add-sheet">
+            <!-- Add Text Option -->
+            <button id="add-text-option" class="add-sheet-option">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
+                </svg>
+                <span>Добавить текст</span>
+            </button>
+            
+            <!-- Add Folder Option -->
+            <button id="add-folder-option" class="add-sheet-option">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 10.5v6m3-3H9m4.06-7.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"></path>
+                </svg>
+                <span>Добавить папку</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Modal Dialog Container -->
+    <div id="custom-modal-container" class="custom-modal-container hidden">
+        <div id="custom-modal" class="custom-modal">
+            <h3 id="custom-modal-title" class="text-sm font-bold text-white uppercase tracking-wider mb-2">Название</h3>
+            <p id="custom-modal-message" class="text-xs text-gray-400 mb-5 leading-relaxed">Сообщение...</p>
+            <div id="custom-modal-input-container" class="mb-5 hidden">
+                <input id="custom-modal-input" type="text" class="w-full bg-gray-900 text-white rounded-lg border border-gray-800 px-4 py-2.5 text-xs focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition" placeholder="">
+            </div>
+            <div class="flex justify-end gap-2.5">
+                <button id="custom-modal-cancel-btn" class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700/80 text-gray-300 text-xs font-semibold transition">Отмена</button>
+                <button id="custom-modal-confirm-btn" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition">Подтвердить</button>
             </div>
         </div>
     </div>

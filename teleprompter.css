@@ -20,9 +20,10 @@
 
 /* === EDIT MODE === */
 .edit-container {
-    max-width: 800px;
+    max-width: 1400px;
     margin: 20px auto 60px auto;
     padding: 0 20px;
+    width: 100%;
 }
 
 .editor-card {
@@ -267,3 +268,275 @@ input[type="range"]::-webkit-slider-thumb:active {
         bottom: calc(24px + env(safe-area-inset-bottom));
     }
 }
+
+/* === CHAPTERS SIDEBAR === */
+.chapter-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.02);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chapter-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.chapter-item.active {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: var(--accent-color);
+}
+
+/* Custom Scrollbar for Chapters list */
+#chapters-list::-webkit-scrollbar {
+    width: 4px;
+}
+#chapters-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+#chapters-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+#chapters-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* === COUNTDOWN OVERLAY === */
+.countdown-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+.countdown-number {
+    font-size: 150px;
+    font-weight: 800;
+    color: #3b82f6;
+    text-shadow: 0 0 40px rgba(59, 130, 246, 0.6);
+    animation: zoomFade 1s infinite ease-in-out;
+}
+
+@keyframes zoomFade {
+    0% {
+        transform: scale(0.6);
+        opacity: 0;
+    }
+    20% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    80% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1.2);
+        opacity: 0;
+    }
+}
+
+/* === BOTTOM NAVIGATION === */
+#bottom-nav {
+    height: 64px;
+    background: #141416;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.nav-tab.active {
+    color: #ff3b30 !important; /* Active tab in red matching sufler.pro */
+}
+.nav-tab {
+    position: relative;
+}
+.nav-tab::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: #ff3b30;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.nav-tab.active::after {
+    opacity: 1;
+}
+
+/* === SCRIPT CARDS (Matching Screenshot) === */
+.script-card {
+    background-color: #1e1e20;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s, border-color 0.2s;
+}
+.script-card:hover {
+    background-color: #242426;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+.script-card:active {
+    transform: scale(0.99);
+}
+
+/* Tab animations */
+.animate-fade {
+    animation: fadeIn 0.2s ease-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Safe area bottom padding for bottom nav */
+body {
+    padding-bottom: 74px !important;
+}
+
+/* When prompter or editor-view is active, hide bottom navigation */
+.prompter-active #bottom-nav,
+.editor-active #bottom-nav {
+    display: none !important;
+}
+
+.editor-active {
+    padding-bottom: 20px !important;
+}
+
+/* === BOTTOM ACTION SHEET MODAL === */
+.add-sheet-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease-out;
+}
+.add-sheet-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+.add-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #1c1c1e;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    padding: 16px 0 calc(16px + env(safe-area-inset-bottom)) 0;
+    z-index: 1001;
+    transform: translateY(100%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+}
+.add-sheet-overlay.open .add-sheet {
+    transform: translateY(0);
+}
+.add-sheet-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 16px 24px;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.2s;
+}
+.add-sheet-option:hover, .add-sheet-option:active {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Folder icon shape matching the solid white icon on screenshots */
+.folder-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 28px;
+    background-color: #ffffff;
+    border-radius: 5px;
+    position: relative;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+.folder-icon::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 3px;
+    width: 14px;
+    height: 5px;
+    background-color: #ffffff;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+}
+
+/* === CUSTOM MODAL DIALOG === */
+.custom-modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.custom-modal-container.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+.custom-modal {
+    background: #1c1c1e;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 380px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    transform: scale(0.9);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.custom-modal-container.open .custom-modal {
+    transform: scale(1);
+}
+
+
+
+

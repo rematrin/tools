@@ -6911,7 +6911,7 @@ body.dark .modal-tab.active {
     justify-content: space-between;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     overflow: hidden;
-    cursor: pointer;
+    cursor: default;
 }
 
 .habit-header {
@@ -6948,6 +6948,7 @@ body.dark .modal-tab.active {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    cursor: pointer;
 }
 
 .habit-stats {
@@ -7719,4 +7720,34 @@ body.dark .offline-banner-close:hover {
 /* Custom Emoji Popover styling */
 .custom-emoji-popover {
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Периодичность привычек и неактивные дни */
+.habit-day-btn.active {
+    background-color: var(--accent) !important;
+    color: #fff !important;
+    border-color: var(--accent) !important;
+}
+
+.habit-circle.disabled {
+    opacity: 0.25;
+    pointer-events: none;
+}
+
+.calendar-cell.inactive-day .cell-circle {
+    opacity: 0.25;
+    pointer-events: none;
+}
+
+.calendar-cell.inactive-day .day-number {
+    opacity: 0.4;
+}
+
+.calendar-cell.inactive-day,
+.calendar-cell.inactive-day * {
+    cursor: default !important;
+}
+
+.habit-title:hover {
+    text-decoration: underline;
 }

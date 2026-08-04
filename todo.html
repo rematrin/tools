@@ -234,8 +234,8 @@
                         </button>
                     </div>
                     <div class="habit-header-actions" id="habitHeaderActions"
-                        style="display: none; margin-left: auto; align-items: center; gap: 8px;">
-                        <button class="habit-add-btn" id="btnHabitAdd" aria-label="Добавить привычку"
+                        style="display: none; margin-left: auto; align-items: center; gap: 8px; position: relative;">
+                        <button class="habit-add-btn" id="btnHabitAdd" aria-label="Добавить"
                             title="Добавить"
                             style="background: transparent; border: none; color: var(--text-secondary); opacity: 0.7; cursor: pointer; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background-color 0.15s, opacity 0.15s;">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -244,6 +244,27 @@
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
                         </button>
+                        <div class="project-header-dropdown" id="habitHeaderDropdown"
+                            style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); z-index: 1000; width: 240px; padding: 4px; box-sizing: border-box; flex-direction: column; gap: 2px;">
+                            <button class="dropdown-item" id="btnHabitAddDropdownItem">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" style="margin-right: 6px; flex-shrink: 0;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                                </svg>
+                                <span>Добавить элемент</span>
+                            </button>
+                            <button class="dropdown-item" id="btnHabitAddSection">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" style="margin-right: 6px; flex-shrink: 0;">
+                                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                                </svg>
+                                <span>Добавить раздел</span>
+                            </button>
+                        </div>
                     </div>
                     <div class="project-header-actions" id="projectHeaderActions"
                         style="display: none; margin-left: auto; position: relative;">

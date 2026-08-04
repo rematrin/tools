@@ -1520,7 +1520,7 @@ if (sidebarHeader && !document.getElementById('userProfileMenu')) {
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                     <polyline points="22 4 12 14.01 9 11.01"></polyline>
                 </svg>
-                <span>Привычки</span>
+                <span>Отслеживаемое</span>
             </button>
             <button class="user-menu-item" id="btnUserMenuPomodoro">
                 <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
@@ -2200,7 +2200,7 @@ function updateBrowserTitle() {
     } else if (currentRoute === 'countdown') {
         title = 'Обратный отсчет';
     } else if (currentRoute === 'habit') {
-        title = 'Привычки';
+        title = 'Отслеживаемое';
     } else if (currentRoute.startsWith('project/')) {
         const projectId = currentRoute.split('/')[1];
         const proj = projectsList.find(p => p.id === projectId);
@@ -2282,7 +2282,7 @@ function handleRoute() {
     } else if (currentRoute === 'countdown') {
         if (titleEl) titleEl.textContent = 'Обратный отсчет';
     } else if (currentRoute === 'habit') {
-        if (titleEl) titleEl.textContent = 'Привычки';
+        if (titleEl) titleEl.textContent = 'Отслеживаемое';
     } else if (currentRoute.startsWith('project/')) {
         const projectId = currentRoute.split('/')[1];
         const proj = projectsList.find(p => p.id === projectId);
@@ -13233,144 +13233,260 @@ function formatTotalCheckins(total) {
     return `${total} дней`;
 }
 
+function createHabitCardElement(habit) {
+    const historyArray = habit.history || [];
+    const historySet = new Set(historyArray);
+
+    const total = historySet.size;
+    const streak = calculateHabitStreak(historySet);
+
+    const card = document.createElement('div');
+    card.className = 'habit-card';
+
+    const actionsHtml = `
+        <div class="habit-actions">
+            <button class="habit-action-btn btn-edit" title="Редактировать">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </button>
+            <button class="habit-action-btn btn-delete" title="Удалить">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+        </div>
+    `;
+
+    const isFrequencyCustom = habit.frequency === 'custom';
+    const activeDays = habit.activeDays || [];
+
+    let circlesHtml = '';
+    for (let i = 6; i >= 0; i--) {
+        const dateStr = getHabitDateString(i);
+        const isCompleted = historySet.has(dateStr);
+        const isTodayDay = i === 0;
+        const dayLabel = getDayLabel(i);
+
+        const parts = dateStr.split('-');
+        const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        const dayOfWeek = dateObj.getDay();
+        const isActiveDay = !isFrequencyCustom || activeDays.includes(dayOfWeek);
+
+        circlesHtml += `
+            <div class="habit-circle-wrapper">
+                <span class="habit-circle-day-label">${dayLabel}</span>
+                <button class="habit-circle ${isCompleted ? 'checked' : ''} ${isTodayDay ? 'today' : ''} ${!isActiveDay ? 'disabled' : ''}" 
+                        data-date="${dateStr}" 
+                        title="${dateStr}">
+                    ${isCompleted ? `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    ` : ''}
+                </button>
+            </div>
+        `;
+    }
+
+    card.innerHTML = `
+        ${actionsHtml}
+        <div class="habit-header">
+            <div class="habit-icon-circle" style="background-color: ${habit.color || getEmojiBg(habit.icon || '💪')}">
+                ${habit.icon || '💪'}
+            </div>
+            <div class="habit-title-container">
+                <div class="habit-title" title="${habit.title}">${habit.title}</div>
+                <div class="habit-stats">
+                    <div class="habit-stat-item">
+                        <span>⚡</span> ${formatTotalCheckins(total)}
+                    </div>
+                    <div class="habit-stat-item">
+                        <span>🔥</span> ${formatTotalCheckins(streak)}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="habit-circles-row">
+            ${circlesHtml}
+        </div>
+    `;
+
+    card.querySelectorAll('.habit-circle').forEach(circleBtn => {
+        circleBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (circleBtn.classList.contains('disabled')) return;
+            if (!currentUid) return;
+
+            const targetDate = circleBtn.getAttribute('data-date');
+            let newHistory = [...historyArray];
+
+            if (historySet.has(targetDate)) {
+                newHistory = newHistory.filter(d => d !== targetDate);
+            } else {
+                newHistory.push(targetDate);
+            }
+
+            try {
+                await updateDoc(doc(db, 'users', currentUid, 'habits', habit.id), {
+                    history: newHistory
+                });
+            } catch (err) {
+                console.error("Ошибка при обновлении элемента:", err);
+            }
+        });
+    });
+
+    card.querySelector('.btn-edit').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openHabitModal(habit);
+    });
+
+    card.querySelector('.btn-delete').addEventListener('click', (e) => {
+        e.stopPropagation();
+        showCustomConfirm('Удаление', `Вы действительно хотите удалить элемент "${habit.title}"?`, 'Удалить', async () => {
+            try {
+                await deleteDoc(doc(db, 'users', currentUid, 'habits', habit.id));
+            } catch (err) {
+                console.error("Ошибка при удалении элемента:", err);
+            }
+        });
+    });
+
+    card.querySelector('.habit-title').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openHabitStatsModal(habit);
+    });
+
+    return card;
+}
+
 function renderHabits() {
-    const grid = document.getElementById('habitGrid');
-    if (!grid) return;
+    const container = document.getElementById('habitContainer');
+    if (!container) return;
 
     if (habitsList.length === 0) {
-        grid.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-secondary); opacity: 0.6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;">
+        container.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary); opacity: 0.6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
-                <div style="font-size: 16px; font-weight: 600;">У вас пока нет привычек</div>
-                <div style="font-size: 13px;">Создайте новую привычку, нажав кнопку «+» вверху.</div>
+                <div style="font-size: 16px; font-weight: 600;">У вас пока нет отслеживаемых элементов</div>
+                <div style="font-size: 13px;">Создайте новый элемент, нажав кнопку «+» вверху.</div>
             </div>
         `;
         return;
     }
 
-    grid.innerHTML = '';
+    container.innerHTML = '';
 
-    habitsList.forEach(habit => {
-        const historyArray = habit.history || [];
-        const historySet = new Set(historyArray);
+    const habitSections = sectionsList.filter(s => s.projectId === 'habit');
+    const unsectionedHabits = habitsList.filter(h => !h.sectionId || !habitSections.some(s => s.id === h.sectionId));
 
-        const total = historySet.size;
-        const streak = calculateHabitStreak(historySet);
+    if (unsectionedHabits.length > 0) {
+        const grid = document.createElement('div');
+        grid.className = 'habit-grid';
+        grid.style.marginBottom = '20px';
+        container.appendChild(grid);
+        unsectionedHabits.forEach(habit => {
+            const card = createHabitCardElement(habit);
+            grid.appendChild(card);
+        });
+    }
 
-        const card = document.createElement('div');
-        card.className = 'habit-card';
+    habitSections.forEach(section => {
+        const sectionHabits = habitsList.filter(h => h.sectionId === section.id);
+        const isCollapsed = isSectionCollapsed(section.id);
 
-        const actionsHtml = `
-            <div class="habit-actions">
-                <button class="habit-action-btn btn-edit" title="Редактировать">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        const sectionEl = document.createElement('div');
+        sectionEl.className = `project-section ${isCollapsed ? 'collapsed' : ''}`;
+        sectionEl.setAttribute('data-section-id', section.id);
+
+        sectionEl.innerHTML = `
+            <div class="project-section-header">
+                <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
+                    <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                        <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
                 </button>
-                <button class="habit-action-btn btn-delete" title="Удалить">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                </button>
-            </div>
-        `;
-
-        let circlesHtml = '';
-        for (let i = 6; i >= 0; i--) {
-            const dateStr = getHabitDateString(i);
-            const isCompleted = historySet.has(dateStr);
-            const isTodayDay = i === 0;
-            const dayLabel = getDayLabel(i);
-
-            circlesHtml += `
-                <div class="habit-circle-wrapper">
-                    <span class="habit-circle-day-label">${dayLabel}</span>
-                    <button class="habit-circle ${isCompleted ? 'checked' : ''} ${isTodayDay ? 'today' : ''}" 
-                            data-date="${dateStr}" 
-                            title="${dateStr}">
-                        ${isCompleted ? `
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                        ` : ''}
+                <span class="section-title-text">${escapeHtml(section.name)}</span>
+                <span class="section-count-badge">${sectionHabits.length}</span>
+                <div class="section-actions-wrapper" style="position: relative; margin-left: auto; display: flex; align-items: center; gap: 4px;">
+                    <button class="section-actions-btn" title="Действия" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="1.5"></circle>
+                            <circle cx="12" cy="5" r="1.5"></circle>
+                            <circle cx="12" cy="19" r="1.5"></circle>
+                        </svg>
                     </button>
-                </div>
-            `;
-        }
-
-        card.innerHTML = `
-            ${actionsHtml}
-            <div class="habit-header">
-                <div class="habit-icon-circle" style="background-color: ${habit.color || getEmojiBg(habit.icon || '💪')}">
-                    ${habit.icon || '💪'}
-                </div>
-                <div class="habit-title-container">
-                    <div class="habit-title" title="${habit.title}">${habit.title}</div>
-                    <div class="habit-stats">
-                        <div class="habit-stat-item">
-                            <span>⚡</span> ${formatTotalCheckins(total)}
-                        </div>
-                        <div class="habit-stat-item">
-                            <span>🔥</span> ${formatTotalCheckins(streak)}
-                        </div>
+                    <div class="section-actions-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); right: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); z-index: 1000; width: 170px; padding: 4px; box-sizing: border-box; flex-direction: column; gap: 2px;">
+                        <button class="dropdown-item btn-rename-section" type="button">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            <span>Изменить</span>
+                        </button>
+                        <button class="dropdown-item btn-delete-section btn-delete" type="button" style="color: #ff4d4f;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px; color: #ff4d4f;">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            <span>Удалить</span>
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="habit-circles-row">
-                ${circlesHtml}
-            </div>
+            <div class="habit-grid section-habits-container" style="${isCollapsed ? 'display: none;' : ''}; margin-top: 12px; margin-bottom: 20px;"></div>
         `;
 
-        card.querySelectorAll('.habit-circle').forEach(circleBtn => {
-            circleBtn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                if (!currentUid) return;
+        container.appendChild(sectionEl);
 
-                const targetDate = circleBtn.getAttribute('data-date');
-                let newHistory = [...historyArray];
+        const grid = sectionEl.querySelector('.section-habits-container');
+        sectionHabits.forEach(habit => {
+            const card = createHabitCardElement(habit);
+            grid.appendChild(card);
+        });
 
-                if (historySet.has(targetDate)) {
-                    newHistory = newHistory.filter(d => d !== targetDate);
-                } else {
-                    newHistory.push(targetDate);
-                }
+        // Bind collapse button listener
+        const collapseBtn = sectionEl.querySelector('.section-collapse-btn');
+        collapseBtn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            toggleSectionCollapsed(section.id);
+            renderHabits();
+        });
 
-                try {
-                    await updateDoc(doc(db, 'users', currentUid, 'habits', habit.id), {
-                        history: newHistory
-                    });
-                } catch (err) {
-                    console.error("Ошибка при обновлении привычки:", err);
-                }
+        // Bind action menu events
+        const actionsBtn = sectionEl.querySelector('.section-actions-btn');
+        const dropdown = sectionEl.querySelector('.section-actions-dropdown');
+
+        actionsBtn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const isHidden = dropdown.style.display === 'none' || dropdown.style.display === '';
+            document.querySelectorAll('.section-actions-dropdown').forEach(d => {
+                d.style.display = 'none';
+                d.closest('.project-section-header')?.classList.remove('menu-open');
             });
+            if (isHidden) {
+                dropdown.style.display = 'flex';
+                sectionEl.querySelector('.project-section-header')?.classList.add('menu-open');
+            }
         });
 
-        card.querySelector('.btn-edit').addEventListener('click', (e) => {
-            e.stopPropagation();
-            openHabitModal(habit);
+        sectionEl.querySelector('.btn-rename-section').addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            dropdown.style.display = 'none';
+            renameSection(section.id);
         });
 
-        card.querySelector('.btn-delete').addEventListener('click', (e) => {
-            e.stopPropagation();
-            showCustomConfirm('Удаление', `Вы действительно хотите удалить привычку "${habit.title}"?`, 'Удалить', async () => {
-                try {
-                    await deleteDoc(doc(db, 'users', currentUid, 'habits', habit.id));
-                } catch (err) {
-                    console.error("Ошибка при удалении привычки:", err);
-                }
-            });
+        sectionEl.querySelector('.btn-delete-section').addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            dropdown.style.display = 'none';
+            deleteSection(section.id);
         });
-
-        card.addEventListener('click', () => {
-            openHabitStatsModal(habit);
-        });
-
-        grid.appendChild(card);
     });
 }
 
@@ -13513,13 +13629,20 @@ function openHabitStatsModal(habit) {
         }
 
         const today = new Date();
+        const isFrequencyCustom = currentHabit.frequency === 'custom';
+        const activeDays = currentHabit.activeDays || [];
+
         for (let d = 1; d <= totalDays; d++) {
             const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             const isCompleted = historySet.has(dateStr);
             const isToday = (today.getFullYear() === viewYear && today.getMonth() === viewMonth && today.getDate() === d);
 
+            const cellDate = new Date(viewYear, viewMonth, d);
+            const dayOfWeek = cellDate.getDay();
+            const isActiveDay = !isFrequencyCustom || activeDays.includes(dayOfWeek);
+
             const cell = document.createElement('div');
-            cell.className = `calendar-cell current-month ${isToday ? 'today' : ''} ${isCompleted ? 'checked' : ''}`;
+            cell.className = `calendar-cell current-month ${isToday ? 'today' : ''} ${isCompleted ? 'checked' : ''} ${!isActiveDay ? 'inactive-day' : ''}`;
             cell.innerHTML = `
                 <span class="day-number">${d}</span>
                 <div class="cell-circle">
@@ -13529,6 +13652,7 @@ function openHabitStatsModal(habit) {
 
             cell.querySelector('.cell-circle').addEventListener('click', async (e) => {
                 e.stopPropagation();
+                if (!isActiveDay) return;
                 if (!currentUid) return;
 
                 let newHistory = [...historyArray];
@@ -13621,6 +13745,7 @@ function openHabitModal(habit = null) {
     if (existing) existing.remove();
 
     const isEdit = !!habit;
+    const habitSections = sectionsList.filter(s => s.projectId === 'habit');
     let selectedIcon = habit ? (habit.icon || '💪') : '💪';
     let selectedColor = habit ? (habit.color || getEmojiBg(selectedIcon)) : getEmojiBg(selectedIcon);
 
@@ -13640,7 +13765,7 @@ function openHabitModal(habit = null) {
     overlay.innerHTML = `
         <div class="countdown-modal-card habit-modal-card">
             <div class="countdown-modal-header">
-                <span class="countdown-modal-title">${isEdit ? 'Редактировать' : 'Добавить'} привычку</span>
+                <span class="countdown-modal-title">${isEdit ? 'Редактировать' : 'Добавить'} элемент</span>
                 <button class="countdown-modal-close" id="btnCloseHabitModal">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -13655,9 +13780,9 @@ function openHabitModal(habit = null) {
                     ${selectedIcon}
                 </div>
                 <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-                    <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); display: block;">Название привычки</label>
+                    <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); display: block;">Название</label>
                     <input type="text" class="countdown-input" id="inputHabitTitle" placeholder="Например: Тренировка" value="${habit ? habit.title : ''}" maxlength="50" autocomplete="off" style="width: 100%; box-sizing: border-box; height: 42px; border-radius: 12px;">
-                    <span class="habit-title-error" style="display: none; color: #ef4444; font-size: 11px; font-weight: 600; margin-top: -2px;">Пожалуйста, введите название привычки</span>
+                    <span class="habit-title-error" style="display: none; color: #ef4444; font-size: 11px; font-weight: 600; margin-top: -2px;">Пожалуйста, введите название</span>
                 </div>
             </div>
             
@@ -13679,6 +13804,49 @@ function openHabitModal(habit = null) {
                         <div class="color-circle habit-color-circle ${selectedColor === color ? 'active' : ''}" data-color="${color}" style="background-color: ${color}; --active-color: ${color};"></div>
                     `).join('')}
                     <div class="color-circle habit-color-circle custom-color-btn ${selectedColor && !presets.includes(selectedColor) ? 'active' : ''}" id="habit-custom-color-trigger" style="--active-color: ${selectedColor && !presets.includes(selectedColor) ? selectedColor : '#3b82f6'};"></div>
+                </div>
+            </div>
+
+            <!-- Fourth Row: Section selector -->
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <span class="habit-modal-section-title">Раздел</span>
+                <select class="countdown-input" id="selectHabitSection" style="width: 100%; box-sizing: border-box; height: 42px; border-radius: 12px; font-family: inherit; font-size: 0.95rem; background: var(--bg-hover); color: var(--text); border: 1px solid var(--border); padding: 0 12px; outline: none;">
+                    <option value="">Без раздела</option>
+                    ${habitSections.map(sect => `
+                        <option value="${sect.id}" ${habit && habit.sectionId === sect.id ? 'selected' : ''}>${escapeHtml(sect.name)}</option>
+                    `).join('')}
+                </select>
+            </div>
+
+            <!-- Fifth Row: Frequency selection -->
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <span class="habit-modal-section-title">Периодичность</span>
+                <select class="countdown-input" id="selectHabitFrequency" style="width: 100%; box-sizing: border-box; height: 42px; border-radius: 12px; font-family: inherit; font-size: 0.95rem; background: var(--bg-hover); color: var(--text); border: 1px solid var(--border); padding: 0 12px; outline: none;">
+                    <option value="any" ${!habit || habit.frequency === 'any' ? 'selected' : ''}>Любой день</option>
+                    <option value="custom" ${habit && habit.frequency === 'custom' ? 'selected' : ''}>Определенные дни недели</option>
+                </select>
+            </div>
+
+            <!-- Custom Days Selection Row -->
+            <div id="habitCustomDaysContainer" style="display: ${habit && habit.frequency === 'custom' ? 'flex' : 'none'}; flex-direction: column; gap: 8px; margin-top: 4px;">
+                <span class="habit-modal-section-title" style="font-size: 12px;">Выберите активные дни</span>
+                <div class="habit-weekdays-selector" style="display: flex; gap: 6px; justify-content: space-between;">
+                    ${[
+                        { label: 'Пн', val: 1 },
+                        { label: 'Вт', val: 2 },
+                        { label: 'Ср', val: 3 },
+                        { label: 'Чт', val: 4 },
+                        { label: 'Пт', val: 5 },
+                        { label: 'Сб', val: 6 },
+                        { label: 'Вс', val: 0 }
+                    ].map(day => {
+                        const isDayActive = habit && habit.frequency === 'custom' && habit.activeDays && habit.activeDays.includes(day.val);
+                        return `
+                            <button type="button" class="habit-day-btn ${isDayActive ? 'active' : ''}" data-day="${day.val}" style="flex: 1; height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-hover); color: var(--text); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease;">
+                                ${day.label}
+                            </button>
+                        `;
+                    }).join('')}
                 </div>
             </div>
             
@@ -14090,6 +14258,25 @@ function openHabitModal(habit = null) {
         overlay.remove();
     };
 
+    const selectFrequency = overlay.querySelector('#selectHabitFrequency');
+    const customDaysContainer = overlay.querySelector('#habitCustomDaysContainer');
+    if (selectFrequency && customDaysContainer) {
+        selectFrequency.addEventListener('change', () => {
+            if (selectFrequency.value === 'custom') {
+                customDaysContainer.style.display = 'flex';
+            } else {
+                customDaysContainer.style.display = 'none';
+            }
+        });
+    }
+
+    overlay.querySelectorAll('.habit-day-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            btn.classList.toggle('active');
+        });
+    });
+
     btnClose.addEventListener('click', closeModal);
     btnCancel.addEventListener('click', closeModal);
     overlay.addEventListener('click', (e) => {
@@ -14106,10 +14293,24 @@ function openHabitModal(habit = null) {
             return;
         }
 
+        const selectSection = overlay.querySelector('#selectHabitSection');
+        const sectionId = selectSection ? (selectSection.value || null) : null;
+
+        const frequency = selectFrequency ? selectFrequency.value : 'any';
+        let activeDays = [];
+        if (frequency === 'custom') {
+            overlay.querySelectorAll('.habit-day-btn.active').forEach(btn => {
+                activeDays.push(parseInt(btn.getAttribute('data-day')));
+            });
+        }
+
         const data = {
             title,
             icon: selectedIcon,
-            color: selectedColor
+            color: selectedColor,
+            sectionId,
+            frequency,
+            activeDays
         };
 
         try {
@@ -14124,7 +14325,7 @@ function openHabitModal(habit = null) {
             }
             closeModal();
         } catch (err) {
-            console.error("Ошибка при сохранении привычки:", err);
+            console.error("Ошибка при сохранении:", err);
             showCustomConfirm('Ошибка', 'Не удалось сохранить. Попробуйте еще раз.', 'OK', () => { });
         }
     });
@@ -14133,11 +14334,110 @@ function openHabitModal(habit = null) {
     updatePreview();
 }
 
+function addSectionForHabits() {
+    const habitHeaderDropdown = document.getElementById('habitHeaderDropdown');
+    if (habitHeaderDropdown) habitHeaderDropdown.style.display = 'none';
+
+    if (currentRoute !== 'habit') return;
+
+    const container = document.getElementById('habitContainer');
+    if (!container) return;
+
+    // Если уже открыто поле ввода нового раздела, не создаем еще одно
+    if (container.querySelector('.new-section-temp')) {
+        const tempInput = container.querySelector('.section-inline-input');
+        if (tempInput) tempInput.focus();
+        return;
+    }
+
+    const tempSectionEl = document.createElement('div');
+    tempSectionEl.className = 'project-section new-section-temp';
+    tempSectionEl.innerHTML = `
+        <div class="project-section-header" style="padding-left: 0;">
+            <button class="section-collapse-btn" type="button" style="margin-left: 0;">
+                <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+            <input type="text" class="section-inline-input" placeholder="Название раздела..." maxlength="50" style="background: transparent; border: 1px solid var(--accent); outline: none; color: var(--text); font-family: inherit; font-size: 0.95rem; font-weight: 600; padding: 2px 4px; border-radius: 4px; width: 200px;">
+        </div>
+    `;
+    container.appendChild(tempSectionEl);
+    const input = tempSectionEl.querySelector('.section-inline-input');
+    input.focus();
+
+    let finished = false;
+    async function saveSection() {
+        if (finished) return;
+        finished = true;
+        const nameText = input.value.trim();
+        if (nameText && nameText.length <= 50) {
+            try {
+                const habitSections = sectionsList.filter(s => s.projectId === 'habit');
+                const maxOrder = habitSections.reduce((max, s) => Math.max(max, s.order !== undefined ? s.order : 0), 0);
+
+                await addDoc(collection(db, 'users', currentUid, 'sections'), {
+                    name: nameText,
+                    projectId: 'habit',
+                    order: maxOrder + 1,
+                    createdAt: serverTimestamp()
+                });
+            } catch (err) {
+                console.error("Не удалось добавить раздел:", err);
+                tempSectionEl.remove();
+            }
+        } else {
+            tempSectionEl.remove();
+        }
+    }
+
+    input.addEventListener('blur', saveSection);
+    input.addEventListener('keydown', (ev) => {
+        ev.stopPropagation();
+        if (ev.key === 'Enter') {
+            ev.preventDefault();
+            input.blur();
+        } else if (ev.key === 'Escape') {
+            finished = true;
+            tempSectionEl.remove();
+        }
+    });
+}
+
 function initHabitEvents() {
     const btnHabitAdd = document.getElementById('btnHabitAdd');
-    if (btnHabitAdd) {
-        btnHabitAdd.addEventListener('click', () => {
+    const habitHeaderDropdown = document.getElementById('habitHeaderDropdown');
+
+    if (btnHabitAdd && habitHeaderDropdown) {
+        btnHabitAdd.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (habitHeaderDropdown.style.display === 'none' || habitHeaderDropdown.style.display === '') {
+                // Close other header dropdowns if any
+                const projectHeaderDropdown = document.getElementById('projectHeaderDropdown');
+                if (projectHeaderDropdown) projectHeaderDropdown.style.display = 'none';
+                
+                habitHeaderDropdown.style.display = 'flex';
+            } else {
+                habitHeaderDropdown.style.display = 'none';
+            }
+        });
+    }
+
+    const btnHabitAddDropdownItem = document.getElementById('btnHabitAddDropdownItem');
+    if (btnHabitAddDropdownItem) {
+        btnHabitAddDropdownItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (habitHeaderDropdown) habitHeaderDropdown.style.display = 'none';
             openHabitModal();
+        });
+    }
+
+    const btnHabitAddSection = document.getElementById('btnHabitAddSection');
+    if (btnHabitAddSection) {
+        btnHabitAddSection.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (habitHeaderDropdown) habitHeaderDropdown.style.display = 'none';
+            addSectionForHabits();
         });
     }
 }

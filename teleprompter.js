@@ -1,4 +1,4 @@
-// teleprompter.js - Core Teleprompter PWA Logic matching sufler.pro mobile dashboard with Folders and Custom Modals support
+// teleprompter.js - Core Teleprompter PWA Logic matching sufler.pro mobile dashboard with Folders, Custom Modals, and Minimalist Player Mode
 
 document.addEventListener('DOMContentLoaded', () => {
     // === DOM ELEMENTS ===
@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const exitBtn = document.getElementById('exit-btn');
     const prompterText = document.getElementById('prompter-text');
     const prompterScrollWrapper = document.getElementById('prompter-scroll-wrapper');
-    const controlPanel = document.getElementById('control-panel');
     
     // Bottom Navigation & Tabs
     const textsTab = document.getElementById('texts-tab');
@@ -57,29 +56,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const editorMirrorToggle = document.getElementById('editor-mirror-toggle');
     const editorGuideToggle = document.getElementById('editor-guide-toggle');
 
-    // Player Controls DOM Elements (Playback Floating Panel)
-    const playPauseBtn = document.getElementById('play-pause-btn');
-    const playIcon = document.getElementById('play-icon');
-    const pauseIcon = document.getElementById('pause-icon');
-    const speedSlider = document.getElementById('speed-slider');
-    const speedVal = document.getElementById('speed-val');
-    const fontSizeSlider = document.getElementById('font-size-slider');
-    const fontSizeVal = document.getElementById('font-size-val');
-    const marginSlider = document.getElementById('margin-slider');
-    const marginVal = document.getElementById('margin-val');
-    const lineHeightSlider = document.getElementById('line-height-slider');
-    const lineHeightVal = document.getElementById('line-height-val');
-    const mirrorToggle = document.getElementById('mirror-toggle');
-    const guideToggle = document.getElementById('guide-toggle');
-    const prevChapterBtn = document.getElementById('prev-chapter-btn');
-    const nextChapterBtn = document.getElementById('next-chapter-btn');
-    const prompterChapterIndicator = document.getElementById('prompter-chapter-indicator');
+    // === PLAYER MODE NEW INTERFACE ELEMENTS (Matching Screenshots) ===
+    const prompterPlayBtn = document.getElementById('prompter-play-btn');
+    const prompterPlayIcon = document.getElementById('prompter-play-icon');
+    const prompterPauseIcon = document.getElementById('prompter-pause-icon');
+    const prompterMirrorBtn = document.getElementById('prompter-mirror-btn');
+    
+    const prompterBottomBar = document.getElementById('prompter-bottom-bar');
+    const prompterFloatingActions = document.getElementById('prompter-floating-actions');
+    const prompterBackBtn = document.getElementById('prompter-back-btn');
+    const prompterGearBtn = document.getElementById('prompter-gear-btn');
+    const prompterCameraBtn = document.getElementById('prompter-camera-btn');
+    const prompterMicBtn = document.getElementById('prompter-mic-btn');
+    const prompterCameraPreview = document.getElementById('prompter-camera-preview');
+    
+    // Font Size Adjusters in bottom bar
+    const prompterFsMinus = document.getElementById('prompter-fs-minus');
+    const prompterFsPlus = document.getElementById('prompter-fs-plus');
+    const prompterFsVal = document.getElementById('prompter-fs-val');
+
+    // Speed Adjusters in bottom bar
+    const prompterSpMinus = document.getElementById('prompter-sp-minus');
+    const prompterSpPlus = document.getElementById('prompter-sp-plus');
+    const prompterSpVal = document.getElementById('prompter-sp-val');
+
+    // Prompter Settings Bottom Sheet
+    const prompterSettingsOverlay = document.getElementById('prompter-settings-overlay');
+    const prompterSettingsSheet = document.getElementById('prompter-settings-sheet');
+    const prompterMarginSlider = document.getElementById('prompter-margin-slider');
+    const prompterMarginVal = document.getElementById('prompter-margin-val');
+    const prompterLhSlider = document.getElementById('prompter-lh-slider');
+    const prompterLhVal = document.getElementById('prompter-lh-val');
+    const prompterGuideToggle = document.getElementById('prompter-guide-toggle');
 
     // Countdown Overlay DOM Elements
     const countdownOverlay = document.getElementById('countdown-overlay');
     const countdownNumber = document.getElementById('countdown-number');
-
-    const wakeLockStatus = document.getElementById('wakelock-status');
     const readingGuide = document.getElementById('reading-guide');
 
     // Presets
@@ -120,6 +132,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Wake Lock
     let wakeLock = null;
+
+    // Camera and SpeechRecognition variables
+    let cameraStream = null;
+    let voiceRecognition = null;
+    let isListening = false;
 
     // Auto-hide controls variables
     let controlsHideTimeout = null;
@@ -614,7 +631,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function deleteFolder(id) {
-        // Recursive deletion for children
         const scriptsToDelete = scripts.filter(s => s.folderId === id);
         const childFolders = folders.filter(f => f.parentId === id);
 
@@ -727,35 +743,31 @@ document.addEventListener('DOMContentLoaded', () => {
         // Set inputs values
         editorSpeedSlider.value = speed;
         editorSpeedVal.textContent = speed;
-        speedSlider.value = speed;
-        speedVal.textContent = speed;
+        prompterSpVal.textContent = speed;
 
         editorFontSizeSlider.value = fontSize;
         editorFontSizeVal.textContent = fontSize + 'px';
-        fontSizeSlider.value = fontSize;
-        fontSizeVal.textContent = fontSize + 'px';
+        prompterFsVal.textContent = fontSize;
 
         editorMarginSlider.value = margin;
         editorMarginVal.textContent = margin + '%';
-        marginSlider.value = margin;
-        marginVal.textContent = margin + '%';
+        prompterMarginSlider.value = margin;
+        prompterMarginVal.textContent = margin + '%';
 
         editorLineHeightSlider.value = lineHeight;
         editorLineHeightVal.textContent = lineHeight.toFixed(1);
-        lineHeightSlider.value = lineHeight;
-        lineHeightVal.textContent = lineHeight.toFixed(1);
+        prompterLhSlider.value = lineHeight;
+        prompterLhVal.textContent = lineHeight.toFixed(1);
 
         updateAlignmentButtonStates('editor-align', alignment);
-        updateAlignmentButtonStates('align', alignment);
+        updateAlignmentButtonStates('prompter-align', alignment);
 
         updateDelayButtonStates('editor-delay', countdownDelay);
-        updateDelayButtonStates('delay', countdownDelay);
+        updateDelayButtonStates('prompter-delay', countdownDelay);
 
         editorMirrorToggle.checked = isMirrored;
-        mirrorToggle.checked = isMirrored;
-
         editorGuideToggle.checked = showGuide;
-        guideToggle.checked = showGuide;
+        prompterGuideToggle.checked = showGuide;
 
         // Load chapters
         chapters = script.chapters || [];
@@ -927,8 +939,7 @@ document.addEventListener('DOMContentLoaded', () => {
         speed = parseInt(newSpeed);
         editorSpeedSlider.value = speed;
         editorSpeedVal.textContent = speed;
-        speedSlider.value = speed;
-        speedVal.textContent = speed;
+        prompterSpVal.textContent = speed;
         
         const script = scripts.find(s => s.id === currentScriptId);
         if (script) {
@@ -942,8 +953,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fontSize = parseInt(newSize);
         editorFontSizeSlider.value = fontSize;
         editorFontSizeVal.textContent = fontSize + 'px';
-        fontSizeSlider.value = fontSize;
-        fontSizeVal.textContent = fontSize + 'px';
+        prompterFsVal.textContent = fontSize;
 
         const script = scripts.find(s => s.id === currentScriptId);
         if (script) {
@@ -957,8 +967,8 @@ document.addEventListener('DOMContentLoaded', () => {
         margin = parseInt(newMargin);
         editorMarginSlider.value = margin;
         editorMarginVal.textContent = margin + '%';
-        marginSlider.value = margin;
-        marginVal.textContent = margin + '%';
+        prompterMarginSlider.value = margin;
+        prompterMarginVal.textContent = margin + '%';
 
         const script = scripts.find(s => s.id === currentScriptId);
         if (script) {
@@ -972,8 +982,8 @@ document.addEventListener('DOMContentLoaded', () => {
         lineHeight = parseFloat(newLH);
         editorLineHeightSlider.value = lineHeight;
         editorLineHeightVal.textContent = lineHeight.toFixed(1);
-        lineHeightSlider.value = lineHeight;
-        lineHeightVal.textContent = lineHeight.toFixed(1);
+        prompterLhSlider.value = lineHeight;
+        prompterLhVal.textContent = lineHeight.toFixed(1);
 
         const script = scripts.find(s => s.id === currentScriptId);
         if (script) {
@@ -986,7 +996,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAlignment(newAlign) {
         alignment = newAlign;
         updateAlignmentButtonStates('editor-align', alignment);
-        updateAlignmentButtonStates('align', alignment);
+        updateAlignmentButtonStates('prompter-align', alignment);
 
         const script = scripts.find(s => s.id === currentScriptId);
         if (script) {
@@ -1010,11 +1020,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Sync Delay Controls
     function updateCountdownDelay(newDelay) {
         countdownDelay = parseInt(newDelay);
         updateDelayButtonStates('editor-delay', countdownDelay);
-        updateDelayButtonStates('delay', countdownDelay);
+        updateDelayButtonStates('prompter-delay', countdownDelay);
 
         const script = scripts.find(s => s.id === currentScriptId);
         if (script) {
@@ -1040,7 +1049,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateMirror(newMirror) {
         isMirrored = newMirror;
         editorMirrorToggle.checked = isMirrored;
-        mirrorToggle.checked = isMirrored;
 
         const script = scripts.find(s => s.id === currentScriptId);
         if (script) {
@@ -1053,7 +1061,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateGuide(newGuide) {
         showGuide = newGuide;
         editorGuideToggle.checked = showGuide;
-        guideToggle.checked = showGuide;
+        prompterGuideToggle.checked = showGuide;
 
         const script = scripts.find(s => s.id === currentScriptId);
         if (script) {
@@ -1073,11 +1081,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (isMirrored) {
             prompterText.classList.add('mirror-content');
+            prompterMirrorBtn.classList.add('bg-opacity-100');
+            prompterMirrorBtn.classList.remove('bg-opacity-40');
         } else {
             prompterText.classList.remove('mirror-content');
+            prompterMirrorBtn.classList.remove('bg-opacity-100');
+            prompterMirrorBtn.classList.add('bg-opacity-40');
         }
 
-        readingGuide.style.display = showGuide ? 'flex' : 'none';
+        readingGuide.style.display = showGuide ? 'block' : 'none';
     }
 
     // === STATISTICS ===
@@ -1119,7 +1131,7 @@ document.addEventListener('DOMContentLoaded', () => {
             section.dataset.chapterTitle = chapter.title;
 
             const header = document.createElement('div');
-            header.className = 'text-blue-500/40 text-sm tracking-widest font-semibold my-12 border-b border-gray-900 pb-2 select-none';
+            header.className = 'text-blue-500/30 text-sm tracking-widest font-semibold my-12 border-b border-gray-900 pb-2 select-none';
             header.textContent = `--- ${chapter.title.toUpperCase()} ---`;
             section.appendChild(header);
 
@@ -1155,7 +1167,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     lastTimestamp = performance.now();
                     isPlaying = true;
                     updatePlayBtnState();
-                    prompterScrollWrapper.classList.add('scrolling-active');
                     animationFrameId = requestAnimationFrame(scrollLoop);
                 }, 350);
             }
@@ -1260,7 +1271,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePlayBtnState();
 
         if (isPlaying) {
-            prompterScrollWrapper.classList.add('scrolling-active');
             requestWakeLock();
             resetControlsHideTimer();
 
@@ -1269,7 +1279,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 animationFrameId = requestAnimationFrame(scrollLoop);
             });
         } else {
-            prompterScrollWrapper.classList.remove('scrolling-active');
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
                 animationFrameId = null;
@@ -1281,13 +1290,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updatePlayBtnState() {
         if (isPlaying) {
-            playIcon.classList.add('hidden');
-            pauseIcon.classList.remove('hidden');
-            playPauseBtn.setAttribute('aria-label', 'Пауза');
+            prompterPlayIcon.classList.add('hidden');
+            prompterPauseIcon.classList.remove('hidden');
+            prompterPlayBtn.setAttribute('aria-label', 'Пауза');
         } else {
-            playIcon.classList.remove('hidden');
-            pauseIcon.classList.add('hidden');
-            playPauseBtn.setAttribute('aria-label', 'Старт');
+            prompterPlayIcon.classList.remove('hidden');
+            prompterPauseIcon.classList.add('hidden');
+            prompterPlayBtn.setAttribute('aria-label', 'Старт');
         }
     }
 
@@ -1307,7 +1316,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (prompterScrollWrapper.scrollTop >= maxScroll - 2) {
             isPlaying = false;
             updatePlayBtnState();
-            prompterScrollWrapper.classList.remove('scrolling-active');
             releaseWakeLock();
             showControls();
             return;
@@ -1333,8 +1341,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Auto hiding controls
     function showControls() {
-        controlPanel.classList.remove('control-panel-hidden');
+        prompterContainer.classList.remove('prompter-controls-hidden');
         if (isPlaying) {
             resetControlsHideTimer();
         } else {
@@ -1346,14 +1355,107 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function hideControls() {
-        if (isPlaying) {
-            controlPanel.classList.add('control-panel-hidden');
+        if (isPlaying && !prompterSettingsOverlay.classList.contains('open')) {
+            prompterContainer.classList.add('prompter-controls-hidden');
         }
     }
 
     function resetControlsHideTimer() {
         if (controlsHideTimeout) clearTimeout(controlsHideTimeout);
         controlsHideTimeout = setTimeout(hideControls, CONTROLS_HIDE_DELAY);
+    }
+
+    // Camera Stream Functions
+    async function toggleCameraPreview() {
+        if (cameraStream) {
+            const tracks = cameraStream.getTracks();
+            tracks.forEach(track => track.stop());
+            cameraStream = null;
+            prompterCameraPreview.srcObject = null;
+            prompterCameraPreview.classList.add('hidden');
+            prompterCameraBtn.classList.remove('text-blue-500');
+            prompterCameraBtn.classList.add('text-gray-400');
+        } else {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                prompterCameraPreview.srcObject = cameraStream;
+                prompterCameraPreview.classList.remove('hidden');
+                prompterCameraBtn.classList.add('text-blue-500');
+                prompterCameraBtn.classList.remove('text-gray-400');
+            } catch (e) {
+                console.error("Camera access failed", e);
+                await showCustomModal({
+                    title: 'Ошибка камеры',
+                    message: 'Не удалось получить доступ к фронтальной камере устройства.',
+                    cancelText: null
+                });
+            }
+        }
+    }
+
+    // Voice recognition scrolling integration
+    function toggleVoiceRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            showCustomModal({
+                title: 'Голосовой скролл',
+                message: 'Голосовое управление не поддерживается вашим браузером. Попробуйте Google Chrome или Safari.',
+                cancelText: null
+            });
+            return;
+        }
+
+        if (isListening) {
+            stopVoiceRecognition();
+        } else {
+            startVoiceRecognition(SpeechRecognition);
+        }
+    }
+
+    function startVoiceRecognition(SpeechRecognition) {
+        try {
+            voiceRecognition = new SpeechRecognition();
+            voiceRecognition.continuous = true;
+            voiceRecognition.interimResults = true;
+            voiceRecognition.lang = 'ru-RU';
+
+            voiceRecognition.onstart = () => {
+                isListening = true;
+                prompterMicBtn.classList.add('text-red-500', 'animate-pulse');
+                prompterMicBtn.classList.remove('text-gray-400');
+            };
+
+            voiceRecognition.onresult = (event) => {
+                if (!isPlaying) {
+                    // Small scroll on voice sync
+                    scrollPosition += 20;
+                    prompterScrollWrapper.scrollTop = scrollPosition;
+                }
+            };
+
+            voiceRecognition.onerror = (e) => {
+                console.error("Speech recognition error", e);
+                stopVoiceRecognition();
+            };
+
+            voiceRecognition.onend = () => {
+                stopVoiceRecognition();
+            };
+
+            voiceRecognition.start();
+        } catch (e) {
+            console.error("Speech recognition start failed", e);
+        }
+    }
+
+    function stopVoiceRecognition() {
+        if (voiceRecognition) {
+            try { voiceRecognition.stop(); } catch(e){}
+            voiceRecognition = null;
+        }
+        isListening = false;
+        prompterMicBtn.classList.remove('text-red-500', 'animate-pulse');
+        prompterMicBtn.classList.add('text-gray-400');
     }
 
     // === WAKE LOCK ===
@@ -1406,7 +1508,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Keyboard Shortcuts
+    // Keyboard controls
     function handleKeyDown(e) {
         if (prompterContainer.classList.contains('hidden')) return;
 
@@ -1494,9 +1596,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePlayBtnState();
         showControls();
         updateActiveChapterIndicator();
-
-        const header = document.getElementById('header-container');
-        if (header) header.style.display = 'none';
     }
 
     function exitPrompter() {
@@ -1506,12 +1605,23 @@ document.addEventListener('DOMContentLoaded', () => {
             togglePlay();
         }
 
+        // Stop camera streams
+        if (cameraStream) {
+            const tracks = cameraStream.getTracks();
+            tracks.forEach(track => track.stop());
+            cameraStream = null;
+            prompterCameraPreview.srcObject = null;
+            prompterCameraPreview.classList.add('hidden');
+            prompterCameraBtn.classList.remove('text-blue-500');
+            prompterCameraBtn.classList.add('text-gray-400');
+        }
+
+        // Stop micro recognitions
+        stopVoiceRecognition();
+
         prompterContainer.classList.add('hidden');
         editContainer.classList.remove('hidden');
         document.body.classList.remove('prompter-active');
-
-        const header = document.getElementById('header-container');
-        if (header) header.style.display = '';
 
         if (controlsHideTimeout) clearTimeout(controlsHideTimeout);
     }
@@ -1608,23 +1718,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     launchBtn.addEventListener('click', launchPrompter);
-    exitBtn.addEventListener('click', exitPrompter);
 
-    // Sync input sliders
+    // Sync input sliders in editor workspace
     editorSpeedSlider.addEventListener('input', (e) => updateSpeed(e.target.value));
-    speedSlider.addEventListener('input', (e) => updateSpeed(e.target.value));
-
     editorFontSizeSlider.addEventListener('input', (e) => updateFontSize(e.target.value));
-    fontSizeSlider.addEventListener('input', (e) => updateFontSize(e.target.value));
-
     editorMarginSlider.addEventListener('input', (e) => updateMargin(e.target.value));
-    marginSlider.addEventListener('input', (e) => updateMargin(e.target.value));
-
     editorLineHeightSlider.addEventListener('input', (e) => updateLineHeight(e.target.value));
-    lineHeightSlider.addEventListener('input', (e) => updateLineHeight(e.target.value));
 
     // Align buttons
-    ['editor-align', 'align'].forEach(prefix => {
+    ['editor-align', 'prompter-align'].forEach(prefix => {
         ['left', 'center', 'right'].forEach(a => {
             const btn = document.getElementById(`${prefix}-${a}-btn`);
             if (btn) {
@@ -1634,7 +1736,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Countdown Delay buttons
-    ['editor-delay', 'delay'].forEach(prefix => {
+    ['editor-delay', 'prompter-delay'].forEach(prefix => {
         [0, 3, 5, 10].forEach(d => {
             const btn = document.getElementById(`${prefix}-${d}-btn`);
             if (btn) {
@@ -1645,10 +1747,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Toggles
     editorMirrorToggle.addEventListener('change', (e) => updateMirror(e.target.checked));
-    mirrorToggle.addEventListener('change', (e) => updateMirror(e.target.checked));
-
-    editorGuideToggle.addEventListener('change', (e) => updateGuide(e.target.checked));
-    guideToggle.addEventListener('change', (e) => updateGuide(e.target.checked));
+    prompterGuideToggle.addEventListener('change', (e) => updateGuide(e.target.checked));
 
     // Preset buttons
     presetBtns.forEach(btn => {
@@ -1676,10 +1775,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Chapter Navigation in player mode
-    prevChapterBtn.addEventListener('click', () => navigateChapter(-1));
-    nextChapterBtn.addEventListener('click', () => navigateChapter(1));
-
     // Scroll wrapper scroll sync
     prompterScrollWrapper.addEventListener('scroll', () => {
         handleWrapperScroll();
@@ -1702,8 +1797,38 @@ document.addEventListener('DOMContentLoaded', () => {
     prompterContainer.addEventListener('mousemove', showControls);
     prompterContainer.addEventListener('touchstart', showControls, { passive: true });
 
-    // Play button
-    playPauseBtn.addEventListener('click', togglePlay);
+    // Play/Back/Gear/Mic/Camera Bindings in Player Mode
+    prompterPlayBtn.addEventListener('click', togglePlay);
+    prompterMirrorBtn.addEventListener('click', () => updateMirror(!isMirrored));
+    prompterBackBtn.addEventListener('click', exitPrompter);
+    prompterCameraBtn.addEventListener('click', toggleCameraPreview);
+    prompterMicBtn.addEventListener('click', toggleVoiceRecognition);
+
+    // Font size adjustments in bottom bar
+    prompterFsMinus.addEventListener('click', () => updateFontSize(Math.max(24, fontSize - 2)));
+    prompterFsPlus.addEventListener('click', () => updateFontSize(Math.min(110, fontSize + 2)));
+
+    // Speed adjustments in bottom bar
+    prompterSpMinus.addEventListener('click', () => updateSpeed(Math.max(1, speed - 1)));
+    prompterSpPlus.addEventListener('click', () => updateSpeed(Math.min(20, speed + 1)));
+
+    // Prompter gear sheet triggers
+    prompterGearBtn.addEventListener('click', () => {
+        prompterSettingsOverlay.classList.remove('hidden');
+        prompterSettingsOverlay.offsetHeight; // force reflow
+        prompterSettingsOverlay.classList.add('open');
+    });
+
+    prompterSettingsOverlay.addEventListener('click', (e) => {
+        if (e.target === prompterSettingsOverlay) {
+            prompterSettingsOverlay.classList.remove('open');
+            setTimeout(() => prompterSettingsOverlay.classList.add('hidden'), 250);
+        }
+    });
+
+    // Prompter setting sheet controls listeners
+    prompterMarginSlider.addEventListener('input', (e) => updateMargin(e.target.value));
+    prompterLhSlider.addEventListener('input', (e) => updateLineHeight(e.target.value));
 
     // Keyboard hotkeys
     window.addEventListener('keydown', handleKeyDown);

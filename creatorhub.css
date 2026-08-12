@@ -444,6 +444,8 @@ body.dark .published .change {
     justify-content: space-between;
     align-items: center;
     gap: 16px;
+    flex-wrap: wrap;
+    container-type: inline-size;
 }
 
 .filters-tabs {
@@ -451,6 +453,14 @@ body.dark .published .change {
     gap: 10px;
     background: transparent;
     padding: 0;
+    flex-wrap: wrap;
+}
+
+@container (max-width: 750px) {
+    .sort-dropdown, .filter-dropdown {
+        right: auto !important;
+        left: 0 !important;
+    }
 }
 
 .tab-btn {
@@ -3217,6 +3227,101 @@ body.dark .video-drag-placeholder {
     margin: 4px 6px;
 }
 
+/* === СТИЛИ ФИЛЬТРАЦИИ СПИСКА ВИДЕО === */
+.filter-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-filter {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ch-text-gray);
+    transition: all 0.2s ease;
+    box-shadow: none;
+    width: auto;
+    height: auto;
+}
+
+.btn-filter:hover {
+    color: var(--ch-text-dark);
+}
+
+.btn-filter.active {
+    color: var(--ch-purple);
+}
+
+.filter-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background-color: var(--ch-card-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: 12px;
+    width: 280px;
+    box-shadow: var(--ch-shadow);
+    padding: 12px;
+    z-index: 1001;
+    box-sizing: border-box;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filter-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--ch-text-gray);
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.filter-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 150px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.filter-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--ch-text-dark);
+    transition: background-color 0.15s;
+    user-select: none;
+}
+
+.filter-option:hover {
+    background-color: var(--ch-border);
+}
+
+.filter-option input[type="checkbox"],
+.filter-option input[type="radio"] {
+    cursor: pointer;
+    accent-color: var(--ch-purple);
+    margin: 0;
+}
+
 /* === СТИЛИ ДЛЯ СЧЕТЧИКОВ НА ВКЛАДКАХ === */
 .tab-count {
     background-color: var(--ch-border);
@@ -3843,7 +3948,8 @@ body.dark .tag-color-gray {
 /* --- GRID VIEW LAYOUT FOR VIDEOS LIST --- */
 .videos-list.grid-view {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 220px));
+    grid-template-columns: repeat(auto-fit, minmax(180px, 220px));
+    justify-content: center;
     gap: 16px;
     max-width: 928px;
     margin: 0 auto;

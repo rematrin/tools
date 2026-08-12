@@ -197,6 +197,17 @@
                         </button>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
+                        <!-- Фильтры -->
+                        <div class="filter-wrapper">
+                            <button class="btn-filter" id="btnFilterList" type="button" data-tip="Фильтры">
+                                <svg class="filter-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 6h18M6 12h12m-9 6h6" />
+                                </svg>
+                            </button>
+                            <div class="filter-dropdown" id="filterDropdown">
+                                <!-- Будет заполняться динамически -->
+                            </div>
+                        </div>
                         <div class="sort-wrapper">
                             <button class="btn-sort" id="btnSortList" type="button" data-tip="Сортировка">
                                 <svg class="sort-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
@@ -221,6 +232,11 @@
                                 <div class="sort-dropdown-divider"></div>
                                 <button class="sort-dropdown-item" data-sort="alphabeticalAZ">По алфавиту А-Я</button>
                                 <button class="sort-dropdown-item" data-sort="alphabeticalZA">По алфавиту Я-А</button>
+                                <div class="sort-dropdown-divider"></div>
+                                <button class="sort-dropdown-item" data-sort="tagCountDesc">По кол-ву тегов (больше → меньше)</button>
+                                <button class="sort-dropdown-item" data-sort="tagCountAsc">По кол-ву тегов (меньше → больше)</button>
+                                <button class="sort-dropdown-item" data-sort="tagAlphabeticalAZ">По первому тегу (А-Я)</button>
+                                <button class="sort-dropdown-item" data-sort="tagAlphabeticalZA">По первому тегу (Я-А)</button>
                             </div>
                         </div>
                         <!-- Переключатель вида (сетка/список) -->

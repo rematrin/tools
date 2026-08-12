@@ -262,8 +262,191 @@ function loadSortForCurrentFilter() {
     }
 }
 
+let currentFilterFormat = "all"; // "all" | "shorts" | "regular"
+let currentFilterTags = []; // string[] (selected tags)
+
+function loadFiltersForCurrentFilter() {
+    currentFilterFormat = localStorage.getItem(`creatorhub_filter_format_${currentFilter}`) || "all";
+    try {
+        const storedTags = localStorage.getItem(`creatorhub_filter_tags_${currentFilter}`);
+        currentFilterTags = storedTags ? JSON.parse(storedTags) : [];
+    } catch (e) {
+        currentFilterTags = [];
+    }
+
+    // Update active state on filter button
+    updateFilterButtonState();
+}
+
+function saveFiltersForCurrentFilter() {
+    localStorage.setItem(`creatorhub_filter_format_${currentFilter}`, currentFilterFormat);
+    localStorage.setItem(`creatorhub_filter_tags_${currentFilter}`, JSON.stringify(currentFilterTags));
+}
+
+function updateFilterButtonState() {
+    const btnFilterList = document.getElementById("btnFilterList");
+    if (btnFilterList) {
+        if (currentFilterFormat !== "all" || currentFilterTags.length > 0) {
+            btnFilterList.classList.add("active");
+        } else {
+            btnFilterList.classList.remove("active");
+        }
+    }
+}
+
+function getFilteredVideos() {
+    return videos.filter(v => {
+        const matchesSearch = v.title.toLowerCase().includes(searchQuery);
+        
+        let matchesTab = false;
+        if (currentMenuRoute === "trash") {
+            matchesTab = v.deleted === true;
+        } else {
+            const matchesFilter = currentFilter === "all" || v.status === currentFilter;
+            matchesTab = matchesFilter && !v.deleted;
+        }
+
+        if (!matchesSearch || !matchesTab) {
+            return false;
+        }
+
+        // Format filter
+        if (currentFilterFormat === "shorts") {
+            if (!(v.title && v.title.startsWith('* '))) {
+                return false;
+            }
+        } else if (currentFilterFormat === "regular") {
+            if (v.title && v.title.startsWith('* ')) {
+                return false;
+            }
+        }
+
+        // Tags filter
+        if (currentFilterTags.length > 0) {
+            const videoTags = v.tags || [];
+            const hasMatchingTag = currentFilterTags.some(tag => videoTags.includes(tag));
+            if (!hasMatchingTag) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+}
+
 function saveSortForCurrentFilter(sortVal) {
     localStorage.setItem(getSortKey(), sortVal);
+}
+
+function renderFilterDropdown() {
+    const filterDropdown = document.getElementById("filterDropdown");
+    if (!filterDropdown) return;
+
+    // Get all unique tags of videos in the current tab/filter
+    const tabVideos = videos.filter(v => {
+        if (currentMenuRoute === "trash") {
+            return v.deleted === true;
+        } else {
+            const matchesFilter = currentFilter === "all" || v.status === currentFilter;
+            return matchesFilter && !v.deleted;
+        }
+    });
+
+    const uniqueTags = [];
+    tabVideos.forEach(v => {
+        if (v.tags && Array.isArray(v.tags)) {
+            v.tags.forEach(tag => {
+                const trimmed = tag.trim();
+                if (trimmed && !uniqueTags.includes(trimmed)) {
+                    uniqueTags.push(trimmed);
+                }
+            });
+        }
+    });
+    uniqueTags.sort((a, b) => a.localeCompare(b));
+
+    // Clear and build inner HTML
+    filterDropdown.innerHTML = `
+        <div class="filter-section">
+            <div class="filter-section-title">Формат</div>
+            <div class="filter-options-list">
+                <label class="filter-option">
+                    <input type="radio" name="filterFormat" value="all" ${currentFilterFormat === "all" ? "checked" : ""}>
+                    <span>Все форматы</span>
+                </label>
+                <label class="filter-option">
+                    <input type="radio" name="filterFormat" value="shorts" ${currentFilterFormat === "shorts" ? "checked" : ""}>
+                    <span>Только Shorts</span>
+                </label>
+                <label class="filter-option">
+                    <input type="radio" name="filterFormat" value="regular" ${currentFilterFormat === "regular" ? "checked" : ""}>
+                    <span>Длинные видео</span>
+                </label>
+            </div>
+        </div>
+        <div class="filter-dropdown-divider" style="height: 1px; background-color: var(--ch-border); margin: 6px 0;"></div>
+        <div class="filter-section">
+            <div class="filter-section-title">Теги</div>
+            <div class="filter-options-list" id="filterTagsList">
+                ${uniqueTags.length === 0 ? `
+                    <div style="font-size: 0.8rem; color: var(--ch-text-gray); padding: 4px 8px;">Нет тегов</div>
+                ` : uniqueTags.map(tag => {
+                    const isChecked = currentFilterTags.includes(tag);
+                    return `
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-tag-checkbox" value="${escapeHtml(tag)}" ${isChecked ? "checked" : ""}>
+                            <span class="meta-tag ${typeof getTagColorClass === 'function' ? getTagColorClass(tag) : ''}" style="margin: 0;">${escapeHtml(tag)}</span>
+                        </label>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+        ${currentFilterFormat !== "all" || currentFilterTags.length > 0 ? `
+            <div class="filter-dropdown-divider" style="height: 1px; background-color: var(--ch-border); margin: 6px 0;"></div>
+            <button class="btn-clear-filters" id="btnClearFilters" style="width: 100%; padding: 8px; border: none; border-radius: 8px; background-color: rgba(239, 68, 68, 0.1); color: #ef4444; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background-color 0.15s;">
+                Сбросить фильтры
+            </button>
+        ` : ""}
+    `;
+
+    // Add event listeners
+    const formatRadios = filterDropdown.querySelectorAll('input[name="filterFormat"]');
+    formatRadios.forEach(radio => {
+        radio.addEventListener("change", (e) => {
+            currentFilterFormat = e.target.value;
+            saveFiltersForCurrentFilter();
+            updateFilterButtonState();
+            renderVideosList();
+            renderFilterDropdown();
+        });
+    });
+
+    const tagCheckboxes = filterDropdown.querySelectorAll('.filter-tag-checkbox');
+    tagCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener("change", () => {
+            const checkedTags = [];
+            filterDropdown.querySelectorAll('.filter-tag-checkbox:checked').forEach(cb => {
+                checkedTags.push(cb.value);
+            });
+            currentFilterTags = checkedTags;
+            saveFiltersForCurrentFilter();
+            updateFilterButtonState();
+            renderVideosList();
+            renderFilterDropdown();
+        });
+    });
+
+    const btnClearFilters = filterDropdown.querySelector("#btnClearFilters");
+    if (btnClearFilters) {
+        btnClearFilters.addEventListener("click", () => {
+            currentFilterFormat = "all";
+            currentFilterTags = [];
+            saveFiltersForCurrentFilter();
+            updateFilterButtonState();
+            renderVideosList();
+            renderFilterDropdown();
+        });
+    }
 }
 
 // Инициализация
@@ -317,9 +500,45 @@ document.addEventListener("DOMContentLoaded", () => {
         btnSortList.addEventListener("click", (e) => {
             e.stopPropagation();
             if (sortDropdown.style.display === "none" || !sortDropdown.style.display) {
+                // Adjust position dynamically depending on screen placement
+                const btnRect = btnSortList.getBoundingClientRect();
+                if (btnRect.left < window.innerWidth / 2) {
+                    sortDropdown.style.left = "0";
+                    sortDropdown.style.right = "auto";
+                } else {
+                    sortDropdown.style.left = "auto";
+                    sortDropdown.style.right = "0";
+                }
                 sortDropdown.style.display = "flex";
+                if (filterDropdown) filterDropdown.style.display = "none";
             } else {
                 sortDropdown.style.display = "none";
+            }
+        });
+    }
+
+    // Фильтры списка
+    const btnFilterList = document.getElementById("btnFilterList");
+    const filterDropdown = document.getElementById("filterDropdown");
+    
+    if (btnFilterList) {
+        btnFilterList.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (filterDropdown.style.display === "none" || !filterDropdown.style.display) {
+                // Adjust position dynamically depending on screen placement
+                const btnRect = btnFilterList.getBoundingClientRect();
+                if (btnRect.left < window.innerWidth / 2) {
+                    filterDropdown.style.left = "0";
+                    filterDropdown.style.right = "auto";
+                } else {
+                    filterDropdown.style.left = "auto";
+                    filterDropdown.style.right = "0";
+                }
+                renderFilterDropdown();
+                filterDropdown.style.display = "flex";
+                if (sortDropdown) sortDropdown.style.display = "none";
+            } else {
+                filterDropdown.style.display = "none";
             }
         });
     }
@@ -338,10 +557,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Закрытие дропдауна сортировки при клике вне его
+    // Закрытие дропдауна сортировки и фильтрации при клике вне их
     document.addEventListener("click", (e) => {
-        if (sortDropdown && !btnSortList.contains(e.target) && !sortDropdown.contains(e.target)) {
+        if (sortDropdown && btnSortList && !btnSortList.contains(e.target) && !sortDropdown.contains(e.target)) {
             sortDropdown.style.display = "none";
+        }
+        if (filterDropdown && btnFilterList && !btnFilterList.contains(e.target) && !filterDropdown.contains(e.target)) {
+            filterDropdown.style.display = "none";
         }
     });
 
@@ -1239,6 +1461,7 @@ function handleHashRoute() {
     currentViewMode = savedTabMode;
     
     loadSortForCurrentFilter();
+    loadFiltersForCurrentFilter();
     updateViewForRoute();
 }
 
@@ -1279,15 +1502,7 @@ function updateViewForRoute() {
     renderVideosList();
     
     // Выбираем первое подходящее видео по умолчанию
-    const filtered = videos.filter(v => {
-        const matchesSearch = v.title.toLowerCase().includes(searchQuery);
-        if (currentFilter === "trash") {
-            return matchesSearch && v.deleted === true;
-        } else {
-            const matchesFilter = currentFilter === "all" || v.status === currentFilter;
-            return matchesSearch && matchesFilter && !v.deleted;
-        }
-    });
+    const filtered = getFilteredVideos();
     if (filtered.length > 0) {
         if (selectedVideo && filtered.some(v => v.id === selectedVideo.id)) {
             selectVideoItem(selectedVideo.id);
@@ -1456,24 +1671,46 @@ function renderVideosList() {
         videos.sort((a, b) => {
             return (b.title || "").localeCompare(a.title || "");
         });
+    } else if (currentSort === "tagCountDesc") {
+        videos.sort((a, b) => {
+            const countA = (a.tags && Array.isArray(a.tags)) ? a.tags.length : 0;
+            const countB = (b.tags && Array.isArray(b.tags)) ? b.tags.length : 0;
+            return countB - countA;
+        });
+    } else if (currentSort === "tagCountAsc") {
+        videos.sort((a, b) => {
+            const countA = (a.tags && Array.isArray(a.tags)) ? a.tags.length : 0;
+            const countB = (b.tags && Array.isArray(b.tags)) ? b.tags.length : 0;
+            return countA - countB;
+        });
+    } else if (currentSort === "tagAlphabeticalAZ") {
+        videos.sort((a, b) => {
+            const tagA = (a.tags && Array.isArray(a.tags) && a.tags.length > 0) ? a.tags[0].toLowerCase() : "";
+            const tagB = (b.tags && Array.isArray(b.tags) && b.tags.length > 0) ? b.tags[0].toLowerCase() : "";
+            if (!tagA && !tagB) return 0;
+            if (!tagA) return 1;
+            if (!tagB) return -1;
+            return tagA.localeCompare(tagB);
+        });
+    } else if (currentSort === "tagAlphabeticalZA") {
+        videos.sort((a, b) => {
+            const tagA = (a.tags && Array.isArray(a.tags) && a.tags.length > 0) ? a.tags[0].toLowerCase() : "";
+            const tagB = (b.tags && Array.isArray(b.tags) && b.tags.length > 0) ? b.tags[0].toLowerCase() : "";
+            if (!tagA && !tagB) return 0;
+            if (!tagA) return 1;
+            if (!tagB) return -1;
+            return tagB.localeCompare(tagA);
+        });
     }
 
     // Обновляем статистические счетчики
     updateStatsCounters();
     updateTabCounts();
 
-    const filtered = videos.filter(v => {
-        const matchesSearch = v.title.toLowerCase().includes(searchQuery);
-        if (currentMenuRoute === "trash") {
-            return matchesSearch && v.deleted === true;
-        } else {
-            const matchesFilter = currentFilter === "all" || v.status === currentFilter;
-            return matchesSearch && matchesFilter && !v.deleted;
-        }
-    });
+    const filtered = getFilteredVideos();
 
     if (filtered.length === 0) {
-        videosListContainer.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--ch-text-gray);">Видео не найдены</div>`;
+        videosListContainer.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--ch-text-gray); grid-column: 1 / -1; width: 100%;">Видео не найдены</div>`;
         return;
     }
 
@@ -1495,13 +1732,19 @@ function renderVideosList() {
             });
         }
         
+        let fallbackThumbnailSrc = 'idea-bulb-128x128.png';
+        const ytId = parseYouTubeId(v.videoLink);
+        if (ytId) {
+            fallbackThumbnailSrc = `https://i.ytimg.com/vi/${ytId}/mqdefault.jpg`;
+        }
+
         const isIdeaPlaceholder = (v.status || "idea") === "idea" && (!v.thumbnail || v.thumbnail.includes("placehold.co"));
         const thumbnailHtml = isIdeaPlaceholder ? `
             <div class="video-thumbnail-placeholder idea-placeholder">
                 <img src="idea-bulb-128x128.png" alt="Идея" class="idea-bulb-icon" draggable="false">
             </div>
         ` : `
-            <img src="${v.thumbnail}" alt="Превью" class="video-thumbnail-mini" draggable="false">
+            <img src="${v.thumbnail}" alt="Превью" class="video-thumbnail-mini" draggable="false" onerror="this.onerror=null; this.src='${fallbackThumbnailSrc}';">
         `;
         
         if (v.deleted) {
@@ -2151,6 +2394,16 @@ function updateDetailThumbnailPlaceholder() {
         if (detailImage) {
             detailImage.style.display = "block";
             detailImage.src = selectedVideo.thumbnail;
+            detailImage.onerror = () => {
+                detailImage.onerror = null;
+                const ytId = parseYouTubeId(selectedVideo.videoLink);
+                if (ytId) {
+                    detailImage.src = `https://i.ytimg.com/vi/${ytId}/mqdefault.jpg`;
+                } else {
+                    detailImage.style.display = "none";
+                    if (detailImagePlaceholder) detailImagePlaceholder.style.display = "flex";
+                }
+            };
         }
         if (detailImagePlaceholder) detailImagePlaceholder.style.display = "none";
     }
@@ -2235,16 +2488,7 @@ window.addEventListener('authChanged', (e) => {
             
             renderVideosList();
             
-            // Выбираем первое видео по умолчанию или восстанавливаем выбранное
-            const filtered = videos.filter(v => {
-                const matchesSearch = v.title.toLowerCase().includes(searchQuery);
-                if (currentMenuRoute === "trash") {
-                    return matchesSearch && v.deleted === true;
-                } else {
-                    const matchesFilter = currentFilter === "all" || v.status === currentFilter;
-                    return matchesSearch && matchesFilter && !v.deleted;
-                }
-            });
+            const filtered = getFilteredVideos();
             if (filtered.length > 0) {
                 if (selectedVideo && filtered.some(v => v.id === selectedVideo.id)) {
                     selectVideoItem(selectedVideo.id);
@@ -2295,15 +2539,7 @@ window.addEventListener('authChanged', (e) => {
         
         renderVideosList();
         
-        const filtered = videos.filter(v => {
-            const matchesSearch = v.title.toLowerCase().includes(searchQuery);
-            if (currentMenuRoute === "trash") {
-                return matchesSearch && v.deleted === true;
-            } else {
-                const matchesFilter = currentFilter === "all" || v.status === currentFilter;
-                return matchesSearch && matchesFilter && !v.deleted;
-            }
-        });
+        const filtered = getFilteredVideos();
         if (filtered.length > 0) {
             if (selectedVideo && filtered.some(v => v.id === selectedVideo.id)) {
                 selectVideoItem(selectedVideo.id);
@@ -4228,6 +4464,7 @@ async function updateTagsState(newTags) {
     await saveVideoData("tags", newTags);
     renderVideosList();
     renderTags();
+    renderFilterDropdown();
 }
 
 function getAllUniqueTags() {
@@ -4270,6 +4507,15 @@ function saveTagConfigs() {
 function getTagColorClass(tag) {
     if (tagConfigs[tag] && tagConfigs[tag].color) {
         return `tag-color-${tagConfigs[tag].color}`;
+    }
+    if (tag) {
+        let hash = 0;
+        const tagStr = String(tag);
+        for (let i = 0; i < tagStr.length; i++) {
+            hash = tagStr.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash) % tagColorsList.length;
+        return `tag-color-${tagColorsList[index]}`;
     }
     return "tag-color-purple";
 }

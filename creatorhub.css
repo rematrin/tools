@@ -3265,61 +3265,112 @@ body.dark .video-drag-placeholder {
     background-color: var(--ch-card-bg);
     border: 1px solid var(--ch-border);
     border-radius: 12px;
-    width: 280px;
+    width: 380px; /* Увеличено для селекторов фильтра */
     box-shadow: var(--ch-shadow);
     padding: 12px;
     z-index: 1001;
     box-sizing: border-box;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
+    max-width: calc(100vw - 32px);
 }
 
-.filter-section {
+.filter-rules-container {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-}
-
-.filter-section-title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--ch-text-gray);
-    letter-spacing: 0.5px;
-    margin-bottom: 2px;
-}
-
-.filter-options-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 150px;
+    gap: 8px;
+    max-height: 250px;
     overflow-y: auto;
-    padding-right: 4px;
+    margin-bottom: 4px;
 }
 
-.filter-option {
+.filter-rule-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    color: var(--ch-text-dark);
-    transition: background-color 0.15s;
-    user-select: none;
+    gap: 6px;
+    width: 100%;
 }
 
-.filter-option:hover {
+.filter-rule-select {
     background-color: var(--ch-border);
+    border: 1px solid var(--ch-border);
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-size: 0.8rem;
+    color: var(--ch-text-dark);
+    outline: none;
+    cursor: pointer;
+    font-family: inherit;
+    flex: 1;
+    min-width: 0;
 }
 
-.filter-option input[type="checkbox"],
-.filter-option input[type="radio"] {
+.filter-rule-select:focus {
+    border-color: var(--ch-purple);
+}
+
+.btn-remove-rule {
+    background: transparent;
+    border: none;
+    color: var(--ch-text-gray);
     cursor: pointer;
-    accent-color: var(--ch-purple);
-    margin: 0;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.btn-remove-rule:hover {
+    color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+.filter-dropdown-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    border-top: 1px solid var(--ch-border);
+    padding-top: 10px;
+}
+
+.btn-add-rule-btn {
+    background: rgba(99, 102, 241, 0.08);
+    border: none;
+    color: var(--ch-purple);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.15s;
+}
+
+.btn-add-rule-btn:hover {
+    background-color: rgba(99, 102, 241, 0.15);
+}
+
+.btn-clear-rules-btn {
+    background: transparent;
+    border: none;
+    color: var(--ch-text-gray);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.btn-clear-rules-btn:hover {
+    color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.05);
 }
 
 /* === СТИЛИ ДЛЯ СЧЕТЧИКОВ НА ВКЛАДКАХ === */

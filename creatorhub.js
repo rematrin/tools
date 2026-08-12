@@ -262,31 +262,26 @@ function loadSortForCurrentFilter() {
     }
 }
 
-let currentFilterFormat = "all"; // "all" | "shorts" | "regular"
-let currentFilterTags = []; // string[] (selected tags)
+let currentFiltersList = []; // Array of { id: string, prop: string, op: string, val: string }
 
 function loadFiltersForCurrentFilter() {
-    currentFilterFormat = localStorage.getItem(`creatorhub_filter_format_${currentFilter}`) || "all";
     try {
-        const storedTags = localStorage.getItem(`creatorhub_filter_tags_${currentFilter}`);
-        currentFilterTags = storedTags ? JSON.parse(storedTags) : [];
+        const stored = localStorage.getItem(`creatorhub_adv_filters_${currentFilter}`);
+        currentFiltersList = stored ? JSON.parse(stored) : [];
     } catch (e) {
-        currentFilterTags = [];
+        currentFiltersList = [];
     }
-
-    // Update active state on filter button
     updateFilterButtonState();
 }
 
 function saveFiltersForCurrentFilter() {
-    localStorage.setItem(`creatorhub_filter_format_${currentFilter}`, currentFilterFormat);
-    localStorage.setItem(`creatorhub_filter_tags_${currentFilter}`, JSON.stringify(currentFilterTags));
+    localStorage.setItem(`creatorhub_adv_filters_${currentFilter}`, JSON.stringify(currentFiltersList));
 }
 
 function updateFilterButtonState() {
     const btnFilterList = document.getElementById("btnFilterList");
     if (btnFilterList) {
-        if (currentFilterFormat !== "all" || currentFilterTags.length > 0) {
+        if (currentFiltersList.length > 0) {
             btnFilterList.classList.add("active");
         } else {
             btnFilterList.classList.remove("active");
@@ -310,23 +305,33 @@ function getFilteredVideos() {
             return false;
         }
 
-        // Format filter
-        if (currentFilterFormat === "shorts") {
-            if (!(v.title && v.title.startsWith('* '))) {
-                return false;
+        // Apply advanced rules filters
+        for (const rule of currentFiltersList) {
+            if (rule.active === false) {
+                continue;
             }
-        } else if (currentFilterFormat === "regular") {
-            if (v.title && v.title.startsWith('* ')) {
-                return false;
-            }
-        }
-
-        // Tags filter
-        if (currentFilterTags.length > 0) {
+            const isShorts = !!(v.title && v.title.startsWith('* '));
             const videoTags = v.tags || [];
-            const hasMatchingTag = currentFilterTags.some(tag => videoTags.includes(tag));
-            if (!hasMatchingTag) {
-                return false;
+
+            if (rule.prop === "format") {
+                const targetVal = rule.val; // "shorts" or "regular"
+                const videoVal = isShorts ? "shorts" : "regular";
+
+                if (rule.op === "eq") {
+                    if (videoVal !== targetVal) return false;
+                } else if (rule.op === "neq") {
+                    if (videoVal === targetVal) return false;
+                }
+            } else if (rule.prop === "tags") {
+                if (rule.op === "contains") {
+                    if (!videoTags.includes(rule.val)) return false;
+                } else if (rule.op === "not_contains") {
+                    if (videoTags.includes(rule.val)) return false;
+                } else if (rule.op === "is_empty") {
+                    if (videoTags.length > 0) return false;
+                } else if (rule.op === "is_not_empty") {
+                    if (videoTags.length === 0) return false;
+                }
             }
         }
 
@@ -365,70 +370,183 @@ function renderFilterDropdown() {
     });
     uniqueTags.sort((a, b) => a.localeCompare(b));
 
-    // Clear and build inner HTML
-    filterDropdown.innerHTML = `
-        <div class="filter-section">
-            <div class="filter-section-title">Формат</div>
-            <div class="filter-options-list">
-                <label class="filter-option">
-                    <input type="radio" name="filterFormat" value="all" ${currentFilterFormat === "all" ? "checked" : ""}>
-                    <span>Все форматы</span>
-                </label>
-                <label class="filter-option">
-                    <input type="radio" name="filterFormat" value="shorts" ${currentFilterFormat === "shorts" ? "checked" : ""}>
-                    <span>Только Shorts</span>
-                </label>
-                <label class="filter-option">
-                    <input type="radio" name="filterFormat" value="regular" ${currentFilterFormat === "regular" ? "checked" : ""}>
-                    <span>Длинные видео</span>
-                </label>
-            </div>
-        </div>
-        <div class="filter-dropdown-divider" style="height: 1px; background-color: var(--ch-border); margin: 6px 0;"></div>
-        <div class="filter-section">
-            <div class="filter-section-title">Теги</div>
-            <div class="filter-options-list" id="filterTagsList">
-                ${uniqueTags.length === 0 ? `
-                    <div style="font-size: 0.8rem; color: var(--ch-text-gray); padding: 4px 8px;">Нет тегов</div>
-                ` : uniqueTags.map(tag => {
-                    const isChecked = currentFilterTags.includes(tag);
-                    return `
-                        <label class="filter-option">
-                            <input type="checkbox" class="filter-tag-checkbox" value="${escapeHtml(tag)}" ${isChecked ? "checked" : ""}>
-                            <span class="meta-tag ${typeof getTagColorClass === 'function' ? getTagColorClass(tag) : ''}" style="margin: 0;">${escapeHtml(tag)}</span>
-                        </label>
-                    `;
-                }).join('')}
-            </div>
-        </div>
-        ${currentFilterFormat !== "all" || currentFilterTags.length > 0 ? `
-            <div class="filter-dropdown-divider" style="height: 1px; background-color: var(--ch-border); margin: 6px 0;"></div>
-            <button class="btn-clear-filters" id="btnClearFilters" style="width: 100%; padding: 8px; border: none; border-radius: 8px; background-color: rgba(239, 68, 68, 0.1); color: #ef4444; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background-color 0.15s;">
-                Сбросить фильтры
-            </button>
-        ` : ""}
+    // HTML template
+    let html = `
+        <div class="filter-rules-container" id="filterRulesContainer">
     `;
 
-    // Add event listeners
-    const formatRadios = filterDropdown.querySelectorAll('input[name="filterFormat"]');
-    formatRadios.forEach(radio => {
-        radio.addEventListener("change", (e) => {
-            currentFilterFormat = e.target.value;
+    if (currentFiltersList.length === 0) {
+        html += `
+            <div style="font-size: 0.8rem; color: var(--ch-text-gray); padding: 8px; text-align: center;">
+                Нет активных фильтров
+            </div>
+        `;
+    } else {
+        currentFiltersList.forEach((rule, index) => {
+            html += `
+                <div class="filter-rule-row" data-index="${index}" style="${rule.active === false ? 'opacity: 0.55;' : ''}">
+                    <!-- Включение/выключение -->
+                    <input type="checkbox" class="filter-rule-active-checkbox" ${rule.active !== false ? "checked" : ""} title="Включить/выключить фильтр" style="cursor: pointer; accent-color: var(--ch-purple); margin: 0; flex-shrink: 0; width: 14px; height: 14px;">
+                    
+                    <!-- Свойство -->
+                    <select class="filter-rule-select select-prop" style="flex: 1.2;">
+                        <option value="format" ${rule.prop === "format" ? "selected" : ""}>Формат</option>
+                        <option value="tags" ${rule.prop === "tags" ? "selected" : ""}>Теги</option>
+                    </select>
+                    
+                    <!-- Оператор -->
+                    <select class="filter-rule-select select-op" style="flex: 1.5;">
+            `;
+
+            if (rule.prop === "format") {
+                html += `
+                    <option value="eq" ${rule.op === "eq" ? "selected" : ""}>равен</option>
+                    <option value="neq" ${rule.op === "neq" ? "selected" : ""}>не равен</option>
+                `;
+            } else {
+                html += `
+                    <option value="contains" ${rule.op === "contains" ? "selected" : ""}>содержит</option>
+                    <option value="not_contains" ${rule.op === "not_contains" ? "selected" : ""}>не содержит</option>
+                    <option value="is_empty" ${rule.op === "is_empty" ? "selected" : ""}>пустой</option>
+                    <option value="is_not_empty" ${rule.op === "is_not_empty" ? "selected" : ""}>не пустой</option>
+                `;
+            }
+
+            html += `
+                    </select>
+                    
+                    <!-- Значение -->
+            `;
+
+            const showVal = rule.op !== "is_empty" && rule.op !== "is_not_empty";
+            if (showVal) {
+                html += `
+                    <select class="filter-rule-select select-val" style="flex: 1.8;">
+                `;
+
+                if (rule.prop === "format") {
+                    html += `
+                        <option value="shorts" ${rule.val === "shorts" ? "selected" : ""}>Shorts</option>
+                        <option value="regular" ${rule.val === "regular" ? "selected" : ""}>Длинное видео</option>
+                    `;
+                } else {
+                    if (uniqueTags.length === 0) {
+                        html += `<option value="">(нет тегов)</option>`;
+                    } else {
+                        uniqueTags.forEach(tag => {
+                            html += `<option value="${escapeHtml(tag)}" ${rule.val === tag ? "selected" : ""}>${escapeHtml(tag)}</option>`;
+                        });
+                    }
+                }
+
+                html += `
+                    </select>
+                `;
+            } else {
+                html += `
+                    <div style="flex: 1.8;"></div>
+                `;
+            }
+
+            html += `
+                    <button class="btn-remove-rule" title="Удалить правило">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            `;
+        });
+    }
+
+    html += `
+        </div>
+        <div class="filter-dropdown-actions">
+            <button class="btn-add-rule-btn" id="btnAddFilterRule">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Добавить фильтр
+            </button>
+            ${currentFiltersList.length > 0 ? `
+                <button class="btn-clear-rules-btn" id="btnClearFilterRules">Сбросить все</button>
+            ` : ""}
+        </div>
+    `;
+
+    filterDropdown.innerHTML = html;
+
+    // Add event listeners for dynamic changes
+    const rows = filterDropdown.querySelectorAll(".filter-rule-row");
+    rows.forEach(row => {
+        const index = parseInt(row.dataset.index, 10);
+        const rule = currentFiltersList[index];
+
+        const toggleActive = row.querySelector(".filter-rule-active-checkbox");
+        const selectProp = row.querySelector(".select-prop");
+        const selectOp = row.querySelector(".select-op");
+        const selectVal = row.querySelector(".select-val");
+        const btnRemove = row.querySelector(".btn-remove-rule");
+
+        toggleActive.addEventListener("change", (e) => {
+            rule.active = e.target.checked;
             saveFiltersForCurrentFilter();
             updateFilterButtonState();
             renderVideosList();
             renderFilterDropdown();
         });
-    });
 
-    const tagCheckboxes = filterDropdown.querySelectorAll('.filter-tag-checkbox');
-    tagCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener("change", () => {
-            const checkedTags = [];
-            filterDropdown.querySelectorAll('.filter-tag-checkbox:checked').forEach(cb => {
-                checkedTags.push(cb.value);
+        selectProp.addEventListener("change", (e) => {
+            const nextProp = e.target.value;
+            rule.prop = nextProp;
+            // Set defaults when property changes
+            if (nextProp === "format") {
+                rule.op = "eq";
+                rule.val = "shorts";
+            } else {
+                rule.op = "contains";
+                rule.val = uniqueTags.length > 0 ? uniqueTags[0] : "";
+            }
+            saveFiltersForCurrentFilter();
+            updateFilterButtonState();
+            renderVideosList();
+            renderFilterDropdown();
+        });
+
+        if (selectOp) {
+            selectOp.addEventListener("change", (e) => {
+                const nextOp = e.target.value;
+                rule.op = nextOp;
+                // If operator became empty/not_empty, clear value
+                if (nextOp === "is_empty" || nextOp === "is_not_empty") {
+                    rule.val = "";
+                } else if (!rule.val) {
+                    if (rule.prop === "format") {
+                        rule.val = "shorts";
+                    } else {
+                        rule.val = uniqueTags.length > 0 ? uniqueTags[0] : "";
+                    }
+                }
+                saveFiltersForCurrentFilter();
+                updateFilterButtonState();
+                renderVideosList();
+                renderFilterDropdown();
             });
-            currentFilterTags = checkedTags;
+        }
+
+        if (selectVal) {
+            selectVal.addEventListener("change", (e) => {
+                rule.val = e.target.value;
+                saveFiltersForCurrentFilter();
+                updateFilterButtonState();
+                renderVideosList();
+            });
+        }
+
+        btnRemove.addEventListener("click", () => {
+            currentFiltersList.splice(index, 1);
             saveFiltersForCurrentFilter();
             updateFilterButtonState();
             renderVideosList();
@@ -436,11 +554,26 @@ function renderFilterDropdown() {
         });
     });
 
-    const btnClearFilters = filterDropdown.querySelector("#btnClearFilters");
-    if (btnClearFilters) {
-        btnClearFilters.addEventListener("click", () => {
-            currentFilterFormat = "all";
-            currentFilterTags = [];
+    const btnAddFilterRule = filterDropdown.querySelector("#btnAddFilterRule");
+    btnAddFilterRule.addEventListener("click", () => {
+        // Add default rule: tags is not empty, active: true
+        currentFiltersList.push({
+            id: Math.random().toString(36).substr(2, 9),
+            prop: "tags",
+            op: "is_not_empty",
+            val: "",
+            active: true
+        });
+        saveFiltersForCurrentFilter();
+        updateFilterButtonState();
+        renderVideosList();
+        renderFilterDropdown();
+    });
+
+    const btnClearFilterRules = filterDropdown.querySelector("#btnClearFilterRules");
+    if (btnClearFilterRules) {
+        btnClearFilterRules.addEventListener("click", () => {
+            currentFiltersList = [];
             saveFiltersForCurrentFilter();
             updateFilterButtonState();
             renderVideosList();
@@ -560,10 +693,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // Закрытие дропдауна сортировки и фильтрации при клике вне их
     document.addEventListener("click", (e) => {
         if (sortDropdown && btnSortList && !btnSortList.contains(e.target) && !sortDropdown.contains(e.target)) {
-            sortDropdown.style.display = "none";
+            if (document.body.contains(e.target)) {
+                sortDropdown.style.display = "none";
+            }
         }
         if (filterDropdown && btnFilterList && !btnFilterList.contains(e.target) && !filterDropdown.contains(e.target)) {
-            filterDropdown.style.display = "none";
+            if (document.body.contains(e.target)) {
+                filterDropdown.style.display = "none";
+            }
         }
     });
 

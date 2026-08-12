@@ -489,7 +489,7 @@
                             <div class="settings-row-left">
                                 <span class="settings-row-label">Дата публикации</span>
                             </div>
-                            <div class="due-date-wrapper" style="position: relative;">
+                            <div class="due-date-wrapper" style="position: relative; display: flex; align-items: center; gap: 8px;">
                                 <button class="btn-due-date" id="btnDueDate" type="button"
                                     style="display: flex; align-items: center; gap: 8px; background: var(--ch-card-bg); border: 1px solid var(--ch-border); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-size: 0.9rem; color: var(--ch-text-dark); cursor: pointer; transition: border-color 0.2s;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -500,6 +500,12 @@
                                         <line x1="3" y1="10" x2="21" y2="10"></line>
                                     </svg>
                                     <span id="dueDateBtnText">Выбрать дату</span>
+                                </button>
+                                <button class="btn-clear-date" id="btnClearDueDate" type="button" title="Очистить дату" style="display: none; background: transparent; border: none; color: var(--ch-text-gray); cursor: pointer; padding: 6px; border-radius: 6px; transition: color 0.15s, background-color 0.15s; align-items: center; justify-content: center;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
                                 </button>
                                 <!-- Выпадающее меню календаря -->
                                 <div class="due-date-dropdown" id="dueDateDropdown"

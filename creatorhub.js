@@ -10,7 +10,8 @@ import {
     doc,
     updateDoc,
     serverTimestamp,
-    where
+    where,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // Изначальные данные видео
@@ -960,9 +961,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Кнопка очистки даты публикации
+    const btnClearDueDate = document.getElementById("btnClearDueDate");
+    if (btnClearDueDate) {
+        btnClearDueDate.addEventListener("click", (e) => {
+            e.stopPropagation();
+            clearDueDate();
+        });
+    }
+
     // Скрытие календаря при клике в любое другое место
     document.addEventListener("click", (e) => {
-        if (dueDateDropdown && !btnDueDate.contains(e.target) && !dueDateDropdown.contains(e.target)) {
+        if (dueDateDropdown && btnDueDate && !btnDueDate.contains(e.target) && !dueDateDropdown.contains(e.target) && (!btnClearDueDate || !btnClearDueDate.contains(e.target))) {
             dueDateDropdown.style.display = "none";
         }
     });
@@ -2450,6 +2460,10 @@ function selectVideoItem(id) {
     if (dueDateBtnText) {
         dueDateBtnText.textContent = pubDateFormatted !== "не запланировано" ? pubDateFormatted : "Выбрать дату";
     }
+    const btnClearDueDate = document.getElementById("btnClearDueDate");
+    if (btnClearDueDate) {
+        btnClearDueDate.style.display = selectedVideo.publishDate ? "flex" : "none";
+    }
 
     if (infoCreatedDate) {
         let createdTimestamp = null;
@@ -2561,6 +2575,33 @@ window.addEventListener('authChanged', (e) => {
     db = window.db || getFirestore();
 
     if (currentUid) {
+        // Загрузка глобальных кнопок пользователя из Firestore
+        getDoc(doc(db, 'users', currentUid)).then((docSnap) => {
+            if (docSnap.exists()) {
+                const userData = docSnap.data();
+                if (userData && userData.globalButtons && Array.isArray(userData.globalButtons)) {
+                    userData.globalButtons.forEach(fireBtn => {
+                        const localIdx = globalButtons.findIndex(b => b.id === fireBtn.id);
+                        if (localIdx >= 0) {
+                            globalButtons[localIdx].name = fireBtn.name;
+                        } else {
+                            globalButtons.push(fireBtn);
+                        }
+                    });
+                    localStorage.setItem("creatorhub_global_buttons", JSON.stringify(globalButtons));
+                    recoverMissingGlobalButtons();
+                    renderSelectedVideoButtons();
+                    updateNotionButtonState();
+                } else {
+                    updateDoc(doc(db, "users", currentUid), {
+                        globalButtons: globalButtons
+                    }).catch(err => console.error("Error seeding Firestore globalButtons:", err));
+                }
+            }
+        }).catch((err) => {
+            console.error("Error loading global buttons from Firestore:", err);
+        });
+
         // Подписка на проекты
         const qProj = query(collection(db, 'users', currentUid, 'projects'));
         if (unsubscribeProjects) unsubscribeProjects();
@@ -3352,40 +3393,67 @@ function loadGlobalButtons() {
         const stored = localStorage.getItem("creatorhub_global_buttons");
         if (stored) {
             globalButtons = JSON.parse(stored);
-            
-            // Clean up example buttons if we haven't done it yet
-            if (!localStorage.getItem("creatorhub_global_buttons_cleaned")) {
-                const usedButtonIds = new Set();
-                if (Array.isArray(videos)) {
-                    videos.forEach(v => {
-                        if (v.buttons) {
-                            v.buttons.forEach(vb => usedButtonIds.add(vb.buttonId));
-                        }
-                    });
-                }
-                
-                globalButtons = globalButtons.filter(b => {
-                    if (usedButtonIds.has(b.id)) return true;
-                    if (["gb_script", "gb_figma", "gb_github"].includes(b.id)) return false;
-                    return true;
-                });
-                
-                saveGlobalButtons();
-                localStorage.setItem("creatorhub_global_buttons_cleaned", "true");
-            }
         } else {
-            globalButtons = [];
+            // Seed default buttons
+            globalButtons = [
+                { id: "gb_notion", name: "Notion" },
+                { id: "gb_board", name: "Доска" },
+                { id: "gb_script", name: "Сценарий" },
+                { id: "gb_figma", name: "Figma" }
+            ];
             saveGlobalButtons();
-            localStorage.setItem("creatorhub_global_buttons_cleaned", "true");
         }
+
+        // Self-healing: recover any missing global buttons referenced in videos
+        recoverMissingGlobalButtons();
+
     } catch (e) {
         console.error("Error loading global buttons", e);
+    }
+}
+
+function recoverMissingGlobalButtons() {
+    let changed = false;
+    if (Array.isArray(videos)) {
+        videos.forEach(v => {
+            if (v.buttons && Array.isArray(v.buttons)) {
+                v.buttons.forEach(vb => {
+                    const exists = globalButtons.some(gb => gb.id === vb.buttonId);
+                    if (!exists) {
+                        let name = "Кнопка";
+                        if (vb.buttonId === "gb_notion") name = "Notion";
+                        else if (vb.buttonId === "gb_board") name = "Доска";
+                        else if (vb.buttonId === "gb_script") name = "Сценарий";
+                        else if (vb.buttonId === "gb_figma") name = "Figma";
+                        else {
+                            const cleanId = vb.buttonId.replace("gb_", "");
+                            name = cleanId.charAt(0).toUpperCase() + cleanId.slice(1);
+                        }
+                        globalButtons.push({
+                            id: vb.buttonId,
+                            name: name
+                        });
+                        changed = true;
+                    }
+                });
+            }
+        });
+    }
+    if (changed) {
+        saveGlobalButtons();
     }
 }
 
 function saveGlobalButtons() {
     try {
         localStorage.setItem("creatorhub_global_buttons", JSON.stringify(globalButtons));
+        if (currentUid && db) {
+            updateDoc(doc(db, "users", currentUid), {
+                globalButtons: globalButtons
+            }).catch(err => {
+                console.error("Error saving global buttons to Firestore:", err);
+            });
+        }
     } catch (e) {
         console.error("Error saving global buttons", e);
     }
@@ -4025,6 +4093,11 @@ async function setDueDate(dateStr) {
     if (dueDateBtnText) {
         dueDateBtnText.textContent = formattedDate;
     }
+    // Обновляем кнопку очистки
+    const btnClearDueDate = document.getElementById("btnClearDueDate");
+    if (btnClearDueDate) {
+        btnClearDueDate.style.display = dateStr ? "flex" : "none";
+    }
     // Обновляем статичный текст на вкладке Информация
     if (infoDate) {
         infoDate.textContent = formattedDate;
@@ -4042,12 +4115,52 @@ async function setDueDate(dateStr) {
         }
     } else {
         localStorage.setItem("local_videos", JSON.stringify(videos));
-        renderVideosList();
     }
+    
+    renderVideosList();
     
     if (dueDateDropdown) {
         dueDateDropdown.style.display = "none";
     }
+}
+
+async function clearDueDate() {
+    if (!selectedVideo) return;
+    
+    selectedDueDate = "";
+    selectedVideo.publishDate = "";
+    
+    const formattedDate = "не запланировано";
+    selectedVideo.date = formattedDate;
+    selectedVideo.dateLabel = formattedDate;
+    
+    if (dueDateBtnText) {
+        dueDateBtnText.textContent = "Выбрать дату";
+    }
+    if (infoDate) {
+        infoDate.textContent = formattedDate;
+    }
+    
+    const btnClearDueDate = document.getElementById("btnClearDueDate");
+    if (btnClearDueDate) {
+        btnClearDueDate.style.display = "none";
+    }
+    
+    if (currentUid) {
+        try {
+            await updateDoc(doc(db, "users", currentUid, "videos", selectedVideo.id), {
+                publishDate: "",
+                date: formattedDate,
+                dateLabel: formattedDate
+            });
+        } catch (err) {
+            console.error("Ошибка при сохранении даты публикации в Firestore:", err);
+        }
+    } else {
+        localStorage.setItem("local_videos", JSON.stringify(videos));
+    }
+    
+    renderVideosList();
 }
 
 function updateDescriptionViewer(text) {

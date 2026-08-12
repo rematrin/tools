@@ -4714,3 +4714,8 @@ body.dark .global-button-item:hover {
     background-color: rgba(220, 38, 38, 0.08);
     border-radius: 6px;
 }
+
+.btn-clear-date:hover {
+    color: #ef4444 !important;
+    background-color: rgba(239, 68, 68, 0.1) !important;
+}

@@ -628,7 +628,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 detailSidebar.style.display = "none";
             }
         }
+        updateCarouselScrollArrows();
     });
+
+    const btnCarouselNext = document.getElementById("btnCarouselNext");
+    if (btnCarouselNext) {
+        btnCarouselNext.addEventListener("click", () => {
+            const carousel = document.getElementById("videoButtonsContainer");
+            if (carousel) {
+                carousel.scrollBy({ left: 120, behavior: "smooth" });
+            }
+        });
+    }
+    const btnCarouselPrev = document.getElementById("btnCarouselPrev");
+    if (btnCarouselPrev) {
+        btnCarouselPrev.addEventListener("click", () => {
+            const carousel = document.getElementById("videoButtonsContainer");
+            if (carousel) {
+                carousel.scrollBy({ left: -120, behavior: "smooth" });
+            }
+        });
+    }
+    const carouselEl = document.getElementById("videoButtonsContainer");
+    if (carouselEl) {
+        carouselEl.addEventListener("scroll", updateCarouselScrollArrows);
+    }
     // Сортировка списка
     if (btnSortList) {
         btnSortList.addEventListener("click", (e) => {
@@ -851,6 +875,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (detailStatusSelect) {
                 detailStatusSelect.className = `status-select ${newStatus}`;
             }
+            updateSidebarStatusPill(newStatus);
             updateDetailThumbnailPlaceholder();
 
             if (currentUid) {
@@ -2439,6 +2464,7 @@ function selectVideoItem(id) {
         detailStatusSelect.className = `status-select ${selectedVideo.status || "idea"}`;
     }
     detailStatusDot.className = `status-dot ${selectedVideo.status || "idea"}`;
+    updateSidebarStatusPill(selectedVideo.status || "idea");
 
     // Вкладка: Информация
     if (infoDescription && document.activeElement !== infoDescription) {
@@ -2506,6 +2532,10 @@ function selectVideoItem(id) {
 
     // Обновляем состояние кнопок
     updateNotionButtonState();
+
+    if (typeof initTooltips === "function") {
+        initTooltips();
+    }
 
     // Показываем контент, скрываем заглушку
     const emptyStateEl = document.getElementById("detailSidebarEmptyState");
@@ -2866,6 +2896,7 @@ function clearDetailSidebar() {
         detailStatusSelect.value = "idea";
     }
     detailStatusDot.className = "status-dot";
+    updateSidebarStatusPill("idea");
     if (infoDescription) infoDescription.value = "";
     if (infoDescriptionViewer) {
         infoDescriptionViewer.innerHTML = "";
@@ -2880,6 +2911,10 @@ function clearDetailSidebar() {
     selectedDueDate = "";
     if (dueDateBtnText) {
         dueDateBtnText.textContent = "Выбрать дату";
+    }
+    const btnClearDueDate = document.getElementById("btnClearDueDate");
+    if (btnClearDueDate) {
+        btnClearDueDate.style.display = "none";
     }
     if (referencesContent) referencesContent.innerHTML = "";
     if (settingVideoLink) settingVideoLink.value = "";
@@ -3336,6 +3371,7 @@ statusOptButtons.forEach(btn => {
                 detailStatusSelect.className = `status-select ${newStatus}`;
             }
             detailStatusDot.className = `status-dot ${newStatus}`;
+            updateSidebarStatusPill(newStatus);
             updateDetailThumbnailPlaceholder();
         }
         
@@ -3855,7 +3891,114 @@ function renderGlobalButtonsList() {
     });
 }
 
-// Render dynamic links in Information tab
+// Helper to update status pill badge on the sidebar header
+function updateSidebarStatusPill(status) {
+    const btn = document.getElementById("btnSidebarStatus");
+    const dot = document.getElementById("detailStatusDot");
+    const text = document.getElementById("detailStatusText");
+    if (!btn) return;
+
+    let bgColor = "rgba(99, 102, 241, 0.08)";
+    let textColor = "var(--ch-purple)";
+    let dotColor = "var(--ch-purple)";
+    let textLabel = "Идея";
+
+    if (status === "in_progress") {
+        bgColor = "rgba(245, 158, 11, 0.08)";
+        textColor = "#d97706";
+        dotColor = "#f59e0b";
+        textLabel = "Черновик";
+    } else if (status === "editing") {
+        bgColor = "rgba(59, 130, 246, 0.08)";
+        textColor = "#2563eb";
+        dotColor = "#3b82f6";
+        textLabel = "В процессе";
+    } else if (status === "published") {
+        bgColor = "rgba(16, 185, 129, 0.08)";
+        textColor = "#059669";
+        dotColor = "#10b981";
+        textLabel = "Опубликовано";
+    }
+
+    btn.style.backgroundColor = bgColor;
+    btn.style.color = textColor;
+    if (dot) dot.style.backgroundColor = dotColor;
+    if (text) text.textContent = textLabel;
+}
+
+// Brand icons helper for links carousel cards
+function getBrandIcon(name) {
+    const lowercase = name.toLowerCase();
+    if (lowercase.includes("notion")) {
+        return `<img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Notion-logo.svg" width="16" height="16" style="display: block;">`;
+    }
+    if (lowercase.includes("chatgpt")) {
+        return `<img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" width="16" height="16" style="display: block;">`;
+    }
+    if (lowercase.includes("figma")) {
+        return `<img src="https://upload.wikimedia.org/wikipedia/commons/3/33/Figma-logo.svg" width="12" height="16" style="display: block;">`;
+    }
+    if (lowercase.includes("youtube") || lowercase.includes("studio") || lowercase.includes("ютуб")) {
+        return `<img src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg" width="18" height="16" style="display: block;">`;
+    }
+    if (lowercase.includes("docs") || lowercase.includes("документ")) {
+        return `📄`;
+    }
+    if (lowercase.includes("сценарий") || lowercase.includes("script")) {
+        return `📝`;
+    }
+    if (lowercase.includes("доска") || lowercase.includes("board")) {
+        return `📋`;
+    }
+    if (lowercase.includes("таблица")) {
+        return `📊`;
+    }
+    if (lowercase.includes("съемк")) {
+        return `📷`;
+    }
+    return `🔗`;
+}
+
+// Update scroll state and arrow visibility for carousel
+function updateCarouselScrollArrows() {
+    const carousel = document.getElementById("videoButtonsContainer");
+    const nextBtn = document.getElementById("btnCarouselNext");
+    const prevBtn = document.getElementById("btnCarouselPrev");
+    const fadeOverlay = document.querySelector(".carousel-fade-overlay");
+    const fadeOverlayLeft = document.querySelector(".carousel-fade-overlay-left");
+    if (!carousel) return;
+
+    setTimeout(() => {
+        const hasOverflow = carousel.scrollWidth > carousel.clientWidth;
+        if (hasOverflow) {
+            // Left scroll state
+            if (carousel.scrollLeft > 5) {
+                if (prevBtn) { prevBtn.style.display = "flex"; prevBtn.style.opacity = "1"; }
+                if (fadeOverlayLeft) fadeOverlayLeft.style.opacity = "1";
+            } else {
+                if (prevBtn) { prevBtn.style.display = "none"; prevBtn.style.opacity = "0"; }
+                if (fadeOverlayLeft) fadeOverlayLeft.style.opacity = "0";
+            }
+
+            // Right scroll state
+            const isAtEnd = carousel.scrollLeft + carousel.clientWidth >= carousel.scrollWidth - 5;
+            if (!isAtEnd) {
+                if (nextBtn) { nextBtn.style.display = "flex"; nextBtn.style.opacity = "1"; }
+                if (fadeOverlay) fadeOverlay.style.opacity = "1";
+            } else {
+                if (nextBtn) { nextBtn.style.display = "none"; nextBtn.style.opacity = "0"; }
+                if (fadeOverlay) fadeOverlay.style.opacity = "0";
+            }
+        } else {
+            if (prevBtn) { prevBtn.style.display = "none"; prevBtn.style.opacity = "0"; }
+            if (fadeOverlayLeft) fadeOverlayLeft.style.opacity = "0";
+            if (nextBtn) { nextBtn.style.display = "none"; nextBtn.style.opacity = "0"; }
+            if (fadeOverlay) fadeOverlay.style.opacity = "0";
+        }
+    }, 50);
+}
+
+// Render dynamic links in the header links carousel
 function updateNotionButtonState() {
     if (!videoButtonsContainer) return;
     videoButtonsContainer.innerHTML = "";
@@ -3872,9 +4015,11 @@ function updateNotionButtonState() {
                         linkEl.href = vidBtn.url.trim();
                         linkEl.target = "_blank";
                         linkEl.className = "btn-notion-link";
+                        linkEl.style.flexShrink = "0";
+                        linkEl.style.whiteSpace = "nowrap";
                         linkEl.innerHTML = `
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
-                                height="16" style="margin-right: 6px; vertical-align: middle;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14"
+                                height="14" style="margin-right: 6px; vertical-align: middle;">
                                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                                 <polyline points="15 3 21 3 21 9"></polyline>
                                 <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -3894,10 +4039,11 @@ function updateNotionButtonState() {
                 studioEl.href = `https://studio.youtube.com/video/${ytid}/analytics/`;
                 studioEl.target = "_blank";
                 studioEl.className = "btn-notion-link";
-                studioEl.style.boxSizing = "border-box";
+                studioEl.style.flexShrink = "0";
+                studioEl.style.whiteSpace = "nowrap";
                 studioEl.innerHTML = `
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
-                        height="16" style="margin-right: 6px; vertical-align: middle;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14"
+                        height="14" style="margin-right: 6px; vertical-align: middle;">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                         <polyline points="15 3 21 3 21 9"></polyline>
                         <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -3909,26 +4055,16 @@ function updateNotionButtonState() {
         }
     }
 
-    if (activeButtons.length === 1) {
-        activeButtons[0].style.flex = "1 1 100%";
-    } else if (activeButtons.length === 2) {
-        activeButtons[0].style.flex = "1 1 calc(50% - 5px)";
-        activeButtons[1].style.flex = "1 1 calc(50% - 5px)";
-    } else if (activeButtons.length === 3) {
-        activeButtons[0].style.flex = "1 1 calc(50% - 5px)";
-        activeButtons[1].style.flex = "1 1 calc(50% - 5px)";
-        activeButtons[2].style.flex = "1 1 100%";
-    } else if (activeButtons.length > 3) {
-        activeButtons.forEach(btn => {
-            btn.style.flex = "1 1 calc(50% - 5px)";
-        });
-    }
-
     activeButtons.forEach(btn => {
         videoButtonsContainer.appendChild(btn);
     });
 
-    videoButtonsContainer.style.display = activeButtons.length > 0 ? "flex" : "none";
+    const wrapper = document.querySelector(".video-links-carousel-wrapper");
+    if (wrapper) {
+        wrapper.style.display = activeButtons.length > 0 ? "block" : "none";
+    }
+    
+    updateCarouselScrollArrows();
 }
 
 function openImageLightbox(src) {
@@ -4678,9 +4814,12 @@ function renderTags() {
         return;
     }
     const tagsList = selectedVideo.tags || [];
-    infoTags.innerHTML = tagsList.map(tag => `
-        <span class="tag-badge ${getTagColorClass(tag)}" data-tag="${tag}">${tag}<span class="btn-remove-tag" data-tag="${tag}">&times;</span></span>
-    `).join('') + `<button class="btn-add-tag" id="btnAddTag">+</button>`;
+    infoTags.innerHTML = tagsList.map(tag => {
+        const displayTag = tag.startsWith("#") ? tag : "#" + tag;
+        return `
+            <span class="tag-badge ${getTagColorClass(tag)}" data-tag="${tag}">${displayTag}<span class="btn-remove-tag" data-tag="${tag}">&times;</span></span>
+        `;
+    }).join('') + `<button class="btn-add-tag" id="btnAddTag">+</button>`;
 
     // Add event listeners to delete buttons
     infoTags.querySelectorAll(".btn-remove-tag").forEach(btn => {

@@ -311,259 +311,258 @@
 
             <div class="detail-sidebar-content-wrapper" id="detailSidebarContentWrapper" style="display: none;">
                 <!-- Превью видео -->
-            <div class="detail-thumbnail-wrapper" style="position: relative;">
-                <div class="detail-thumbnail-inner" id="detailThumbnailInner">
-                    <img id="detailImage" src="https://placehold.co/600x338?text=Select+Video" alt="Превью"
-                        class="detail-thumbnail" draggable="false">
-                    <div class="video-thumbnail-placeholder idea-placeholder" id="detailImagePlaceholder" style="display: none; width: 100%; height: 100%;">
-                        <img src="idea-bulb-128x128.png" alt="Идея" class="idea-bulb-icon" draggable="false">
+                <div class="detail-thumbnail-wrapper" style="position: relative;">
+                    <div class="detail-thumbnail-inner" id="detailThumbnailInner" style="border-radius: 16px; overflow: hidden; position: relative;">
+                        <img id="detailImage" src="https://placehold.co/600x338?text=Select+Video" alt="Превью"
+                            class="detail-thumbnail" draggable="false" style="border-radius: 16px;">
+                        <div class="video-thumbnail-placeholder idea-placeholder" id="detailImagePlaceholder" style="display: none; width: 100%; height: 100%; border-radius: 16px;">
+                            <img src="idea-bulb-128x128.png" alt="Идея" class="idea-bulb-icon" draggable="false">
+                        </div>
+                        <div class="shorts-badge" id="detailShortsBadge" style="display: none;"></div>
+                        
+                        <!-- Status Badge Overlay (bottom left) -->
+                        <div class="status-badge-container" style="position: absolute; bottom: 12px; left: 12px; z-index: 10;">
+                            <button id="btnSidebarStatus" class="status-pill-badge" type="button" style="display: flex; align-items: center; gap: 6px; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: background-color 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.15); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+                                <span id="detailStatusDot" class="status-pill-dot" style="width: 6px; height: 6px; border-radius: 50%; display: inline-block;"></span>
+                                <span id="detailStatusText" class="status-pill-text"></span>
+                            </button>
+                            <select id="detailStatusSelect" class="status-select-hidden" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                                <option value="idea">Идея</option>
+                                <option value="in_progress">Черновик</option>
+                                <option value="editing">В процессе</option>
+                                <option value="published">Опубликовано</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="shorts-badge" id="detailShortsBadge" style="display: none;"></div>
+                    <button class="btn-change-thumbnail" id="btnChangeThumbnail" style="display: none;"
+                        title="Изменить обложку">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                        </svg>
+                    </button>
                 </div>
-                <button class="btn-change-thumbnail" id="btnChangeThumbnail" style="display: none;"
-                    title="Изменить обложку">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 20h9"></path>
-                        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
-                    </svg>
-                </button>
-            </div>
 
-            <!-- Заголовок и статус -->
-            <div class="detail-title-block">
-                <h3 id="detailTitle">Выберите видео из списка</h3>
-            </div>
-
-            <!-- Вкладки деталей -->
-            <div class="detail-tabs">
-                <button class="detail-tab-btn active" data-tab="references">
-                    <svg class="detail-tab-icon" viewBox="0 0 24 24" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    <span>Описание</span>
-                </button>
-                <button class="detail-tab-btn" data-tab="tasks">
-                    <svg class="detail-tab-icon" viewBox="0 0 24 24" stroke-width="2.5"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-                    <span>Задачи</span>
-                </button>
-                <button class="detail-tab-btn" data-tab="info">
-                    <svg class="detail-tab-icon" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="8"></line></svg>
-                    <span>Информация</span>
-                </button>
-                <button class="detail-tab-btn" data-tab="settings">
-                    <svg class="detail-tab-icon" viewBox="0 0 24 24" stroke-width="2.5"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    <span>Настройки</span>
-                </button>
-            </div>
-
-            <!-- Контент вкладок -->
-            <div class="detail-tabs-content">
-                <!-- Вкладка: Информация -->
-                <div class="tab-pane" id="pane-info">
-                    <!-- Блок: Описание и свойства -->
-                    <div class="detail-card">
-                        <div class="info-group flex-row">
-                            <span class="info-label">Статус</span>
-                            <div class="detail-status-wrapper">
-                                <span id="detailStatusDot" class="status-dot"></span>
-                                <select id="detailStatusSelect" class="status-select">
-                                    <option value="idea">Идея</option>
-                                    <option value="in_progress">Черновик</option>
-                                    <option value="editing">В процессе</option>
-                                    <option value="published">Опубликовано</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="info-group flex-row">
-                            <label class="info-label">Теги</label>
-                            <div class="tags-container" id="infoTags">
-                                <!-- Теги динамически -->
-                            </div>
-                        </div>
-
-                        <div class="info-group flex-row">
-                            <span class="info-label">Дата публикации</span>
-                            <span id="infoDate" class="info-value">--</span>
-                        </div>
-
-                        <div class="info-group flex-row">
-                            <span class="info-label">Создано</span>
-                            <span id="infoCreatedDate" class="info-value">--</span>
-                        </div>
-
-                        <div id="videoButtonsContainer" class="info-group"
-                            style="margin-top: 20px; border-top: 1px solid var(--ch-border); padding-top: 16px; display: none; flex-wrap: wrap; gap: 10px;">
-                            <a id="btnOpenNotion" href="#" target="_blank" class="btn-notion-link" style="display: none;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
-                                    height="16" style="margin-right: 6px; vertical-align: middle;">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                                Notion
-                            </a>
-                            <a id="btnOpenBoard" href="#" target="_blank" class="btn-notion-link" style="display: none;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
-                                    height="16" style="margin-right: 6px; vertical-align: middle;">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                                Доска
-                            </a>
-                            <a id="btnOpenStudio" href="#" target="_blank" class="btn-notion-link" style="display: none; box-sizing: border-box;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
-                                    height="16" style="margin-right: 6px; vertical-align: middle;">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                </svg>
-                                YouTube Studio
-                            </a>
-                        </div>
+                <!-- Заголовок -->
+                <div class="detail-title-block" style="padding: 12px 24px 8px 24px; border-bottom: none; flex-shrink: 0; margin-bottom: 4px;">
+                    <div style="display: block; width: 100%;">
+                        <h3 id="detailTitle" style="font-size: 1.25rem; font-weight: 750; line-height: 1.35; color: var(--ch-text-dark); margin: 0; letter-spacing: -0.2px; display: block; max-width: 100%;">Выберите видео</h3>
                     </div>
                 </div>
 
-                <!-- Вкладка: Референсы -->
-                <div class="tab-pane active" id="pane-references">
-                    <div id="referencesContent" class="references-editor" contenteditable="true"
-                        placeholder="Вставьте ссылки или изображения из буфера обмена..."></div>
+                <!-- Metadata Row with Publish Date, Created Date and Tags -->
+                <div class="detail-meta-row" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; font-size: 0.8rem; color: var(--ch-text-gray); padding: 0 24px; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; gap: 4px; cursor: help;" data-tip="Дата публикации">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.8;">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span id="infoDate">--</span>
+                    </div>
+                    
+                    <span>&bull;</span>
+                    
+                    <div style="display: flex; align-items: center; gap: 4px; margin-right: 4px; cursor: help;" data-tip="Дата создания">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.8;">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        <span id="infoCreatedDate">--</span>
+                    </div>
+
+                    <div class="tags-container" id="infoTags" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <!-- Теги динамически -->
+                    </div>
                 </div>
 
-                <!-- Вкладка: Настройки -->
-                <div class="tab-pane" id="pane-settings">
-                    <div class="detail-card">
-                        <label class="info-label" style="margin-bottom: 16px; font-weight: 700;">Настройки видео</label>
+                <!-- Horizontal Links Carousel -->
+                <div class="video-links-carousel-wrapper" style="position: relative; margin-bottom: 20px; width: 100%;">
+                    <!-- Left scroll button -->
+                    <button class="carousel-prev-btn" id="btnCarouselPrev" type="button" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--ch-border); background: var(--ch-card-bg); color: var(--ch-text-dark); display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 3; box-shadow: 0 2px 4px rgba(0,0,0,0.06); font-size: 0.8rem; font-weight: 700; transition: opacity 0.2s; padding: 0;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <div class="carousel-fade-overlay-left" style="position: absolute; top: 0; left: 0; height: 100%; width: 40px; background: linear-gradient(to left, transparent, var(--ch-card-bg)); pointer-events: none; z-index: 2; opacity: 0; transition: opacity 0.2s ease;"></div>
+                    
+                    <div class="carousel-fade-overlay" style="position: absolute; top: 0; right: 0; height: 100%; width: 40px; background: linear-gradient(to right, transparent, var(--ch-card-bg)); pointer-events: none; z-index: 2;"></div>
+                    <button class="carousel-next-btn" id="btnCarouselNext" type="button" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--ch-border); background: var(--ch-card-bg); color: var(--ch-text-dark); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 3; box-shadow: 0 2px 4px rgba(0,0,0,0.06); font-size: 0.8rem; font-weight: 700; transition: opacity 0.2s; padding: 0;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                    <div id="videoButtonsContainer" class="video-links-carousel" style="display: flex; gap: 10px; overflow-x: auto; scroll-behavior: smooth; padding: 4px 24px; box-sizing: border-box; width: 100%; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+                        <!-- Ссылки рендерятся динамически -->
+                    </div>
+                </div>
 
-                        <div class="settings-row">
-                            <div class="settings-row-left">
-                                <span class="settings-row-label">Ссылка на видео</span>
+                <div style="height: 1px; background-color: var(--ch-border); margin: 0 0 16px 0;"></div>
+
+                <!-- Вкладки деталей -->
+                <!-- Вкладки деталей -->
+                <div class="detail-tabs">
+                    <button class="detail-tab-btn active" data-tab="references">
+                        <svg class="detail-tab-icon" viewBox="0 0 24 24" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        <span>Описание</span>
+                    </button>
+                    <button class="detail-tab-btn" data-tab="tasks">
+                        <svg class="detail-tab-icon" viewBox="0 0 24 24" stroke-width="2.5"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                        <span>Задачи</span>
+                    </button>
+                    <button class="detail-tab-btn" data-tab="settings">
+                        <svg class="detail-tab-icon" viewBox="0 0 24 24" stroke-width="2.5"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        <span>Настройки</span>
+                    </button>
+                </div>
+
+                <!-- Контент вкладок -->
+                <div class="detail-tabs-content">
+                    <!-- Вкладка: Описание -->
+                    <div class="tab-pane active" id="pane-references">
+                        <div id="referencesContent" class="references-editor" contenteditable="true"
+                            placeholder="Вставьте ссылки или изображения из буфера обмена..."></div>
+                    </div>
+
+                    <!-- Вкладка: Настройки -->
+                    <div class="tab-pane" id="pane-settings">
+                        <div class="detail-card">
+                            <label class="info-label" style="margin-bottom: 16px; font-weight: 700;">Настройки видео</label>
+
+                            <div class="settings-row">
+                                <div class="settings-row-left">
+                                    <span class="settings-row-label">Ссылка на видео</span>
+                                </div>
+                                <input type="text" id="settingVideoLink" class="settings-row-input"
+                                    placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
                             </div>
-                            <input type="text" id="settingVideoLink" class="settings-row-input"
-                                placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
-                        </div>
 
-                        <!-- Кнопки и ссылки -->
-                        <div class="settings-buttons-section" style="margin-top: 16px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
-                            <div class="settings-buttons-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span class="info-label" style="font-weight: 700; margin-bottom: 0;">Кнопки и ссылки</span>
-                                    <button id="btnOpenGlobalButtons" type="button" class="btn-gear-settings" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 4px; display: flex; align-items: center; transition: color 0.2s;" title="База кнопок">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="3"></circle>
-                                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                                        </svg>
-                                    </button>
+                            <!-- Кнопки и ссылки -->
+                            <div class="settings-buttons-section" style="margin-top: 16px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
+                                <div class="settings-buttons-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="info-label" style="font-weight: 700; margin-bottom: 0;">Кнопки и ссылки</span>
+                                        <button id="btnOpenGlobalButtons" type="button" class="btn-gear-settings" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 4px; display: flex; align-items: center; transition: color 0.2s;" title="База кнопок">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="add-button-dropdown-wrapper" style="position: relative;">
+                                        <button id="btnSelectButtonToAdd" type="button" class="btn-add-button-dropdown">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                            </svg>
+                                            Добавить кнопку
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left: 2px;">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </button>
+                                        <div id="dropdownAddButtonOptions" class="add-button-dropdown-menu" style="display: none;">
+                                            <!-- Кнопки добавятся динамически -->
+                                        </div>
+                                    </div>
                                 </div>
                                 
-                                <div class="add-button-dropdown-wrapper" style="position: relative;">
-                                    <button id="btnSelectButtonToAdd" type="button" class="btn-add-button-dropdown">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <p style="font-size: 0.82rem; color: var(--ch-text-gray); margin-bottom: 12px; margin-top: 0;">Добавьте кнопки, которые будут отображаться в этом видео.</p>
+                                
+                                <div style="font-size: 0.88rem; font-weight: 600; color: var(--ch-text-dark); margin-bottom: 10px;">Добавленные кнопки</div>
+                                
+                                <div id="selectedVideoButtonsContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
+                                    <!-- Сюда будут рендериться добавленные кнопки для видео -->
+                                </div>
+                                
+                                <p style="font-size: 0.82rem; color: var(--ch-text-gray); margin-top: 12px; margin-bottom: 0;">Эти ссылки отображаются в верхней части панели информации.</p>
+                            </div>
+                            
+                            <div class="settings-row"
+                                style="position: relative; align-items: flex-start; margin-top: 16px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
+                                <div class="settings-row-left">
+                                    <span class="settings-row-label">Дата публикации</span>
+                                </div>
+                                <div class="due-date-wrapper" style="position: relative; display: flex; align-items: center; gap: 8px;">
+                                    <button class="btn-due-date" id="btnDueDate" type="button"
+                                        style="display: flex; align-items: center; gap: 8px; background: var(--ch-card-bg); border: 1px solid var(--ch-border); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-size: 0.9rem; color: var(--ch-text-dark); cursor: pointer; transition: border-color 0.2s;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                                            <line x1="3" y1="10" x2="21" y2="10"></line>
                                         </svg>
-                                        Добавить кнопку
-                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left: 2px;">
-                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        <span id="dueDateBtnText">Выбрать дату</span>
+                                    </button>
+                                    <button class="btn-clear-date" id="btnClearDueDate" type="button" title="Очистить дату" style="display: none; background: transparent; border: none; color: var(--ch-text-gray); cursor: pointer; padding: 6px; border-radius: 6px; transition: color 0.15s, background-color 0.15s; align-items: center; justify-content: center;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
                                         </svg>
                                     </button>
-                                    <div id="dropdownAddButtonOptions" class="add-button-dropdown-menu" style="display: none;">
-                                        <!-- Кнопки добавятся динамически -->
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <p style="font-size: 0.82rem; color: var(--ch-text-gray); margin-bottom: 12px; margin-top: 0;">Добавьте кнопки, которые будут отображаться в этом видео.</p>
-                            
-                            <div style="font-size: 0.88rem; font-weight: 600; color: var(--ch-text-dark); margin-bottom: 10px;">Добавленные кнопки</div>
-                            
-                            <div id="selectedVideoButtonsContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
-                                <!-- Сюда будут рендериться добавленные кнопки для видео -->
-                            </div>
-                            
-                            <p style="font-size: 0.82rem; color: var(--ch-text-gray); margin-top: 12px; margin-bottom: 0;">Эти кнопки будут отображаться на вкладке «Информация» в этом видео.</p>
-                        </div>
-
-                        <div class="settings-row"
-                            style="position: relative; align-items: flex-start; margin-top: 16px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
-                            <div class="settings-row-left">
-                                <span class="settings-row-label">Дата публикации</span>
-                            </div>
-                            <div class="due-date-wrapper" style="position: relative; display: flex; align-items: center; gap: 8px;">
-                                <button class="btn-due-date" id="btnDueDate" type="button"
-                                    style="display: flex; align-items: center; gap: 8px; background: var(--ch-card-bg); border: 1px solid var(--ch-border); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-size: 0.9rem; color: var(--ch-text-dark); cursor: pointer; transition: border-color 0.2s;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                                    </svg>
-                                    <span id="dueDateBtnText">Выбрать дату</span>
-                                </button>
-                                <button class="btn-clear-date" id="btnClearDueDate" type="button" title="Очистить дату" style="display: none; background: transparent; border: none; color: var(--ch-text-gray); cursor: pointer; padding: 6px; border-radius: 6px; transition: color 0.15s, background-color 0.15s; align-items: center; justify-content: center;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                                    </svg>
-                                </button>
-                                <!-- Выпадающее меню календаря -->
-                                <div class="due-date-dropdown" id="dueDateDropdown"
-                                    style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background-color: var(--ch-card-bg); border: 1px solid var(--ch-border); border-radius: 12px; width: 280px; box-shadow: var(--ch-shadow); padding: 12px; z-index: 1000; box-sizing: border-box;">
-                                    <div class="due-calendar-picker"
-                                        style="display: flex; flex-direction: column; gap: 10px;">
-                                        <div class="calendar-header"
-                                            style="display: flex; align-items: center; justify-content: space-between;">
-                                            <span class="calendar-month-year" id="calendarMonthYear"
-                                                style="font-size: 0.95rem; font-weight: 700; color: var(--ch-text-dark); text-transform: capitalize;">июнь
-                                                2026</span>
-                                            <div class="calendar-nav" style="display: flex; gap: 4px;">
-                                                <button class="cal-nav-btn" id="calPrevMonth" type="button"
-                                                    style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">&lt;</button>
-                                                <button class="cal-nav-btn" id="calCurrentMonth" type="button"
-                                                    style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">●</button>
-                                                <button class="cal-nav-btn" id="calNextMonth" type="button"
-                                                    style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">&gt;</button>
+                                    <!-- Выпадающее меню календаря -->
+                                    <div class="due-date-dropdown" id="dueDateDropdown"
+                                        style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background-color: var(--ch-card-bg); border: 1px solid var(--ch-border); border-radius: 12px; width: 280px; box-shadow: var(--ch-shadow); padding: 12px; z-index: 1000; box-sizing: border-box;">
+                                        <div class="due-calendar-picker"
+                                            style="display: flex; flex-direction: column; gap: 10px;">
+                                            <div class="calendar-header"
+                                                style="display: flex; align-items: center; justify-content: space-between;">
+                                                <span class="calendar-month-year" id="calendarMonthYear"
+                                                    style="font-size: 0.95rem; font-weight: 700; color: var(--ch-text-dark); text-transform: capitalize;">июнь
+                                                    2026</span>
+                                                <div class="calendar-nav" style="display: flex; gap: 4px;">
+                                                    <button class="cal-nav-btn" id="calPrevMonth" type="button"
+                                                        style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">&lt;</button>
+                                                    <button class="cal-nav-btn" id="calCurrentMonth" type="button"
+                                                        style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">●</button>
+                                                    <button class="cal-nav-btn" id="calNextMonth" type="button"
+                                                        style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">&gt;</button>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="calendar-weekdays"
-                                            style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--ch-text-gray); opacity: 0.7;">
-                                            <span>ПН</span><span>ВТ</span><span>СР</span><span>ЧТ</span><span>ПТ</span><span>СБ</span><span>ВС</span>
-                                        </div>
-                                        <div class="calendar-days" id="calendarDaysGrid"
-                                            style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
+                                            <div class="calendar-weekdays"
+                                                style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--ch-text-gray); opacity: 0.7;">
+                                                <span>ПН</span><span>ВТ</span><span>СР</span><span>ЧТ</span><span>ПТ</span><span>СБ</span><span>ВС</span>
+                                            </div>
+                                            <div class="calendar-days" id="calendarDaysGrid"
+                                                style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Вкладка: Задачи -->
-                <div class="tab-pane" id="pane-tasks">
-                    <div class="detail-card ch-tasks-card">
-                        <!-- Добавить задачу -->
-                        <div class="ch-add-task-container">
-                            <input type="text" id="chAddTaskInput" class="ch-task-input" placeholder="Добавить задачу..." autocomplete="off">
+                    <!-- Вкладка: Задачи -->
+                    <div class="tab-pane" id="pane-tasks">
+                        <div class="detail-card ch-tasks-card">
+                            <!-- Добавить задачу -->
+                            <div class="ch-add-task-container">
+                                <input type="text" id="chAddTaskInput" class="ch-task-input" placeholder="Добавить задачу..." autocomplete="off">
+                            </div>
+                            
+                            <!-- Список невыполненных задач -->
+                            <div id="chActiveTasksList" class="ch-tasks-list"></div>
+                            
+                            <!-- Разделитель выполненных задач -->
+                            <div id="chCompletedHeader" class="ch-completed-header" style="display: none;">
+                                <button id="chToggleCompletedBtn" class="ch-toggle-completed-btn" type="button">
+                                    <svg class="ch-chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                    <span>Выполненные</span>
+                                    <span id="chCompletedCount" class="ch-completed-count">0</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Список выполненных задач -->
+                            <div id="chCompletedTasksList" class="ch-tasks-list ch-completed-list" style="display: none;"></div>
                         </div>
-                        
-                        <!-- Список невыполненных задач -->
-                        <div id="chActiveTasksList" class="ch-tasks-list"></div>
-                        
-                        <!-- Разделитель выполненных задач -->
-                        <div id="chCompletedHeader" class="ch-completed-header" style="display: none;">
-                            <button id="chToggleCompletedBtn" class="ch-toggle-completed-btn" type="button">
-                                <svg class="ch-chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
-                                    <polyline points="6 9 12 15 18 9"></polyline>
-                                </svg>
-                                <span>Выполненные</span>
-                                <span id="chCompletedCount" class="ch-completed-count">0</span>
-                            </button>
-                        </div>
-                        
-                        <!-- Список выполненных задач -->
-                        <div id="chCompletedTasksList" class="ch-tasks-list ch-completed-list" style="display: none;"></div>
                     </div>
                 </div>
             </div>

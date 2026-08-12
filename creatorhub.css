@@ -4719,3 +4719,252 @@ body.dark .global-button-item:hover {
     color: #ef4444 !important;
     background-color: rgba(239, 68, 68, 0.1) !important;
 }
+
+/* Sidebar redesign styles */
+.sidebar-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.status-pill-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.status-pill-badge:hover {
+    filter: brightness(0.95);
+}
+
+body.dark .status-pill-badge:hover {
+    filter: brightness(1.1);
+}
+
+.status-select-hidden {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.video-links-carousel-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.carousel-fade-overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 60px;
+    background: linear-gradient(to right, transparent, var(--ch-card-bg));
+    pointer-events: none;
+    z-index: 2;
+    transition: opacity 0.2s ease;
+}
+
+.carousel-next-btn {
+    position: absolute;
+    right: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid var(--ch-border);
+    background: var(--ch-card-bg);
+    color: var(--ch-text-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 3;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    font-size: 0.8rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.carousel-next-btn:hover {
+    border-color: var(--ch-purple);
+    color: var(--ch-purple);
+    transform: translateY(-50%) scale(1.05);
+}
+
+.carousel-prev-btn {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid var(--ch-border);
+    background: var(--ch-card-bg);
+    color: var(--ch-text-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 3;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    font-size: 0.8rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.carousel-prev-btn:hover {
+    border-color: var(--ch-purple);
+    color: var(--ch-purple);
+    transform: translateY(-50%) scale(1.05);
+}
+
+.carousel-fade-overlay-left {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 40px;
+    background: linear-gradient(to left, transparent, var(--ch-card-bg));
+    pointer-events: none;
+    z-index: 2;
+    transition: opacity 0.2s ease;
+}
+
+.video-links-carousel {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 4px 24px;
+    box-sizing: border-box;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.video-links-carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.carousel-link-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 110px;
+    height: 80px;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--ch-border);
+    background-color: var(--ch-card-bg);
+    box-sizing: border-box;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.carousel-link-card:hover {
+    border-color: var(--ch-purple);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+}
+
+.carousel-link-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.carousel-link-card-icon {
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.carousel-link-card-arrow {
+    color: var(--ch-text-gray);
+    opacity: 0.6;
+    transition: opacity 0.2s, color 0.2s;
+}
+
+.carousel-link-card:hover .carousel-link-card-arrow {
+    color: var(--ch-purple);
+    opacity: 1;
+}
+
+.carousel-link-card-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ch-text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+}
+
+/* Metadata row adjustments */
+.detail-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    font-size: 0.8rem;
+    color: var(--ch-text-gray);
+}
+
+/* Horizontal links carousel button design */
+.video-links-carousel .btn-notion-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--ch-card-bg) !important;
+    color: var(--ch-text-dark) !important;
+    border: 1px solid var(--ch-border) !important;
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    width: auto;
+    box-shadow: none !important;
+    cursor: pointer;
+}
+
+.video-links-carousel .btn-notion-link:hover {
+    border-color: var(--ch-purple) !important;
+    color: var(--ch-purple) !important;
+    transform: translateY(-1px);
+    background-color: var(--ch-card-bg) !important;
+}
+
+.video-links-carousel .btn-notion-link svg {
+    color: var(--ch-text-gray);
+    transition: color 0.2s;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+.video-links-carousel .btn-notion-link:hover svg {
+    color: var(--ch-purple);
+}

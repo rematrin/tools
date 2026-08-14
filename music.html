@@ -1027,12 +1027,7 @@
                         Добавить альбом
                     </button>
                 </div>
-                <div style="margin-bottom: 40px; background: var(--am-red-translucent); padding: 24px; border-radius: 16px; border: 1px solid rgba(250, 45, 86, 0.2);">
-                    <h2 style="margin:0 0 8px 0; color: var(--am-red);">Добро пожаловать в Медиатеку!</h2>
-                    <p style="margin:0; font-size:0.95rem; line-height: 1.5; color: var(--text-secondary);">
-                        Импортируйте любимые альбомы из YouTube Music. Скопируйте ссылку на альбом в формате <code>https://music.youtube.com/playlist?list=OLAK5uy_...</code> и нажмите кнопку «Добавить альбом». Система автоматически загрузит треки, обложку и информацию об исполнителе.
-                    </p>
-                </div>
+
                 
                 <h2 style="margin: 0 0 16px 0; font-size: 1.3rem;">Слушать сейчас</h2>
                 <div class="albums-grid" id="home-featured-grid">
@@ -1311,13 +1306,46 @@
                 <h3 class="modal-title">Импорт альбома из YouTube Music</h3>
                 <button class="modal-close" onclick="closeAddPlaylistModal()">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="display:flex; flex-direction:column; gap:16px;">
+                <style>
+                    .edit-icon-btn {
+                        transition: color 0.2s, transform 0.2s;
+                    }
+                    .edit-icon-btn:hover {
+                        color: var(--am-red) !important;
+                        transform: scale(1.1);
+                    }
+                </style>
                 <div class="modal-field">
                     <label for="modalPlaylistUrl">Ссылка на альбом или плейлист</label>
                     <input type="text" id="modalPlaylistUrl" class="modal-input"
-                        placeholder="https://music.youtube.com/playlist?list=OLAK5uy_..." autocomplete="off">
-                    <span id="import-status-text" style="font-size:0.8rem; color:var(--am-red); display:none; margin-top:8px;">Импорт альбома, пожалуйста подождите...</span>
+                        placeholder="https://music.youtube.com/playlist?list=OLAK5uy_..." autocomplete="off" oninput="handleUrlInput(this.value)">
                 </div>
+                
+                <!-- Контейнер с деталями (изначально скрыт) -->
+                <div id="import-details-container" style="display: none; flex-direction: column; gap: 16px;">
+                    <div class="modal-field">
+                        <label for="modalAlbumTitle">Название альбома</label>
+                        <div style="position: relative; display: flex; align-items: center; width: 100%;">
+                            <input type="text" id="modalAlbumTitle" class="modal-input" readonly style="padding-right: 40px; cursor: default; width: 100%;" autocomplete="off">
+                            <span class="edit-icon-btn" onclick="toggleEditField('modalAlbumTitle', this)" style="position: absolute; right: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; color: var(--text-secondary);">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-field">
+                        <label for="modalAlbumArtist">Исполнитель альбома</label>
+                        <div style="position: relative; display: flex; align-items: center; width: 100%;">
+                            <input type="text" id="modalAlbumArtist" class="modal-input" readonly style="padding-right: 40px; cursor: default; width: 100%;" autocomplete="off">
+                            <span class="edit-icon-btn" onclick="toggleEditField('modalAlbumArtist', this)" style="position: absolute; right: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; color: var(--text-secondary);">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <span id="import-status-text" style="font-size:0.8rem; color:var(--am-red); display:none; margin-top:8px;">Импорт треков альбома, пожалуйста подождите...</span>
             </div>
             <div class="modal-footer">
                 <button class="btn-modal btn-modal-cancel" id="btn-import-cancel" onclick="closeAddPlaylistModal()">Отмена</button>
@@ -1331,6 +1359,123 @@
         window.musicSongs = [];
         window.musicAlbums = [];
         window.musicArtists = [];
+        
+        let bgFetchTimeout = null;
+        async function handleUrlInput(url) {
+            clearTimeout(bgFetchTimeout);
+            
+            let listId = null;
+            let reg = /[?&]list=([^#\&\? ]+)/;
+            let match = url.match(reg);
+            if (match && match[1]) {
+                listId = match[1];
+            } else {
+                document.getElementById('import-details-container').style.display = 'none';
+                document.getElementById('import-status-text').style.display = 'none';
+                return;
+            }
+
+            // Show loading text, hide fields
+            document.getElementById('import-details-container').style.display = 'none';
+            const statusText = document.getElementById('import-status-text');
+            statusText.innerText = "Поиск альбома и загрузка метаданных...";
+            statusText.style.display = 'block';
+
+            bgFetchTimeout = setTimeout(async () => {
+                try {
+                    const apiKey = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
+                    const albumInfoUrl = `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${listId}&key=${apiKey}`;
+                    const res1 = await fetch(albumInfoUrl);
+                    const data1 = await res1.json();
+                    
+                    if (!data1.items || data1.items.length === 0) {
+                        statusText.innerText = "Альбом не найден. Убедитесь в правильности ссылки.";
+                        return;
+                    }
+                    
+                    const snippet = data1.items[0].snippet;
+                    const albumTitle = snippet.title;
+
+                    const tracksUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${listId}&key=${apiKey}`;
+                    const res2 = await fetch(tracksUrl);
+                    const data2 = await res2.json();
+                    
+                    let artistVotes = {};
+                    let originalNames = {};
+                    if (data2.items && data2.items.length > 0) {
+                        data2.items.forEach(item => {
+                            if (item.snippet) {
+                                let rawTrackArtist = item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle;
+                                if (rawTrackArtist && rawTrackArtist !== "YouTube" && rawTrackArtist !== "YouTube Music") {
+                                    let cleanName = rawTrackArtist.replace(/ - Topic$/, "").trim();
+                                    // Normalize (remove VEVO, spaces, non-alphanumeric, lowercase)
+                                    let norm = cleanName.toLowerCase().replace(/vevo$/, "").replace(/[^a-z0-9]/g, "").trim();
+                                    if (norm) {
+                                        artistVotes[norm] = (artistVotes[norm] || 0) + 1;
+                                        if (!originalNames[norm] || cleanName.length < originalNames[norm].length) {
+                                            originalNames[norm] = cleanName;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // Check if playlist creator/owner is not a generic name
+                    let playlistOwner = snippet.channelTitle || "";
+                    let cleanedOwner = playlistOwner.replace(/ - Topic$/, "").trim();
+                    let isGeneric = !cleanedOwner || 
+                                    cleanedOwner.toLowerCase() === "youtube" || 
+                                    cleanedOwner.toLowerCase() === "youtube music" || 
+                                    cleanedOwner.toLowerCase() === "various artists" ||
+                                    cleanedOwner.toLowerCase() === "различные исполнители";
+
+                    let albumArtist = "";
+                    if (!isGeneric) {
+                        albumArtist = cleanedOwner;
+                    } else {
+                        // Fallback to majority voting of tracks
+                        let maxVotes = 0;
+                        for (let norm in artistVotes) {
+                            if (artistVotes[norm] > maxVotes) {
+                                maxVotes = artistVotes[norm];
+                                albumArtist = originalNames[norm];
+                            }
+                        }
+                    }
+
+                    if (!albumArtist) {
+                        albumArtist = "Various Artists";
+                    }
+
+                    document.getElementById('modalAlbumTitle').value = albumTitle;
+                    document.getElementById('modalAlbumArtist').value = albumArtist;
+                    
+                    // Show details, hide loading status
+                    statusText.style.display = 'none';
+                    document.getElementById('import-details-container').style.display = 'flex';
+                } catch (e) {
+                    console.error("Ошибка фоновой загрузки данных альбома:", e);
+                    statusText.innerText = "Не удалось загрузить данные альбома.";
+                }
+            }, 500);
+        }
+
+        function toggleEditField(inputId, iconEl) {
+            const input = document.getElementById(inputId);
+            if (input.hasAttribute('readonly')) {
+                input.removeAttribute('readonly');
+                input.style.cursor = 'text';
+                input.focus();
+                // Change to checkmark
+                iconEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--am-red)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            } else {
+                input.setAttribute('readonly', 'true');
+                input.style.cursor = 'default';
+                // Change back to pencil
+                iconEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
+            }
+        }
         
         let playbackQueue = [];
         let currentQueueIndex = -1;
@@ -1447,6 +1592,17 @@
                 });
                 window.musicArtists.sort((a,b) => a.name.localeCompare(b.name));
 
+                // Run background cleanup for empty legacy artists
+                let activeArtistIds = new Set(window.musicSongs.map(s => s.artistId));
+                let emptyArtistIds = window.musicArtists.filter(art => !activeArtistIds.has(art.id)).map(art => art.id);
+                if (emptyArtistIds.length > 0) {
+                    window.musicArtists = window.musicArtists.filter(art => !emptyArtistIds.includes(art.id));
+                    for (let emptyId of emptyArtistIds) {
+                        const artistRef = window.doc(window.db, "users", uid, "music_artists", emptyId);
+                        window.deleteDoc(artistRef).catch(err => console.error("Error deleting empty artist:", err));
+                    }
+                }
+
                 // Render Active View
                 renderCurrentView();
             } catch (e) {
@@ -1499,15 +1655,25 @@
                 }
 
                 const snippet = data1.items[0].snippet;
-                const albumTitle = snippet.title;
-                const rawArtistName = snippet.channelTitle || "Неизвестный исполнитель";
-                // Cleanup " - Topic"
-                const artistName = rawArtistName.replace(/ - Topic$/, "");
-                const coverUrl = snippet.thumbnails.high ? snippet.thumbnails.high.url : (snippet.thumbnails.default ? snippet.thumbnails.default.url : "");
                 
-                // Artist ID & Album ID based on hash/titles
-                const artistId = "artist_" + hashCode(artistName);
-                const albumId = "album_" + listId;
+                // Get edited title from input, or fallback to playlist title
+                let albumTitle = document.getElementById('modalAlbumTitle').value.trim();
+                if (!albumTitle) {
+                    albumTitle = snippet.title;
+                }
+                
+                // Get playlist cover thumbnails order
+                let coverUrl = "";
+                if (snippet.thumbnails) {
+                    const t = snippet.thumbnails;
+                    const order = ['maxres', 'standard', 'high', 'medium', 'default'];
+                    for (let key of order) {
+                        if (t[key] && t[key].url) {
+                            coverUrl = t[key].url;
+                            break;
+                        }
+                    }
+                }
 
                 // 2. Fetch tracks
                 let trackItems = [];
@@ -1522,10 +1688,25 @@
                     if (data2.items && data2.items.length > 0) {
                         data2.items.forEach(item => {
                             if (item.snippet && item.snippet.resourceId && item.snippet.resourceId.videoId) {
+                                // Extract track's thumbnail for cover fallback
+                                let trackThumb = "";
+                                if (item.snippet.thumbnails) {
+                                    const t = item.snippet.thumbnails;
+                                    const order = ['maxres', 'standard', 'high', 'medium', 'default'];
+                                    for (let key of order) {
+                                        if (t[key] && t[key].url) {
+                                            trackThumb = t[key].url;
+                                            break;
+                                        }
+                                    }
+                                }
                                 trackItems.push({
                                     id: item.snippet.resourceId.videoId,
                                     title: item.snippet.title,
-                                    index: item.snippet.position || 0
+                                    index: item.snippet.position || 0,
+                                    thumbnail: trackThumb,
+                                    videoOwnerChannelTitle: item.snippet.videoOwnerChannelTitle || null,
+                                    channelTitle: item.snippet.channelTitle || null
                                 });
                             }
                         });
@@ -1538,6 +1719,70 @@
 
                 if (trackItems.length === 0) {
                     throw new Error("Альбом не содержит доступных песен.");
+                }
+
+                // Get edited artist name from input, or fallback to majority voting / playlist owner
+                let artistName = document.getElementById('modalAlbumArtist').value.trim();
+                if (!artistName) {
+                    let playlistOwner = snippet.channelTitle || "";
+                    let cleanedOwner = playlistOwner.replace(/ - Topic$/, "").trim();
+                    let isGeneric = !cleanedOwner || 
+                                    cleanedOwner.toLowerCase() === "youtube" || 
+                                    cleanedOwner.toLowerCase() === "youtube music" || 
+                                    cleanedOwner.toLowerCase() === "various artists" ||
+                                    cleanedOwner.toLowerCase() === "различные исполнители";
+
+                    let albumArtist = "";
+                    if (!isGeneric) {
+                        albumArtist = cleanedOwner;
+                    } else {
+                        // Fallback to majority voting of tracks
+                        let artistVotes = {};
+                        let originalNames = {};
+                        for (let track of trackItems) {
+                            let rawTrackArtist = track.videoOwnerChannelTitle || track.channelTitle;
+                            if (rawTrackArtist && rawTrackArtist !== "YouTube" && rawTrackArtist !== "YouTube Music") {
+                                let cleanName = rawTrackArtist.replace(/ - Topic$/, "").trim();
+                                let norm = cleanName.toLowerCase().replace(/vevo$/, "").replace(/[^a-z0-9]/g, "").trim();
+                                if (norm) {
+                                    artistVotes[norm] = (artistVotes[norm] || 0) + 1;
+                                    if (!originalNames[norm] || cleanName.length < originalNames[norm].length) {
+                                        originalNames[norm] = cleanName;
+                                    }
+                                }
+                            }
+                        }
+
+                        let maxVotes = 0;
+                        for (let norm in artistVotes) {
+                            if (artistVotes[norm] > maxVotes) {
+                                maxVotes = artistVotes[norm];
+                                albumArtist = originalNames[norm];
+                            }
+                        }
+                    }
+
+                    if (!albumArtist) {
+                        albumArtist = "Various Artists";
+                    }
+                    artistName = albumArtist;
+                }
+
+                const artistId = "artist_" + hashCode(artistName);
+                const albumId = "album_" + listId;
+
+                // Fallback for coverUrl if it's empty or is generic YouTube placeholder
+                if (!coverUrl || coverUrl.includes("no_thumbnail") || coverUrl.includes("default_240_gpr")) {
+                    for (let track of trackItems) {
+                        if (track.thumbnail && !track.thumbnail.includes("no_thumbnail")) {
+                            coverUrl = track.thumbnail;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!coverUrl) {
+                    coverUrl = "https://via.placeholder.com/200";
                 }
 
                 // 3. Batch query video durations (Max 50 ids per request)
@@ -1567,12 +1812,27 @@
                 for(let track of trackItems) {
                     const duration = durationMap[track.id] || 180; // default 3 min
                     const songRef = window.doc(window.db, "users", uid, "music_songs", track.id);
+                    
+                    let rawSongArtist = track.videoOwnerChannelTitle || track.channelTitle || artistName;
+                    let cleanSongArtist = rawSongArtist.replace(/ - Topic$/, "").trim();
+                    
+                    // Normalize for comparison
+                    let normSongArtist = cleanSongArtist.toLowerCase().replace(/vevo$/, "").replace(/[^a-z0-9]/g, "").trim();
+                    let normAlbumArtist = artistName.toLowerCase().replace(/vevo$/, "").replace(/[^a-z0-9]/g, "").trim();
+                    
+                    let songArtistName = cleanSongArtist;
+                    if (normSongArtist === normAlbumArtist || songArtistName === "YouTube" || songArtistName === "YouTube Music" || !songArtistName) {
+                        songArtistName = artistName;
+                    } else {
+                        songArtistName = songArtistName.replace(/vevo$/i, "").trim();
+                    }
+                    
                     const songData = {
                         id: track.id,
                         title: track.title,
                         duration: duration,
-                        artistId: artistId,
-                        artistName: artistName,
+                        artistId: artistId, // Set to Album Artist ID so they are grouped under the main album artist!
+                        artistName: songArtistName, // Keep actual track artist name for display (e.g. "The Jackson 5")
                         albumId: albumId,
                         albumName: albumTitle,
                         index: track.index,
@@ -1612,9 +1872,17 @@
 
         function resetImportModal() {
             document.getElementById('import-status-text').style.display = 'none';
+            document.getElementById('import-details-container').style.display = 'none';
             document.getElementById('btn-import-submit').disabled = false;
             document.getElementById('btn-import-cancel').disabled = false;
             document.getElementById('modalPlaylistUrl').value = '';
+            
+            document.getElementById('modalAlbumTitle').value = '';
+            document.getElementById('modalAlbumArtist').value = '';
+            document.getElementById('modalAlbumTitle').setAttribute('readonly', 'true');
+            document.getElementById('modalAlbumArtist').setAttribute('readonly', 'true');
+            document.getElementById('modalAlbumTitle').style.cursor = 'default';
+            document.getElementById('modalAlbumArtist').style.cursor = 'default';
         }
 
         function hashCode(str) {
@@ -1644,6 +1912,18 @@
                 const album = window.musicAlbums.find(a => a.id === albumId);
                 if (!album) return;
 
+                // Find all unique artist IDs associated with this album and its tracks
+                let artistsToCheck = new Set();
+                if (album.artistId) {
+                    artistsToCheck.add(album.artistId);
+                }
+                let albumSongs = window.musicSongs.filter(s => s.albumId === albumId);
+                albumSongs.forEach(s => {
+                    if (s.artistId) {
+                        artistsToCheck.add(s.artistId);
+                    }
+                });
+
                 // Delete Songs
                 if (album.songIds) {
                     for(let songId of album.songIds) {
@@ -1655,6 +1935,15 @@
                 // Delete Album
                 const albumRef = window.doc(window.db, "users", uid, "music_albums", albumId);
                 await window.deleteDoc(albumRef);
+
+                // Clean up empty artists (who have no other songs left in library)
+                for (let checkArtistId of artistsToCheck) {
+                    const remainingSongs = window.musicSongs.filter(s => s.artistId === checkArtistId && s.albumId !== albumId);
+                    if (remainingSongs.length === 0) {
+                        const artistRef = window.doc(window.db, "users", uid, "music_artists", checkArtistId);
+                        await window.deleteDoc(artistRef);
+                    }
+                }
 
                 alert("Альбом успешно удален!");
                 switchView('home');
@@ -2454,6 +2743,22 @@
         function openAddPlaylistModal() {
             const modal = document.getElementById('addPlaylistModal');
             modal.style.display = 'flex';
+            
+            // Ensure inputs are initially hidden and empty
+            document.getElementById('import-details-container').style.display = 'none';
+            document.getElementById('modalAlbumTitle').value = '';
+            document.getElementById('modalAlbumArtist').value = '';
+            document.getElementById('modalAlbumTitle').setAttribute('readonly', 'true');
+            document.getElementById('modalAlbumArtist').setAttribute('readonly', 'true');
+            document.getElementById('modalAlbumTitle').style.cursor = 'default';
+            document.getElementById('modalAlbumArtist').style.cursor = 'default';
+            
+            // Reset edit buttons to pencil
+            const pencilSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
+            document.querySelectorAll('.edit-icon-btn').forEach(btn => {
+                btn.innerHTML = pencilSvg;
+            });
+            
             setTimeout(() => modal.classList.add('active'), 10);
         }
 

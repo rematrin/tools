@@ -788,6 +788,154 @@
         }
 
 
+        /* --- Apple Music Style Sidebar Layout --- */
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+            background: var(--bg);
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            box-sizing: border-box;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            user-select: none;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 24px;
+            padding-left: 8px;
+        }
+
+        .window-controls .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .window-controls .red { background: #ff5f56; }
+        .window-controls .yellow { background: #ffbd2e; }
+        .window-controls .green { background: #27c93f; }
+
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 4px;
+        }
+
+        .sidebar-menu::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar-menu::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .sidebar-section-title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-secondary);
+            padding: 8px;
+            letter-spacing: 0.05em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-add-btn {
+            background: none;
+            border: none;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0;
+            line-height: 1;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-add-btn:hover {
+            opacity: 0.8;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+        }
+
+        .sidebar-item.active {
+            background: var(--active-bg);
+            color: var(--accent);
+        }
+
+        .sidebar-item svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-playlist-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            background: var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+            background-size: cover;
+            background-position: center;
+        }
+
+
+
+        .main-content {
+            flex-grow: 1;
+            height: 100vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
         /* --- Toggle Switch for Turbo Mix --- */
         .player-view-header {
             width: 100%;
@@ -1344,7 +1492,110 @@
 
     <div id="header-container"></div>
 
-    <div class="wrap">
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="window-controls">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+            </div>
+            
+            <div class="sidebar-menu">
+                <div class="sidebar-section">
+                    <div class="sidebar-item" onclick="alert('Поиск')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <span>Поиск</span>
+                    </div>
+                    <div class="sidebar-item active" id="sidebar-home-btn" onclick="closePlayerCard()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                        <span>Главная</span>
+                    </div>
+                    <div class="sidebar-item" onclick="alert('Новое')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Новое</span>
+                    </div>
+                    <div class="sidebar-item" onclick="alert('Радио')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="2"></circle>
+                            <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path>
+                        </svg>
+                        <span>Радио</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Медиатека</div>
+                    <div class="sidebar-item" onclick="alert('Недавно добавленные')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <span>Недавно добавленные</span>
+                    </div>
+                    <div class="sidebar-item" onclick="alert('Артисты')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="22"></line>
+                        </svg>
+                        <span>Артисты</span>
+                    </div>
+                    <div class="sidebar-item" onclick="alert('Альбомы')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <span>Альбомы</span>
+                    </div>
+                    <div class="sidebar-item" onclick="alert('Песни')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 18V5l12-2v13"></path>
+                            <circle cx="6" cy="18" r="3"></circle>
+                            <circle cx="18" cy="16" r="3"></circle>
+                        </svg>
+                        <span>Песни</span>
+                    </div>
+                    <div class="sidebar-item" onclick="alert('Жанры')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="4" y1="21" x2="4" y2="14"></line>
+                            <line x1="4" y1="10" x2="4" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12" y2="3"></line>
+                            <line x1="20" y1="21" x2="20" y2="16"></line>
+                            <line x1="20" y1="12" x2="20" y2="3"></line>
+                            <line x1="1" y1="14" x2="7" y2="14"></line>
+                            <line x1="9" y1="8" x2="15" y2="8"></line>
+                            <line x1="17" y1="16" x2="23" y2="16"></line>
+                        </svg>
+                        <span>Жанры</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">
+                        <span>Плейлисты</span>
+                        <button class="sidebar-add-btn" onclick="openAddPlaylistModal()" title="Добавить плейлист">+</button>
+                    </div>
+                    <div id="sidebar-playlists-list"></div>
+                </div>
+            </div>
+            
+
+        </aside>
+
+        <main class="main-content">
+            <div class="wrap">
 
         <div class="card" id="main-player-card" style="display: none;">
             <div id="player-container">
@@ -1570,6 +1821,8 @@
             </div>
             <div class="saved-playlists-list" id="saved-playlists-list"></div>
         </div>
+    </div>
+        </main>
     </div>
 
     <script>
@@ -1871,6 +2124,20 @@
             updateDeckVisibility();
             updateButtons();
             toggleTurboMix(isTurboMixEnabled);
+            
+            // Update sidebar highlights
+            renderSavedPlaylists(window.currentSavedPlaylists);
+            
+            // Adjust sidebar item highlights: if player card is active, Главная button is not highlighted
+            const mainPlayerCard = document.getElementById('main-player-card');
+            const homeBtn = document.getElementById('sidebar-home-btn');
+            if (homeBtn) {
+                if (mainPlayerCard && mainPlayerCard.style.display !== 'none') {
+                    homeBtn.classList.remove('active');
+                } else {
+                    homeBtn.classList.add('active');
+                }
+            }
         }
 
         function updateButtons() {
@@ -2966,6 +3233,35 @@
             window.currentSavedPlaylists = list || [];
             const container = document.getElementById('saved-playlists-section');
             const listContainer = document.getElementById('saved-playlists-list');
+            
+            // Render sidebar playlists
+            const sidebarList = document.getElementById('sidebar-playlists-list');
+            if (sidebarList) {
+                sidebarList.innerHTML = '';
+                if (window.currentUser && list && list.length > 0) {
+                    list.forEach(item => {
+                        const isActive = (window.currentListId && item.url && item.url.includes(`list=${window.currentListId}`));
+                        const activeClass = isActive ? 'active' : '';
+                        const div = document.createElement('div');
+                        div.className = `sidebar-item ${activeClass}`;
+                        div.onclick = () => loadSavedPlaylist(item.url, item.name);
+                        
+                        let styleStr = '';
+                        if (item.first_video_id) {
+                            styleStr = `style="background-image: url('https://img.youtube.com/vi/${item.first_video_id}/hqdefault.jpg')"`;
+                        }
+                        
+                        div.innerHTML = `
+                            <div class="sidebar-playlist-icon" ${styleStr}>
+                                ${item.first_video_id ? '' : '🎵'}
+                            </div>
+                            <span class="sidebar-playlist-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</span>
+                        `;
+                        sidebarList.appendChild(div);
+                    });
+                }
+            }
+
             if (!listContainer) return;
 
             listContainer.innerHTML = '';
@@ -3234,6 +3530,10 @@
             }
             document.getElementById('player-container').style.display = 'flex';
             document.getElementById('player-error-state').style.display = 'none';
+            
+            const homeBtn = document.getElementById('sidebar-home-btn');
+            if (homeBtn) homeBtn.classList.add('active');
+            renderSavedPlaylists(window.currentSavedPlaylists);
         }
 
         window.addEventListener('click', (e) => {

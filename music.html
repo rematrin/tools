@@ -4,1140 +4,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>YouTube Music Client</title>
+    <title>YouTube Playlists</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎧</text></svg>">
 
     <link rel="stylesheet" href="theme.css">
 
     <style>
-        /* === APPLE MUSIC TAHOE DESIGN SYSTEM === */
-        :root {
-            --am-red: #fa2d56;
-            --am-red-hover: #e02448;
-            --am-red-translucent: rgba(250, 45, 86, 0.1);
-            
-            --sidebar-width: 260px;
-            --player-height: 76px;
-            
-            --glass-bg-light: rgba(255, 255, 255, 0.8);
-            --glass-bg-dark: rgba(20, 24, 35, 0.85);
-            --glass-border-light: rgba(230, 230, 230, 0.5);
-            --glass-border-dark: rgba(45, 50, 60, 0.4);
-            
-            --text-primary-light: #1f1f1f;
-            --text-primary-dark: #f5f5f7;
-            --text-secondary-light: #8e8e93;
-            --text-secondary-dark: #8e8e93;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-            background: var(--bg);
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            transition: background 0.3s ease, color 0.3s ease;
-        }
-
-        /* Adjust global layouts because header.js adds header at top */
-        #header-container {
-            display: none !important;
-        }
-        #footer {
-            display: none !important;
-        }
-
-        /* Layout Container */
-        .am-container {
-            display: flex;
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-            padding-bottom: var(--player-height);
-            box-sizing: border-box;
-        }
-
-        /* Persistent Sidebar */
-        .am-sidebar {
-            width: var(--sidebar-width);
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            padding: 24px 12px 16px 12px;
-            box-sizing: border-box;
-            flex-shrink: 0;
-            height: 100%;
-        }
-
-        .am-sidebar-logo {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 0 12px 20px 12px;
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--am-red);
-        }
-        .am-sidebar-logo svg {
-            fill: currentColor;
-        }
-
-        .am-sidebar-section {
-            margin-bottom: 24px;
-        }
-
-        .am-sidebar-header {
-            font-size: 0.72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-secondary);
-            padding: 0 12px 8px 12px;
-        }
-
-        .am-sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .am-sidebar-link {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 12px;
-            color: var(--text);
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 0.92rem;
-            font-weight: 500;
-            transition: background 0.2s ease, color 0.2s ease;
-        }
-
-        .am-sidebar-link svg {
-            color: var(--am-red);
-            flex-shrink: 0;
-            width: 18px;
-            height: 18px;
-            transition: color 0.2s ease;
-        }
-
-        .am-sidebar-link:hover {
-            background: var(--hover-bg);
-        }
-
-        .am-sidebar-link.active {
-            background: var(--am-red-translucent);
-            color: var(--am-red);
-        }
-
-        .am-sidebar-link.active svg {
-            color: var(--am-red);
-        }
-
-        .sidebar-search-container {
-            padding: 0 12px 12px 12px;
-        }
-
-        .sidebar-search-input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg);
-            color: var(--text);
-            font-size: 0.88rem;
-            outline: none;
-            transition: border-color 0.2s ease;
-        }
-
-        .sidebar-search-input:focus {
-            border-color: var(--am-red);
-        }
-
-        .add-playlist-btn {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 0;
-            line-height: 1;
-            transition: color 0.2s ease;
-        }
-
-        .add-playlist-btn:hover {
-            color: var(--am-red);
-        }
-
-        .am-sidebar-profile {
-            margin-top: auto;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            background: var(--hover-bg);
-            transition: background 0.2s ease;
-        }
-
-        .am-sidebar-profile:hover {
-            background: var(--border);
-        }
-
-        .profile-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--am-red);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 1rem;
-            object-fit: cover;
-        }
-
-        .profile-info {
-            overflow: hidden;
-        }
-
-        .profile-name {
-            font-size: 0.88rem;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* Main Content Viewports */
-        .am-main-content {
-            flex-grow: 1;
-            padding: 30px 40px;
-            box-sizing: border-box;
-            overflow-y: auto;
-            height: 100%;
-        }
-
-        .view-section {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .view-section.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .view-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 16px;
-        }
-
-        .view-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        /* Button elements */
-        .am-btn {
-            background: var(--am-red);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: background 0.2s ease;
-        }
-
-        .am-btn:hover {
-            background: var(--am-red-hover);
-        }
-
-        .am-btn-secondary {
-            background: var(--hover-bg);
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-
-        .am-btn-secondary:hover {
-            background: var(--border);
-        }
-
-        /* Grid View (Albums) */
-        .albums-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-            gap: 24px;
-        }
-
-        .album-card {
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            position: relative;
-            transition: transform 0.2s ease;
-        }
-
-        .album-card:hover {
-            transform: translateY(-2px);
-        }
-
-        .album-cover-wrapper {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-            background: var(--border);
-        }
-
-        .album-cover {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .album-hover-play {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-
-        .album-card:hover .album-hover-play {
-            opacity: 1;
-        }
-
-        .play-btn-circle {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.9);
-            color: #111;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transition: transform 0.2s ease;
-        }
-
-        .play-btn-circle:hover {
-            transform: scale(1.08);
-        }
-
-        .album-title {
-            font-size: 0.92rem;
-            font-weight: 600;
-            margin: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .album-artist {
-            font-size: 0.84rem;
-            color: var(--text-secondary);
-            margin: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* Detail View Layout (Album details) */
-        .album-details-container {
-            display: flex;
-            gap: 40px;
-            align-items: flex-start;
-        }
-
-        .album-details-sidebar {
-            width: 240px;
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .album-details-cover {
-            width: 240px;
-            height: 240px;
-            border-radius: 12px;
-            box-shadow: 0 12px 32px rgba(0,0,0,0.12);
-            object-fit: cover;
-        }
-
-        .album-details-info {
-            text-align: center;
-        }
-
-        .album-details-title {
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin: 0 0 4px 0;
-        }
-
-        .album-details-artist {
-            font-size: 1.05rem;
-            color: var(--am-red);
-            font-weight: 600;
-            margin: 0 0 12px 0;
-            cursor: pointer;
-        }
-
-        .album-details-meta {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin: 0;
-        }
-
-        .album-details-tracks {
-            flex-grow: 1;
-        }
-
-        /* Songs & Tracks Table Layout */
-        .tracks-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
-
-        .tracks-table th {
-            font-size: 0.76rem;
-            text-transform: uppercase;
-            color: var(--text-secondary);
-            padding: 8px 12px;
-            border-bottom: 1px solid var(--border);
-            font-weight: 600;
-        }
-
-        .tracks-table td {
-            padding: 10px 12px;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.9rem;
-            vertical-align: middle;
-        }
-
-        .tracks-table tr:hover {
-            background: var(--hover-bg);
-        }
-
-        .tracks-table tr.active {
-            background: var(--am-red-translucent);
-            color: var(--am-red);
-        }
-
-        .track-num {
-            width: 40px;
-            color: var(--text-secondary);
-        }
-
-        .track-play-cell {
-            width: 32px;
-        }
-
-        .play-row-btn {
-            background: none;
-            border: none;
-            color: var(--am-red);
-            cursor: pointer;
-            display: none;
-            padding: 0;
-        }
-
-        .tracks-table tr:hover .play-row-btn {
-            display: inline-block;
-        }
-
-        .tracks-table tr:hover .track-num-txt {
-            display: none;
-        }
-
-        .track-duration {
-            text-align: right;
-            width: 60px;
-            color: var(--text-secondary);
-        }
-
-        /* Bottom Now Playing Bar */
-        .now-playing-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: var(--player-height);
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(20px);
-            border-top: 1px solid var(--glass-border-light);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 24px;
-            box-sizing: border-box;
-            z-index: 100;
-        }
-
-        body.dark .now-playing-bar {
-            background: var(--glass-bg-dark);
-            border-top: 1px solid var(--glass-border-dark);
-        }
-
-        /* Player bar left side */
-        .player-track-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            width: 25%;
-            min-width: 200px;
-        }
-
-        .player-artwork {
-            width: 48px;
-            height: 48px;
-            border-radius: 6px;
-            object-fit: cover;
-            background: var(--border);
-        }
-
-        .player-meta {
-            overflow: hidden;
-        }
-
-        .player-title {
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .player-artist {
-            font-size: 0.78rem;
-            color: var(--text-secondary);
-            margin: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* Player bar center controls */
-        .player-controls {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            width: 45%;
-        }
-
-        .control-btns {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .control-btn {
-            background: none;
-            border: none;
-            color: var(--text);
-            cursor: pointer;
-            padding: 6px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s ease, color 0.2s ease;
-        }
-
-        .control-btn:hover {
-            background: var(--hover-bg);
-        }
-
-        .control-btn.active {
-            color: var(--am-red);
-        }
-
-        .control-btn.play-pause {
-            background: var(--text);
-            color: var(--bg);
-            width: 36px;
-            height: 36px;
-        }
-
-        .control-btn.play-pause:hover {
-            background: var(--text-secondary);
-        }
-
-        /* Progress Slider */
-        .progress-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            width: 100%;
-            max-width: 500px;
-        }
-
-        .time-label {
-            font-size: 0.72rem;
-            color: var(--text-secondary);
-            width: 32px;
-            text-align: center;
-        }
-
-        .progress-slider-wrapper {
-            flex-grow: 1;
-            position: relative;
-            height: 4px;
-            background: var(--border);
-            border-radius: 2px;
-            cursor: pointer;
-        }
-
-        .progress-fill {
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            background: var(--am-red);
-            border-radius: 2px;
-            width: 0%;
-        }
-
-        /* Right controls */
-        .player-right-controls {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            width: 25%;
-            justify-content: flex-end;
-            min-width: 180px;
-        }
-
-        .volume-container {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            width: 100px;
-        }
-
-        .volume-slider-wrapper {
-            flex-grow: 1;
-            position: relative;
-            height: 4px;
-            background: var(--border);
-            border-radius: 2px;
-            cursor: pointer;
-        }
-
-        .volume-fill {
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            background: var(--text-secondary);
-            border-radius: 2px;
-            width: 100%;
-        }
-
-        /* Side Sliding Panel (Queue & Lyrics) */
-        .side-sliding-panel {
-            position: fixed;
-            right: -360px;
-            top: 0;
-            width: 350px;
-            height: calc(100vh - var(--player-height));
-            background: var(--card-bg);
-            border-left: 1px solid var(--border);
-            box-shadow: -4px 0 24px rgba(0,0,0,0.05);
-            z-index: 95;
-            transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            padding: 24px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .side-sliding-panel.open {
-            right: 0;
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 12px;
-        }
-
-        .panel-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        .panel-close {
-            background: none;
-            border: none;
-            font-size: 1.3rem;
-            cursor: pointer;
-            color: var(--text-secondary);
-        }
-
-        .panel-content {
-            flex-grow: 1;
-            overflow-y: auto;
-        }
-
-        /* Lyrics styles */
-        .lyrics-text {
-            font-size: 1.15rem;
-            line-height: 1.6;
-            font-weight: 600;
-            color: var(--text-secondary);
-            white-space: pre-line;
-            transition: color 0.3s ease;
-        }
-
-        /* Artist Detail Layout */
-        .artist-details-layout {
-            display: flex;
-            flex-direction: column;
-            gap: 32px;
-        }
-
-        .artist-banner {
-            height: 160px;
-            background: var(--hover-bg);
-            border-radius: 12px;
-            display: flex;
-            align-items: flex-end;
-            padding: 24px;
-            box-sizing: border-box;
-            background-size: cover;
-            background-position: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .artist-banner::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
-            z-index: 1;
-        }
-
-        .artist-banner-name {
-            font-size: 2.2rem;
-            font-weight: 800;
-            color: white;
-            z-index: 2;
-            margin: 0;
-        }
-
-        /* Modal Box Customization */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.4);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-        }
-
-        .modal-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            width: 100%;
-            max-width: 440px;
-            box-shadow: 0 12px 36px rgba(0,0,0,0.15);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .modal-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-title {
-            margin: 0;
-            font-size: 1.05rem;
-            font-weight: 700;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.4rem;
-            cursor: pointer;
-            color: var(--text-secondary);
-            padding: 0;
-            line-height: 1;
-        }
-
-        .modal-body {
-            padding: 20px;
-        }
-
-        .modal-field {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .modal-field label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        .modal-input {
-            padding: 10px 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg);
-            color: var(--text);
-            font-size: 0.9rem;
-            outline: none;
-        }
-
-        .modal-input:focus {
-            border-color: var(--am-red);
-        }
-
-        .modal-footer {
-            padding: 12px 20px;
-            background: var(--hover-bg);
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-        }
-
-        .btn-modal {
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 0.88rem;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-        }
-
-        .btn-modal-cancel {
-            background: transparent;
-            color: var(--text);
-        }
-
-        .btn-modal-cancel:hover {
-            background: rgba(0,0,0,0.05);
-        }
-
-        .btn-modal-submit {
-            background: var(--am-red);
-            color: white;
-        }
-
-        .btn-modal-submit:hover {
-            background: var(--am-red-hover);
-        }
-
-        .btn-modal-danger {
-            background: #e02448;
-        }
-
-        /* YouTube Deck wrapper (hide offscreen but keep active) */
-        #visual-container {
-            position: absolute;
-            top: -9999px;
-            left: -9999px;
-            width: 200px;
-            height: 200px;
-            opacity: 0;
-            pointer-events: none;
-            z-index: -10;
-        }
-
-        #visual-container.onscreen {
-            position: relative !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            opacity: 1 !important;
-            pointer-events: auto !important;
-            z-index: 10 !important;
-        }
-
-
-    </style>
-</head>
-
-<body>
-
-    <script src="theme-loader.js"></script>
-
-    <!-- Global header mock container to avoid JS error in header.js -->
-    <div id="header-container" style="display: none;"></div>
-
-    <div class="am-container">
-        <!-- ЛЕВЫЙ САЙДБАР -->
-        <aside class="am-sidebar">
-            <div class="am-sidebar-logo">
-                <svg viewBox="0 0 24 24" width="22" height="22">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
-                </svg>
-                <span>Медиатека</span>
-            </div>
-
-            <!-- Поиск -->
-            <div class="sidebar-search-container">
-                <input type="text" class="sidebar-search-input" id="sidebar-search-input" placeholder="Поиск" oninput="triggerGlobalSearch(this.value)">
-            </div>
-
-            <!-- Главный блок навигации -->
-            <div class="am-sidebar-section">
-                <nav class="am-sidebar-nav">
-                    <a href="#" class="am-sidebar-link active" onclick="switchView('home')" id="link-home">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                        </svg>
-                        <span>Главная</span>
-                    </a>
-                    <a href="#" class="am-sidebar-link" onclick="switchView('recently-added')" id="link-recently-added">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        <span>Недавно добавленные</span>
-                    </a>
-                </nav>
-            </div>
-
-            <!-- Медиатека -->
-            <div class="am-sidebar-section">
-                <div class="am-sidebar-header">Медиатека</div>
-                <nav class="am-sidebar-nav">
-                    <a href="#" class="am-sidebar-link" onclick="switchView('artists')" id="link-artists">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                        <span>Артисты</span>
-                    </a>
-                    <a href="#" class="am-sidebar-link" onclick="switchView('albums')" id="link-albums">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                        <span>Альбомы</span>
-                    </a>
-                    <a href="#" class="am-sidebar-link" onclick="switchView('songs')" id="link-songs">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 18V5l12-2v13"></path>
-                            <circle cx="6" cy="18" r="3"></circle>
-                            <circle cx="18" cy="16" r="3"></circle>
-                        </svg>
-                        <span>Песни</span>
-                    </a>
-                </nav>
-            </div>
-
-            <!-- Плейлисты -->
-            <div class="am-sidebar-section">
-                <div class="am-sidebar-header" style="display:flex; justify-content:space-between; align-items:center;">
-                    <span>Плейлисты</span>
-                    <button class="add-playlist-btn" onclick="openAddPlaylistModal()" title="Импортировать альбом">+</button>
-                </div>
-                <nav class="am-sidebar-nav" id="sidebar-playlists-nav">
-                    <!-- Заполняется динамически -->
-                </nav>
-            </div>
-
-            <!-- Профиль пользователя внизу -->
-            <div class="am-sidebar-profile" onclick="triggerProfileClick()">
-                <div class="profile-avatar" id="sidebar-user-avatar">?</div>
-                <div class="profile-info">
-                    <div class="profile-name" id="sidebar-user-name">Войти</div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- ЦЕНТРАЛЬНЫЙ КОНТЕНТ -->
-        <main class="am-main-content">
-            
-            <!-- Вью: Главная (Home) -->
-            <section class="view-section active" id="view-home">
-                <div class="view-header">
-                    <h1 class="view-title">Главная</h1>
-                    <button class="am-btn" onclick="openAddPlaylistModal()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        Добавить альбом
-                    </button>
-                </div>
-
-                
-                <h2 style="margin: 0 0 16px 0; font-size: 1.3rem;">Слушать сейчас</h2>
-                <div class="albums-grid" id="home-featured-grid">
-                    <!-- Заполняется динамически -->
-                </div>
-            </section>
-
-            <!-- Вью: Недавно добавленные -->
-            <section class="view-section" id="view-recently-added">
-                <div class="view-header">
-                    <h1 class="view-title">Недавно добавленные</h1>
-                </div>
-                <div class="albums-grid" id="recently-added-grid">
-                    <!-- Заполняется динамически -->
-                </div>
-            </section>
-
-            <!-- Вью: Альбомы -->
-            <section class="view-section" id="view-albums">
-                <div class="view-header">
-                    <h1 class="view-title">Альбомы</h1>
-                </div>
-                <div class="albums-grid" id="albums-grid">
-                    <!-- Заполняется динамически -->
-                </div>
-            </section>
-
-            <!-- Вью: Артисты -->
-            <section class="view-section" id="view-artists">
-                <div class="view-header">
-                    <h1 class="view-title">Артисты</h1>
-                </div>
-                <div class="artist-details-layout" id="artists-master-detail">
-                    <!-- Заполняется динамически -->
-                </div>
-            </section>
-
-            <!-- Вью: Песни -->
-            <section class="view-section" id="view-songs">
-                <div class="view-header">
-                    <h1 class="view-title">Песни</h1>
-                    <button class="am-btn am-btn-secondary" onclick="playAllSongs()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                        Воспроизвести все
-                    </button>
-                </div>
-                <div class="album-details-tracks">
-                    <table class="tracks-table">
-                        <thead>
-                            <tr>
-                                <th class="track-num">#</th>
-                                <th>Песня</th>
-                                <th>Исполнитель</th>
-                                <th>Альбом</th>
-                                <th class="track-duration">Длительность</th>
-                            </tr>
-                        </thead>
-                        <tbody id="songs-list-table">
-                            <!-- Загружается динамически -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-
-
-            <!-- Вью: Детали Артиста -->
-            <section class="view-section" id="view-artist-details">
-                <div class="view-header">
-                    <button class="am-btn am-btn-secondary" onclick="switchView('artists')">Все артисты</button>
-                </div>
-                <div class="artist-details-layout">
-                    <div class="artist-banner" id="artist-details-banner">
-                        <h1 class="artist-banner-name" id="artist-details-name">Артист</h1>
-                    </div>
-                    
-                    <h2 style="margin:24px 0 16px 0;">Альбомы</h2>
-                    <div class="albums-grid" id="artist-albums-grid">
-                        <!-- Динамическая сетка альбомов артиста -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Вью: Глобальный Поиск -->
-            <section class="view-section" id="view-search-results">
-                <div class="view-header">
-                    <h1 class="view-title" id="search-title-text">Результаты поиска</h1>
-                </div>
-                
-                <div id="search-albums-section" style="margin-bottom: 40px;">
-                    <h2 style="font-size:1.2rem; margin-bottom:16px;">Альбомы</h2>
-                    <div class="albums-grid" id="search-albums-grid"></div>
-                </div>
-                
-                <div id="search-songs-section">
-                    <h2 style="font-size:1.2rem; margin-bottom:16px;">Песни</h2>
-                    <table class="tracks-table">
-                        <thead>
-                            <tr>
-                                <th class="track-num">#</th>
-                                <th>Песня</th>
-                                <th>Исполнитель</th>
-                                <th>Альбом</th>
-                                <th class="track-duration">Длительность</th>
-                            </tr>
-                        </thead>
-                        <tbody id="search-songs-table"></tbody>
-                    </table>
-                </div>
-            </section>
-            
-            <!-- Вью: DJ Станция (DJ Station Scoped Copy) -->
-            <section class="view-section" id="view-dj-station" style="padding: 24px; min-height: 100vh; overflow-y: auto;">
-                <style>
-#view-dj-station {
-
         /* === ЛОКАЛЬНЫЕ СТИЛИ (Специфика DJ Station) === */
         :root {
             /* Специфичные неоновые цвета */
@@ -1150,7 +23,7 @@
 
 
 
-        #view-dj-station {
+        body {
             display: flex;
             /* Для центровки */
             flex-direction: column;
@@ -1200,7 +73,7 @@
         }
 
         /* --- Левая колонка (Плейлист) --- */
-        #dj-playlist-sidebar {
+        #playlist-sidebar {
             width: 40%;
             flex: 0 0 40%;
             display: flex;
@@ -1292,7 +165,7 @@
             opacity: 0.8;
         }
 
-        #dj-player-error-state {
+        #player-error-state {
             display: none;
             flex-direction: column;
             align-items: center;
@@ -1368,7 +241,7 @@
             padding: 0;
         }
 
-        .modal-#view-dj-station {
+        .modal-body {
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -1584,7 +457,7 @@
             flex-grow: 1;
         }
 
-        #dj-playlist-title-text {
+        #playlist-title-text {
             font-size: 1.1rem;
             margin: 0;
             color: var(--text);
@@ -1595,7 +468,7 @@
             cursor: text;
         }
 
-        #dj-playlist-count-text {
+        #playlist-count-text {
             font-size: 0.8rem;
             color: var(--text-secondary);
         }
@@ -1859,7 +732,7 @@
 
 
         /* --- Правая колонка (Плеер) --- */
-        #dj-main-player-area {
+        #main-player-area {
             flex: 1;
             min-width: 0;
             /* Важно для flex-shrink и текстовых переполнений */
@@ -1915,7 +788,7 @@
         }
 
 
-        /* --- Переключатель режима плеера (Музыка / Нативное Видео) --- */
+        /* --- Toggle Switch for Turbo Mix --- */
         .player-view-header {
             width: 100%;
             display: flex;
@@ -1923,48 +796,63 @@
             margin-bottom: 12px;
         }
 
-        .player-view-toggle {
-            display: inline-flex;
-            background: var(--bg);
-            padding: 3px;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            gap: 2px;
-        }
-
-        .player-view-btn {
-            border: none;
-            background: transparent;
-            padding: 5px 12px;
-            border-radius: 16px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            cursor: pointer;
+        .turbo-toggle-container {
             display: flex;
             align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-            font-family: inherit;
+            gap: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            user-select: none;
         }
 
-        .player-view-btn:hover {
-            color: var(--text);
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 20px;
         }
 
-        .player-view-btn.active {
-            background: var(--card-bg);
-            color: var(--accent);
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
 
-        .player-view-btn svg {
-            width: 14px;
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border);
+            transition: .3s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
             height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--card-bg);
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(18px);
         }
 
         /* 2. Визуальный контейнер */
-        #dj-visual-container {
+        #visual-container {
             width: 100%;
             max-width: 480px;
             aspect-ratio: 16 / 9;
@@ -1978,20 +866,20 @@
         }
 
         /* Нативный режим плеера */
-        .wrap-native-video #dj-playlist-sidebar {
+        .wrap-native-video #playlist-sidebar {
             width: 320px;
             flex: 0 0 320px;
             height: auto;
             max-height: calc((1240px - 320px - 20px - 32px) * 9 / 16 + 32px);
         }
 
-        #dj-main-player-area.player-view-native-video {
+        #main-player-area.player-view-native-video {
             display: flex;
             flex-direction: column;
             width: 100%;
         }
 
-        #dj-main-player-area.player-view-native-video #dj-visual-container {
+        #main-player-area.player-view-native-video #visual-container {
             max-width: 100%;
             width: 100%;
             aspect-ratio: 16 / 9;
@@ -2001,23 +889,23 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
         }
 
-        #dj-main-player-area.player-view-native-video #dj-native-player-wrapper {
+        #main-player-area.player-view-native-video #native-player-wrapper {
             pointer-events: auto !important;
         }
 
-        #dj-main-player-area.player-view-native-video #dj-native-player-wrapper iframe {
+        #main-player-area.player-view-native-video #native-player-wrapper iframe {
             pointer-events: auto !important;
         }
 
-        #dj-main-player-area.player-view-native-video #dj-cover-overlay {
+        #main-player-area.player-view-native-video #cover-overlay {
             display: none !important;
         }
 
-        #dj-main-player-area.player-view-native-video .mode-switcher,
-        #dj-main-player-area.player-view-native-video #dj-current-track-info,
-        #dj-main-player-area.player-view-native-video #meta-info-row,
-        #dj-main-player-area.player-view-native-video .seek-container,
-        #dj-main-player-area.player-view-native-video #controls {
+        #main-player-area.player-view-native-video .mode-switcher,
+        #main-player-area.player-view-native-video #current-track-info,
+        #main-player-area.player-view-native-video #meta-info-row,
+        #main-player-area.player-view-native-video .seek-container,
+        #main-player-area.player-view-native-video #controls {
             display: none !important;
         }
 
@@ -2041,7 +929,7 @@
             pointer-events: none;
         }
 
-        #dj-cover-overlay {
+        #cover-overlay {
             position: absolute;
             top: 0;
             left: 0;
@@ -2055,8 +943,8 @@
         }
 
         /* ЛОГИКА РЕЖИМОВ */
-        .mode-audio #dj-cover-overlay,
-        .is-empty #dj-cover-overlay {
+        .mode-audio #cover-overlay,
+        .is-empty #cover-overlay {
             opacity: 1 !important;
             pointer-events: auto;
             cursor: default;
@@ -2067,7 +955,7 @@
 
 
         /* 3. Инфо о треке */
-        #dj-current-track-info {
+        #current-track-info {
             font-size: 1.1rem;
             font-weight: 700;
             color: var(--text);
@@ -2226,7 +1114,7 @@
             box-shadow: 0 4px 10px rgba(0, 150, 238, 0.3);
         }
 
-        #dj-playPauseBtn {
+        #playPauseBtn {
             width: 64px;
             height: 64px;
             background: var(--accent-hover);
@@ -2246,7 +1134,7 @@
             height: 24px;
         }
 
-        #dj-playPauseBtn svg {
+        #playPauseBtn svg {
             width: 32px;
             height: 32px;
         }
@@ -2258,14 +1146,14 @@
                 flex-direction: column;
             }
 
-            #dj-main-player-area {
+            #main-player-area {
                 width: 100%;
                 margin-bottom: 20px;
                 border-bottom: 1px solid var(--border);
                 padding-bottom: 20px;
             }
 
-            #dj-playlist-sidebar {
+            #playlist-sidebar {
                 width: 100%;
                 max-height: 300px;
                 padding-bottom: 20px;
@@ -2395,9 +1283,9 @@
             height: 20px;
         }
 
-        #dj-volumeSlider,
-        #dj-crossfadeSlider,
-        #dj-turboMixSlider {
+        #volumeSlider,
+        #crossfadeSlider,
+        #turboMixSlider {
             width: 120px;
             /* Чуть шире */
             height: 4px;
@@ -2439,16 +1327,29 @@
                 width: 140px;
             }
         }
-    
-}
-                </style>
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
 
-                <div class="wrap">
+        gtag('config', 'G-384FKZ1NQP');
+    </script>
+</head>
 
-        <div class="card" id="dj-main-player-card" style="display: flex;">
+<body>
+
+    <script src="theme-loader.js"></script>
+
+    <div id="header-container"></div>
+
+    <div class="wrap">
+
+        <div class="card" id="main-player-card" style="display: none;">
             <div id="player-container">
 
-                <div id="dj-playlist-sidebar">
+                <div id="playlist-sidebar">
                     <div id="playlist-header-row">
                         <div class="playlist-header-left">
                             <button class="icon-action-btn btn-back-to-list" onclick="closePlayerCard()"
@@ -2460,23 +1361,11 @@
                                 </svg>
                             </button>
                             <div class="playlist-header-text">
-                                <h2 id="dj-playlist-title-text">Мой Плейлист</h2>
-                                <div id="dj-playlist-count-text">0 видео из 0</div>
+                                <h2 id="playlist-title-text">Мой Плейлист</h2>
+                                <div id="playlist-count-text">0 видео из 0</div>
                             </div>
                         </div>
                         <div class="playlist-header-actions">
-
-                            <!-- Delete Album Button -->
-                            <button class="icon-action-btn" onclick="deleteCurrentAlbum()" style="color: #ff3b30; margin-left: 6px;"
-                                data-tooltip="Удалить альбом">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; display: block;">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                    <line x1="10" y1="11" x2="10" y2="17"></line>
-                                    <line x1="14" y1="11" x2="14" y2="17"></line>
-                                </svg>
-                            </button>
-    
                             <button class="icon-action-btn btn-shuffle-large" onclick="shufflePlaylist()"
                                 data-tooltip="Перемешать">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -2494,63 +1383,37 @@
                         </div>
                     </div>
 
-                    <div class="playlist-scroll-area" id="dj-playlist-list">
+                    <div class="playlist-scroll-area" id="playlist-list">
                     </div>
                 </div>
 
-                <div id="dj-main-player-area" class="mode-video">
+                <div id="main-player-area" class="mode-audio">
 
                     <div class="player-view-header">
-                        <div class="player-view-toggle">
-                            <button class="player-view-btn active" id="btn-view-music"
-                                onclick="setPlayerViewMode('music')"
-                                title="Музыкальный режим со спецэффектом Crossfade">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M9 18V5l12-2v13"></path>
-                                    <circle cx="6" cy="18" r="3"></circle>
-                                    <circle cx="18" cy="16" r="3"></circle>
-                                </svg>
-                                <span>Музыка</span>
-                            </button>
-                            <button class="player-view-btn" id="btn-view-turbo"
-                                onclick="setPlayerViewMode('turbo-mix')"
-                                title="Режим Турбо-микс (Случайный запуск и быстрая смена)">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="16 3 21 3 21 8"></polyline>
-                                    <line x1="4" y1="20" x2="21" y2="3"></line>
-                                    <polyline points="21 16 21 21 16 21"></polyline>
-                                    <line x1="15" y1="15" x2="21" y2="21"></line>
-                                    <line x1="4" y1="4" x2="9" y2="9"></line>
-                                </svg>
-                                <span>Турбо-микс</span>
-                            </button>
-                            <button class="player-view-btn" id="btn-view-video"
-                                onclick="setPlayerViewMode('native-video')"
-                                title="Видео режим с нативным плеером YouTube">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="2" y="4" width="20" height="16" rx="3" ry="3"></rect>
-                                    <polygon points="10,9 16,12 10,15" fill="currentColor"></polygon>
-                                </svg>
-                                <span>Видео</span>
-                            </button>
+                        <div class="turbo-toggle-container" title="Турбо-микс (Случайный запуск и быстрая смена треков)">
+                            <span class="turbo-toggle-label">Турбо-микс</span>
+                            <label class="switch">
+                                <input type="checkbox" id="turbo-toggle-input" onchange="toggleTurboMix(this.checked)">
+                                <span class="slider round"></span>
+                            </label>
                         </div>
                     </div>
 
-                    <div id="dj-visual-container">
-                        <div id="dj-wrapper1" class="deck-wrapper deck-active">
-                            <div id="dj-player1" style="width:100%; height:100%;"></div>
+                    <div id="visual-container">
+                        <div id="wrapper1" class="deck-wrapper deck-active">
+                            <div id="player1" style="width:100%; height:100%;"></div>
                         </div>
-                        <div id="dj-wrapper2" class="deck-wrapper deck-bg">
-                            <div id="dj-player2" style="width:100%; height:100%;"></div>
+                        <div id="wrapper2" class="deck-wrapper deck-bg">
+                            <div id="player2" style="width:100%; height:100%;"></div>
                         </div>
-                        <div id="dj-native-player-wrapper" class="deck-wrapper" style="display:none; z-index:30;">
-                            <div id="dj-playerNative" style="width:100%; height:100%;"></div>
+                        <div id="native-player-wrapper" class="deck-wrapper" style="display:none; z-index:30;">
+                            <div id="playerNative" style="width:100%; height:100%;"></div>
                         </div>
-                        <img id="dj-cover-overlay" src="" alt="Cover" draggable="false">
+                        <img id="cover-overlay" src="" alt="Cover" draggable="false">
                     </div>
 
                     <div class="mode-switcher">
-                        <button class="mode-btn active" onclick="setMode('video')" id="dj-btn-video">
+                        <button class="mode-btn" onclick="setMode('video')" id="btn-video">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
                                 <line x1="8" y1="21" x2="16" y2="21"></line>
@@ -2558,7 +1421,7 @@
                             </svg>
                             <span>Видео</span>
                         </button>
-                        <button class="mode-btn" onclick="setMode('audio')" id="dj-btn-audio">
+                        <button class="mode-btn active" onclick="setMode('audio')" id="btn-audio">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M9 18V5l12-2v13"></path>
                                 <circle cx="6" cy="18" r="3"></circle>
@@ -2568,35 +1431,35 @@
                         </button>
                     </div>
 
-                    <div id="dj-current-track-info">Загрузка...</div>
+                    <div id="current-track-info">Загрузка...</div>
 
                     <div id="meta-info-row">
-                        <button id="dj-mixBtn" class="btn-mix" onclick="forceCrossfade()">
+                        <button id="mixBtn" class="btn-mix" onclick="forceCrossfade()">
                             ⚡ Сделать Crossfade
                         </button>
                     </div>
 
                     <div class="seek-container">
-                        <span id="dj-currentTime">0:00</span>
+                        <span id="currentTime">0:00</span>
                         <div class="seek-wrapper">
-                            <input type="range" id="dj-progressBar" value="0" step="0.1">
-                            <div id="dj-seekTooltip" class="seek-tooltip">0:00</div>
+                            <input type="range" id="progressBar" value="0" step="0.1">
+                            <div id="seekTooltip" class="seek-tooltip">0:00</div>
                         </div>
-                        <span id="dj-totalTime">0:00</span>
+                        <span id="totalTime">0:00</span>
                     </div>
 
 
                     <div id="controls">
                         <div class="crossfade-container">
                             <div class="crossfade-popover">
-                                <div class="popover-label">Переход: <span id="dj-crossfadeValue">8</span>с</div>
+                                <div class="popover-label">Переход: <span id="crossfadeValue">8</span>с</div>
                                 <div class="slider-wrapper">
                                     <div class="default-tick" title="По умолчанию (8с)"></div>
-                                    <input type="range" id="dj-crossfadeSlider" min="5" max="15" value="8"
+                                    <input type="range" id="crossfadeSlider" min="5" max="15" value="8"
                                         oninput="changeCrossfade(this.value)">
                                 </div>
                                 <div class="popover-label" style="margin-top: 8px; font-size: 0.65rem;">Эффект:</div>
-                                <select id="dj-crossfadeTypeSelect" onchange="changeCrossfadeType(this.value)" style="width: 120px; font-size: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 4px; outline: none; cursor: pointer; font-weight: 500;">
+                                <select id="crossfadeTypeSelect" onchange="changeCrossfadeType(this.value)" style="width: 120px; font-size: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 4px; outline: none; cursor: pointer; font-weight: 500;">
                                     <option value="standard">Стандартный</option>
                                     <option value="smart">Smart Crossfade</option>
                                     <option value="speed">Speed Transition</option>
@@ -2605,24 +1468,24 @@
                                 </select>
                             </div>
 
-                            <button class="volume-btn" id="dj-crossfadeBtn" title="Музыкальный режим со спецэффектом Crossfade">
+                            <button class="volume-btn" id="crossfadeBtn" title="Музыкальный режим со спецэффектом Crossfade">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                                 </svg>
                             </button>
                         </div>
 
-                        <div class="turbo-mix-container" style="display: flex;">
+                        <div class="turbo-mix-container" style="display: none;">
                             <div class="turbo-mix-popover">
-                                <div class="popover-label">Турбо-микс: <span id="dj-turboMixDurationValue">45</span>с</div>
+                                <div class="popover-label">Турбо-микс: <span id="turboMixDurationValue">45</span>с</div>
                                 <div class="slider-wrapper">
                                     <div class="default-tick" title="По умолчанию (45с)" style="left: 40%;"></div>
-                                    <input type="range" id="dj-turboMixSlider" min="15" max="90" value="45"
+                                    <input type="range" id="turboMixSlider" min="15" max="90" value="45"
                                         oninput="changeTurboMixDuration(this.value)">
                                 </div>
                             </div>
 
-                            <button class="volume-btn" id="dj-turboMixBtn" title="Настройки режима Турбо-микс">
+                            <button class="volume-btn" id="turboMixBtn" title="Настройки режима Турбо-микс">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="12" cy="12" r="3"></circle>
                                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -2630,22 +1493,22 @@
                             </button>
                         </div>
 
-                        <button id="dj-prevBtn" class="nav-btn" onclick="prevTrack()">
+                        <button id="prevBtn" class="nav-btn" onclick="prevTrack()">
                             <svg viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M6 6h2v12H6zm3.5 6l8.5 6V6l-8.5 6z" />
                             </svg>
                         </button>
 
-                        <button id="dj-playPauseBtn" class="nav-btn" onclick="togglePlay()">
-                            <svg id="dj-icon-play" viewBox="0 0 24 24" fill="currentColor">
+                        <button id="playPauseBtn" class="nav-btn" onclick="togglePlay()">
+                            <svg id="icon-play" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M8 5v14l11-7z" />
                             </svg>
-                            <svg id="dj-icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display: flex;">
+                            <svg id="icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
                                 <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                             </svg>
                         </button>
 
-                        <button id="dj-nextBtn" class="nav-btn" onclick="nextTrack()">
+                        <button id="nextBtn" class="nav-btn" onclick="nextTrack()">
                             <svg viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
                             </svg>
@@ -2653,19 +1516,19 @@
 
                         <div class="volume-container">
                             <div class="volume-popover">
-                                <div class="popover-label">Громкость: <span id="dj-volumeValue">100</span>%</div>
-                                <input type="range" id="dj-volumeSlider" min="0" max="100" value="100"
+                                <div class="popover-label">Громкость: <span id="volumeValue">100</span>%</div>
+                                <input type="range" id="volumeSlider" min="0" max="100" value="100"
                                     oninput="changeVolume(this.value)">
                             </div>
-                            <button class="volume-btn" onclick="toggleMute()" id="dj-muteBtn">
-                                <svg id="dj-icon-vol-high" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            <button class="volume-btn" onclick="toggleMute()" id="muteBtn">
+                                <svg id="icon-vol-high" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
                                     <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
                                     <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                                     <path d="M19.07 4.93a10 10 0 0 1 0 14.14" opacity="0.4"></path>
                                 </svg>
-                                <svg id="dj-icon-vol-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" style="display: flex;">
+                                <svg id="icon-vol-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" style="display:none;">
                                     <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
                                     <line x1="23" y1="9" x2="17" y2="15"></line>
                                     <line x1="17" y1="9" x2="23" y2="15"></line>
@@ -2678,7 +1541,7 @@
 
             </div>
             <!-- Информационное окно ошибки воспроизведения всего плейлиста -->
-            <div id="dj-player-error-state">
+            <div id="player-error-state">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
                     style="width: 64px; height: 64px; opacity: 0.5; color: var(--neon-pink);">
                     <circle cx="12" cy="12" r="10"></circle>
@@ -2694,40 +1557,33 @@
             </div>
         </div>
 
-        
+        <div class="saved-playlists-section" id="saved-playlists-section">
+            <div class="saved-playlists-header">
+                <div class="saved-playlists-title">Мои плейлисты</div>
+                <button class="icon-action-btn" onclick="openAddPlaylistModal()" data-tooltip="Добавить плейлист">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="saved-playlists-list" id="saved-playlists-list"></div>
+        </div>
+    </div>
 
-                <script>
-(function() {
-    // Enforced collection name
-    const dbCollectionName = "music_playlists";
-
-let playlist = [];
+    <script>
+        // --- ДАННЫЕ И НАСТРОЙКИ ---
+        let playlist = [];
         window.currentListId = null;
         window.loadedPlaylistName = null;
         window.loadedPlaylistUrl = null;
 
-        
-        // Hide header and adjust padding when loaded in an iframe (embedded mode)
-        if (window.self !== window.top) {
-            
-            document.addEventListener('DOMContentLoaded', () => {
-                const hc = document.getElementById('header-container');
-                if (hc) hc.style.display = 'none';
-                const footer = document.getElementById('footer');
-                if (footer) footer.style.display = 'none';
-                const wrap = document.querySelector('.wrap');
-                if (wrap) {
-                    wrap.style.paddingTop = '10px';
-                    wrap.style.maxWidth = '100%';
-                }
-            });
-        }
 
-
-        let crossfadeDuration = parseInt(localStorage.getItem('crossfade-duration')) || 8;
-        let crossfadeType = localStorage.getItem('crossfade-type') || 'standard';
-        let turboMixDuration = parseInt(localStorage.getItem('turbo-mix-duration')) || 45;
-        let isTurboMixEnabled = (localStorage.getItem('crossfade-player-view-mode') || 'music') === 'turbo-mix';
+        let crossfadeDuration = parseInt(localStorage.getItem('music-crossfade-duration')) || 8;
+        let crossfadeType = localStorage.getItem('music-crossfade-type') || 'standard';
+        let turboMixDuration = parseInt(localStorage.getItem('music-turbo-mix-duration')) || 45;
+        let isTurboMixEnabled = (localStorage.getItem('music-player-view-mode') || 'music') === 'turbo-mix';
 
         // --- YOUTUBE API ---
         var tag = document.createElement('script');
@@ -2743,14 +1599,14 @@ let playlist = [];
         var activeCrossfadeInterval = null;
         var isDragging = false;
         var updateTimer;
-        var currentMode = 'video';
+        var currentMode = 'audio';
         var playersReadyCount = 0;
 
-        let playerVolume = parseInt(localStorage.getItem('crossfade-volume')) || 100;
+        let playerVolume = parseInt(localStorage.getItem('music-crossfade-volume')) || 100;
         let prevVolume = playerVolume;
 
 
-        function initDjStationPlayers() {
+        function onYouTubeIframeAPIReady() {
             const playerVars = {
                 controls: 0,
                 disablekb: 1,
@@ -2821,7 +1677,8 @@ let playlist = [];
             });
 
             if (playlist.length === 0) {
-                document.getElementById('importBox').classList.add('show');
+                const ib = document.getElementById('importBox');
+                if (ib) ib.classList.add('show');
             }
         }
 
@@ -2861,8 +1718,8 @@ let playlist = [];
                     updateUI();
                     loadDeck(p1, trackIndex);
                 }
-                // Принудительно применяем сохраненный режим плеера (Музыка/Нативное Видео) после инициализации
-                setPlayerViewMode(currentPlayerViewMode);
+                // Принудительно применяем сохраненный режим плеера
+                toggleTurboMix(isTurboMixEnabled);
             }
         }
 
@@ -2871,91 +1728,34 @@ let playlist = [];
         let currentPlayerViewMode = localStorage.getItem('crossfade-player-view-mode') || 'music';
         var pNative = null;
 
-        function setPlayerViewMode(mode) {
-            currentPlayerViewMode = mode;
-            localStorage.setItem('crossfade-player-view-mode', mode);
+        function toggleTurboMix(enabled) {
+            isTurboMixEnabled = enabled;
+            localStorage.setItem('music-player-view-mode', enabled ? 'turbo-mix' : 'music');
 
-            const container = document.getElementById('main-player-area');
-            const wrapEl = document.querySelector('.wrap');
-            const btnMusic = document.getElementById('btn-view-music');
-            const btnVideo = document.getElementById('btn-view-video');
-            const btnTurbo = document.getElementById('btn-view-turbo');
-            const nativeWrapper = document.getElementById('native-player-wrapper');
+            const toggleInput = document.getElementById('turbo-toggle-input');
+            if (toggleInput) {
+                toggleInput.checked = enabled;
+            }
+
             const turboMixContainer = document.querySelector('.turbo-mix-container');
-
-            // Обновляем флаг активности Турбо-микса
-            isTurboMixEnabled = (mode === 'turbo-mix');
-
-            if (mode === 'native-video') {
-                container.classList.add('player-view-native-video');
-                if (wrapEl) wrapEl.classList.add('wrap-native-video');
-                if (btnMusic) btnMusic.classList.remove('active');
-                if (btnTurbo) btnTurbo.classList.remove('active');
-                if (btnVideo) btnVideo.classList.add('active');
-                if (nativeWrapper) nativeWrapper.style.display = 'block';
-                if (turboMixContainer) turboMixContainer.style.display = 'none';
-
-                // Приостанавливаем dj-плееры
-                if (p1 && typeof p1.pauseVideo === 'function') p1.pauseVideo();
-                if (p2 && typeof p2.pauseVideo === 'function') p2.pauseVideo();
-
-                // Инициализируем нативный плеер с controls: 1 если еще не создан
-                const currentVideoId = (playlist && playlist[trackIndex]) ? playlist[trackIndex].id : '';
-                if (!pNative && typeof YT !== 'undefined' && YT.Player && currentVideoId) {
-                    pNative = new YT.Player('playerNative', {
-                        height: '100%', width: '100%',
-                        videoId: currentVideoId,
-                        playerVars: {
-                            controls: 1,
-                            disablekb: 0,
-                            rel: 0,
-                            iv_load_policy: 3,
-                            origin: window.location.origin
-                        }
-                    });
-                } else if (pNative && currentVideoId) {
-                    let curData = pNative.getVideoData ? pNative.getVideoData() : null;
-                    if (!curData || curData.video_id !== currentVideoId) {
-                        pNative.cueVideoById(currentVideoId);
+            if (enabled) {
+                if (turboMixContainer) turboMixContainer.style.display = 'flex';
+                if (isPlaying) {
+                    let activeP = (currentDeck === 1) ? p1 : p2;
+                    if (activeP && !activeP.hasRandomized) {
+                        applyRandomMixSettings(activeP);
                     }
                 }
             } else {
-                container.classList.remove('player-view-native-video');
-                if (wrapEl) wrapEl.classList.remove('wrap-native-video');
-                if (btnVideo) btnVideo.classList.remove('active');
-                if (nativeWrapper) nativeWrapper.style.display = 'none';
-
-                if (pNative && typeof pNative.pauseVideo === 'function') {
-                    pNative.pauseVideo();
-                }
-
-                if (mode === 'turbo-mix') {
-                    if (btnMusic) btnMusic.classList.remove('active');
-                    if (btnTurbo) btnTurbo.classList.add('active');
-                    if (turboMixContainer) turboMixContainer.style.display = 'flex';
-
-                    // Если музыка играет при переключении режима, то сразу настраиваем таймкоды
-                    if (isPlaying) {
-                        let activeP = (currentDeck === 1) ? p1 : p2;
-                        if (activeP && !activeP.hasRandomized) {
-                            applyRandomMixSettings(activeP);
-                        }
-                    }
-                } else { // music
-                    if (btnMusic) btnMusic.classList.add('active');
-                    if (btnTurbo) btnTurbo.classList.remove('active');
-                    if (turboMixContainer) turboMixContainer.style.display = 'none';
-
-                    // Сбрасываем цели таймкодов при возврате в обычный режим
-                    if (p1) p1.randomMixTargetEnd = null;
-                    if (p2) p2.randomMixTargetEnd = null;
-                }
+                if (turboMixContainer) turboMixContainer.style.display = 'none';
+                if (p1) p1.randomMixTargetEnd = null;
+                if (p2) p2.randomMixTargetEnd = null;
             }
         }
 
         // Вызываем при загрузке страницы для установки сохранённого режима
         document.addEventListener('DOMContentLoaded', () => {
-            setPlayerViewMode(currentPlayerViewMode);
+            toggleTurboMix(isTurboMixEnabled);
         });
 
         function setMode(mode) {
@@ -3070,7 +1870,7 @@ let playlist = [];
             updatePlayPauseIcon();
             updateDeckVisibility();
             updateButtons();
-            setPlayerViewMode(currentPlayerViewMode);
+            toggleTurboMix(isTurboMixEnabled);
         }
 
         function updateButtons() {
@@ -3098,14 +1898,6 @@ let playlist = [];
             let activeP = (currentDeck === 1) ? p1 : p2;
 
             if (!isPlaying) {
-                // Pause parent player to avoid simultaneous playback
-                if (window.musicPlayer) {
-                    try {
-                        if (window.musicPlayer.isPlaying() && typeof window.parent.togglePlayPause === 'function') {
-                            window.musicPlayer.pause();
-                        }
-                    } catch(e){}
-                }
                 const pState = activeP.getPlayerState();
                 if (pState === -1 || pState === 5 || pState === 0) {
                     startMix();
@@ -3121,16 +1913,6 @@ let playlist = [];
 
         function startMix() {
             if (playlist.length === 0) return;
-
-            // Pause parent player to avoid simultaneous playback
-            if (window.musicPlayer) {
-                try {
-                    if (window.musicPlayer.isPlaying() && typeof window.parent.togglePlayPause === 'function') {
-                        window.musicPlayer.pause();
-                    }
-                } catch(e){}
-            }
-
             let activeP = (currentDeck === 1) ? p1 : p2;
 
             activeP.setVolume(100);
@@ -3274,15 +2056,7 @@ let playlist = [];
         function jumpToTrack(index) {
             if (isCrossfading) return;
             trackIndex = index;
-            if (currentPlayerViewMode === 'native-video') {
-                if (pNative && playlist[trackIndex]) {
-                    pNative.loadVideoById(playlist[trackIndex].id);
-                } else if (!pNative && playlist[trackIndex]) {
-                    setPlayerViewMode('native-video');
-                }
-            } else {
-                startMix();
-            }
+            startMix();
             updateUI();
         }
 
@@ -3493,20 +2267,20 @@ let playlist = [];
 
         function changeCrossfade(val) {
             crossfadeDuration = parseInt(val);
-            localStorage.setItem('crossfade-duration', crossfadeDuration);
+            localStorage.setItem('music-crossfade-duration', crossfadeDuration);
             document.getElementById('crossfadeValue').innerText = val;
         }
 
         function changeCrossfadeType(val) {
             crossfadeType = val;
-            localStorage.setItem('crossfade-type', crossfadeType);
+            localStorage.setItem('music-crossfade-type', crossfadeType);
         }
 
 
 
         function changeTurboMixDuration(val) {
             turboMixDuration = parseInt(val);
-            localStorage.setItem('turbo-mix-duration', turboMixDuration);
+            localStorage.setItem('music-turbo-mix-duration', turboMixDuration);
             document.getElementById('turboMixDurationValue').innerText = val;
             
             if (isPlaying && isTurboMixEnabled) {
@@ -3520,7 +2294,7 @@ let playlist = [];
 
         function changeVolume(val) {
             playerVolume = parseInt(val);
-            localStorage.setItem('crossfade-volume', playerVolume);
+            localStorage.setItem('music-crossfade-volume', playerVolume);
             document.getElementById('volumeValue').innerText = val;
 
             if (!isCrossfading) {
@@ -3559,7 +2333,7 @@ let playlist = [];
             if (/^[a-zA-Z0-9_-]{11}$/.test(url)) {
                 return url;
             }
-            var regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=|shorts\/)|youtu\.be\/)([^"&?\/ ]{11})/;
+            var regExp = /(?:(?:youtube\.com|music\.youtube\.com)\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=|shorts\/)|youtu\.be\/)([^"&?\/ ]{11});/
             var match = url.match(regExp);
             return (match && match[1]) ? match[1] : false;
         }
@@ -3680,7 +2454,7 @@ let playlist = [];
                     prepareNext();
                     updateUI();
                 }
-                document.getElementById('importBox').classList.remove('show');
+                const ib = document.getElementById('importBox'); if (ib) ib.classList.remove('show');
                 return;
             }
 
@@ -3725,7 +2499,7 @@ let playlist = [];
                 }
             });
 
-            document.getElementById('importBox').classList.remove('show');
+            const ib = document.getElementById('importBox'); if (ib) ib.classList.remove('show');
         }
 
 
@@ -3952,7 +2726,7 @@ let playlist = [];
         async function submitDeletePlaylist() {
             if (!activeDeleteId) return;
             try {
-                const docRef = window.doc(window.db, "users", window.currentUser.uid, dbCollectionName, activeDeleteId);
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "music", activeDeleteId);
                 if (window.currentSavedPlaylists) {
                     const playlistToDelete = window.currentSavedPlaylists.find(p => p.id === activeDeleteId);
                     if (playlistToDelete) {
@@ -3997,7 +2771,7 @@ let playlist = [];
                 if (window.currentUser && window.db && window.currentSavedPlaylists) {
                     const foundP = window.currentSavedPlaylists.find(p => p.url && p.url.includes(`list=${listId}`));
                     if (foundP) {
-                        const docRef = window.doc(window.db, "users", window.currentUser.uid, dbCollectionName, foundP.id);
+                        const docRef = window.doc(window.db, "users", window.currentUser.uid, "music", foundP.id);
                         window.getDoc(docRef).then(docSnap => {
                             if (docSnap.exists()) {
                                 const docData = docSnap.data();
@@ -4044,7 +2818,7 @@ let playlist = [];
         async function saveCachedTracksToFirebase(playlistId, tracksMap) {
             if (!window.currentUser || !window.db || !playlistId || !tracksMap || Object.keys(tracksMap).length === 0) return;
             try {
-                const docRef = window.doc(window.db, "users", window.currentUser.uid, dbCollectionName, playlistId);
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "music", playlistId);
                 let existingTracks = {};
                 if (window.activePlaylistCachedTracks && window.currentPlaylistId && getPlaylistIdByListId(window.currentPlaylistId) === playlistId) {
                     existingTracks = window.activePlaylistCachedTracks;
@@ -4079,7 +2853,7 @@ let playlist = [];
             if (!playlistId) return;
 
             try {
-                const docRef = window.doc(window.db, "users", window.currentUser.uid, dbCollectionName, playlistId);
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", playlistId);
                 let updatedData = {
                     first_video_id: firstVideoId,
                     tracks_count: count
@@ -4167,7 +2941,7 @@ let playlist = [];
                 return;
             }
             try {
-                const docRef = window.doc(window.db, "users", window.currentUser.uid, dbCollectionName, activeRenameId);
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "music", activeRenameId);
                 await window.updateDoc(docRef, { name: newName });
 
                 if (window.currentSavedPlaylists) {
@@ -4292,7 +3066,7 @@ let playlist = [];
         async function loadSavedPlaylistsFromFirebase(uid) {
             if (!window.db || !window.collection || !window.getDocs) return;
             try {
-                const colRef = window.collection(window.db, "users", uid, dbCollectionName);
+                const colRef = window.collection(window.db, "users", uid, "music");
                 const docSnaps = await window.getDocs(colRef);
                 let savedPlaylists = [];
                 docSnaps.forEach(docSnap => {
@@ -4405,7 +3179,7 @@ let playlist = [];
             let saved = false;
             const playlistId = Date.now().toString();
             try {
-                const docRef = window.doc(window.db, "users", window.currentUser.uid, dbCollectionName, playlistId);
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", playlistId);
                 const newPlaylist = {
                     id: playlistId,
                     name: finalName,
@@ -4443,17 +3217,21 @@ let playlist = [];
             if (p2 && typeof p2.stopVideo === 'function') p2.stopVideo();
             isPlaying = false;
             if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
-            
+
             playlist = [];
             trackIndex = 0;
             window.currentListId = null;
             window.loadedPlaylistName = null;
             window.loadedPlaylistUrl = null;
-            
-            if (window.navigateBack) {
-                window.navigateBack();
+
+            renderPlaylist();
+            updateUI();
+            updateUrlState();
+
+            const cardEl = document.getElementById('main-player-card');
+            if (cardEl) {
+                cardEl.style.display = 'none';
             }
-        }
             document.getElementById('player-container').style.display = 'flex';
             document.getElementById('player-error-state').style.display = 'none';
         }
@@ -4482,1986 +3260,78 @@ let playlist = [];
                 renderSavedPlaylists([]);
             }
         });
-    
+    </script>
 
-    // Expose DJ player controller globally
-    window.djPlayer = {
-        isPlaying: function() { return isPlaying; },
-        pause: function() { if (isPlaying) { togglePlay(); } }
-    };
+    <link rel="stylesheet" href="footer.css">
+    <div id="footer"></div>
+    <script>
+        fetch('footer.html')
+            .then(r => r.text())
+            .then(html => { if (html) document.getElementById('footer').innerHTML = html; })
+            .catch(() => { });
+    </script>
 
-
-        let activeAlbumId = null;
-
-        // Load an album tracks into DJ Station
-        window.loadAlbumIntoDjStation = function(albumId) {
-            if (!albumId) return;
-            const album = window.musicAlbums.find(a => a.id === albumId);
-            if (!album) return;
-            
-            activeAlbumId = albumId;
-            const tracks = window.musicSongs.filter(s => s.albumId === albumId);
-            tracks.sort((a, b) => (a.trackNumber || 0) - (b.trackNumber || 0));
-            
-            playlist = tracks.map(t => ({
-                id: t.id,
-                title: t.title
-            }));
-            
-            window.loadedPlaylistName = album.title;
-            window.loadedPlaylistUrl = "album:" + albumId;
-            window.activePlaylistCachedTracks = {};
-            playlist.forEach(t => {
-                window.activePlaylistCachedTracks[t.id] = t.title;
-            });
-            
-            trackIndex = 0;
-            
-            const titleEl = document.getElementById('dj-playlist-title-text');
-            if (titleEl) titleEl.innerText = album.title;
-            const countEl = document.getElementById('dj-playlist-count-text');
-            if (countEl) countEl.innerText = playlist.length + " треков";
-            
-            renderPlaylist();
-            updateUI();
-            
-            // Stop current playbacks
-            if (p1 && typeof p1.stopVideo === 'function') p1.stopVideo();
-            if (p2 && typeof p2.stopVideo === 'function') p2.stopVideo();
-            isPlaying = false;
-            
-            // Start playing the first track
-            startMix();
-        };
-
-        function deleteCurrentAlbum() {
-            if (activeAlbumId && typeof window.deleteAlbum === 'function') {
-                window.deleteAlbum(activeAlbumId);
-            }
-        }
-    
-
-
-    // Expose local event handlers to global scope
-    window.playTrack = playTrack;
-    window.closePlayerCard = closePlayerCard;
-    window.shufflePlaylist = shufflePlaylist;
-    window.copyPlaylistLink = copyPlaylistLink;
-    window.setPlayerViewMode = setPlayerViewMode;
-    window.setMode = setMode;
-    window.forceCrossfade = forceCrossfade;
-    window.changeCrossfade = changeCrossfade;
-    window.changeCrossfadeType = changeCrossfadeType;
-    window.changeTurboMixDuration = changeTurboMixDuration;
-    window.prevTrack = prevTrack;
-    window.togglePlay = togglePlay;
-    window.nextTrack = nextTrack;
-    window.toggleMute = toggleMute;
-    window.changeVolume = changeVolume;
-    window.deleteCurrentAlbum = deleteCurrentAlbum;
-    
-
-
-        // Poller to initialize players when YT is loaded
-        if (window.YT && window.YT.Player) {
-            initDjStationPlayers();
-        } else {
-            const ytInterval = setInterval(() => {
-                if (window.YT && window.YT.Player) {
-                    clearInterval(ytInterval);
-                    initDjStationPlayers();
-                }
-            }, 100);
-        }
-    
-})();
-                </script>
-            </section>
-
-        </main>
-    </div>
-
-    <!-- НИЖНЯЯ ПАНЕЛЬ ПЛЕЕРА -->
-    <div class="now-playing-bar">
-        <!-- Информация о текущем треке -->
-        <div class="player-track-info" onclick="toggleDetailsFromBar()">
-            <img class="player-artwork" id="bar-cover" src="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2248%22 height=%2248%22><rect width=%2248%22 height=%2248%22 fill=%22%23ddd%22/></svg>" alt="Artwork">
-            <div class="player-meta">
-                <div class="player-title" id="bar-title">Не воспроизводится</div>
-                <div class="player-artist" id="bar-artist">Медиатека пуста</div>
-            </div>
-        </div>
-
-        <!-- Кнопки управления по центру -->
-        <div class="player-controls">
-            <div class="control-btns">
-                <button class="control-btn" id="btn-shuffle" onclick="toggleShuffle()" title="Перемешать очередь">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M4 4l5 5m6 6l6 6"/></svg>
-                </button>
-                <button class="control-btn" onclick="prevTrack()" title="Предыдущий трек">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
-                </button>
-                <button class="control-btn play-pause" onclick="togglePlayPause()" id="btn-play-pause" title="Воспроизведение / Пауза">
-                    <svg id="play-pause-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                </button>
-                <button class="control-btn" onclick="nextTrack()" title="Следующий трек">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
-                </button>
-                <button class="control-btn" id="btn-repeat" onclick="toggleRepeat()" title="Повтор">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23 3 19 7 15"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
-                </button>
-            </div>
-            
-            <!-- Слайдер времени прогресса -->
-            <div class="progress-container">
-                <span class="time-label" id="current-time">0:00</span>
-                <div class="progress-slider-wrapper" id="progress-slider" onclick="seekTo(event)">
-                    <div class="progress-fill" id="progress-fill"></div>
-                </div>
-                <span class="time-label" id="total-time">0:00</span>
-            </div>
-        </div>
-
-        <!-- Дополнительные кнопки управления справа -->
-        <div class="player-right-controls">
-            <!-- Режим видео -->
-            <button class="control-btn" onclick="setPlayerViewMode('native-video')" title="Видео режим">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-            </button>
-            <!-- Текст песни -->
-            <button class="control-btn" id="btn-lyrics" onclick="togglePanel('lyrics')" title="Текст песни">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            </button>
-            <!-- Очередь -->
-            <button class="control-btn" id="btn-queue" onclick="togglePanel('queue')" title="Очередь воспроизведения">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-            </button>
-            
-            <!-- Регулятор громкости -->
-            <div class="volume-container">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"></path></svg>
-                <div class="volume-slider-wrapper" onclick="changeVolume(event)">
-                    <div class="volume-fill" id="volume-fill"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- БОКОВАЯ СДВИЖНАЯ ПАНЕЛЬ ОЧЕРЕДИ -->
-    <div class="side-sliding-panel" id="panel-queue">
-        <div class="panel-header">
-            <h3 class="panel-title">Далее</h3>
-            <button class="panel-close" onclick="closePanel('queue')">&times;</button>
-        </div>
-        <div class="panel-content">
-            <div class="album-details-tracks" style="padding-top:10px;">
-                <table class="tracks-table">
-                    <tbody id="queue-tracks-list">
-                        <!-- Загружается динамически -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- БОКОВАЯ СДВИЖНАЯ ПАНЕЛЬ ТЕКСТА ПЕСНИ -->
-    <div class="side-sliding-panel" id="panel-lyrics">
-        <div class="panel-header">
-            <h3 class="panel-title">Текст песни</h3>
-            <button class="panel-close" onclick="closePanel('lyrics')">&times;</button>
-        </div>
-        <div class="panel-content" style="padding-top: 16px;">
-            <div class="lyrics-text" id="lyrics-content-area">Текст песни загружается...</div>
-        </div>
-    </div>
-
-    <!-- ДУАЛЬНЫЕ ПЛЕЕРЫ YOUTUBE (Скрыты вне экрана) -->
-    <div id="visual-container">
-        <div id="wrapper1" class="deck-wrapper deck-active">
-            <div id="player1" style="width:100%; height:100%;"></div>
-        </div>
-        <div id="wrapper2" class="deck-wrapper deck-bg">
-            <div id="player2" style="width:100%; height:100%;"></div>
-        </div>
-        <div id="native-player-wrapper" class="deck-wrapper" style="z-index:30;">
-            <div id="playerNative" style="width:100%; height:100%;"></div>
-        </div>
-    </div>
-
-    <!-- МОДАЛЬНОЕ ОКНО ИМПОРТА/ДОБАВЛЕНИЯ АЛЬБОМА -->
+    <!-- Модальное окно добавления плейлиста -->
     <div id="addPlaylistModal" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 class="modal-title">Импорт альбома из YouTube Music</h3>
+                <h3 class="modal-title">Добавить плейлист</h3>
                 <button class="modal-close" onclick="closeAddPlaylistModal()">&times;</button>
             </div>
-            <div class="modal-body" style="display:flex; flex-direction:column; gap:16px;">
-                <style>
-                    .edit-icon-btn {
-                        transition: color 0.2s, transform 0.2s;
-                    }
-                    .edit-icon-btn:hover {
-                        color: var(--am-red) !important;
-                        transform: scale(1.1);
-                    }
-                </style>
+            <div class="modal-body">
                 <div class="modal-field">
-                    <label for="modalPlaylistUrl">Ссылка на альбом или плейлист</label>
+                    <label for="modalPlaylistUrl">Ссылка на YouTube плейлист или видео</label>
                     <input type="text" id="modalPlaylistUrl" class="modal-input"
-                        placeholder="https://music.youtube.com/playlist?list=OLAK5uy_..." autocomplete="off" oninput="handleUrlInput(this.value)">
+                        placeholder="https://music.youtube.com/playlist?list=..." autocomplete="off"
+                        onkeydown="if(event.key==='Enter') submitNewPlaylist()">
                 </div>
-                
-                <!-- Контейнер с деталями (изначально скрыт) -->
-                <div id="import-details-container" style="display: none; flex-direction: column; gap: 16px;">
-                    <div class="modal-field">
-                        <label for="modalAlbumTitle">Название альбома</label>
-                        <div style="position: relative; display: flex; align-items: center; width: 100%;">
-                            <input type="text" id="modalAlbumTitle" class="modal-input" readonly style="padding-right: 40px; cursor: default; width: 100%;" autocomplete="off">
-                            <span class="edit-icon-btn" onclick="toggleEditField('modalAlbumTitle', this)" style="position: absolute; right: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; color: var(--text-secondary);">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div class="modal-field">
-                        <label for="modalAlbumArtist">Исполнитель альбома</label>
-                        <div style="position: relative; display: flex; align-items: center; width: 100%;">
-                            <input type="text" id="modalAlbumArtist" class="modal-input" readonly style="padding-right: 40px; cursor: default; width: 100%;" autocomplete="off">
-                            <span class="edit-icon-btn" onclick="toggleEditField('modalAlbumArtist', this)" style="position: absolute; right: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; color: var(--text-secondary);">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                
-                <span id="import-status-text" style="font-size:0.8rem; color:var(--am-red); display:none; margin-top:8px;">Импорт треков альбома, пожалуйста подождите...</span>
             </div>
             <div class="modal-footer">
-                <button class="btn-modal btn-modal-cancel" id="btn-import-cancel" onclick="closeAddPlaylistModal()">Отмена</button>
-                <button class="btn-modal btn-modal-submit" id="btn-import-submit" onclick="submitImportAlbum()">Импортировать</button>
+                <button class="btn-modal btn-modal-cancel" onclick="closeAddPlaylistModal()">Отмена</button>
+                <button class="btn-modal btn-modal-submit" onclick="submitNewPlaylist()">Добавить</button>
             </div>
         </div>
     </div>
 
-    <script>
-        // --- ДАННЫЕ И МЕДИАТЕКА ---
-        window.musicSongs = [];
-        window.musicAlbums = [];
-        window.musicArtists = [];
-        
-        let bgFetchTimeout = null;
-        async function handleUrlInput(url) {
-            clearTimeout(bgFetchTimeout);
-            
-            let listId = null;
-            let reg = /[?&]list=([^#\&\? ]+)/;
-            let match = url.match(reg);
-            if (match && match[1]) {
-                listId = match[1];
-            } else {
-                document.getElementById('import-details-container').style.display = 'none';
-                document.getElementById('import-status-text').style.display = 'none';
-                return;
-            }
-
-            // Show loading text, hide fields
-            document.getElementById('import-details-container').style.display = 'none';
-            const statusText = document.getElementById('import-status-text');
-            statusText.innerText = "Поиск альбома и загрузка метаданных...";
-            statusText.style.display = 'block';
-
-            bgFetchTimeout = setTimeout(async () => {
-                try {
-                    const apiKey = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
-                    const albumInfoUrl = `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${listId}&key=${apiKey}`;
-                    const res1 = await fetch(albumInfoUrl);
-                    const data1 = await res1.json();
-                    
-                    if (!data1.items || data1.items.length === 0) {
-                        statusText.innerText = "Альбом не найден. Убедитесь в правильности ссылки.";
-                        return;
-                    }
-                    
-                    const snippet = data1.items[0].snippet;
-                    const albumTitle = snippet.title;
-
-                    const tracksUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${listId}&key=${apiKey}`;
-                    const res2 = await fetch(tracksUrl);
-                    const data2 = await res2.json();
-                    
-                    let artistVotes = {};
-                    let originalNames = {};
-                    if (data2.items && data2.items.length > 0) {
-                        data2.items.forEach(item => {
-                            if (item.snippet) {
-                                let rawTrackArtist = item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle;
-                                if (rawTrackArtist && rawTrackArtist !== "YouTube" && rawTrackArtist !== "YouTube Music") {
-                                    let cleanName = rawTrackArtist.replace(/ - Topic$/, "").trim();
-                                    // Normalize (remove VEVO, spaces, non-alphanumeric, lowercase)
-                                    let norm = cleanName.toLowerCase().replace(/vevo$/, "").replace(/[^a-z0-9]/g, "").trim();
-                                    if (norm) {
-                                        artistVotes[norm] = (artistVotes[norm] || 0) + 1;
-                                        if (!originalNames[norm] || cleanName.length < originalNames[norm].length) {
-                                            originalNames[norm] = cleanName;
-                                        }
-                                    }
-                                }
-                            }
-                        });
-                    }
-
-                    // Check if playlist creator/owner is not a generic name
-                    let playlistOwner = snippet.channelTitle || "";
-                    let cleanedOwner = playlistOwner.replace(/ - Topic$/, "").trim();
-                    let isGeneric = !cleanedOwner || 
-                                    cleanedOwner.toLowerCase() === "youtube" || 
-                                    cleanedOwner.toLowerCase() === "youtube music" || 
-                                    cleanedOwner.toLowerCase() === "various artists" ||
-                                    cleanedOwner.toLowerCase() === "различные исполнители";
-
-                    let albumArtist = "";
-                    if (!isGeneric) {
-                        albumArtist = cleanedOwner;
-                    } else {
-                        // Fallback to majority voting of tracks
-                        let maxVotes = 0;
-                        for (let norm in artistVotes) {
-                            if (artistVotes[norm] > maxVotes) {
-                                maxVotes = artistVotes[norm];
-                                albumArtist = originalNames[norm];
-                            }
-                        }
-                    }
-
-                    if (!albumArtist) {
-                        albumArtist = "Various Artists";
-                    }
-
-                    document.getElementById('modalAlbumTitle').value = albumTitle;
-                    document.getElementById('modalAlbumArtist').value = albumArtist;
-                    
-                    // Show details, hide loading status
-                    statusText.style.display = 'none';
-                    document.getElementById('import-details-container').style.display = 'flex';
-                } catch (e) {
-                    console.error("Ошибка фоновой загрузки данных альбома:", e);
-                    statusText.innerText = "Не удалось загрузить данные альбома.";
-                }
-            }, 500);
-        }
-
-        function toggleEditField(inputId, iconEl) {
-            const input = document.getElementById(inputId);
-            if (input.hasAttribute('readonly')) {
-                input.removeAttribute('readonly');
-                input.style.cursor = 'text';
-                input.focus();
-                // Change to checkmark
-                iconEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--am-red)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-            } else {
-                input.setAttribute('readonly', 'true');
-                input.style.cursor = 'default';
-                // Change back to pencil
-                iconEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
-            }
-        }
-        
-        let playbackQueue = [];
-        let currentQueueIndex = -1;
-        let isRepeatEnabled = false;
-        let isShuffleEnabled = false;
-        let activeView = 'home';
-        let currentViewParams = null;
-        let navigationHistory = [];
-        
-        // Settings & Volume
-        let crossfadeDuration = parseInt(localStorage.getItem('music-crossfade-duration')) || 4;
-        let crossfadeType = localStorage.getItem('music-crossfade-type') || 'standard';
-        let turboMixDuration = parseInt(localStorage.getItem('music-turbo-mix-duration')) || 45;
-        let isTurboMixEnabled = (localStorage.getItem('music-player-view-mode') || 'music') === 'turbo-mix';
-        let playerVolume = parseInt(localStorage.getItem('music-crossfade-volume')) || 75;
-        let prevVolume = playerVolume;
-        
-        // YouTube API Players
-        var tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        var firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-        var p1, p2, pNative;
-        var currentDeck = 1;
-        var isPlaying = false;
-        var isCrossfading = false;
-        var activeCrossfadeInterval = null;
-        var updateTimer;
-        var currentPlayerViewMode = 'music'; // 'music' or 'native-video'
-        var playersReadyCount = 0;
-
-        function onYouTubeIframeAPIReady() {
-            const playerVarsParams = {
-                controls: 0,
-                disablekb: 1,
-                rel: 0,
-                iv_load_policy: 3,
-                origin: window.location.origin
-            };
-
-            p1 = new YT.Player('player1', {
-                height: '100%', width: '100%',
-                videoId: '',
-                playerVars: playerVarsParams,
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': (e) => onPlayerStateChange(e, 1)
-                }
-            });
-
-            p2 = new YT.Player('player2', {
-                height: '100%', width: '100%',
-                videoId: '',
-                playerVars: playerVarsParams,
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': (e) => onPlayerStateChange(e, 2)
-                }
-            });
-
-            // Native player displays video in video mode
-            pNative = new YT.Player('playerNative', {
-                height: '100%', width: '100%',
-                videoId: '',
-                playerVars: {
-                    controls: 1,
-                    rel: 0,
-                    origin: window.location.origin
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onNativePlayerStateChange
-                }
-            });
-        }
-
-        function onPlayerReady(event) {
-            playersReadyCount++;
-            event.target.setVolume(playerVolume);
-            
-            // Sync UI volume bar
-            updateVolumeUI();
-        }
-
-        // --- FIRESTORE DATA STORAGE ---
-
-        async function loadMediaLibrary(uid) {
-            if (!window.db || !window.collection || !window.getDocs) return;
-            try {
-                // Fetch Songs
-                const songsRef = window.collection(window.db, "users", uid, "music_songs");
-                const songsSnap = await window.getDocs(songsRef);
-                window.musicSongs = [];
-                songsSnap.forEach(doc => {
-                    window.musicSongs.push(doc.data());
-                });
-
-                // Fetch Albums
-                const albumsRef = window.collection(window.db, "users", uid, "music_albums");
-                const albumsSnap = await window.getDocs(albumsRef);
-                window.musicAlbums = [];
-                albumsSnap.forEach(doc => {
-                    window.musicAlbums.push(doc.data());
-                });
-                // Sort by date added desc
-                window.musicAlbums.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-                // Fetch Artists
-                const artistsRef = window.collection(window.db, "users", uid, "music_artists");
-                const artistsSnap = await window.getDocs(artistsRef);
-                window.musicArtists = [];
-                artistsSnap.forEach(doc => {
-                    window.musicArtists.push(doc.data());
-                });
-                window.musicArtists.sort((a,b) => a.name.localeCompare(b.name));
-
-                // Run background cleanup for empty legacy artists
-                let activeArtistIds = new Set(window.musicSongs.map(s => s.artistId));
-                let emptyArtistIds = window.musicArtists.filter(art => !activeArtistIds.has(art.id)).map(art => art.id);
-                if (emptyArtistIds.length > 0) {
-                    window.musicArtists = window.musicArtists.filter(art => !emptyArtistIds.includes(art.id));
-                    for (let emptyId of emptyArtistIds) {
-                        const artistRef = window.doc(window.db, "users", uid, "music_artists", emptyId);
-                        window.deleteDoc(artistRef).catch(err => console.error("Error deleting empty artist:", err));
-                    }
-                }
-
-                // Render Active View
-                renderCurrentView();
-            } catch (e) {
-                console.error("Ошибка загрузки медиатеки из Firestore:", e);
-            }
-        }
-
-        // Auto-Import YouTube Music Album URL
-        async function submitImportAlbum() {
-            const urlInput = document.getElementById('modalPlaylistUrl');
-            const url = urlInput.value.trim();
-            if (!url) {
-                alert("Пожалуйста, введите URL альбома или плейлиста.");
-                return;
-            }
-
-            // Extract list ID
-            let listId = null;
-            let reg = /[?&]list=([^#\&\? ]+)/;
-            let match = url.match(reg);
-            if (match && match[1]) {
-                listId = match[1];
-            } else {
-                alert("Неверный формат ссылки. Ссылка должна содержать ?list=...");
-                return;
-            }
-
-            // Toggle spinner
-            document.getElementById('import-status-text').style.display = 'block';
-            document.getElementById('btn-import-submit').disabled = true;
-            document.getElementById('btn-import-cancel').disabled = true;
-
-            try {
-                const uid = window.currentUser ? window.currentUser.uid : null;
-                if (!uid) {
-                    alert("Пожалуйста, войдите в аккаунт, чтобы сохранять альбомы.");
-                    resetImportModal();
-                    return;
-                }
-
-                const apiKey = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
-                
-                // 1. Fetch Playlist details (Album details)
-                const albumInfoUrl = `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${listId}&key=${apiKey}`;
-                const res1 = await fetch(albumInfoUrl);
-                const data1 = await res1.json();
-                
-                if (!data1.items || data1.items.length === 0) {
-                    throw new Error("Альбом не найден на YouTube Music.");
-                }
-
-                const snippet = data1.items[0].snippet;
-                
-                // Get edited title from input, or fallback to playlist title
-                let albumTitle = document.getElementById('modalAlbumTitle').value.trim();
-                if (!albumTitle) {
-                    albumTitle = snippet.title;
-                }
-                
-                // Get playlist cover thumbnails order
-                let coverUrl = "";
-                if (snippet.thumbnails) {
-                    const t = snippet.thumbnails;
-                    const order = ['maxres', 'standard', 'high', 'medium', 'default'];
-                    for (let key of order) {
-                        if (t[key] && t[key].url) {
-                            coverUrl = t[key].url;
-                            break;
-                        }
-                    }
-                }
-
-                // 2. Fetch tracks
-                let trackItems = [];
-                let nextPageToken = "";
-                let hasMore = true;
-                
-                while(hasMore) {
-                    const tracksUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${listId}&key=${apiKey}${nextPageToken ? `&pageToken=${nextPageToken}` : ""}`;
-                    const res2 = await fetch(tracksUrl);
-                    const data2 = await res2.json();
-                    
-                    if (data2.items && data2.items.length > 0) {
-                        data2.items.forEach(item => {
-                            if (item.snippet && item.snippet.resourceId && item.snippet.resourceId.videoId) {
-                                // Extract track's thumbnail for cover fallback
-                                let trackThumb = "";
-                                if (item.snippet.thumbnails) {
-                                    const t = item.snippet.thumbnails;
-                                    const order = ['maxres', 'standard', 'high', 'medium', 'default'];
-                                    for (let key of order) {
-                                        if (t[key] && t[key].url) {
-                                            trackThumb = t[key].url;
-                                            break;
-                                        }
-                                    }
-                                }
-                                trackItems.push({
-                                    id: item.snippet.resourceId.videoId,
-                                    title: item.snippet.title,
-                                    index: item.snippet.position || 0,
-                                    thumbnail: trackThumb,
-                                    videoOwnerChannelTitle: item.snippet.videoOwnerChannelTitle || null,
-                                    channelTitle: item.snippet.channelTitle || null
-                                });
-                            }
-                        });
-                        nextPageToken = data2.nextPageToken;
-                        if (!nextPageToken) hasMore = false;
-                    } else {
-                        hasMore = false;
-                    }
-                }
-
-                if (trackItems.length === 0) {
-                    throw new Error("Альбом не содержит доступных песен.");
-                }
-
-                // Get edited artist name from input, or fallback to majority voting / playlist owner
-                let artistName = document.getElementById('modalAlbumArtist').value.trim();
-                if (!artistName) {
-                    let playlistOwner = snippet.channelTitle || "";
-                    let cleanedOwner = playlistOwner.replace(/ - Topic$/, "").trim();
-                    let isGeneric = !cleanedOwner || 
-                                    cleanedOwner.toLowerCase() === "youtube" || 
-                                    cleanedOwner.toLowerCase() === "youtube music" || 
-                                    cleanedOwner.toLowerCase() === "various artists" ||
-                                    cleanedOwner.toLowerCase() === "различные исполнители";
-
-                    let albumArtist = "";
-                    if (!isGeneric) {
-                        albumArtist = cleanedOwner;
-                    } else {
-                        // Fallback to majority voting of tracks
-                        let artistVotes = {};
-                        let originalNames = {};
-                        for (let track of trackItems) {
-                            let rawTrackArtist = track.videoOwnerChannelTitle || track.channelTitle;
-                            if (rawTrackArtist && rawTrackArtist !== "YouTube" && rawTrackArtist !== "YouTube Music") {
-                                let cleanName = rawTrackArtist.replace(/ - Topic$/, "").trim();
-                                let norm = cleanName.toLowerCase().replace(/vevo$/, "").replace(/[^a-z0-9]/g, "").trim();
-                                if (norm) {
-                                    artistVotes[norm] = (artistVotes[norm] || 0) + 1;
-                                    if (!originalNames[norm] || cleanName.length < originalNames[norm].length) {
-                                        originalNames[norm] = cleanName;
-                                    }
-                                }
-                            }
-                        }
-
-                        let maxVotes = 0;
-                        for (let norm in artistVotes) {
-                            if (artistVotes[norm] > maxVotes) {
-                                maxVotes = artistVotes[norm];
-                                albumArtist = originalNames[norm];
-                            }
-                        }
-                    }
-
-                    if (!albumArtist) {
-                        albumArtist = "Various Artists";
-                    }
-                    artistName = albumArtist;
-                }
-
-                const artistId = "artist_" + hashCode(artistName);
-                const albumId = "album_" + listId;
-
-                // Fallback for coverUrl if it's empty or is generic YouTube placeholder
-                if (!coverUrl || coverUrl.includes("no_thumbnail") || coverUrl.includes("default_240_gpr")) {
-                    for (let track of trackItems) {
-                        if (track.thumbnail && !track.thumbnail.includes("no_thumbnail")) {
-                            coverUrl = track.thumbnail;
-                            break;
-                        }
-                    }
-                }
-                
-                if (!coverUrl) {
-                    coverUrl = "https://via.placeholder.com/200";
-                }
-
-                // 3. Batch query video durations (Max 50 ids per request)
-                let videoIdsStr = trackItems.map(t => t.id).join(",");
-                const videosUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoIdsStr}&key=${apiKey}`;
-                const res3 = await fetch(videosUrl);
-                const data3 = await res3.json();
-                
-                let durationMap = {};
-                if (data3.items) {
-                    data3.items.forEach(v => {
-                        durationMap[v.id] = parseISODuration(v.contentDetails.duration);
-                    });
-                }
-
-                // 4. Save to Firestore
-                // A. Save Artist
-                const artistRef = window.doc(window.db, "users", uid, "music_artists", artistId);
-                await window.setDoc(artistRef, {
-                    id: artistId,
-                    name: artistName,
-                    createdAt: new Date().toISOString()
-                });
-
-                // B. Save Songs
-                let songIds = [];
-                for(let track of trackItems) {
-                    const duration = durationMap[track.id] || 180; // default 3 min
-                    const songRef = window.doc(window.db, "users", uid, "music_songs", track.id);
-                    
-                    let rawSongArtist = track.videoOwnerChannelTitle || track.channelTitle || artistName;
-                    let cleanSongArtist = rawSongArtist.replace(/ - Topic$/, "").trim();
-                    
-                    // Normalize for comparison
-                    let normSongArtist = cleanSongArtist.toLowerCase().replace(/vevo$/, "").replace(/[^a-z0-9]/g, "").trim();
-                    let normAlbumArtist = artistName.toLowerCase().replace(/vevo$/, "").replace(/[^a-z0-9]/g, "").trim();
-                    
-                    let songArtistName = cleanSongArtist;
-                    if (normSongArtist === normAlbumArtist || songArtistName === "YouTube" || songArtistName === "YouTube Music" || !songArtistName) {
-                        songArtistName = artistName;
-                    } else {
-                        songArtistName = songArtistName.replace(/vevo$/i, "").trim();
-                    }
-                    
-                    const songData = {
-                        id: track.id,
-                        title: track.title,
-                        duration: duration,
-                        artistId: artistId, // Set to Album Artist ID so they are grouped under the main album artist!
-                        artistName: songArtistName, // Keep actual track artist name for display (e.g. "The Jackson 5")
-                        albumId: albumId,
-                        albumName: albumTitle,
-                        index: track.index,
-                        createdAt: new Date().toISOString()
-                    };
-                    await window.setDoc(songRef, songData);
-                    songIds.push(track.id);
-                }
-
-                // C. Save Album
-                const albumRef = window.doc(window.db, "users", uid, "music_albums", albumId);
-                await window.setDoc(albumRef, {
-                    id: albumId,
-                    title: albumTitle,
-                    artistId: artistId,
-                    artistName: artistName,
-                    coverUrl: coverUrl,
-                    genre: "Разное",
-                    year: new Date().getFullYear().toString(),
-                    songIds: songIds,
-                    createdAt: new Date().toISOString()
-                });
-
-                closeAddPlaylistModal();
-                alert(`Альбом «${albumTitle}» успешно импортирован!`);
-                
-                // Reload Media Library
-                await loadMediaLibrary(uid);
-
-            } catch (e) {
-                console.error("Ошибка при импорте альбома:", e);
-                alert("Не удалось загрузить альбом: " + e.message);
-            } finally {
-                resetImportModal();
-            }
-        }
-
-        function resetImportModal() {
-            document.getElementById('import-status-text').style.display = 'none';
-            document.getElementById('import-details-container').style.display = 'none';
-            document.getElementById('btn-import-submit').disabled = false;
-            document.getElementById('btn-import-cancel').disabled = false;
-            document.getElementById('modalPlaylistUrl').value = '';
-            
-            document.getElementById('modalAlbumTitle').value = '';
-            document.getElementById('modalAlbumArtist').value = '';
-            document.getElementById('modalAlbumTitle').setAttribute('readonly', 'true');
-            document.getElementById('modalAlbumArtist').setAttribute('readonly', 'true');
-            document.getElementById('modalAlbumTitle').style.cursor = 'default';
-            document.getElementById('modalAlbumArtist').style.cursor = 'default';
-        }
-
-        function hashCode(str) {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            return Math.abs(hash).toString(16);
-        }
-
-        function parseISODuration(durationStr) {
-            const matches = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-            if (!matches) return 0;
-            const hours = parseInt(matches[1] || 0);
-            const minutes = parseInt(matches[2] || 0);
-            const seconds = parseInt(matches[3] || 0);
-            return hours * 3600 + minutes * 60 + seconds;
-        }
-
-        // Delete Entire Album
-        async function deleteAlbum(albumId) {
-            if(!confirm("Вы уверены, что хотите удалить этот альбом и все его песни?")) return;
-            try {
-                const uid = window.currentUser ? window.currentUser.uid : null;
-                if(!uid) return;
-                
-                const album = window.musicAlbums.find(a => a.id === albumId);
-                if (!album) return;
-
-                // Find all unique artist IDs associated with this album and its tracks
-                let artistsToCheck = new Set();
-                if (album.artistId) {
-                    artistsToCheck.add(album.artistId);
-                }
-                let albumSongs = window.musicSongs.filter(s => s.albumId === albumId);
-                albumSongs.forEach(s => {
-                    if (s.artistId) {
-                        artistsToCheck.add(s.artistId);
-                    }
-                });
-
-                // Delete Songs
-                if (album.songIds) {
-                    for(let songId of album.songIds) {
-                        const songRef = window.doc(window.db, "users", uid, "music_songs", songId);
-                        await window.deleteDoc(songRef);
-                    }
-                }
-
-                // Delete Album
-                const albumRef = window.doc(window.db, "users", uid, "music_albums", albumId);
-                await window.deleteDoc(albumRef);
-
-                // Clean up empty artists (who have no other songs left in library)
-                for (let checkArtistId of artistsToCheck) {
-                    const remainingSongs = window.musicSongs.filter(s => s.artistId === checkArtistId && s.albumId !== albumId);
-                    if (remainingSongs.length === 0) {
-                        const artistRef = window.doc(window.db, "users", uid, "music_artists", checkArtistId);
-                        await window.deleteDoc(artistRef);
-                    }
-                }
-
-                alert("Альбом успешно удален!");
-                switchView('home');
-                await loadMediaLibrary(uid);
-            } catch(e) {
-                console.error("Не удалось удалить альбом:", e);
-                alert("Ошибка удаления альбома.");
-            }
-        }
-
-        // --- NAVIGATION VIEWS ROUTER ---
-
-        function switchView(viewName, params = null, pushState = true) {
-            activeView = viewName;
-            currentViewParams = params;
-            
-            // Remove active state from sidebar links
-            document.querySelectorAll('.am-sidebar-link').forEach(el => {
-                el.classList.remove('active');
-            });
-            
-            // Highlight matching sidebar links
-            const activeLinkLabel = (viewName === 'album-details') ? 'albums' : viewName;
-            const activeLink = document.getElementById(`link-${activeLinkLabel}`);
-            if (activeLink) activeLink.classList.add('active');
-
-            // Hide all views
-            document.querySelectorAll('.view-section').forEach(el => {
-                el.classList.remove('active');
-            });
-
-            // Show active view
-            const targetViewName = (viewName === 'album-details') ? 'dj-station' : viewName;
-            const targetView = document.getElementById(`view-${targetViewName}`);
-            if (targetView) targetView.classList.add('active');
-
-            // Update URL State
-            if (pushState) {
-                const url = new URL(window.location);
-                url.searchParams.set('page', viewName);
-                if (params) {
-                    url.searchParams.set('id', params);
-                } else {
-                    url.searchParams.delete('id');
-                }
-                window.history.pushState({}, '', url);
-            }
-
-            renderCurrentView();
-        }
-
-        function navigateBack() {
-            if (navigationHistory.length > 1) {
-                navigationHistory.pop(); // remove current
-                const prev = navigationHistory.pop(); // fetch previous
-                switchView(prev.view, prev.params, false);
-            } else {
-                switchView('home', null, false);
-            }
-        }
-
-        function renderCurrentView() {
-            // Push history
-            const histItem = { view: activeView, params: currentViewParams };
-            if (navigationHistory.length === 0 || JSON.stringify(navigationHistory[navigationHistory.length - 1]) !== JSON.stringify(histItem)) {
-                navigationHistory.push(histItem);
-            }
-
-            if (activeView === 'home') {
-                renderHomeGrid();
-            } else if (activeView === 'recently-added') {
-                renderRecentlyAddedGrid();
-            } else if (activeView === 'albums') {
-                renderAlbumsGrid();
-            } else if (activeView === 'artists') {
-                renderArtistsLayout();
-            } else if (activeView === 'songs') {
-                renderSongsTable();
-            } else if (activeView === 'album-details' || activeView === 'dj-station') {
-                if (currentViewParams) {
-                    if (window.loadAlbumIntoDjStation) {
-                        window.loadAlbumIntoDjStation(currentViewParams);
-                    }
-                } else if (window.musicAlbums && window.musicAlbums.length > 0) {
-                    if (window.loadAlbumIntoDjStation) {
-                        window.loadAlbumIntoDjStation(window.musicAlbums[0].id);
-                    }
-                } else {
-                    switchView('home', null, false);
-                }
-            } else if (activeView === 'artist-details') {
-                renderArtistDetails(currentViewParams);
-            }
-        }
-
-        // Render Home page view
-        function renderHomeGrid() {
-            const grid = document.getElementById('home-featured-grid');
-            grid.innerHTML = '';
-            
-            if (window.musicAlbums.length === 0) {
-                grid.innerHTML = `<div class="playlists-empty-state" style="grid-column: 1 / -1;">
-                    <p>Здесь будут отображаться ваши альбомы. Нажмите «Добавить альбом» выше.</p>
-                </div>`;
-                return;
-            }
-
-            // Display up to 6 featured albums
-            window.musicAlbums.slice(0, 6).forEach(album => {
-                grid.appendChild(createAlbumCard(album));
-            });
-        }
-
-        // Render Recently Added page view
-        function renderRecentlyAddedGrid() {
-            const grid = document.getElementById('recently-added-grid');
-            grid.innerHTML = '';
-            
-            if (window.musicAlbums.length === 0) {
-                grid.innerHTML = `<div class="playlists-empty-state" style="grid-column: 1 / -1;"><p>Медиатека пуста.</p></div>`;
-                return;
-            }
-
-            window.musicAlbums.forEach(album => {
-                grid.appendChild(createAlbumCard(album));
-            });
-        }
-
-        // Render Albums list page view
-        function renderAlbumsGrid() {
-            const grid = document.getElementById('albums-grid');
-            grid.innerHTML = '';
-            
-            if (window.musicAlbums.length === 0) {
-                grid.innerHTML = `<div class="playlists-empty-state" style="grid-column: 1 / -1;"><p>Альбомов пока нет.</p></div>`;
-                return;
-            }
-
-            // Sort alphabetically
-            const sorted = [...window.musicAlbums].sort((a,b) => a.title.localeCompare(b.title));
-            sorted.forEach(album => {
-                grid.appendChild(createAlbumCard(album));
-            });
-        }
-
-        // Helper to construct Album grid element
-        function createAlbumCard(album) {
-            const card = document.createElement('div');
-            card.className = 'album-card';
-            card.onclick = () => switchView('album-details', album.id);
-            
-            card.innerHTML = `
-                <div class="album-cover-wrapper">
-                    <img class="album-cover" src="${album.coverUrl || 'https://via.placeholder.com/200'}" loading="lazy">
-                    <div class="album-hover-play">
-                        <div class="play-btn-circle" onclick="playAlbumDirect(event, '${album.id}')">
-                            <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
-                                <polygon points="6 4 20 12 6 20 6 4"></polygon>
-                            </svg>
-                        </div>
-                    </div>
+    <!-- Модальное окно переименования плейлиста -->
+    <div id="renamePlaylistModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Переименовать плейлист</h3>
+                <button class="modal-close" onclick="closeRenamePlaylistModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-field">
+                    <label for="modalRenameInput">Новое название</label>
+                    <input type="text" id="modalRenameInput" class="modal-input" placeholder="Название плейлиста"
+                        autocomplete="off">
                 </div>
-                <h3 class="album-title">${album.title}</h3>
-                <p class="album-artist">${album.artistName}</p>
-            `;
-            return card;
-        }
-
-        // Render Artists split-master list
-        function renderArtistsLayout() {
-            const layout = document.getElementById('artists-master-detail');
-            
-            if (window.musicArtists.length === 0) {
-                layout.innerHTML = `<div class="playlists-empty-state"><p>Исполнителей нет.</p></div>`;
-                return;
-            }
-
-            // Create sidebar list of artists and detail grid
-            let artistsHTML = `<div style="display:flex; gap:30px;">
-                <div style="width:240px; border-right:1px solid var(--border); max-height:550px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; padding-right:16px;">`;
-            
-            window.musicArtists.forEach((artist, idx) => {
-                artistsHTML += `<a href="#" class="am-sidebar-link" style="color:var(--text); font-weight:600;" onclick="switchView('artist-details', '${artist.id}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
-                    <span>${artist.name}</span>
-                </a>`;
-            });
-
-            artistsHTML += `</div>
-                <div style="flex-grow:1;">
-                    <h3 style="margin-top:0;">Все треки артистов</h3>
-                    <p style="color:var(--text-secondary); font-size:0.9rem;">Выберите артиста слева, чтобы посмотреть его релизы.</p>
-                </div>
-            </div>`;
-
-            layout.innerHTML = artistsHTML;
-        }
-
-        // Render Songs full table view
-        function renderSongsTable() {
-            const table = document.getElementById('songs-list-table');
-            table.innerHTML = '';
-
-            if (window.musicSongs.length === 0) {
-                table.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-secondary);">У вас пока нет импортированных песен.</td></tr>`;
-                return;
-            }
-
-            window.musicSongs.forEach((song, index) => {
-                const tr = document.createElement('tr');
-                tr.id = `song-row-${song.id}`;
-                tr.className = (currentQueueIndex >= 0 && playbackQueue[currentQueueIndex].id === song.id) ? 'active' : '';
-                tr.innerHTML = `
-                    <td class="track-num">
-                        <span class="track-num-txt">${index + 1}</span>
-                        <button class="play-row-btn" onclick="playSongFromFlatList('${song.id}')">▶</button>
-                    </td>
-                    <td style="font-weight:600;">${song.title}</td>
-                    <td style="color:var(--am-red); cursor:pointer;" onclick="switchView('artist-details', '${song.artistId}')">${song.artistName}</td>
-                    <td style="color:var(--text-secondary); cursor:pointer;" onclick="switchView('album-details', '${song.albumId}')">${song.albumName}</td>
-                    <td class="track-duration">${formatTime(song.duration)}</td>
-                `;
-                table.appendChild(tr);
-            });
-        }
-
-        // Render individual album details page
-        function renderAlbumDetails(albumId) {
-            const album = window.musicAlbums.find(a => a.id === albumId);
-            if (!album) return;
-
-            document.getElementById('album-details-cover').src = album.coverUrl || 'https://via.placeholder.com/200';
-            document.getElementById('album-details-title').innerText = album.title;
-            document.getElementById('album-details-artist').innerText = album.artistName;
-            document.getElementById('album-details-artist').onclick = () => switchView('artist-details', album.artistId);
-            document.getElementById('album-details-meta').innerText = `Год: ${album.year || "Разное"} • Жанр: ${album.genre || "Музыка"}`;
-
-            // Add delete button action
-            const deleteBtn = document.getElementById('btn-delete-album');
-            deleteBtn.style.display = 'block';
-            deleteBtn.onclick = () => deleteAlbum(albumId);
-
-            // Render Tracks inside album
-            const tracksBody = document.getElementById('album-tracks-table');
-            tracksBody.innerHTML = '';
-
-            const albumSongs = window.musicSongs
-                .filter(s => s.albumId === albumId)
-                .sort((a,b) => a.index - b.index);
-
-            if (albumSongs.length === 0) {
-                tracksBody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--text-secondary);">Нет доступных треков.</td></tr>`;
-                return;
-            }
-
-            albumSongs.forEach((song, idx) => {
-                const tr = document.createElement('tr');
-                tr.id = `album-song-row-${song.id}`;
-                tr.className = (currentQueueIndex >= 0 && playbackQueue[currentQueueIndex].id === song.id) ? 'active' : '';
-                tr.innerHTML = `
-                    <td class="track-num">
-                        <span class="track-num-txt">${idx + 1}</span>
-                        <button class="play-row-btn" onclick="playSongFromAlbum('${albumId}', '${song.id}')">▶</button>
-                    </td>
-                    <td style="font-weight:600;">${song.title}</td>
-                    <td class="track-duration">${formatTime(song.duration)}</td>
-                `;
-                tracksBody.appendChild(tr);
-            });
-        }
-
-        // Render individual Artist details page
-        function renderArtistDetails(artistId) {
-            const artistName = window.musicSongs.find(s => s.artistId === artistId)?.artistName || "Исполнитель";
-            
-            document.getElementById('artist-details-name').innerText = artistName;
-            
-            // Set random/aesthetic background or solid banner
-            document.getElementById('artist-details-banner').style.backgroundImage = `linear-gradient(135deg, #fa2d56 0%, #fa712d 100%)`;
-
-            // Filter artist albums
-            const artistAlbums = window.musicAlbums.filter(a => a.artistId === artistId);
-            const grid = document.getElementById('artist-albums-grid');
-            grid.innerHTML = '';
-
-            if (artistAlbums.length === 0) {
-                grid.innerHTML = `<p style="color:var(--text-secondary);">У этого артиста нет загруженных релизов.</p>`;
-                return;
-            }
-
-            artistAlbums.forEach(album => {
-                grid.appendChild(createAlbumCard(album));
-            });
-        }
-
-        // Global search filtering
-        function triggerGlobalSearch(query) {
-            const cleanQuery = query.trim().toLowerCase();
-            if (!cleanQuery) {
-                if (activeView === 'search-results') {
-                    switchView('home');
-                }
-                return;
-            }
-
-            if (activeView !== 'search-results') {
-                switchView('search-results');
-            }
-
-            document.getElementById('search-title-text').innerText = `Результаты поиска для «${query}»`;
-
-            // Filter Albums
-            const filteredAlbums = window.musicAlbums.filter(a => 
-                a.title.toLowerCase().includes(cleanQuery) || 
-                a.artistName.toLowerCase().includes(cleanQuery)
-            );
-            const albumsGrid = document.getElementById('search-albums-grid');
-            albumsGrid.innerHTML = '';
-            if (filteredAlbums.length > 0) {
-                document.getElementById('search-albums-section').style.display = 'block';
-                filteredAlbums.forEach(album => {
-                    albumsGrid.appendChild(createAlbumCard(album));
-                });
-            } else {
-                document.getElementById('search-albums-section').style.display = 'none';
-            }
-
-            // Filter Songs
-            const filteredSongs = window.musicSongs.filter(s => 
-                s.title.toLowerCase().includes(cleanQuery) || 
-                s.artistName.toLowerCase().includes(cleanQuery) ||
-                s.albumName.toLowerCase().includes(cleanQuery)
-            );
-            const songsTable = document.getElementById('search-songs-table');
-            songsTable.innerHTML = '';
-            if (filteredSongs.length > 0) {
-                document.getElementById('search-songs-section').style.display = 'block';
-                filteredSongs.forEach((song, idx) => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td class="track-num">
-                            <span class="track-num-txt">${idx + 1}</span>
-                            <button class="play-row-btn" onclick="playSongFromFlatList('${song.id}')">▶</button>
-                        </td>
-                        <td style="font-weight:600;">${song.title}</td>
-                        <td style="color:var(--am-red); cursor:pointer;" onclick="switchView('artist-details', '${song.artistId}')">${song.artistName}</td>
-                        <td style="color:var(--text-secondary); cursor:pointer;" onclick="switchView('album-details', '${song.albumId}')">${song.albumName}</td>
-                        <td class="track-duration">${formatTime(song.duration)}</td>
-                    `;
-                    songsTable.appendChild(tr);
-                });
-            } else {
-                document.getElementById('search-songs-section').style.display = 'none';
-            }
-
-            if (filteredAlbums.length === 0 && filteredSongs.length === 0) {
-                songsTable.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-secondary);">Ничего не найдено. Попробуйте другой запрос.</td></tr>`;
-                document.getElementById('search-songs-section').style.display = 'block';
-            }
-        }
-
-        // --- MUSIC PLAYER ENGINE LOGIC ---
-
-        function playSongFromAlbum(albumId, songId) {
-            const albumSongs = window.musicSongs
-                .filter(s => s.albumId === albumId)
-                .sort((a,b) => a.index - b.index);
-            
-            playbackQueue = [...albumSongs];
-            currentQueueIndex = playbackQueue.findIndex(s => s.id === songId);
-            
-            playCurrentQueueTrack();
-            renderQueuePanel();
-            highlightTracksTableRows();
-        }
-
-        function playSongFromFlatList(songId) {
-            playbackQueue = [...window.musicSongs];
-            currentQueueIndex = playbackQueue.findIndex(s => s.id === songId);
-            
-            playCurrentQueueTrack();
-            renderQueuePanel();
-            highlightTracksTableRows();
-        }
-
-        function playAlbumDirect(event, albumId) {
-            if(event) event.stopPropagation();
-            const albumSongs = window.musicSongs
-                .filter(s => s.albumId === albumId)
-                .sort((a,b) => a.index - b.index);
-
-            if (albumSongs.length === 0) return;
-            playbackQueue = [...albumSongs];
-            currentQueueIndex = 0;
-            playCurrentQueueTrack();
-            renderQueuePanel();
-        }
-
-        function playCurrentAlbum() {
-            if (activeView === 'album-details' && currentViewParams) {
-                playAlbumDirect(null, currentViewParams);
-            }
-        }
-
-        function shuffleCurrentAlbum() {
-            if (activeView === 'album-details' && currentViewParams) {
-                const albumSongs = window.musicSongs
-                    .filter(s => s.albumId === currentViewParams)
-                    .sort((a,b) => a.index - b.index);
-                if (albumSongs.length === 0) return;
-                
-                playbackQueue = shuffleArray([...albumSongs]);
-                currentQueueIndex = 0;
-                playCurrentQueueTrack();
-                renderQueuePanel();
-            }
-        }
-
-        function playAllSongs() {
-            if (window.musicSongs.length === 0) return;
-            playbackQueue = [...window.musicSongs];
-            currentQueueIndex = 0;
-            playCurrentQueueTrack();
-            renderQueuePanel();
-        }
-
-        function toggleShuffle() {
-            isShuffleEnabled = !isShuffleEnabled;
-            const btn = document.getElementById('btn-shuffle');
-            if (isShuffleEnabled) {
-                btn.classList.add('active');
-                // Shuffle remaining queue
-                if (currentQueueIndex >= 0 && currentQueueIndex < playbackQueue.length) {
-                    const current = playbackQueue[currentQueueIndex];
-                    let remaining = playbackQueue.slice(currentQueueIndex + 1);
-                    remaining = shuffleArray(remaining);
-                    playbackQueue = [...playbackQueue.slice(0, currentQueueIndex + 1), ...remaining];
-                }
-            } else {
-                btn.classList.remove('active');
-            }
-            renderQueuePanel();
-        }
-
-        // Repeat button states
-        function toggleRepeat() {
-            isRepeatEnabled = !isRepeatEnabled;
-            const btn = document.getElementById('btn-repeat');
-            if (isRepeatEnabled) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        }
-
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
-
-        function playCurrentQueueTrack() {
-            if (currentQueueIndex < 0 || currentQueueIndex >= playbackQueue.length) return;
-            
-            // Pause DJ player to avoid simultaneous audio
-            if (window.djPlayer && typeof window.djPlayer.pause === 'function') {
-                try {
-                    window.djPlayer.pause();
-                } catch(err) {
-                    console.error("Could not pause DJ player:", err);
-                }
-            }
-
-            const track = playbackQueue[currentQueueIndex];
-            
-            // Set Player Bar Metadata
-            document.getElementById('bar-title').innerText = track.title;
-            document.getElementById('bar-artist').innerText = track.artistName;
-            
-            const album = window.musicAlbums.find(a => a.id === track.albumId);
-            const artwork = album ? album.coverUrl : 'https://via.placeholder.com/200';
-            document.getElementById('bar-cover').src = artwork;
-
-            // Sync DJ Station metadata if elements exist
-            const djTitle = document.getElementById('dj-track-title-text');
-            if (djTitle) djTitle.innerText = track.title;
-            const djArtist = document.getElementById('dj-track-artist-text');
-            if (djArtist) djArtist.innerText = track.artistName;
-
-            // Load Video in YouTube players
-            if (currentPlayerViewMode === 'native-video') {
-                document.getElementById('video-playing-title').innerText = track.title;
-                document.getElementById('video-playing-artist').innerText = track.artistName;
-                if (pNative && typeof pNative.loadVideoById === 'function') {
-                    pNative.loadVideoById(track.id);
-                    isPlaying = true;
-                    setPlayIconState(true);
-                }
-            } else {
-                // Audio crossfade engine
-                loadTrackCrossfade(track.id);
-            }
-            
-            // Sync lyrics panel
-            fetchLyrics(track.title, track.artistName);
-
-
-
-            // Sync Table Rows active styling
-            highlightTracksTableRows();
-        }
-
-        function highlightTracksTableRows() {
-            if (currentQueueIndex < 0 || currentQueueIndex >= playbackQueue.length) return;
-            const activeTrack = playbackQueue[currentQueueIndex];
-
-            // Clean active rows
-            document.querySelectorAll('.tracks-table tr').forEach(row => {
-                row.classList.remove('active');
-            });
-
-            // Highlight active song in current view
-            const songRow = document.getElementById(`song-row-${activeTrack.id}`);
-            if (songRow) songRow.classList.add('active');
-
-            const albumSongRow = document.getElementById(`album-song-row-${activeTrack.id}`);
-            if (albumSongRow) albumSongRow.classList.add('active');
-        }
-
-        function loadTrackCrossfade(videoId) {
-            isCrossfading = false;
-            clearInterval(activeCrossfadeInterval);
-            
-            let activePlayer = (currentDeck === 1) ? p1 : p2;
-            let nextPlayer = (currentDeck === 1) ? p2 : p1;
-            
-            if (!activePlayer || !nextPlayer) return;
-
-            // Stop next player and load video
-            if (typeof nextPlayer.stopVideo === 'function') {
-                nextPlayer.stopVideo();
-                nextPlayer.loadVideoById(videoId);
-                nextPlayer.setVolume(playerVolume);
-                
-                // Reset turbo mix variables for next player
-                nextPlayer.hasRandomized = false;
-                nextPlayer.randomMixTargetEnd = null;
-                nextPlayer.lastRandomStart = undefined;
-            }
-
-            // Crossfade transitions
-            if (isPlaying && typeof activePlayer.getVolume === 'function' && typeof activePlayer.setVolume === 'function') {
-                isCrossfading = true;
-                
-                // Choose specific transition type (standard, smart, speed, beat-pulse)
-                let activeType = crossfadeType;
-                if (activeType === 'random') {
-                    const types = ['standard', 'smart', 'speed', 'beat-pulse'];
-                    activeType = types[Math.floor(Math.random() * types.length)];
-                }
-
-                let fadeSteps = 40;
-                let fadeIntervalMs = (crossfadeDuration * 1000) / fadeSteps;
-                let currentStep = 0;
-                
-                // Play new player at volume 0
-                nextPlayer.setVolume(0);
-                nextPlayer.playVideo();
-
-                activeCrossfadeInterval = setInterval(() => {
-                    currentStep++;
-                    let p = currentStep / fadeSteps; // transition progress from 0.0 to 1.0
-                    let nextVolFactor = p;
-                    let activeVolFactor = 1 - p;
-
-                    if (activeType === 'smart') {
-                        // Smart Crossfade curve
-                        if (p <= 0.3) {
-                            activeVolFactor = 1.0 - (p / 0.3) * 0.6;
-                        } else {
-                            activeVolFactor = 0.4 - ((p - 0.3) / 0.7) * 0.4;
-                        }
-                        if (p <= 0.7) {
-                            nextVolFactor = (p / 0.7) * 0.3;
-                        } else {
-                            nextVolFactor = 0.3 + ((p - 0.7) / 0.3) * 0.7;
-                        }
-                    } else if (activeType === 'speed') {
-                        // Speed Transition (pitch change simulation via rates)
-                        let activeRate = 1.0;
-                        let nextRate = 1.0;
-                        if (p < 0.25) {
-                            activeRate = 1.0;
-                            nextRate = 1.5;
-                        } else if (p >= 0.25 && p < 0.5) {
-                            activeRate = 1.25;
-                            nextRate = 1.5;
-                        } else if (p >= 0.5 && p < 0.75) {
-                            activeRate = 1.5;
-                            nextRate = 1.25;
-                        } else {
-                            activeRate = 1.5;
-                            nextRate = 1.0;
-                        }
-                        if (activePlayer && typeof activePlayer.setPlaybackRate === 'function') {
-                            try { activePlayer.setPlaybackRate(activeRate); } catch(e){}
-                        }
-                        if (nextPlayer && typeof nextPlayer.setPlaybackRate === 'function') {
-                            try { nextPlayer.setPlaybackRate(nextRate); } catch(e){}
-                        }
-                    } else if (activeType === 'beat-pulse') {
-                        // Beat Pulse (sine pulsation)
-                        let pulse = 1.0 - 0.15 * Math.abs(Math.sin(p * Math.PI * 10));
-                        activeVolFactor *= pulse;
-                        nextVolFactor *= pulse;
-                    }
-
-                    let activeVol = Math.max(0, playerVolume * activeVolFactor);
-                    let nextVol = Math.min(playerVolume, playerVolume * nextVolFactor);
-                    
-                    if (typeof activePlayer.setVolume === 'function') activePlayer.setVolume(activeVol);
-                    if (typeof nextPlayer.setVolume === 'function') nextPlayer.setVolume(nextVol);
-
-                    if (currentStep >= fadeSteps) {
-                        clearInterval(activeCrossfadeInterval);
-                        if (typeof activePlayer.stopVideo === 'function') activePlayer.stopVideo();
-                        
-                        // Reset rates to normal
-                        if (typeof activePlayer.setPlaybackRate === 'function') {
-                            try { activePlayer.setPlaybackRate(1.0); } catch(e){}
-                        }
-                        if (typeof nextPlayer.setPlaybackRate === 'function') {
-                            try { nextPlayer.setPlaybackRate(1.0); } catch(e){}
-                        }
-
-                        isCrossfading = false;
-                    }
-                }, fadeIntervalMs);
-            } else {
-                nextPlayer.playVideo();
-                nextPlayer.setVolume(playerVolume);
-            }
-
-            // Toggle Decks
-            currentDeck = (currentDeck === 1) ? 2 : 1;
-            isPlaying = true;
-            setPlayIconState(true);
-
-            // Start polling progress timer
-            startProgressTimer();
-        }
-
-        function togglePlayPause() {
-            if (playbackQueue.length === 0) return;
-            if (currentQueueIndex === -1) currentQueueIndex = 0;
-
-            let activeP = (currentPlayerViewMode === 'native-video') ? pNative : ((currentDeck === 2) ? p2 : p1); // currentDeck was toggled, so we target the playing deck
-            if (!activeP) return;
-
-            if (isPlaying) {
-                if (typeof activeP.pauseVideo === 'function') activeP.pauseVideo();
-                isPlaying = false;
-                setPlayIconState(false);
-            } else {
-                // Pause DJ player if active to prevent overlapping audio
-                if (window.djPlayer && typeof window.djPlayer.pause === 'function') {
-                    try {
-                        window.djPlayer.pause();
-                    } catch(e) {}
-                }
-                if (typeof activeP.playVideo === 'function') activeP.playVideo();
-                isPlaying = true;
-                setPlayIconState(true);
-                startProgressTimer();
-            }
-        }
-
-        window.musicPlayer = {
-            isPlaying: function() {
-                return isPlaying;
-            },
-            pause: function() {
-                if (isPlaying) {
-                    togglePlayPause();
-                }
-            }
-        };
-
-        function setPlayIconState(playing) {
-            const icon = document.getElementById('play-pause-icon');
-            if (icon) {
-                if (playing) {
-                    icon.innerHTML = `<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>`;
-                } else {
-                    icon.innerHTML = `<polygon points="5 3 19 12 5 21 5 3"></polygon>`;
-                }
-            }
-
-            // Sync DJ Station play btn
-            const djPlay = document.getElementById('dj-icon-play');
-            const djPause = document.getElementById('dj-icon-pause');
-            if (djPlay && djPause) {
-                if (playing) {
-                    djPlay.style.display = 'none';
-                    djPause.style.display = 'inline';
-                } else {
-                    djPlay.style.display = 'inline';
-                    djPause.style.display = 'none';
-                }
-            }
-        }
-
-        // Poll song durations and timeline progress
-        function startProgressTimer() {
-            clearInterval(updateTimer);
-            updateTimer = setInterval(() => {
-                let activeP = (currentPlayerViewMode === 'native-video') ? pNative : ((currentDeck === 2) ? p2 : p1);
-                if (activeP && typeof activeP.getCurrentTime === 'function' && typeof activeP.getDuration === 'function') {
-                    let cur = activeP.getCurrentTime();
-                    let dur = activeP.getDuration() || playbackQueue[currentQueueIndex]?.duration || 0;
-                    
-                    if (dur > 0) {
-                        const formattedCur = formatTime(cur);
-                        const formattedDur = formatTime(dur);
-
-                        // Sync Player Bar
-                        const barCur = document.getElementById('current-time');
-                        if (barCur) barCur.innerText = formattedCur;
-                        const barDur = document.getElementById('total-time');
-                        if (barDur) barDur.innerText = formattedDur;
-                        
-                        let pct = (cur / dur) * 100;
-                        const barFill = document.getElementById('progress-fill');
-                        if (barFill) barFill.style.width = pct + '%';
-
-                        // Sync DJ Station View
-                        const djCur = document.getElementById('dj-currentTime');
-                        if (djCur) djCur.innerText = formattedCur;
-                        const djDur = document.getElementById('dj-totalTime');
-                        if (djDur) djDur.innerText = formattedDur;
-                        
-                        const djFill = document.getElementById('dj-progress-fill');
-                        if (djFill) djFill.style.width = pct + '%';
-                        const djSlider = document.getElementById('dj-progressBar');
-                        if (djSlider) {
-                            djSlider.max = dur;
-                            djSlider.value = cur;
-                        }
-
-                        // Auto-play next when track ends (handles crossfade trigger early)
-                        let triggerCrossfade = false;
-                        if (isTurboMixEnabled && activeP.randomMixTargetEnd) {
-                            if (cur >= activeP.randomMixTargetEnd - (isCrossfading ? 0 : crossfadeDuration)) {
-                                triggerCrossfade = true;
-                            }
-                        } else {
-                            if (dur - cur <= (isCrossfading ? 0 : crossfadeDuration)) {
-                                triggerCrossfade = true;
-                            }
-                        }
-
-                        if (triggerCrossfade && isPlaying && !isCrossfading) {
-                            nextTrack();
-                        }
-                    }
-                }
-            }, 500);
-        }
-
-        function nextTrack() {
-            if (playbackQueue.length === 0) return;
-            
-            if (currentQueueIndex < playbackQueue.length - 1) {
-                currentQueueIndex++;
-                playCurrentQueueTrack();
-            } else if (isRepeatEnabled) {
-                currentQueueIndex = 0;
-                playCurrentQueueTrack();
-            } else {
-                isPlaying = false;
-                setPlayIconState(false);
-                clearInterval(updateTimer);
-            }
-            renderQueuePanel();
-        }
-
-        function prevTrack() {
-            if (playbackQueue.length === 0) return;
-
-            if (currentQueueIndex > 0) {
-                currentQueueIndex--;
-                playCurrentQueueTrack();
-            } else {
-                currentQueueIndex = 0;
-                playCurrentQueueTrack();
-            }
-            renderQueuePanel();
-        }
-
-        // Poll song durations and timeline progress
-        function startProgressTimer() {
-            clearInterval(updateTimer);
-            updateTimer = setInterval(() => {
-                let activeP = (currentPlayerViewMode === 'native-video') ? pNative : ((currentDeck === 2) ? p2 : p1);
-                if (activeP && typeof activeP.getCurrentTime === 'function' && typeof activeP.getDuration === 'function') {
-                    let cur = activeP.getCurrentTime();
-                    let dur = activeP.getDuration() || playbackQueue[currentQueueIndex]?.duration || 0;
-                    
-                    if (dur > 0) {
-                        document.getElementById('current-time').innerText = formatTime(cur);
-                        document.getElementById('total-time').innerText = formatTime(dur);
-                        
-                        let pct = (cur / dur) * 100;
-                        document.getElementById('progress-fill').style.width = pct + '%';
-
-                        // Auto-play next when track ends (handles crossfade trigger early)
-                        if (dur - cur <= (isCrossfading ? 0 : crossfadeDuration) && isPlaying && !isCrossfading) {
-                            nextTrack();
-                        }
-                    }
-                }
-            }, 500);
-        }
-
-        function seekTo(event) {
-            if (playbackQueue.length === 0) return;
-            const bar = document.getElementById('progress-slider');
-            const rect = bar.getBoundingClientRect();
-            const pct = (event.clientX - rect.left) / rect.width;
-            
-            let activeP = (currentPlayerViewMode === 'native-video') ? pNative : ((currentDeck === 2) ? p2 : p1);
-            if (activeP && typeof activeP.getDuration === 'function' && typeof activeP.seekTo === 'function') {
-                let dur = activeP.getDuration();
-                if (dur > 0) {
-                    activeP.seekTo(dur * pct, true);
-                    document.getElementById('progress-fill').style.width = (pct * 100) + '%';
-                }
-            }
-        }
-
-        // Volume logic
-        function changeVolume(event) {
-            const bar = event.currentTarget;
-            const rect = bar.getBoundingClientRect();
-            const pct = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-            
-            playerVolume = Math.round(pct * 100);
-            localStorage.setItem('music-crossfade-volume', playerVolume);
-            
-            updateVolumeUI();
-
-            // Set to current players
-            if (p1 && typeof p1.setVolume === 'function') p1.setVolume(playerVolume);
-            if (p2 && typeof p2.setVolume === 'function') p2.setVolume(playerVolume);
-            if (pNative && typeof pNative.setVolume === 'function') pNative.setVolume(playerVolume);
-        }
-
-        function updateVolumeUI() {
-            document.getElementById('volume-fill').style.width = playerVolume + '%';
-        }
-
-        function formatTime(s) {
-            let m = Math.floor(s / 60);
-            let sec = Math.floor(s % 60);
-            return `${m}:${sec < 10 ? '0' : ''}${sec}`;
-        }
-
-        // Toggle Player view Mode (Music overlay vs YouTube video player)
-        function setPlayerViewMode(mode) {
-            currentPlayerViewMode = mode;
-            localStorage.setItem('music-player-view-mode', mode);
-            
-            // Sync buttons active state in DJ Station
-            document.querySelectorAll('.dj-view-btn').forEach(btn => btn.classList.remove('active'));
-            const activeBtn = document.getElementById(`dj-btn-view-${mode}`);
-            if (activeBtn) activeBtn.classList.add('active');
-
-            // Apply classes to DJ player area
-            const playerArea = document.getElementById('dj-player-area');
-            if (playerArea) {
-                if (mode === 'native-video') {
-                    playerArea.classList.add('player-view-native-video');
-                } else {
-                    playerArea.classList.remove('player-view-native-video');
-                }
-            }
-
-            // Sync visual display of active players inside visual container
-            const nativeIframe = document.getElementById('native-player-wrapper');
-            const coverOverlay = document.getElementById('cover-overlay');
-            const wrapper1 = document.getElementById('wrapper1');
-            const wrapper2 = document.getElementById('wrapper2');
-
-            let activeP = (currentDeck === 2) ? p2 : p1;
-
-            if (mode === 'native-video') {
-                if (isPlaying && activeP && typeof activeP.pauseVideo === 'function') activeP.pauseVideo();
-                if (nativeIframe) nativeIframe.style.display = 'block';
-                if (coverOverlay) coverOverlay.style.display = 'none';
-                if (wrapper1) wrapper1.style.display = 'none';
-                if (wrapper2) wrapper2.style.display = 'none';
-                
-                // Show/hide settings popovers
-                const cfBtn = document.getElementById('dj-btn-crossfade');
-                const tbBtn = document.getElementById('dj-turbo-settings-container');
-                if (cfBtn) cfBtn.style.display = 'none';
-                if (tbBtn) tbBtn.style.display = 'none';
-
-                if (currentQueueIndex >= 0) {
-                    playCurrentQueueTrack();
-                }
-            } else {
-                if (isPlaying && pNative && typeof pNative.pauseVideo === 'function') pNative.pauseVideo();
-                if (nativeIframe) nativeIframe.style.display = 'none';
-                if (coverOverlay) coverOverlay.style.display = 'block';
-                if (wrapper1) wrapper1.style.display = 'block';
-                if (wrapper2) wrapper2.style.display = 'block';
-
-                // Show/hide settings popovers
-                const cfBtn = document.getElementById('dj-btn-crossfade');
-                const tbBtn = document.getElementById('dj-turbo-settings-container');
-                if (cfBtn) cfBtn.style.display = 'flex';
-                if (tbBtn) {
-                    tbBtn.style.display = (mode === 'turbo-mix') ? 'block' : 'none';
-                }
-
-                isTurboMixEnabled = (mode === 'turbo-mix');
-
-                if (currentQueueIndex >= 0) {
-                    playCurrentQueueTrack();
-                }
-            }
-        }
-
-
-
-        function toggleDetailsFromBar() {
-            if (currentQueueIndex >= 0) {
-                const track = playbackQueue[currentQueueIndex];
-                switchView('album-details', track.albumId);
-            }
-        }
-
-        // --- QUEUE & LYRICS SIDE PANELS ---
-
-        function togglePanel(panelName) {
-            const panel = document.getElementById(`panel-${panelName}`);
-            const btn = document.getElementById(`btn-${panelName}`);
-            
-            if (panel.classList.contains('open')) {
-                panel.classList.remove('open');
-                btn.classList.remove('active');
-            } else {
-                // Close other panels
-                closePanel(panelName === 'queue' ? 'lyrics' : 'queue');
-                
-                panel.classList.add('open');
-                btn.classList.add('active');
-                if (panelName === 'queue') renderQueuePanel();
-            }
-        }
-
-        function closePanel(panelName) {
-            document.getElementById(`panel-${panelName}`).classList.remove('open');
-            document.getElementById(`btn-${panelName}`).classList.remove('active');
-        }
-
-        function renderQueuePanel() {
-            const list = document.getElementById('queue-tracks-list');
-            list.innerHTML = '';
-
-            if (playbackQueue.length === 0 || currentQueueIndex === -1) {
-                list.innerHTML = `<tr><td style="color:var(--text-secondary); text-align:center; padding:20px;">Очередь пуста</td></tr>`;
-                return;
-            }
-
-            // Display active and upcoming songs
-            playbackQueue.slice(currentQueueIndex).forEach((song, idx) => {
-                const tr = document.createElement('tr');
-                tr.className = idx === 0 ? 'active' : '';
-                tr.innerHTML = `
-                    <td style="font-weight:600; font-size:0.84rem;">${song.title}</td>
-                    <td style="font-size:0.78rem; text-align:right; color:var(--text-secondary);">${formatTime(song.duration)}</td>
-                `;
-                list.appendChild(tr);
-            });
-        }
-
-        // Mock fetch lyrics based on song/artist
-        function fetchLyrics(songTitle, artistName) {
-            const content = document.getElementById('lyrics-content-area');
-            content.innerText = `Текст песни «${songTitle}» исполнителя «${artistName}» на данный момент отсутствует или загружается из внешнего источника.`;
-        }
-
-        // State changes handlers for crossfading deck endpoints
-        function applyRandomMixSettings(player) {
-            if (!isTurboMixEnabled || player.hasRandomized) return;
-            let duration = player.getDuration();
-            if (duration && duration > 0) {
-                let maxStart = duration - turboMixDuration - crossfadeDuration - 5;
-                let startAt = 0;
-                if (maxStart > 0) {
-                    startAt = Math.floor(Math.random() * maxStart);
-                }
-                player.seekTo(startAt, true);
-                player.randomMixTargetEnd = startAt + turboMixDuration;
-                player.lastRandomStart = startAt;
-                player.hasRandomized = true;
-            }
-        }
-
-        // State changes handlers for crossfading deck endpoints
-        function onPlayerStateChange(event, deckNum) {
-            if (event.data === YT.PlayerState.PLAYING) {
-                // Apply random mix seeking if in Turbo Mix
-                applyRandomMixSettings(event.target);
-            }
-
-            // If track ends, check repeat/next triggers
-            if (event.data === YT.PlayerState.ENDED) {
-                // Handles natural video ending if progress tracker missed it
-                let currentActiveDeck = (currentDeck === 1) ? 2 : 1; // since toggled, deckNum represents finished player
-                if (deckNum === currentActiveDeck && isPlaying && !isCrossfading) {
-                    nextTrack();
-                }
-            }
-        }
-
-        // YouTube native player callback triggers next track on end
-        function onNativePlayerStateChange(event) {
-            if (event.data === YT.PlayerState.ENDED) {
-                nextTrack();
-            }
-        }
-
-        // --- AUTHENTICATION & MODALS ---
-
-        function triggerProfileClick() {
-            if (typeof window.openAuthModal === 'function') {
-                window.openAuthModal(document.querySelector('.am-sidebar-profile'));
-            }
-        }
-
-        function openAddPlaylistModal() {
-            const modal = document.getElementById('addPlaylistModal');
-            modal.style.display = 'flex';
-            
-            // Ensure inputs are initially hidden and empty
-            document.getElementById('import-details-container').style.display = 'none';
-            document.getElementById('modalAlbumTitle').value = '';
-            document.getElementById('modalAlbumArtist').value = '';
-            document.getElementById('modalAlbumTitle').setAttribute('readonly', 'true');
-            document.getElementById('modalAlbumArtist').setAttribute('readonly', 'true');
-            document.getElementById('modalAlbumTitle').style.cursor = 'default';
-            document.getElementById('modalAlbumArtist').style.cursor = 'default';
-            
-            // Reset edit buttons to pencil
-            const pencilSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
-            document.querySelectorAll('.edit-icon-btn').forEach(btn => {
-                btn.innerHTML = pencilSvg;
-            });
-            
-            setTimeout(() => modal.classList.add('active'), 10);
-        }
-
-        function closeAddPlaylistModal() {
-            const modal = document.getElementById('addPlaylistModal');
-            modal.classList.remove('active');
-            setTimeout(() => { modal.style.display = 'none'; }, 250);
-            resetImportModal();
-        }
-
-        // Handle profile information sync on authChanged
-        function handleUrlRouting() {
-            const params = new URLSearchParams(window.location.search);
-            const view = params.get('page') || params.get('view') || 'home';
-            const id = params.get('id');
-            
-            // Switch to the parsed view (pushState = false to avoid duplicate entries)
-            switchView(view, id, false);
-        }
-
-        window.addEventListener('popstate', () => {
-            handleUrlRouting();
-        });
-
-        window.addEventListener('authChanged', async (e) => {
-            const user = e.detail.user;
-            window.currentUser = user;
-
-            const nameEl = document.getElementById('sidebar-user-name');
-            const avatarEl = document.getElementById('sidebar-user-avatar');
-
-            if (user) {
-                nameEl.innerText = user.displayName || "Медиатека";
-                const letter = user.displayName ? user.displayName[0].toUpperCase() : "U";
-                avatarEl.innerText = letter;
-                
-                // Load albums and library items from Firebase
-                await loadMediaLibrary(user.uid);
-                
-                // Route after media library loads
-                handleUrlRouting();
-            } else {
-                nameEl.innerText = "Войти";
-                avatarEl.innerText = "?";
-                
-                // Clear state
-                window.musicSongs = [];
-                window.musicAlbums = [];
-                window.musicArtists = [];
-                
-                // Route for guests
-                handleUrlRouting();
-            }
-        });
-        
-        // Modal dismiss handles
-        window.addEventListener('click', (e) => {
-            const addModal = document.getElementById('addPlaylistModal');
-            if (e.target === addModal) {
-                closeAddPlaylistModal();
-            }
-        });
-
-    </script>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-modal-cancel" onclick="closeRenamePlaylistModal()">Отмена</button>
+                <button class="btn-modal btn-modal-submit" onclick="submitRenamePlaylist()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно удаления плейлиста -->
+    <div id="deletePlaylistModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Удалить плейлист?</h3>
+                <button class="modal-close" onclick="closeDeletePlaylistModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin: 0; font-size: 0.95rem; color: var(--text-secondary);">Это действие нельзя отменить.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-modal-cancel" onclick="closeDeletePlaylistModal()">Отмена</button>
+                <button class="btn-modal btn-modal-submit btn-modal-danger"
+                    onclick="submitDeletePlaylist()">Удалить</button>
+            </div>
+        </div>
+    </div>
 
     <link rel="stylesheet" href="auth-widget.css">
     <script type="module" src="nav-widget.js"></script>

@@ -1590,23 +1590,6 @@
         window.loadedPlaylistName = null;
         window.loadedPlaylistUrl = null;
 
-        let dbCollectionName = "playlists";
-        // Hide header and adjust padding when loaded in an iframe (embedded mode)
-        if (window.self !== window.top) {
-            dbCollectionName = "music_playlists";
-            document.addEventListener('DOMContentLoaded', () => {
-                const hc = document.getElementById('header-container');
-                if (hc) hc.style.display = 'none';
-                const footer = document.getElementById('footer');
-                if (footer) footer.style.display = 'none';
-                const wrap = document.querySelector('.wrap');
-                if (wrap) {
-                    wrap.style.paddingTop = '10px';
-                    wrap.style.maxWidth = '100%';
-                }
-            });
-        }
-
 
         let crossfadeDuration = parseInt(localStorage.getItem('crossfade-duration')) || 8;
         let crossfadeType = localStorage.getItem('crossfade-type') || 'standard';
@@ -1982,14 +1965,6 @@
             let activeP = (currentDeck === 1) ? p1 : p2;
 
             if (!isPlaying) {
-                // Pause parent player to avoid simultaneous playback
-                if (window.parent && window.parent !== window) {
-                    try {
-                        if (window.parent.isPlaying && typeof window.parent.togglePlayPause === 'function') {
-                            window.parent.togglePlayPause();
-                        }
-                    } catch(e){}
-                }
                 const pState = activeP.getPlayerState();
                 if (pState === -1 || pState === 5 || pState === 0) {
                     startMix();
@@ -2005,16 +1980,6 @@
 
         function startMix() {
             if (playlist.length === 0) return;
-
-            // Pause parent player to avoid simultaneous playback
-            if (window.parent && window.parent !== window) {
-                try {
-                    if (window.parent.isPlaying && typeof window.parent.togglePlayPause === 'function') {
-                        window.parent.togglePlayPause();
-                    }
-                } catch(e){}
-            }
-
             let activeP = (currentDeck === 1) ? p1 : p2;
 
             activeP.setVolume(100);
@@ -2836,7 +2801,7 @@
         async function submitDeletePlaylist() {
             if (!activeDeleteId) return;
             try {
-                const docRef = window.doc(window.db, "users", window.currentUser.uid, dbCollectionName, activeDeleteId);
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", activeDeleteId);
                 if (window.currentSavedPlaylists) {
                     const playlistToDelete = window.currentSavedPlaylists.find(p => p.id === activeDeleteId);
                     if (playlistToDelete) {
@@ -2881,7 +2846,7 @@
                 if (window.currentUser && window.db && window.currentSavedPlaylists) {
                     const foundP = window.currentSavedPlaylists.find(p => p.url && p.url.includes(`list=${listId}`));
                     if (foundP) {
-                        const docRef = window.doc(window.db, "users", window.currentUser.uid, dbCollectionName, foundP.id);
+                        const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", foundP.id);
                         window.getDoc(docRef).then(docSnap => {
                             if (docSnap.exists()) {
                                 const docData = docSnap.data();
@@ -2928,7 +2893,7 @@
         async function saveCachedTracksToFirebase(playlistId, tracksMap) {
             if (!window.currentUser || !window.db || !playlistId || !tracksMap || Object.keys(tracksMap).length === 0) return;
             try {
-                const docRef = window.doc(window.db, "users", window.currentUser.uid, dbCollectionName, playlistId);
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", playlistId);
                 let existingTracks = {};
                 if (window.activePlaylistCachedTracks && window.currentPlaylistId && getPlaylistIdByListId(window.currentPlaylistId) === playlistId) {
                     existingTracks = window.activePlaylistCachedTracks;
@@ -2963,7 +2928,7 @@
             if (!playlistId) return;
 
             try {
-                const docRef = window.doc(window.db, "users", window.currentUser.uid, dbCollectionName, playlistId);
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", playlistId);
                 let updatedData = {
                     first_video_id: firstVideoId,
                     tracks_count: count
@@ -3051,7 +3016,7 @@
                 return;
             }
             try {
-                const docRef = window.doc(window.db, "users", window.currentUser.uid, dbCollectionName, activeRenameId);
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", activeRenameId);
                 await window.updateDoc(docRef, { name: newName });
 
                 if (window.currentSavedPlaylists) {
@@ -3176,7 +3141,7 @@
         async function loadSavedPlaylistsFromFirebase(uid) {
             if (!window.db || !window.collection || !window.getDocs) return;
             try {
-                const colRef = window.collection(window.db, "users", uid, dbCollectionName);
+                const colRef = window.collection(window.db, "users", uid, "playlists");
                 const docSnaps = await window.getDocs(colRef);
                 let savedPlaylists = [];
                 docSnaps.forEach(docSnap => {
@@ -3289,7 +3254,7 @@
             let saved = false;
             const playlistId = Date.now().toString();
             try {
-                const docRef = window.doc(window.db, "users", window.currentUser.uid, dbCollectionName, playlistId);
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", playlistId);
                 const newPlaylist = {
                     id: playlistId,
                     name: finalName,

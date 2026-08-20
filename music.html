@@ -39,7 +39,7 @@
             width: 100%;
             max-width: 900px;
             margin: 0 auto;
-            padding: 80px 14px 20px 14px;
+            padding: 24px 14px 20px 14px;
             flex-grow: 1;
             /* Чтобы футер прибивался */
             transition: max-width 0.35s ease;
@@ -811,23 +811,7 @@
             z-index: 100;
         }
 
-        .window-controls {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 24px;
-            padding-left: 8px;
-        }
 
-        .window-controls .dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .window-controls .red { background: #ff5f56; }
-        .window-controls .yellow { background: #ffbd2e; }
-        .window-controls .green { background: #27c93f; }
 
         .sidebar-menu {
             display: flex;
@@ -1490,33 +1474,36 @@
 
     <script src="theme-loader.js"></script>
 
-    <div id="header-container"></div>
+    
 
     <div class="app-layout">
         <aside class="sidebar">
-            <div class="window-controls">
-                <span class="dot red"></span>
-                <span class="dot yellow"></span>
-                <span class="dot green"></span>
+            <div class="sidebar-header" style="margin-bottom: 12px; padding: 4px 8px;">
+                <div class="sidebar-user" onclick="openAuthModal(this)" style="display: flex; align-items: center; gap: 12px; padding: 6px 8px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                    <div class="sidebar-avatar" id="sidebar-user-avatar" style="width: 24px; height: 24px; border-radius: 50%; background: var(--hover-bg); border: 1px solid var(--border); color: var(--text); font-weight: 700; font-size: 0.72rem; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">U</div>
+                    <div class="sidebar-user-info" style="display: flex; flex-direction: column; min-width: 0; flex-grow: 1;">
+                        <span class="sidebar-name" id="sidebar-user-name" style="font-weight: 600; font-size: 0.9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">Загрузка...</span>
+                    </div>
+                </div>
             </div>
             
             <div class="sidebar-menu">
                 <div class="sidebar-section">
-                    <div class="sidebar-item" onclick="alert('Поиск')">
+                    <a href="#search" class="sidebar-item" id="menu-search">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
                         <span>Поиск</span>
-                    </div>
-                    <div class="sidebar-item active" id="sidebar-home-btn" onclick="closePlayerCard()">
+                    </a>
+                    <a href="#home" class="sidebar-item active" id="menu-home">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                             <polyline points="9 22 9 12 15 12 15 22"></polyline>
                         </svg>
                         <span>Главная</span>
-                    </div>
-                    <div class="sidebar-item" onclick="alert('Новое')">
+                    </a>
+                    <a href="#new" class="sidebar-item" id="menu-new">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="3" width="7" height="7"></rect>
                             <rect x="14" y="3" width="7" height="7"></rect>
@@ -1524,49 +1511,49 @@
                             <rect x="3" y="14" width="7" height="7"></rect>
                         </svg>
                         <span>Новое</span>
-                    </div>
-                    <div class="sidebar-item" onclick="alert('Радио')">
+                    </a>
+                    <a href="#radio" class="sidebar-item" id="menu-radio">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="2"></circle>
                             <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path>
                         </svg>
                         <span>Радио</span>
-                    </div>
+                    </a>
                 </div>
 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Медиатека</div>
-                    <div class="sidebar-item" onclick="alert('Недавно добавленные')">
+                    <a href="#recent" class="sidebar-item" id="menu-recent">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
                         <span>Недавно добавленные</span>
-                    </div>
-                    <div class="sidebar-item" onclick="alert('Артисты')">
+                    </a>
+                    <a href="#artists" class="sidebar-item" id="menu-artists">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
                             <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
                             <line x1="12" y1="19" x2="12" y2="22"></line>
                         </svg>
                         <span>Артисты</span>
-                    </div>
-                    <div class="sidebar-item" onclick="alert('Альбомы')">
+                    </a>
+                    <a href="#albums" class="sidebar-item" id="menu-albums">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                         <span>Альбомы</span>
-                    </div>
-                    <div class="sidebar-item" onclick="alert('Песни')">
+                    </a>
+                    <a href="#songs" class="sidebar-item" id="menu-songs">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9 18V5l12-2v13"></path>
                             <circle cx="6" cy="18" r="3"></circle>
                             <circle cx="18" cy="16" r="3"></circle>
                         </svg>
                         <span>Песни</span>
-                    </div>
-                    <div class="sidebar-item" onclick="alert('Жанры')">
+                    </a>
+                    <a href="#genres" class="sidebar-item" id="menu-genres">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="4" y1="21" x2="4" y2="14"></line>
                             <line x1="4" y1="10" x2="4" y2="3"></line>
@@ -1579,7 +1566,7 @@
                             <line x1="17" y1="16" x2="23" y2="16"></line>
                         </svg>
                         <span>Жанры</span>
-                    </div>
+                    </a>
                 </div>
 
                 <div class="sidebar-section">
@@ -1821,6 +1808,7 @@
             </div>
             <div class="saved-playlists-list" id="saved-playlists-list"></div>
         </div>
+        <div id="stub-view" style="display: none; padding: 10px 0; color: var(--text-secondary);"></div>
     </div>
         </main>
     </div>
@@ -1976,6 +1964,120 @@
             }
         }
 
+        // --- ROUTING LOGIC ---
+        function handleRoute() {
+            const hash = window.location.hash || '#home';
+            
+            // Highlight main menu buttons
+            document.querySelectorAll('.sidebar-menu .sidebar-item').forEach(item => item.classList.remove('active'));
+            
+            const playerCard = document.getElementById('main-player-card');
+            const savedSection = document.getElementById('saved-playlists-section');
+            const stubView = document.getElementById('stub-view');
+            
+            if (playerCard) playerCard.style.display = 'none';
+            if (savedSection) savedSection.style.display = 'none';
+            if (stubView) stubView.style.display = 'none';
+            
+            if (hash === '#home') {
+                const homeBtn = document.getElementById('menu-home');
+                if (homeBtn) homeBtn.classList.add('active');
+                
+                if (playlist && playlist.length > 0) {
+                    if (playerCard) playerCard.style.display = 'block';
+                    document.getElementById('player-container').style.display = 'flex';
+                    if (savedSection) savedSection.style.display = 'none';
+                } else {
+                    if (savedSection) savedSection.style.display = 'block';
+                }
+            } else {
+                const menuId = 'menu-' + hash.replace('#', '');
+                const activeBtn = document.getElementById(menuId);
+                if (activeBtn) activeBtn.classList.add('active');
+                
+                if (stubView) {
+                    stubView.style.display = 'block';
+                    populateStubView(hash);
+                }
+            }
+        }
+        
+        function populateStubView(hash) {
+            const stubView = document.getElementById('stub-view');
+            if (!stubView) return;
+            
+            let title = '';
+            let content = '';
+            
+            if (hash === '#search') {
+                title = 'Поиск';
+                content = `
+                    <div style="max-width: 600px; margin: 0 auto; text-align: left; padding-top: 20px;">
+                        <h2 style="font-size: 1.8rem; font-weight: 700; color: var(--text); margin-bottom: 20px;">Поиск</h2>
+                        <div style="position: relative; display: flex; gap: 10px; margin-bottom: 30px;">
+                            <input type="text" placeholder="Артисты, песни, тексты и другое" style="flex-grow: 1; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); outline: none; font-size: 0.95rem;">
+                            <button style="background: var(--accent); color: #fff; border: none; padding: 0 24px; border-radius: 10px; font-weight: 600; cursor: pointer;">Найти</button>
+                        </div>
+                        <p style="opacity: 0.5; font-size: 0.9rem;">Введите запрос для поиска по медиатеке или YouTube Music.</p>
+                    </div>
+                `;
+            } else if (hash === '#new') {
+                title = 'Новое';
+                content = `
+                    <div style="text-align: left;">
+                        <h2 style="font-size: 1.8rem; font-weight: 700; color: var(--text); margin-bottom: 24px;">Новое</h2>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px;">
+                            ${[1,2,3,4,5].map(i => `
+                                <div style="background: var(--card-bg); border: 1px solid var(--border); padding: 12px; border-radius: 12px; cursor: pointer;">
+                                    <div style="aspect-ratio: 1; background: var(--border); border-radius: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-size: 2rem; opacity: 0.3;">💿</div>
+                                    <div style="font-weight: 600; font-size: 0.88rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Релиз #${i}</div>
+                                    <div style="font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Исполнитель</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (hash === '#radio') {
+                title = 'Радио';
+                content = `
+                    <div style="text-align: left;">
+                        <h2 style="font-size: 1.8rem; font-weight: 700; color: var(--text); margin-bottom: 24px;">Радиостанции</h2>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
+                            ${['Chill Pop', 'Hip-Hop Beat', 'Deep House Radio', 'Retro Wave'].map(station => `
+                                <div style="background: var(--card-bg); border: 1px solid var(--border); padding: 20px; border-radius: 16px; cursor: pointer; text-align: center; position: relative; overflow: hidden;">
+                                    <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--accent); margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff;">📻</div>
+                                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--text);">${station}</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Прямой эфир</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                const pageNames = {
+                    'recent': 'Недавно добавленные',
+                    'artists': 'Артисты',
+                    'albums': 'Альбомы',
+                    'songs': 'Песни',
+                    'genres': 'Жанры'
+                };
+                const pageName = pageNames[hash.replace('#', '')] || 'Раздел';
+                title = pageName;
+                content = `
+                    <div style="padding: 60px 20px; text-align: center; max-width: 400px; margin: 0 auto;">
+                        <div style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;">📂</div>
+                        <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text); margin-bottom: 10px;">${pageName}</h2>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">Здесь будут отображаться ваши медиафайлы из этого раздела после интеграции библиотеки.</p>
+                    </div>
+                `;
+            }
+            
+            stubView.innerHTML = content;
+        }
+
+        window.addEventListener('hashchange', handleRoute);
+        document.addEventListener('DOMContentLoaded', handleRoute);
+
         // --- UI LOGIC ---
 
         let currentPlayerViewMode = localStorage.getItem('crossfade-player-view-mode') || 'music';
@@ -2127,17 +2229,6 @@
             
             // Update sidebar highlights
             renderSavedPlaylists(window.currentSavedPlaylists);
-            
-            // Adjust sidebar item highlights: if player card is active, Главная button is not highlighted
-            const mainPlayerCard = document.getElementById('main-player-card');
-            const homeBtn = document.getElementById('sidebar-home-btn');
-            if (homeBtn) {
-                if (mainPlayerCard && mainPlayerCard.style.display !== 'none') {
-                    homeBtn.classList.remove('active');
-                } else {
-                    homeBtn.classList.add('active');
-                }
-            }
         }
 
         function updateButtons() {
@@ -3019,6 +3110,7 @@
         }
 
         function loadSavedPlaylist(urlStr, name) {
+            window.location.hash = '#home';
             const cardEl = document.getElementById('main-player-card');
             if (cardEl) {
                 cardEl.style.display = 'block';
@@ -3265,8 +3357,18 @@
             if (!listContainer) return;
 
             listContainer.innerHTML = '';
+            
+            // Hide bottom playlists section if a playlist is loaded or if we are not on the Home page
+            const isHome = (!window.location.hash || window.location.hash === '#home');
+            const hasPlaylistLoaded = (playlist && playlist.length > 0);
+            if (hasPlaylistLoaded || !isHome) {
+                if (container) container.style.display = 'none';
+                return; // Prevent overriding container.style.display and skip rendering grid cards
+            } else {
+                if (container) container.style.display = (!window.currentUser || !list || list.length === 0) ? 'flex' : 'block';
+            }
+
             if (!window.currentUser || !list || list.length === 0) {
-                container.style.display = 'flex';
                 listContainer.innerHTML = `
                     <div class="playlists-empty-state">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -3531,9 +3633,8 @@
             document.getElementById('player-container').style.display = 'flex';
             document.getElementById('player-error-state').style.display = 'none';
             
-            const homeBtn = document.getElementById('sidebar-home-btn');
-            if (homeBtn) homeBtn.classList.add('active');
-            renderSavedPlaylists(window.currentSavedPlaylists);
+            window.location.hash = '#home';
+            handleRoute();
         }
 
         window.addEventListener('click', (e) => {
@@ -3554,22 +3655,33 @@
         window.addEventListener('authChanged', async (e) => {
             const user = e.detail.user;
             window.currentUser = user;
+            
+            const sidebarName = document.getElementById('sidebar-user-name');
+            const sidebarAvatar = document.getElementById('sidebar-user-avatar');
+            
             if (user) {
+                if (sidebarName) sidebarName.innerText = user.displayName || "Пользователь";
+                if (sidebarAvatar) {
+                    if (user.photoURL) {
+                        sidebarAvatar.innerHTML = `<img src="${user.photoURL}" style="width: 100%; height: 100%; object-fit: cover; display: block;">`;
+                    } else {
+                        sidebarAvatar.innerText = user.displayName ? user.displayName[0].toUpperCase() : "U";
+                        sidebarAvatar.innerHTML = user.displayName ? user.displayName[0].toUpperCase() : "U";
+                    }
+                }
                 await loadSavedPlaylistsFromFirebase(user.uid);
             } else {
+                if (sidebarName) sidebarName.innerText = "Войти";
+                if (sidebarAvatar) {
+                    sidebarAvatar.innerText = "?";
+                    sidebarAvatar.innerHTML = "?";
+                }
                 renderSavedPlaylists([]);
             }
         });
     </script>
 
-    <link rel="stylesheet" href="footer.css">
-    <div id="footer"></div>
-    <script>
-        fetch('footer.html')
-            .then(r => r.text())
-            .then(html => { if (html) document.getElementById('footer').innerHTML = html; })
-            .catch(() => { });
-    </script>
+
 
     <!-- Модальное окно добавления плейлиста -->
     <div id="addPlaylistModal" class="modal-overlay">
@@ -3636,7 +3748,7 @@
     <link rel="stylesheet" href="auth-widget.css">
     <script type="module" src="nav-widget.js"></script>
     <script type="module" src="auth-widget.js"></script>
-    <script type="module" src="header.js"></script>
+    
 
 </body>
 

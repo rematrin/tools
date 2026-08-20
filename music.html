@@ -918,6 +918,210 @@
             height: 100vh;
             overflow-y: auto;
             position: relative;
+            padding-bottom: 96px !important; /* Extra bottom margin for playbar */
+            box-sizing: border-box;
+        }
+
+        /* Player controls inside card are enabled */
+
+        /* --- Fixed Bottom Playbar Styles (YTM Style) --- */
+        .bottom-playbar {
+            position: fixed;
+            bottom: 0;
+            left: 260px; /* Offset for left sidebar */
+            right: 0;
+            height: 72px;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            box-sizing: border-box;
+            z-index: 1000;
+            box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.08);
+            user-select: none;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .playbar-timeline-container {
+            position: absolute;
+            top: -3px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.06);
+            cursor: pointer;
+            transition: height 0.15s ease, top 0.15s ease;
+            z-index: 10;
+        }
+
+        .playbar-timeline-container:hover {
+            height: 6px;
+            top: -4px;
+        }
+
+        .playbar-timeline-progress {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            position: relative;
+        }
+
+        .playbar-timeline-handle {
+            position: absolute;
+            top: 50%;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent);
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.15s ease;
+            pointer-events: none;
+        }
+
+        .playbar-timeline-container:hover .playbar-timeline-handle {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .playbar-left, .playbar-center, .playbar-right {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+
+        .playbar-left {
+            gap: 16px;
+            min-width: 220px;
+        }
+
+        .playbar-center {
+            justify-content: center;
+            gap: 16px;
+            flex-grow: 1;
+            min-width: 0;
+            max-width: 45%;
+        }
+
+        .playbar-right {
+            justify-content: flex-end;
+            gap: 16px;
+            min-width: 280px;
+        }
+
+        .playbar-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .playbar-btn:hover {
+            color: var(--text);
+            background: var(--hover-bg);
+        }
+
+        .playbar-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .playbar-btn.play-pause-btn {
+            color: var(--text);
+            background: var(--hover-bg);
+            padding: 10px;
+        }
+
+        .playbar-time {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .playbar-thumbnail {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            background: var(--border);
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .playbar-track-info {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            max-width: 240px;
+        }
+
+        .playbar-title {
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+
+        .playbar-title:hover {
+            text-decoration: underline;
+        }
+
+        .playbar-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .playbar-feedback-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 8px;
+        }
+
+        .playbar-volume-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .playbar-volume-slider {
+            -webkit-appearance: none;
+            width: 80px;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+            accent-color: var(--accent);
+        }
+
+        .playbar-volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+        }
+
+        /* Adjust main layout padding-bottom to clear fixed playbar */
+        .app-layout {
+            padding-bottom: 72px;
         }
 
         /* --- Toggle Switch for Turbo Mix --- */
@@ -2109,8 +2313,48 @@
         }
 
         // Вызываем при загрузке страницы для установки сохранённого режима
+        let isDraggingTimeline = false;
         document.addEventListener('DOMContentLoaded', () => {
             toggleTurboMix(isTurboMixEnabled);
+            
+            // Initialize volume slider state
+            const slider = document.getElementById('playbar-volumeSlider');
+            if (slider) slider.value = playerVolume;
+            updateVolumeIcon();
+
+            // Custom timeline seeking
+            const timeline = document.getElementById('playbar-timeline-container');
+            const progress = document.getElementById('playbar-timeline-progress');
+            const handle = document.getElementById('playbar-timeline-handle');
+            
+            if (timeline) {
+                function seekFromEvent(e) {
+                    const rect = timeline.getBoundingClientRect();
+                    let pct = (e.clientX - rect.left) / rect.width;
+                    pct = Math.max(0, Math.min(1, pct));
+                    if (progress) progress.style.width = (pct * 100) + '%';
+                    if (handle) handle.style.left = (pct * 100) + '%';
+                    
+                    let activeP = (currentDeck === 1) ? p1 : p2;
+                    if (activeP && typeof activeP.getDuration === 'function') {
+                        const duration = activeP.getDuration();
+                        activeP.seekTo(duration * pct, true);
+                    }
+                }
+
+                timeline.addEventListener('mousedown', (e) => {
+                    isDraggingTimeline = true;
+                    seekFromEvent(e);
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (isDraggingTimeline) seekFromEvent(e);
+                });
+
+                document.addEventListener('mouseup', () => {
+                    isDraggingTimeline = false;
+                });
+            }
         });
 
         function setMode(mode) {
@@ -2192,25 +2436,40 @@
         }
 
         function updatePlayPauseIcon() {
-            document.getElementById('icon-play').style.display = isPlaying ? 'none' : 'block';
-            document.getElementById('icon-pause').style.display = isPlaying ? 'block' : 'none';
+            const playIcon = document.getElementById('playbar-icon-play');
+            const pauseIcon = document.getElementById('playbar-icon-pause');
+            if (playIcon) playIcon.style.display = isPlaying ? 'none' : 'block';
+            if (pauseIcon) pauseIcon.style.display = isPlaying ? 'block' : 'none';
         }
 
         function updateUI() {
             const playerArea = document.getElementById('main-player-area');
+            const playbar = document.getElementById('bottom-playbar');
+            
             if (playlist.length > 0 && playlist[trackIndex]) {
                 playerArea.classList.remove('is-empty');
                 const t = playlist[trackIndex];
+                
+                // Update playbar state
+                if (playbar) playbar.style.display = 'flex';
+                
                 document.getElementById('current-track-info').innerText = t.title;
                 document.getElementById('cover-overlay').src = `https://i.ytimg.com/vi/${t.id}/maxresdefault.jpg`;
                 document.title = t.title;
+                
+                // Sync playbar text & cover
+                const pTitle = document.getElementById('playbar-track-title');
+                const pSub = document.getElementById('playbar-track-subtitle');
+                const pCover = document.getElementById('playbar-track-cover');
+                if (pTitle) pTitle.innerText = t.title;
+                if (pSub) pSub.innerText = window.loadedPlaylistName || 'YouTube Music Player';
+                if (pCover) pCover.style.backgroundImage = `url('https://img.youtube.com/vi/${t.id}/hqdefault.jpg')`;
             } else {
                 playerArea.classList.add('is-empty');
+                if (playbar) playbar.style.display = 'none';
+                
                 document.getElementById('current-track-info').innerText = "Добавьте ваш плейлист";
                 document.getElementById('cover-overlay').src = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23111'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='30' opacity='0.2'>🎧</text></svg>";
-                document.getElementById('currentTime').innerText = "0:00";
-                document.getElementById('totalTime').innerText = "0:00";
-                document.getElementById('progressBar').value = 0;
                 document.title = "YouTube Playlists";
             }
 
@@ -2232,8 +2491,10 @@
         }
 
         function updateButtons() {
-            document.getElementById('prevBtn').disabled = playlist.length <= 1;
-            document.getElementById('nextBtn').disabled = playlist.length <= 1;
+            const prev = document.getElementById('playbar-prevBtn');
+            const next = document.getElementById('playbar-nextBtn');
+            if (prev) prev.disabled = playlist.length <= 1;
+            if (next) next.disabled = playlist.length <= 1;
         }
 
         function setMixStatus(isMixing) {
@@ -2465,12 +2726,29 @@
 
             if (!duration || duration <= 0) return;
 
-            if (!isDragging) {
-                let pct = (current / duration) * 100;
-                document.getElementById('currentTime').innerText = formatTime(current);
-                document.getElementById('totalTime').innerText = formatTime(duration);
-                document.getElementById('progressBar').value = pct;
+            const curText = document.getElementById('playbar-currentTime');
+            const durText = document.getElementById('playbar-totalTime');
+            if (curText) curText.innerText = formatTime(current);
+            if (durText) durText.innerText = formatTime(duration);
+
+            const progressBar = document.getElementById('playbar-timeline-progress');
+            const progressHandle = document.getElementById('playbar-timeline-handle');
+            if (progressBar && progressHandle && !isDraggingTimeline) {
+                const pct = (current / duration) * 100;
+                progressBar.style.width = pct + '%';
+                progressHandle.style.left = pct + '%';
             }
+            
+            // Sync main player card controls timeline
+            const mainProgress = document.getElementById('progressBar');
+            if (mainProgress && !isDragging) {
+                mainProgress.max = duration;
+                mainProgress.value = current;
+            }
+            const mainCur = document.getElementById('currentTime');
+            const mainDur = document.getElementById('totalTime');
+            if (mainCur) mainCur.innerText = formatTime(current);
+            if (mainDur) mainDur.innerText = formatTime(duration);
 
             if (!isCrossfading && playlist.length > 1) {
                 let triggerCrossfade = false;
@@ -2653,7 +2931,15 @@
         function changeVolume(val) {
             playerVolume = parseInt(val);
             localStorage.setItem('music-crossfade-volume', playerVolume);
-            document.getElementById('volumeValue').innerText = val;
+            
+            const slider = document.getElementById('playbar-volumeSlider');
+            if (slider) slider.value = playerVolume;
+            
+            // Sync volume sliders and value text in main player card
+            const topVol = document.getElementById('volumeSlider');
+            if (topVol) topVol.value = playerVolume;
+            const volumeVal = document.getElementById('volumeValue');
+            if (volumeVal) volumeVal.innerText = playerVolume;
 
             if (!isCrossfading) {
                 let activeP = (currentDeck === 1) ? p1 : p2;
@@ -2663,14 +2949,16 @@
         }
 
         function updateVolumeIcon() {
-            const high = document.getElementById('icon-vol-high');
-            const mute = document.getElementById('icon-vol-mute');
-            if (playerVolume === 0) {
-                high.style.display = 'none';
-                mute.style.display = 'block';
-            } else {
-                high.style.display = 'block';
-                mute.style.display = 'none';
+            const high = document.getElementById('playbar-icon-vol-high');
+            const mute = document.getElementById('playbar-icon-vol-mute');
+            if (high && mute) {
+                if (playerVolume === 0) {
+                    high.style.display = 'none';
+                    mute.style.display = 'block';
+                } else {
+                    high.style.display = 'block';
+                    mute.style.display = 'none';
+                }
             }
         }
 
@@ -3634,6 +3922,8 @@
             document.getElementById('player-error-state').style.display = 'none';
             
             window.location.hash = '#home';
+            const playbar = document.getElementById('bottom-playbar');
+            if (playbar) playbar.style.display = 'none';
             handleRoute();
         }
 
@@ -3679,6 +3969,35 @@
                 renderSavedPlaylists([]);
             }
         });
+
+        // --- BOTTOM PLAYER PANEL ACTIONS ---
+        function toggleFullPlayerCard() {
+            const cardEl = document.getElementById('main-player-card');
+            const chevronBtn = document.getElementById('bottom-chevron-btn');
+            if (!cardEl) return;
+            
+            if (cardEl.style.display === 'none') {
+                window.location.hash = '#home';
+                cardEl.style.display = 'block';
+                if (chevronBtn) {
+                    chevronBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+                    chevronBtn.title = "Свернуть проигрыватель";
+                }
+            } else {
+                cardEl.style.display = 'none';
+                if (chevronBtn) {
+                    chevronBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;"><polyline points="18 15 12 9 6 15"></polyline></svg>`;
+                    chevronBtn.title = "Развернуть проигрыватель";
+                }
+            }
+        }
+
+        function expandFullPlayerCard() {
+            const cardEl = document.getElementById('main-player-card');
+            if (cardEl && cardEl.style.display === 'none') {
+                toggleFullPlayerCard();
+            }
+        }
     </script>
 
 
@@ -3749,6 +4068,90 @@
     <script type="module" src="nav-widget.js"></script>
     <script type="module" src="auth-widget.js"></script>
     
+
+    <!-- YouTube Music Style Bottom Playbar -->
+    <div id="bottom-playbar" class="bottom-playbar" style="display: none;">
+        <div class="playbar-timeline-container" id="playbar-timeline-container">
+            <div class="playbar-timeline-progress" id="playbar-timeline-progress"></div>
+            <div class="playbar-timeline-handle" id="playbar-timeline-handle"></div>
+        </div>
+
+        <div class="playbar-left">
+            <button class="playbar-btn" id="playbar-prevBtn" onclick="prevTrack()" title="Предыдущий трек">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 6h2v12H6zm3.5 6l8.5 6V6l-8.5 6z" />
+                </svg>
+            </button>
+            <button class="playbar-btn play-pause-btn" id="playbar-playPauseBtn" onclick="togglePlay()" title="Воспроизвести / Пауза">
+                <svg id="playbar-icon-play" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                </svg>
+                <svg id="playbar-icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                </svg>
+            </button>
+            <button class="playbar-btn" id="playbar-nextBtn" onclick="nextTrack()" title="Следующий трек">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+                </svg>
+            </button>
+            <div class="playbar-time">
+                <span id="playbar-currentTime">0:00</span> / <span id="playbar-totalTime">0:00</span>
+            </div>
+        </div>
+
+        <div class="playbar-center">
+            <div class="playbar-thumbnail" id="playbar-track-cover" onclick="expandFullPlayerCard()" style="cursor: pointer;"></div>
+            <div class="playbar-track-info">
+                <span class="playbar-title" id="playbar-track-title" onclick="expandFullPlayerCard()" style="cursor: pointer;">Ожидание...</span>
+                <span class="playbar-subtitle" id="playbar-track-subtitle">YouTube Music Player</span>
+            </div>
+            
+            <div class="playbar-feedback-actions">
+                <button class="playbar-btn" onclick="alert('Нравится')" title="Нравится">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                </button>
+                <button class="playbar-btn" onclick="alert('Не нравится')" title="Не нравится">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg>
+                </button>
+                <button class="playbar-btn" title="Ещё">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="playbar-right">
+            <div class="playbar-volume-container">
+                <input type="range" id="playbar-volumeSlider" class="playbar-volume-slider" min="0" max="100" value="100" oninput="changeVolume(this.value)">
+                <button class="playbar-btn" onclick="toggleMute()" id="playbar-muteBtn">
+                    <svg id="playbar-icon-vol-high" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14" opacity="0.4"></path>
+                    </svg>
+                    <svg id="playbar-icon-vol-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                        <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                        <line x1="23" y1="9" x2="17" y2="15"></line>
+                        <line x1="17" y1="9" x2="23" y2="15"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <button class="playbar-btn" onclick="alert('Повтор')" title="Повторить">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23 3 19 7 15"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+            </button>
+            
+            <button class="playbar-btn" onclick="shufflePlaylist()" title="Перемешать">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+            </button>
+            
+            <button class="playbar-btn" id="bottom-chevron-btn" onclick="toggleFullPlayerCard()" title="Свернуть проигрыватель" style="color: var(--text);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+        </div>
+    </div>
 
 </body>
 

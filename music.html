@@ -1707,15 +1707,6 @@
                         </svg>
                         <span>Главная</span>
                     </a>
-                    <a href="#new" class="sidebar-item" id="menu-new">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="14" width="7" height="7"></rect>
-                            <rect x="3" y="14" width="7" height="7"></rect>
-                        </svg>
-                        <span>Новое</span>
-                    </a>
                     <a href="#radio" class="sidebar-item" id="menu-radio">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="2"></circle>
@@ -1778,6 +1769,15 @@
                         <span>Плейлисты</span>
                         <button class="sidebar-add-btn" onclick="openAddPlaylistModal()" title="Добавить плейлист">+</button>
                     </div>
+                    <a href="#playlists" class="sidebar-item" id="menu-playlists" style="margin-bottom: 8px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Все плейлисты</span>
+                    </a>
                     <div id="sidebar-playlists-list"></div>
                 </div>
             </div>
@@ -2187,13 +2187,23 @@
                 const homeBtn = document.getElementById('menu-home');
                 if (homeBtn) homeBtn.classList.add('active');
                 
+                if (stubView) {
+                    stubView.style.display = 'block';
+                    populateStubView('#home');
+                }
+                
                 if (playlist && playlist.length > 0) {
                     if (playerCard) playerCard.style.display = 'block';
                     document.getElementById('player-container').style.display = 'flex';
-                    if (savedSection) savedSection.style.display = 'none';
-                } else {
-                    if (savedSection) savedSection.style.display = 'block';
                 }
+            } else if (hash === '#playlists') {
+                const playlistsBtn = document.getElementById('menu-playlists');
+                if (playlistsBtn) playlistsBtn.classList.add('active');
+                
+                if (savedSection) {
+                    savedSection.style.display = 'block';
+                }
+                renderSavedPlaylists(window.currentSavedPlaylists);
             } else {
                 const menuId = 'menu-' + hash.replace('#', '');
                 const activeBtn = document.getElementById(menuId);
@@ -2213,7 +2223,29 @@
             let title = '';
             let content = '';
             
-            if (hash === '#search') {
+            if (hash === '#home') {
+                title = 'Главная';
+                content = `
+                    <div style="text-align: left; padding-top: 20px;">
+                        <h2 style="font-size: 1.8rem; font-weight: 700; color: var(--text); margin-bottom: 12px;">Добро пожаловать в Медиатеку</h2>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 30px; max-width: 600px;">Ваше персональное музыкальное пространство. Перейдите во вкладку «Все плейлисты» в левом меню, чтобы управлять вашей библиотекой и слушать музыку.</p>
+                        
+                        <h3 style="font-size: 1.2rem; font-weight: 600; color: var(--text); margin-bottom: 16px;">Рекомендуемое для вас</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
+                            <div style="background: var(--card-bg); border: 1px solid var(--border); padding: 24px; border-radius: 16px; text-align: center; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div style="font-size: 2.5rem; margin-bottom: 12px;">🎧</div>
+                                <div style="font-weight: 700; font-size: 0.95rem; color: var(--text);">Любимые треки</div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Ваша персональная подборка</div>
+                            </div>
+                            <div style="background: var(--card-bg); border: 1px solid var(--border); padding: 24px; border-radius: 16px; text-align: center; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div style="font-size: 2.5rem; margin-bottom: 12px;">✨</div>
+                                <div style="font-weight: 700; font-size: 0.95rem; color: var(--text);">Турбо-микс дня</div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Лучшие переходы от ИИ</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (hash === '#search') {
                 title = 'Поиск';
                 content = `
                     <div style="max-width: 600px; margin: 0 auto; text-align: left; padding-top: 20px;">
@@ -2223,22 +2255,6 @@
                             <button style="background: var(--accent); color: #fff; border: none; padding: 0 24px; border-radius: 10px; font-weight: 600; cursor: pointer;">Найти</button>
                         </div>
                         <p style="opacity: 0.5; font-size: 0.9rem;">Введите запрос для поиска по медиатеке или YouTube Music.</p>
-                    </div>
-                `;
-            } else if (hash === '#new') {
-                title = 'Новое';
-                content = `
-                    <div style="text-align: left;">
-                        <h2 style="font-size: 1.8rem; font-weight: 700; color: var(--text); margin-bottom: 24px;">Новое</h2>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px;">
-                            ${[1,2,3,4,5].map(i => `
-                                <div style="background: var(--card-bg); border: 1px solid var(--border); padding: 12px; border-radius: 12px; cursor: pointer;">
-                                    <div style="aspect-ratio: 1; background: var(--border); border-radius: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-size: 2rem; opacity: 0.3;">💿</div>
-                                    <div style="font-weight: 600; font-size: 0.88rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Релиз #${i}</div>
-                                    <div style="font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Исполнитель</div>
-                                </div>
-                            `).join('')}
-                        </div>
                     </div>
                 `;
             } else if (hash === '#radio') {
@@ -3646,10 +3662,10 @@
 
             listContainer.innerHTML = '';
             
-            // Hide bottom playlists section if a playlist is loaded or if we are not on the Home page
-            const isHome = (!window.location.hash || window.location.hash === '#home');
+            // Hide bottom playlists section if a playlist is loaded or if we are not on the Playlists page
+            const isPlaylistsTab = (window.location.hash === '#playlists');
             const hasPlaylistLoaded = (playlist && playlist.length > 0);
-            if (hasPlaylistLoaded || !isHome) {
+            if (hasPlaylistLoaded || !isPlaylistsTab) {
                 if (container) container.style.display = 'none';
                 return; // Prevent overriding container.style.display and skip rendering grid cards
             } else {
@@ -3921,7 +3937,7 @@
             document.getElementById('player-container').style.display = 'flex';
             document.getElementById('player-error-state').style.display = 'none';
             
-            window.location.hash = '#home';
+            window.location.hash = '#playlists';
             const playbar = document.getElementById('bottom-playbar');
             if (playbar) playbar.style.display = 'none';
             handleRoute();

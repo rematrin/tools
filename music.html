@@ -139,9 +139,9 @@
 
         .saved-playlists-list {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 16px;
-            margin-top: 5px;
+            grid-template-columns: repeat(auto-fill, 160px);
+            gap: 24px;
+            margin-top: 15px;
         }
 
         .playlists-empty-state {
@@ -327,50 +327,50 @@
             background: var(--accent-hover);
         }
 
-        @media (max-width: 900px) {
-            .saved-playlists-list {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
 
-        @media (max-width: 600px) {
-            .saved-playlists-list {
-                grid-template-columns: 1fr;
-            }
-        }
 
         .saved-playlist-card {
             position: relative;
             display: flex;
-            align-items: center;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            padding: 12px;
-            border-radius: 12px;
+            flex-direction: column;
+            align-items: flex-start;
+            background: transparent;
+            border: none;
+            padding: 0;
+            border-radius: 0;
             cursor: pointer;
             transition: 0.2s;
-            gap: 12px;
+            gap: 10px;
             min-width: 0;
+            width: 100%;
         }
 
         .saved-playlist-card:hover {
-            background: var(--hover-bg);
-            border-color: var(--accent);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            background: transparent;
+            border-color: transparent;
+            box-shadow: none;
+        }
+
+        .saved-playlist-card:hover .playlist-card-cover {
+            transform: none;
+            box-shadow: none;
         }
 
         .playlist-card-cover {
-            width: 60px;
-            height: 60px;
-            border-radius: 8px;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            height: auto;
+            border-radius: 12px;
             overflow: hidden;
             flex-shrink: 0;
-            background: linear-gradient(135deg, #1e1e24 0%, #33333e 100%);
+            background: linear-gradient(135deg, #2a2a2c 0%, #1e1e1f 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #fff;
-            font-size: 1.5rem;
+            font-size: 2rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--border);
         }
 
         .playlist-card-cover img {
@@ -380,12 +380,12 @@
         }
 
         .playlist-card-content {
-            flex: 1;
+            width: 100%;
             min-width: 0;
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            padding-right: 48px;
+            gap: 2px;
+            padding-right: 0;
         }
 
         .playlist-card-title {
@@ -1808,13 +1808,7 @@
 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Медиатека</div>
-                    <a href="#recent" class="sidebar-item" id="menu-recent">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
-                        <span>Недавно добавленные</span>
-                    </a>
+
                     <a href="#artists" class="sidebar-item" id="menu-artists">
                         <svg viewBox="0 0 512 512" fill="currentColor">
                             <g>
@@ -1897,7 +1891,21 @@
                                 </svg>
                             </button>
                             <div class="playlist-header-text">
-                                <h2 id="playlist-title-text">Мой Плейлист</h2>
+                                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                                    <h2 id="playlist-title-text" style="font-size: 1.1rem; margin: 0; color: var(--text); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">Мой Плейлист</h2>
+                                    <button class="icon-action-btn" id="btn-rename-current-playlist" onclick="renameCurrentPlaylist(event)" data-tooltip="Переименовать" style="width: 26px; height: 26px; flex-shrink: 0; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: none; cursor: pointer; color: var(--text-secondary); border-radius: 50%; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        </svg>
+                                    </button>
+                                    <button class="icon-action-btn" id="btn-delete-current-playlist" onclick="deleteCurrentPlaylist(event)" data-tooltip="Удалить плейлист" style="width: 26px; height: 26px; flex-shrink: 0; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: none; cursor: pointer; color: var(--accent); border-radius: 50%; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        </svg>
+                                    </button>
+                                </div>
                                 <div id="playlist-count-text">0 видео из 0</div>
                             </div>
                         </div>
@@ -2204,11 +2212,14 @@
                 let vIds = urlParams.get('v');
 
                 if (listId || vIds) {
-                    const cardEl = document.getElementById('main-player-card');
-                    if (cardEl) {
-                        cardEl.style.display = 'block';
-                        document.getElementById('player-container').style.display = 'flex';
-                        document.getElementById('player-error-state').style.display = 'none';
+                    const hash = window.location.hash;
+                    if (hash !== '#playlists' && hash !== '#search' && hash !== '#radio' && hash !== '#artists' && hash !== '#albums' && hash !== '#songs' && hash !== '#genres') {
+                        const cardEl = document.getElementById('main-player-card');
+                        if (cardEl) {
+                            cardEl.style.display = 'block';
+                            document.getElementById('player-container').style.display = 'flex';
+                            document.getElementById('player-error-state').style.display = 'none';
+                        }
                     }
                     if (!window.location.hash || window.location.hash === '#home') {
                         window.location.hash = '#playlist';
@@ -2356,7 +2367,6 @@
                 `;
             } else {
                 const pageNames = {
-                    'recent': 'Недавно добавленные',
                     'artists': 'Артисты',
                     'albums': 'Альбомы',
                     'songs': 'Песни',
@@ -2602,7 +2612,7 @@
                 const pCover = document.getElementById('playbar-track-cover');
                 if (pTitle) pTitle.innerText = t.title;
                 if (pSub) pSub.innerText = window.loadedPlaylistName || 'YouTube Music Player';
-                if (pCover) pCover.style.backgroundImage = `url('https://img.youtube.com/vi/${t.id}/hqdefault.jpg')`;
+                if (pCover) pCover.style.backgroundImage = `url('https://img.youtube.com/vi/${t.id}/mqdefault.jpg')`;
             } else {
                 playerArea.classList.add('is-empty');
                 if (playbar) playbar.style.display = 'none';
@@ -3808,6 +3818,25 @@
             }
         }
 
+        function renameCurrentPlaylist(event) {
+            if (event) event.stopPropagation();
+            if (!window.currentListId) return;
+            const pId = getPlaylistIdByListId(window.currentListId);
+            if (!pId) return;
+            const p = window.currentSavedPlaylists.find(x => x.id === pId);
+            if (p) {
+                openRenamePlaylistModal(pId, p.name, event);
+            }
+        }
+
+        function deleteCurrentPlaylist(event) {
+            if (event) event.stopPropagation();
+            if (!window.currentListId) return;
+            const pId = getPlaylistIdByListId(window.currentListId);
+            if (!pId) return;
+            openDeletePlaylistModal(pId, event);
+        }
+
         async function submitRenamePlaylist() {
             if (!activeRenameId) return;
             const input = document.getElementById('modalRenameInput');
@@ -3857,7 +3886,7 @@
                         
                         let styleStr = '';
                         if (item.first_video_id) {
-                            styleStr = `style="background-image: url('https://img.youtube.com/vi/${item.first_video_id}/hqdefault.jpg')"`;
+                            styleStr = `style="background-image: url('https://img.youtube.com/vi/${item.first_video_id}/mqdefault.jpg')"`;
                         }
                         
                         div.innerHTML = `
@@ -3953,20 +3982,6 @@
                     <div class="playlist-card-content">
                         <div class="playlist-card-title" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div>
                         <div class="playlist-card-meta">${metaText}</div>
-                    </div>
-                    <div class="playlist-card-actions">
-                        <button class="btn-delete-playlist" onclick="openRenamePlaylistModal('${p.id}', '${escapeHtml(p.name)}', event)" title="Редактировать название">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                            </svg>
-                        </button>
-                        <button class="btn-delete-playlist" onclick="openDeletePlaylistModal('${p.id}', event)" title="Удалить">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="3 6 5 6 21 6"></polyline>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                        </button>
                     </div>
                 `;
                 listContainer.appendChild(div);

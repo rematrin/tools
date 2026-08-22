@@ -143,6 +143,7 @@ const btnConfirmDeleteCoform = document.getElementById('btnConfirmDeleteCoform')
 const taskTitleInput = document.getElementById('taskTitleInput');
 const btnAddTask = document.getElementById('btnAddTask');
 const activeTasksContainer = document.getElementById('activeTasksContainer');
+const addTaskForm = document.querySelector('.add-task-form');
 
 // Элементы выбора срока
 const btnDueDate = document.getElementById('btnDueDate');
@@ -426,7 +427,6 @@ document.addEventListener('click', (e) => {
     });
 
     // 2. Сворачивание формы добавления задачи при клике вне
-    const addTaskForm = document.querySelector('.add-task-form');
     if (addTaskForm && addTaskForm.classList.contains('expanded')) {
         const isClickInsideForm = addTaskForm.contains(e.target) ||
             (dueDateDropdown && dueDateDropdown.contains(e.target)) ||
@@ -532,7 +532,6 @@ document.addEventListener('mouseenter', (e) => {
 }, true);
 
 // Разворачивание формы ввода при клике на нее
-const addTaskForm = document.querySelector('.add-task-form');
 if (addTaskForm) {
     addTaskForm.addEventListener('click', (e) => {
         if (!addTaskForm.classList.contains('expanded')) {
@@ -4153,10 +4152,7 @@ function renderTasks() {
                 activeTasksContainer.appendChild(overdueSectionEl);
 
                 const overdueContainer = overdueSectionEl.querySelector('.section-tasks-container');
-                overdueActiveTasks.forEach(task => {
-                    const el = createTaskRowElement(task);
-                    overdueContainer.appendChild(el);
-                });
+                renderTasksGroup(overdueActiveTasks, overdueContainer);
 
                 overdueSectionEl.querySelector('.project-section-header').addEventListener('click', () => {
                     const collapsed = localStorage.getItem('todo_today_overdue_collapsed') === 'true';
@@ -4439,10 +4435,7 @@ function renderTasks() {
                         activeTasksContainer.appendChild(overdueSectionEl);
 
                         const overdueContainer = overdueSectionEl.querySelector('.section-tasks-container');
-                        overdueActiveTasks.forEach(task => {
-                            const el = createTaskRowElement(task);
-                            overdueContainer.appendChild(el);
-                        });
+                        renderTasksGroup(overdueActiveTasks, overdueContainer);
 
                         overdueSectionEl.querySelector('.project-section-header').addEventListener('click', () => {
                             const collapsed = localStorage.getItem('todo_today_overdue_collapsed') === 'true';
@@ -4470,10 +4463,7 @@ function renderTasks() {
                         activeTasksContainer.appendChild(todaySectionEl);
 
                         const todayContainer = todaySectionEl.querySelector('.section-tasks-container');
-                        displayActiveTasks.forEach(task => {
-                            const el = createTaskRowElement(task);
-                            todayContainer.appendChild(el);
-                        });
+                        renderTasksGroup(displayActiveTasks, todayContainer);
 
                         todaySectionEl.querySelector('.project-section-header').addEventListener('click', () => {
                             const collapsed = localStorage.getItem('todo_today_current_collapsed') === 'true';
@@ -4482,16 +4472,10 @@ function renderTasks() {
                         });
                     } else {
                         // Render standard list without headers
-                        displayActiveTasks.forEach(task => {
-                            const el = createTaskRowElement(task);
-                            activeTasksContainer.appendChild(el);
-                        });
+                        renderTasksGroup(displayActiveTasks, activeTasksContainer);
                     }
                 } else if (currentRoute === 'tomorrow') {
-                    displayActiveTasks.forEach(task => {
-                        const el = createTaskRowElement(task);
-                        activeTasksContainer.appendChild(el);
-                    });
+                    renderTasksGroup(displayActiveTasks, activeTasksContainer);
                 } else {
                     renderTasksGroup(displayActiveTasks, activeTasksContainer);
                 }

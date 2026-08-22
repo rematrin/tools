@@ -1144,7 +1144,8 @@
 
         .playbar-left {
             gap: 16px;
-            min-width: 220px;
+            width: 320px;
+            flex: 0 0 320px;
         }
 
         .playbar-center {
@@ -1152,13 +1153,13 @@
             gap: 16px;
             flex-grow: 1;
             min-width: 0;
-            max-width: 45%;
         }
 
         .playbar-right {
             justify-content: flex-end;
             gap: 16px;
-            min-width: 280px;
+            width: 320px;
+            flex: 0 0 320px;
         }
 
         .playbar-btn {
@@ -2751,6 +2752,9 @@
             initThemeToggle();
             toggleTurboMix(isTurboMixEnabled);
             updateRepeatUI();
+            
+            setupHoverCrossfade('playbar-prevBtn', 'prev');
+            setupHoverCrossfade('playbar-nextBtn', 'next');
 
             // Initialize volume slider state
             const slider = document.getElementById('playbar-volumeSlider');
@@ -2928,8 +2932,12 @@
         function updateButtons() {
             const prev = document.getElementById('playbar-prevBtn');
             const next = document.getElementById('playbar-nextBtn');
+            const prevCf = document.getElementById('playbar-prevCfBtn');
+            const nextCf = document.getElementById('playbar-nextCfBtn');
             if (prev) prev.disabled = playlist.length <= 1;
             if (next) next.disabled = playlist.length <= 1;
+            if (prevCf) prevCf.disabled = playlist.length <= 1;
+            if (nextCf) nextCf.disabled = playlist.length <= 1;
         }
 
         function setMixStatus(isMixing) {
@@ -3205,14 +3213,93 @@
         }
 
         function forceCrossfade() {
-            if (!isPlaying || isCrossfading || playlist.length < 2) return;
-
-            const btn = document.getElementById('playbar-mixBtn');
             const mainBtn = document.getElementById('mixBtn');
-            if (btn) createSparkleEffect(btn);
-            if (mainBtn) createSparkleEffect(mainBtn);
+            crossfadeToTrack((trackIndex + 1) % playlist.length, mainBtn);
+        }
+
+        function crossfadeToTrack(targetIdx, btnEl) {
+            if (!isPlaying || isCrossfading || playlist.length < 2) return;
+            if (targetIdx === undefined || targetIdx === null || targetIdx < 0 || targetIdx >= playlist.length) return;
+
+            if (btnEl) createSparkleEffect(btnEl);
+
+            let nextP = (currentDeck === 1) ? p2 : p1;
+            window.nextTrackIndex = targetIdx;
+
+            // Set volume to 0 BEFORE loading the video to prevent volume leaks!
+            nextP.setVolume(0);
+            nextP.loadVideoById(playlist[window.nextTrackIndex].id);
 
             performCrossfade();
+        }
+
+        function setupHoverCrossfade(btnId, direction) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            
+            if (!btn.querySelector('.hold-progress-svg')) {
+                btn.style.position = 'relative';
+                const svgHTML = `
+                    <svg class="hold-progress-svg" viewBox="0 0 36 36" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-90deg); width: 36px; height: 36px; pointer-events: none; opacity: 0; transition: opacity 0.2s ease;">
+                        <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255, 255, 255, 0.1)" stroke-width="2" />
+                        <circle class="hold-progress-bar" cx="18" cy="18" r="16" fill="none" stroke="var(--neon-pink)" stroke-width="2.5" stroke-dasharray="100.53" stroke-dashoffset="100.53" style="transition: stroke-dashoffset 2s linear;" />
+                    </svg>
+                `;
+                btn.insertAdjacentHTML('beforeend', svgHTML);
+            }
+            
+            let holdTimeout = null;
+            let isCrossfadeArmed = false;
+            const bar = btn.querySelector('.hold-progress-bar');
+            const svg = btn.querySelector('.hold-progress-svg');
+            
+            btn.addEventListener('mouseenter', () => {
+                if (!isPlaying || isCrossfading || playlist.length < 2) return;
+                svg.style.opacity = '1';
+                bar.style.strokeDashoffset = '0';
+                isCrossfadeArmed = false;
+                
+                holdTimeout = setTimeout(() => {
+                    isCrossfadeArmed = true;
+                    // Change stroke color to denote armed crossfade state (neon cyan!)
+                    bar.style.stroke = '#00ffcc';
+                }, 2000);
+            });
+            
+            btn.addEventListener('mouseleave', () => {
+                if (holdTimeout) {
+                    clearTimeout(holdTimeout);
+                    holdTimeout = null;
+                }
+                isCrossfadeArmed = false;
+                svg.style.opacity = '0';
+                bar.style.stroke = 'var(--neon-pink)';
+                bar.style.transition = 'none';
+                bar.style.strokeDashoffset = '100.53';
+                requestAnimationFrame(() => {
+                    bar.style.transition = 'stroke-dashoffset 2s linear';
+                });
+            });
+
+            btn.addEventListener('click', (e) => {
+                if (isCrossfadeArmed) {
+                    // Block standard inline onclick event!
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    
+                    let targetIdx = (direction === 'next') 
+                        ? (trackIndex + 1) % playlist.length
+                        : (trackIndex - 1 + playlist.length) % playlist.length;
+                    
+                    crossfadeToTrack(targetIdx, btn);
+                    
+                    // Reset armed state
+                    isCrossfadeArmed = false;
+                    svg.style.opacity = '0';
+                    bar.style.stroke = 'var(--neon-pink)';
+                    bar.style.strokeDashoffset = '100.53';
+                }
+            }, true); // capturing phase runs before inline onclick
         }
 
         // --- TIMER & CROSSFADE ---
@@ -5007,12 +5094,15 @@
             <div class="playbar-timeline-handle" id="playbar-timeline-handle"></div>
         </div>
 
-        <div class="playbar-left">
+        <div class="playbar-left" style="display: flex; align-items: center; gap: 16px;">
+            <!-- Original Prev -->
             <button class="playbar-btn" id="playbar-prevBtn" onclick="prevTrack()" title="Предыдущий трек">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M6 6h2v12H6zm3.5 6l8.5 6V6l-8.5 6z" />
                 </svg>
             </button>
+
+            <!-- Original Play/Pause -->
             <button class="playbar-btn play-pause-btn" id="playbar-playPauseBtn" onclick="togglePlay()"
                 title="Воспроизвести / Пауза">
                 <svg id="playbar-icon-play" viewBox="0 0 24 24" fill="currentColor">
@@ -5022,13 +5112,17 @@
                     <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                 </svg>
             </button>
+
+            <!-- Original Next -->
             <button class="playbar-btn" id="playbar-nextBtn" onclick="nextTrack()" title="Следующий трек">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
                 </svg>
             </button>
-            <div class="playbar-time">
-                <span id="playbar-currentTime">0:00</span> / <span id="playbar-totalTime">0:00</span>
+            
+            <div class="playbar-time" style="display: flex; align-items: center; gap: 8px;">
+                <span style="white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 0.85rem; font-weight: 500;"><span id="playbar-currentTime">0:00</span> / <span id="playbar-totalTime">0:00</span></span>
+                <div class="playbar-mix-badge" id="playbar-mix-badge" style="margin-left: 12px;">mixing in progress..</div>
             </div>
         </div>
 
@@ -5042,14 +5136,6 @@
             </div>
 
             <div class="playbar-feedback-actions">
-                <button class="playbar-btn" id="playbar-mixBtn" onclick="forceCrossfade()"
-                    data-tooltip="Сделать Crossfade">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                        stroke-linejoin="round" style="width: 18px; height: 18px;">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                    </svg>
-                </button>
-                <div class="playbar-mix-badge" id="playbar-mix-badge">mixing in progress...</div>
                 <div class="playbar-turbo-container" data-tooltip="Турбо-микс (авто-переход)"
                     style="display: flex; align-items: center; gap: 6px; margin-left: 8px;">
                     <span

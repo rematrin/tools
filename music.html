@@ -9,27 +9,38 @@
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎧</text></svg>">
 
     <link rel="stylesheet" href="theme.css">
+    <script src="theme-loader.js"></script>
 
     <style>
-        /* === ЛОКАЛЬНЫЕ СТИЛИ (Специфика DJ Station - Apple Music Dark Theme) === */
-        :root, body, body.dark {
-            /* Apple Music Dark Theme Palette */
-            --bg: #191919;           /* Main content background */
-            --sidebar-bg: #161616;   /* Sidebar background matching Apple Music */
-            --text: #ffffff;         /* Primary text */
-            --text-secondary: #8e8e93; /* Secondary text (Apple gray) */
-            --card-bg: #202022;      /* Card and player bar background */
-            --border: rgba(255, 255, 255, 0.08); /* Subtle dividers */
-            
-            --accent: #fc3c44;       /* Apple Music Pink/Red Accent */
-            --accent-hover: #ff454d;
-            
-            --hover-bg: rgba(255, 255, 255, 0.06); /* Hover state */
-            --active-bg: rgba(255, 255, 255, 0.1);  /* Active item background */
-            
-            --disabled: #555558;
-            --tooltip-bg: #e6e9f2;
-            --tooltip-text: #0f1115;
+        /* === ЛОКАЛЬНЫЕ СТИЛИ (Специфика DJ Station) === */
+        /* СВЕТЛАЯ ТЕМА (По умолчанию - Apple Music / playlists.html Light Theme) */
+        :root {
+            /* Apple Music Light Theme Palette (Matching playlists.html) */
+            --bg: #f4f6fb;
+            /* Main content background */
+            --sidebar-bg: #fafafa;
+            /* Sidebar background matching playlists.html */
+            --text: #1d1d1f;
+            /* Primary text */
+            --text-secondary: #8e8e93;
+            /* Secondary text (Apple gray) */
+            --card-bg: #ffffff;
+            /* Card and player bar background */
+            --border: rgba(0, 0, 0, 0.08);
+            /* Subtle dividers */
+
+            --accent: #fc3c44;
+            /* Apple Music Pink/Red Accent */
+            --accent-hover: #e32b33;
+
+            --hover-bg: rgba(0, 0, 0, 0.04);
+            /* Hover state */
+            --active-bg: rgba(0, 0, 0, 0.08);
+            /* Active item background */
+
+            --disabled: #d1d1d6;
+            --tooltip-bg: #2a2c33;
+            --tooltip-text: #ffffff;
 
             /* Специфичные неоновые цвета */
             --neon-blue: #00e5ff;
@@ -38,17 +49,48 @@
             --active-item-bg: var(--active-bg);
         }
 
+        /* ТЕМНАЯ ТЕМА (Apple Music Dark Theme) */
+        body.dark {
+            --bg: #191919;
+            /* Main content background */
+            --sidebar-bg: #161616;
+            /* Sidebar background matching Apple Music */
+            --text: #ffffff;
+            /* Primary text */
+            --text-secondary: #8e8e93;
+            /* Secondary text (Apple gray) */
+            --card-bg: #202022;
+            /* Card and player bar background */
+            --border: rgba(255, 255, 255, 0.08);
+            /* Subtle dividers */
 
+            --accent: #fc3c44;
+            /* Apple Music Pink/Red Accent */
+            --accent-hover: #ff454d;
+
+            --hover-bg: rgba(255, 255, 255, 0.06);
+            /* Hover state */
+            --active-bg: rgba(255, 255, 255, 0.1);
+            /* Active item background */
+
+            --disabled: #555558;
+            --tooltip-bg: #e6e9f2;
+            --tooltip-text: #0f1115;
+        }
+
+
+
+        html, body {
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
 
         body {
             display: flex;
-            /* Для центровки */
             flex-direction: column;
-            /* Важно: чтобы хедер был сверху */
             justify-content: flex-start;
-            min-height: 100vh;
             padding: 0;
-            /* Паддинг теперь у wrap */
         }
 
         /* Переопределяем глобальный wrap для этой страницы (он шире) */
@@ -58,8 +100,12 @@
             margin: 0 auto;
             padding: 24px 14px 20px 14px;
             flex-grow: 1;
-            /* Чтобы футер прибивался */
             transition: max-width 0.35s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: calc(100vh - 32px);
+            box-sizing: border-box;
         }
 
         .wrap.wrap-native-video {
@@ -815,17 +861,21 @@
         .sidebar {
             width: 260px;
             background: var(--sidebar-bg);
-            border-right: 1px solid var(--border);
+            border: 1px solid var(--border);
+            border-radius: 20px;
             display: flex;
             flex-direction: column;
             padding: 16px;
             box-sizing: border-box;
-            height: 100vh;
-            position: sticky;
-            top: 0;
+            height: fit-content;
+            position: fixed;
+            top: 16px;
+            left: 16px;
             user-select: none;
             flex-shrink: 0;
             z-index: 100;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+            transition: background 0.3s ease, border-color 0.3s ease;
         }
 
 
@@ -842,8 +892,9 @@
         .sidebar-menu::-webkit-scrollbar {
             width: 4px;
         }
+
         .sidebar-menu::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(130, 130, 130, 0.3);
             border-radius: 2px;
         }
 
@@ -854,12 +905,10 @@
         }
 
         .sidebar-section-title {
-            font-size: 0.72rem;
-            text-transform: uppercase;
+            font-size: 0.82rem;
             font-weight: 700;
             color: var(--text-secondary);
             padding: 8px;
-            letter-spacing: 0.05em;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -889,7 +938,7 @@
             gap: 12px;
             padding: 8px 10px;
             border-radius: 8px;
-            color: var(--text-secondary);
+            color: var(--text);
             text-decoration: none;
             font-size: 0.88rem;
             font-weight: 500;
@@ -898,7 +947,7 @@
         }
 
         .sidebar-item:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--hover-bg);
             color: var(--text);
         }
 
@@ -935,7 +984,8 @@
             height: 100vh;
             overflow-y: auto;
             position: relative;
-            padding-bottom: 96px !important; /* Extra bottom margin for playbar */
+            padding-bottom: 96px !important;
+            /* Extra bottom margin for playbar */
             box-sizing: border-box;
         }
 
@@ -944,29 +994,32 @@
         /* --- Fixed Bottom Playbar Styles (YTM Style) --- */
         .bottom-playbar {
             position: fixed;
-            bottom: 0;
-            left: 260px; /* Offset for left sidebar */
-            right: 0;
+            bottom: 16px;
+            left: 105px;
+            right: 105px;
             height: 72px;
             background: var(--card-bg);
-            border-top: 1px solid var(--border);
+            border: 1px solid var(--border);
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 24px;
             box-sizing: border-box;
             z-index: 1000;
-            box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
             user-select: none;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, border-color 0.3s ease;
         }
 
         /* Custom upward tooltips for bottom playbar items */
-        .playbar-btn, .playbar-turbo-container {
+        .playbar-btn[data-tooltip]:not([data-tooltip=""]),
+        .playbar-turbo-container[data-tooltip]:not([data-tooltip=""]) {
             position: relative;
         }
 
-        .playbar-btn:hover::after, .playbar-turbo-container:hover::after {
+        .playbar-btn[data-tooltip]:not([data-tooltip=""]):hover::after,
+        .playbar-turbo-container[data-tooltip]:not([data-tooltip=""]):hover::after {
             content: attr(data-tooltip);
             position: absolute;
             bottom: 125%;
@@ -1028,9 +1081,11 @@
             0% {
                 transform: scale(1);
             }
+
             50% {
                 transform: scale(1.25);
             }
+
             100% {
                 transform: scale(1);
             }
@@ -1042,10 +1097,13 @@
             left: 0;
             right: 0;
             height: 4px;
-            background: rgba(255, 255, 255, 0.06);
+            background: var(--hover-bg);
             cursor: pointer;
             transition: height 0.15s ease, top 0.15s ease;
             z-index: 10;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            overflow: hidden;
         }
 
         .playbar-timeline-container:hover {
@@ -1076,7 +1134,9 @@
             transform: translate(-50%, -50%) scale(1);
         }
 
-        .playbar-left, .playbar-center, .playbar-right {
+        .playbar-left,
+        .playbar-center,
+        .playbar-right {
             display: flex;
             align-items: center;
             height: 100%;
@@ -1146,7 +1206,7 @@
             background-size: cover;
             background-position: center;
             flex-shrink: 0;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         .playbar-track-info {
@@ -1271,11 +1331,11 @@
             border-radius: 50%;
         }
 
-        input:checked + .slider {
+        input:checked+.slider {
             background-color: var(--accent);
         }
 
-        input:checked + .slider:before {
+        input:checked+.slider:before {
             transform: translateX(18px);
         }
 
@@ -1378,6 +1438,13 @@
             cursor: default;
             user-select: none;
             -webkit-user-drag: none;
+        }
+
+        #main-player-area.mode-audio #visual-container {
+            aspect-ratio: 1 / 1;
+            max-width: 270px;
+            /* Heights match exactly: 480 * 9/16 = 270px */
+            margin: 0 auto 15px auto;
         }
 
 
@@ -1768,39 +1835,75 @@
 
 <body class="dark">
 
-    
+
 
     <div class="app-layout">
         <aside class="sidebar">
-            <div class="sidebar-header" style="margin-bottom: 12px; padding: 4px 8px;">
-                <div class="sidebar-user" onclick="openAuthModal(this)" style="display: flex; align-items: center; gap: 12px; padding: 6px 8px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
-                    <div class="sidebar-avatar" id="sidebar-user-avatar" style="width: 24px; height: 24px; border-radius: 50%; background: var(--hover-bg); border: 1px solid var(--border); color: var(--text); font-weight: 700; font-size: 0.72rem; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">U</div>
-                    <div class="sidebar-user-info" style="display: flex; flex-direction: column; min-width: 0; flex-grow: 1;">
-                        <span class="sidebar-name" id="sidebar-user-name" style="font-weight: 600; font-size: 0.9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">Загрузка...</span>
+            <div class="sidebar-header"
+                style="margin-bottom: 12px; padding: 4px 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <div class="sidebar-user" onclick="openAuthModal(this)"
+                    style="display: flex; align-items: center; gap: 12px; padding: 6px 8px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease; flex-grow: 1; min-width: 0;"
+                    onmouseover="this.style.backgroundColor='var(--hover-bg)'"
+                    onmouseout="this.style.backgroundColor='transparent'">
+                    <div class="sidebar-avatar" id="sidebar-user-avatar"
+                        style="width: 24px; height: 24px; border-radius: 50%; background: var(--hover-bg); border: 1px solid var(--border); color: var(--text); font-weight: 700; font-size: 0.72rem; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+                        U</div>
+                    <div class="sidebar-user-info"
+                        style="display: flex; flex-direction: column; min-width: 0; flex-grow: 1;">
+                        <span class="sidebar-name" id="sidebar-user-name"
+                            style="font-weight: 600; font-size: 0.9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;">Загрузка...</span>
                     </div>
                 </div>
+                <button id="theme-toggle-btn" class="theme-icon-btn"
+                    style="width: 32px; height: 32px; border-radius: 50%; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); transition: background-color 0.2s, color 0.2s; flex-shrink: 0;"
+                    onmouseover="this.style.backgroundColor='var(--hover-bg)';"
+                    onmouseout="this.style.backgroundColor='transparent';" title="Переключить тему">
+                    <svg class="theme-icon-light" style="display: none; width: 18px; height: 18px;" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="theme-icon-dark" style="display: block; width: 18px; height: 18px;" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
             </div>
-            
+
             <div class="sidebar-menu">
                 <div class="sidebar-section">
                     <a href="#search" class="sidebar-item" id="menu-search">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
                         <span>Поиск</span>
                     </a>
                     <a href="#home" class="sidebar-item active" id="menu-home">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                             <polyline points="9 22 9 12 15 12 15 22"></polyline>
                         </svg>
                         <span>Главная</span>
                     </a>
                     <a href="#radio" class="sidebar-item" id="menu-radio">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="2"></circle>
-                            <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path>
+                            <path
+                                d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14">
+                            </path>
                         </svg>
                         <span>Радио</span>
                     </a>
@@ -1812,20 +1915,35 @@
                     <a href="#artists" class="sidebar-item" id="menu-artists">
                         <svg viewBox="0 0 512 512" fill="currentColor">
                             <g>
-                                <rect x="19.564" y="447.635" transform="matrix(-0.7071 -0.7071 0.7071 -0.7071 -285.559 842.3594)" width="24.231" height="65.371"></rect>
+                                <rect x="19.564" y="447.635"
+                                    transform="matrix(-0.7071 -0.7071 0.7071 -0.7071 -285.559 842.3594)" width="24.231"
+                                    height="65.371"></rect>
                                 <polygon points="0.17,494.699 46.394,448.809 63.188,465.945 17.133,511.66 "></polygon>
-                                <path d="M263.682,147.594L43.473,412.466l56.061,56.061l264.872-220.21L263.682,147.594z M99.534,468.528 l264.872-220.21"></path>
-                                <path d="M43.642,412.297l220.223-264.551l100.371,100.738L99.549,468.203L43.642,412.297z"></path>
-                                <path d="M273.211,120.521l118.268,118.268c29.522,0.34,59.073-10.42,82.226-31.882L305.092,38.295 C283.631,61.447,272.872,90.999,273.211,120.521z"></path>
-                                <path d="M391.48,238.551l-118.1-118.199c-0.279-30.238,11.02-59.379,31.887-81.891l168.268,168.614 c-22.131,20.18-50.791,31.484-80.695,31.484L391.48,238.551z"></path>
-                                <path d="M477.097,34.904C437.35-4.844,376.59-10.594,330.612,17.4L494.6,181.387 C522.594,135.409,516.844,74.65,477.097,34.904z"></path>
-                                <path d="M330.783,17.23c18.611-10.984,40.072-16.992,62.018-16.992c31.787,0,61.664,12.371,84.127,34.832 c38.895,38.898,46.123,98.863,17.625,145.93L330.783,17.23z"></path>
+                                <path
+                                    d="M263.682,147.594L43.473,412.466l56.061,56.061l264.872-220.21L263.682,147.594z M99.534,468.528 l264.872-220.21">
+                                </path>
+                                <path
+                                    d="M43.642,412.297l220.223-264.551l100.371,100.738L99.549,468.203L43.642,412.297z">
+                                </path>
+                                <path
+                                    d="M273.211,120.521l118.268,118.268c29.522,0.34,59.073-10.42,82.226-31.882L305.092,38.295 C283.631,61.447,272.872,90.999,273.211,120.521z">
+                                </path>
+                                <path
+                                    d="M391.48,238.551l-118.1-118.199c-0.279-30.238,11.02-59.379,31.887-81.891l168.268,168.614 c-22.131,20.18-50.791,31.484-80.695,31.484L391.48,238.551z">
+                                </path>
+                                <path
+                                    d="M477.097,34.904C437.35-4.844,376.59-10.594,330.612,17.4L494.6,181.387 C522.594,135.409,516.844,74.65,477.097,34.904z">
+                                </path>
+                                <path
+                                    d="M330.783,17.23c18.611-10.984,40.072-16.992,62.018-16.992c31.787,0,61.664,12.371,84.127,34.832 c38.895,38.898,46.123,98.863,17.625,145.93L330.783,17.23z">
+                                </path>
                             </g>
                         </svg>
                         <span>Артисты</span>
                     </a>
                     <a href="#albums" class="sidebar-item" id="menu-albums">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <rect x="2" y="2" width="15" height="15" rx="2" ry="2"></rect>
                             <path d="M17 5a6 6 0 0 1 0 12"></path>
                             <path d="M19 8a3 3 0 0 1 0 6"></path>
@@ -1835,7 +1953,9 @@
                     </a>
                     <a href="#songs" class="sidebar-item" id="menu-songs">
                         <svg viewBox="0 0 56 56" fill="currentColor">
-                            <path d="M 42.6484 15.1797 L 42.6484 6.3437 C 42.6484 5.0312 41.5703 4.1641 40.3047 4.4453 L 27.8594 7.1406 C 26.2656 7.4922 25.3984 8.3359 25.3984 9.7422 L 25.5391 35.8047 C 25.5391 36.8828 25.0469 37.5859 24.0860 37.7734 L 20.3594 38.5703 C 15.5781 39.5547 13.3516 42.0156 13.3516 45.6015 C 13.3516 49.2578 16.1875 51.8359 20.1484 51.8359 C 23.6172 51.8359 28.8672 49.2344 28.8672 42.3437 L 28.8672 20.8984 C 28.8672 19.7265 29.0547 19.5156 30.1094 19.3047 L 41.2656 16.8437 C 42.1094 16.6563 42.6484 16 42.6484 15.1797 Z"></path>
+                            <path
+                                d="M 42.6484 15.1797 L 42.6484 6.3437 C 42.6484 5.0312 41.5703 4.1641 40.3047 4.4453 L 27.8594 7.1406 C 26.2656 7.4922 25.3984 8.3359 25.3984 9.7422 L 25.5391 35.8047 C 25.5391 36.8828 25.0469 37.5859 24.0860 37.7734 L 20.3594 38.5703 C 15.5781 39.5547 13.3516 42.0156 13.3516 45.6015 C 13.3516 49.2578 16.1875 51.8359 20.1484 51.8359 C 23.6172 51.8359 28.8672 49.2344 28.8672 42.3437 L 28.8672 20.8984 C 28.8672 19.7265 29.0547 19.5156 30.1094 19.3047 L 41.2656 16.8437 C 42.1094 16.6563 42.6484 16 42.6484 15.1797 Z">
+                            </path>
                         </svg>
                         <span>Песни</span>
                     </a>
@@ -1846,244 +1966,332 @@
                             <path d="M14.988 44.026l2.444-2.443l4.983 4.984l-2.444 2.444z"></path>
                             <path d="M13.423 46.813l3.86 3.86l-1.393 1.393l-3.86-3.86z"></path>
                             <path d="M20.935 52.026a2.306 2.306 0 1 0 3.262 0c-.901-.9-2.361-.9-3.262 0"></path>
-                            <path d="M59.897 12.03l-.496-.495c3.267-3.104 3.558-3.941.281-7.216c-3.277-3.28-4.115-2.986-7.218.28l-.494-.495c.433-.53.614-1.058.135-1.537c-.59-.589-1.25-.19-1.903.463c-.652.652-1.049 1.311-.461 1.898c.48.479 1.006.301 1.537-.132l.516.516c-.753.803-1.628 1.742-2.678 2.821l-.588-.588c.434-.531.611-1.057.134-1.537c-.589-.586-1.249-.191-1.899.459c-.654.654-1.051 1.313-.461 1.902c.479.479 1.006.298 1.537-.136l.595.595c-.115.116-.218.223-.337.342c-.916.916-1.708 1.713-2.391 2.433l-.617-.618c.432-.531.611-1.057.131-1.535c-.588-.588-1.248-.193-1.898.459c-.652.654-1.051 1.313-.461 1.9c.48.48 1.006.302 1.537-.132l.643.645c-1.969 2.182-2.646 3.573-1.898 5.143L30.276 29.606c-1.586-1.542-3.384-2.817-6.171-2.604c-6.663.504-2.295 8.092-10.83 8.66c-3.052.201-5.95.871-8.046 2.972c-5.33 5.328-3.626 12.642 1.934 18.204c5.559 5.56 12.874 7.261 18.203 1.934c2.779-2.777 2.686-7.816 3.615-10.827c1.199-3.891 7.463-2.574 7.176-6.902c-.025-.408-.125-.666-.281-.82c-.779-.779-2.963 1.078-4.276-.236c-.412-.41-.736-1.135-.906-2.34L46.535 20.86c1.57.749 2.963.07 5.146-1.899l.643.643c-.434.532-.611 1.059-.135 1.539c.588.588 1.25.191 1.902-.463c.652-.65 1.049-1.311.459-1.9c-.479-.478-1.005-.298-1.536.135l-.617-.616c.721-.683 1.517-1.475 2.433-2.392c.119-.119.227-.221.344-.337l.591.594c-.433.532-.612 1.058-.131 1.538c.588.588 1.247.191 1.899-.461c.648-.652 1.047-1.313.459-1.9c-.478-.479-1.004-.3-1.535.132l-.587-.587c1.078-1.051 2.017-1.926 2.819-2.677l.517.515c-.435.531-.612 1.058-.132 1.537c.588.586 1.247.191 1.898-.462c.654-.652 1.05-1.313.462-1.9c-.48-.481-1.006-.301-1.537.131m-27.67 30.605c-.09.039-.182.076-.281.117c-1.775.73-4.211 1.729-5.078 4.541c-.318 1.027-.516 2.166-.725 3.375c-.412 2.382-.881 5.081-2.339 6.54c-2.039 2.039-4.439 2.875-7.139 2.49c-2.643-.375-5.464-1.945-7.941-4.424c-2.478-2.477-4.048-5.296-4.422-7.938c-.386-2.699.453-5.1 2.489-7.139c1.398-1.398 3.443-2.117 6.631-2.329c5.936-.393 7.287-3.85 8.181-6.137c.698-1.789.934-2.393 2.671-2.525c1.807-.137 3.018.598 4.394 1.918l-4.325 4.082l4.452 4.454l.08-.085c.272.814.653 1.467 1.162 1.976a3.713 3.713 0 0 0 2.19 1.084m15.546-28.209a1.283 1.283 0 1 1-1.813-1.816a1.283 1.283 0 0 1 1.813 1.816m1.643-5.273c.502-.5 1.314-.5 1.817 0a1.286 1.286 0 0 1-.002 1.814c-.503.502-1.315.5-1.813 0a1.279 1.279 0 0 1-.002-1.814m1.987 8.9a1.286 1.286 0 0 1-1.817-1.816c.504-.5 1.315-.5 1.817.002a1.28 1.28 0 0 1 0 1.814m1.469-12.355a1.28 1.28 0 0 1 1.814.002a1.283 1.283 0 1 1-1.814-.002m1.986 8.898a1.284 1.284 0 0 1-1.815-1.815c.5-.498 1.313-.5 1.816 0a1.285 1.285 0 0 1-.001 1.815m3.455-3.456A1.28 1.28 0 1 1 56.5 9.328c.5-.504 1.313-.502 1.814 0s.503 1.31-.001 1.812"></path>
+                            <path
+                                d="M59.897 12.03l-.496-.495c3.267-3.104 3.558-3.941.281-7.216c-3.277-3.28-4.115-2.986-7.218.28l-.494-.495c.433-.53.614-1.058.135-1.537c-.59-.589-1.25-.19-1.903.463c-.652.652-1.049 1.311-.461 1.898c.48.479 1.006.301 1.537-.132l.516.516c-.753.803-1.628 1.742-2.678 2.821l-.588-.588c.434-.531.611-1.057.134-1.537c-.589-.586-1.249-.191-1.899.459c-.654.654-1.051 1.313-.461 1.902c.479.479 1.006.298 1.537-.136l.595.595c-.115.116-.218.223-.337.342c-.916.916-1.708 1.713-2.391 2.433l-.617-.618c.432-.531.611-1.057.131-1.535c-.588-.588-1.248-.193-1.898.459c-.652.654-1.051 1.313-.461 1.9c.48.48 1.006.302 1.537-.132l.643.645c-1.969 2.182-2.646 3.573-1.898 5.143L30.276 29.606c-1.586-1.542-3.384-2.817-6.171-2.604c-6.663.504-2.295 8.092-10.83 8.66c-3.052.201-5.95.871-8.046 2.972c-5.33 5.328-3.626 12.642 1.934 18.204c5.559 5.56 12.874 7.261 18.203 1.934c2.779-2.777 2.686-7.816 3.615-10.827c1.199-3.891 7.463-2.574 7.176-6.902c-.025-.408-.125-.666-.281-.82c-.779-.779-2.963 1.078-4.276-.236c-.412-.41-.736-1.135-.906-2.34L46.535 20.86c1.57.749 2.963.07 5.146-1.899l.643.643c-.434.532-.611 1.059-.135 1.539c.588.588 1.25.191 1.902-.463c.652-.65 1.049-1.311.459-1.9c-.479-.478-1.005-.298-1.536.135l-.617-.616c.721-.683 1.517-1.475 2.433-2.392c.119-.119.227-.221.344-.337l.591.594c-.433.532-.612 1.058-.131 1.538c.588.588 1.247.191 1.899-.461c.648-.652 1.047-1.313.459-1.9c-.478-.479-1.004-.3-1.535.132l-.587-.587c1.078-1.051 2.017-1.926 2.819-2.677l.517.515c-.435.531-.612 1.058-.132 1.537c.588.586 1.247.191 1.898-.462c.654-.652 1.05-1.313.462-1.9c-.48-.481-1.006-.301-1.537.131m-27.67 30.605c-.09.039-.182.076-.281.117c-1.775.73-4.211 1.729-5.078 4.541c-.318 1.027-.516 2.166-.725 3.375c-.412 2.382-.881 5.081-2.339 6.54c-2.039 2.039-4.439 2.875-7.139 2.49c-2.643-.375-5.464-1.945-7.941-4.424c-2.478-2.477-4.048-5.296-4.422-7.938c-.386-2.699.453-5.1 2.489-7.139c1.398-1.398 3.443-2.117 6.631-2.329c5.936-.393 7.287-3.85 8.181-6.137c.698-1.789.934-2.393 2.671-2.525c1.807-.137 3.018.598 4.394 1.918l-4.325 4.082l4.452 4.454l.08-.085c.272.814.653 1.467 1.162 1.976a3.713 3.713 0 0 0 2.19 1.084m15.546-28.209a1.283 1.283 0 1 1-1.813-1.816a1.283 1.283 0 0 1 1.813 1.816m1.643-5.273c.502-.5 1.314-.5 1.817 0a1.286 1.286 0 0 1-.002 1.814c-.503.502-1.315.5-1.813 0a1.279 1.279 0 0 1-.002-1.814m1.987 8.9a1.286 1.286 0 0 1-1.817-1.816c.504-.5 1.315-.5 1.817.002a1.28 1.28 0 0 1 0 1.814m1.469-12.355a1.28 1.28 0 0 1 1.814.002a1.283 1.283 0 1 1-1.814-.002m1.986 8.898a1.284 1.284 0 0 1-1.815-1.815c.5-.498 1.313-.5 1.816 0a1.285 1.285 0 0 1-.001 1.815m3.455-3.456A1.28 1.28 0 1 1 56.5 9.328c.5-.504 1.313-.502 1.814 0s.503 1.31-.001 1.812">
+                            </path>
                         </svg>
                         <span>Жанры</span>
                     </a>
-                </div>
-
-                <div class="sidebar-section">
-                    <div class="sidebar-section-title">
-                        <span>Плейлисты</span>
-                        <button class="sidebar-add-btn" onclick="openAddPlaylistModal()" title="Добавить плейлист">+</button>
-                    </div>
-                    <a href="#playlists" class="sidebar-item" id="menu-playlists" style="margin-bottom: 8px;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <a href="#playlists" class="sidebar-item" id="menu-playlists">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="3" width="7" height="7"></rect>
                             <rect x="14" y="3" width="7" height="7"></rect>
                             <rect x="14" y="14" width="7" height="7"></rect>
                             <rect x="3" y="14" width="7" height="7"></rect>
                         </svg>
-                        <span>Все плейлисты</span>
+                        <span>Плейлисты</span>
                     </a>
-                    <div id="sidebar-playlists-list"></div>
                 </div>
+                <div id="sidebar-playlists-list" style="display: none;"></div>
             </div>
-            
+
 
         </aside>
 
         <main class="main-content">
             <div class="wrap">
 
-        <div class="card" id="main-player-card" style="display: none;">
-            <div id="player-container">
-
-                <div id="playlist-sidebar">
-                    <div id="playlist-header-row">
-                        <div class="playlist-header-left">
-                            <button class="icon-action-btn btn-back-to-list" onclick="closePlayerCard()"
-                                data-tooltip="Назад">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                                    <polyline points="12 19 5 12 12 5"></polyline>
-                                </svg>
-                            </button>
-                            <div class="playlist-header-text">
-                                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                                    <h2 id="playlist-title-text" style="font-size: 1.1rem; margin: 0; color: var(--text); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">Мой Плейлист</h2>
-                                    <button class="icon-action-btn" id="btn-rename-current-playlist" onclick="renameCurrentPlaylist(event)" data-tooltip="Переименовать" style="width: 26px; height: 26px; flex-shrink: 0; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: none; cursor: pointer; color: var(--text-secondary); border-radius: 50%; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                        </svg>
-                                    </button>
-                                    <button class="icon-action-btn" id="btn-delete-current-playlist" onclick="deleteCurrentPlaylist(event)" data-tooltip="Удалить плейлист" style="width: 26px; height: 26px; flex-shrink: 0; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: none; cursor: pointer; color: var(--accent); border-radius: 50%; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                            <polyline points="3 6 5 6 21 6"></polyline>
-                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div id="playlist-count-text">0 видео из 0</div>
-                            </div>
+                <!-- Playlist Details View -->
+                <div class="card" id="playlist-details-view" style="display: none; padding: 24px;">
+                    <div id="playlist-details-header"
+                        style="display: flex; gap: 32px; margin-bottom: 32px; flex-wrap: wrap;">
+                        <div id="playlist-details-cover"
+                            style="width: 220px; height: 220px; border-radius: 16px; overflow: hidden; background: var(--hover-bg); border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,0.12); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 4rem;">
+                            🎵
                         </div>
-                        <div class="playlist-header-actions">
-                            <button class="icon-action-btn btn-shuffle-large" onclick="shufflePlaylist()"
-                                data-tooltip="Перемешать">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path
-                                        d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3" />
-                                </svg>
-                            </button>
-                            <button class="icon-action-btn" onclick="copyPlaylistLink()"
-                                data-tooltip="Копировать ссылку на плейлист">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                                </svg>
-                            </button>
+                        <div
+                            style="display: flex; flex-direction: column; justify-content: center; min-width: 250px; flex: 1;">
+                            <h1 id="playlist-details-title"
+                                style="font-size: 2.2rem; font-weight: 800; text-align: left; margin: 0 0 8px 0; color: var(--text);">
+                                Название плейлиста</h1>
+                            <div id="playlist-details-meta"
+                                style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 24px; text-align: left;">
+                                Авторы и статистика</div>
+                            <div style="display: flex; gap: 12px; justify-content: flex-start;">
+                                <button class="btn-playlist-action" id="btn-playlist-play"
+                                    style="display: flex; align-items: center; gap: 8px; background: var(--accent); color: #fff; border: none; padding: 10px 24px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: background 0.2s;"
+                                    onmouseover="this.style.background='var(--accent-hover)'"
+                                    onmouseout="this.style.background='var(--accent)'">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z" />
+                                    </svg>
+                                    Воспроизвести
+                                </button>
+                                <button class="btn-playlist-action" id="btn-playlist-shuffle"
+                                    style="display: flex; align-items: center; gap: 8px; background: var(--hover-bg); color: var(--accent); border: 1px solid var(--border); padding: 10px 24px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: background 0.2s;"
+                                    onmouseover="this.style.background='var(--active-bg)'"
+                                    onmouseout="this.style.background='var(--hover-bg)'">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path
+                                            d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3" />
+                                    </svg>
+                                    Перемешать
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="playlist-scroll-area" id="playlist-list">
+                    <div id="playlist-details-tracks-container"
+                        style="border-top: 1px solid var(--border); padding-top: 16px;">
+                        <div
+                            style="display: grid; grid-template-columns: 50px 1fr 1fr 100px 50px; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); padding: 8px 16px; border-bottom: 1px solid var(--border); margin-bottom: 8px; letter-spacing: 0.05em;">
+                            <div>#</div>
+                            <div>Песня</div>
+                            <div>Артист</div>
+                            <div style="text-align: right; padding-right: 16px;">Время</div>
+                            <div></div>
+                        </div>
+                        <div id="playlist-details-tracks-list" style="display: flex; flex-direction: column;">
+                            <!-- Track items will be rendered here dynamically -->
+                        </div>
                     </div>
                 </div>
 
-                <div id="main-player-area" class="mode-audio">
+                <div class="card" id="main-player-card" style="display: none;">
+                    <div id="player-container">
 
-                    <div class="player-view-header" style="display: none;">
-                        <div class="turbo-toggle-container" title="Турбо-микс (Случайный запуск и быстрая смена треков)">
-                            <span class="turbo-toggle-label">Турбо-микс</span>
-                            <label class="switch">
-                                <input type="checkbox" id="turbo-toggle-input" onchange="toggleTurboMix(this.checked)">
-                                <span class="slider round"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div id="visual-container">
-                        <div id="wrapper1" class="deck-wrapper deck-active">
-                            <div id="player1" style="width:100%; height:100%;"></div>
-                        </div>
-                        <div id="wrapper2" class="deck-wrapper deck-bg">
-                            <div id="player2" style="width:100%; height:100%;"></div>
-                        </div>
-                        <div id="native-player-wrapper" class="deck-wrapper" style="display:none; z-index:30;">
-                            <div id="playerNative" style="width:100%; height:100%;"></div>
-                        </div>
-                        <img id="cover-overlay" src="" alt="Cover" draggable="false">
-                    </div>
-
-                    <div class="mode-switcher">
-                        <button class="mode-btn" onclick="setMode('video')" id="btn-video">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                                <line x1="8" y1="21" x2="16" y2="21"></line>
-                                <line x1="12" y1="17" x2="12" y2="21"></line>
-                            </svg>
-                            <span>Видео</span>
-                        </button>
-                        <button class="mode-btn active" onclick="setMode('audio')" id="btn-audio">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M9 18V5l12-2v13"></path>
-                                <circle cx="6" cy="18" r="3"></circle>
-                                <circle cx="18" cy="16" r="3"></circle>
-                            </svg>
-                            <span>Аудио</span>
-                        </button>
-                    </div>
-
-                    <div id="current-track-info">Загрузка...</div>
-
-                    <div id="meta-info-row" style="display: none;"></div>
-
-
-                    <div id="controls">
-                        <div class="crossfade-container">
-                            <div class="crossfade-popover">
-                                <div class="popover-label">Переход: <span id="crossfadeValue">8</span>с</div>
-                                <div class="slider-wrapper">
-                                    <div class="default-tick" title="По умолчанию (8с)"></div>
-                                    <input type="range" id="crossfadeSlider" min="5" max="15" value="8"
-                                        oninput="changeCrossfade(this.value)">
+                        <div id="playlist-sidebar">
+                            <div id="playlist-header-row">
+                                <div class="playlist-header-left">
+                                    <button class="icon-action-btn btn-back-to-list" onclick="closePlayerCard()"
+                                        data-tooltip="Назад">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                                            <polyline points="12 19 5 12 12 5"></polyline>
+                                        </svg>
+                                    </button>
+                                    <div class="playlist-header-text">
+                                        <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                                            <h2 id="playlist-title-text"
+                                                style="font-size: 1.1rem; margin: 0; color: var(--text); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">
+                                                Мой Плейлист</h2>
+                                            <button class="icon-action-btn" id="btn-rename-current-playlist"
+                                                onclick="renameCurrentPlaylist(event)" data-tooltip="Переименовать"
+                                                style="width: 26px; height: 26px; flex-shrink: 0; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: none; cursor: pointer; color: var(--text-secondary); border-radius: 50%; transition: background-color 0.2s;"
+                                                onmouseover="this.style.backgroundColor='var(--hover-bg)'"
+                                                onmouseout="this.style.backgroundColor='transparent'">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                                    stroke-linejoin="round">
+                                                    <path
+                                                        d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7">
+                                                    </path>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z">
+                                                    </path>
+                                                </svg>
+                                            </button>
+                                            <button class="icon-action-btn" id="btn-delete-current-playlist"
+                                                onclick="deleteCurrentPlaylist(event)" data-tooltip="Удалить плейлист"
+                                                style="width: 26px; height: 26px; flex-shrink: 0; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: none; cursor: pointer; color: var(--accent); border-radius: 50%; transition: background-color 0.2s;"
+                                                onmouseover="this.style.backgroundColor='var(--hover-bg)'"
+                                                onmouseout="this.style.backgroundColor='transparent'">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                                    stroke-linejoin="round">
+                                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                                    <path
+                                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                                    </path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div id="playlist-count-text">0 видео из 0</div>
+                                    </div>
                                 </div>
-                                <div class="popover-label" style="margin-top: 8px; font-size: 0.65rem;">Эффект:</div>
-                                <select id="crossfadeTypeSelect" onchange="changeCrossfadeType(this.value)" style="width: 120px; font-size: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 4px; outline: none; cursor: pointer; font-weight: 500;">
-                                    <option value="standard">Стандартный</option>
-                                    <option value="smart">Smart Crossfade</option>
-                                    <option value="speed">Speed Transition</option>
-                                    <option value="beat-pulse">Beat Pulse</option>
-                                    <option value="random">Случайный</option>
-                                </select>
-                            </div>
-
-                            <button class="volume-btn" id="crossfadeBtn" title="Музыкальный режим со спецэффектом Crossfade">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        <div class="turbo-mix-container" style="display: none;">
-                            <div class="turbo-mix-popover">
-                                <div class="popover-label">Турбо-микс: <span id="turboMixDurationValue">45</span>с</div>
-                                <div class="slider-wrapper">
-                                    <div class="default-tick" title="По умолчанию (45с)" style="left: 40%;"></div>
-                                    <input type="range" id="turboMixSlider" min="15" max="90" value="45"
-                                        oninput="changeTurboMixDuration(this.value)">
+                                <div class="playlist-header-actions">
+                                    <button class="icon-action-btn btn-shuffle-large" onclick="shufflePlaylist()"
+                                        data-tooltip="Перемешать">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path
+                                                d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3" />
+                                        </svg>
+                                    </button>
+                                    <button class="icon-action-btn" onclick="copyPlaylistLink()"
+                                        data-tooltip="Копировать ссылку на плейлист">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71">
+                                            </path>
+                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71">
+                                            </path>
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
 
-                            <button class="volume-btn" id="turboMixBtn" title="Настройки режима Турбо-микс">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                                </svg>
-                            </button>
-                        </div>
-
-
-
-                        <div class="volume-container">
-                            <div class="volume-popover">
-                                <div class="popover-label">Громкость: <span id="volumeValue">100</span>%</div>
-                                <input type="range" id="volumeSlider" min="0" max="100" value="100"
-                                    oninput="changeVolume(this.value)">
+                            <div class="playlist-scroll-area" id="playlist-list">
                             </div>
-                            <button class="volume-btn" onclick="toggleMute()" id="muteBtn">
-                                <svg id="icon-vol-high" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
-                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" opacity="0.4"></path>
-                                </svg>
-                                <svg id="icon-vol-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" style="display:none;">
-                                    <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
-                                    <line x1="23" y1="9" x2="17" y2="15"></line>
-                                    <line x1="17" y1="9" x2="23" y2="15"></line>
-                                </svg>
-                            </button>
                         </div>
-                    </div>
 
+                        <div id="main-player-area" class="mode-audio">
+
+                            <div class="player-view-header" style="display: none;">
+                                <div class="turbo-toggle-container"
+                                    title="Турбо-микс (Случайный запуск и быстрая смена треков)">
+                                    <span class="turbo-toggle-label">Турбо-микс</span>
+                                    <label class="switch">
+                                        <input type="checkbox" id="turbo-toggle-input"
+                                            onchange="toggleTurboMix(this.checked)">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="visual-container">
+                                <div id="wrapper1" class="deck-wrapper deck-active">
+                                    <div id="player1" style="width:100%; height:100%;"></div>
+                                </div>
+                                <div id="wrapper2" class="deck-wrapper deck-bg">
+                                    <div id="player2" style="width:100%; height:100%;"></div>
+                                </div>
+                                <div id="native-player-wrapper" class="deck-wrapper" style="display:none; z-index:30;">
+                                    <div id="playerNative" style="width:100%; height:100%;"></div>
+                                </div>
+                                <img id="cover-overlay" src="" alt="Cover" draggable="false">
+                            </div>
+
+                            <div class="mode-switcher">
+                                <button class="mode-btn" onclick="setMode('video')" id="btn-video">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                        <line x1="8" y1="21" x2="16" y2="21"></line>
+                                        <line x1="12" y1="17" x2="12" y2="21"></line>
+                                    </svg>
+                                    <span>Видео</span>
+                                </button>
+                                <button class="mode-btn active" onclick="setMode('audio')" id="btn-audio">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M9 18V5l12-2v13"></path>
+                                        <circle cx="6" cy="18" r="3"></circle>
+                                        <circle cx="18" cy="16" r="3"></circle>
+                                    </svg>
+                                    <span>Аудио</span>
+                                </button>
+                            </div>
+
+                            <div id="current-track-info">Загрузка...</div>
+
+                            <div id="meta-info-row" style="display: none;"></div>
+
+
+                            <div id="controls">
+                                <div class="crossfade-container">
+                                    <div class="crossfade-popover">
+                                        <div class="popover-label">Переход: <span id="crossfadeValue">8</span>с</div>
+                                        <div class="slider-wrapper">
+                                            <div class="default-tick" title="По умолчанию (8с)"></div>
+                                            <input type="range" id="crossfadeSlider" min="5" max="15" value="8"
+                                                oninput="changeCrossfade(this.value)">
+                                        </div>
+                                        <div class="popover-label" style="margin-top: 8px; font-size: 0.65rem;">Эффект:
+                                        </div>
+                                        <select id="crossfadeTypeSelect" onchange="changeCrossfadeType(this.value)"
+                                            style="width: 120px; font-size: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 4px; outline: none; cursor: pointer; font-weight: 500;">
+                                            <option value="standard">Стандартный</option>
+                                            <option value="smart">Smart Crossfade</option>
+                                            <option value="speed">Speed Transition</option>
+                                            <option value="beat-pulse">Beat Pulse</option>
+                                            <option value="random">Случайный</option>
+                                        </select>
+                                    </div>
+
+                                    <button class="volume-btn" id="crossfadeBtn"
+                                        title="Музыкальный режим со спецэффектом Crossfade">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <div class="turbo-mix-container" style="display: none;">
+                                    <div class="turbo-mix-popover">
+                                        <div class="popover-label">Турбо-микс: <span
+                                                id="turboMixDurationValue">45</span>с</div>
+                                        <div class="slider-wrapper">
+                                            <div class="default-tick" title="По умолчанию (45с)" style="left: 40%;">
+                                            </div>
+                                            <input type="range" id="turboMixSlider" min="15" max="90" value="45"
+                                                oninput="changeTurboMixDuration(this.value)">
+                                        </div>
+                                    </div>
+
+                                    <button class="volume-btn" id="turboMixBtn" title="Настройки режима Турбо-микс">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                            <path
+                                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+                                            </path>
+                                        </svg>
+                                    </button>
+                                </div>
+
+
+
+                                <div class="volume-container">
+                                    <div class="volume-popover">
+                                        <div class="popover-label">Громкость: <span id="volumeValue">100</span>%</div>
+                                        <input type="range" id="volumeSlider" min="0" max="100" value="100"
+                                            oninput="changeVolume(this.value)">
+                                    </div>
+                                    <button class="volume-btn" onclick="toggleMute()" id="muteBtn">
+                                        <svg id="icon-vol-high" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" opacity="0.4"></path>
+                                        </svg>
+                                        <svg id="icon-vol-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2" style="display:none;">
+                                            <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                                            <line x1="23" y1="9" x2="17" y2="15"></line>
+                                            <line x1="17" y1="9" x2="23" y2="15"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <!-- Информационное окно ошибки воспроизведения всего плейлиста -->
+                    <div id="player-error-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                            style="width: 64px; height: 64px; opacity: 0.5; color: var(--neon-pink);">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--text);">Не удалось
+                            воспроизвести
+                            ни одного видео из этого плейлиста.</h3>
+                        <button class="btn-modal btn-modal-cancel" onclick="closePlayerCard()"
+                            style="display: flex; align-items: center; gap: 8px; font-weight: 600; padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); margin-top: 10px;">
+                            ← Вернуться к плейлистам
+                        </button>
+                    </div>
                 </div>
 
+                <div class="saved-playlists-section" id="saved-playlists-section">
+                    <div class="saved-playlists-header">
+                        <div class="saved-playlists-title">Мои плейлисты</div>
+                        <button class="icon-action-btn" onclick="openAddPlaylistModal()"
+                            data-tooltip="Добавить плейлист">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="saved-playlists-list" id="saved-playlists-list"></div>
+                </div>
+                <div id="stub-view" style="display: none; padding: 10px 0; color: var(--text-secondary);"></div>
             </div>
-            <!-- Информационное окно ошибки воспроизведения всего плейлиста -->
-            <div id="player-error-state">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                    style="width: 64px; height: 64px; opacity: 0.5; color: var(--neon-pink);">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--text);">Не удалось воспроизвести
-                    ни одного видео из этого плейлиста.</h3>
-                <button class="btn-modal btn-modal-cancel" onclick="closePlayerCard()"
-                    style="display: flex; align-items: center; gap: 8px; font-weight: 600; padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); margin-top: 10px;">
-                    ← Вернуться к плейлистам
-                </button>
-            </div>
-        </div>
-
-        <div class="saved-playlists-section" id="saved-playlists-section">
-            <div class="saved-playlists-header">
-                <div class="saved-playlists-title">Мои плейлисты</div>
-                <button class="icon-action-btn" onclick="openAddPlaylistModal()" data-tooltip="Добавить плейлист">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                </button>
-            </div>
-            <div class="saved-playlists-list" id="saved-playlists-list"></div>
-        </div>
-        <div id="stub-view" style="display: none; padding: 10px 0; color: var(--text-secondary);"></div>
-    </div>
         </main>
     </div>
 
@@ -2251,36 +2459,56 @@
         // --- ROUTING LOGIC ---
         function handleRoute() {
             let hash = window.location.hash;
+            if (hash && hash !== '#playlist') {
+                window.previousMusicHash = hash;
+            }
+            
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                mainContent.style.overflowY = 'auto';
+                mainContent.style.paddingBottom = '96px';
+            }
+            
             if (!hash) {
                 let urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('list') || urlParams.get('v')) {
-                    hash = '#playlist';
-                    window.location.hash = '#playlist';
+                const listId = urlParams.get('list');
+                const videoId = urlParams.get('v');
+                if (listId || videoId) {
+                    let targetUrl = listId ? `playlists.html?list=${listId}` : `playlists.html?v=${videoId}`;
+                    let targetName = "Плейлист";
+                    hash = `#playlist-details?url=${encodeURIComponent(targetUrl)}&name=${encodeURIComponent(targetName)}`;
+                    window.location.hash = hash;
                 } else {
                     hash = '#home';
                 }
             }
-            
+
             // Highlight main menu buttons
             document.querySelectorAll('.sidebar-menu .sidebar-item').forEach(item => item.classList.remove('active'));
-            
+
             const playerCard = document.getElementById('main-player-card');
             const savedSection = document.getElementById('saved-playlists-section');
             const stubView = document.getElementById('stub-view');
-            
+            const detailsView = document.getElementById('playlist-details-view');
+
             if (playerCard) playerCard.style.display = 'none';
             if (savedSection) savedSection.style.display = 'none';
             if (stubView) stubView.style.display = 'none';
-            
+            if (detailsView) detailsView.style.display = 'none';
+
             if (hash === '#home') {
                 const homeBtn = document.getElementById('menu-home');
                 if (homeBtn) homeBtn.classList.add('active');
-                
+
                 if (stubView) {
                     stubView.style.display = 'block';
                     populateStubView('#home');
                 }
             } else if (hash === '#playlist') {
+                if (mainContent) {
+                    mainContent.style.overflowY = 'hidden';
+                    mainContent.style.paddingBottom = '0';
+                }
                 if (playerCard) {
                     playerCard.style.display = 'block';
                     document.getElementById('player-container').style.display = 'flex';
@@ -2288,10 +2516,21 @@
                 if (window.currentSavedPlaylists) {
                     renderSavedPlaylists(window.currentSavedPlaylists);
                 }
+            } else if (hash.startsWith('#playlist-details')) {
+                if (window.currentSavedPlaylists) {
+                    renderSavedPlaylists(window.currentSavedPlaylists);
+                }
+                const qMark = hash.indexOf('?');
+                if (qMark !== -1) {
+                    const params = new URLSearchParams(hash.substring(qMark));
+                    const playlistUrl = params.get('url');
+                    const playlistName = params.get('name');
+                    showPlaylistDetails(playlistUrl, playlistName);
+                }
             } else if (hash === '#playlists') {
                 const playlistsBtn = document.getElementById('menu-playlists');
                 if (playlistsBtn) playlistsBtn.classList.add('active');
-                
+
                 if (savedSection) {
                     savedSection.style.display = 'block';
                 }
@@ -2300,21 +2539,21 @@
                 const menuId = 'menu-' + hash.replace('#', '');
                 const activeBtn = document.getElementById(menuId);
                 if (activeBtn) activeBtn.classList.add('active');
-                
+
                 if (stubView) {
                     stubView.style.display = 'block';
                     populateStubView(hash);
                 }
             }
         }
-        
+
         function populateStubView(hash) {
             const stubView = document.getElementById('stub-view');
             if (!stubView) return;
-            
+
             let title = '';
             let content = '';
-            
+
             if (hash === '#home') {
                 title = 'Главная';
                 content = `
@@ -2382,7 +2621,7 @@
                     </div>
                 `;
             }
-            
+
             stubView.innerHTML = content;
         }
 
@@ -2441,7 +2680,7 @@
         function updateRepeatUI() {
             const btn = document.getElementById('playbar-repeatBtn');
             if (!btn) return;
-            
+
             if (window.repeatMode === 'all') {
                 btn.style.color = 'var(--accent)';
                 btn.setAttribute('data-tooltip', 'Повторять все треки');
@@ -2460,12 +2699,59 @@
             }
         }
 
+        function initThemeToggle() {
+            const toggleBtn = document.getElementById('theme-toggle-btn');
+            if (!toggleBtn) return;
+
+            const sunIcon = toggleBtn.querySelector('.theme-icon-light');
+            const moonIcon = toggleBtn.querySelector('.theme-icon-dark');
+
+            function updateToggleIcons() {
+                const isDark = document.body.classList.contains('dark');
+                if (isDark) {
+                    if (sunIcon) sunIcon.style.display = 'block';
+                    if (moonIcon) moonIcon.style.display = 'none';
+                } else {
+                    if (sunIcon) sunIcon.style.display = 'none';
+                    if (moonIcon) moonIcon.style.display = 'block';
+                }
+            }
+
+            // Update icons initially
+            updateToggleIcons();
+
+            // Listen to manual toggles
+            toggleBtn.addEventListener('click', () => {
+                const isDark = document.body.classList.contains('dark');
+                const nextTheme = isDark ? 'light' : 'dark';
+
+                if (typeof window.setTheme === 'function') {
+                    window.setTheme(nextTheme);
+                } else {
+                    if (nextTheme === 'dark') {
+                        document.body.classList.add('dark');
+                    } else {
+                        document.body.classList.remove('dark');
+                    }
+                    localStorage.setItem('themeMode', nextTheme);
+                }
+                updateToggleIcons();
+            });
+
+            // MutationObserver to watch class changes on body
+            const observer = new MutationObserver(() => {
+                updateToggleIcons();
+            });
+            observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        }
+
         // Вызываем при загрузке страницы для установки сохранённого режима
         let isDraggingTimeline = false;
         document.addEventListener('DOMContentLoaded', () => {
+            initThemeToggle();
             toggleTurboMix(isTurboMixEnabled);
             updateRepeatUI();
-            
+
             // Initialize volume slider state
             const slider = document.getElementById('playbar-volumeSlider');
             if (slider) slider.value = playerVolume;
@@ -2475,7 +2761,7 @@
             const timeline = document.getElementById('playbar-timeline-container');
             const progress = document.getElementById('playbar-timeline-progress');
             const handle = document.getElementById('playbar-timeline-handle');
-            
+
             if (timeline) {
                 function seekFromEvent(e) {
                     const rect = timeline.getBoundingClientRect();
@@ -2483,7 +2769,7 @@
                     pct = Math.max(0, Math.min(1, pct));
                     if (progress) progress.style.width = (pct * 100) + '%';
                     if (handle) handle.style.left = (pct * 100) + '%';
-                    
+
                     let activeP = (currentDeck === 1) ? p1 : p2;
                     if (activeP && typeof activeP.getDuration === 'function') {
                         const duration = activeP.getDuration();
@@ -2594,18 +2880,18 @@
         function updateUI() {
             const playerArea = document.getElementById('main-player-area');
             const playbar = document.getElementById('bottom-playbar');
-            
+
             if (playlist.length > 0 && playlist[trackIndex]) {
                 playerArea.classList.remove('is-empty');
                 const t = playlist[trackIndex];
-                
+
                 // Update playbar state
                 if (playbar) playbar.style.display = 'flex';
-                
+
                 document.getElementById('current-track-info').innerText = t.title;
                 document.getElementById('cover-overlay').src = `https://i.ytimg.com/vi/${t.id}/maxresdefault.jpg`;
                 document.title = t.title;
-                
+
                 // Sync playbar text & cover
                 const pTitle = document.getElementById('playbar-track-title');
                 const pSub = document.getElementById('playbar-track-subtitle');
@@ -2616,7 +2902,7 @@
             } else {
                 playerArea.classList.add('is-empty');
                 if (playbar) playbar.style.display = 'none';
-                
+
                 document.getElementById('current-track-info').innerText = "Добавьте ваш плейлист";
                 document.getElementById('cover-overlay').src = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23111'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='30' opacity='0.2'>🎧</text></svg>";
                 document.title = "YouTube Playlists";
@@ -2634,7 +2920,7 @@
             updateDeckVisibility();
             updateButtons();
             toggleTurboMix(isTurboMixEnabled);
-            
+
             // Update sidebar highlights
             renderSavedPlaylists(window.currentSavedPlaylists);
         }
@@ -2706,11 +2992,11 @@
             activeP.hasRandomized = false;
             activeP.randomMixTargetEnd = null;
             activeP.lastRandomStart = undefined;
-            
+
             if (activeP && typeof activeP.setPlaybackRate === 'function') {
-                try { activeP.setPlaybackRate(1.0); } catch(e){}
+                try { activeP.setPlaybackRate(1.0); } catch (e) { }
             }
-            
+
             loadDeck(activeP, trackIndex);
 
             activeP.playVideo();
@@ -2767,10 +3053,10 @@
 
             // Сбрасываем скорость плееров на нормальную (1.0x) при ошибке
             if (p1 && typeof p1.setPlaybackRate === 'function') {
-                try { p1.setPlaybackRate(1.0); } catch(e){}
+                try { p1.setPlaybackRate(1.0); } catch (e) { }
             }
             if (p2 && typeof p2.setPlaybackRate === 'function') {
-                try { p2.setPlaybackRate(1.0); } catch(e){}
+                try { p2.setPlaybackRate(1.0); } catch (e) { }
             }
 
             // Check if all tracks in the playlist are marked as error
@@ -2835,12 +3121,12 @@
                 while (playlist[nextIndex] && playlist[nextIndex].isError && nextIndex !== startIndex) {
                     nextIndex = (nextIndex + 1) % playlist.length;
                 }
-                
+
                 if (window.repeatMode === 'off' && nextIndex <= startIndex) {
                     window.nextTrackIndex = null;
                     return;
                 }
-                
+
                 if (nextIndex === startIndex && playlist[nextIndex] && playlist[nextIndex].isError) {
                     window.nextTrackIndex = null;
                     return;
@@ -2901,7 +3187,7 @@
                 star.style.zIndex = '99999';
                 star.style.transition = 'all 0.8s cubic-bezier(0.25, 1, 0.5, 1)';
                 star.style.transform = 'translate(-50%, -50%)';
-                
+
                 document.body.appendChild(star);
 
                 const angle = Math.random() * Math.PI * 2;
@@ -2920,7 +3206,7 @@
 
         function forceCrossfade() {
             if (!isPlaying || isCrossfading || playlist.length < 2) return;
-            
+
             const btn = document.getElementById('playbar-mixBtn');
             const mainBtn = document.getElementById('mixBtn');
             if (btn) createSparkleEffect(btn);
@@ -2959,7 +3245,7 @@
                 progressBar.style.width = pct + '%';
                 progressHandle.style.left = pct + '%';
             }
-            
+
             // Sync main player card controls timeline
             const mainProgress = document.getElementById('progressBar');
             if (mainProgress && !isDragging) {
@@ -3056,10 +3342,10 @@
                     }
 
                     if (activeP && typeof activeP.setPlaybackRate === 'function') {
-                        try { activeP.setPlaybackRate(activeRate); } catch(e){}
+                        try { activeP.setPlaybackRate(activeRate); } catch (e) { }
                     }
                     if (nextP && typeof nextP.setPlaybackRate === 'function') {
-                        try { nextP.setPlaybackRate(nextRate); } catch(e){}
+                        try { nextP.setPlaybackRate(nextRate); } catch (e) { }
                     }
                 } else if (activeType === 'beat-pulse') {
                     // Beat Pulse: синусоидальная пульсация громкости
@@ -3100,10 +3386,10 @@
 
             // Сбрасываем скорость воспроизведения на нормальную (1.0x)
             if (p1 && typeof p1.setPlaybackRate === 'function') {
-                try { p1.setPlaybackRate(1.0); } catch(e){}
+                try { p1.setPlaybackRate(1.0); } catch (e) { }
             }
             if (p2 && typeof p2.setPlaybackRate === 'function') {
-                try { p2.setPlaybackRate(1.0); } catch(e){}
+                try { p2.setPlaybackRate(1.0); } catch (e) { }
             }
 
             currentDeck = (currentDeck === 1) ? 2 : 1;
@@ -3139,7 +3425,7 @@
             turboMixDuration = parseInt(val);
             localStorage.setItem('music-turbo-mix-duration', turboMixDuration);
             document.getElementById('turboMixDurationValue').innerText = val;
-            
+
             if (isPlaying && isTurboMixEnabled) {
                 let activeP = (currentDeck === 1) ? p1 : p2;
                 if (activeP && typeof activeP.getCurrentTime === 'function') {
@@ -3152,10 +3438,10 @@
         function changeVolume(val) {
             playerVolume = parseInt(val);
             localStorage.setItem('music-crossfade-volume', playerVolume);
-            
+
             const slider = document.getElementById('playbar-volumeSlider');
             if (slider) slider.value = playerVolume;
-            
+
             // Sync volume sliders and value text in main player card
             const topVol = document.getElementById('volumeSlider');
             if (topVol) topVol.value = playerVolume;
@@ -3218,6 +3504,41 @@
             return (match && match[1]) ? match[1] : null;
         }
 
+        function parseISO8601Duration(duration) {
+            const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+            if (!match) return "0:00";
+            const hours = (parseInt(match[1]) || 0);
+            const minutes = (parseInt(match[2]) || 0);
+            const seconds = (parseInt(match[3]) || 0);
+
+            let result = "";
+            if (hours > 0) {
+                result += hours + ":" + (minutes < 10 ? "0" : "");
+            }
+            result += minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+            return result;
+        }
+
+        async function fetchVideoDetails(videoId) {
+            const apiKey = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
+            const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${apiKey}`;
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data && data.items && data.items.length > 0) {
+                    const item = data.items[0];
+                    return {
+                        title: item.snippet?.title || "YouTube Video",
+                        channel: item.snippet?.channelTitle || "YouTube Video",
+                        duration: parseISO8601Duration(item.contentDetails?.duration || "")
+                    };
+                }
+            } catch (e) {
+                console.error("Ошибка получения деталей видео:", e);
+            }
+            return null;
+        }
+
         async function fetchPlaylistVideos(listId) {
             const apiKey = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
             let videoItems = [];
@@ -3249,6 +3570,48 @@
                     break;
                 }
             }
+
+            // Загружаем дополнительную информацию (канал и продолжительность) пакетами по 50 видео
+            if (videoItems.length > 0) {
+                const chunks = [];
+                for (let i = 0; i < videoItems.length; i += 50) {
+                    chunks.push(videoItems.slice(i, i + 50));
+                }
+
+                try {
+                    const detailPromises = chunks.map(async (chunk) => {
+                        const ids = chunk.map(item => item.id).join(',');
+                        const videosUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${ids}&key=${apiKey}`;
+                        const response = await fetch(videosUrl);
+                        const data = await response.json();
+                        return data.items || [];
+                    });
+
+                    const allVideoDetails = (await Promise.all(detailPromises)).flat();
+                    const videoDetailsMap = {};
+                    allVideoDetails.forEach(item => {
+                        if (item && item.id) {
+                            videoDetailsMap[item.id] = {
+                                channel: item.snippet?.channelTitle || "YouTube Video",
+                                duration: parseISO8601Duration(item.contentDetails?.duration || "")
+                            };
+                        }
+                    });
+
+                    videoItems.forEach(item => {
+                        const details = videoDetailsMap[item.id];
+                        item.channel = details?.channel || "YouTube Video";
+                        item.duration = details?.duration || "--:--";
+                    });
+                } catch (err) {
+                    console.error("Не удалось подгрузить детали видео:", err);
+                    videoItems.forEach(item => {
+                        item.channel = "YouTube Video";
+                        item.duration = "--:--";
+                    });
+                }
+            }
+
             return videoItems;
         }
 
@@ -3414,7 +3777,7 @@
             if (event.target === activePlayer) {
                 if (event.data === YT.PlayerState.PLAYING) {
                     clearVideoLoadingTimeout();
-                    
+
                     applyRandomMixSettings(activePlayer);
 
                     if (!isPlaying) {
@@ -3436,7 +3799,7 @@
             } else if (event.target === nextPlayer && isCrossfading) {
                 if (event.data === YT.PlayerState.PLAYING) {
                     clearVideoLoadingTimeout();
-                    
+
                     applyRandomMixSettings(nextPlayer);
                 }
             }
@@ -3619,85 +3982,361 @@
         }
 
         function loadSavedPlaylist(urlStr, name) {
+            window.location.hash = `#playlist-details?url=${encodeURIComponent(urlStr)}&name=${encodeURIComponent(name)}`;
+        }
+
+        async function showPlaylistDetails(urlStr, name) {
+            const detailsView = document.getElementById('playlist-details-view');
+            if (!detailsView) return;
+
+            detailsView.style.display = 'block';
+
+            const titleEl = document.getElementById('playlist-details-title');
+            const metaEl = document.getElementById('playlist-details-meta');
+            const coverEl = document.getElementById('playlist-details-cover');
+            const tracksList = document.getElementById('playlist-details-tracks-list');
+
+            if (titleEl) titleEl.innerText = name || "Загрузка...";
+            if (metaEl) metaEl.innerText = "Загрузка треков...";
+            if (coverEl) coverEl.innerHTML = "🎵";
+            if (coverEl) coverEl.style.backgroundImage = 'none';
+            if (tracksList) tracksList.innerHTML = '<div style="text-align: center; padding: 32px; color: var(--text-secondary);">Загрузка списка воспроизведения...</div>';
+
             const url = new URL(urlStr, window.location.origin);
             const listId = url.searchParams.get('list');
-            
-            // Если этот плейлист уже загружен и проигрывается, просто переходим в него без перезапуска
-            if (listId && window.currentListId === listId && playlist.length > 0) {
-                window.location.hash = '#playlist';
-                const cardEl = document.getElementById('main-player-card');
-                if (cardEl) {
-                    cardEl.style.display = 'block';
-                    document.getElementById('player-container').style.display = 'flex';
-                    document.getElementById('player-error-state').style.display = 'none';
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+            const vIds = url.searchParams.get('v');
+
+            let loadedTracks = [];
+            let cachedMap = {};
+
+            // Попытка моментальной загрузки из кэша Firebase
+            if (listId && window.currentUser && window.db && window.currentSavedPlaylists) {
+                const foundP = window.currentSavedPlaylists.find(p => p.url && p.url.includes(`list=${listId}`));
+                if (foundP) {
+                    try {
+                        const docRef = window.doc(window.db, "users", window.currentUser.uid, "music", foundP.id);
+                        const docSnap = await window.getDoc(docRef);
+                        if (docSnap.exists()) {
+                            const docData = docSnap.data();
+                            cachedMap = docData.cached_tracks || {};
+                            if (docData.video_ids && Array.isArray(docData.video_ids) && docData.video_ids.length > 0) {
+                                loadedTracks = docData.video_ids.map(id => {
+                                    const cachedItem = cachedMap[id];
+                                    if (typeof cachedItem === 'object' && cachedItem !== null) {
+                                        return {
+                                            id: id,
+                                            title: cachedItem.title || ("Video ID: " + id),
+                                            channel: cachedItem.channel || "YouTube Video",
+                                            duration: cachedItem.duration || "--:--"
+                                        };
+                                    } else {
+                                        return {
+                                            id: id,
+                                            title: cachedItem || ("Video ID: " + id),
+                                            channel: "YouTube Video",
+                                            duration: "--:--"
+                                        };
+                                    }
+                                });
+                            } else if (docData.cached_tracks) {
+                                loadedTracks = Object.entries(docData.cached_tracks).map(([id, cachedItem]) => {
+                                    if (typeof cachedItem === 'object' && cachedItem !== null) {
+                                        return {
+                                            id: id,
+                                            title: cachedItem.title || "Без названия",
+                                            channel: cachedItem.channel || "YouTube Video",
+                                            duration: cachedItem.duration || "--:--"
+                                        };
+                                    } else {
+                                        return {
+                                            id: id,
+                                            title: cachedItem || "Без названия",
+                                            channel: "YouTube Video",
+                                            duration: "--:--"
+                                        };
+                                    }
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Ошибка при получении кэша плейлиста:", e);
+                    }
                 }
-                return;
             }
 
+            // Если есть кэш, рендерим его мгновенно
+            if (loadedTracks.length > 0) {
+                renderDetailsTracks(loadedTracks);
+            }
+
+            // Загружаем актуальные данные из YouTube API в фоне
+            if (listId) {
+                try {
+                    const apiTracks = await fetchPlaylistVideos(listId);
+                    if (apiTracks && apiTracks.length > 0) {
+                        loadedTracks = apiTracks;
+                        renderDetailsTracks(loadedTracks);
+                        // Обновляем кэш в Firebase
+                        const playlistId = getPlaylistIdByListId(listId);
+                        if (playlistId) {
+                            let freshMap = {};
+                            apiTracks.forEach(track => {
+                                freshMap[track.id] = {
+                                    title: track.title,
+                                    channel: track.channel || "YouTube Video",
+                                    duration: track.duration || "--:--"
+                                };
+                            });
+                            saveCachedTracksToFirebase(playlistId, freshMap);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Ошибка обновления списка из YouTube API:", e);
+                }
+            } else if (vIds && loadedTracks.length === 0) {
+                let ids = vIds.split(',');
+                loadedTracks = ids.map(id => ({ id: id, title: "Загрузка...", channel: "YouTube Video", duration: "--:--" }));
+                renderDetailsTracks(loadedTracks);
+
+                try {
+                    const fetchPromises = loadedTracks.map(async (track) => {
+                        const details = await fetchVideoDetails(track.id);
+                        if (details) {
+                            track.title = details.title;
+                            track.channel = details.channel;
+                            track.duration = details.duration;
+                        }
+                    });
+                    await Promise.all(fetchPromises);
+                    renderDetailsTracks(loadedTracks);
+
+                    // Сохраняем детали одиночных видео в кэш плейлиста в Firebase
+                    const playlistId = getPlaylistIdByListId(null); // or find by url matching
+                    const foundP = window.currentSavedPlaylists?.find(p => p.url && p.url.includes(`v=${vIds}`));
+                    if (foundP) {
+                        let freshMap = {};
+                        loadedTracks.forEach(track => {
+                            freshMap[track.id] = {
+                                title: track.title,
+                                channel: track.channel,
+                                duration: track.duration
+                            };
+                        });
+                        saveCachedTracksToFirebase(foundP.id, freshMap);
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            function renderDetailsTracks(tracks) {
+                if (metaEl) metaEl.innerText = `${tracks.length} видео`;
+
+                if (tracks[0] && tracks[0].id) {
+                    if (coverEl) {
+                        coverEl.style.backgroundImage = `url('https://img.youtube.com/vi/${tracks[0].id}/mqdefault.jpg')`;
+                        coverEl.style.backgroundSize = 'cover';
+                        coverEl.style.backgroundPosition = 'center';
+                        coverEl.innerHTML = '';
+                    }
+                }
+
+                if (tracksList) {
+                    tracksList.innerHTML = '';
+                    tracks.forEach((track, index) => {
+                        const row = document.createElement('div');
+                        row.style.cssText = "display: grid; grid-template-columns: 50px 1fr 1fr 100px 50px; align-items: center; padding: 10px 16px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s;";
+                        row.onmouseover = () => row.style.backgroundColor = 'var(--hover-bg)';
+                        row.onmouseout = () => row.style.backgroundColor = 'transparent';
+
+                        row.onclick = () => {
+                            playTrackFromDetails(urlStr, name, tracks, index);
+                        };
+
+                        const thumbnail = `https://img.youtube.com/vi/${track.id}/mqdefault.jpg`;
+                        const displayChannel = (track.channel || "YouTube Video").replace(/\s*-\s*Topic$/, '');
+
+                        row.innerHTML = `
+                            <div style="font-weight: 600; color: var(--text-secondary);">${index + 1}</div>
+                            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                                <img src="${thumbnail}" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 40 40\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23555\\'/></svg>'">
+                                <span style="font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || "Загрузка..."}</span>
+                            </div>
+                            <div style="color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayChannel}</div>
+                            <div style="text-align: right; padding-right: 16px; color: var(--text-secondary); font-variant-numeric: tabular-nums;">${track.duration || "--:--"}</div>
+                            <div style="color: var(--text-secondary); text-align: center;">•••</div>
+                        `;
+                        tracksList.appendChild(row);
+                    });
+                }
+
+                const playBtn = document.getElementById('btn-playlist-play');
+                const shuffleBtn = document.getElementById('btn-playlist-shuffle');
+
+                if (playBtn) {
+                    playBtn.onclick = () => {
+                        playTrackFromDetails(urlStr, name, tracks, 0);
+                    };
+                }
+                if (shuffleBtn) {
+                    shuffleBtn.onclick = () => {
+                        const shuffled = [...tracks];
+                        for (let i = shuffled.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                        }
+                        renderDetailsTracks(shuffled);
+                        loadQueueFromDetails(urlStr, name, shuffled);
+                    };
+                }
+            }
+        }
+
+        function loadQueueFromDetails(urlStr, name, tracklist) {
+            playlist = [...tracklist];
+            trackIndex = 0;
+            currentDeck = 1;
+
+            const url = new URL(urlStr, window.location.origin);
+            const listId = url.searchParams.get('list');
             if (listId) {
                 window.currentListId = listId;
-            }
-
-            window.location.hash = '#playlist';
-            const cardEl = document.getElementById('main-player-card');
-            if (cardEl) {
-                cardEl.style.display = 'block';
-                document.getElementById('player-container').style.display = 'flex';
-                document.getElementById('player-error-state').style.display = 'none';
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                window.currentListId = null;
             }
 
             window.loadedPlaylistName = name;
             window.loadedPlaylistUrl = urlStr;
-            window.activePlaylistCachedTracks = null;
 
-            const vIds = url.searchParams.get('v');
+            loadDeck(p1, 0, false);
+            isPlaying = false;
+            updatePlayPauseIcon();
+
+            renderPlaylist();
+            updateUI();
+            updateUrlState();
+        }
+
+        function playTrackFromDetails(urlStr, name, tracklist, index) {
+            if (isPlaying && isCrossfading) { alert("Подождите конца перехода"); return; }
+
+            playlist = [...tracklist];
+            trackIndex = index;
+            currentDeck = 1;
+
+            const url = new URL(urlStr, window.location.origin);
+            const listId = url.searchParams.get('list');
             if (listId) {
-                if (window.currentUser && window.db && window.currentSavedPlaylists) {
-                    const foundP = window.currentSavedPlaylists.find(p => p.url && p.url.includes(`list=${listId}`));
-                    if (foundP) {
+                window.currentListId = listId;
+            } else {
+                window.currentListId = null;
+            }
+
+            window.loadedPlaylistName = name;
+            window.loadedPlaylistUrl = urlStr;
+
+            window.location.hash = '#playlist';
+
+            loadDeck(p1, trackIndex, true);
+            isPlaying = true;
+            updatePlayPauseIcon();
+
+            renderPlaylist();
+            updateUI();
+            updateUrlState();
+        }
+
+        async function restorePlaylistPlayback(urlStr, name) {
+            const url = new URL(urlStr, window.location.origin);
+            const listId = url.searchParams.get('list');
+            const vIds = url.searchParams.get('v');
+            
+            let loadedTracks = [];
+            let cachedMap = {};
+            
+            if (listId && window.currentUser && window.db && window.currentSavedPlaylists) {
+                const foundP = window.currentSavedPlaylists.find(p => p.url && p.url.includes(`list=${listId}`));
+                if (foundP) {
+                    try {
                         const docRef = window.doc(window.db, "users", window.currentUser.uid, "music", foundP.id);
-                        window.getDoc(docRef).then(docSnap => {
-                            if (docSnap.exists()) {
-                                const docData = docSnap.data();
-                                if (docData && docData.cached_tracks) {
-                                    window.activePlaylistCachedTracks = docData.cached_tracks;
-                                }
-                                if (docData && docData.video_ids && Array.isArray(docData.video_ids) && docData.video_ids.length > 0) {
-                                    if (window.loadedPlaylistUrl === urlStr) {
-                                        const cachedMap = docData.cached_tracks || {};
-                                        playlist = docData.video_ids.map(id => ({
+                        const docSnap = await window.getDoc(docRef);
+                        if (docSnap.exists()) {
+                            const docData = docSnap.data();
+                            cachedMap = docData.cached_tracks || {};
+                            if (docData.video_ids && Array.isArray(docData.video_ids) && docData.video_ids.length > 0) {
+                                loadedTracks = docData.video_ids.map(id => {
+                                    const cachedItem = cachedMap[id];
+                                    if (typeof cachedItem === 'object' && cachedItem !== null) {
+                                        return {
                                             id: id,
-                                            title: cachedMap[id] || ("Video ID: " + id)
-                                        }));
-                                        trackIndex = 0;
-                                        renderPlaylist();
+                                            title: cachedItem.title || ("Video ID: " + id),
+                                            channel: cachedItem.channel || "YouTube Video",
+                                            duration: cachedItem.duration || "--:--"
+                                        };
+                                    } else {
+                                        return {
+                                            id: id,
+                                            title: cachedItem || ("Video ID: " + id),
+                                            channel: "YouTube Video",
+                                            duration: "--:--"
+                                        };
                                     }
-                                } else if (docData && docData.cached_tracks && window.loadedPlaylistUrl === urlStr) {
-                                    let cachedEntries = Object.entries(docData.cached_tracks);
-                                    if (cachedEntries.length > 0) {
-                                        playlist = cachedEntries.map(([id, title]) => ({ id, title }));
-                                        trackIndex = 0;
-                                        renderPlaylist();
-                                    }
-                                }
+                                });
                             }
-                        }).catch(err => console.error("Ошибка при чтении кэша плейлиста:", err));
+                        }
+                    } catch (e) {
+                        console.error("Ошибка при получении кэша плейлиста для восстановления:", e);
                     }
                 }
-                importPlaylist(listId, true);
-            } else if (vIds) {
-                let ids = vIds.split(',');
-                playlist = [];
-                ids.forEach(id => playlist.push({ id: id, title: "Загрузка..." }));
+            }
+            
+            if (loadedTracks.length > 0) {
+                playlist = loadedTracks;
                 trackIndex = 0;
-                window.currentListId = null;
-                renderPlaylist();
-                fetchTitlesForPlaylist();
+                currentDeck = 1;
+                window.currentListId = listId;
+                window.loadedPlaylistName = name;
+                window.loadedPlaylistUrl = urlStr;
+                
                 loadDeck(p1, 0, false);
-                prepareNext();
+                isPlaying = false;
+                updatePlayPauseIcon();
+                renderPlaylist();
                 updateUI();
+            }
+            
+            if (listId) {
+                try {
+                    const apiTracks = await fetchPlaylistVideos(listId);
+                    if (apiTracks && apiTracks.length > 0) {
+                        playlist = apiTracks;
+                        renderPlaylist();
+                        updateUI();
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            } else if (vIds && loadedTracks.length === 0) {
+                let ids = vIds.split(',');
+                playlist = ids.map(id => ({ id: id, title: "Загрузка...", channel: "YouTube Video", duration: "--:--" }));
+                renderPlaylist();
+                updateUI();
+                
+                try {
+                    const fetchPromises = playlist.map(async (track) => {
+                        const details = await fetchVideoDetails(track.id);
+                        if (details) {
+                            track.title = details.title;
+                            track.channel = details.channel;
+                            track.duration = details.duration;
+                        }
+                    });
+                    await Promise.all(fetchPromises);
+                    renderPlaylist();
+                    updateUI();
+                } catch (e) {
+                    console.error(e);
+                }
             }
         }
 
@@ -3739,7 +4378,7 @@
             if (!playlistId) return;
 
             try {
-                const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", playlistId);
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "music", playlistId);
                 let updatedData = {
                     first_video_id: firstVideoId,
                     tracks_count: count
@@ -3871,24 +4510,36 @@
             window.currentSavedPlaylists = list || [];
             const container = document.getElementById('saved-playlists-section');
             const listContainer = document.getElementById('saved-playlists-list');
-            
+
             // Render sidebar playlists
             const sidebarList = document.getElementById('sidebar-playlists-list');
             if (sidebarList) {
                 sidebarList.innerHTML = '';
                 if (window.currentUser && list && list.length > 0) {
                     list.forEach(item => {
-                        const isActive = (window.location.hash === '#playlist' && window.currentListId && item.url && item.url.includes(`list=${window.currentListId}`));
+                        if (!item || !item.name || !item.url) return;
+                        let isActive = false;
+                        const currentHash = window.location.hash;
+                        if (currentHash.startsWith('#playlist-details')) {
+                            const qMark = currentHash.indexOf('?');
+                            if (qMark !== -1) {
+                                const params = new URLSearchParams(currentHash.substring(qMark));
+                                const playlistUrl = params.get('url');
+                                isActive = (playlistUrl && item.url && playlistUrl.includes(item.url));
+                            }
+                        } else if (currentHash === '#playlist') {
+                            isActive = (window.currentListId && item.url && item.url.includes(`list=${window.currentListId}`));
+                        }
                         const activeClass = isActive ? 'active' : '';
                         const div = document.createElement('div');
                         div.className = `sidebar-item ${activeClass}`;
                         div.onclick = () => loadSavedPlaylist(item.url, item.name);
-                        
+
                         let styleStr = '';
                         if (item.first_video_id) {
                             styleStr = `style="background-image: url('https://img.youtube.com/vi/${item.first_video_id}/mqdefault.jpg')"`;
                         }
-                        
+
                         div.innerHTML = `
                             <div class="sidebar-playlist-icon" ${styleStr}>
                                 ${item.first_video_id ? '' : '🎵'}
@@ -3903,7 +4554,7 @@
             if (!listContainer) return;
 
             listContainer.innerHTML = '';
-            
+
             // Hide bottom playlists section if we are not on the Playlists page
             const isPlaylistsTab = (window.location.hash === '#playlists');
             if (!isPlaylistsTab) {
@@ -3931,6 +4582,7 @@
 
             container.style.display = 'flex';
             list.forEach(p => {
+                if (!p || !p.name || !p.url) return;
                 const url = new URL(p.url, window.location.origin);
                 const listId = url.searchParams.get('list');
                 const vIds = url.searchParams.get('v');
@@ -4083,6 +4735,8 @@
 
             let finalName = defaultName;
 
+            let initialCache = {};
+
             if (listId) {
                 const fetchedPlTitle = await fetchPlaylistTitle(listId);
                 if (fetchedPlTitle) {
@@ -4090,10 +4744,25 @@
                 }
             } else if (videoId) {
                 try {
-                    const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
-                    const data = await res.json();
-                    if (data && data.title) {
-                        finalName = data.title;
+                    const details = await fetchVideoDetails(videoId);
+                    if (details) {
+                        finalName = details.title;
+                        initialCache[videoId] = {
+                            title: details.title,
+                            channel: details.channel,
+                            duration: details.duration
+                        };
+                    } else {
+                        const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+                        const data = await res.json();
+                        if (data && data.title) {
+                            finalName = data.title;
+                            initialCache[videoId] = {
+                                title: data.title,
+                                channel: "YouTube Video",
+                                duration: "--:--"
+                            };
+                        }
                     }
                 } catch (e) {
                     console.error("Не удалось автоматически получить название:", e);
@@ -4108,7 +4777,7 @@
             let saved = false;
             const playlistId = Date.now().toString();
             try {
-                const docRef = window.doc(window.db, "users", window.currentUser.uid, "playlists", playlistId);
+                const docRef = window.doc(window.db, "users", window.currentUser.uid, "music", playlistId);
                 const newPlaylist = {
                     id: playlistId,
                     name: finalName,
@@ -4116,7 +4785,7 @@
                     first_video_id: videoId || null,
                     tracks_count: listId ? null : 1,
                     video_ids: videoId ? [videoId] : [],
-                    cached_tracks: {},
+                    cached_tracks: initialCache,
                     created_at: new Date().toISOString()
                 };
 
@@ -4163,7 +4832,7 @@
             }
             document.getElementById('player-container').style.display = 'flex';
             document.getElementById('player-error-state').style.display = 'none';
-            
+
             window.location.hash = '#playlists';
             const playbar = document.getElementById('bottom-playbar');
             if (playbar) playbar.style.display = 'none';
@@ -4188,10 +4857,10 @@
         window.addEventListener('authChanged', async (e) => {
             const user = e.detail.user;
             window.currentUser = user;
-            
+
             const sidebarName = document.getElementById('sidebar-user-name');
             const sidebarAvatar = document.getElementById('sidebar-user-avatar');
-            
+
             if (user) {
                 if (sidebarName) sidebarName.innerText = user.displayName || "Пользователь";
                 if (sidebarAvatar) {
@@ -4203,6 +4872,22 @@
                     }
                 }
                 await loadSavedPlaylistsFromFirebase(user.uid);
+                
+                // Восстановление плейлиста после логина, если обновили страницу на вкладке плеера
+                if (window.location.hash === '#playlist' && playlist.length === 0) {
+                    let urlParams = new URLSearchParams(window.location.search);
+                    const listId = urlParams.get('list');
+                    const videoId = urlParams.get('v');
+                    if (listId || videoId) {
+                        let targetUrl = listId ? `playlists.html?list=${listId}` : `playlists.html?v=${videoId}`;
+                        let targetName = "Плейлист";
+                        if (listId && window.currentSavedPlaylists) {
+                            const found = window.currentSavedPlaylists.find(p => p.url && p.url.includes(`list=${listId}`));
+                            if (found) targetName = found.name;
+                        }
+                        restorePlaylistPlayback(targetUrl, targetName);
+                    }
+                }
             } else {
                 if (sidebarName) sidebarName.innerText = "Войти";
                 if (sidebarAvatar) {
@@ -4217,8 +4902,11 @@
             const cardEl = document.getElementById('main-player-card');
             const chevronBtn = document.getElementById('bottom-chevron-btn');
             if (!cardEl) return;
-            
+
             if (cardEl.style.display === 'none') {
+                if (window.location.hash && window.location.hash !== '#playlist') {
+                    window.previousMusicHash = window.location.hash;
+                }
                 window.location.hash = '#playlist';
                 cardEl.style.display = 'block';
                 if (chevronBtn) {
@@ -4226,6 +4914,7 @@
                     chevronBtn.setAttribute('data-tooltip', 'Свернуть проигрыватель');
                 }
             } else {
+                window.location.hash = window.previousMusicHash || '#home';
                 cardEl.style.display = 'none';
                 if (chevronBtn) {
                     chevronBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;"><polyline points="18 15 12 9 6 15"></polyline></svg>`;
@@ -4309,7 +4998,7 @@
     <link rel="stylesheet" href="auth-widget.css">
     <script type="module" src="nav-widget.js"></script>
     <script type="module" src="auth-widget.js"></script>
-    
+
 
     <!-- YouTube Music Style Bottom Playbar -->
     <div id="bottom-playbar" class="bottom-playbar" style="display: none;">
@@ -4324,7 +5013,8 @@
                     <path d="M6 6h2v12H6zm3.5 6l8.5 6V6l-8.5 6z" />
                 </svg>
             </button>
-            <button class="playbar-btn play-pause-btn" id="playbar-playPauseBtn" onclick="togglePlay()" title="Воспроизвести / Пауза">
+            <button class="playbar-btn play-pause-btn" id="playbar-playPauseBtn" onclick="togglePlay()"
+                title="Воспроизвести / Пауза">
                 <svg id="playbar-icon-play" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M8 5v14l11-7z" />
                 </svg>
@@ -4343,21 +5033,27 @@
         </div>
 
         <div class="playbar-center">
-            <div class="playbar-thumbnail" id="playbar-track-cover" onclick="expandFullPlayerCard()" style="cursor: pointer;"></div>
+            <div class="playbar-thumbnail" id="playbar-track-cover" onclick="expandFullPlayerCard()"
+                style="cursor: pointer;"></div>
             <div class="playbar-track-info">
-                <span class="playbar-title" id="playbar-track-title" onclick="expandFullPlayerCard()" style="cursor: pointer;">Ожидание...</span>
+                <span class="playbar-title" id="playbar-track-title" onclick="expandFullPlayerCard()"
+                    style="cursor: pointer;">Ожидание...</span>
                 <span class="playbar-subtitle" id="playbar-track-subtitle">YouTube Music Player</span>
             </div>
-            
+
             <div class="playbar-feedback-actions">
-                <button class="playbar-btn" id="playbar-mixBtn" onclick="forceCrossfade()" data-tooltip="Сделать Crossfade">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                <button class="playbar-btn" id="playbar-mixBtn" onclick="forceCrossfade()"
+                    data-tooltip="Сделать Crossfade">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" style="width: 18px; height: 18px;">
                         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                     </svg>
                 </button>
                 <div class="playbar-mix-badge" id="playbar-mix-badge">mixing in progress...</div>
-                <div class="playbar-turbo-container" data-tooltip="Турбо-микс (авто-переход)" style="display: flex; align-items: center; gap: 6px; margin-left: 8px;">
-                    <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; white-space: nowrap;">Турбо-микс</span>
+                <div class="playbar-turbo-container" data-tooltip="Турбо-микс (авто-переход)"
+                    style="display: flex; align-items: center; gap: 6px; margin-left: 8px;">
+                    <span
+                        style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; white-space: nowrap;">Турбо-микс</span>
                     <label class="switch" style="transform: scale(0.85); transform-origin: left center;">
                         <input type="checkbox" id="playbar-turbo-toggle-input" onchange="toggleTurboMix(this.checked)">
                         <span class="slider round"></span>
@@ -4368,33 +5064,44 @@
 
         <div class="playbar-right">
             <div class="playbar-volume-container">
-                <input type="range" id="playbar-volumeSlider" class="playbar-volume-slider" min="0" max="100" value="100" oninput="changeVolume(this.value)">
-            <button class="playbar-btn" onclick="toggleMute()" id="playbar-muteBtn" data-tooltip="Выключить звук">
-                    <svg id="playbar-icon-vol-high" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <input type="range" id="playbar-volumeSlider" class="playbar-volume-slider" min="0" max="100"
+                    value="100" oninput="changeVolume(this.value)">
+                <button class="playbar-btn" onclick="toggleMute()" id="playbar-muteBtn" data-tooltip="Выключить звук">
+                    <svg id="playbar-icon-vol-high" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
                         <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
                         <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                         <path d="M19.07 4.93a10 10 0 0 1 0 14.14" opacity="0.4"></path>
                     </svg>
-                    <svg id="playbar-icon-vol-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                    <svg id="playbar-icon-vol-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" style="display:none;">
                         <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
                         <line x1="23" y1="9" x2="17" y2="15"></line>
                         <line x1="17" y1="9" x2="23" y2="15"></line>
                     </svg>
                 </button>
             </div>
-            
+
             <button class="playbar-btn" id="playbar-repeatBtn" onclick="toggleRepeat()" data-tooltip="Повторить">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23 3 19 7 15"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <polyline points="17 1 21 5 17 9"></polyline>
+                    <path d="M3 11V9a4 4 0 0 1 4-4h14M7 23 3 19 7 15"></path>
+                    <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                </svg>
             </button>
-            
+
             <button class="playbar-btn" onclick="shufflePlaylist()" data-tooltip="Перемешать">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
                     <path d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3" />
                 </svg>
             </button>
-            
-            <button class="playbar-btn" id="bottom-chevron-btn" onclick="toggleFullPlayerCard()" data-tooltip="Развернуть проигрыватель" style="color: var(--text);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+            <button class="playbar-btn" id="bottom-chevron-btn" onclick="toggleFullPlayerCard()"
+                data-tooltip="Развернуть проигрыватель" style="color: var(--text);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
                     <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
             </button>

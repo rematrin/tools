@@ -141,8 +141,35 @@
             flex: 0 0 40%;
             display: flex;
             flex-direction: column;
-            max-height: 600px;
+            height: 100%;
             min-width: 320px;
+        }
+
+        #main-player-card {
+            position: fixed !important;
+            top: 24px;
+            left: 292px;
+            right: 24px;
+            bottom: 104px;
+            background: var(--card-bg);
+            z-index: 900;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+            transform: translateY(100vh);
+            opacity: 0;
+            pointer-events: none;
+            display: block !important;
+            min-height: 0 !important;
+            height: auto !important;
+            margin: 0 !important;
+            box-sizing: border-box;
+        }
+
+        #main-player-card.active {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
         }
 
         /* Saved Playlists Section */
@@ -2050,7 +2077,7 @@
                     </div>
                 </div>
 
-                <div class="card" id="main-player-card" style="display: none;">
+                <div class="card" id="main-player-card">
                     <div id="player-container">
 
                         <div id="playlist-sidebar">
@@ -2492,10 +2519,16 @@
             const stubView = document.getElementById('stub-view');
             const detailsView = document.getElementById('playlist-details-view');
 
-            if (playerCard) playerCard.style.display = 'none';
+            if (playerCard) playerCard.classList.remove('active');
             if (savedSection) savedSection.style.display = 'none';
             if (stubView) stubView.style.display = 'none';
             if (detailsView) detailsView.style.display = 'none';
+
+            const chevronBtn = document.getElementById('bottom-chevron-btn');
+            if (chevronBtn) {
+                chevronBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;"><polyline points="18 15 12 9 6 15"></polyline></svg>`;
+                chevronBtn.setAttribute('data-tooltip', 'Развернуть проигрыватель');
+            }
 
             if (hash === '#home') {
                 const homeBtn = document.getElementById('menu-home');
@@ -2511,8 +2544,12 @@
                     mainContent.style.paddingBottom = '0';
                 }
                 if (playerCard) {
-                    playerCard.style.display = 'block';
+                    playerCard.classList.add('active');
                     document.getElementById('player-container').style.display = 'flex';
+                }
+                if (chevronBtn) {
+                    chevronBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+                    chevronBtn.setAttribute('data-tooltip', 'Свернуть проигрыватель');
                 }
                 if (window.currentSavedPlaylists) {
                     renderSavedPlaylists(window.currentSavedPlaylists);
@@ -4990,19 +5027,19 @@
             const chevronBtn = document.getElementById('bottom-chevron-btn');
             if (!cardEl) return;
 
-            if (cardEl.style.display === 'none') {
+            if (!cardEl.classList.contains('active')) {
                 if (window.location.hash && window.location.hash !== '#playlist') {
                     window.previousMusicHash = window.location.hash;
                 }
                 window.location.hash = '#playlist';
-                cardEl.style.display = 'block';
+                cardEl.classList.add('active');
                 if (chevronBtn) {
                     chevronBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
                     chevronBtn.setAttribute('data-tooltip', 'Свернуть проигрыватель');
                 }
             } else {
                 window.location.hash = window.previousMusicHash || '#home';
-                cardEl.style.display = 'none';
+                cardEl.classList.remove('active');
                 if (chevronBtn) {
                     chevronBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;"><polyline points="18 15 12 9 6 15"></polyline></svg>`;
                     chevronBtn.setAttribute('data-tooltip', 'Развернуть проигрыватель');
@@ -5012,7 +5049,7 @@
 
         function expandFullPlayerCard() {
             const cardEl = document.getElementById('main-player-card');
-            if (cardEl && cardEl.style.display === 'none') {
+            if (cardEl && !cardEl.classList.contains('active')) {
                 toggleFullPlayerCard();
             }
         }

@@ -13231,6 +13231,22 @@ function formatTotalCheckins(total) {
     return `${total} дней`;
 }
 
+function formatTotalRegistrations(total) {
+    if (total === 0) return '0 раз';
+    const lastDigit = total % 10;
+    const lastTwoDigits = total % 100;
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+        return `${total} раз`;
+    }
+    if (lastDigit === 1) {
+        return `${total} раз`;
+    }
+    if (lastDigit >= 2 && lastDigit <= 4) {
+        return `${total} раза`;
+    }
+    return `${total} раз`;
+}
+
 function createHabitCardElement(habit) {
     const historyArray = habit.history || [];
     const historySet = new Set(historyArray);
@@ -13259,35 +13275,90 @@ function createHabitCardElement(habit) {
     `;
 
     const isFrequencyCustom = habit.frequency === 'custom';
+    const isFrequencyMonthly = habit.frequency === 'monthly';
     const activeDays = habit.activeDays || [];
 
     let circlesHtml = '';
-    for (let i = 6; i >= 0; i--) {
-        const dateStr = getHabitDateString(i);
-        const isCompleted = historySet.has(dateStr);
-        const isTodayDay = i === 0;
-        const dayLabel = getDayLabel(i);
 
-        const parts = dateStr.split('-');
-        const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-        const dayOfWeek = dateObj.getDay();
-        const isActiveDay = !isFrequencyCustom || activeDays.includes(dayOfWeek);
+    if (isFrequencyMonthly) {
+        const monthShortNames = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+        const todayDate = new Date();
+        
+        // Показываем последние 6 месяцев
+        for (let i = 5; i >= 0; i--) {
+            const tempDate = new Date(todayDate.getFullYear(), todayDate.getMonth() - i, 1);
+            const yearVal = tempDate.getFullYear();
+            const monthVal = tempDate.getMonth(); // 0-11
+            const monthLabel = monthShortNames[monthVal];
+            
+            // Проверяем, есть ли в этом месяце хоть одна запись
+            const monthPrefix = `${yearVal}-${String(monthVal + 1).padStart(2, '0')}-`;
+            const isCompleted = historyArray.some(d => d.startsWith(monthPrefix));
+            const isCurrentMonth = todayDate.getFullYear() === yearVal && todayDate.getMonth() === monthVal;
+            
+            const targetDateStr = isCurrentMonth 
+                ? `${yearVal}-${String(monthVal + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`
+                : `${yearVal}-${String(monthVal + 1).padStart(2, '0')}-01`;
 
-        circlesHtml += `
-            <div class="habit-circle-wrapper">
-                <span class="habit-circle-day-label">${dayLabel}</span>
-                <button class="habit-circle ${isCompleted ? 'checked' : ''} ${isTodayDay ? 'today' : ''} ${!isActiveDay ? 'disabled' : ''}" 
-                        data-date="${dateStr}" 
-                        title="${dateStr}">
-                    ${isCompleted ? `
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    ` : ''}
-                </button>
+            circlesHtml += `
+                <div class="habit-circle-wrapper">
+                    <span class="habit-circle-day-label">${monthLabel}</span>
+                    <button class="habit-circle ${isCompleted ? 'checked' : ''} ${isCurrentMonth ? 'today' : ''}" 
+                            data-date="${targetDateStr}" 
+                            data-month-prefix="${monthPrefix}"
+                            title="${monthLabel} ${yearVal}">
+                        ${isCompleted ? `
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        ` : ''}
+                    </button>
+                </div>
+            `;
+        }
+    } else {
+        for (let i = 6; i >= 0; i--) {
+            const dateStr = getHabitDateString(i);
+            const isCompleted = historySet.has(dateStr);
+            const isTodayDay = i === 0;
+            const dayLabel = getDayLabel(i);
+
+            const parts = dateStr.split('-');
+            const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            const dayOfWeek = dateObj.getDay();
+            const isActiveDay = !isFrequencyCustom || activeDays.includes(dayOfWeek);
+
+            circlesHtml += `
+                <div class="habit-circle-wrapper">
+                    <span class="habit-circle-day-label">${dayLabel}</span>
+                    <button class="habit-circle ${isCompleted ? 'checked' : ''} ${isTodayDay ? 'today' : ''} ${!isActiveDay ? 'disabled' : ''}" 
+                            data-date="${dateStr}" 
+                            title="${dateStr}">
+                        ${isCompleted ? `
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        ` : ''}
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    const statsHtml = isFrequencyMonthly
+        ? `
+            <div class="habit-stat-item">
+                <span>⚡</span> ${formatTotalRegistrations(total)}
+            </div>
+        `
+        : `
+            <div class="habit-stat-item">
+                <span>⚡</span> ${formatTotalCheckins(total)}
+            </div>
+            <div class="habit-stat-item">
+                <span>🔥</span> ${formatTotalCheckins(streak)}
             </div>
         `;
-    }
 
     card.innerHTML = `
         ${actionsHtml}
@@ -13298,12 +13369,7 @@ function createHabitCardElement(habit) {
             <div class="habit-title-container">
                 <div class="habit-title" title="${habit.title}">${habit.title}</div>
                 <div class="habit-stats">
-                    <div class="habit-stat-item">
-                        <span>⚡</span> ${formatTotalCheckins(total)}
-                    </div>
-                    <div class="habit-stat-item">
-                        <span>🔥</span> ${formatTotalCheckins(streak)}
-                    </div>
+                    ${statsHtml}
                 </div>
             </div>
         </div>
@@ -13319,12 +13385,22 @@ function createHabitCardElement(habit) {
             if (!currentUid) return;
 
             const targetDate = circleBtn.getAttribute('data-date');
+            const monthPrefix = circleBtn.getAttribute('data-month-prefix');
             let newHistory = [...historyArray];
 
-            if (historySet.has(targetDate)) {
-                newHistory = newHistory.filter(d => d !== targetDate);
+            if (isFrequencyMonthly && monthPrefix) {
+                const hasAnyInMonth = newHistory.some(d => d.startsWith(monthPrefix));
+                if (hasAnyInMonth) {
+                    newHistory = newHistory.filter(d => !d.startsWith(monthPrefix));
+                } else {
+                    newHistory.push(targetDate);
+                }
             } else {
-                newHistory.push(targetDate);
+                if (historySet.has(targetDate)) {
+                    newHistory = newHistory.filter(d => d !== targetDate);
+                } else {
+                    newHistory.push(targetDate);
+                }
             }
 
             try {
@@ -13589,101 +13665,197 @@ function openHabitStatsModal(habit) {
         const currentHabit = habitsList.find(h => h.id === habit.id) || habit;
         const historyArray = currentHabit.history || [];
         const historySet = new Set(historyArray);
+        const isFrequencyMonthly = (currentHabit.frequency === 'monthly');
 
-        overlay.querySelector('#habitStatTotal').innerText = formatTotalCheckins(historySet.size);
+        const totalCard = overlay.querySelector('.habit-stats-grid .habit-stat-card:nth-child(1)');
+        const monthYearCard = overlay.querySelector('.habit-stats-grid .habit-stat-card:nth-child(2)');
+        const weekCard = overlay.querySelector('.habit-stats-grid .habit-stat-card:nth-child(3)');
+        const streakCard = overlay.querySelector('.habit-stats-grid .habit-stat-card:nth-child(4)');
 
-        const monthPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-`;
-        let monthlyCount = 0;
-        historyArray.forEach(d => {
-            if (d.startsWith(monthPrefix)) monthlyCount++;
-        });
-        overlay.querySelector('#habitStatMonth').innerText = formatTotalCheckins(monthlyCount);
+        if (isFrequencyMonthly) {
+            // "Всего регистраций" и "В этом году"
+            totalCard.querySelector('.habit-stat-label').innerHTML = '<span>⚡</span> Всего регистраций';
+            overlay.querySelector('#habitStatTotal').innerText = formatTotalRegistrations(historySet.size);
 
-        overlay.querySelector('#habitStatWeek').innerText = formatTotalCheckins(getCompletionsThisWeek(historySet));
+            monthYearCard.querySelector('.habit-stat-label').innerHTML = '<span>💚</span> В этом году';
+            const yearPrefix = `${viewYear}-`;
+            let yearlyCount = 0;
+            historyArray.forEach(d => {
+                if (d.startsWith(yearPrefix)) yearlyCount++;
+            });
+            overlay.querySelector('#habitStatMonth').innerText = formatTotalRegistrations(yearlyCount);
 
-        overlay.querySelector('#habitStatStreak').innerText = formatTotalCheckins(calculateHabitStreak(historySet));
+            // Скрываем остальные карточки
+            if (weekCard) weekCard.style.display = 'none';
+            if (streakCard) streakCard.style.display = 'none';
+            
+            // Задаем сетку из 2 колонок для оставшихся карточек
+            const statsGrid = overlay.querySelector('.habit-stats-grid');
+            if (statsGrid) statsGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        } else {
+            totalCard.querySelector('.habit-stat-label').innerHTML = '<span>⚡</span> Всего регистраций';
+            overlay.querySelector('#habitStatTotal').innerText = formatTotalCheckins(historySet.size);
 
-        overlay.querySelector('#habitCalMonthTitle').innerText = `${monthNames[viewMonth]} ${viewYear}`;
+            monthYearCard.querySelector('.habit-stat-label').innerHTML = '<span>💚</span> В этом месяце';
+            const monthPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-`;
+            let monthlyCount = 0;
+            historyArray.forEach(d => {
+                if (d.startsWith(monthPrefix)) monthlyCount++;
+            });
+            overlay.querySelector('#habitStatMonth').innerText = formatTotalCheckins(monthlyCount);
+
+            if (weekCard) {
+                weekCard.style.display = 'flex';
+                overlay.querySelector('#habitStatWeek').innerText = formatTotalCheckins(getCompletionsThisWeek(historySet));
+            }
+            if (streakCard) {
+                streakCard.style.display = 'flex';
+                overlay.querySelector('#habitStatStreak').innerText = formatTotalCheckins(calculateHabitStreak(historySet));
+            }
+
+            const statsGrid = overlay.querySelector('.habit-stats-grid');
+            if (statsGrid) statsGrid.style.gridTemplateColumns = '';
+        }
+
+        if (isFrequencyMonthly) {
+            overlay.querySelector('#habitCalMonthTitle').innerText = `${viewYear} год`;
+            overlay.querySelector('.habit-cal-weekdays').style.display = 'none';
+        } else {
+            overlay.querySelector('#habitCalMonthTitle').innerText = `${monthNames[viewMonth]} ${viewYear}`;
+            overlay.querySelector('.habit-cal-weekdays').style.display = 'grid';
+        }
 
         const grid = overlay.querySelector('#habitCalGrid');
         grid.innerHTML = '';
 
-        const firstDay = new Date(viewYear, viewMonth, 1);
-        let startDay = firstDay.getDay();
-        let mondayIndex = startDay === 0 ? 6 : startDay - 1;
+        if (isFrequencyMonthly) {
+            grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            grid.style.gap = '16px';
+            const shortMonths = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+            const today = new Date();
 
-        const totalDays = new Date(viewYear, viewMonth + 1, 0).getDate();
-        const prevTotalDays = new Date(viewYear, viewMonth, 0).getDate();
+            for (let m = 0; m < 12; m++) {
+                const monthPrefix = `${viewYear}-${String(m + 1).padStart(2, '0')}-`;
+                const matchedDate = historyArray.find(d => d.startsWith(monthPrefix));
+                const isCompleted = !!matchedDate;
+                const isTodayMonth = (today.getFullYear() === viewYear && today.getMonth() === m);
 
-        for (let i = mondayIndex - 1; i >= 0; i--) {
-            const dayNum = prevTotalDays - i;
-            const cell = document.createElement('div');
-            cell.className = 'calendar-cell muted';
-            cell.innerHTML = `
-                <span class="day-number">${dayNum}</span>
-                <div class="cell-circle"></div>
-            `;
-            grid.appendChild(cell);
-        }
+                const cell = document.createElement('div');
+                cell.className = `calendar-cell current-month ${isTodayMonth ? 'today' : ''} ${isCompleted ? 'checked' : ''}`;
+                cell.innerHTML = `
+                    <span class="day-number" style="font-size: 0.85rem; font-weight: 600;">${shortMonths[m]}</span>
+                    <div class="cell-circle" style="width: 32px; height: 32px;">
+                        ${isCompleted ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+                    </div>
+                `;
 
-        const today = new Date();
-        const isFrequencyCustom = currentHabit.frequency === 'custom';
-        const activeDays = currentHabit.activeDays || [];
+                cell.querySelector('.cell-circle').addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    if (!currentUid) return;
 
-        for (let d = 1; d <= totalDays; d++) {
-            const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            const isCompleted = historySet.has(dateStr);
-            const isToday = (today.getFullYear() === viewYear && today.getMonth() === viewMonth && today.getDate() === d);
+                    let newHistory = [...historyArray];
+                    if (isCompleted) {
+                        newHistory = newHistory.filter(x => !x.startsWith(monthPrefix));
+                    } else {
+                        // Ставим отметку на первое число месяца или на сегодняшнее число (если это текущий месяц текущего года)
+                        const targetDay = isTodayMonth ? today.getDate() : 1;
+                        const dateStr = `${viewYear}-${String(m + 1).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
+                        newHistory.push(dateStr);
+                    }
 
-            const cellDate = new Date(viewYear, viewMonth, d);
-            const dayOfWeek = cellDate.getDay();
-            const isActiveDay = !isFrequencyCustom || activeDays.includes(dayOfWeek);
+                    try {
+                        await updateDoc(doc(db, 'users', currentUid, 'habits', habit.id), {
+                            history: newHistory
+                        });
+                        habit.history = newHistory;
+                        updateStatsAndCalendar();
+                    } catch (err) {
+                        console.error("Ошибка обновления привычки:", err);
+                    }
+                });
 
-            const cell = document.createElement('div');
-            cell.className = `calendar-cell current-month ${isToday ? 'today' : ''} ${isCompleted ? 'checked' : ''} ${!isActiveDay ? 'inactive-day' : ''}`;
-            cell.innerHTML = `
-                <span class="day-number">${d}</span>
-                <div class="cell-circle">
-                    ${isCompleted ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
-                </div>
-            `;
+                grid.appendChild(cell);
+            }
+        } else {
+            grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+            grid.style.gap = '';
+            const firstDay = new Date(viewYear, viewMonth, 1);
+            let startDay = firstDay.getDay();
+            let mondayIndex = startDay === 0 ? 6 : startDay - 1;
 
-            cell.querySelector('.cell-circle').addEventListener('click', async (e) => {
-                e.stopPropagation();
-                if (!isActiveDay) return;
-                if (!currentUid) return;
+            const totalDays = new Date(viewYear, viewMonth + 1, 0).getDate();
+            const prevTotalDays = new Date(viewYear, viewMonth, 0).getDate();
 
-                let newHistory = [...historyArray];
-                if (historySet.has(dateStr)) {
-                    newHistory = newHistory.filter(x => x !== dateStr);
-                } else {
-                    newHistory.push(dateStr);
-                }
+            for (let i = mondayIndex - 1; i >= 0; i--) {
+                const dayNum = prevTotalDays - i;
+                const cell = document.createElement('div');
+                cell.className = 'calendar-cell muted';
+                cell.innerHTML = `
+                    <span class="day-number">${dayNum}</span>
+                    <div class="cell-circle"></div>
+                `;
+                grid.appendChild(cell);
+            }
 
-                try {
-                    await updateDoc(doc(db, 'users', currentUid, 'habits', habit.id), {
-                        history: newHistory
-                    });
-                    habit.history = newHistory;
-                    updateStatsAndCalendar();
-                } catch (err) {
-                    console.error("Ошибка обновления привычки:", err);
-                }
-            });
+            const today = new Date();
+            const isFrequencyCustom = currentHabit.frequency === 'custom';
+            const activeDays = currentHabit.activeDays || [];
 
-            grid.appendChild(cell);
-        }
+            for (let d = 1; d <= totalDays; d++) {
+                const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const isCompleted = historySet.has(dateStr);
+                const isToday = (today.getFullYear() === viewYear && today.getMonth() === viewMonth && today.getDate() === d);
 
-        const totalCells = mondayIndex + totalDays;
-        const remaining = 42 - totalCells;
-        for (let d = 1; d <= remaining; d++) {
-            const cell = document.createElement('div');
-            cell.className = 'calendar-cell muted';
-            cell.innerHTML = `
-                <span class="day-number">${d}</span>
-                <div class="cell-circle"></div>
-            `;
-            grid.appendChild(cell);
+                const cellDate = new Date(viewYear, viewMonth, d);
+                const dayOfWeek = cellDate.getDay();
+                const isActiveDay = !isFrequencyCustom || activeDays.includes(dayOfWeek);
+
+                const cell = document.createElement('div');
+                cell.className = `calendar-cell current-month ${isToday ? 'today' : ''} ${isCompleted ? 'checked' : ''} ${!isActiveDay ? 'inactive-day' : ''}`;
+                cell.innerHTML = `
+                    <span class="day-number">${d}</span>
+                    <div class="cell-circle">
+                        ${isCompleted ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+                    </div>
+                `;
+
+                cell.querySelector('.cell-circle').addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    if (!isActiveDay) return;
+                    if (!currentUid) return;
+
+                    let newHistory = [...historyArray];
+                    if (historySet.has(dateStr)) {
+                        newHistory = newHistory.filter(x => x !== dateStr);
+                    } else {
+                        newHistory.push(dateStr);
+                    }
+
+                    try {
+                        await updateDoc(doc(db, 'users', currentUid, 'habits', habit.id), {
+                            history: newHistory
+                        });
+                        habit.history = newHistory;
+                        updateStatsAndCalendar();
+                    } catch (err) {
+                        console.error("Ошибка обновления привычки:", err);
+                    }
+                });
+
+                grid.appendChild(cell);
+            }
+
+            const totalCells = mondayIndex + totalDays;
+            const remaining = 42 - totalCells;
+            for (let d = 1; d <= remaining; d++) {
+                const cell = document.createElement('div');
+                cell.className = 'calendar-cell muted';
+                cell.innerHTML = `
+                    <span class="day-number">${d}</span>
+                    <div class="cell-circle"></div>
+                `;
+                grid.appendChild(cell);
+            }
         }
     }
 
@@ -13709,20 +13881,28 @@ function openHabitStatsModal(habit) {
 
     overlay.querySelector('#btnHabitCalPrev').addEventListener('click', (e) => {
         e.stopPropagation();
-        viewMonth--;
-        if (viewMonth < 0) {
-            viewMonth = 11;
+        if (habit.frequency === 'monthly') {
             viewYear--;
+        } else {
+            viewMonth--;
+            if (viewMonth < 0) {
+                viewMonth = 11;
+                viewYear--;
+            }
         }
         updateStatsAndCalendar();
     });
 
     overlay.querySelector('#btnHabitCalNext').addEventListener('click', (e) => {
         e.stopPropagation();
-        viewMonth++;
-        if (viewMonth > 11) {
-            viewMonth = 0;
+        if (habit.frequency === 'monthly') {
             viewYear++;
+        } else {
+            viewMonth++;
+            if (viewMonth > 11) {
+                viewMonth = 0;
+                viewYear++;
+            }
         }
         updateStatsAndCalendar();
     });
@@ -13822,6 +14002,7 @@ function openHabitModal(habit = null) {
                 <select class="countdown-input" id="selectHabitFrequency" style="width: 100%; box-sizing: border-box; height: 42px; border-radius: 12px; font-family: inherit; font-size: 0.95rem; background: var(--bg-hover); color: var(--text); border: 1px solid var(--border); padding: 0 12px; outline: none;">
                     <option value="any" ${!habit || habit.frequency === 'any' ? 'selected' : ''}>Любой день</option>
                     <option value="custom" ${habit && habit.frequency === 'custom' ? 'selected' : ''}>Определенные дни недели</option>
+                    <option value="monthly" ${habit && habit.frequency === 'monthly' ? 'selected' : ''}>Ежемесячно</option>
                 </select>
             </div>
 
@@ -14438,6 +14619,7 @@ function initHabitEvents() {
             addSectionForHabits();
         });
     }
+
 }
 
 initHabitEvents();

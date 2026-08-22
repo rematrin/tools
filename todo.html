@@ -24,6 +24,7 @@
         :root {
             --bg: #fefefe;
         }
+
         body.dark {
             --bg: #0f1115;
         }
@@ -62,7 +63,8 @@
                         id="sidebarAvatar" style="display:none">
                     <div class="sidebar-user-info">
                         <span class="sidebar-name" id="sidebarName">Загрузка...</span>
-                        <span class="sidebar-status-badge offline" id="sidebarStatusBadge" style="display: none;">Оффлайн</span>
+                        <span class="sidebar-status-badge offline" id="sidebarStatusBadge"
+                            style="display: none;">Оффлайн</span>
                     </div>
                 </div>
                 <button class="sidebar-close-toggle" id="sidebarCloseToggle" aria-label="Закрыть меню">
@@ -91,8 +93,10 @@
                         <span class="menu-counter" id="inboxCounter" style="display:none">0</span>
                     </a>
                     <button class="project-actions-btn" id="inboxActionsBtn" title="Действия">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            viewBox="0 0 16 16">
+                            <path
+                                d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3" />
                         </svg>
                     </button>
                 </div>
@@ -113,8 +117,10 @@
                         <span class="menu-counter" id="todayCounter" style="display:none">0</span>
                     </a>
                     <button class="project-actions-btn" id="todayActionsBtn" title="Действия">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            viewBox="0 0 16 16">
+                            <path
+                                d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3" />
                         </svg>
                     </button>
                 </div>
@@ -140,8 +146,10 @@
                         <span class="menu-counter" id="tomorrowCounter" style="display:none">0</span>
                     </a>
                     <button class="project-actions-btn" id="tomorrowActionsBtn" title="Действия">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            viewBox="0 0 16 16">
+                            <path
+                                d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3" />
                         </svg>
                     </button>
                 </div>
@@ -163,6 +171,38 @@
 
                 <div class="sidebar-footer-menu"
                     style="margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="sidebar-bottom-bar">
+                        <a href="#habit" class="bottom-bar-item" id="bottomNavHabit">
+                            <span class="bottom-bar-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                            </span>
+                            <span class="bottom-bar-label">Отслеж.</span>
+                        </a>
+                        <a href="#pomodoro" class="bottom-bar-item" id="bottomNavPomodoro">
+                            <span class="bottom-bar-icon">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12 14.5 13.3807 13.3807 14.5 12 14.5 10.6193 14.5 9.5 13.3807 9.5 12 9.5 10.6193 10.6193 9.5 12 9.5ZM12 2C17.5228 2 22 6.47715 22 12 22 17.5228 17.5228 22 12 22 6.47715 22 2 17.5228 2 12 2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12 4 16.4183 7.58172 20 12 20 16.4183 20 20 16.4183 20 12 20 7.58172 16.4183 4 12 4Z">
+                                    </path>
+                                </svg>
+                            </span>
+                            <span class="bottom-bar-label">Помодоро</span>
+                        </a>
+                        <a href="#countdown" class="bottom-bar-item" id="bottomNavCountdown">
+                            <span class="bottom-bar-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </span>
+                            <span class="bottom-bar-label">Отчёт</span>
+                        </a>
+                    </div>
                 </div>
             </nav>
             <div class="sidebar-resizer" id="sidebarResizer"></div>
@@ -235,8 +275,7 @@
                     </div>
                     <div class="habit-header-actions" id="habitHeaderActions"
                         style="display: none; margin-left: auto; align-items: center; gap: 8px; position: relative;">
-                        <button class="habit-add-btn" id="btnHabitAdd" aria-label="Добавить"
-                            title="Добавить"
+                        <button class="habit-add-btn" id="btnHabitAdd" aria-label="Добавить" title="Добавить"
                             style="background: transparent; border: none; color: var(--text-secondary); opacity: 0.7; cursor: pointer; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background-color 0.15s, opacity 0.15s;">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -310,8 +349,8 @@
 
                 <!-- Баннер событий Google Календаря -->
                 <div class="gcal-events-banner" id="gcalEventsBanner" style="display: none; position: relative;">
-                    <button class="gcal-banner-toggle-btn" id="btnGCalBannerToggle"
-                        aria-label="Свернуть/развернуть" style="display: none;">
+                    <button class="gcal-banner-toggle-btn" id="btnGCalBannerToggle" aria-label="Свернуть/развернуть"
+                        style="display: none;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12"
                             height="12" class="chevron-icon">
                             <polyline points="6 9 12 15 18 9"></polyline>
@@ -323,7 +362,8 @@
                 </div>
 
                 <!-- Баннер событий обратного отсчета -->
-                <div class="gcal-events-banner countdown-events-banner" id="countdownEventsBanner" style="display: none; position: relative; padding-right: 10px;">
+                <div class="gcal-events-banner countdown-events-banner" id="countdownEventsBanner"
+                    style="display: none; position: relative; padding-right: 10px;">
                     <div class="gcal-banner-events-list" id="countdownBannerEventsList">
                         <!-- События будут добавляться динамически -->
                     </div>
@@ -343,16 +383,19 @@
                             <button id="btn-short">Короткий перерыв</button>
                             <button id="btn-long">Длинный перерыв</button>
                         </div>
-                        
+
                         <div class="timer" id="time-display">25:00</div>
-                        
+
                         <!-- Название активной задачи -->
-                        <div class="pomo-active-task-name" id="pomo-active-task-name" style="display: none; margin: 5px auto 15px; font-size: 18px; font-weight: 600; color: rgba(255, 255, 255, 0.9); max-width: 80%; word-wrap: break-word; text-align: center; font-family: 'Nunito', sans-serif;"></div>
-                        
+                        <div class="pomo-active-task-name" id="pomo-active-task-name"
+                            style="display: none; margin: 5px auto 15px; font-size: 18px; font-weight: 600; color: rgba(255, 255, 255, 0.9); max-width: 80%; word-wrap: break-word; text-align: center; font-family: 'Nunito', sans-serif;">
+                        </div>
+
                         <div class="timer-controls">
                             <button class="start-btn" id="start-btn">СТАРТ</button>
                             <button class="skip-btn" id="skip-btn">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="white"
+                                    stroke-width="2">
                                     <polygon points="5 4 15 12 5 20 5 4"></polygon>
                                     <line x1="19" y1="5" x2="19" y2="19"></line>
                                 </svg>
@@ -364,7 +407,9 @@
                     <div class="tasks-list" id="pomoTasksList" style="margin-top: 8px; width: 100%;"></div>
 
                     <!-- Статистика внизу -->
-                    <div class="pomo-bottom-stats" id="pomoBottomStats" style="margin-top: 30px; color: var(--text-secondary); font-size: 14px; font-weight: 500; text-align: center; width: 100%;"></div>
+                    <div class="pomo-bottom-stats" id="pomoBottomStats"
+                        style="margin-top: 30px; color: var(--text-secondary); font-size: 14px; font-weight: 500; text-align: center; width: 100%;">
+                    </div>
                 </div>
 
                 <!-- Блок Обратного Отсчета -->
@@ -654,16 +699,23 @@
                             style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--border); position: relative;">
                             <div class="settings-field-info">
                                 <label
-                                    style="display: block; font-weight: 600; font-size: 0.95rem; color: var(--text); margin-bottom: 2px;">Главный экран</label>
-                                <span style="font-size: 0.82rem; color: var(--text-secondary);">Выберите экран по умолчанию при запуске</span>
+                                    style="display: block; font-weight: 600; font-size: 0.95rem; color: var(--text); margin-bottom: 2px;">Главный
+                                    экран</label>
+                                <span style="font-size: 0.82rem; color: var(--text-secondary);">Выберите экран по
+                                    умолчанию при запуске</span>
                             </div>
                             <div class="add-task-project-wrapper" id="prefHomeWrapper" style="position: relative;">
-                                <button class="btn-due-date" id="btnPrefHome" type="button" style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; background: var(--hover-bg); border: 1px solid var(--border); color: var(--text); cursor: pointer;">
+                                <button class="btn-due-date" id="btnPrefHome" type="button"
+                                    style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; background: var(--hover-bg); border: 1px solid var(--border); color: var(--text); cursor: pointer;">
                                     <span class="project-icon" id="prefHomeIcon"
                                         style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; flex-shrink: 0;">
                                     </span>
                                     <span id="prefHomeText">Входящие</span>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; opacity: 0.6; margin-left: 2px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round"
+                                        style="width: 12px; height: 12px; opacity: 0.6; margin-left: 2px;">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
                                 </button>
                                 <div class="due-date-dropdown project-dropdown" id="prefHomeDropdown"
                                     style="display: none; position: absolute; left: auto; right: 0; top: calc(100% + 6px); width: 220px; max-height: 280px; overflow-y: auto; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px; flex-direction: column; gap: 4px;">
@@ -978,7 +1030,8 @@
         <div class="task-details-modal-card">
             <div class="task-details-drag-handle-container">
                 <button class="task-details-mobile-close-btn" id="btnTaskDetailsMobileClose" aria-label="Закрыть">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
+                        height="16">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -986,13 +1039,15 @@
                 <div class="task-details-drag-handle"></div>
                 <div class="task-details-mobile-more-wrapper">
                     <button class="task-details-mobile-more-btn" id="btnTaskDetailsMobileMore" aria-label="Действия">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
+                            height="16">
                             <circle cx="5" cy="12" r="1.5"></circle>
                             <circle cx="12" cy="12" r="1.5"></circle>
                             <circle cx="19" cy="12" r="1.5"></circle>
                         </svg>
                     </button>
-                    <div class="task-actions-dropdown modal-actions-dropdown" id="modalActionsDropdown" style="display: none;">
+                    <div class="task-actions-dropdown modal-actions-dropdown" id="modalActionsDropdown"
+                        style="display: none;">
                     </div>
                 </div>
             </div>
@@ -1032,16 +1087,18 @@
                             </svg>
                             <span>Добавить подзадачу</span>
                         </button>
-                        <div class="modal-new-subtask-input-container add-task-form expanded" id="modalNewSubtaskContainer"
+                        <div class="modal-new-subtask-input-container add-task-form expanded"
+                            id="modalNewSubtaskContainer"
                             style="display: none; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-top: 10px; background: var(--card-bg); flex-direction: column; gap: 10px; width: 100%; box-sizing: border-box;">
-                            <textarea id="modalNewSubtaskTitle" class="task-input" placeholder="Что бы вы хотели сделать?"
-                                rows="1" autocomplete="off"
+                            <textarea id="modalNewSubtaskTitle" class="task-input"
+                                placeholder="Что бы вы хотели сделать?" rows="1" autocomplete="off"
                                 style="width: 100%; min-height: 24px; max-height: 120px; background: transparent; border: none; outline: none; resize: none; font-family: inherit; color: var(--text); padding: 0; margin-bottom: 8px; box-sizing: border-box;"></textarea>
                             <div class="form-actions"
                                 style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0; background: transparent; border: none;">
                                 <div class="form-actions-left" style="display: flex; gap: 8px; align-items: center;">
                                     <!-- Срок подзадачи -->
-                                    <div class="due-date-wrapper" id="modalSubtaskDueWrapper" style="position: relative;">
+                                    <div class="due-date-wrapper" id="modalSubtaskDueWrapper"
+                                        style="position: relative;">
                                         <button class="btn-due-date" id="btnModalSubtaskDue" type="button"
                                             style="font-weight: 700;">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -1052,8 +1109,8 @@
                                                 <line x1="3" y1="10" x2="21" y2="10"></line>
                                             </svg>
                                             <span class="due-date-text" id="modalSubtaskDueText">Срок</span>
-                                            <span id="btnClearModalSubtaskDue" class="clear-due-icon" style="display:none"
-                                                title="Очистить">&times;</span>
+                                            <span id="btnClearModalSubtaskDue" class="clear-due-icon"
+                                                style="display:none" title="Очистить">&times;</span>
                                         </button>
                                     </div>
 
@@ -1073,7 +1130,8 @@
                                             </span>
                                             <span id="modalSubtaskPriorityText">Приоритет</span>
                                         </button>
-                                        <div class="due-date-dropdown priority-dropdown" id="modalSubtaskPriorityDropdown"
+                                        <div class="due-date-dropdown priority-dropdown"
+                                            id="modalSubtaskPriorityDropdown"
                                             style="display: none; width: 170px; flex-direction: column; gap: 2px; padding: 4px; z-index: 1100;">
                                         </div>
                                     </div>
@@ -1151,14 +1209,16 @@
 
     <!-- Выпадающее меню календаря -->
     <div class="due-modal-overlay" id="dueModalOverlay" style="display: none;">
-        <div class="due-date-dropdown new-modal-layout" id="dueDateDropdown" style="position: relative; z-index: 2000; margin: 0;">
+        <div class="due-date-dropdown new-modal-layout" id="dueDateDropdown"
+            style="position: relative; z-index: 2000; margin: 0;">
             <!-- Колонка 1: Дата -->
             <div class="due-column due-column-date">
                 <div class="due-quick-options">
                     <button class="quick-opt-btn" type="button" data-date="today">
                         <span class="quick-opt-left">
                             <span class="quick-opt-icon" style="color: #22c55e;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14"
+                                    height="14">
                                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                     <line x1="16" y1="2" x2="16" y2="6"></line>
                                     <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -1172,7 +1232,8 @@
                     <button class="quick-opt-btn" type="button" data-date="tomorrow">
                         <span class="quick-opt-left">
                             <span class="quick-opt-icon" style="color: #f97316;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14"
+                                    height="14">
                                     <circle cx="12" cy="12" r="4"></circle>
                                     <line x1="12" y1="2" x2="12" y2="4"></line>
                                     <line x1="12" y1="20" x2="12" y2="22"></line>
@@ -1195,17 +1256,20 @@
                         <span class="calendar-month-year" id="calendarMonthYear">июнь 2026</span>
                         <div class="calendar-nav">
                             <button class="cal-nav-btn" id="calPrevMonth" type="button" title="Предыдущий месяц">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12"
+                                    height="12">
                                     <polyline points="15 18 9 12 15 6" />
                                 </svg>
                             </button>
                             <button class="cal-nav-btn" id="calCurrentMonth" type="button" title="Текущий месяц">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10"
+                                    height="10">
                                     <circle cx="12" cy="12" r="6" />
                                 </svg>
                             </button>
                             <button class="cal-nav-btn" id="calNextMonth" type="button" title="Следующий месяц">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12"
+                                    height="12">
                                     <polyline points="9 18 15 12 9 6" />
                                 </svg>
                             </button>
@@ -1226,16 +1290,19 @@
                 <!-- Время -->
                 <div class="due-row-time-trigger">
                     <div class="due-checkbox-label">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px; vertical-align: middle; color: var(--text-secondary);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14"
+                            height="14"
+                            style="margin-right: 4px; vertical-align: middle; color: var(--text-secondary);">
                             <circle cx="12" cy="12" r="10"></circle>
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
                         <span>Время</span>
                     </div>
                 </div>
-                
+
                 <!-- Поля ввода времени (всегда видны) -->
-                <div class="due-time-inputs-wrapper" style="display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-left: 0;">
+                <div class="due-time-inputs-wrapper"
+                    style="display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-left: 0;">
                     <input type="checkbox" class="due-time-checkbox" id="dueTimeCheckbox" style="margin-right: 2px;">
                     <input class="pill-btn start-time-btn" type="time" value="08:00">
                     <span class="time-dash">—</span>
@@ -1251,7 +1318,9 @@
                 <!-- Повтор -->
                 <div class="due-row-repeat-trigger">
                     <div class="due-checkbox-label">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px; vertical-align: middle; color: var(--text-secondary);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14"
+                            height="14"
+                            style="margin-right: 4px; vertical-align: middle; color: var(--text-secondary);">
                             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
                         </svg>
                         <span>Повтор</span>
@@ -1260,7 +1329,8 @@
 
                 <!-- Повторять задачу (всегда видно) -->
                 <div class="due-repeat-options-block" style="display: block; margin-top: 10px;">
-                    <div class="repeat-picker-list" style="display: flex; flex-direction: column; gap: 2px; max-height: 220px; overflow-y: auto;">
+                    <div class="repeat-picker-list"
+                        style="display: flex; flex-direction: column; gap: 2px; max-height: 220px; overflow-y: auto;">
                         <!-- Будет заполнено динамически -->
                     </div>
                 </div>
@@ -1277,16 +1347,21 @@
     <!-- Панель уведомления об оффлайн режиме -->
     <div class="offline-notification-banner" id="offlineBanner">
         <div class="offline-banner-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.5M5 12.5a10.94 10.94 0 0 1 5.83-2.84M8.5 16.5a6.75 6.75 0 0 1 7 0M10.5 19.5a2 2 0 0 1 3 0"></path>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.5M5 12.5a10.94 10.94 0 0 1 5.83-2.84M8.5 16.5a6.75 6.75 0 0 1 7 0M10.5 19.5a2 2 0 0 1 3 0">
+                </path>
             </svg>
         </div>
         <div class="offline-banner-content">
             <div class="offline-banner-title">Вы оффлайн</div>
             <div class="offline-banner-desc">Изменения будут синхронизированы при восстановлении подключения.</div>
         </div>
-        <button class="offline-banner-close" onclick="document.getElementById('offlineBanner').classList.remove('visible')" aria-label="Закрыть">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button class="offline-banner-close"
+            onclick="document.getElementById('offlineBanner').classList.remove('visible')" aria-label="Закрыть">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>

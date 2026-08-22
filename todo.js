@@ -1515,26 +1515,6 @@ if (sidebarHeader && !document.getElementById('userProfileMenu')) {
                 </svg>
                 <span>Настройки</span>
             </button>
-            <button class="user-menu-item" id="btnUserMenuHabit">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                <span>Отслеживаемое</span>
-            </button>
-            <button class="user-menu-item" id="btnUserMenuPomodoro">
-                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-                    <path d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12 14.5 13.3807 13.3807 14.5 12 14.5 10.6193 14.5 9.5 13.3807 9.5 12 9.5 10.6193 10.6193 9.5 12 9.5ZM12 2C17.5228 2 22 6.47715 22 12 22 17.5228 17.5228 22 12 22 6.47715 22 2 17.5228 2 12 2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12 4 16.4183 7.58172 20 12 20 16.4183 20 20 16.4183 20 12 20 7.58172 16.4183 4 12 4Z"></path>
-                </svg>
-                <span>Помодоро</span>
-            </button>
-            <button class="user-menu-item" id="btnUserMenuCountdown">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                <span>Обратный отсчет</span>
-            </button>
             <button class="user-menu-item" id="btnUserMenuTrash">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -2264,6 +2244,24 @@ function handleRoute() {
     if (menuTrash) {
         if (currentRoute === 'trash') menuTrash.classList.add('active');
         else menuTrash.classList.remove('active');
+    }
+
+    // Обновляем подсветку кнопок нижнего меню
+    const bottomNavHabit = document.getElementById('bottomNavHabit');
+    const bottomNavPomodoro = document.getElementById('bottomNavPomodoro');
+    const bottomNavCountdown = document.getElementById('bottomNavCountdown');
+
+    if (bottomNavHabit) {
+        if (currentRoute === 'habit') bottomNavHabit.classList.add('active');
+        else bottomNavHabit.classList.remove('active');
+    }
+    if (bottomNavPomodoro) {
+        if (currentRoute === 'pomodoro') bottomNavPomodoro.classList.add('active');
+        else bottomNavPomodoro.classList.remove('active');
+    }
+    if (bottomNavCountdown) {
+        if (currentRoute === 'countdown') bottomNavCountdown.classList.add('active');
+        else bottomNavCountdown.classList.remove('active');
     }
 
     // Обновляем подсветку для проектов

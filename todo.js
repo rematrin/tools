@@ -377,7 +377,7 @@ if (btnClearDueDate) {
 if (btnAddTaskProject) {
     btnAddTaskProject.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (addTaskProjectDropdown.style.display === 'none') {
+        if (addTaskProjectDropdown.style.display === 'none' || addTaskProjectDropdown.style.display === '') {
             if (dueDateDropdown) dueDateDropdown.style.display = 'none';
             if (priorityDropdown) priorityDropdown.style.display = 'none';
             addTaskProjectDropdown.style.display = 'flex';

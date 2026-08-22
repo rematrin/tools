@@ -3774,8 +3774,8 @@ body.dark .priority-opt-btn:hover {
     .add-task-form .project-dropdown,
     .add-task-form .priority-dropdown {
         position: fixed !important;
-        top: auto !important;
-        bottom: 12px !important;
+        top: 100px !important;
+        bottom: auto !important;
         left: 12px !important;
         right: 12px !important;
         width: calc(100% - 24px) !important;

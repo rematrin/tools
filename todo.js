@@ -3734,22 +3734,31 @@ function toggleSectionCollapsed(sectionId) {
 }
 
 function renderTasksGroup(tasksGroup, containerEl) {
-    const activeParentTasks = [];
+    const parentTasksToRender = [];
+    const standaloneSubtasks = [];
+
     tasksGroup.forEach(t => {
         if (!t.parentId) {
-            if (!activeParentTasks.some(p => p.id === t.id)) {
-                activeParentTasks.push(t);
+            if (!parentTasksToRender.some(p => p.id === t.id)) {
+                parentTasksToRender.push(t);
             }
         } else {
-            const parent = allTasks.find(pt => pt.id === t.parentId && !pt.deleted);
-            if (parent && !activeParentTasks.some(p => p.id === parent.id)) {
-                activeParentTasks.push(parent);
+            const parentInGroup = tasksGroup.some(pt => pt.id === t.parentId);
+            if (parentInGroup) {
+                const parentTask = allTasks.find(pt => pt.id === t.parentId && !pt.deleted);
+                if (parentTask && !parentTasksToRender.some(p => p.id === parentTask.id)) {
+                    parentTasksToRender.push(parentTask);
+                }
+            } else {
+                if (!standaloneSubtasks.some(s => s.id === t.id)) {
+                    standaloneSubtasks.push(t);
+                }
             }
         }
     });
 
     // Sort parent tasks
-    activeParentTasks.sort((a, b) => {
+    parentTasksToRender.sort((a, b) => {
         const orderA = a.order !== undefined ? a.order : 0;
         const orderB = b.order !== undefined ? b.order : 0;
         if (orderA !== orderB) return orderA - orderB;
@@ -3758,14 +3767,28 @@ function renderTasksGroup(tasksGroup, containerEl) {
         return timeB - timeA;
     });
 
-    activeParentTasks.forEach(task => {
+    parentTasksToRender.forEach(task => {
         const el = createTaskRowElement(task);
         containerEl.appendChild(el);
 
-        // Рендерим подзадачи родительской задачи (только активные на главном экране)
-        const subtasks = allTasks.filter(t => t.parentId === task.id && !t.deleted && !t.completed);
+        // Render subtasks of this parent task
+        let subtasks = [];
+        if (currentRoute === 'today' || currentRoute === 'tomorrow') {
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
 
-        // Sort subtasks
+            if (currentRoute === 'today') {
+                subtasks = allTasks.filter(t => t.parentId === task.id && !t.deleted && !t.completed && (t.dueDate === todayStr || !t.dueDate));
+            } else {
+                subtasks = allTasks.filter(t => t.parentId === task.id && !t.deleted && !t.completed && (t.dueDate === tomorrowStr || !t.dueDate));
+            }
+        } else {
+            subtasks = allTasks.filter(t => t.parentId === task.id && !t.deleted && !t.completed);
+        }
+
         subtasks.sort((a, b) => {
             const orderA = a.order !== undefined ? a.order : 0;
             const orderB = b.order !== undefined ? b.order : 0;
@@ -3783,6 +3806,23 @@ function renderTasksGroup(tasksGroup, containerEl) {
             });
         }
     });
+
+    // Render standalone subtasks (without indent)
+    if (standaloneSubtasks.length > 0) {
+        standaloneSubtasks.sort((a, b) => {
+            const orderA = a.order !== undefined ? a.order : 0;
+            const orderB = b.order !== undefined ? b.order : 0;
+            if (orderA !== orderB) return orderA - orderB;
+            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
+            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
+            return timeB - timeA;
+        });
+
+        standaloneSubtasks.forEach(subtask => {
+            const subEl = createTaskRowElement(subtask, true);
+            containerEl.appendChild(subEl);
+        });
+    }
 }
 
 function getEmptyStateHtml() {
@@ -4190,24 +4230,186 @@ function renderTasks() {
         } else {
             if (currentRoute.startsWith('project/')) {
                 const projectId = currentRoute.split('/')[1];
-                const projectSections = sectionsList.filter(s => s.projectId === projectId);
+                const project = projectsList.find(p => p.id === projectId);
+                const isGroupByDate = project && project.groupByDate === true;
 
-                if (displayActiveTasks.length === 0) {
-                    const emptyStateEl = document.createElement('div');
-                    emptyStateEl.style.marginTop = '20px';
-                    emptyStateEl.style.marginBottom = '20px';
-                    emptyStateEl.innerHTML = getEmptyStateHtml();
-                    activeTasksContainer.appendChild(emptyStateEl);
-                }
+                if (isGroupByDate) {
+                    if (displayActiveTasks.length === 0) {
+                        const emptyStateEl = document.createElement('div');
+                        emptyStateEl.style.marginTop = '20px';
+                        emptyStateEl.style.marginBottom = '20px';
+                        emptyStateEl.innerHTML = getEmptyStateHtml();
+                        activeTasksContainer.appendChild(emptyStateEl);
+                    } else {
+                        const getRussianMonth = (monthIndex) => {
+                            const months = ['янв.', 'февр.', 'мар.', 'апр.', 'май', 'июн.', 'июл.', 'авг.', 'сент.', 'окт.', 'нояб.', 'дек.'];
+                            return months[monthIndex];
+                        };
 
-                const unsectionedTasks = displayActiveTasks.filter(t => !t.sectionId || !projectSections.some(s => s.id === t.sectionId));
+                        const formatDateRussian = (dateStr) => {
+                            const [y, m, d] = dateStr.split('-').map(Number);
+                            const date = new Date(y, m - 1, d);
+                            return `${d} ${getRussianMonth(date.getMonth())}`;
+                        };
 
-                // Render unsectioned tasks first
-                const unsectionedContainer = document.createElement('div');
-                unsectionedContainer.className = 'unsectioned-tasks-container';
-                unsectionedContainer.style.minHeight = '20px';
-                activeTasksContainer.appendChild(unsectionedContainer);
-                renderTasksGroup(unsectionedTasks, unsectionedContainer);
+                        const getPeriodBucket = (dateStr) => {
+                            const [y, m, d] = dateStr.split('-').map(Number);
+                            const date = new Date(y, m - 1, d);
+                            date.setHours(0,0,0,0);
+
+                            const time = date.getTime();
+                            
+                            const day = todayObj.getDay();
+                            const daysToSunday = day === 0 ? 0 : 7 - day;
+                            const sundayOfThisWeek = new Date(todayObj);
+                            sundayOfThisWeek.setDate(todayObj.getDate() + daysToSunday);
+                            sundayOfThisWeek.setHours(23, 59, 59, 999);
+
+                            const nextMonday = new Date(sundayOfThisWeek);
+                            nextMonday.setDate(nextMonday.getDate() + 1);
+                            nextMonday.setHours(0,0,0,0);
+                            const nextSunday = new Date(nextMonday);
+                            nextSunday.setDate(nextSunday.getDate() + 6);
+                            nextSunday.setHours(23,59,59,999);
+
+                            const endOfThisMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 0);
+                            endOfThisMonth.setHours(23,59,59,999);
+
+                            const startOfNextMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 1);
+                            startOfNextMonth.setHours(0,0,0,0);
+                            const endOfNextMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 2, 0);
+                            endOfNextMonth.setHours(23,59,59,999);
+
+                            if (time <= sundayOfThisWeek.getTime()) {
+                                return { id: 'this_week', name: 'На этой неделе' };
+                            } else if (time >= nextMonday.getTime() && time <= nextSunday.getTime()) {
+                                return { id: 'next_week', name: 'На следующей неделе' };
+                            } else if (time <= endOfThisMonth.getTime()) {
+                                return { id: 'this_month', name: 'В этом месяце' };
+                            } else if (time >= startOfNextMonth.getTime() && time <= endOfNextMonth.getTime()) {
+                                return { id: 'next_month', name: 'В следующем месяце' };
+                            } else {
+                                return { id: 'later', name: 'Позже' };
+                            }
+                        };
+
+                        const parentActiveTasks = displayActiveTasks.filter(t => !t.parentId);
+
+                        const dateCounts = {};
+                        parentActiveTasks.forEach(t => {
+                            if (t.dueDate) {
+                                dateCounts[t.dueDate] = (dateCounts[t.dueDate] || 0) + 1;
+                            }
+                        });
+
+                        const groupsMap = {};
+
+                        parentActiveTasks.forEach(t => {
+                            let groupId, groupName, sortKey;
+                            if (!t.dueDate) {
+                                groupId = 'nodate';
+                                groupName = 'Без даты';
+                                sortKey = '9999-12-31';
+                            } else if (t.dueDate < todayStr) {
+                                groupId = 'overdue';
+                                groupName = 'Просрочено';
+                                sortKey = '0000-00-00';
+                            } else if (t.dueDate === todayStr) {
+                                groupId = 'today';
+                                groupName = 'Сегодня';
+                                sortKey = '0000-00-01';
+                            } else if (t.dueDate === tomorrowStr) {
+                                groupId = 'tomorrow';
+                                groupName = 'Завтра';
+                                sortKey = '0000-00-02';
+                            } else {
+                                if (dateCounts[t.dueDate] > 2) {
+                                    groupId = 'date-' + t.dueDate;
+                                    groupName = formatDateRussian(t.dueDate);
+                                    sortKey = t.dueDate;
+                                } else {
+                                    const bucket = getPeriodBucket(t.dueDate);
+                                    groupId = bucket.id;
+                                    groupName = bucket.name;
+                                    sortKey = t.dueDate;
+                                }
+                            }
+
+                            if (!groupsMap[groupId]) {
+                                groupsMap[groupId] = {
+                                    id: groupId,
+                                    name: groupName,
+                                    tasks: [],
+                                    minSortKey: sortKey
+                                };
+                            }
+                            groupsMap[groupId].tasks.push(t);
+                            if (sortKey < groupsMap[groupId].minSortKey) {
+                                groupsMap[groupId].minSortKey = sortKey;
+                            }
+                        });
+
+                        const dateGroups = Object.values(groupsMap);
+                        dateGroups.sort((a, b) => {
+                            const order = { 'overdue': 1, 'today': 2, 'tomorrow': 3, 'nodate': 999 };
+                            const orderA = order[a.id];
+                            const orderB = order[b.id];
+                            if (orderA && orderB) return orderA - orderB;
+                            if (orderA) return -1;
+                            if (orderB) return 1;
+                            return a.minSortKey.localeCompare(b.minSortKey);
+                        });
+
+                        const visibleDateGroups = dateGroups;
+
+                        visibleDateGroups.forEach(group => {
+                            const isCollapsed = isSectionCollapsed(`date-group-${projectId}-${group.id}`);
+                            const sectionEl = document.createElement('div');
+                            sectionEl.className = `project-section date-group-section ${isCollapsed ? 'collapsed' : ''}`;
+                            sectionEl.setAttribute('data-date-group-id', group.id);
+                            sectionEl.style.marginTop = '20px';
+                            sectionEl.innerHTML = `
+                                <div class="project-section-header" style="cursor: pointer;">
+                                    <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
+                                        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </button>
+                                    <span class="section-title-text" style="font-weight: 600;">${group.name}</span>
+                                    <span class="section-count-badge" style="margin-left: 6px;">${group.tasks.length}</span>
+                                </div>
+                                <div class="section-tasks-container" style="${isCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
+                            `;
+                            activeTasksContainer.appendChild(sectionEl);
+
+                            const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
+                            renderTasksGroup(group.tasks, sectionTasksContainer);
+
+                            sectionEl.querySelector('.project-section-header').addEventListener('click', () => {
+                                toggleSectionCollapsed(`date-group-${projectId}-${group.id}`);
+                                renderTasks();
+                            });
+                        });
+                    }
+                } else {
+                    const projectSections = sectionsList.filter(s => s.projectId === projectId);
+
+                    if (displayActiveTasks.length === 0) {
+                        const emptyStateEl = document.createElement('div');
+                        emptyStateEl.style.marginTop = '20px';
+                        emptyStateEl.style.marginBottom = '20px';
+                        emptyStateEl.innerHTML = getEmptyStateHtml();
+                        activeTasksContainer.appendChild(emptyStateEl);
+                    }
+
+                    const unsectionedTasks = displayActiveTasks.filter(t => !t.sectionId || !projectSections.some(s => s.id === t.sectionId));
+
+                    // Render unsectioned tasks first
+                    const unsectionedContainer = document.createElement('div');
+                    unsectionedContainer.className = 'unsectioned-tasks-container';
+                    unsectionedContainer.style.minHeight = '20px';
+                    activeTasksContainer.appendChild(unsectionedContainer);
+                    renderTasksGroup(unsectionedTasks, unsectionedContainer);
 
                 // Render each section
                 projectSections.forEach(section => {
@@ -4409,7 +4611,8 @@ function renderTasks() {
                         deleteSection(section.id);
                     });
                 });
-            } else {
+            }
+        } else {
                 if (currentRoute === 'today') {
                     const overdueActiveTasks = activeTasks.filter(t => t.dueDate && t.dueDate < todayStr);
                     sortTasksByOrder(overdueActiveTasks);
@@ -4590,7 +4793,7 @@ function toggleParentTaskCollapsed(taskId) {
     }
 }
 
-function createTaskRowElement(task) {
+function createTaskRowElement(task, isStandalone = false) {
     if (task.isCountdown) {
         const item = document.createElement('div');
         item.className = `task-item priority-0`;
@@ -4712,7 +4915,7 @@ function createTaskRowElement(task) {
         return item;
     }
 
-    const isSubtask = !!task.parentId;
+    const isSubtask = !!task.parentId && !isStandalone;
     const hasSubtasks = !isSubtask && allTasks.some(t => t.parentId === task.id && !t.deleted && !t.completed);
     const isCollapsed = hasSubtasks && isParentTaskCollapsed(task.id);
 
@@ -6165,6 +6368,7 @@ function renderProjectHeaderDropdown() {
 
     const isCompletedHidden = project.hideCompleted === true;
     const isCountHidden = project.hideCount === true;
+    const isGroupByDate = project.groupByDate === true;
 
     projectHeaderDropdown.innerHTML = `
         <button class="dropdown-item" id="btnProjectAddSection">
@@ -6184,6 +6388,25 @@ function renderProjectHeaderDropdown() {
         <button class="dropdown-item" id="btnProjectChangeColor">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="5" fill="currentColor"></circle></svg>
             <span>Изменить цвет</span>
+        </button>
+        <button class="dropdown-item" id="btnProjectToggleGroupByDate">
+            ${isGroupByDate ? `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span>Отключить группировку по датам</span>
+            ` : `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span>Группировать по датам</span>
+            `}
         </button>
         <button class="dropdown-item" id="btnProjectToggleCompleted">
             ${isCompletedHidden ? `
@@ -6241,6 +6464,18 @@ function renderProjectHeaderDropdown() {
         e.stopPropagation();
         projectHeaderDropdown.style.display = 'none';
         showProjectColorModal(projectId);
+    });
+
+    document.getElementById('btnProjectToggleGroupByDate').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        projectHeaderDropdown.style.display = 'none';
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                groupByDate: !isGroupByDate
+            });
+        } catch (err) {
+            console.error("Ошибка при изменении группировки по датам:", err);
+        }
     });
 
     document.getElementById('btnProjectToggleCompleted').addEventListener('click', async (e) => {
@@ -6873,6 +7108,67 @@ function initDragAndDrop() {
                 }
             }
 
+            if (currentRoute.startsWith('project/') && parentContainer) {
+                const projectId = currentRoute.split('/')[1];
+                const project = projectsList.find(p => p.id === projectId);
+                if (project && project.groupByDate === true) {
+                    const sectEl = parentContainer.closest('.project-section');
+                    if (sectEl && sectEl.hasAttribute('data-date-group-id')) {
+                        const dateGroupId = sectEl.getAttribute('data-date-group-id');
+                        const today = new Date();
+                        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+
+                        if (dateGroupId === 'today') {
+                            updateFields.dueDate = todayStr;
+                        } else if (dateGroupId === 'tomorrow') {
+                            updateFields.dueDate = tomorrowStr;
+                        } else if (dateGroupId === 'nodate') {
+                            updateFields.dueDate = null;
+                        } else if (dateGroupId.startsWith('date-')) {
+                            updateFields.dueDate = dateGroupId.substring(5);
+                        } else if (dateGroupId === 'this_week') {
+                            const nextDay = new Date();
+                            nextDay.setDate(nextDay.getDate() + 2);
+                            updateFields.dueDate = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
+                        } else if (dateGroupId === 'next_week') {
+                            const nextWeekMon = new Date();
+                            const day = nextWeekMon.getDay();
+                            const daysToNextMonday = day === 0 ? 1 : 8 - day;
+                            nextWeekMon.setDate(nextWeekMon.getDate() + daysToNextMonday);
+                            updateFields.dueDate = `${nextWeekMon.getFullYear()}-${String(nextWeekMon.getMonth() + 1).padStart(2, '0')}-${String(nextWeekMon.getDate()).padStart(2, '0')}`;
+                        } else if (dateGroupId === 'this_month') {
+                            const thisMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                            updateFields.dueDate = `${thisMonthEnd.getFullYear()}-${String(thisMonthEnd.getMonth() + 1).padStart(2, '0')}-${String(thisMonthEnd.getDate()).padStart(2, '0')}`;
+                        } else if (dateGroupId === 'next_month') {
+                            const nextMonthFirst = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+                            updateFields.dueDate = `${nextMonthFirst.getFullYear()}-${String(nextMonthFirst.getMonth() + 1).padStart(2, '0')}-${String(nextMonthFirst.getDate()).padStart(2, '0')}`;
+                        } else if (dateGroupId === 'later') {
+                            const laterDate = new Date();
+                            laterDate.setDate(laterDate.getDate() + 45);
+                            updateFields.dueDate = `${laterDate.getFullYear()}-${String(laterDate.getMonth() + 1).padStart(2, '0')}-${String(laterDate.getDate()).padStart(2, '0')}`;
+                        } else if (dateGroupId === 'overdue') {
+                            const task = allTasks.find(t => t.id === taskId);
+                            if (!task.dueDate || task.dueDate >= todayStr) {
+                                const yesterday = new Date();
+                                yesterday.setDate(yesterday.getDate() - 1);
+                                const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+                                updateFields.dueDate = yesterdayStr;
+                            }
+                        }
+                        
+                        updateFields.sectionId = null;
+                        const task = allTasks.find(t => t.id === taskId);
+                        if (task) {
+                            task.dueDate = updateFields.dueDate;
+                            task.sectionId = null;
+                        }
+                    }
+                }
+            }
+
             if (targetParentId) {
                 const parentTask = allTasks.find(t => t.id === targetParentId);
                 if (parentTask) {
@@ -6929,6 +7225,7 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
 
     const project = projectsList.find(p => p.id === projectId);
     const isCountHidden = project && project.hideCount === true;
+    const isGroupByDate = project && project.groupByDate === true;
 
     const menu = document.createElement('div');
     menu.className = 'custom-context-menu';
@@ -6940,6 +7237,15 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
         <div class="ctx-item" id="ctx-change-color-project">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="5" fill="currentColor"></circle></svg>
             <span>Изменить цвет</span>
+        </div>
+        <div class="ctx-item" id="ctx-toggle-group-project">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>${isGroupByDate ? 'Отключить группировку по датам' : 'Группировать по датам'}</span>
         </div>
         <div class="ctx-item" id="ctx-toggle-count-project">
             ${isCountHidden ? `
@@ -6999,6 +7305,20 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
         menu.remove();
         activeContextMenu = null;
         showProjectColorModal(projectId);
+    });
+
+    // Обработчик переключения группировки по датам
+    menu.querySelector('#ctx-toggle-group-project').addEventListener('click', async (evt) => {
+        evt.stopPropagation();
+        menu.remove();
+        activeContextMenu = null;
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                groupByDate: !isGroupByDate
+            });
+        } catch (err) {
+            console.error("Ошибка при изменении группировки по датам:", err);
+        }
     });
 
     // Обработчик переключения видимости счетчика проекта

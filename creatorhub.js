@@ -5074,11 +5074,11 @@ function renderTags() {
     }
     const tagsList = selectedVideo.tags || [];
     infoTags.innerHTML = tagsList.map(tag => {
-        const displayTag = tag.startsWith("#") ? tag : "#" + tag;
+        const displayTag = tag.startsWith("#") ? tag.substring(1) : tag;
         return `
             <span class="tag-badge ${getTagColorClass(tag)}" data-tag="${tag}">${displayTag}<span class="btn-remove-tag" data-tag="${tag}">&times;</span></span>
         `;
-    }).join('') + `<button class="btn-add-tag" id="btnAddTag">+</button>`;
+    }).join('') + `<button class="btn-add-tag" id="btnAddTag" data-tip="Добавить теги">+</button>`;
 
     // Add event listeners to delete buttons
     infoTags.querySelectorAll(".btn-remove-tag").forEach(btn => {
@@ -5096,6 +5096,11 @@ function renderTags() {
             e.stopPropagation();
             toggleTagsDropdown(e);
         });
+    }
+
+    // Инициализируем кастомную подсказку для новых динамических элементов
+    if (typeof initTooltips === "function") {
+        initTooltips();
     }
 }
 

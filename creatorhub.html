@@ -341,7 +341,7 @@
             <div class="detail-sidebar-content-wrapper" id="detailSidebarContentWrapper" style="display: none;">
                 <!-- Превью видео -->
                 <div class="detail-thumbnail-wrapper" style="position: relative;">
-                    <div class="detail-thumbnail-inner" id="detailThumbnailInner" style="border-radius: 16px; overflow: hidden; position: relative;">
+                    <div class="detail-thumbnail-inner" id="detailThumbnailInner" style="border-radius: 16px; overflow: hidden; width: 100%; height: 100%; position: absolute; top: 0; left: 0;">
                         <img id="detailImage" src="https://placehold.co/600x338?text=Select+Video" alt="Превью"
                             class="detail-thumbnail" draggable="false" style="border-radius: 16px;">
                         <div class="video-thumbnail-placeholder idea-placeholder" id="detailImagePlaceholder" style="display: none; width: 100%; height: 100%; border-radius: 16px;">
@@ -382,7 +382,7 @@
 
                 <!-- Metadata Row with Publish Date, Created Date and Tags -->
                 <div class="detail-meta-row" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; font-size: 0.8rem; color: var(--ch-text-gray); padding: 0 24px; box-sizing: border-box;">
-                    <div style="display: flex; align-items: center; gap: 4px; cursor: help;" data-tip="Дата публикации">
+                    <div style="display: flex; align-items: center; gap: 4px; cursor: default;" data-tip="Дата публикации">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.8;">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                             <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -394,7 +394,7 @@
                     
                     <span>&bull;</span>
                     
-                    <div style="display: flex; align-items: center; gap: 4px; margin-right: 4px; cursor: help;" data-tip="Дата создания">
+                    <div style="display: flex; align-items: center; gap: 4px; margin-right: 4px; cursor: default;" data-tip="Дата создания">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.8;">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>

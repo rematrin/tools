@@ -58,6 +58,12 @@
                         <img src="hub256t.png" alt="Logo" style="width: 38px; height: 38px; object-fit: contain;">
                         <span>CreatorHub</span>
                     </div>
+                    <button class="btn-header-gear" id="btnHeaderGear" type="button" title="Настройки" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 50%; transition: all 0.2s; margin-left: -8px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </button>
                     <div class="search-wrapper header-search">
                         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
@@ -88,93 +94,112 @@
                 </div>
             </div>
 
-            <!-- Сетка статистики -->
-            <section class="stats-grid" aria-label="Статистика видео">
+            <!-- Группа: Каналы, Статистика и Баннер с уменьшенными отступами -->
+            <div class="channels-and-stats-wrapper" style="display: flex; flex-direction: column; gap: 8px; margin-top: -16px; margin-bottom: -16px; flex-shrink: 0; width: 100%;">
+                <!-- Переключатель каналов -->
+                <div class="channels-switcher-row" id="channelsSwitcherRow" style="margin: 0;">
+                    <!-- Заполняется динамически -->
+                </div>
 
-                <article class="stat-card ideas">
-                    <div class="stat-main">
-                        <div class="icon" aria-hidden="true">
-                            <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                                <path
-                                    d="M16,7a8.36,8.36,0,0,0-8,8,8.4,8.4,0,0,0,2.29,5.7A4.56,4.56,0,0,1,12,24a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1,4.46,4.46,0,0,1,1.69-3.28A7.87,7.87,0,0,0,24,15a8.17,8.17,0,0,0-2.44-5.83A7.67,7.67,0,0,0,16,7Zm4.34,12.28A6.87,6.87,0,0,0,18.09,23H13.91a7,7,0,0,0-2.2-3.71A6.41,6.41,0,0,1,10,15a6.29,6.29,0,0,1,6-6,5.63,5.63,0,0,1,4.13,1.6A6.16,6.16,0,0,1,22,15,5.93,5.93,0,0,1,20.31,19.28Z">
-                                </path>
-                                <path d="M19,26H13a1,1,0,0,0,0,2h6a1,1,0,0,0,0-2Z"></path>
-                                <path d="M18,29H14a1,1,0,0,0,0,2h4a1,1,0,0,0,0-2Z"></path>
-                                <path d="M16,5a1,1,0,0,0,1-1V2a1,1,0,0,0-2,0V4A1,1,0,0,0,16,5Z"></path>
-                                <path d="M5,14H3a1,1,0,0,0,0,2H5a1,1,0,0,0,0-2Z"></path>
-                                <path d="M29,14H27a1,1,0,0,0,0,2h2a1,1,0,0,0,0-2Z"></path>
-                                <path
-                                    d="M25.9,5.1a1,1,0,0,0-1.41,0L23.07,6.51a1,1,0,0,0,0,1.42,1,1,0,0,0,.71.29,1,1,0,0,0,.71-.29L25.9,6.51A1,1,0,0,0,25.9,5.1Z">
-                                </path>
-                                <path
-                                    d="M8.93,7.93a1,1,0,0,0,0-1.42L7.51,5.1A1,1,0,0,0,6.1,6.51L7.51,7.93a1,1,0,0,0,.71.29A1,1,0,0,0,8.93,7.93Z">
-                                </path>
-                            </svg>
-                        </div>
-                        <div class="content">
-                            <div class="number">32</div>
-                            <div class="label">Идей</div>
-                        </div>
-                    </div>
-                    <div class="change">+5 за неделю</div>
-                </article>
+                <!-- Сетка статистики -->
+                <section class="stats-grid" aria-label="Статистика видео" style="margin: 0;">
 
-                <article class="stat-card work">
-                    <div class="stat-main">
-                        <div class="icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 20h9"></path>
-                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                            </svg>
+                    <article class="stat-card ideas">
+                        <div class="stat-main">
+                            <div class="icon" aria-hidden="true">
+                                <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                                    <path
+                                        d="M16,7a8.36,8.36,0,0,0-8,8,8.4,8.4,0,0,0,2.29,5.7A4.56,4.56,0,0,1,12,24a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1,4.46,4.46,0,0,1,1.69-3.28A7.87,7.87,0,0,0,24,15a8.17,8.17,0,0,0-2.44-5.83A7.67,7.67,0,0,0,16,7Zm4.34,12.28A6.87,6.87,0,0,0,18.09,23H13.91a7,7,0,0,0-2.2-3.71A6.41,6.41,0,0,1,10,15a6.29,6.29,0,0,1,6-6,5.63,5.63,0,0,1,4.13,1.6A6.16,6.16,0,0,1,22,15,5.93,5.93,0,0,1,20.31,19.28Z">
+                                    </path>
+                                    <path d="M19,26H13a1,1,0,0,0,0,2h6a1,1,0,0,0,0-2Z"></path>
+                                    <path d="M18,29H14a1,1,0,0,0,0,2h4a1,1,0,0,0,0-2Z"></path>
+                                    <path d="M16,5a1,1,0,0,0,1-1V2a1,1,0,0,0-2,0V4A1,1,0,0,0,16,5Z"></path>
+                                    <path d="M5,14H3a1,1,0,0,0,0,2H5a1,1,0,0,0,0-2Z"></path>
+                                    <path d="M29,14H27a1,1,0,0,0,0,2h2a1,1,0,0,0,0-2Z"></path>
+                                    <path
+                                        d="M25.9,5.1a1,1,0,0,0-1.41,0L23.07,6.51a1,1,0,0,0,0,1.42,1,1,0,0,0,.71.29,1,1,0,0,0,.71-.29L25.9,6.51A1,1,0,0,0,25.9,5.1Z">
+                                    </path>
+                                    <path
+                                        d="M8.93,7.93a1,1,0,0,0,0-1.42L7.51,5.1A1,1,0,0,0,6.1,6.51L7.51,7.93a1,1,0,0,0,.71.29A1,1,0,0,0,8.93,7.93Z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <div class="content">
+                                <div class="number">32</div>
+                                <div class="label">Идей</div>
+                            </div>
                         </div>
-                        <div class="content">
-                            <div class="number">6</div>
-                            <div class="label">Черновик</div>
-                        </div>
-                    </div>
-                    <div class="change">+1 за неделю</div>
-                </article>
+                        <div class="change">+5 за неделю</div>
+                    </article>
 
-                <article class="stat-card edit">
-                    <div class="stat-main">
-                        <div class="icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path d="m12.296 3.464 3.02 3.956"></path>
-                                <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z">
-                                </path>
-                                <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                <path d="m6.18 5.276 3.1 3.899"></path>
-                            </svg>
+                    <article class="stat-card work">
+                        <div class="stat-main">
+                            <div class="icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 20h9"></path>
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                </svg>
+                            </div>
+                            <div class="content">
+                                <div class="number">6</div>
+                                <div class="label">Черновик</div>
+                            </div>
                         </div>
-                        <div class="content">
-                            <div class="number">3</div>
-                            <div class="label">В процессе</div>
-                        </div>
-                    </div>
-                    <div class="change">без изменений</div>
-                </article>
+                        <div class="change">+1 за неделю</div>
+                    </article>
 
-                <article class="stat-card published">
-                    <div class="stat-main">
-                        <div class="icon" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-check-circle"
-                                viewBox="0 0 16 16">
-                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                                <path
-                                    d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05" />
-                            </svg>
+                    <article class="stat-card edit">
+                        <div class="stat-main">
+                            <div class="icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m12.296 3.464 3.02 3.956"></path>
+                                    <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z">
+                                    </path>
+                                    <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <path d="m6.18 5.276 3.1 3.899"></path>
+                                </svg>
+                            </div>
+                            <div class="content">
+                                <div class="number">3</div>
+                                <div class="label">В процессе</div>
+                            </div>
                         </div>
-                        <div class="content">
-                            <div class="number">47</div>
-                            <div class="label">Опубликовано</div>
-                        </div>
-                    </div>
-                    <div class="change">+3 за неделю</div>
-                </article>
+                        <div class="change">без изменений</div>
+                    </article>
 
-            </section>
+                    <article class="stat-card published">
+                        <div class="stat-main">
+                            <div class="icon" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-check-circle"
+                                    viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                    <path
+                                        d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05" />
+                                </svg>
+                            </div>
+                            <div class="content">
+                                <div class="number">47</div>
+                                <div class="label">Опубликовано</div>
+                            </div>
+                        </div>
+                        <div class="change">+3 за неделю</div>
+                    </article>
+
+                </section>
+
+                <!-- Информационная плашка о последнем опубликованном видео -->
+                <div class="last-video-banner" id="lastVideoBanner" style="display: none; align-items: center; gap: 10px; padding: 12px 18px; border-radius: 12px; margin: 0; font-size: 0.9rem; font-weight: 500; background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.12); color: #2563eb;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="flex-shrink: 0; opacity: 0.9;">
+                        <path d="m12.296 3.464 3.02 3.956"></path>
+                        <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"></path>
+                        <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <path d="m6.18 5.276 3.1 3.899"></path>
+                    </svg>
+                    <span id="lastVideoBannerText">С последнего опубликованного видео прошло 5 дней</span>
+                </div>
+            </div>
 
             <!-- Раздел "Мои видео" -->
             <div class="videos-section">
@@ -183,7 +208,11 @@
                 </div>
 
                 <!-- Панель управления (фильтры, сортировка и вид) -->
-                <div class="controls-panel">
+                <div class="controls-panel" style="gap: 12px;">
+                    <div id="bulkSelectAllContainer" style="display: none; align-items: center; gap: 6px; flex-shrink: 0; padding-left: 4px;">
+                        <input type="checkbox" id="bulkSelectAllCheckbox" style="width: 16px; height: 16px; accent-color: var(--ch-purple); cursor: pointer;" title="Выделить все видео">
+                        <span style="font-size: 0.8rem; font-weight: 600; color: var(--ch-text-gray); user-select: none; cursor: pointer;" onclick="document.getElementById('bulkSelectAllCheckbox').click();">Все</span>
+                    </div>
                     <div class="filters-tabs">
                         <button class="tab-btn" data-filter="idea">Идеи</button>
                         <button class="tab-btn" data-filter="in_progress">Черновик</button>
@@ -433,6 +462,15 @@
                         <div class="detail-card">
                             <label class="info-label" style="margin-bottom: 16px; font-weight: 700;">Настройки видео</label>
 
+                            <div class="settings-row" id="settingChannelRow" style="margin-bottom: 14px;">
+                                <div class="settings-row-left">
+                                    <span class="settings-row-label">Канал</span>
+                                </div>
+                                <select id="settingVideoChannel" class="settings-row-input" style="background: var(--ch-bg); color: var(--ch-text-dark); border: 1px solid var(--ch-border); border-radius: 8px; padding: 6px 10px; font-family: inherit; font-size: 0.9rem; cursor: pointer; outline: none; transition: border-color 0.2s; width: 100%; box-sizing: border-box;">
+                                    <!-- Опции генерируются через JS -->
+                                </select>
+                            </div>
+
                             <div class="settings-row">
                                 <div class="settings-row-left">
                                     <span class="settings-row-label">Ссылка на видео</span>
@@ -449,7 +487,7 @@
                                         <button id="btnOpenGlobalButtons" type="button" class="btn-gear-settings" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 4px; display: flex; align-items: center; transition: color 0.2s;" title="База кнопок">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <circle cx="12" cy="12" r="3"></circle>
-                                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                                             </svg>
                                         </button>
                                     </div>
@@ -642,6 +680,22 @@
             </svg>
             <span>Удалить</span>
         </button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item" id="btnVideoSelect">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <polyline points="9 11 12 14 22 4"></polyline>
+            </svg>
+            <span>Выбрать</span>
+        </button>
+        <button class="dropdown-item" id="btnVideoMoveToChannel">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span>Переместить в канал</span>
+        </button>
     </div>
 
     <!-- Модальное окно подтверждения удаления видео -->
@@ -704,100 +758,26 @@
     <!-- Модальное окно настроек -->
     <div class="settings-modal-overlay" id="settingsModal" style="display: none;">
         <div class="settings-modal-card">
-            <!-- Сайдбар настроек (левая сторона) -->
-            <div class="settings-modal-sidebar">
-                <h2 class="settings-sidebar-title">Настройки</h2>
-                <nav class="settings-sidebar-menu">
-                    <button class="settings-menu-item active" data-tab="account">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
-                            height="16">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                        <span>Аккаунт</span>
-                    </button>
-                    <button class="settings-menu-item" data-tab="general">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
-                            height="16">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path
-                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
-                            </path>
-                        </svg>
-                        <span>Основное</span>
-                    </button>
-                    <button class="settings-menu-item" data-tab="appearance">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
-                            height="16">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="9" y1="3" x2="9" y2="21"></line>
-                        </svg>
-                        <span>Боковая панель</span>
-                    </button>
-                </nav>
-            </div>
-
-            <!-- Основной контент настроек (правая сторона) -->
+            <!-- Основной контент настроек -->
             <div class="settings-modal-content">
                 <button class="settings-close-btn" id="btnSettingsClose" aria-label="Закрыть настройки">&times;</button>
 
-                <!-- Вкладка: Основное -->
-                <div class="settings-tab-pane" id="tab-general" style="display: none;">
-                    <h3 style="margin-top: 0; font-size: 1.1rem; font-weight: 600; color: var(--ch-text-dark);">Общие
-                        настройки</h3>
-                    <div class="settings-section">
-                        <div class="settings-field"
-                            style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0;">
-                            <div class="settings-field-info">
-                                <label
-                                    style="display: block; font-weight: 600; font-size: 0.95rem; color: var(--ch-text-dark); margin-bottom: 2px;">Уведомления</label>
-                                <span style="font-size: 0.82rem; color: var(--ch-text-gray);">Включить системные
-                                    уведомления</span>
-                            </div>
-                            <label class="switch-container">
-                                <input type="checkbox" id="prefNotifications">
-                                <span class="slider round"></span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Вкладка: Аккаунт -->
-                <div class="settings-tab-pane active" id="tab-account">
-                    <div class="settings-profile-header">
-                        <div class="settings-avatar-wrapper">
-                            <img src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" alt="Avatar"
-                                class="settings-profile-avatar" id="settingsProfileAvatar">
-                        </div>
-                        <div class="settings-profile-info">
-                            <h3 class="settings-profile-name" id="settingsProfileName">Max</h3>
-                        </div>
-                    </div>
 
-                    <div class="settings-section">
-                        <div class="settings-field">
-                            <div class="settings-field-info">
-                                <label>Электронная почта</label>
-                                <span id="settingsEmailText">--</span>
-                            </div>
-                        </div>
-                        <div class="settings-field">
-                            <div class="settings-field-info">
-                                <label>Пароль</label>
-                                <span>••••••••</span>
-                            </div>
-                            <button class="settings-field-action-btn" id="btnSettingsChangePassword">Изменить
-                                пароль</button>
-                        </div>
+                <!-- Вкладка: Каналы -->
+                <div class="settings-tab-pane active" id="tab-channels">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--ch-text-dark);">Управление каналами</h3>
+                        <button id="btnSettingsAddChannel" class="confirm-btn-danger" style="background: var(--ch-purple); color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 500; font-size: 0.85rem; cursor: pointer; transition: opacity 0.2s;">
+                            + Добавить канал
+                        </button>
                     </div>
-                </div>
-
-                <!-- Вкладка: Боковая панель -->
-                <div class="settings-tab-pane" id="tab-appearance" style="display: none;">
-                    <h3 style="margin-top: 0; font-size: 1.1rem; font-weight: 600; color: var(--ch-text-dark);">
-                        Настройки боковой панели</h3>
-                    <p style="font-size: 0.92rem; color: var(--ch-text-gray);">Настройки отображения меню появятся
-                        здесь.</p>
+                    <p style="font-size: 0.82rem; color: var(--ch-text-gray); margin-bottom: 16px;">
+                        Добавьте ваши YouTube каналы. Переключайтесь между ними, чтобы видеть разную статистику и списки видео.
+                    </p>
+                    <div id="settingsChannelsList" style="display: flex; flex-direction: column; gap: 12px; max-height: 380px; overflow-y: auto; padding-right: 4px;">
+                        <!-- Будет генерироваться через JS -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -864,6 +844,60 @@
 
     <!-- Скрытые элементы для обложки -->
     <input type="file" id="thumbnailFileInput" accept="image/*" style="display: none;">
+
+    <!-- Панель массовых действий -->
+    <div class="bulk-actions-toolbar" id="bulkActionsToolbar" style="display: none;">
+        <div class="bulk-actions-info">
+            Выбрано видео: <span id="bulkSelectedCount">0</span>
+        </div>
+        <div class="bulk-actions-buttons">
+            <button id="btnBulkMove" class="bulk-action-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                В канал
+            </button>
+            <button id="btnBulkAddTags" class="bulk-action-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                    <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                </svg>
+                + Теги
+            </button>
+            <button id="btnBulkRemoveTags" class="bulk-action-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                - Теги
+            </button>
+            <button id="btnBulkDelete" class="bulk-action-btn danger">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Удалить
+            </button>
+            <button id="btnBulkCancel" class="bulk-action-btn cancel">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Кастомное модальное окно: Подтверждение и Ввод -->
+    <div class="confirm-modal-overlay" id="chCustomModal" style="display: none; z-index: 30000;">
+        <div class="confirm-modal-card" style="max-width: 400px; width: 90%;">
+            <h3 class="confirm-modal-title" id="chCustomModalTitle">Подтверждение</h3>
+            <p class="confirm-modal-desc" id="chCustomModalDesc">Вы уверены?</p>
+            <div id="chCustomModalInputContainer" style="display: none; margin-bottom: 20px;">
+                <input type="text" id="chCustomModalInput" style="width: 100%; border: 1px solid var(--ch-border); border-radius: 8px; padding: 10px 12px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 0.95rem; box-sizing: border-box; outline: none; transition: border-color 0.2s;" placeholder="Введите значение...">
+            </div>
+            <div class="confirm-modal-actions" id="chCustomModalActions">
+                <button class="confirm-btn-cancel" id="btnChCustomModalCancel">Отмена</button>
+                <button class="confirm-btn-danger" id="btnChCustomModalConfirm" style="background: var(--ch-purple); border-color: var(--ch-purple);">ОК</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Общие скрипты -->
     <script type="module" src="nav-widget.js"></script>

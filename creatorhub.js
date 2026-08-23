@@ -25,6 +25,23 @@ let currentMenuRoute = "videos"; // "videos" | "trash"
 let isDeletePermanentMode = false;
 let currentViewMode = localStorage.getItem("creatorhub_view_mode") || "list";
 
+// Переменные каналов
+let channels = [];
+try {
+    const savedChannels = localStorage.getItem("creatorhub_channels");
+    if (savedChannels) {
+        channels = JSON.parse(savedChannels);
+    }
+} catch (e) {
+    console.error("Error reading saved channels:", e);
+}
+if (!channels) {
+    channels = [];
+}
+let currentChannelId = localStorage.getItem("creatorhub_current_channel_id") || (channels[0] ? channels[0].id : null);
+let bulkSelectedVideoIds = [];
+let isBulkSelectionMode = false;
+
 // Переменные для интеграции с todo.html
 let youtubeProjectId = null;
 let videoSectionId = null;
@@ -304,6 +321,17 @@ function getFilteredVideos() {
 
         if (!matchesSearch || !matchesTab) {
             return false;
+        }
+
+        // Фильтрация по каналу
+        if (channels && channels.length > 0 && currentChannelId) {
+            if (currentChannelId === "no_channel") {
+                const matchesChannel = !v.channelId || !channels.some(ch => ch.id === v.channelId);
+                if (!matchesChannel) return false;
+            } else {
+                const matchesChannel = (v.channelId === currentChannelId);
+                if (!matchesChannel) return false;
+            }
         }
 
         // Apply advanced rules filters
@@ -1402,6 +1430,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    const settingVideoChannel = document.getElementById("settingVideoChannel");
+    if (settingVideoChannel) {
+        settingVideoChannel.addEventListener("change", (e) => {
+            if (!selectedVideo) return;
+            const newChannelId = e.target.value || "";
+            selectedVideo.channelId = newChannelId;
+            saveVideoData("channelId", newChannelId);
+            renderVideosList();
+            updateStatsCounters();
+        });
+    }
+
     // Логика изменения обложки видео (вызов модального окна)
     const btnChangeThumbnail = document.getElementById("btnChangeThumbnail");
     if (btnChangeThumbnail) {
@@ -1689,8 +1729,72 @@ function updateViewForRoute() {
 }
 
 // Функция обновления счетчиков статистики
+// Вспомогательная функция для склонения дней
+function getDaysWord(days) {
+    const lastDigit = days % 10;
+    const lastTwoDigits = days % 100;
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+        return "дней";
+    }
+    if (lastDigit === 1) {
+        return "день";
+    }
+    if (lastDigit >= 2 && lastDigit <= 4) {
+        return "дня";
+    }
+    return "дней";
+}
+
 function updateStatsCounters() {
-    const activeVideos = videos.filter(v => !v.deleted);
+    let activeVideos = videos.filter(v => !v.deleted);
+    if (channels && channels.length > 0 && currentChannelId) {
+        if (currentChannelId === "no_channel") {
+            activeVideos = activeVideos.filter(v => !v.channelId || !channels.some(ch => ch.id === v.channelId));
+        } else {
+            activeVideos = activeVideos.filter(v => v.channelId === currentChannelId);
+        }
+    }
+
+    // Обновление информационной плашки о последнем опубликованном видео
+    const lastVideoBanner = document.getElementById("lastVideoBanner");
+    const lastVideoBannerText = document.getElementById("lastVideoBannerText");
+    if (lastVideoBanner && lastVideoBannerText) {
+        const publishedVideos = activeVideos.filter(v => v.status === "published" && v.publishDate);
+        if (publishedVideos.length > 0) {
+            let latestDate = null;
+            publishedVideos.forEach(v => {
+                const d = new Date(v.publishDate);
+                if (!isNaN(d.getTime())) {
+                    if (!latestDate || d > latestDate) {
+                        latestDate = d;
+                    }
+                }
+            });
+
+            if (latestDate) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                latestDate.setHours(0, 0, 0, 0);
+                const diffTime = today - latestDate;
+                const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+                
+                let text = "";
+                if (diffDays === 0) {
+                    text = "Последнее видео опубликовано сегодня";
+                } else {
+                    const daysWord = getDaysWord(diffDays);
+                    text = `С последнего опубликованного видео прошло ${diffDays} ${daysWord}`;
+                }
+                lastVideoBannerText.textContent = text;
+                lastVideoBanner.style.display = "flex";
+            } else {
+                lastVideoBanner.style.display = "none";
+            }
+        } else {
+            lastVideoBanner.style.display = "none";
+        }
+    }
+
     const countIdeas = activeVideos.filter(v => v.status === "idea").length;
     const countInProgress = activeVideos.filter(v => v.status === "in_progress").length;
     const countEditing = activeVideos.filter(v => v.status === "editing").length;
@@ -1875,11 +1979,23 @@ function renderVideosList() {
         });
     }
 
-    // Обновляем статистические счетчики
+    // Обновляем статистические счетчики и переключатель каналов
     updateStatsCounters();
     updateTabCounts();
+    renderChannelSwitcher();
 
     const filtered = getFilteredVideos();
+    const filteredIds = filtered.map(v => v.id);
+    bulkSelectedVideoIds = bulkSelectedVideoIds.filter(id => filteredIds.includes(id));
+    
+    // Синхронизация верхнего чекбокса "Выделить все"
+    const bulkSelectAllCheckbox = document.getElementById("bulkSelectAllCheckbox");
+    if (bulkSelectAllCheckbox) {
+        const isAllSelected = filtered.length > 0 && filtered.every(v => bulkSelectedVideoIds.includes(v.id));
+        bulkSelectAllCheckbox.checked = isAllSelected;
+    }
+    
+    updateBulkActionsToolbar();
 
     if (filtered.length === 0) {
         videosListContainer.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--ch-text-gray); grid-column: 1 / -1; width: 100%;">Видео не найдены</div>`;
@@ -1922,6 +2038,9 @@ function renderVideosList() {
         if (v.deleted) {
             card.innerHTML = `
                 <div class="video-card-left">
+                    <div class="video-card-checkbox-wrapper" onclick="event.stopPropagation();">
+                        <input type="checkbox" class="video-bulk-checkbox" data-id="${v.id}" ${bulkSelectedVideoIds.includes(v.id) ? 'checked' : ''}>
+                    </div>
                     <div class="video-thumbnail-container">
                         <div class="video-thumbnail-inner">
                             ${thumbnailHtml}
@@ -1959,6 +2078,9 @@ function renderVideosList() {
         } else {
             card.innerHTML = `
                 <div class="video-card-left">
+                    <div class="video-card-checkbox-wrapper" onclick="event.stopPropagation();">
+                        <input type="checkbox" class="video-bulk-checkbox" data-id="${v.id}" ${bulkSelectedVideoIds.includes(v.id) ? 'checked' : ''}>
+                    </div>
                     <div class="video-thumbnail-container">
                         <div class="video-thumbnail-inner">
                             ${thumbnailHtml}
@@ -2004,8 +2126,33 @@ function renderVideosList() {
             }
         }
 
+        // Слушатель изменения чекбокса
+        const bulkCb = card.querySelector(".video-bulk-checkbox");
+        if (bulkCb) {
+            bulkCb.addEventListener("change", (e) => {
+                const vidId = v.id;
+                if (e.target.checked) {
+                    if (!bulkSelectedVideoIds.includes(vidId)) {
+                        bulkSelectedVideoIds.push(vidId);
+                    }
+                } else {
+                    bulkSelectedVideoIds = bulkSelectedVideoIds.filter(id => id !== vidId);
+                }
+                
+                // Синхронизация общего чекбокса "Выделить все"
+                const bulkSelectAllCheckbox = document.getElementById("bulkSelectAllCheckbox");
+                if (bulkSelectAllCheckbox) {
+                    const filtered = getFilteredVideos();
+                    const isAllSelected = filtered.length > 0 && filtered.every(item => bulkSelectedVideoIds.includes(item.id));
+                    bulkSelectAllCheckbox.checked = isAllSelected;
+                }
+                
+                updateBulkActionsToolbar();
+            });
+        }
+
         card.addEventListener("click", (e) => {
-            if (e.target.closest(".video-options-btn") || e.target.closest(".btn-restore") || e.target.closest(".btn-delete-perm")) {
+            if (e.target.closest(".video-options-btn") || e.target.closest(".btn-restore") || e.target.closest(".btn-delete-perm") || e.target.closest(".video-card-checkbox-wrapper")) {
                 return;
             }
             selectVideoItem(v.id);
@@ -2527,6 +2674,26 @@ function selectVideoItem(id) {
         settingVideoLink.value = selectedVideo.videoLink || "";
     }
 
+    const settingVideoChannel = document.getElementById("settingVideoChannel");
+    if (settingVideoChannel) {
+        settingVideoChannel.innerHTML = "";
+        
+        const defaultOpt = document.createElement("option");
+        defaultOpt.value = "";
+        defaultOpt.textContent = "Без канала";
+        settingVideoChannel.appendChild(defaultOpt);
+
+        if (channels && channels.length > 0) {
+            channels.forEach(ch => {
+                const opt = document.createElement("option");
+                opt.value = ch.id;
+                opt.textContent = ch.name;
+                settingVideoChannel.appendChild(opt);
+            });
+        }
+        settingVideoChannel.value = selectedVideo.channelId || "";
+    }
+
     migrateVideosData(videos);
     renderSelectedVideoButtons();
 
@@ -2627,9 +2794,26 @@ window.addEventListener('authChanged', (e) => {
                         globalButtons: globalButtons
                     }).catch(err => console.error("Error seeding Firestore globalButtons:", err));
                 }
+
+                // Синхронизация каналов
+                if (userData && userData.channels && Array.isArray(userData.channels)) {
+                    channels = userData.channels;
+                    localStorage.setItem("creatorhub_channels", JSON.stringify(channels));
+                    if (channels.length > 0 && (!currentChannelId || !channels.some(c => c.id === currentChannelId))) {
+                        currentChannelId = channels[0].id;
+                        localStorage.setItem("creatorhub_current_channel_id", currentChannelId);
+                    }
+                    renderChannelSwitcher();
+                    renderVideosList();
+                    updateStatsCounters();
+                } else {
+                    updateDoc(doc(db, "users", currentUid), {
+                        channels: channels
+                    }).catch(err => console.error("Error seeding Firestore channels:", err));
+                }
             }
         }).catch((err) => {
-            console.error("Error loading global buttons from Firestore:", err);
+            console.error("Error loading profile details from Firestore:", err);
         });
 
         // Подписка на проекты
@@ -2809,7 +2993,7 @@ const btnSettingsClose = document.getElementById('btnSettingsClose');
 function openSettingsModal() {
     if (settingsModal) {
         settingsModal.style.display = 'flex';
-        switchSettingsTab('account');
+        renderSettingsChannels();
     }
 }
 
@@ -2951,6 +3135,7 @@ async function addVideo() {
     else if (defaultStatus === "editing") statusText = "В процессе";
     else if (defaultStatus === "published") statusText = "Опубликовано";
 
+    const activeChannelId = currentChannelId || (channels[0] ? channels[0].id : null);
     const newVideoData = {
         title: "Новое видео",
         status: defaultStatus,
@@ -2966,7 +3151,8 @@ async function addVideo() {
         link: "",
         notes: "",
         checklist: [],
-        files: []
+        files: [],
+        channelId: activeChannelId
     };
 
     if (currentUid) {
@@ -3136,6 +3322,71 @@ document.getElementById("btnVideoRename").addEventListener("click", (e) => {
     if (activeMenuVideoId) {
         renameVideoInSidebar(activeMenuVideoId);
     }
+});
+
+document.getElementById("btnVideoSelect").addEventListener("click", (e) => {
+    e.stopPropagation();
+    videoActionsDropdown.style.display = "none";
+    if (activeMenuVideoId) {
+        isBulkSelectionMode = true;
+        if (!bulkSelectedVideoIds.includes(activeMenuVideoId)) {
+            bulkSelectedVideoIds.push(activeMenuVideoId);
+        }
+        updateBulkActionsToolbar();
+        renderVideosList();
+    }
+});
+
+document.getElementById("btnVideoMoveToChannel").addEventListener("click", async (e) => {
+    e.stopPropagation();
+    videoActionsDropdown.style.display = "none";
+    if (!activeMenuVideoId) return;
+
+    const v = videos.find(item => item.id === activeMenuVideoId);
+    if (!v) return;
+
+    const customButtons = channels.map(ch => ({
+        text: ch.name,
+        val: ch.id,
+        style: { background: "var(--ch-purple)", borderColor: "var(--ch-purple)" }
+    }));
+    customButtons.push({
+        text: "Без канала",
+        val: "no_channel",
+        style: { background: "var(--ch-text-gray)", borderColor: "var(--ch-text-gray)" }
+    });
+    customButtons.push({
+        text: "Отмена",
+        val: "cancel",
+        type: "cancel"
+    });
+
+    const targetChId = await showCustomConfirm(
+        "Переместить видео",
+        `Выберите канал для перемещения видео "${v.title}":`,
+        customButtons
+    );
+
+    if (targetChId === "cancel" || !targetChId) return;
+
+    const finalChId = targetChId === "no_channel" ? "" : targetChId;
+    v.channelId = finalChId;
+    
+    if (currentUid && db) {
+        try {
+            await updateDoc(doc(db, "users", currentUid, "videos", activeMenuVideoId), {
+                channelId: finalChId
+            });
+        } catch (err) {
+            console.error("Error moving single video:", err);
+        }
+    } else {
+        localStorage.setItem("local_videos", JSON.stringify(videos));
+    }
+
+    renderVideosList();
+    updateStatsCounters();
+    renderChannelSwitcher();
 });
 
 const confirmDeleteVideoModal = document.getElementById("confirmDeleteVideoModal");
@@ -4776,7 +5027,15 @@ function initTouchDragAndDrop() {
 }
 
 function updateTabCounts() {
-    const activeVideos = videos.filter(v => !v.deleted);
+    let activeVideos = videos.filter(v => !v.deleted);
+    if (channels && channels.length > 0 && currentChannelId) {
+        if (currentChannelId === "no_channel") {
+            activeVideos = activeVideos.filter(v => !v.channelId || !channels.some(ch => ch.id === v.channelId));
+        } else {
+            activeVideos = activeVideos.filter(v => v.channelId === currentChannelId);
+        }
+    }
+
     const countMap = {
         idea: activeVideos.filter(v => v.status === "idea").length,
         in_progress: activeVideos.filter(v => v.status === "in_progress").length,
@@ -5860,7 +6119,8 @@ function initChTaskEditModal() {
         btnDelete.addEventListener("click", async (e) => {
             e.stopPropagation();
             if (currentEditingTask) {
-                if (confirm("Вы уверены, что хотите удалить эту задачу?")) {
+                const confirmed = await showCustomConfirm("Удалить задачу?", "Вы действительно хотите удалить эту задачу?");
+                if (confirmed) {
                     await deleteTask(currentEditingTask.id);
                     closeChTaskEditModal();
                 }
@@ -6036,5 +6296,813 @@ function getDueDateBadgeHtml(dueDateStr) {
         </span>
     `;
 }
+
+// === Управление каналами ===
+
+function renderChannelSwitcher() {
+    const row = document.getElementById("channelsSwitcherRow");
+    if (!row) return;
+    row.innerHTML = "";
+
+    if (!channels || channels.length === 0) {
+        row.style.display = "none";
+        return;
+    }
+    row.style.display = "flex";
+
+    channels.forEach(ch => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "channel-pill-btn" + (ch.id === currentChannelId ? " active" : "");
+        btn.setAttribute("data-channel-id", ch.id);
+
+        if (ch.avatarUrl) {
+            const img = document.createElement("img");
+            img.src = ch.avatarUrl;
+            img.className = "channel-pill-avatar";
+            btn.appendChild(img);
+        } else {
+            const placeholder = document.createElement("div");
+            placeholder.className = "channel-pill-avatar-placeholder";
+            placeholder.textContent = ch.name ? ch.name.charAt(0) : "?";
+            btn.appendChild(placeholder);
+        }
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = ch.name;
+        btn.appendChild(nameSpan);
+
+        // Расчет количества видео в канале
+        const count = videos.filter(v => !v.deleted && v.channelId === ch.id).length;
+        
+        const countSpan = document.createElement("span");
+        countSpan.className = "channel-pill-count";
+        countSpan.textContent = count;
+        btn.appendChild(countSpan);
+
+        btn.addEventListener("click", () => {
+            currentChannelId = ch.id;
+            localStorage.setItem("creatorhub_current_channel_id", ch.id);
+            
+            row.querySelectorAll(".channel-pill-btn").forEach(b => {
+                b.classList.toggle("active", b.getAttribute("data-channel-id") === ch.id);
+            });
+
+            renderVideosList();
+            updateStatsCounters();
+        });
+
+        row.appendChild(btn);
+    });
+
+    // Добавляем вкладку "Без канала", только если есть видео без привязанного канала
+    const hasVideosWithoutChannel = videos.some(v => !v.deleted && (!v.channelId || !channels.some(ch => ch.id === v.channelId)));
+    if (hasVideosWithoutChannel) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "channel-pill-btn" + (currentChannelId === "no_channel" ? " active" : "");
+        btn.setAttribute("data-channel-id", "no_channel");
+
+        const placeholder = document.createElement("div");
+        placeholder.className = "channel-pill-avatar-placeholder";
+        placeholder.textContent = "?";
+        btn.appendChild(placeholder);
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = "Без канала";
+        btn.appendChild(nameSpan);
+
+        // Расчет количества видео без канала
+        const count = videos.filter(v => !v.deleted && (!v.channelId || !channels.some(ch => ch.id === v.channelId))).length;
+        const countSpan = document.createElement("span");
+        countSpan.className = "channel-pill-count";
+        countSpan.textContent = count;
+        btn.appendChild(countSpan);
+
+        btn.addEventListener("click", () => {
+            currentChannelId = "no_channel";
+            localStorage.setItem("creatorhub_current_channel_id", "no_channel");
+            
+            row.querySelectorAll(".channel-pill-btn").forEach(b => {
+                b.classList.toggle("active", b.getAttribute("data-channel-id") === "no_channel");
+            });
+
+            renderVideosList();
+            updateStatsCounters();
+        });
+
+        row.appendChild(btn);
+    }
+}
+
+function renderSettingsChannels() {
+    const container = document.getElementById("settingsChannelsList");
+    if (!container) return;
+    container.innerHTML = "";
+
+    channels.forEach((ch, idx) => {
+        const item = document.createElement("div");
+        item.className = "channel-settings-item";
+        item.style.display = "flex";
+        item.style.alignItems = "center";
+        item.style.justifyContent = "space-between";
+        item.style.padding = "10px";
+        item.style.border = "1px solid var(--ch-border)";
+        item.style.borderRadius = "12px";
+        item.style.backgroundColor = "var(--ch-bg)";
+
+        const avatarWrapper = document.createElement("div");
+        avatarWrapper.className = "channel-avatar-edit-wrapper";
+        avatarWrapper.style.position = "relative";
+        avatarWrapper.style.width = "40px";
+        avatarWrapper.style.height = "40px";
+        avatarWrapper.style.borderRadius = "50%";
+        avatarWrapper.style.overflow = "hidden";
+        avatarWrapper.style.cursor = "pointer";
+        avatarWrapper.style.border = "1px solid var(--ch-border)";
+        avatarWrapper.style.flexShrink = "0";
+
+        if (ch.avatarUrl) {
+            const img = document.createElement("img");
+            img.src = ch.avatarUrl;
+            img.style.width = "100%";
+            img.style.height = "100%";
+            img.style.objectFit = "cover";
+            avatarWrapper.appendChild(img);
+        } else {
+            const placeholder = document.createElement("div");
+            placeholder.className = "channel-pill-avatar-placeholder";
+            placeholder.style.width = "100%";
+            placeholder.style.height = "100%";
+            placeholder.style.display = "flex";
+            placeholder.style.alignItems = "center";
+            placeholder.style.justifyContent = "center";
+            placeholder.style.fontSize = "0.9rem";
+            placeholder.textContent = ch.name ? ch.name.charAt(0) : "?";
+            avatarWrapper.appendChild(placeholder);
+        }
+
+        const overlay = document.createElement("div");
+        overlay.className = "channel-avatar-overlay";
+        overlay.style.position = "absolute";
+        overlay.style.inset = "0";
+        overlay.style.background = "rgba(0,0,0,0.5)";
+        overlay.style.display = "flex";
+        overlay.style.alignItems = "center";
+        overlay.style.justifyContent = "center";
+        overlay.style.opacity = "0";
+        overlay.style.transition = "opacity 0.2s";
+        overlay.style.color = "#ffffff";
+        overlay.style.fontSize = "0.68rem";
+        overlay.style.fontWeight = "600";
+        overlay.textContent = "Изменить";
+        avatarWrapper.appendChild(overlay);
+
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/*";
+        fileInput.style.display = "none";
+        avatarWrapper.appendChild(fileInput);
+
+        avatarWrapper.addEventListener("click", () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                try {
+                    overlay.style.opacity = "1";
+                    overlay.textContent = "Загрузка...";
+                    
+                    // 1. Сжатие и кроп до 128x128
+                    const compressedBase64 = await resizeAndCompressImage(evt.target.result, 128, 128);
+                    
+                    // 2. Загрузка на ImgBB
+                    const imgUrl = await uploadToImgBB(compressedBase64);
+                    
+                    ch.avatarUrl = imgUrl;
+                    saveChannels();
+                    renderSettingsChannels();
+                    renderChannelSwitcher();
+                    renderVideosList();
+                } catch (err) {
+                    console.error("Ошибка загрузки аватара:", err);
+                    alert("Не удалось загрузить аватарку. Попробуйте еще раз.");
+                } finally {
+                    overlay.style.opacity = "";
+                    overlay.textContent = "Изменить";
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        const leftWrap = document.createElement("div");
+        leftWrap.style.display = "flex";
+        leftWrap.style.alignItems = "center";
+        leftWrap.style.gap = "12px";
+        leftWrap.style.flexGrow = "1";
+        leftWrap.style.marginRight = "12px";
+
+        leftWrap.appendChild(avatarWrapper);
+
+        const nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.className = "channel-item-name-input";
+        nameInput.value = ch.name;
+        nameInput.placeholder = "Название канала";
+        nameInput.style.border = "1px solid transparent";
+        nameInput.style.background = "transparent";
+        nameInput.style.fontFamily = "inherit";
+        nameInput.style.fontSize = "0.95rem";
+        nameInput.style.fontWeight = "600";
+        nameInput.style.color = "var(--ch-text-dark)";
+        nameInput.style.padding = "6px 10px";
+        nameInput.style.borderRadius = "8px";
+        nameInput.style.flexGrow = "1";
+        nameInput.style.transition = "all 0.2s";
+
+        leftWrap.appendChild(nameInput);
+        item.appendChild(leftWrap);
+
+        const actionsWrap = document.createElement("div");
+        actionsWrap.style.display = "flex";
+        actionsWrap.style.alignItems = "center";
+        actionsWrap.style.gap = "8px";
+
+        const saveBtn = document.createElement("button");
+        saveBtn.type = "button";
+        saveBtn.className = "btn-save-channel-name";
+        saveBtn.textContent = "Сохранить";
+        saveBtn.style.display = "none";
+        saveBtn.style.background = "var(--ch-purple)";
+        saveBtn.style.color = "#ffffff";
+        saveBtn.style.border = "none";
+        saveBtn.style.padding = "6px 12px";
+        saveBtn.style.borderRadius = "8px";
+        saveBtn.style.fontSize = "0.82rem";
+        saveBtn.style.fontWeight = "600";
+        saveBtn.style.cursor = "pointer";
+        actionsWrap.appendChild(saveBtn);
+
+        nameInput.addEventListener("input", () => {
+            saveBtn.style.display = "inline-block";
+        });
+
+        saveBtn.addEventListener("click", () => {
+            ch.name = nameInput.value.trim() || "Без названия";
+            saveChannels();
+            renderSettingsChannels();
+            renderChannelSwitcher();
+        });
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "btn-delete-channel";
+        deleteBtn.style.background = "none";
+        deleteBtn.style.border = "none";
+        deleteBtn.style.color = "#dc2626";
+        deleteBtn.style.padding = "6px";
+        deleteBtn.style.cursor = "pointer";
+        deleteBtn.style.display = "flex";
+        deleteBtn.style.alignItems = "center";
+        deleteBtn.style.borderRadius = "8px";
+        deleteBtn.style.transition = "background-color 0.2s";
+
+        deleteBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+        `;
+        actionsWrap.appendChild(deleteBtn);
+
+        deleteBtn.addEventListener("click", async () => {
+            const result = await showCustomConfirm(
+                "Удалить канал?", 
+                `Вы действительно хотите удалить канал "${ch.name}"? Выберите вариант обработки видео этого канала:`,
+                [
+                    { text: "Оставить видео без канала", val: "keep", style: { background: "var(--ch-purple)", borderColor: "var(--ch-purple)" } },
+                    { text: "Удалить канал и все его видео", val: "delete", style: { background: "#dc2626", borderColor: "#dc2626" } },
+                    { text: "Отмена", val: "cancel", type: "cancel" }
+                ]
+            );
+
+            if (result === "cancel" || !result) return;
+
+            // Удаляем канал из списка
+            channels.splice(idx, 1);
+            if (currentChannelId === ch.id) {
+                currentChannelId = channels[0] ? channels[0].id : null;
+                localStorage.setItem("creatorhub_current_channel_id", currentChannelId || "");
+            }
+
+            // Обработка видео в канале
+            if (result === "delete") {
+                const videosToDelete = videos.filter(v => v.channelId === ch.id);
+                for (const v of videosToDelete) {
+                    v.deleted = true;
+                    v.deletedAt = new Date().toISOString();
+                    if (currentUid && db) {
+                        try {
+                            await updateDoc(doc(db, "users", currentUid, "videos", v.id), {
+                                deleted: true,
+                                deletedAt: serverTimestamp()
+                            });
+                        } catch (e) {
+                            console.error("Error updating deleted status:", e);
+                        }
+                    }
+                }
+                if (!currentUid) {
+                    localStorage.setItem("local_videos", JSON.stringify(videos));
+                }
+            } else if (result === "keep") {
+                const videosToKeep = videos.filter(v => v.channelId === ch.id);
+                for (const v of videosToKeep) {
+                    v.channelId = "";
+                    if (currentUid && db) {
+                        try {
+                            await updateDoc(doc(db, "users", currentUid, "videos", v.id), {
+                                channelId: ""
+                            });
+                        } catch (e) {
+                            console.error("Error updating channelId:", e);
+                        }
+                    }
+                }
+                if (!currentUid) {
+                    localStorage.setItem("local_videos", JSON.stringify(videos));
+                }
+            }
+
+            saveChannels();
+            renderSettingsChannels();
+            renderChannelSwitcher();
+            renderVideosList();
+            updateStatsCounters();
+        });
+
+        item.appendChild(actionsWrap);
+        container.appendChild(item);
+    });
+}
+
+function saveChannels() {
+    localStorage.setItem("creatorhub_channels", JSON.stringify(channels));
+    if (currentUid && db) {
+        updateDoc(doc(db, "users", currentUid), {
+            channels: channels
+        }).catch(err => console.error("Error saving channels to Firestore:", err));
+    }
+}
+
+// === Инициализация событий каналов ===
+
+function updateBulkActionsToolbar() {
+    const toolbar = document.getElementById("bulkActionsToolbar");
+    const countSpan = document.getElementById("bulkSelectedCount");
+    const listEl = document.getElementById("videosListContainer");
+    const bulkSelectAllContainer = document.getElementById("bulkSelectAllContainer");
+    if (!toolbar) return;
+    
+    if (isBulkSelectionMode) {
+        if (listEl) listEl.classList.add("bulk-mode");
+        if (bulkSelectAllContainer) bulkSelectAllContainer.style.display = "flex";
+        if (countSpan) countSpan.textContent = bulkSelectedVideoIds.length;
+        toolbar.style.display = "flex";
+    } else {
+        if (listEl) listEl.classList.remove("bulk-mode");
+        if (bulkSelectAllContainer) bulkSelectAllContainer.style.display = "none";
+        
+        bulkSelectedVideoIds = [];
+        const checkboxes = document.querySelectorAll(".video-bulk-checkbox");
+        checkboxes.forEach(cb => cb.checked = false);
+        const bulkSelectAllCheckbox = document.getElementById("bulkSelectAllCheckbox");
+        if (bulkSelectAllCheckbox) bulkSelectAllCheckbox.checked = false;
+        
+        toolbar.style.display = "none";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    renderChannelSwitcher();
+
+    const btnHeaderGear = document.getElementById("btnHeaderGear");
+    if (btnHeaderGear) {
+        btnHeaderGear.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openSettingsModal();
+        });
+    }
+
+    const btnSettingsAddChannel = document.getElementById("btnSettingsAddChannel");
+    if (btnSettingsAddChannel) {
+        btnSettingsAddChannel.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const newName = await showCustomPrompt("Создать канал", "Название канала");
+            if (newName && newName.trim()) {
+                const newCh = {
+                    id: "ch_" + Date.now(),
+                    name: newName.trim(),
+                    avatarUrl: ""
+                };
+                channels.push(newCh);
+                if (!currentChannelId) {
+                    currentChannelId = newCh.id;
+                    localStorage.setItem("creatorhub_current_channel_id", newCh.id);
+                }
+                saveChannels();
+                renderSettingsChannels();
+                renderChannelSwitcher();
+                renderVideosList();
+                updateStatsCounters();
+            }
+        });
+    }
+
+    // Слушатели массовых действий
+    const bulkSelectAllCheckbox = document.getElementById("bulkSelectAllCheckbox");
+    if (bulkSelectAllCheckbox) {
+        bulkSelectAllCheckbox.addEventListener("change", (e) => {
+            const filtered = getFilteredVideos();
+            if (e.target.checked) {
+                filtered.forEach(v => {
+                    if (!bulkSelectedVideoIds.includes(v.id)) {
+                        bulkSelectedVideoIds.push(v.id);
+                    }
+                });
+            } else {
+                const filteredIds = filtered.map(v => v.id);
+                bulkSelectedVideoIds = bulkSelectedVideoIds.filter(id => !filteredIds.includes(id));
+            }
+            
+            // Синхронизация всех видимых чекбоксов в списке
+            const checkboxes = document.querySelectorAll(".video-bulk-checkbox");
+            checkboxes.forEach(cb => {
+                const id = cb.getAttribute("data-id");
+                cb.checked = bulkSelectedVideoIds.includes(id);
+            });
+
+            updateBulkActionsToolbar();
+        });
+    }
+
+    const btnBulkCancel = document.getElementById("btnBulkCancel");
+    if (btnBulkCancel) {
+        btnBulkCancel.addEventListener("click", () => {
+            isBulkSelectionMode = false;
+            updateBulkActionsToolbar();
+            renderVideosList();
+        });
+    }
+
+    const btnBulkMove = document.getElementById("btnBulkMove");
+    if (btnBulkMove) {
+        btnBulkMove.addEventListener("click", async () => {
+            if (bulkSelectedVideoIds.length === 0) return;
+            
+            const customButtons = channels.map(ch => ({
+                text: ch.name,
+                val: ch.id,
+                style: { background: "var(--ch-purple)", borderColor: "var(--ch-purple)" }
+            }));
+            customButtons.push({
+                text: "Без канала",
+                val: "no_channel",
+                style: { background: "var(--ch-text-gray)", borderColor: "var(--ch-text-gray)" }
+            });
+            customButtons.push({
+                text: "Отмена",
+                val: "cancel",
+                type: "cancel"
+            });
+
+            const targetChId = await showCustomConfirm(
+                "Переместить видео",
+                `Выберите целевой канал для перемещения ${bulkSelectedVideoIds.length} видео:`,
+                customButtons
+            );
+
+            if (targetChId === "cancel" || !targetChId) return;
+
+            const finalChId = targetChId === "no_channel" ? "" : targetChId;
+
+            for (const vidId of bulkSelectedVideoIds) {
+                const v = videos.find(item => item.id === vidId);
+                if (v) {
+                    v.channelId = finalChId;
+                    if (currentUid && db) {
+                        try {
+                            await updateDoc(doc(db, "users", currentUid, "videos", vidId), {
+                                channelId: finalChId
+                            });
+                        } catch (e) {
+                            console.error("Error moving video in bulk:", e);
+                        }
+                    }
+                }
+            }
+
+            if (!currentUid) {
+                localStorage.setItem("local_videos", JSON.stringify(videos));
+            }
+
+            isBulkSelectionMode = false;
+            updateBulkActionsToolbar();
+            renderVideosList();
+            updateStatsCounters();
+            renderChannelSwitcher();
+        });
+    }
+
+    const btnBulkAddTags = document.getElementById("btnBulkAddTags");
+    if (btnBulkAddTags) {
+        btnBulkAddTags.addEventListener("click", async () => {
+            if (bulkSelectedVideoIds.length === 0) return;
+
+            const tagsStr = await showCustomPrompt(
+                "Добавить теги",
+                "Введите теги через запятую (например: Стрим, Игры):"
+            );
+
+            if (!tagsStr || !tagsStr.trim()) return;
+
+            const newTags = tagsStr.split(",").map(t => t.trim()).filter(t => t.length > 0);
+            if (newTags.length === 0) return;
+
+            for (const vidId of bulkSelectedVideoIds) {
+                const v = videos.find(item => item.id === vidId);
+                if (v) {
+                    if (!v.tags) v.tags = [];
+                    const merged = Array.from(new Set([...v.tags, ...newTags]));
+                    v.tags = merged;
+                    if (currentUid && db) {
+                        try {
+                            await updateDoc(doc(db, "users", currentUid, "videos", vidId), {
+                                tags: merged
+                            });
+                        } catch (e) {
+                            console.error("Error bulk adding tags:", e);
+                        }
+                    }
+                }
+            }
+
+            if (!currentUid) {
+                localStorage.setItem("local_videos", JSON.stringify(videos));
+            }
+
+            isBulkSelectionMode = false;
+            updateBulkActionsToolbar();
+            renderVideosList();
+        });
+    }
+
+    const btnBulkRemoveTags = document.getElementById("btnBulkRemoveTags");
+    if (btnBulkRemoveTags) {
+        btnBulkRemoveTags.addEventListener("click", async () => {
+            if (bulkSelectedVideoIds.length === 0) return;
+
+            const tagsStr = await showCustomPrompt(
+                "Удалить теги",
+                "Введите теги через запятую для их удаления у выбранных видео:"
+            );
+
+            if (!tagsStr || !tagsStr.trim()) return;
+
+            const tagsToRemove = tagsStr.split(",").map(t => t.trim()).filter(t => t.length > 0);
+            if (tagsToRemove.length === 0) return;
+
+            for (const vidId of bulkSelectedVideoIds) {
+                const v = videos.find(item => item.id === vidId);
+                if (v) {
+                    if (v.tags) {
+                        const filteredTags = v.tags.filter(t => !tagsToRemove.includes(t));
+                        v.tags = filteredTags;
+                        if (currentUid && db) {
+                            try {
+                                await updateDoc(doc(db, "users", currentUid, "videos", vidId), {
+                                    tags: filteredTags
+                                });
+                            } catch (e) {
+                                console.error("Error bulk removing tags:", e);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!currentUid) {
+                localStorage.setItem("local_videos", JSON.stringify(videos));
+            }
+
+            isBulkSelectionMode = false;
+            updateBulkActionsToolbar();
+            renderVideosList();
+        });
+    }
+
+    const btnBulkDelete = document.getElementById("btnBulkDelete");
+    if (btnBulkDelete) {
+        btnBulkDelete.addEventListener("click", async () => {
+            if (bulkSelectedVideoIds.length === 0) return;
+
+            const confirmed = await showCustomConfirm(
+                "Удалить выбранные видео?",
+                `Вы уверены, что хотите переместить ${bulkSelectedVideoIds.length} видео в корзину?`
+            );
+
+            if (!confirmed) return;
+
+            const nowStr = new Date().toISOString();
+
+            for (const vidId of bulkSelectedVideoIds) {
+                const v = videos.find(item => item.id === vidId);
+                if (v) {
+                    v.deleted = true;
+                    v.deletedAt = nowStr;
+                    if (currentUid && db) {
+                        try {
+                            await updateDoc(doc(db, "users", currentUid, "videos", vidId), {
+                                deleted: true,
+                                deletedAt: serverTimestamp()
+                            });
+                        } catch (e) {
+                            console.error("Error bulk deleting videos:", e);
+                        }
+                    }
+                }
+            }
+
+            if (!currentUid) {
+                localStorage.setItem("local_videos", JSON.stringify(videos));
+            }
+
+            isBulkSelectionMode = false;
+            updateBulkActionsToolbar();
+            renderVideosList();
+            updateStatsCounters();
+        });
+    }
+});
+
+// Дополнительный вызов для инициализации при первом проходе JS
+renderChannelSwitcher();
+
+// === Вспомогательные функции кастомных диалогов ===
+
+function showCustomConfirm(title, desc, customButtons = null) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById("chCustomModal");
+        if (!modal) {
+            resolve(confirm(desc));
+            return;
+        }
+        const titleEl = document.getElementById("chCustomModalTitle");
+        const descEl = document.getElementById("chCustomModalDesc");
+        const inputContainer = document.getElementById("chCustomModalInputContainer");
+        const actionsContainer = document.getElementById("chCustomModalActions");
+
+        titleEl.textContent = title;
+        descEl.textContent = desc;
+        descEl.style.display = "block";
+        inputContainer.style.display = "none";
+
+        modal.style.display = "flex";
+
+        if (customButtons) {
+            actionsContainer.className = "confirm-modal-actions vertical-actions";
+            actionsContainer.innerHTML = "";
+            customButtons.forEach(btnConfig => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.textContent = btnConfig.text;
+                if (btnConfig.type === "cancel") {
+                    btn.className = "confirm-btn-cancel";
+                } else {
+                    btn.className = "confirm-btn-danger";
+                    if (btnConfig.style) {
+                        Object.assign(btn.style, btnConfig.style);
+                    }
+                }
+                btn.addEventListener("click", () => {
+                    modal.style.display = "none";
+                    resolve(btnConfig.val);
+                });
+                actionsContainer.appendChild(btn);
+            });
+        } else {
+            actionsContainer.className = "confirm-modal-actions";
+            actionsContainer.innerHTML = `
+                <button class="confirm-btn-cancel" id="btnChCustomModalCancel">Отмена</button>
+                <button class="confirm-btn-danger" id="btnChCustomModalConfirm">Да, удалить</button>
+            `;
+            const cancelBtn = document.getElementById("btnChCustomModalCancel");
+            const confirmBtn = document.getElementById("btnChCustomModalConfirm");
+
+            confirmBtn.style.background = "#dc2626";
+
+            function cleanup() {
+                modal.style.display = "none";
+                cancelBtn.removeEventListener("click", onCancel);
+                confirmBtn.removeEventListener("click", onConfirm);
+            }
+
+            function onCancel() {
+                cleanup();
+                resolve(false);
+            }
+
+            function onConfirm() {
+                cleanup();
+                resolve(true);
+            }
+
+            cancelBtn.addEventListener("click", onCancel);
+            confirmBtn.addEventListener("click", onConfirm);
+        }
+    });
+}
+
+function showCustomPrompt(title, placeholder) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById("chCustomModal");
+        if (!modal) {
+            resolve(prompt(title));
+            return;
+        }
+        const titleEl = document.getElementById("chCustomModalTitle");
+        const descEl = document.getElementById("chCustomModalDesc");
+        const inputContainer = document.getElementById("chCustomModalInputContainer");
+        const inputEl = document.getElementById("chCustomModalInput");
+        const cancelBtn = document.getElementById("btnChCustomModalCancel");
+        const confirmBtn = document.getElementById("btnChCustomModalConfirm");
+
+        titleEl.textContent = title;
+        descEl.style.display = "none";
+        inputContainer.style.display = "block";
+        inputEl.value = "";
+        inputEl.placeholder = placeholder || "Введите значение...";
+        confirmBtn.textContent = "Создать";
+        confirmBtn.style.background = "var(--ch-purple)";
+
+        modal.style.display = "flex";
+        setTimeout(() => inputEl.focus(), 50);
+
+        function cleanup() {
+            modal.style.display = "none";
+            cancelBtn.removeEventListener("click", onCancel);
+            confirmBtn.removeEventListener("click", onConfirm);
+        }
+
+        function onCancel() {
+            cleanup();
+            resolve(null);
+        }
+
+        function onConfirm() {
+            const val = inputEl.value;
+            cleanup();
+            resolve(val);
+        }
+
+        cancelBtn.addEventListener("click", onCancel);
+        confirmBtn.addEventListener("click", onConfirm);
+        
+        inputEl.onkeydown = (e) => {
+            if (e.key === "Enter") {
+                onConfirm();
+            }
+        };
+    });
+}
+
+function resizeAndCompressImage(base64Image, targetWidth = 128, targetHeight = 128) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement("canvas");
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            const ctx = canvas.getContext("2d");
+            
+            const minSize = Math.min(img.width, img.height);
+            const sx = (img.width - minSize) / 2;
+            const sy = (img.height - minSize) / 2;
+            
+            ctx.drawImage(img, sx, sy, minSize, minSize, 0, 0, targetWidth, targetHeight);
+            resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        img.onerror = function(err) {
+            reject(err);
+        };
+        img.src = base64Image;
+    });
+}
+
 
 

@@ -2861,6 +2861,7 @@ async function toggleTaskCompleted(taskId, currentStatus) {
                     dueEndDate: nextEndDateStr,
                     dueEndTime: task.dueEndTime || null,
                     projectId: task.projectId || null,
+                    sectionId: task.sectionId || null,
                     order: task.order !== undefined ? task.order : 0,
                     createdAt: task.createdAt || new Date()
                 });

@@ -5818,27 +5818,6 @@ function subscribeToTasks(sectionId) {
             tasksList.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        // Проверяем наличие не удаленных задач
-        const nonDeletedTasks = tasksList.filter(t => !t.deleted);
-        if (nonDeletedTasks.length === 0 && sectionId) {
-            // Удаляем раздел, если не осталось активных/выполненных задач
-            const secToDel = sectionId;
-            if (videoSectionId === secToDel) {
-                videoSectionId = null;
-            }
-            try {
-                if (unsubscribeTasks) {
-                    unsubscribeTasks();
-                    unsubscribeTasks = null;
-                }
-                await deleteDoc(doc(db, 'users', currentUid, 'sections', secToDel));
-            } catch (err) {
-                console.error("Ошибка при удалении пустого раздела:", err);
-            }
-            renderTasksUI([]);
-            return;
-        }
-        
         renderTasksUI(tasksList);
     }, (error) => {
         console.error("Ошибка при получении задач видео:", error);

@@ -1555,6 +1555,11 @@
             transition: opacity 0.2s ease, visibility 0.2s ease;
         }
 
+        .wp-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
         .wp-modal-overlay {
             overflow: hidden;
         }
@@ -1667,6 +1672,128 @@
         .wp-btn-save {
             background: #34C759;
             color: white;
+        }
+
+        /* Styles for the new multi-functional wallpaper upload modal */
+        .wp-modal-card.thumbnail-confirm-box {
+            width: 360px !important;
+            max-width: 90%;
+            height: 510px !important;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+        }
+
+        .modal-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            margin-bottom: 16px;
+            gap: 8px;
+        }
+
+        .modal-tab {
+            flex: 1;
+            padding: 8px 0 10px 0;
+            background: none;
+            border: none;
+            font-weight: 500;
+            font-size: 14px;
+            color: #888;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+
+        .modal-tab:hover {
+            color: #444;
+        }
+
+        .modal-tab.active {
+            font-weight: 600;
+            color: #007AFF;
+            border-bottom-color: #007AFF;
+        }
+
+        .tab-content-pane {
+            min-height: 240px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .icon-dropzone {
+            border: 2px dashed rgba(0, 0, 0, 0.12);
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: all 0.2s ease;
+            background: rgba(0, 0, 0, 0.02);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: #444;
+            flex: 1;
+        }
+
+        .icon-dropzone:hover {
+            border-color: #007AFF;
+            background: rgba(0, 122, 255, 0.05);
+        }
+
+        .confirm-btn-primary {
+            background: #007AFF;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.1s;
+            text-align: center;
+        }
+
+        .confirm-btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .confirm-btn-secondary {
+            background: #fff;
+            border: 1px solid #dcdcdc;
+            color: #333;
+            border-radius: 8px;
+            padding: 10px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.1s;
+            text-align: center;
+        }
+
+        .confirm-btn-secondary:hover {
+            background: #f9f9f9;
+        }
+
+        .confirm-btn-delete {
+            background: #fff5f5;
+            border: 1px solid rgba(255, 59, 48, 0.15);
+            color: #ff3b30;
+            border-radius: 8px;
+            padding: 10px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.1s;
+            text-align: center;
+        }
+
+        .confirm-btn-delete:hover {
+            background: #ffebeb;
         }
 
         /* Блокировка скролла при открытой папке */

@@ -1725,6 +1725,13 @@ function openSettingsModal() {
         addTaskPositionSelect.value = addTaskPositionPref;
     }
 
+    // Подставляем значение настройки темы оформления
+    const currentTheme = localStorage.getItem('themeMode') || 'system';
+    const prefThemeModeSelect = document.getElementById('prefThemeMode');
+    if (prefThemeModeSelect) {
+        prefThemeModeSelect.value = currentTheme;
+    }
+
     // Подставляем значение настройки главного экрана
     const defaultHomePref = localStorage.getItem('todo_pref_default_home') || 'inbox';
     updatePrefHomeButton(defaultHomePref);
@@ -1845,6 +1852,15 @@ const prefAddTaskPosition = document.getElementById('prefAddTaskPosition');
 if (prefAddTaskPosition) {
     prefAddTaskPosition.addEventListener('change', (e) => {
         localStorage.setItem('todo_pref_add_task_position', e.target.value);
+    });
+}
+
+const prefThemeMode = document.getElementById('prefThemeMode');
+if (prefThemeMode) {
+    prefThemeMode.addEventListener('change', (e) => {
+        if (typeof window.setTheme === 'function') {
+            window.setTheme(e.target.value);
+        }
     });
 }
 
@@ -7122,46 +7138,126 @@ function initDragAndDrop() {
                         tomorrow.setDate(tomorrow.getDate() + 1);
                         const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
 
-                        if (dateGroupId === 'today') {
-                            updateFields.dueDate = todayStr;
-                        } else if (dateGroupId === 'tomorrow') {
-                            updateFields.dueDate = tomorrowStr;
-                        } else if (dateGroupId === 'nodate') {
-                            updateFields.dueDate = null;
-                        } else if (dateGroupId.startsWith('date-')) {
-                            updateFields.dueDate = dateGroupId.substring(5);
-                        } else if (dateGroupId === 'this_week') {
-                            const nextDay = new Date();
-                            nextDay.setDate(nextDay.getDate() + 2);
-                            updateFields.dueDate = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
-                        } else if (dateGroupId === 'next_week') {
-                            const nextWeekMon = new Date();
-                            const day = nextWeekMon.getDay();
-                            const daysToNextMonday = day === 0 ? 1 : 8 - day;
-                            nextWeekMon.setDate(nextWeekMon.getDate() + daysToNextMonday);
-                            updateFields.dueDate = `${nextWeekMon.getFullYear()}-${String(nextWeekMon.getMonth() + 1).padStart(2, '0')}-${String(nextWeekMon.getDate()).padStart(2, '0')}`;
-                        } else if (dateGroupId === 'this_month') {
-                            const thisMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                            updateFields.dueDate = `${thisMonthEnd.getFullYear()}-${String(thisMonthEnd.getMonth() + 1).padStart(2, '0')}-${String(thisMonthEnd.getDate()).padStart(2, '0')}`;
-                        } else if (dateGroupId === 'next_month') {
-                            const nextMonthFirst = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-                            updateFields.dueDate = `${nextMonthFirst.getFullYear()}-${String(nextMonthFirst.getMonth() + 1).padStart(2, '0')}-${String(nextMonthFirst.getDate()).padStart(2, '0')}`;
-                        } else if (dateGroupId === 'later') {
-                            const laterDate = new Date();
-                            laterDate.setDate(laterDate.getDate() + 45);
-                            updateFields.dueDate = `${laterDate.getFullYear()}-${String(laterDate.getMonth() + 1).padStart(2, '0')}-${String(laterDate.getDate()).padStart(2, '0')}`;
-                        } else if (dateGroupId === 'overdue') {
-                            const task = allTasks.find(t => t.id === taskId);
-                            if (!task.dueDate || task.dueDate >= todayStr) {
-                                const yesterday = new Date();
-                                yesterday.setDate(yesterday.getDate() - 1);
-                                const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
-                                updateFields.dueDate = yesterdayStr;
+                        const task = allTasks.find(t => t.id === taskId);
+                        let alreadyMatches = false;
+                        if (task) {
+                            const currentDueDate = task.dueDate;
+                            if (dateGroupId === 'nodate') {
+                                alreadyMatches = !currentDueDate;
+                            } else if (currentDueDate) {
+                                if (dateGroupId === 'overdue') {
+                                    alreadyMatches = currentDueDate < todayStr;
+                                } else if (dateGroupId === 'today') {
+                                    alreadyMatches = currentDueDate === todayStr;
+                                } else if (dateGroupId === 'tomorrow') {
+                                    alreadyMatches = currentDueDate === tomorrowStr;
+                                } else if (dateGroupId.startsWith('date-')) {
+                                    alreadyMatches = currentDueDate === dateGroupId.substring(5);
+                                } else {
+                                    const projectActiveTasks = allTasks.filter(t => t.projectId === projectId && !t.parentId && !t.deleted && !t.completed);
+                                    const tempCounts = {};
+                                    projectActiveTasks.forEach(pt => {
+                                        if (pt.dueDate) {
+                                            tempCounts[pt.dueDate] = (tempCounts[pt.dueDate] || 0) + 1;
+                                        }
+                                    });
+                                    
+                                    if (tempCounts[currentDueDate] > 2) {
+                                        alreadyMatches = (dateGroupId === 'date-' + currentDueDate);
+                                    } else {
+                                        const getPeriodBucketLocal = (dStr) => {
+                                            const [y, m, d] = dStr.split('-').map(Number);
+                                            const dObj = new Date(y, m - 1, d);
+                                            dObj.setHours(0,0,0,0);
+                                            const time = dObj.getTime();
+                                            
+                                            const todayObj = new Date();
+                                            todayObj.setHours(0,0,0,0);
+                                            const day = todayObj.getDay();
+                                            const daysToSunday = day === 0 ? 0 : 7 - day;
+                                            const sundayOfThisWeek = new Date(todayObj);
+                                            sundayOfThisWeek.setDate(todayObj.getDate() + daysToSunday);
+                                            sundayOfThisWeek.setHours(23, 59, 59, 999);
+
+                                            const nextMonday = new Date(sundayOfThisWeek);
+                                            nextMonday.setDate(nextMonday.getDate() + 1);
+                                            nextMonday.setHours(0,0,0,0);
+                                            const nextSunday = new Date(nextMonday);
+                                            nextSunday.setDate(nextSunday.getDate() + 6);
+                                            nextSunday.setHours(23,59,59,999);
+
+                                            const endOfThisMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 0);
+                                            endOfThisMonth.setHours(23,59,59,999);
+
+                                            const startOfNextMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 1);
+                                            startOfNextMonth.setHours(0,0,0,0);
+                                            const endOfNextMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 2, 0);
+                                            endOfNextMonth.setHours(23,59,59,999);
+
+                                            if (time <= sundayOfThisWeek.getTime()) {
+                                                return 'this_week';
+                                            } else if (time >= nextMonday.getTime() && time <= nextSunday.getTime()) {
+                                                return 'next_week';
+                                            } else if (time <= endOfThisMonth.getTime()) {
+                                                return 'this_month';
+                                            } else if (time >= startOfNextMonth.getTime() && time <= endOfNextMonth.getTime()) {
+                                                return 'next_month';
+                                            } else {
+                                                return 'later';
+                                            }
+                                        };
+                                        alreadyMatches = (getPeriodBucketLocal(currentDueDate) === dateGroupId);
+                                    }
+                                }
                             }
                         }
-                        
+
+                        if (alreadyMatches && task) {
+                            updateFields.dueDate = task.dueDate;
+                        } else {
+                            if (dateGroupId === 'today') {
+                                updateFields.dueDate = todayStr;
+                            } else if (dateGroupId === 'tomorrow') {
+                                updateFields.dueDate = tomorrowStr;
+                            } else if (dateGroupId === 'nodate') {
+                                updateFields.dueDate = null;
+                            } else if (dateGroupId.startsWith('date-')) {
+                                updateFields.dueDate = dateGroupId.substring(5);
+                            } else if (dateGroupId === 'this_week') {
+                                const nextDay = new Date();
+                                nextDay.setDate(nextDay.getDate() + 2);
+                                updateFields.dueDate = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
+                            } else if (dateGroupId === 'next_week') {
+                                const nextWeekMon = new Date();
+                                const day = nextWeekMon.getDay();
+                                const daysToNextMonday = day === 0 ? 1 : 8 - day;
+                                nextWeekMon.setDate(nextWeekMon.getDate() + daysToNextMonday);
+                                updateFields.dueDate = `${nextWeekMon.getFullYear()}-${String(nextWeekMon.getMonth() + 1).padStart(2, '0')}-${String(nextWeekMon.getDate()).padStart(2, '0')}`;
+                            } else if (dateGroupId === 'this_month') {
+                                const thisMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                                updateFields.dueDate = `${thisMonthEnd.getFullYear()}-${String(thisMonthEnd.getMonth() + 1).padStart(2, '0')}-${String(thisMonthEnd.getDate()).padStart(2, '0')}`;
+                            } else if (dateGroupId === 'next_month') {
+                                const nextMonthFirst = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+                                updateFields.dueDate = `${nextMonthFirst.getFullYear()}-${String(nextMonthFirst.getMonth() + 1).padStart(2, '0')}-${String(nextMonthFirst.getDate()).padStart(2, '0')}`;
+                            } else if (dateGroupId === 'later') {
+                                const laterDate = new Date();
+                                laterDate.setDate(laterDate.getDate() + 45);
+                                updateFields.dueDate = `${laterDate.getFullYear()}-${String(laterDate.getMonth() + 1).padStart(2, '0')}-${String(laterDate.getDate()).padStart(2, '0')}`;
+                            } else if (dateGroupId === 'overdue') {
+                                if (task) {
+                                    if (!task.dueDate || task.dueDate >= todayStr) {
+                                        const yesterday = new Date();
+                                        yesterday.setDate(yesterday.getDate() - 1);
+                                        const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+                                        updateFields.dueDate = yesterdayStr;
+                                    } else {
+                                        updateFields.dueDate = task.dueDate;
+                                    }
+                                }
+                            }
+                        }
+
                         updateFields.sectionId = null;
-                        const task = allTasks.find(t => t.id === taskId);
                         if (task) {
                             task.dueDate = updateFields.dueDate;
                             task.sectionId = null;
@@ -8483,6 +8579,147 @@ function initTouchDragAndDrop() {
                     const task = allTasks.find(t => t.id === taskId);
                     if (task) {
                         task.dueDate = todayStr;
+                    }
+                }
+            }
+
+            if (currentRoute.startsWith('project/') && parentContainer) {
+                const projectId = currentRoute.split('/')[1];
+                const project = projectsList.find(p => p.id === projectId);
+                if (project && project.groupByDate === true) {
+                    const sectEl = parentContainer.closest('.project-section');
+                    if (sectEl && sectEl.hasAttribute('data-date-group-id')) {
+                        const dateGroupId = sectEl.getAttribute('data-date-group-id');
+                        const today = new Date();
+                        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+
+                        const task = allTasks.find(t => t.id === taskId);
+                        let alreadyMatches = false;
+                        if (task) {
+                            const currentDueDate = task.dueDate;
+                            if (dateGroupId === 'nodate') {
+                                alreadyMatches = !currentDueDate;
+                            } else if (currentDueDate) {
+                                if (dateGroupId === 'overdue') {
+                                    alreadyMatches = currentDueDate < todayStr;
+                                } else if (dateGroupId === 'today') {
+                                    alreadyMatches = currentDueDate === todayStr;
+                                } else if (dateGroupId === 'tomorrow') {
+                                    alreadyMatches = currentDueDate === tomorrowStr;
+                                } else if (dateGroupId.startsWith('date-')) {
+                                    alreadyMatches = currentDueDate === dateGroupId.substring(5);
+                                } else {
+                                    const projectActiveTasks = allTasks.filter(t => t.projectId === projectId && !t.parentId && !t.deleted && !t.completed);
+                                    const tempCounts = {};
+                                    projectActiveTasks.forEach(pt => {
+                                        if (pt.dueDate) {
+                                            tempCounts[pt.dueDate] = (tempCounts[pt.dueDate] || 0) + 1;
+                                        }
+                                    });
+                                    
+                                    if (tempCounts[currentDueDate] > 2) {
+                                        alreadyMatches = (dateGroupId === 'date-' + currentDueDate);
+                                    } else {
+                                        const getPeriodBucketLocal = (dStr) => {
+                                            const [y, m, d] = dStr.split('-').map(Number);
+                                            const dObj = new Date(y, m - 1, d);
+                                            dObj.setHours(0,0,0,0);
+                                            const time = dObj.getTime();
+                                            
+                                            const todayObj = new Date();
+                                            todayObj.setHours(0,0,0,0);
+                                            const day = todayObj.getDay();
+                                            const daysToSunday = day === 0 ? 0 : 7 - day;
+                                            const sundayOfThisWeek = new Date(todayObj);
+                                            sundayOfThisWeek.setDate(todayObj.getDate() + daysToSunday);
+                                            sundayOfThisWeek.setHours(23, 59, 59, 999);
+
+                                            const nextMonday = new Date(sundayOfThisWeek);
+                                            nextMonday.setDate(nextMonday.getDate() + 1);
+                                            nextMonday.setHours(0,0,0,0);
+                                            const nextSunday = new Date(nextMonday);
+                                            nextSunday.setDate(nextSunday.getDate() + 6);
+                                            nextSunday.setHours(23,59,59,999);
+
+                                            const endOfThisMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 0);
+                                            endOfThisMonth.setHours(23,59,59,999);
+
+                                            const startOfNextMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 1);
+                                            startOfNextMonth.setHours(0,0,0,0);
+                                            const endOfNextMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 2, 0);
+                                            endOfNextMonth.setHours(23,59,59,999);
+
+                                            if (time <= sundayOfThisWeek.getTime()) {
+                                                return 'this_week';
+                                            } else if (time >= nextMonday.getTime() && time <= nextSunday.getTime()) {
+                                                return 'next_week';
+                                            } else if (time <= endOfThisMonth.getTime()) {
+                                                return 'this_month';
+                                            } else if (time >= startOfNextMonth.getTime() && time <= endOfNextMonth.getTime()) {
+                                                return 'next_month';
+                                            } else {
+                                                return 'later';
+                                            }
+                                        };
+                                        alreadyMatches = (getPeriodBucketLocal(currentDueDate) === dateGroupId);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (alreadyMatches && task) {
+                            updateFields.dueDate = task.dueDate;
+                        } else {
+                            if (dateGroupId === 'today') {
+                                updateFields.dueDate = todayStr;
+                            } else if (dateGroupId === 'tomorrow') {
+                                updateFields.dueDate = tomorrowStr;
+                            } else if (dateGroupId === 'nodate') {
+                                updateFields.dueDate = null;
+                            } else if (dateGroupId.startsWith('date-')) {
+                                updateFields.dueDate = dateGroupId.substring(5);
+                            } else if (dateGroupId === 'this_week') {
+                                const nextDay = new Date();
+                                nextDay.setDate(nextDay.getDate() + 2);
+                                updateFields.dueDate = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
+                            } else if (dateGroupId === 'next_week') {
+                                const nextWeekMon = new Date();
+                                const day = nextWeekMon.getDay();
+                                const daysToNextMonday = day === 0 ? 1 : 8 - day;
+                                nextWeekMon.setDate(nextWeekMon.getDate() + daysToNextMonday);
+                                updateFields.dueDate = `${nextWeekMon.getFullYear()}-${String(nextWeekMon.getMonth() + 1).padStart(2, '0')}-${String(nextWeekMon.getDate()).padStart(2, '0')}`;
+                            } else if (dateGroupId === 'this_month') {
+                                const thisMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                                updateFields.dueDate = `${thisMonthEnd.getFullYear()}-${String(thisMonthEnd.getMonth() + 1).padStart(2, '0')}-${String(thisMonthEnd.getDate()).padStart(2, '0')}`;
+                            } else if (dateGroupId === 'next_month') {
+                                const nextMonthFirst = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+                                updateFields.dueDate = `${nextMonthFirst.getFullYear()}-${String(nextMonthFirst.getMonth() + 1).padStart(2, '0')}-${String(nextMonthFirst.getDate()).padStart(2, '0')}`;
+                            } else if (dateGroupId === 'later') {
+                                const laterDate = new Date();
+                                laterDate.setDate(laterDate.getDate() + 45);
+                                updateFields.dueDate = `${laterDate.getFullYear()}-${String(laterDate.getMonth() + 1).padStart(2, '0')}-${String(laterDate.getDate()).padStart(2, '0')}`;
+                            } else if (dateGroupId === 'overdue') {
+                                if (task) {
+                                    if (!task.dueDate || task.dueDate >= todayStr) {
+                                        const yesterday = new Date();
+                                        yesterday.setDate(yesterday.getDate() - 1);
+                                        const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+                                        updateFields.dueDate = yesterdayStr;
+                                    } else {
+                                        updateFields.dueDate = task.dueDate;
+                                    }
+                                }
+                            }
+                        }
+
+                        updateFields.sectionId = null;
+                        if (task) {
+                            task.dueDate = updateFields.dueDate;
+                            task.sectionId = null;
+                        }
                     }
                 }
             }

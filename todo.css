@@ -3667,6 +3667,7 @@ body.dark .priority-opt-btn:hover {
 @media (max-width: 768px) {
     .add-task-form {
         position: relative !important;
+        z-index: 1002 !important; /* Обеспечиваем, что сама форма не перекрывает выпадающие списки (у которых z-index: 15000), но находится на правильном уровне */
     }
 
     .add-task-form .form-actions {
@@ -3780,7 +3781,7 @@ body.dark .priority-opt-btn:hover {
         right: 12px !important;
         width: calc(100% - 24px) !important;
         border-radius: 16px !important;
-        z-index: 1300 !important;
+        z-index: 15000 !important;
         /* Выше формы и оверлея */
         box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15) !important;
         padding: 16px !important;

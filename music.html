@@ -148,7 +148,7 @@
         #main-player-card {
             position: fixed !important;
             top: 24px;
-            left: 292px;
+            left: 24px;
             right: 24px;
             bottom: 104px;
             background: var(--card-bg);
@@ -162,7 +162,8 @@
             display: block !important;
             min-height: 0 !important;
             height: auto !important;
-            margin: 0 !important;
+            margin: 0 auto !important;
+            max-width: 1200px;
             box-sizing: border-box;
         }
 
@@ -170,6 +171,23 @@
             transform: translateY(0);
             opacity: 1;
             pointer-events: auto;
+        }
+
+        /* Hide main app sidebar when player card is active */
+        body:has(#main-player-card.active) .sidebar {
+            display: none !important;
+        }
+
+        /* Adjust main-content padding when sidebar is hidden */
+        body:has(#main-player-card.active) .main-content {
+            margin-left: 0 !important;
+            padding-left: 24px !important;
+            padding-right: 24px !important;
+        }
+
+        /* Swap player on left and list on right */
+        #main-player-card.active #player-container {
+            flex-direction: row-reverse;
         }
 
         /* Saved Playlists Section */
@@ -721,7 +739,7 @@
         }
 
         .playlist-thumb {
-            width: 70px;
+            width: 40px;
             height: 40px;
             flex-shrink: 0;
             border-radius: 6px;
@@ -2530,6 +2548,12 @@
                 chevronBtn.setAttribute('data-tooltip', 'Развернуть проигрыватель');
             }
 
+            if (mainContent) {
+                mainContent.style.marginLeft = '';
+                mainContent.style.paddingLeft = '';
+                mainContent.style.paddingRight = '';
+            }
+
             if (hash === '#home') {
                 const homeBtn = document.getElementById('menu-home');
                 if (homeBtn) homeBtn.classList.add('active');
@@ -2542,6 +2566,9 @@
                 if (mainContent) {
                     mainContent.style.overflowY = 'hidden';
                     mainContent.style.paddingBottom = '0';
+                    mainContent.style.marginLeft = '0';
+                    mainContent.style.paddingLeft = '24px';
+                    mainContent.style.paddingRight = '24px';
                 }
                 if (playerCard) {
                     playerCard.classList.add('active');

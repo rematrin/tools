@@ -148,6 +148,22 @@
         }
 
         #main-player-card {
+            /* Always Dark Mode Theme Variables for the player card */
+            --bg: #191919;
+            --sidebar-bg: #161616;
+            --text: #ffffff;
+            --text-secondary: #8e8e93;
+            --card-bg: #202022;
+            --border: rgba(255, 255, 255, 0.08);
+            --accent: #fc3c44;
+            --accent-hover: #ff454d;
+            --hover-bg: rgba(255, 255, 255, 0.06);
+            --active-bg: rgba(255, 255, 255, 0.1);
+            --active-item-bg: rgba(255, 255, 255, 0.1);
+            --disabled: #555558;
+            --tooltip-bg: #e6e9f2;
+            --tooltip-text: #0f1115;
+
             position: fixed !important;
             top: 24px;
             left: 24px;
@@ -182,11 +198,8 @@
             z-index: 0;
             transition: background 0.5s ease;
         }
-        body.dark #main-player-card.has-dynamic-bg::before {
+        #main-player-card.has-dynamic-bg::before {
             background: rgba(0, 0, 0, 0.3);
-        }
-        body:not(.dark) #main-player-card.has-dynamic-bg::before {
-            background: rgba(255, 255, 255, 0.35);
         }
 
         #main-player-card.active {
@@ -3082,11 +3095,10 @@
             const h1 = Math.abs(hash) % 360;
             const h2 = (h1 + 60 + (Math.abs(hash >> 8) % 60)) % 360;
 
-            const isDark = document.body.classList.contains('dark');
-            const s1 = isDark ? 40 : 50;
-            const l1 = isDark ? 25 : 75;
-            const s2 = isDark ? 35 : 45;
-            const l2 = isDark ? 20 : 70;
+            const s1 = 40;
+            const l1 = 25;
+            const s2 = 35;
+            const l2 = 20;
 
             const c1 = `hsl(${h1}, ${s1}%, ${l1}%)`;
             const c2 = `hsl(${h2}, ${s2}%, ${l2}%)`;

@@ -1076,15 +1076,18 @@
         .bottom-playbar {
             position: fixed;
             bottom: 16px;
-            left: 105px;
-            right: 105px;
-            height: 72px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: max-content;
+            max-width: 95vw;
+            height: 76px;
             background: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 20px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
+            gap: 36px;
             padding: 0 24px;
             box-sizing: border-box;
             z-index: 1000;
@@ -1173,30 +1176,35 @@
         }
 
         .playbar-timeline-container {
+            position: relative;
+            height: 12px;
+            cursor: pointer;
+            z-index: 10;
+            overflow: visible;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .playbar-timeline-track {
             position: absolute;
-            top: -3px;
             left: 0;
             right: 0;
             height: 4px;
-            background: var(--hover-bg);
-            cursor: pointer;
-            transition: height 0.15s ease, top 0.15s ease;
-            z-index: 10;
-            border-top-left-radius: 16px;
-            border-top-right-radius: 16px;
-            overflow: hidden;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 2px;
+            transition: height 0.15s ease;
         }
 
-        .playbar-timeline-container:hover {
+        .playbar-timeline-container:hover .playbar-timeline-track {
             height: 6px;
-            top: -4px;
         }
 
         .playbar-timeline-progress {
             height: 100%;
             background: var(--accent);
             width: 0%;
-            position: relative;
+            border-radius: 2px;
         }
 
         .playbar-timeline-handle {
@@ -1209,6 +1217,7 @@
             transform: translate(-50%, -50%) scale(0);
             transition: transform 0.15s ease;
             pointer-events: none;
+            z-index: 2;
         }
 
         .playbar-timeline-container:hover .playbar-timeline-handle {
@@ -1225,22 +1234,20 @@
 
         .playbar-left {
             gap: 16px;
-            width: 320px;
-            flex: 0 0 320px;
+            flex: none;
         }
 
         .playbar-center {
             justify-content: center;
             gap: 16px;
-            flex-grow: 1;
-            min-width: 0;
+            flex: none;
+            width: 440px;
         }
 
         .playbar-right {
             justify-content: flex-end;
             gap: 16px;
-            width: 320px;
-            flex: 0 0 320px;
+            flex: none;
         }
 
         .playbar-btn {
@@ -5276,11 +5283,6 @@
 
     <!-- YouTube Music Style Bottom Playbar -->
     <div id="bottom-playbar" class="bottom-playbar" style="display: none;">
-        <div class="playbar-timeline-container" id="playbar-timeline-container">
-            <div class="playbar-timeline-progress" id="playbar-timeline-progress"></div>
-            <div class="playbar-timeline-handle" id="playbar-timeline-handle"></div>
-        </div>
-
         <div class="playbar-left" style="display: flex; align-items: center; gap: 16px;">
             <!-- Original Prev -->
             <button class="playbar-btn" id="playbar-prevBtn" onclick="prevTrack()" title="Предыдущий трек">
@@ -5314,23 +5316,35 @@
         </div>
 
         <div class="playbar-center">
-            <div class="playbar-thumbnail" id="playbar-track-cover" onclick="expandFullPlayerCard()"
-                style="cursor: pointer;"></div>
-            <div class="playbar-track-info">
-                <span class="playbar-title" id="playbar-track-title" onclick="expandFullPlayerCard()"
-                    style="cursor: pointer;">Ожидание...</span>
-                <span class="playbar-subtitle" id="playbar-track-subtitle">YouTube Music Player</span>
-            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 480px;">
+                <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                    <div class="playbar-thumbnail" id="playbar-track-cover" onclick="expandFullPlayerCard()"
+                        style="cursor: pointer;"></div>
+                    <div class="playbar-track-info" style="flex-grow: 1;">
+                        <span class="playbar-title" id="playbar-track-title" onclick="expandFullPlayerCard()"
+                            style="cursor: pointer;">Ожидание...</span>
+                        <span class="playbar-subtitle" id="playbar-track-subtitle">YouTube Music Player</span>
+                    </div>
 
-            <div class="playbar-feedback-actions">
-                <div class="playbar-turbo-container" data-tooltip="Турбо-микс (авто-переход)"
-                    style="display: flex; align-items: center; gap: 6px; margin-left: 8px;">
-                    <span
-                        style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; white-space: nowrap;">Турбо-микс</span>
-                    <label class="switch" style="transform: scale(0.85); transform-origin: left center;">
-                        <input type="checkbox" id="playbar-turbo-toggle-input" onchange="toggleTurboMix(this.checked)">
-                        <span class="slider round"></span>
-                    </label>
+                    <div class="playbar-feedback-actions">
+                        <div class="playbar-turbo-container" data-tooltip="Турбо-микс (авто-переход)"
+                            style="display: flex; align-items: center; gap: 6px; margin-left: 8px;">
+                            <span
+                                style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; white-space: nowrap;">Турбо-микс</span>
+                            <label class="switch" style="transform: scale(0.85); transform-origin: left center;">
+                                <input type="checkbox" id="playbar-turbo-toggle-input" onchange="toggleTurboMix(this.checked)">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Inner Timeline/Progress Bar -->
+                <div class="playbar-timeline-container" id="playbar-timeline-container">
+                    <div class="playbar-timeline-track">
+                        <div class="playbar-timeline-progress" id="playbar-timeline-progress"></div>
+                    </div>
+                    <div class="playbar-timeline-handle" id="playbar-timeline-handle"></div>
                 </div>
             </div>
         </div>

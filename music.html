@@ -133,6 +133,8 @@
             display: flex;
             gap: 20px;
             height: 100%;
+            position: relative;
+            z-index: 1;
         }
 
         /* --- Левая колонка (Плейлист) --- */
@@ -155,7 +157,7 @@
             z-index: 900;
             border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+            transition: background 0.8s ease-in-out, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
             transform: translateY(100vh);
             opacity: 0;
             pointer-events: none;
@@ -165,6 +167,26 @@
             margin: 0 auto !important;
             max-width: 1200px;
             box-sizing: border-box;
+        }
+
+        #main-player-card.has-dynamic-bg {
+            background: linear-gradient(135deg, var(--dynamic-bg-start), var(--dynamic-bg-end)) !important;
+        }
+
+        #main-player-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            z-index: 0;
+            transition: background 0.5s ease;
+        }
+        body.dark #main-player-card.has-dynamic-bg::before {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        body:not(.dark) #main-player-card.has-dynamic-bg::before {
+            background: rgba(255, 255, 255, 0.35);
         }
 
         #main-player-card.active {
@@ -847,6 +869,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             text-align: center;
         }
 
@@ -2101,49 +2124,11 @@
                         <div id="playlist-sidebar">
                             <div id="playlist-header-row">
                                 <div class="playlist-header-left">
-                                    <button class="icon-action-btn btn-back-to-list" onclick="closePlayerCard()"
-                                        data-tooltip="Назад">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                            stroke-linejoin="round">
-                                            <line x1="19" y1="12" x2="5" y2="12"></line>
-                                            <polyline points="12 19 5 12 12 5"></polyline>
-                                        </svg>
-                                    </button>
                                     <div class="playlist-header-text">
                                         <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
                                             <h2 id="playlist-title-text"
                                                 style="font-size: 1.1rem; margin: 0; color: var(--text); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">
                                                 Мой Плейлист</h2>
-                                            <button class="icon-action-btn" id="btn-rename-current-playlist"
-                                                onclick="renameCurrentPlaylist(event)" data-tooltip="Переименовать"
-                                                style="width: 26px; height: 26px; flex-shrink: 0; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: none; cursor: pointer; color: var(--text-secondary); border-radius: 50%; transition: background-color 0.2s;"
-                                                onmouseover="this.style.backgroundColor='var(--hover-bg)'"
-                                                onmouseout="this.style.backgroundColor='transparent'">
-                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                                    stroke-linejoin="round">
-                                                    <path
-                                                        d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7">
-                                                    </path>
-                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z">
-                                                    </path>
-                                                </svg>
-                                            </button>
-                                            <button class="icon-action-btn" id="btn-delete-current-playlist"
-                                                onclick="deleteCurrentPlaylist(event)" data-tooltip="Удалить плейлист"
-                                                style="width: 26px; height: 26px; flex-shrink: 0; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: none; cursor: pointer; color: var(--accent); border-radius: 50%; transition: background-color 0.2s;"
-                                                onmouseover="this.style.backgroundColor='var(--hover-bg)'"
-                                                onmouseout="this.style.backgroundColor='transparent'">
-                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                                    stroke-linejoin="round">
-                                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                                    <path
-                                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
-                                                    </path>
-                                                </svg>
-                                            </button>
                                         </div>
                                         <div id="playlist-count-text">0 видео из 0</div>
                                     </div>
@@ -2159,11 +2144,27 @@
                                     </button>
                                     <button class="icon-action-btn" onclick="copyPlaylistLink()"
                                         data-tooltip="Копировать ссылку на плейлист">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71">
                                             </path>
                                             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71">
                                             </path>
+                                        </svg>
+                                    </button>
+                                    <button class="icon-action-btn" id="btn-rename-current-playlist"
+                                        onclick="renameCurrentPlaylist(event)" data-tooltip="Переименовать">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        </svg>
+                                    </button>
+                                    <button class="icon-action-btn" id="btn-delete-current-playlist"
+                                        onclick="deleteCurrentPlaylist(event)" data-tooltip="Удалить плейлист">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                         </svg>
                                     </button>
                                 </div>
@@ -2187,19 +2188,6 @@
                                 </div>
                             </div>
 
-                            <div id="visual-container">
-                                <div id="wrapper1" class="deck-wrapper deck-active">
-                                    <div id="player1" style="width:100%; height:100%;"></div>
-                                </div>
-                                <div id="wrapper2" class="deck-wrapper deck-bg">
-                                    <div id="player2" style="width:100%; height:100%;"></div>
-                                </div>
-                                <div id="native-player-wrapper" class="deck-wrapper" style="display:none; z-index:30;">
-                                    <div id="playerNative" style="width:100%; height:100%;"></div>
-                                </div>
-                                <img id="cover-overlay" src="" alt="Cover" draggable="false">
-                            </div>
-
                             <div class="mode-switcher">
                                 <button class="mode-btn" onclick="setMode('video')" id="btn-video">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2217,6 +2205,19 @@
                                     </svg>
                                     <span>Аудио</span>
                                 </button>
+                            </div>
+
+                            <div id="visual-container">
+                                <div id="wrapper1" class="deck-wrapper deck-active">
+                                    <div id="player1" style="width:100%; height:100%;"></div>
+                                </div>
+                                <div id="wrapper2" class="deck-wrapper deck-bg">
+                                    <div id="player2" style="width:100%; height:100%;"></div>
+                                </div>
+                                <div id="native-player-wrapper" class="deck-wrapper" style="display:none; z-index:30;">
+                                    <div id="playerNative" style="width:100%; height:100%;"></div>
+                                </div>
+                                <img id="cover-overlay" src="" alt="Cover" draggable="false">
                             </div>
 
                             <div id="current-track-info">Загрузка...</div>
@@ -2967,6 +2968,9 @@
                 if (pTitle) pTitle.innerText = t.title;
                 if (pSub) pSub.innerText = window.loadedPlaylistName || 'YouTube Music Player';
                 if (pCover) pCover.style.backgroundImage = `url('https://img.youtube.com/vi/${t.id}/mqdefault.jpg')`;
+
+                // Update dynamic background
+                updateDynamicBackground(t.id, t.title);
             } else {
                 playerArea.classList.add('is-empty');
                 if (playbar) playbar.style.display = 'none';
@@ -2974,6 +2978,9 @@
                 document.getElementById('current-track-info').innerText = "Добавьте ваш плейлист";
                 document.getElementById('cover-overlay').src = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23111'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='30' opacity='0.2'>🎧</text></svg>";
                 document.title = "YouTube Playlists";
+
+                // Reset dynamic background
+                updateDynamicBackground(null, null);
             }
 
 
@@ -2991,6 +2998,110 @@
 
             // Update sidebar highlights
             renderSavedPlaylists(window.currentSavedPlaylists);
+        }
+
+        function updateDynamicBackground(trackId, title) {
+            if (!trackId) {
+                const card = document.getElementById('main-player-card');
+                if (card) card.classList.remove('has-dynamic-bg');
+                return;
+            }
+
+            const imgUrl = `https://i.ytimg.com/vi/${trackId}/mqdefault.jpg`;
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = function() {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 30;
+                    canvas.height = 30;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, 30, 30);
+                    const imageData = ctx.getImageData(0, 0, 30, 30).data;
+
+                    let tlR = 0, tlG = 0, tlB = 0, tlCount = 0;
+                    let brR = 0, brG = 0, brB = 0, brCount = 0;
+
+                    for (let y = 0; y < 30; y++) {
+                        for (let x = 0; x < 30; x++) {
+                            const idx = (y * 30 + x) * 4;
+                            const r = imageData[idx];
+                            const g = imageData[idx + 1];
+                            const b = imageData[idx + 2];
+                            const a = imageData[idx + 3];
+
+                            if (a < 200) continue;
+
+                            // Diagonal split to get top-left and bottom-right average colors
+                            if (x + y < 30) {
+                                tlR += r; tlG += g; tlB += b;
+                                tlCount++;
+                            } else {
+                                brR += r; brG += g; brB += b;
+                                brCount++;
+                            }
+                        }
+                    }
+
+                    if (tlCount === 0 || brCount === 0) {
+                        applyFallbackColors(trackId, title);
+                        return;
+                    }
+
+                    const r1 = Math.round(tlR / tlCount);
+                    const g1 = Math.round(tlG / tlCount);
+                    const b1 = Math.round(tlB / tlCount);
+
+                    const r2 = Math.round(brR / brCount);
+                    const g2 = Math.round(brG / brCount);
+                    const b2 = Math.round(brB / brCount);
+
+                    const c1 = `rgb(${r1}, ${g1}, ${b1})`;
+                    const c2 = `rgb(${r2}, ${g2}, ${b2})`;
+
+                    setCardBg(c1, c2);
+                    console.log("Dynamic bg updated successfully from image:", c1, c2);
+                } catch (e) {
+                    console.warn("CORS block or canvas error, falling back to hash colors:", e);
+                    applyFallbackColors(trackId, title);
+                }
+            };
+            img.onerror = function(err) {
+                console.warn("Failed to load image for dynamic bg, falling back to hash colors:", imgUrl, err);
+                applyFallbackColors(trackId, title);
+            };
+            img.src = imgUrl;
+        }
+
+        function applyFallbackColors(trackId, title) {
+            const seed = (title || "") + (trackId || "");
+            let hash = 0;
+            for (let i = 0; i < seed.length; i++) {
+                hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const h1 = Math.abs(hash) % 360;
+            const h2 = (h1 + 60 + (Math.abs(hash >> 8) % 60)) % 360;
+
+            const isDark = document.body.classList.contains('dark');
+            const s1 = isDark ? 40 : 50;
+            const l1 = isDark ? 25 : 75;
+            const s2 = isDark ? 35 : 45;
+            const l2 = isDark ? 20 : 70;
+
+            const c1 = `hsl(${h1}, ${s1}%, ${l1}%)`;
+            const c2 = `hsl(${h2}, ${s2}%, ${l2}%)`;
+
+            setCardBg(c1, c2);
+            console.log("Dynamic bg updated successfully from hash fallback:", c1, c2);
+        }
+
+        function setCardBg(c1, c2) {
+            const card = document.getElementById('main-player-card');
+            if (card) {
+                card.style.setProperty('--dynamic-bg-start', c1);
+                card.style.setProperty('--dynamic-bg-end', c2);
+                card.classList.add('has-dynamic-bg');
+            }
         }
 
         function updateButtons() {

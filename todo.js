@@ -2507,37 +2507,59 @@ async function handleAddTask() {
     const projectIdForDb = addTaskSelectedProjectId;
     const priorityForDb = selectedPriority || 0;
 
-    btnAddTask.disabled = true;
-
-    // Вычисляем order, чтобы новая задача вставала в начало или конец списка
+    // Вычисляем order, ориентируясь на задачи, отображаемые в ТЕКУЩЕМ представлении (роуте)
     const addTaskPositionPref = localStorage.getItem('todo_pref_add_task_position') || 'top';
     let newOrder = 0;
+    let foundAny = false;
+
+    // Определяем условия фильтрации текущего экрана
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+
+    const isTaskInCurrentRoute = (t) => {
+        if (currentRoute === 'today') {
+            return t.dueDate === todayStr;
+        } else if (currentRoute === 'tomorrow') {
+            return t.dueDate === tomorrowStr;
+        } else if (currentRoute.startsWith('project/')) {
+            const pId = currentRoute.split('/')[1];
+            return t.projectId === pId;
+        } else if (currentRoute === 'inbox') {
+            return !t.projectId;
+        }
+        return false;
+    };
+
     if (addTaskPositionPref === 'bottom') {
         let maxOrder = 0;
         allTasks.forEach(t => {
             if (!t.completed && !t.deleted) {
-                const isSameProject = (projectIdForDb && t.projectId === projectIdForDb) || (!projectIdForDb && !t.projectId);
-                if (isSameProject && t.order !== undefined) {
-                    if (t.order > maxOrder) {
+                if (isTaskInCurrentRoute(t) && t.order !== undefined) {
+                    if (!foundAny || t.order > maxOrder) {
                         maxOrder = t.order;
+                        foundAny = true;
                     }
                 }
             }
         });
-        newOrder = maxOrder + 1;
+        newOrder = foundAny ? maxOrder + 1 : 0;
     } else {
         let minOrder = 0;
+        foundAny = false;
         allTasks.forEach(t => {
             if (!t.completed && !t.deleted) {
-                const isSameProject = (projectIdForDb && t.projectId === projectIdForDb) || (!projectIdForDb && !t.projectId);
-                if (isSameProject && t.order !== undefined) {
-                    if (t.order < minOrder) {
+                if (isTaskInCurrentRoute(t) && t.order !== undefined) {
+                    if (!foundAny || t.order < minOrder) {
                         minOrder = t.order;
+                        foundAny = true;
                     }
                 }
             }
         });
-        newOrder = minOrder - 1;
+        newOrder = foundAny ? minOrder - 1 : 0;
     }
 
     try {
@@ -3774,15 +3796,73 @@ function renderTasksGroup(tasksGroup, containerEl) {
         }
     });
 
+    // Сортируем задачи по выбранному критерию
+    const sortGroupTasks = (tasks) => {
+        let sortBy = 'manual';
+        if (currentRoute.startsWith('project/')) {
+            const projectId = currentRoute.split('/')[1];
+            const project = projectsList.find(p => p.id === projectId);
+            if (project && project.sortBy) {
+                sortBy = project.sortBy;
+            }
+        } else if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
+            sortBy = localStorage.getItem(`todo_sort_${currentRoute}`) || 'manual';
+        }
+
+        if (sortBy === 'date') {
+            tasks.sort((a, b) => {
+                const dateA = a.dueDate || '9999-12-31';
+                const dateB = b.dueDate || '9999-12-31';
+                if (dateA !== dateB) return dateA.localeCompare(dateB);
+
+                const timeA = a.dueTime || '23:59';
+                const timeB = b.dueTime || '23:59';
+                if (timeA !== timeB) return timeA.localeCompare(timeB);
+
+                const orderA = a.order !== undefined ? a.order : 0;
+                const orderB = b.order !== undefined ? b.order : 0;
+                if (orderA !== orderB) return orderA - orderB;
+
+                const cTimeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
+                const cTimeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
+                return cTimeB - cTimeA;
+            });
+        } else if (sortBy === 'alphabetical') {
+            tasks.sort((a, b) => {
+                const titleA = a.title || '';
+                const titleB = b.title || '';
+                return titleA.localeCompare(titleB);
+            });
+        } else if (sortBy === 'priority') {
+            tasks.sort((a, b) => {
+                const pA = a.priority !== undefined ? a.priority : 0;
+                const pB = b.priority !== undefined ? b.priority : 0;
+                if (pA !== pB) return pB - pA; // High priority (3) first
+
+                const orderA = a.order !== undefined ? a.order : 0;
+                const orderB = b.order !== undefined ? b.order : 0;
+                if (orderA !== orderB) return orderA - orderB;
+
+                const cTimeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
+                const cTimeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
+                return cTimeB - cTimeA;
+            });
+        } else {
+            // manual
+            tasks.sort((a, b) => {
+                const orderA = a.order !== undefined ? a.order : 0;
+                const orderB = b.order !== undefined ? b.order : 0;
+                if (orderA !== orderB) return orderA - orderB;
+
+                const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
+                const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
+                return timeB - timeA; // Новые вверху
+            });
+        }
+    };
+
     // Sort parent tasks
-    parentTasksToRender.sort((a, b) => {
-        const orderA = a.order !== undefined ? a.order : 0;
-        const orderB = b.order !== undefined ? b.order : 0;
-        if (orderA !== orderB) return orderA - orderB;
-        const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
-        const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
-        return timeB - timeA;
-    });
+    sortGroupTasks(parentTasksToRender);
 
     parentTasksToRender.forEach(task => {
         const el = createTaskRowElement(task);
@@ -3806,14 +3886,7 @@ function renderTasksGroup(tasksGroup, containerEl) {
             subtasks = allTasks.filter(t => t.parentId === task.id && !t.deleted && !t.completed);
         }
 
-        subtasks.sort((a, b) => {
-            const orderA = a.order !== undefined ? a.order : 0;
-            const orderB = b.order !== undefined ? b.order : 0;
-            if (orderA !== orderB) return orderA - orderB;
-            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
-            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
-            return timeB - timeA;
-        });
+        sortGroupTasks(subtasks);
 
         const isCollapsed = isParentTaskCollapsed(task.id);
         if (!isCollapsed) {
@@ -3826,14 +3899,7 @@ function renderTasksGroup(tasksGroup, containerEl) {
 
     // Render standalone subtasks (without indent)
     if (standaloneSubtasks.length > 0) {
-        standaloneSubtasks.sort((a, b) => {
-            const orderA = a.order !== undefined ? a.order : 0;
-            const orderB = b.order !== undefined ? b.order : 0;
-            if (orderA !== orderB) return orderA - orderB;
-            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
-            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
-            return timeB - timeA;
-        });
+        sortGroupTasks(standaloneSubtasks);
 
         standaloneSubtasks.forEach(subtask => {
             const subEl = createTaskRowElement(subtask, true);
@@ -4154,15 +4220,67 @@ function renderTasks() {
 
     // Сортируем задачи по полю 'order', а при равенстве или его отсутствии — по 'createdAt'
     const sortTasksByOrder = (tasks) => {
-        tasks.sort((a, b) => {
-            const orderA = a.order !== undefined ? a.order : 0;
-            const orderB = b.order !== undefined ? b.order : 0;
-            if (orderA !== orderB) return orderA - orderB;
+        let sortBy = 'manual';
+        if (currentRoute.startsWith('project/')) {
+            const projectId = currentRoute.split('/')[1];
+            const project = projectsList.find(p => p.id === projectId);
+            if (project && project.sortBy) {
+                sortBy = project.sortBy;
+            }
+        } else if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
+            sortBy = localStorage.getItem(`todo_sort_${currentRoute}`) || 'manual';
+        }
 
-            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
-            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
-            return timeB - timeA; // Новые вверху
-        });
+        if (sortBy === 'date') {
+            tasks.sort((a, b) => {
+                const dateA = a.dueDate || '9999-12-31';
+                const dateB = b.dueDate || '9999-12-31';
+                if (dateA !== dateB) return dateA.localeCompare(dateB);
+
+                const timeA = a.dueTime || '23:59';
+                const timeB = b.dueTime || '23:59';
+                if (timeA !== timeB) return timeA.localeCompare(timeB);
+
+                const orderA = a.order !== undefined ? a.order : 0;
+                const orderB = b.order !== undefined ? b.order : 0;
+                if (orderA !== orderB) return orderA - orderB;
+
+                const cTimeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
+                const cTimeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
+                return cTimeB - cTimeA;
+            });
+        } else if (sortBy === 'alphabetical') {
+            tasks.sort((a, b) => {
+                const titleA = a.title || '';
+                const titleB = b.title || '';
+                return titleA.localeCompare(titleB);
+            });
+        } else if (sortBy === 'priority') {
+            tasks.sort((a, b) => {
+                const pA = a.priority !== undefined ? a.priority : 0;
+                const pB = b.priority !== undefined ? b.priority : 0;
+                if (pA !== pB) return pB - pA; // High priority (3) first
+
+                const orderA = a.order !== undefined ? a.order : 0;
+                const orderB = b.order !== undefined ? b.order : 0;
+                if (orderA !== orderB) return orderA - orderB;
+
+                const cTimeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
+                const cTimeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
+                return cTimeB - cTimeA;
+            });
+        } else {
+            // manual
+            tasks.sort((a, b) => {
+                const orderA = a.order !== undefined ? a.order : 0;
+                const orderB = b.order !== undefined ? b.order : 0;
+                if (orderA !== orderB) return orderA - orderB;
+
+                const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
+                const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
+                return timeB - timeA; // Новые вверху
+            });
+        }
     };
 
     if (currentRoute !== 'trash') {
@@ -6329,6 +6447,9 @@ function renderProjectHeaderDropdown() {
         const keyCount = `todo_hide_counter_${currentRoute}`;
         const isCountHidden = localStorage.getItem(keyCount) === 'true';
 
+        const sortKey = `todo_sort_${currentRoute}`;
+        const sortBy = localStorage.getItem(sortKey) || 'manual';
+
         projectHeaderDropdown.innerHTML = `
             <button class="dropdown-item" id="btnProjectToggleCompleted">
                 ${isCompletedHidden ? `
@@ -6360,6 +6481,30 @@ function renderProjectHeaderDropdown() {
                     <span>Скрыть количество в боковом меню</span>
                 `}
             </button>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-submenu-container" style="position: relative; width: 100%;">
+                <button class="dropdown-item btn-sort-submenu-trigger" type="button" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+                            <path d="M15 18H3M21 14H3M17 10H3M12 6H3"></path>
+                        </svg>
+                        <span>Сортировка: ${
+                            sortBy === 'date' ? 'По дате' :
+                            sortBy === 'alphabetical' ? 'По алфавиту' :
+                            sortBy === 'priority' ? 'По приоритету' : 'Вручную'
+                        }</span>
+                    </span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="opacity: 0.6;">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+                <div class="dropdown-submenu" style="display: none; position: absolute; left: 100%; top: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 4px; min-width: 160px; z-index: 1010; flex-direction: column; gap: 2px;">
+                    <button class="dropdown-item sort-option-btn ${sortBy === 'manual' ? 'selected' : ''}" data-sort="manual" type="button">Вручную</button>
+                    <button class="dropdown-item sort-option-btn ${sortBy === 'date' ? 'selected' : ''}" data-sort="date" type="button">По дате и времени</button>
+                    <button class="dropdown-item sort-option-btn ${sortBy === 'alphabetical' ? 'selected' : ''}" data-sort="alphabetical" type="button">По алфавиту</button>
+                    <button class="dropdown-item sort-option-btn ${sortBy === 'priority' ? 'selected' : ''}" data-sort="priority" type="button">По приоритету</button>
+                </div>
+            </div>
         `;
 
         document.getElementById('btnProjectToggleCompleted').addEventListener('click', (e) => {
@@ -6375,6 +6520,36 @@ function renderProjectHeaderDropdown() {
             localStorage.setItem(keyCount, isCountHidden ? 'false' : 'true');
             renderTasks();
         });
+
+        // Добавляем обработчик подменю сортировки для общих экранов
+        const submenuTrigger = projectHeaderDropdown.querySelector('.btn-sort-submenu-trigger');
+        const submenu = projectHeaderDropdown.querySelector('.dropdown-submenu');
+        if (submenuTrigger && submenu) {
+            submenuTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = submenu.style.display === 'flex';
+                submenu.style.display = isVisible ? 'none' : 'flex';
+            });
+            submenuTrigger.addEventListener('mouseenter', () => {
+                submenu.style.display = 'flex';
+            });
+            const container = projectHeaderDropdown.querySelector('.dropdown-submenu-container');
+            if (container) {
+                container.addEventListener('mouseleave', () => {
+                    submenu.style.display = 'none';
+                });
+            }
+
+            submenu.querySelectorAll('.sort-option-btn').forEach(btn => {
+                btn.addEventListener('click', (evt) => {
+                    evt.stopPropagation();
+                    projectHeaderDropdown.style.display = 'none';
+                    const sortByVal = btn.getAttribute('data-sort');
+                    localStorage.setItem(sortKey, sortByVal);
+                    renderTasks();
+                });
+            });
+        }
         return;
     }
 
@@ -6456,6 +6631,30 @@ function renderProjectHeaderDropdown() {
             `}
         </button>
         <div class="dropdown-divider"></div>
+        <div class="dropdown-submenu-container" style="position: relative; width: 100%;">
+            <button class="dropdown-item btn-sort-submenu-trigger" type="button" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+                        <path d="M15 18H3M21 14H3M17 10H3M12 6H3"></path>
+                    </svg>
+                    <span>Сортировка: ${
+                        project.sortBy === 'date' ? 'По дате' :
+                        project.sortBy === 'alphabetical' ? 'По алфавиту' :
+                        project.sortBy === 'priority' ? 'По приоритету' : 'Вручную'
+                    }</span>
+                </span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="opacity: 0.6;">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+            <div class="dropdown-submenu" style="display: none; position: absolute; left: 100%; top: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 4px; min-width: 160px; z-index: 1010; flex-direction: column; gap: 2px;">
+                <button class="dropdown-item sort-option-btn ${!project.sortBy || project.sortBy === 'manual' ? 'selected' : ''}" data-sort="manual" type="button">Вручную</button>
+                <button class="dropdown-item sort-option-btn ${project.sortBy === 'date' ? 'selected' : ''}" data-sort="date" type="button">По дате и времени</button>
+                <button class="dropdown-item sort-option-btn ${project.sortBy === 'alphabetical' ? 'selected' : ''}" data-sort="alphabetical" type="button">По алфавиту</button>
+                <button class="dropdown-item sort-option-btn ${project.sortBy === 'priority' ? 'selected' : ''}" data-sort="priority" type="button">По приоритету</button>
+            </div>
+        </div>
+        <div class="dropdown-divider"></div>
         <button class="dropdown-item btn-delete" id="btnProjectDelete">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0; color: #ef4444;">
                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -6518,6 +6717,42 @@ function renderProjectHeaderDropdown() {
             console.error("Ошибка при изменении видимости счетчика проекта:", err);
         }
     });
+
+    // Добавляем обработчик подменю сортировки
+    const submenuTrigger = projectHeaderDropdown.querySelector('.btn-sort-submenu-trigger');
+    const submenu = projectHeaderDropdown.querySelector('.dropdown-submenu');
+    if (submenuTrigger && submenu) {
+        // На компьютерах показываем при наведении, на телефонах при клике
+        submenuTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = submenu.style.display === 'flex';
+            submenu.style.display = isVisible ? 'none' : 'flex';
+        });
+        submenuTrigger.addEventListener('mouseenter', () => {
+            submenu.style.display = 'flex';
+        });
+        const container = projectHeaderDropdown.querySelector('.dropdown-submenu-container');
+        if (container) {
+            container.addEventListener('mouseleave', () => {
+                submenu.style.display = 'none';
+            });
+        }
+
+        submenu.querySelectorAll('.sort-option-btn').forEach(btn => {
+            btn.addEventListener('click', async (evt) => {
+                evt.stopPropagation();
+                projectHeaderDropdown.style.display = 'none';
+                const sortByVal = btn.getAttribute('data-sort');
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                        sortBy: sortByVal
+                    });
+                } catch (err) {
+                    console.error("Ошибка при изменении сортировки проекта:", err);
+                }
+            });
+        });
+    }
 
     document.getElementById('btnProjectDelete').addEventListener('click', (e) => {
         e.stopPropagation();

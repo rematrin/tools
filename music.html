@@ -231,11 +231,10 @@
 
         /* Saved Playlists Section */
         .saved-playlists-section {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 16px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 10px 0;
             margin-top: 20px;
             display: flex;
             flex-direction: column;
@@ -244,7 +243,7 @@
         }
 
         .saved-playlists-title {
-            font-size: 0.95rem;
+            font-size: 1.4rem;
             margin: 0;
             color: var(--text);
             font-weight: 700;
@@ -269,7 +268,7 @@
 
         .saved-playlists-list {
             display: grid;
-            grid-template-columns: repeat(auto-fill, 160px);
+            grid-template-columns: repeat(auto-fill, 180px);
             gap: 24px;
             margin-top: 15px;
         }
@@ -475,38 +474,46 @@
             width: 100%;
         }
 
-        .saved-playlist-card:hover {
-            background: transparent;
-            border-color: transparent;
-            box-shadow: none;
-        }
-
         .saved-playlist-card:hover .playlist-card-cover {
-            transform: none;
-            box-shadow: none;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
         }
 
         .playlist-card-cover {
+            position: relative;
             width: 100%;
             aspect-ratio: 1 / 1;
             height: auto;
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
             flex-shrink: 0;
-            background: linear-gradient(135deg, #2a2a2c 0%, #1e1e1f 100%);
+            background: #171717;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #fff;
             font-size: 2rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         .playlist-card-cover img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: transform 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .saved-playlist-card:hover .playlist-card-cover img {
+            transform: scale(1.04);
+        }
+
+        .saved-playlist-card:hover .album-card-overlay {
+            opacity: 1;
+        }
+
+        .saved-playlist-card:hover .album-card-play {
+            opacity: 1;
+            transform: scale(1);
         }
 
         .playlist-card-content {
@@ -5930,6 +5937,11 @@
                 div.innerHTML = `
                     <div class="playlist-card-cover">
                         ${coverHtml}
+                        <div class="album-card-overlay">
+                            <button class="album-card-play">
+                                <svg viewBox="0 0 24 24" fill="currentColor" style="width: 18px; height: 18px;"><path d="M8 5v14l11-7z"></path></svg>
+                            </button>
+                        </div>
                     </div>
                     <div class="playlist-card-content">
                         <div class="playlist-card-title" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div>

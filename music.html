@@ -4,9 +4,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>YouTube Playlists</title>
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎧</text></svg>">
+    <title>Apple Music – Веб-плеер</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <link rel="stylesheet" href="theme.css">
     <script src="theme-loader.js"></script>
@@ -16,7 +15,7 @@
         /* СВЕТЛАЯ ТЕМА (По умолчанию - Apple Music / playlists.html Light Theme) */
         :root {
             /* Apple Music Light Theme Palette (Matching playlists.html) */
-            --bg: #f4f6fb;
+            --bg: #fbfbfd;
             /* Main content background */
             --sidebar-bg: #fafafa;
             /* Sidebar background matching playlists.html */
@@ -80,7 +79,8 @@
 
 
 
-        html, body {
+        html,
+        body {
             height: 100vh;
             margin: 0;
             overflow: hidden;
@@ -96,7 +96,7 @@
         /* Переопределяем глобальный wrap для этой страницы (он шире) */
         .wrap {
             width: 100%;
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 24px 14px 20px 14px;
             flex-grow: 1;
@@ -192,12 +192,16 @@
         #main-player-card::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             border-radius: inherit;
             pointer-events: none;
             z-index: 0;
             transition: background 0.5s ease;
         }
+
         #main-player-card.has-dynamic-bg::before {
             background: rgba(0, 0, 0, 0.3);
         }
@@ -1068,6 +1072,14 @@
             padding-bottom: 96px !important;
             /* Extra bottom margin for playbar */
             box-sizing: border-box;
+            transition: padding-left 0.3s ease;
+        }
+
+        @media (min-width: 769px) {
+            .main-content {
+                padding-left: 292px !important;
+                padding-right: 32px !important;
+            }
         }
 
         /* Player controls inside card are enabled */
@@ -1911,6 +1923,327 @@
                 width: 140px;
             }
         }
+
+        /* Card Hover and Play Button Styles */
+        .editorial-card {
+            position: relative;
+            width: 340px;
+            height: 200px;
+            border-radius: 14px;
+            overflow: hidden;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: box-shadow 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            background: #171717;
+        }
+
+        .editorial-card:hover {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .editorial-card-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.7;
+            transition: transform 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .editorial-card:hover .editorial-card-bg {
+            transform: scale(1.03);
+        }
+
+        .editorial-card-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.1) 100%);
+        }
+
+        .editorial-card-play {
+            width: 40px;
+            height: 40px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            border: none;
+            cursor: pointer;
+            color: #1d1d1f;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .editorial-card:hover .editorial-card-play {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .editorial-card-play:hover {
+            transform: scale(1.05) !important;
+        }
+
+        .editorial-card-play:active {
+            transform: scale(0.95) !important;
+        }
+
+        /* Regular Album/Playlist/Station Hover Play Styles */
+        .album-card-wrapper {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            width: 100%;
+            aspect-ratio: 1;
+        }
+
+        .album-card-wrapper img {
+            transition: transform 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .album-card-wrapper:hover img {
+            transform: scale(1.04);
+        }
+
+        .album-card-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s ease;
+            pointer-events: auto;
+        }
+
+        .album-card-wrapper:hover .album-card-overlay {
+            opacity: 1;
+        }
+
+        .album-card-play {
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            border: none;
+            cursor: pointer;
+            color: #1d1d1f;
+            transition: transform 0.2s ease;
+        }
+
+        .album-card-play:hover {
+            transform: scale(1.05);
+        }
+
+        .album-card-play:active {
+            transform: scale(0.95);
+        }
+
+        .album-card-play svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            margin-left: 2px;
+        }
+
+        /* Radio Banners */
+        .radio-hero-banner {
+            position: relative;
+            height: 176px;
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            background: #171717;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .radio-hero-banner:hover {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .radio-hero-banner img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.7;
+            transition: transform 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .radio-hero-banner:hover img {
+            transform: scale(1.02);
+        }
+
+        .radio-hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top-right, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.35) 60%, transparent 100%);
+        }
+
+        .radio-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #fc3c44;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            width: max-content;
+            box-shadow: 0 2px 8px rgba(252, 60, 68, 0.3);
+        }
+
+        .radio-badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #fff;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.4;
+            }
+        }
+
+        .radio-antenna-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            z-index: 10;
+        }
+
+        /* Playlist Track Row & Hover Play Icon */
+        .playlist-track-row {
+            display: grid;
+            grid-template-columns: 50px 1fr 1fr 100px 50px;
+            align-items: center;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .playlist-track-row:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .playlist-track-number {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            font-weight: 600;
+            color: var(--text-secondary);
+            width: 24px;
+            height: 24px;
+        }
+
+        .playlist-track-row .track-play-icon {
+            display: none;
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            color: var(--text-secondary);
+        }
+
+        .playlist-track-row:hover .track-num-label {
+            display: none;
+        }
+
+        .playlist-track-row:hover .track-play-icon {
+            display: block;
+        }
+
+        .playlist-track-row .track-pause-icon {
+            display: none;
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            color: #fa243c;
+        }
+        .playlist-track-row:hover .playlist-track-number.playing .eq-container {
+            display: none;
+        }
+        .playlist-track-row:hover .playlist-track-number.playing .track-pause-icon {
+            display: block;
+        }
+
+        /* Equalizer Animation */
+        @keyframes equalizer-bounce {
+            0% {
+                transform: scaleY(0.3);
+            }
+
+            50% {
+                transform: scaleY(1);
+            }
+
+            100% {
+                transform: scaleY(0.3);
+            }
+        }
+
+        .eq-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 2.5px;
+            height: 14px;
+            width: 16px;
+        }
+
+        .eq-bar {
+            width: 3px;
+            background-color: #fa243c;
+            border-radius: 2px;
+            transform-origin: bottom;
+        }
+
+        .eq-bar-1 {
+            height: 10px;
+            animation: equalizer-bounce 0.8s ease-in-out infinite 0.1s;
+        }
+
+        .eq-bar-2 {
+            height: 14px;
+            animation: equalizer-bounce 0.8s ease-in-out infinite 0.3s;
+        }
+
+        .eq-bar-3 {
+            height: 8px;
+            animation: equalizer-bounce 0.8s ease-in-out infinite 0.2s;
+        }
     </style>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
     <script>
@@ -1985,6 +2318,15 @@
                             <polyline points="9 22 9 12 15 12 15 22"></polyline>
                         </svg>
                         <span>Главная</span>
+                    </a>
+                    <a href="#new" class="sidebar-item" id="menu-new">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z">
+                            </path>
+                        </svg>
+                        <span>Новое</span>
                     </a>
                     <a href="#radio" class="sidebar-item" id="menu-radio">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -2082,7 +2424,7 @@
             <div class="wrap">
 
                 <!-- Playlist Details View -->
-                <div class="card" id="playlist-details-view" style="display: none; padding: 24px;">
+                <div id="playlist-details-view" style="display: none; padding: 10px 0;">
                     <div id="playlist-details-header"
                         style="display: flex; gap: 32px; margin-bottom: 32px; flex-wrap: wrap;">
                         <div id="playlist-details-cover"
@@ -2184,7 +2526,9 @@
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                             stroke-linecap="round" stroke-linejoin="round">
                                             <polyline points="3 6 5 6 21 6"></polyline>
-                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            <path
+                                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                            </path>
                                         </svg>
                                     </button>
                                 </div>
@@ -2529,13 +2873,13 @@
             if (hash && hash !== '#playlist') {
                 window.previousMusicHash = hash;
             }
-            
+
             const mainContent = document.querySelector('.main-content');
             if (mainContent) {
                 mainContent.style.overflowY = 'auto';
                 mainContent.style.paddingBottom = '96px';
             }
-            
+
             if (!hash) {
                 let urlParams = new URLSearchParams(window.location.search);
                 const listId = urlParams.get('list');
@@ -2643,21 +2987,481 @@
             if (hash === '#home') {
                 title = 'Главная';
                 content = `
-                    <div style="text-align: left; padding-top: 20px;">
-                        <h2 style="font-size: 1.8rem; font-weight: 700; color: var(--text); margin-bottom: 12px;">Добро пожаловать в Медиатеку</h2>
-                        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 30px; max-width: 600px;">Ваше персональное музыкальное пространство. Перейдите во вкладку «Все плейлисты» в левом меню, чтобы управлять вашей библиотекой и слушать музыку.</p>
+                    <div style="text-align: left; padding-top: 10px;">
+                        <h2 style="font-size: 2rem; font-weight: 800; color: var(--text); margin-bottom: 24px; letter-spacing: -0.03em;">Главная</h2>
                         
-                        <h3 style="font-size: 1.2rem; font-weight: 600; color: var(--text); margin-bottom: 16px;">Рекомендуемое для вас</h3>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
-                            <div style="background: var(--card-bg); border: 1px solid var(--border); padding: 24px; border-radius: 16px; text-align: center; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                                <div style="font-size: 2.5rem; margin-bottom: 12px;">🎧</div>
-                                <div style="font-weight: 700; font-size: 0.95rem; color: var(--text);">Любимые треки</div>
-                                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Ваша персональная подборка</div>
+                        <!-- Для вас -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                            <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Для вас</h3>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                </button>
+                                <button onclick="scrollSection(this, 'right')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
                             </div>
-                            <div style="background: var(--card-bg); border: 1px solid var(--border); padding: 24px; border-radius: 16px; text-align: center; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                                <div style="font-size: 2.5rem; margin-bottom: 12px;">✨</div>
-                                <div style="font-weight: 700; font-size: 0.95rem; color: var(--text);">Турбо-микс дня</div>
-                                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Лучшие переходы от ИИ</div>
+                        </div>
+                        <div style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 36px; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
+                            <!-- Card 1 -->
+                            <div class="editorial-card" onclick="window.location.hash='#playlists'">
+                                <img src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=600&h=380&fit=crop&q=80" class="editorial-card-bg">
+                                <div class="editorial-card-overlay"></div>
+                                <div style="position: relative; z-index: 10; padding: 20px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; text-align: left; color: #fff;">
+                                    <div>
+                                        <span style="font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,0.6);">ДЛЯ ВАС</span>
+                                        <h4 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 4px 0 0 0; line-height: 1.2;">Вечерний микс</h4>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                                        <p style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin: 0; font-weight: 400; line-height: 1.35; max-width: 70%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">Идеальные треки, чтобы замедлиться после насыщенного дня.</p>
+                                        <button class="editorial-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Вечерний микс')">
+                                            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px; height:16px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Card 2 -->
+                            <div class="editorial-card" onclick="window.location.hash='#playlists'">
+                                <img src="https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=600&h=380&fit=crop&q=80" class="editorial-card-bg">
+                                <div class="editorial-card-overlay"></div>
+                                <div style="position: relative; z-index: 10; padding: 20px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; text-align: left; color: #fff;">
+                                    <div>
+                                        <span style="font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,0.6);">ФОКУС</span>
+                                        <h4 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 4px 0 0 0; line-height: 1.2;">Музыка для концентрации</h4>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                                        <p style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin: 0; font-weight: 400; line-height: 1.35; max-width: 70%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">Атмосферный эмбиент и неоклассика для работы и учебы.</p>
+                                        <button class="editorial-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Концентрация')">
+                                            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px; height:16px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Card 3 -->
+                            <div class="editorial-card" onclick="window.location.hash='#playlists'">
+                                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&h=380&fit=crop&q=80" class="editorial-card-bg">
+                                <div class="editorial-card-overlay"></div>
+                                <div style="position: relative; z-index: 10; padding: 20px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; text-align: left; color: #fff;">
+                                    <div>
+                                        <span style="font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,0.6);">РЕКОМЕНДАЦИЯ</span>
+                                        <h4 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 4px 0 0 0; line-height: 1.2;">Новинки для вас</h4>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                                        <p style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin: 0; font-weight: 400; line-height: 1.35; max-width: 70%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">Персональный дайджест самых интересных свежих музыкальных релизов.</p>
+                                        <button class="editorial-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Новинки')">
+                                            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px; height:16px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Недавно прослушанные -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                            <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Недавно прослушанные</h3>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                </button>
+                                <button onclick="scrollSection(this, 'right')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 36px; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: After Hours')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">After Hours</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">The Weeknd</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Starboy')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Starboy</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">The Weeknd</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Divide')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Divide</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Ed Sheeran</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Любимое')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Любимое</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Плейлист</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: В дорогу')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">В дорогу</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Плейлист</div>
+                            </div>
+                        </div>
+
+                        <!-- Недавно добавленные -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                            <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Недавно добавленные</h3>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                </button>
+                                <button onclick="scrollSection(this, 'right')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 36px; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1618005198143-e528346d9a59?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Future Nostalgia')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Future Nostalgia</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Dua Lipa</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1604871000636-074fa5117945?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Harry\\'s House')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Harry's House</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Harry Styles</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Hurry Up, We\\'re Dreaming')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Hurry Up, We're Dreaming</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">M83</div>
+                            </div>
+                        </div>
+
+                        <!-- Станции для вас -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                            <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Станции для вас</h3>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                </button>
+                                <button onclick="scrollSection(this, 'right')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: center;" onclick="alert('Радио: Моя станция')">
+                                <div class="album-card-wrapper" style="border-radius: 50%;">
+                                    <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" style="width: 40px; height: 40px;">
+                                            <span style="font-size: 8px; font-weight: 800; color: #fc3c44; letter-spacing: 0.05em;">LIVE</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Моя станция</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Персональное радио</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: center;" onclick="alert('Радио: Хиты')">
+                                <div class="album-card-wrapper" style="border-radius: 50%;">
+                                    <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" style="width: 40px; height: 40px;">
+                                            <span style="font-size: 8px; font-weight: 800; color: #fc3c44; letter-spacing: 0.05em;">LIVE</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Хиты</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Apple Music 1</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: center;" onclick="alert('Радио: Chill Station')">
+                                <div class="album-card-wrapper" style="border-radius: 50%;">
+                                    <img src="https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" style="width: 40px; height: 40px;">
+                                            <span style="font-size: 8px; font-weight: 800; color: #fc3c44; letter-spacing: 0.05em;">LIVE</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Chill Station</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Спокойная музыка</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: center;" onclick="alert('Радио: Alternative Live')">
+                                <div class="album-card-wrapper" style="border-radius: 50%;">
+                                    <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" style="width: 40px; height: 40px;">
+                                            <span style="font-size: 8px; font-weight: 800; color: #fc3c44; letter-spacing: 0.05em;">LIVE</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Alternative Live</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Инди и Рок</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (hash === '#new') {
+                title = 'Новое';
+                content = `
+                    <div style="text-align: left; padding-top: 10px;">
+                        <h2 style="font-size: 2rem; font-weight: 800; color: var(--text); margin-bottom: 24px; letter-spacing: -0.03em;">Новое</h2>
+                        
+                        <!-- Избранная коллекция -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                            <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Избранная коллекция</h3>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                </button>
+                                <button onclick="scrollSection(this, 'right')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 36px; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
+                            <!-- Card 1 -->
+                            <div class="editorial-card" onclick="window.location.hash='#playlists'">
+                               <img src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=600&h=380&fit=crop&q=80" class="editorial-card-bg">
+                                <div class="editorial-card-overlay"></div>
+                                <div style="position: relative; z-index: 10; padding: 20px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; text-align: left; color: #fff;">
+                                    <div>
+                                        <span style="font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,0.6);">ДЛЯ ВАС</span>
+                                        <h4 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 4px 0 0 0; line-height: 1.2;">Вечерний микс</h4>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                                        <p style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin: 0; font-weight: 400; line-height: 1.35; max-width: 70%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">Идеальные треки, чтобы замедлиться после насыщенного дня.</p>
+                                        <button class="editorial-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Вечерний микс')">
+                                            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px; height:16px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Card 2 -->
+                            <div class="editorial-card" onclick="window.location.hash='#playlists'">
+                                <img src="https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=600&h=380&fit=crop&q=80" class="editorial-card-bg">
+                                <div class="editorial-card-overlay"></div>
+                                <div style="position: relative; z-index: 10; padding: 20px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; text-align: left; color: #fff;">
+                                    <div>
+                                        <span style="font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,0.6);">ФОКУС</span>
+                                        <h4 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 4px 0 0 0; line-height: 1.2;">Музыка для концентрации</h4>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                                        <p style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin: 0; font-weight: 400; line-height: 1.35; max-width: 70%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">Атмосферный эмбиент и неоклассика для работы и учебы.</p>
+                                        <button class="editorial-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Концентрация')">
+                                            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px; height:16px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Card 3 -->
+                            <div class="editorial-card" onclick="window.location.hash='#playlists'">
+                                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&h=380&fit=crop&q=80" class="editorial-card-bg">
+                                <div class="editorial-card-overlay"></div>
+                                <div style="position: relative; z-index: 10; padding: 20px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; text-align: left; color: #fff;">
+                                    <div>
+                                        <span style="font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,0.6);">РЕКОМЕНДАЦИЯ</span>
+                                        <h4 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 4px 0 0 0; line-height: 1.2;">Новинки для вас</h4>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                                        <p style="font-size: 0.8rem; color: rgba(255,255,255,0.8); margin: 0; font-weight: 400; line-height: 1.35; max-width: 70%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">Персональный дайджест самых интересных свежих музыкальных релизов.</p>
+                                        <button class="editorial-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Новинки')">
+                                            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px; height:16px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Новая музыка -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                            <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Новая музыка</h3>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                </button>
+                                <button onclick="scrollSection(this, 'right')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 36px; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Divide')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Divide</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Ed Sheeran</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1618005198143-e528346d9a59?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Future Nostalgia')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Future Nostalgia</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Dua Lipa</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1604871000636-074fa5117945?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Harry\\'s House')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Harry's House</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Harry Styles</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Hurry Up, We\\'re Dreaming')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Hurry Up, We're Dreaming</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">M83</div>
+                            </div>
+                        </div>
+
+                        <!-- Популярные плейлисты -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                            <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Популярные плейлисты</h3>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                </button>
+                                <button onclick="scrollSection(this, 'right')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 36px; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: В дорогу')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">В дорогу</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Создано для вас</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Вечер')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Вечер</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Создано для вас</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Chill')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Chill</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Музыкальный редактор</div>
+                            </div>
+                            <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash='#playlists'">
+                                <div class="album-card-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1487180142328-0c4e37023af5?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="album-card-overlay">
+                                        <button class="album-card-play" onclick="event.stopPropagation(); alert('Воспроизведение: Мой плейлист')">
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Мой плейлист</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Пользователь</div>
+                            </div>
+                        </div>
+
+                        <!-- Обзор по жанрам -->
+                        <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text); margin-bottom: 16px; letter-spacing: -0.02em;">Обзор по жанрам</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+                            <div style="padding: 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--card-bg); display: flex; items-center; justify-content: space-between; cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'" onclick="window.location.hash='#search'">
+                                <span style="font-weight: 600; color: var(--text); font-size: 0.9rem;">Поп</span>
+                                <span style="color: var(--text-secondary); font-size: 0.8rem;">→</span>
+                            </div>
+                            <div style="padding: 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--card-bg); display: flex; items-center; justify-content: space-between; cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'" onclick="window.location.hash='#search'">
+                                <span style="font-weight: 600; color: var(--text); font-size: 0.9rem;">Рок</span>
+                                <span style="color: var(--text-secondary); font-size: 0.8rem;">→</span>
+                            </div>
+                            <div style="padding: 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--card-bg); display: flex; items-center; justify-content: space-between; cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'" onclick="window.location.hash='#search'">
+                                <span style="font-weight: 600; color: var(--text); font-size: 0.9rem;">Электроника</span>
+                                <span style="color: var(--text-secondary); font-size: 0.8rem;">→</span>
+                            </div>
+                            <div style="padding: 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--card-bg); display: flex; items-center; justify-content: space-between; cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'" onclick="window.location.hash='#search'">
+                                <span style="font-weight: 600; color: var(--text); font-size: 0.9rem;">Альтернатива</span>
+                                <span style="color: var(--text-secondary); font-size: 0.8rem;">→</span>
                             </div>
                         </div>
                     </div>
@@ -2665,29 +3469,183 @@
             } else if (hash === '#search') {
                 title = 'Поиск';
                 content = `
-                    <div style="max-width: 600px; margin: 0 auto; text-align: left; padding-top: 20px;">
-                        <h2 style="font-size: 1.8rem; font-weight: 700; color: var(--text); margin-bottom: 20px;">Поиск</h2>
-                        <div style="position: relative; display: flex; gap: 10px; margin-bottom: 30px;">
+                    <div style="text-align: left; padding-top: 10px;">
+                        <h2 style="font-size: 2rem; font-weight: 800; color: var(--text); margin-bottom: 20px; letter-spacing: -0.03em;">Поиск</h2>
+                        <div style="position: relative; display: flex; gap: 10px; margin-bottom: 30px; max-width: 600px;">
                             <input type="text" placeholder="Артисты, песни, тексты и другое" style="flex-grow: 1; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); outline: none; font-size: 0.95rem;">
                             <button style="background: var(--accent); color: #fff; border: none; padding: 0 24px; border-radius: 10px; font-weight: 600; cursor: pointer;">Найти</button>
                         </div>
-                        <p style="opacity: 0.5; font-size: 0.9rem;">Введите запрос для поиска по медиатеке или YouTube Music.</p>
+
+                        <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text); margin-bottom: 16px;">Поиск по категориям</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+                            <div style="background: linear-gradient(135deg, #FF6A00 0%, #EE0979 100%); height: 112px; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div style="font-size: 1.2rem; opacity: 0.5; color: #fff;">✨</div>
+                                <span style="color: #fff; font-weight: 700; font-size: 1.1rem;">Поп</span>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #1f4037 0%, #99f2c8 100%); height: 112px; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div style="font-size: 1.2rem; opacity: 0.5; color: #fff;">✨</div>
+                                <span style="color: #fff; font-weight: 700; font-size: 1.1rem;">Рок</span>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #8A2387 0%, #E94057 50%, #F27121 100%); height: 112px; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div style="font-size: 1.2rem; opacity: 0.5; color: #fff;">✨</div>
+                                <span style="color: #fff; font-weight: 700; font-size: 1.1rem;">Электроника</span>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%); height: 112px; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div style="font-size: 1.2rem; opacity: 0.5; color: #fff;">✨</div>
+                                <span style="color: #fff; font-weight: 700; font-size: 1.1rem;">Альтернатива</span>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #ff9966 0%, #ff5e62 100%); height: 112px; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div style="font-size: 1.2rem; opacity: 0.5; color: #fff;">✨</div>
+                                <span style="color: #fff; font-weight: 700; font-size: 1.1rem;">Hip-Hop</span>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #7F00FF 0%, #E100FF 100%); height: 112px; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div style="font-size: 1.2rem; opacity: 0.5; color: #fff;">✨</div>
+                                <span style="color: #fff; font-weight: 700; font-size: 1.1rem;">Джаз</span>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #4ca1af 0%, #c4e0e5 100%); height: 112px; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div style="font-size: 1.2rem; opacity: 0.5; color: #fff;">✨</div>
+                                <span style="color: #fff; font-weight: 700; font-size: 1.1rem;">Для концентрации</span>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #2b5876 0%, #4e4376 100%); height: 112px; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div style="font-size: 1.2rem; opacity: 0.5; color: #fff;">✨</div>
+                                <span style="color: #fff; font-weight: 700; font-size: 1.1rem;">Для сна</span>
+                            </div>
+                        </div>
                     </div>
                 `;
             } else if (hash === '#radio') {
                 title = 'Радио';
                 content = `
-                    <div style="text-align: left;">
-                        <h2 style="font-size: 1.8rem; font-weight: 700; color: var(--text); margin-bottom: 24px;">Радиостанции</h2>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
-                            ${['Chill Pop', 'Hip-Hop Beat', 'Deep House Radio', 'Retro Wave'].map(station => `
-                                <div style="background: var(--card-bg); border: 1px solid var(--border); padding: 20px; border-radius: 16px; cursor: pointer; text-align: center; position: relative; overflow: hidden;">
-                                    <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--accent); margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff;">📻</div>
-                                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--text);">${station}</div>
-                                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Прямой эфир</div>
+                    <div style="text-align: left; padding-top: 10px;">
+                        <h2 style="font-size: 2rem; font-weight: 800; color: var(--text); margin-bottom: 24px; letter-spacing: -0.03em;">Радио</h2>
+                        
+                        <!-- Прямой эфир -->
+                        <section style="margin-bottom: 36px;">
+                            <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text); margin-bottom: 16px; letter-spacing: -0.02em;">Прямой эфир</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                                <!-- Station 1 -->
+                                <div class="radio-hero-banner" onclick="alert('Воспроизведение радио: Моя станция')">
+                                    <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&q=80">
+                                    <div class="radio-hero-overlay"></div>
+                                    <div style="position: absolute; inset: 0; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; z-index: 10;">
+                                        <span class="radio-badge">
+                                            <span class="radio-badge-dot"></span>
+                                            В эфире
+                                        </span>
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;">
+                                            <div style="color: #fff;">
+                                                <span style="font-size: 10px; color: rgba(255,255,255,0.6); tracking-wider; text-transform: uppercase; font-weight: 600;">Персональное радио</span>
+                                                <h4 style="font-size: 1.25rem; font-weight: 800; margin: 4px 0 0 0; letter-spacing: -0.01em;">Моя станция</h4>
+                                                <p style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin: 6px 0 0 0; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;">Музыка, подобранная специально для вас на основе вкусов.</p>
+                                            </div>
+                                            <button class="editorial-card-play" style="opacity: 1; transform: scale(1); flex-shrink: 0;">
+                                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                            `).join('')}
-                        </div>
+                                <!-- Station 2 -->
+                                <div class="radio-hero-banner" onclick="alert('Воспроизведение радио: Хиты')">
+                                    <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80">
+                                    <div class="radio-hero-overlay"></div>
+                                    <div style="position: absolute; inset: 0; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; z-index: 10;">
+                                        <span class="radio-badge">
+                                            <span class="radio-badge-dot"></span>
+                                            В эфире
+                                        </span>
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;">
+                                            <div style="color: #fff;">
+                                                <span style="font-size: 10px; color: rgba(255,255,255,0.6); tracking-wider; text-transform: uppercase; font-weight: 600;">Apple Music 1</span>
+                                                <h4 style="font-size: 1.25rem; font-weight: 800; margin: 4px 0 0 0; letter-spacing: -0.01em;">Хиты</h4>
+                                                <p style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin: 6px 0 0 0; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;">Главная мировая поп-станция. Прямые эфиры с лучшими ведущими.</p>
+                                            </div>
+                                            <button class="editorial-card-play" style="opacity: 1; transform: scale(1); flex-shrink: 0;">
+                                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Музыкальные станции -->
+                        <section>
+                            <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text); margin-bottom: 16px; letter-spacing: -0.02em;">Музыкальные станции</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px;">
+                                <!-- Station 3 -->
+                                <div style="cursor: pointer;" onclick="alert('Воспроизведение радио: Chill Station')">
+                                    <div class="album-card-wrapper" style="position: relative;">
+                                        <img src="https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <div class="album-card-overlay">
+                                            <button class="album-card-play">
+                                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                            </button>
+                                        </div>
+                                        <div class="radio-antenna-badge">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
+                                        </div>
+                                    </div>
+                                    <div style="margin-top: 8px;">
+                                        <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Chill Station</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Спокойная музыка</div>
+                                    </div>
+                                </div>
+                                <!-- Station 4 -->
+                                <div style="cursor: pointer;" onclick="alert('Воспроизведение радио: Alternative Live')">
+                                    <div class="album-card-wrapper" style="position: relative;">
+                                        <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <div class="album-card-overlay">
+                                            <button class="album-card-play">
+                                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                            </button>
+                                        </div>
+                                        <div class="radio-antenna-badge">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
+                                        </div>
+                                    </div>
+                                    <div style="margin-top: 8px;">
+                                        <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Alternative Live</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Инди и Рок</div>
+                                    </div>
+                                </div>
+                                <!-- Station 5 -->
+                                <div style="cursor: pointer;" onclick="alert('Воспроизведение радио: Electronic Beat')">
+                                    <div class="album-card-wrapper" style="position: relative;">
+                                        <img src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <div class="album-card-overlay">
+                                            <button class="album-card-play">
+                                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                            </button>
+                                        </div>
+                                        <div class="radio-antenna-badge">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
+                                        </div>
+                                    </div>
+                                    <div style="margin-top: 8px;">
+                                        <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Electronic Beat</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Танцевальное радио</div>
+                                    </div>
+                                </div>
+                                <!-- Station 6 -->
+                                <div style="cursor: pointer;" onclick="alert('Воспроизведение радио: Hip-Hop Flow')">
+                                    <div class="album-card-wrapper" style="position: relative;">
+                                        <img src="https://images.unsplash.com/photo-1482440308425-276ad0f28b19?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <div class="album-card-overlay">
+                                            <button class="album-card-play">
+                                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                            </button>
+                                        </div>
+                                        <div class="radio-antenna-badge">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
+                                        </div>
+                                    </div>
+                                    <div style="margin-top: 8px;">
+                                        <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Hip-Hop Flow</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Рэп и Хип-Хоп</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
                     </div>
                 `;
             } else {
@@ -2713,6 +3671,19 @@
 
         window.addEventListener('hashchange', handleRoute);
         document.addEventListener('DOMContentLoaded', handleRoute);
+
+        window.scrollSection = function (btn, direction) {
+            const headerDiv = btn.closest('div');
+            const headerContainer = headerDiv.parentElement;
+            const row = headerContainer.nextElementSibling;
+            if (row) {
+                const scrollAmount = row.clientWidth * 0.75;
+                row.scrollBy({
+                    left: direction === 'left' ? -scrollAmount : scrollAmount,
+                    behavior: 'smooth'
+                });
+            }
+        };
 
         // --- UI LOGIC ---
 
@@ -2837,7 +3808,7 @@
             initThemeToggle();
             toggleTurboMix(isTurboMixEnabled);
             updateRepeatUI();
-            
+
             setupHoverCrossfade('playbar-prevBtn', 'prev');
             setupHoverCrossfade('playbar-nextBtn', 'next');
 
@@ -2959,11 +3930,19 @@
             updateButtons();
         }
 
+        function refreshPlaylistDetailsIfVisible() {
+            const detailsView = document.getElementById('playlist-details-view');
+            if (detailsView && detailsView.style.display === 'block' && window.refreshDetailsTracksCallback) {
+                window.refreshDetailsTracksCallback();
+            }
+        }
+
         function updatePlayPauseIcon() {
             const playIcon = document.getElementById('playbar-icon-play');
             const pauseIcon = document.getElementById('playbar-icon-pause');
             if (playIcon) playIcon.style.display = isPlaying ? 'none' : 'block';
             if (pauseIcon) pauseIcon.style.display = isPlaying ? 'block' : 'none';
+            refreshPlaylistDetailsIfVisible();
         }
 
         function updateUI() {
@@ -3030,7 +4009,7 @@
             const imgUrl = `https://i.ytimg.com/vi/${trackId}/mqdefault.jpg`;
             const img = new Image();
             img.crossOrigin = "anonymous";
-            img.onload = function() {
+            img.onload = function () {
                 try {
                     const canvas = document.createElement('canvas');
                     canvas.width = 30;
@@ -3086,7 +4065,7 @@
                     applyFallbackColors(trackId, title);
                 }
             };
-            img.onerror = function(err) {
+            img.onerror = function (err) {
                 console.warn("Failed to load image for dynamic bg, falling back to hash colors:", imgUrl, err);
                 applyFallbackColors(trackId, title);
             };
@@ -3430,7 +4409,7 @@
         function setupHoverCrossfade(btnId, direction) {
             const btn = document.getElementById(btnId);
             if (!btn) return;
-            
+
             if (!btn.querySelector('.hold-progress-svg')) {
                 btn.style.position = 'relative';
                 const svgHTML = `
@@ -3441,25 +4420,25 @@
                 `;
                 btn.insertAdjacentHTML('beforeend', svgHTML);
             }
-            
+
             let holdTimeout = null;
             let isCrossfadeArmed = false;
             const bar = btn.querySelector('.hold-progress-bar');
             const svg = btn.querySelector('.hold-progress-svg');
-            
+
             btn.addEventListener('mouseenter', () => {
                 if (!isPlaying || isCrossfading || playlist.length < 2) return;
                 svg.style.opacity = '1';
                 bar.style.strokeDashoffset = '0';
                 isCrossfadeArmed = false;
-                
+
                 holdTimeout = setTimeout(() => {
                     isCrossfadeArmed = true;
                     // Change stroke color to denote armed crossfade state (neon cyan!)
                     bar.style.stroke = '#00ffcc';
                 }, 2000);
             });
-            
+
             btn.addEventListener('mouseleave', () => {
                 if (holdTimeout) {
                     clearTimeout(holdTimeout);
@@ -3480,13 +4459,13 @@
                     // Block standard inline onclick event!
                     e.preventDefault();
                     e.stopImmediatePropagation();
-                    
-                    let targetIdx = (direction === 'next') 
+
+                    let targetIdx = (direction === 'next')
                         ? (trackIndex + 1) % playlist.length
                         : (trackIndex - 1 + playlist.length) % playlist.length;
-                    
+
                     crossfadeToTrack(targetIdx, btn);
-                    
+
                     // Reset armed state
                     isCrossfadeArmed = false;
                     svg.style.opacity = '0';
@@ -4410,6 +5389,10 @@
                 }
             }
 
+            window.refreshDetailsTracksCallback = () => {
+                renderDetailsTracks(loadedTracks);
+            };
+
             function renderDetailsTracks(tracks) {
                 if (metaEl) metaEl.innerText = `${tracks.length} видео`;
 
@@ -4426,22 +5409,55 @@
                     tracksList.innerHTML = '';
                     tracks.forEach((track, index) => {
                         const row = document.createElement('div');
-                        row.style.cssText = "display: grid; grid-template-columns: 50px 1fr 1fr 100px 50px; align-items: center; padding: 10px 16px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s;";
-                        row.onmouseover = () => row.style.backgroundColor = 'var(--hover-bg)';
-                        row.onmouseout = () => row.style.backgroundColor = 'transparent';
+                        row.className = 'playlist-track-row';
 
                         row.onclick = () => {
-                            playTrackFromDetails(urlStr, name, tracks, index);
+                            const currentTrack = playlist[trackIndex];
+                            const isCurrent = (currentTrack && currentTrack.id === track.id);
+                            if (isCurrent) {
+                                togglePlay();
+                            } else {
+                                playTrackFromDetails(urlStr, name, tracks, index);
+                            }
                         };
 
                         const thumbnail = `https://img.youtube.com/vi/${track.id}/mqdefault.jpg`;
                         const displayChannel = (track.channel || "YouTube Video").replace(/\s*-\s*Topic$/, '');
 
+                        // Check if active playing track is this one
+                        const currentTrack = playlist[trackIndex];
+                        const isCurrent = (currentTrack && currentTrack.id === track.id);
+
+                        let trackNumContent = `<span class="track-num-label">${index + 1}</span>`;
+                        let titleStyle = 'font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+                        let activeClass = '';
+
+                        if (isCurrent) {
+                            titleStyle = 'font-weight: 600; color: #fa243c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+                            if (isPlaying) {
+                                activeClass = ' playing';
+                                trackNumContent = `
+                                    <div class="eq-container">
+                                        <div class="eq-bar eq-bar-1"></div>
+                                        <div class="eq-bar eq-bar-2"></div>
+                                        <div class="eq-bar eq-bar-3"></div>
+                                    </div>
+                                    <svg class="track-pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+                                `;
+                            } else {
+                                activeClass = ' paused';
+                                trackNumContent = `<svg class="track-play-icon" viewBox="0 0 24 24" style="display: block; color: #fa243c;"><path d="M8 5v14l11-7z"></path></svg>`;
+                            }
+                        }
+
                         row.innerHTML = `
-                            <div style="font-weight: 600; color: var(--text-secondary);">${index + 1}</div>
+                            <div class="playlist-track-number${activeClass}">
+                                ${trackNumContent}
+                                ${isCurrent ? '' : '<svg class="track-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>'}
+                            </div>
                             <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
                                 <img src="${thumbnail}" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 40 40\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23555\\'/></svg>'">
-                                <span style="font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || "Загрузка..."}</span>
+                                <span style="${titleStyle}">${track.title || "Загрузка..."}</span>
                             </div>
                             <div style="color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayChannel}</div>
                             <div style="text-align: right; padding-right: 16px; color: var(--text-secondary); font-variant-numeric: tabular-nums;">${track.duration || "--:--"}</div>
@@ -4516,8 +5532,6 @@
             window.loadedPlaylistName = name;
             window.loadedPlaylistUrl = urlStr;
 
-            window.location.hash = '#playlist';
-
             loadDeck(p1, trackIndex, true);
             isPlaying = true;
             updatePlayPauseIcon();
@@ -4531,10 +5545,10 @@
             const url = new URL(urlStr, window.location.origin);
             const listId = url.searchParams.get('list');
             const vIds = url.searchParams.get('v');
-            
+
             let loadedTracks = [];
             let cachedMap = {};
-            
+
             if (listId && window.currentUser && window.db && window.currentSavedPlaylists) {
                 const foundP = window.currentSavedPlaylists.find(p => p.url && p.url.includes(`list=${listId}`));
                 if (foundP) {
@@ -4570,7 +5584,7 @@
                     }
                 }
             }
-            
+
             if (loadedTracks.length > 0) {
                 playlist = loadedTracks;
                 trackIndex = 0;
@@ -4578,14 +5592,14 @@
                 window.currentListId = listId;
                 window.loadedPlaylistName = name;
                 window.loadedPlaylistUrl = urlStr;
-                
+
                 loadDeck(p1, 0, false);
                 isPlaying = false;
                 updatePlayPauseIcon();
                 renderPlaylist();
                 updateUI();
             }
-            
+
             if (listId) {
                 try {
                     const apiTracks = await fetchPlaylistVideos(listId);
@@ -4602,7 +5616,7 @@
                 playlist = ids.map(id => ({ id: id, title: "Загрузка...", channel: "YouTube Video", duration: "--:--" }));
                 renderPlaylist();
                 updateUI();
-                
+
                 try {
                     const fetchPromises = playlist.map(async (track) => {
                         const details = await fetchVideoDetails(track.id);
@@ -5153,7 +6167,7 @@
                     }
                 }
                 await loadSavedPlaylistsFromFirebase(user.uid);
-                
+
                 // Восстановление плейлиста после логина, если обновили страницу на вкладке плеера
                 if (window.location.hash === '#playlist' && playlist.length === 0) {
                     let urlParams = new URLSearchParams(window.location.search);
@@ -5308,10 +6322,13 @@
                     <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
                 </svg>
             </button>
-            
+
             <div class="playbar-time" style="display: flex; align-items: center; gap: 8px;">
-                <span style="white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 0.85rem; font-weight: 500;"><span id="playbar-currentTime">0:00</span> / <span id="playbar-totalTime">0:00</span></span>
-                <div class="playbar-mix-badge" id="playbar-mix-badge" style="margin-left: 12px;">mixing in progress..</div>
+                <span
+                    style="white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 0.85rem; font-weight: 500;"><span
+                        id="playbar-currentTime">0:00</span> / <span id="playbar-totalTime">0:00</span></span>
+                <div class="playbar-mix-badge" id="playbar-mix-badge" style="margin-left: 12px;">mixing in progress..
+                </div>
             </div>
         </div>
 
@@ -5332,13 +6349,14 @@
                             <span
                                 style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; white-space: nowrap;">Турбо-микс</span>
                             <label class="switch" style="transform: scale(0.85); transform-origin: left center;">
-                                <input type="checkbox" id="playbar-turbo-toggle-input" onchange="toggleTurboMix(this.checked)">
+                                <input type="checkbox" id="playbar-turbo-toggle-input"
+                                    onchange="toggleTurboMix(this.checked)">
                                 <span class="slider round"></span>
                             </label>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Inner Timeline/Progress Bar -->
                 <div class="playbar-timeline-container" id="playbar-timeline-container">
                     <div class="playbar-timeline-track">

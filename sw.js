@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tools-pwa-v24';
+const CACHE_NAME = 'tools-pwa-v25';
 const DYNAMIC_CACHE = 'tools-dynamic-image-cache-v1';
 const ASSETS = [
     './fx_converter.html',
@@ -15,8 +15,8 @@ const ASSETS = [
     './teleprompter.css',
     './teleprompter.js',
     './teleprompter_manifest.json',
-    './teleprompter128.png',
-    './teleprompter256.png',
+    './img/teleprompter128.png',
+    './img/teleprompter256.png',
     './theme.css',
     './theme-loader.js',
     './footer.css',
@@ -26,17 +26,17 @@ const ASSETS = [
     './auth-widget.js',
     './header.js',
     './header.html',
-    './exchange.png',
-    './exchange2.png',
-    './clock.png',
-    './clock2.png',
-    './todo128.png',
-    './todo256.png',
-    './hub128.png',
-    './hub256.png',
-    './hub256t.png',
-    './house-favicon.svg',
-    './glass.jpg'
+    './img/exchange.png',
+    './img/exchange2.png',
+    './img/clock.png',
+    './img/clock2.png',
+    './img/todo128.png',
+    './img/todo256.png',
+    './img/hub128.png',
+    './img/hub256.png',
+    './img/hub256t.png',
+    './img/house-favicon.svg',
+    './img/glass.jpg'
 ];
 
 self.addEventListener('install', event => {

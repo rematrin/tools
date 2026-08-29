@@ -7,12 +7,12 @@
     "theme_color": "#141519",
     "icons": [
         {
-            "src": "clock.png",
+            "src": "img/clock.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "clock2.png",
+            "src": "img/clock2.png",
             "sizes": "512x512",
             "type": "image/png"
         }

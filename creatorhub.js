@@ -2020,7 +2020,7 @@ function renderVideosList() {
             });
         }
         
-        let fallbackThumbnailSrc = 'idea-bulb-128x128.png';
+        let fallbackThumbnailSrc = 'img/idea-bulb-128x128.png';
         const ytId = parseYouTubeId(v.videoLink);
         if (ytId) {
             fallbackThumbnailSrc = `https://i.ytimg.com/vi/${ytId}/mqdefault.jpg`;
@@ -2029,7 +2029,7 @@ function renderVideosList() {
         const isIdeaPlaceholder = (v.status || "idea") === "idea" && (!v.thumbnail || v.thumbnail.includes("placehold.co"));
         const thumbnailHtml = isIdeaPlaceholder ? `
             <div class="video-thumbnail-placeholder idea-placeholder">
-                <img src="idea-bulb-128x128.png" alt="Идея" class="idea-bulb-icon" draggable="false">
+                <img src="img/idea-bulb-128x128.png" alt="Идея" class="idea-bulb-icon" draggable="false">
             </div>
         ` : `
             <img src="${v.thumbnail}" alt="Превью" class="video-thumbnail-mini" draggable="false" onerror="this.onerror=null; this.src='${fallbackThumbnailSrc}';">

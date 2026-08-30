@@ -248,8 +248,7 @@ if (btnPriority && priorityDropdown) {
 
             // Adjust position for mobile
             if (window.innerWidth <= 768) {
-                const rect = addTaskForm.getBoundingClientRect();
-                priorityDropdown.style.top = `${rect.bottom + 12}px`;
+                priorityDropdown.style.top = '';
             } else {
                 priorityDropdown.style.top = '';
             }
@@ -385,8 +384,7 @@ if (btnAddTaskProject) {
 
             // Adjust position for mobile
             if (window.innerWidth <= 768) {
-                const rect = addTaskForm.getBoundingClientRect();
-                addTaskProjectDropdown.style.top = `${rect.bottom + 12}px`;
+                addTaskProjectDropdown.style.top = '';
             } else {
                 addTaskProjectDropdown.style.top = '';
             }

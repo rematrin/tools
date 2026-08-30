@@ -369,6 +369,8 @@
           });
 
           // Unit Conversion (e.g. 5 часов в минутах)
+          let unitConverted = false;
+          let unitResult = '';
           s = s.replace(/([\d\.,\s]+)\s+([a-zа-яё]+)\s+в\s+([a-zа-яё]+)/gi, (m, val, u1, u2) => {
             let v = parseFloat(cleanNumber(val));
 
@@ -400,6 +402,62 @@
             let mult2 = getUnitMatch(u2);
 
             if (mult1 !== null && mult2 !== null) {
+              let totalSeconds = v * mult1;
+
+              if (mult2 === 86400) { // days
+                let days = Math.floor(totalSeconds / 86400);
+                let hours = Math.round((totalSeconds % 86400) / 3600);
+                if (hours === 24) {
+                  days++;
+                  hours = 0;
+                }
+                if (days > 0 && hours > 0) {
+                  unitResult = `${days} дн ${hours} ч`;
+                } else if (days > 0) {
+                  unitResult = `${days} дн`;
+                } else {
+                  unitResult = `${hours} ч`;
+                }
+                unitConverted = true;
+                return unitResult;
+              }
+
+              if (mult2 === 3600) { // hours
+                let hrs = Math.floor(totalSeconds / 3600);
+                let mins = Math.round((totalSeconds % 3600) / 60);
+                if (mins === 60) {
+                  hrs++;
+                  mins = 0;
+                }
+                if (hrs > 0 && mins > 0) {
+                  unitResult = `${hrs} ч ${mins} мин`;
+                } else if (hrs > 0) {
+                  unitResult = `${hrs} ч`;
+                } else {
+                  unitResult = `${mins} мин`;
+                }
+                unitConverted = true;
+                return unitResult;
+              }
+
+              if (mult2 === 60) { // minutes
+                let mins = Math.floor(totalSeconds / 60);
+                let secs = Math.round(totalSeconds % 60);
+                if (secs === 60) {
+                  mins++;
+                  secs = 0;
+                }
+                if (mins > 0 && secs > 0) {
+                  unitResult = `${mins} мин ${secs} сек`;
+                } else if (mins > 0) {
+                  unitResult = `${mins} мин`;
+                } else {
+                  unitResult = `${secs} сек`;
+                }
+                unitConverted = true;
+                return unitResult;
+              }
+
               isCurrencyOut = u2;
               let res = (v * mult1 / mult2);
               return res.toFixed(4);
@@ -407,6 +465,10 @@
 
             return m;
           });
+
+          if (unitConverted && unitResult) {
+            return unitResult;
+          }
 
           // X это сколько % от Y
           s = s.replace(/([\d\.,\s]+)\s+это\s+сколько\s+%\s+от\s+([\d\.,\s]+)/gi, (m, a, b) => {

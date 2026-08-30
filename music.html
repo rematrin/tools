@@ -4018,7 +4018,7 @@
                 return;
             }
 
-            const imgUrl = `https://i.ytimg.com/vi/${trackId}/mqdefault.jpg`;
+            const imgUrl = `https://i.ytimg.com/vi/${trackId}/mqdefault.jpg?cors=anonymous`;
             const img = new Image();
             img.crossOrigin = "anonymous";
             img.onload = function () {
@@ -5067,6 +5067,29 @@
                         updatePlayPauseIcon();
                     }
                     updateUI();
+                }
+                else if (event.data === YT.PlayerState.ENDED) {
+                    clearVideoLoadingTimeout();
+                    if (!isCrossfading) {
+                        if (window.repeatMode === 'one') {
+                            startMix();
+                        } else {
+                            let startIndex = trackIndex;
+                            let nextIndex = (trackIndex + 1) % playlist.length;
+                            while (playlist[nextIndex] && playlist[nextIndex].isError && nextIndex !== startIndex) {
+                                nextIndex = (nextIndex + 1) % playlist.length;
+                            }
+
+                            if (window.repeatMode === 'off' && nextIndex <= startIndex) {
+                                isPlaying = false;
+                                updatePlayPauseIcon();
+                                updateUI();
+                            } else {
+                                trackIndex = nextIndex;
+                                startMix();
+                            }
+                        }
+                    }
                 }
             } else if (event.target === nextPlayer && isCrossfading) {
                 if (event.data === YT.PlayerState.PLAYING) {

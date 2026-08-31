@@ -212,17 +212,7 @@
             pointer-events: auto;
         }
 
-        /* Hide main app sidebar when player card is active */
-        body:has(#main-player-card.active) .sidebar {
-            display: none !important;
-        }
-
-        /* Adjust main-content padding when sidebar is hidden */
-        body:has(#main-player-card.active) .main-content {
-            margin-left: 0 !important;
-            padding-left: 24px !important;
-            padding-right: 24px !important;
-        }
+        /* Swap player on left and list on right */
 
         /* Swap player on left and list on right */
         #main-player-card.active #player-container {
@@ -3124,20 +3114,6 @@
                 let listId = urlParams.get('list');
                 let vIds = urlParams.get('v');
 
-                if (listId || vIds) {
-                    const hash = window.location.hash;
-                    if (hash !== '#playlists' && hash !== '#search' && hash !== '#radio' && hash !== '#artists' && hash !== '#albums' && hash !== '#songs' && hash !== '#genres') {
-                        const cardEl = document.getElementById('main-player-card');
-                        if (cardEl) {
-                            cardEl.style.display = 'block';
-                            document.getElementById('player-container').style.display = 'flex';
-                            document.getElementById('player-error-state').style.display = 'none';
-                        }
-                    }
-                    if (!window.location.hash || window.location.hash === '#home') {
-                        window.location.hash = '#playlist';
-                    }
-                }
 
                 if (listId) {
                     importPlaylist(listId, true);
@@ -3225,9 +3201,6 @@
                 if (mainContent) {
                     mainContent.style.overflowY = 'hidden';
                     mainContent.style.paddingBottom = '0';
-                    mainContent.style.marginLeft = '0';
-                    mainContent.style.paddingLeft = '24px';
-                    mainContent.style.paddingRight = '24px';
                 }
                 if (playerCard) {
                     playerCard.classList.add('active');

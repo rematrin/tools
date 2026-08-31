@@ -2256,6 +2256,247 @@
             height: 8px;
             animation: equalizer-bounce 0.8s ease-in-out infinite 0.2s;
         }
+
+        /* Grid View (Albums) */
+        .albums-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 24px;
+        }
+
+        .album-card {
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+            transition: transform 0.2s ease;
+        }
+
+        .album-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .album-cover-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            background: var(--border);
+        }
+
+        .album-cover {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .album-hover-play {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .album-card:hover .album-hover-play {
+            opacity: 1;
+        }
+
+        .play-btn-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            color: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: transform 0.2s ease;
+        }
+
+        .play-btn-circle:hover {
+            transform: scale(1.08);
+        }
+
+        .album-title {
+            font-size: 0.92rem;
+            font-weight: 600;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .album-artist {
+            font-size: 0.84rem;
+            color: var(--text-secondary);
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Detail View Layout (Album details) */
+        .album-details-container {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+        }
+
+        .album-details-sidebar {
+            width: 240px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .album-details-cover {
+            width: 240px;
+            height: 240px;
+            border-radius: 12px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+            object-fit: cover;
+        }
+
+        .album-details-info {
+            text-align: center;
+        }
+
+        .album-details-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0 0 4px 0;
+        }
+
+        .album-details-artist {
+            font-size: 1.05rem;
+            color: #fa243c;
+            font-weight: 600;
+            margin: 0 0 12px 0;
+            cursor: pointer;
+        }
+
+        .album-details-meta {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .album-details-tracks {
+            flex-grow: 1;
+        }
+
+        /* Songs & Tracks Table Layout */
+        .tracks-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .tracks-table th {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+        }
+
+        .tracks-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+            vertical-align: middle;
+        }
+
+        .tracks-table tr:hover {
+            background: var(--hover-bg);
+        }
+
+        .tracks-table tr.active {
+            background: rgba(250, 36, 60, 0.1);
+            color: #fa243c;
+        }
+
+        .track-num {
+            width: 40px;
+            color: var(--text-secondary);
+        }
+
+        .track-play-cell {
+            width: 32px;
+        }
+
+        .play-row-btn {
+            background: none;
+            border: none;
+            color: #fa243c;
+            cursor: pointer;
+            display: none;
+            padding: 0;
+        }
+
+        .tracks-table tr:hover .play-row-btn {
+            display: inline-block;
+        }
+
+        .tracks-table tr:hover .track-num-txt {
+            display: none;
+        }
+
+        .track-duration {
+            text-align: right;
+            width: 60px;
+            color: var(--text-secondary);
+        }
+
+        /* Artist Detail Layout */
+        .artist-details-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .artist-banner {
+            height: 160px;
+            background: var(--hover-bg);
+            border-radius: 12px;
+            display: flex;
+            align-items: flex-end;
+            padding: 24px;
+            box-sizing: border-box;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .artist-banner::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+            z-index: 1;
+        }
+
+        .artist-banner-name {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: white;
+            z-index: 2;
+            margin: 0;
+        }
     </style>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
     <script>
@@ -2726,13 +2967,21 @@
                     </div>
                     <div class="saved-playlists-list" id="saved-playlists-list"></div>
                 </div>
-                <div id="stub-view" style="display: none; padding: 10px 0; color: var(--text-secondary);"></div>
+                <div id="stub-view" style="display: none; padding: 10px 0; color: var(--text);"></div>
             </div>
         </main>
     </div>
 
     <script>
         // --- ДАННЫЕ И НАСТРОЙКИ ---
+        window.musicSongs = [];
+        window.musicAlbums = [];
+        window.musicArtists = [];
+        let bgFetchTimeout = null;
+        let navigationHistory = [];
+        let activeView = 'home';
+        let currentViewParams = null;
+
         let playlist = [];
         window.currentListId = null;
         window.loadedPlaylistName = null;
@@ -2999,6 +3248,9 @@
                     stubView.style.display = 'block';
                     populateStubView(hash);
                 }
+            }
+            if (typeof renderCurrentView === 'function') {
+                renderCurrentView();
             }
         }
 
@@ -3357,6 +3609,121 @@
                                 </div>
                             </div>
                         </section>
+                    </div>
+                `;
+            } else if (hash === '#albums') {
+                title = 'Альбомы';
+                content = `
+                    <div style="text-align: left; padding-top: 10px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                            <h2 style="font-size: 2rem; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -0.03em;">Альбомы</h2>
+                            <button class="icon-action-btn" onclick="openAddAlbumModal()" style="width: 32px; height: 32px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'" title="Импортировать альбом">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="albums-grid" id="albums-grid">
+                            <!-- Заполняется динамически -->
+                        </div>
+                    </div>
+                `;
+            } else if (hash === '#artists') {
+                title = 'Артисты';
+                content = `
+                    <div style="text-align: left; padding-top: 10px;">
+                        <h2 style="font-size: 2rem; font-weight: 800; color: var(--text); margin-bottom: 24px; letter-spacing: -0.03em;">Артисты</h2>
+                        <div class="artist-details-layout" id="artists-master-detail">
+                            <!-- Заполняется динамически -->
+                        </div>
+                    </div>
+                `;
+            } else if (hash === '#songs') {
+                title = 'Песни';
+                content = `
+                    <div style="text-align: left; padding-top: 10px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                            <h2 style="font-size: 2rem; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -0.03em;">Песни</h2>
+                            <button class="btn-modal btn-modal-submit" onclick="playAllSongs()" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                Воспроизвести все
+                            </button>
+                        </div>
+                        <div class="album-details-tracks">
+                            <table class="tracks-table">
+                                <thead>
+                                    <tr>
+                                        <th class="track-num">#</th>
+                                        <th>Песня</th>
+                                        <th>Исполнитель</th>
+                                        <th>Альбом</th>
+                                        <th class="track-duration">Длительность</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="songs-list-table">
+                                    <!-- Загружается динамически -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else if (hash.startsWith('#album-details')) {
+                title = 'Детали альбома';
+                content = `
+                    <div style="text-align: left; padding-top: 10px;">
+                        <div class="view-header" style="display:flex; justify-content:space-between; margin-bottom:20px; align-items: center;">
+                            <button class="btn-modal btn-modal-cancel" onclick="navigateBack()" style="padding: 6px 16px;">Назад</button>
+                            <button class="btn-modal btn-modal-cancel" id="btn-delete-album" style="background:#e02448; color:white; border:none; display:none; padding: 6px 16px;">Удалить альбом</button>
+                        </div>
+                        <div class="album-details-container">
+                            <div class="album-details-sidebar">
+                                <img class="album-details-cover" id="album-details-cover" src="" alt="Cover">
+                                <div class="album-details-info">
+                                    <h2 class="album-details-title" id="album-details-title">Загрузка...</h2>
+                                    <p class="album-details-artist" id="album-details-artist" style="color:#fa243c; font-weight:600; cursor:pointer; margin-top: 8px;">...</p>
+                                    <p class="album-details-meta" id="album-details-meta" style="margin-top: 8px;">...</p>
+                                </div>
+                                <div style="display:flex; gap:10px; justify-content:center; width:100%; margin-top: 16px;">
+                                    <button class="btn-modal btn-modal-submit" style="flex:1;" onclick="playCurrentAlbum()">Играть</button>
+                                    <button class="btn-modal btn-modal-cancel" style="flex:1;" onclick="shuffleCurrentAlbum()">Случайно</button>
+                                </div>
+                            </div>
+                            
+                            <div class="album-details-tracks">
+                                <table class="tracks-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="track-num">#</th>
+                                            <th>Название</th>
+                                            <th class="track-duration">Длительность</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="album-tracks-table">
+                                        <!-- Загружается динамически -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (hash.startsWith('#artist-details')) {
+                title = 'Детали исполнителя';
+                content = `
+                    <div style="text-align: left; padding-top: 10px;">
+                        <div class="view-header" style="margin-bottom:20px;">
+                            <button class="btn-modal btn-modal-cancel" onclick="window.location.hash='#artists'" style="padding: 6px 16px;">Все артисты</button>
+                        </div>
+                        <div class="artist-details-layout">
+                            <div class="artist-banner" id="artist-details-banner" style="background-image: linear-gradient(135deg, rgb(250, 45, 86) 0%, rgb(250, 113, 45) 100%);">
+                                <h1 class="artist-banner-name" id="artist-details-name">Артист</h1>
+                            </div>
+                            
+                            <h2 style="margin:24px 0 16px 0;">Альбомы</h2>
+                            <div class="albums-grid" id="artist-albums-grid">
+                                <!-- Динамическая сетка альбомов артиста -->
+                            </div>
+                        </div>
                     </div>
                 `;
             } else {
@@ -6141,6 +6508,7 @@
             const addModal = document.getElementById('addPlaylistModal');
             const renameModal = document.getElementById('renamePlaylistModal');
             const deleteModal = document.getElementById('deletePlaylistModal');
+            const addAlbumModal = document.getElementById('addAlbumModal');
             if (e.target === addModal) {
                 closeAddPlaylistModal();
             }
@@ -6149,6 +6517,9 @@
             }
             if (e.target === deleteModal) {
                 closeDeletePlaylistModal();
+            }
+            if (e.target === addAlbumModal) {
+                closeAddAlbumModal();
             }
         });
 
@@ -6170,6 +6541,7 @@
                     }
                 }
                 await loadSavedPlaylistsFromFirebase(user.uid);
+                await loadMediaLibrary(user.uid);
 
                 // Восстановление плейлиста после логина, если обновили страницу на вкладке плеера
                 if (window.location.hash === '#playlist' && playlist.length === 0) {
@@ -6193,6 +6565,9 @@
                     sidebarAvatar.innerHTML = "?";
                 }
                 renderSavedPlaylists([]);
+                window.musicSongs = [];
+                window.musicAlbums = [];
+                window.musicArtists = [];
             }
         });
 
@@ -6227,9 +6602,883 @@
                 toggleFullPlayerCard();
             }
         }
+
+        // --- ALBUMS & ARTISTS FUNCTIONS ---
+        function openAddAlbumModal() {
+            const modal = document.getElementById('addAlbumModal');
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeAddAlbumModal() {
+            const modal = document.getElementById('addAlbumModal');
+            if (modal) modal.classList.remove('active');
+            resetImportModal();
+        }
+
+        async function handleUrlInput(url) {
+            clearTimeout(bgFetchTimeout);
+            
+            let listId = null;
+            let reg = /[?&]list=([^#\&\? ]+)/;
+            let match = url.match(reg);
+            if (match && match[1]) {
+                listId = match[1];
+            } else {
+                document.getElementById('import-details-container').style.display = 'none';
+                document.getElementById('import-status-text').style.display = 'none';
+                return;
+            }
+
+            // Show loading text, hide fields
+            document.getElementById('import-details-container').style.display = 'none';
+            const statusText = document.getElementById('import-status-text');
+            statusText.innerText = "Поиск альбома и загрузка метаданных...";
+            statusText.style.display = 'block';
+
+            bgFetchTimeout = setTimeout(async () => {
+                try {
+                    const apiKey = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
+                    const albumInfoUrl = `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${listId}&key=${apiKey}`;
+                    const res1 = await fetch(albumInfoUrl);
+                    const data1 = await res1.json();
+                    
+                    if (!data1.items || data1.items.length === 0) {
+                        statusText.innerText = "Альбом не найден. Убедитесь в правильности ссылки.";
+                        return;
+                    }
+                    
+                    const snippet = data1.items[0].snippet;
+                    const albumTitle = snippet.title;
+
+                    const tracksUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${listId}&key=${apiKey}`;
+                    const res2 = await fetch(tracksUrl);
+                    const data2 = await res2.json();
+                    
+                    let artistVotes = {};
+                    let originalNames = {};
+                    if (data2.items && data2.items.length > 0) {
+                        data2.items.forEach(item => {
+                            if (item.snippet) {
+                                let rawTrackArtist = item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle;
+                                if (rawTrackArtist && rawTrackArtist !== "YouTube" && rawTrackArtist !== "YouTube Music") {
+                                    let cleanName = rawTrackArtist.replace(/ - Topic$/, "").trim();
+                                    let norm = cleanName.toLowerCase().replace(/vevo$/, "").replace(/[^a-z0-9]/g, "").trim();
+                                    if (norm) {
+                                        artistVotes[norm] = (artistVotes[norm] || 0) + 1;
+                                        if (!originalNames[norm] || cleanName.length < originalNames[norm].length) {
+                                            originalNames[norm] = cleanName;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    let playlistOwner = snippet.channelTitle || "";
+                    let cleanedOwner = playlistOwner.replace(/ - Topic$/, "").trim();
+                    let isGeneric = !cleanedOwner || 
+                                    cleanedOwner.toLowerCase() === "youtube" || 
+                                    cleanedOwner.toLowerCase() === "youtube music" || 
+                                    cleanedOwner.toLowerCase() === "various artists" ||
+                                    cleanedOwner.toLowerCase() === "различные исполнители";
+
+                    let albumArtist = "";
+                    if (!isGeneric) {
+                        albumArtist = cleanedOwner;
+                    } else {
+                        let maxVotes = 0;
+                        for (let norm in artistVotes) {
+                            if (artistVotes[norm] > maxVotes) {
+                                maxVotes = artistVotes[norm];
+                                albumArtist = originalNames[norm];
+                            }
+                        }
+                    }
+
+                    if (!albumArtist) {
+                        albumArtist = "Various Artists";
+                    }
+
+                    document.getElementById('modalAlbumTitle').value = albumTitle;
+                    document.getElementById('modalAlbumArtist').value = albumArtist;
+                    
+                    statusText.style.display = 'none';
+                    document.getElementById('import-details-container').style.display = 'flex';
+                } catch (e) {
+                    console.error("Ошибка фоновой загрузки данных альбома:", e);
+                    statusText.innerText = "Не удалось загрузить данные альбома.";
+                }
+            }, 500);
+        }
+
+        function toggleEditField(inputId, iconEl) {
+            const input = document.getElementById(inputId);
+            if (input.hasAttribute('readonly')) {
+                input.removeAttribute('readonly');
+                input.style.cursor = 'text';
+                input.focus();
+                iconEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fa243c" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            } else {
+                input.setAttribute('readonly', 'true');
+                input.style.cursor = 'default';
+                iconEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
+            }
+        }
+
+        async function submitImportAlbum() {
+            const urlInput = document.getElementById('modalAlbumUrl');
+            const url = urlInput.value.trim();
+            if (!url) {
+                alert("Пожалуйста, введите URL альбома или плейлиста.");
+                return;
+            }
+
+            let listId = null;
+            let reg = /[?&]list=([^#\&\? ]+)/;
+            let match = url.match(reg);
+            if (match && match[1]) {
+                listId = match[1];
+            } else {
+                alert("Неверный формат ссылки. Ссылка должна содержать ?list=...");
+                return;
+            }
+
+            document.getElementById('import-status-text').style.display = 'block';
+            document.getElementById('btn-import-submit').disabled = true;
+            document.getElementById('btn-import-cancel').disabled = true;
+
+            try {
+                const uid = window.currentUser ? window.currentUser.uid : null;
+                if (!uid) {
+                    alert("Пожалуйста, войдите в аккаунт, чтобы сохранять альбомы.");
+                    resetImportModal();
+                    return;
+                }
+
+                const apiKey = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
+                
+                const albumInfoUrl = `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${listId}&key=${apiKey}`;
+                const res1 = await fetch(albumInfoUrl);
+                const data1 = await res1.json();
+                
+                if (!data1.items || data1.items.length === 0) {
+                    throw new Error("Альбом не найден на YouTube Music.");
+                }
+
+                const snippet = data1.items[0].snippet;
+                let albumTitle = document.getElementById('modalAlbumTitle').value.trim();
+                if (!albumTitle) {
+                    albumTitle = snippet.title;
+                }
+                
+                let coverUrl = "";
+                if (snippet.thumbnails) {
+                    const t = snippet.thumbnails;
+                    const order = ['maxres', 'standard', 'high', 'medium', 'default'];
+                    for (let key of order) {
+                        if (t[key] && t[key].url) {
+                            coverUrl = t[key].url;
+                            break;
+                        }
+                    }
+                }
+
+                let trackItems = [];
+                let nextPageToken = "";
+                let hasMore = true;
+                
+                while(hasMore) {
+                    const tracksUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${listId}&key=${apiKey}${nextPageToken ? `&pageToken=${nextPageToken}` : ""}`;
+                    const res2 = await fetch(tracksUrl);
+                    const data2 = await res2.json();
+                    
+                    if (data2.items && data2.items.length > 0) {
+                        data2.items.forEach(item => {
+                            if (item.snippet && item.snippet.resourceId && item.snippet.resourceId.videoId) {
+                                let trackThumb = "";
+                                if (item.snippet.thumbnails) {
+                                    const t = item.snippet.thumbnails;
+                                    const order = ['maxres', 'standard', 'high', 'medium', 'default'];
+                                    for (let key of order) {
+                                        if (t[key] && t[key].url) {
+                                            trackThumb = t[key].url;
+                                            break;
+                                        }
+                                    }
+                                }
+                                trackItems.push({
+                                    id: item.snippet.resourceId.videoId,
+                                    title: item.snippet.title,
+                                    index: item.snippet.position || 0,
+                                    thumbnail: trackThumb,
+                                    videoOwnerChannelTitle: item.snippet.videoOwnerChannelTitle || null,
+                                    channelTitle: item.snippet.channelTitle || null
+                                });
+                            }
+                        });
+                        nextPageToken = data2.nextPageToken;
+                        if (!nextPageToken) hasMore = false;
+                    } else {
+                        hasMore = false;
+                    }
+                }
+
+                if (trackItems.length === 0) {
+                    throw new Error("Альбом не содержит доступных песен.");
+                }
+
+                let artistName = document.getElementById('modalAlbumArtist').value.trim();
+                if (!artistName) {
+                    let playlistOwner = snippet.channelTitle || "";
+                    let cleanedOwner = playlistOwner.replace(/ - Topic$/, "").trim();
+                    let isGeneric = !cleanedOwner || 
+                                    cleanedOwner.toLowerCase() === "youtube" || 
+                                    cleanedOwner.toLowerCase() === "youtube music" || 
+                                    cleanedOwner.toLowerCase() === "various artists" ||
+                                    cleanedOwner.toLowerCase() === "различные исполнители";
+
+                    let albumArtist = "";
+                    if (!isGeneric) {
+                        albumArtist = cleanedOwner;
+                    } else {
+                        let artistVotes = {};
+                        let originalNames = {};
+                        for (let track of trackItems) {
+                            let rawTrackArtist = track.videoOwnerChannelTitle || track.channelTitle;
+                            if (rawTrackArtist && rawTrackArtist !== "YouTube" && rawTrackArtist !== "YouTube Music") {
+                                let cleanName = rawTrackArtist.replace(/ - Topic$/, "").trim();
+                                let norm = cleanName.toLowerCase().replace(/vevo$/, "").replace(/[^a-z0-9]/g, "").trim();
+                                if (norm) {
+                                    artistVotes[norm] = (artistVotes[norm] || 0) + 1;
+                                    if (!originalNames[norm] || cleanName.length < originalNames[norm].length) {
+                                        originalNames[norm] = cleanName;
+                                    }
+                                }
+                            }
+                        }
+
+                        let maxVotes = 0;
+                        for (let norm in artistVotes) {
+                            if (artistVotes[norm] > maxVotes) {
+                                maxVotes = artistVotes[norm];
+                                albumArtist = originalNames[norm];
+                            }
+                        }
+                    }
+
+                    if (!albumArtist) {
+                        albumArtist = "Various Artists";
+                    }
+                    artistName = albumArtist;
+                }
+
+                const artistId = "artist_" + hashCode(artistName);
+                const albumId = "album_" + listId;
+
+                if (!coverUrl || coverUrl.includes("no_thumbnail") || coverUrl.includes("default_240_gpr")) {
+                    for (let track of trackItems) {
+                        if (track.thumbnail && !track.thumbnail.includes("no_thumbnail")) {
+                            coverUrl = track.thumbnail;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!coverUrl) {
+                    coverUrl = "https://via.placeholder.com/200";
+                }
+
+                let videoIdsStr = trackItems.map(t => t.id).join(",");
+                const videosUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoIdsStr}&key=${apiKey}`;
+                const res3 = await fetch(videosUrl);
+                const data3 = await res3.json();
+                
+                let durationMap = {};
+                if (data3.items) {
+                    data3.items.forEach(v => {
+                        durationMap[v.id] = parseISODuration(v.contentDetails.duration);
+                    });
+                }
+
+                // Firestore batch save
+                const artistRef = window.doc(window.db, "users", uid, "music_artists", artistId);
+                await window.setDoc(artistRef, {
+                    id: artistId,
+                    name: artistName,
+                    createdAt: new Date().toISOString()
+                });
+
+                let songIds = [];
+                for(let track of trackItems) {
+                    const duration = durationMap[track.id] || 180;
+                    const songRef = window.doc(window.db, "users", uid, "music_songs", track.id);
+                    
+                    let rawSongArtist = track.videoOwnerChannelTitle || track.channelTitle || artistName;
+                    let cleanSongArtist = rawSongArtist.replace(/ - Topic$/, "").trim();
+                    let normSongArtist = cleanSongArtist.toLowerCase().replace(/vevo$/, "").replace(/[^a-z0-9]/g, "").trim();
+                    let normAlbumArtist = artistName.toLowerCase().replace(/vevo$/, "").replace(/[^a-z0-9]/g, "").trim();
+                    
+                    let songArtistName = cleanSongArtist;
+                    if (normSongArtist === normAlbumArtist || songArtistName === "YouTube" || songArtistName === "YouTube Music" || !songArtistName) {
+                        songArtistName = artistName;
+                    } else {
+                        songArtistName = songArtistName.replace(/vevo$/i, "").trim();
+                    }
+                    
+                    const songData = {
+                        id: track.id,
+                        title: track.title,
+                        duration: duration,
+                        artistId: artistId,
+                        artistName: songArtistName,
+                        albumId: albumId,
+                        albumName: albumTitle,
+                        index: track.index,
+                        createdAt: new Date().toISOString()
+                    };
+                    await window.setDoc(songRef, songData);
+                    songIds.push(track.id);
+                }
+
+                const albumRef = window.doc(window.db, "users", uid, "music_albums", albumId);
+                await window.setDoc(albumRef, {
+                    id: albumId,
+                    title: albumTitle,
+                    artistId: artistId,
+                    artistName: artistName,
+                    coverUrl: coverUrl,
+                    genre: "Разное",
+                    year: new Date().getFullYear().toString(),
+                    songIds: songIds,
+                    createdAt: new Date().toISOString()
+                });
+
+                closeAddAlbumModal();
+                alert(`Альбом «${albumTitle}» успешно импортирован!`);
+                
+                await loadMediaLibrary(uid);
+            } catch (e) {
+                console.error("Ошибка при импорте альбома:", e);
+                alert("Не удалось загрузить альбом: " + e.message);
+            } finally {
+                resetImportModal();
+            }
+        }
+
+        function resetImportModal() {
+            document.getElementById('import-status-text').style.display = 'none';
+            document.getElementById('import-details-container').style.display = 'none';
+            document.getElementById('btn-import-submit').disabled = false;
+            document.getElementById('btn-import-cancel').disabled = false;
+            document.getElementById('modalAlbumUrl').value = '';
+            
+            document.getElementById('modalAlbumTitle').value = '';
+            document.getElementById('modalAlbumArtist').value = '';
+            document.getElementById('modalAlbumTitle').setAttribute('readonly', 'true');
+            document.getElementById('modalAlbumArtist').setAttribute('readonly', 'true');
+            document.getElementById('modalAlbumTitle').style.cursor = 'default';
+            document.getElementById('modalAlbumArtist').style.cursor = 'default';
+        }
+
+        function hashCode(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return Math.abs(hash).toString(16);
+        }
+
+        function parseISODuration(durationStr) {
+            const matches = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+            if (!matches) return 0;
+            const hours = parseInt(matches[1] || 0);
+            const minutes = parseInt(matches[2] || 0);
+            const seconds = parseInt(matches[3] || 0);
+            return hours * 3600 + minutes * 60 + seconds;
+        }
+
+        async function loadMediaLibrary(uid) {
+            if (!window.db || !window.collection || !window.getDocs) return;
+            try {
+                // Fetch Songs
+                const songsRef = window.collection(window.db, "users", uid, "music_songs");
+                const songsSnap = await window.getDocs(songsRef);
+                window.musicSongs = [];
+                songsSnap.forEach(doc => {
+                    window.musicSongs.push(doc.data());
+                });
+
+                // Fetch Albums
+                const albumsRef = window.collection(window.db, "users", uid, "music_albums");
+                const albumsSnap = await window.getDocs(albumsRef);
+                window.musicAlbums = [];
+                albumsSnap.forEach(doc => {
+                    window.musicAlbums.push(doc.data());
+                });
+                window.musicAlbums.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                // Fetch Artists
+                const artistsRef = window.collection(window.db, "users", uid, "music_artists");
+                const artistsSnap = await window.getDocs(artistsRef);
+                window.musicArtists = [];
+                artistsSnap.forEach(doc => {
+                    window.musicArtists.push(doc.data());
+                });
+                window.musicArtists.sort((a,b) => a.name.localeCompare(b.name));
+
+                // Clean empty artists
+                let activeArtistIds = new Set(window.musicSongs.map(s => s.artistId));
+                let emptyArtistIds = window.musicArtists.filter(art => !activeArtistIds.has(art.id)).map(art => art.id);
+                if (emptyArtistIds.length > 0) {
+                    window.musicArtists = window.musicArtists.filter(art => !emptyArtistIds.includes(art.id));
+                    for (let emptyId of emptyArtistIds) {
+                        const artistRef = window.doc(window.db, "users", uid, "music_artists", emptyId);
+                        window.deleteDoc(artistRef).catch(err => console.error("Error deleting empty artist:", err));
+                    }
+                }
+
+                if (['#albums', '#artists', '#songs', '#album-details', '#artist-details'].some(p => window.location.hash.startsWith(p))) {
+                    renderCurrentView();
+                }
+            } catch (e) {
+                console.error("Ошибка загрузки медиатеки из Firestore:", e);
+            }
+        }
+
+        async function deleteAlbum(albumId) {
+            if(!confirm("Вы уверены, что хотите удалить этот альбом и все его песни?")) return;
+            try {
+                const uid = window.currentUser ? window.currentUser.uid : null;
+                if(!uid) return;
+                
+                const album = window.musicAlbums.find(a => a.id === albumId);
+                if (!album) return;
+
+                let artistsToCheck = new Set();
+                if (album.artistId) {
+                    artistsToCheck.add(album.artistId);
+                }
+                let albumSongs = window.musicSongs.filter(s => s.albumId === albumId);
+                albumSongs.forEach(s => {
+                    if (s.artistId) {
+                        artistsToCheck.add(s.artistId);
+                    }
+                });
+
+                if (album.songIds) {
+                    for(let songId of album.songIds) {
+                        const songRef = window.doc(window.db, "users", uid, "music_songs", songId);
+                        await window.deleteDoc(songRef);
+                    }
+                }
+
+                const albumRef = window.doc(window.db, "users", uid, "music_albums", albumId);
+                await window.deleteDoc(albumRef);
+
+                for (let checkArtistId of artistsToCheck) {
+                    const remainingSongs = window.musicSongs.filter(s => s.artistId === checkArtistId && s.albumId !== albumId);
+                    if (remainingSongs.length === 0) {
+                        const artistRef = window.doc(window.db, "users", uid, "music_artists", checkArtistId);
+                        await window.deleteDoc(artistRef);
+                    }
+                }
+
+                alert("Альбом успешно удален!");
+                window.location.hash = '#albums';
+                await loadMediaLibrary(uid);
+            } catch(e) {
+                console.error("Не удалось удалить альбом:", e);
+                alert("Ошибка удаления альбома.");
+            }
+        }
+
+        function navigateBack() {
+            if (navigationHistory.length > 1) {
+                navigationHistory.pop(); // remove current
+                const prev = navigationHistory.pop(); // fetch previous
+                window.location.hash = prev.view + (prev.params ? `?id=${prev.params}` : '');
+            } else {
+                window.location.hash = '#albums';
+            }
+        }
+
+        function renderCurrentView() {
+            const hash = window.location.hash;
+            
+            const histItem = { view: hash.split('?')[0], params: hash.includes('?id=') ? hash.split('?id=')[1] : null };
+            if (navigationHistory.length === 0 || JSON.stringify(navigationHistory[navigationHistory.length - 1]) !== JSON.stringify(histItem)) {
+                if (['#albums', '#artists', '#songs', '#album-details', '#artist-details'].some(p => hash.startsWith(p))) {
+                    navigationHistory.push(histItem);
+                }
+            }
+
+            if (hash === '#albums') {
+                renderAlbumsGrid();
+            } else if (hash === '#artists') {
+                renderArtistsLayout();
+            } else if (hash === '#songs') {
+                renderSongsTable();
+            } else if (hash.startsWith('#album-details')) {
+                const albumId = hash.split('?id=')[1] || '';
+                renderAlbumDetails(albumId);
+            } else if (hash.startsWith('#artist-details')) {
+                const artistId = hash.split('?id=')[1] || '';
+                renderArtistDetails(artistId);
+            }
+        }
+
+        function renderAlbumsGrid() {
+            const grid = document.getElementById('albums-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            
+            if (window.musicAlbums.length === 0) {
+                grid.innerHTML = `<div class="playlists-empty-state" style="grid-column: 1 / -1;"><p>Альбомов пока нет.</p></div>`;
+                return;
+            }
+
+            const sorted = [...window.musicAlbums].sort((a,b) => a.title.localeCompare(b.title));
+            sorted.forEach(album => {
+                grid.appendChild(createAlbumCard(album));
+            });
+        }
+
+        function createAlbumCard(album) {
+            const card = document.createElement('div');
+            card.className = 'album-card';
+            card.onclick = () => window.location.hash = '#album-details?id=' + album.id;
+            
+            card.innerHTML = `
+                <div class="album-cover-wrapper">
+                    <img class="album-cover" src="${album.coverUrl || 'https://via.placeholder.com/200'}" loading="lazy">
+                    <div class="album-hover-play">
+                        <div class="play-btn-circle" onclick="playAlbumDirect(event, '${album.id}')">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                                <polygon points="6 4 20 12 6 20 6 4"></polygon>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="album-title">${album.title}</h3>
+                <p class="album-artist">${album.artistName}</p>
+            `;
+            return card;
+        }
+
+        function renderArtistsLayout() {
+            const layout = document.getElementById('artists-master-detail');
+            if (!layout) return;
+            
+            if (window.musicArtists.length === 0) {
+                layout.innerHTML = `<div class="playlists-empty-state"><p>Исполнителей нет.</p></div>`;
+                return;
+            }
+
+            let artistsHTML = `<div style="display:flex; gap:30px; width: 100%;">
+                <div style="width:240px; border-right:1px solid var(--border); max-height:550px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; padding-right:16px;">`;
+            
+            window.musicArtists.forEach((artist) => {
+                artistsHTML += `<a href="#artist-details?id=${artist.id}" class="sidebar-item" style="color:var(--text); font-weight:600; padding: 8px 12px; border-radius: 8px; display: flex; align-items: center; gap: 12px; text-decoration: none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+                    <span>${artist.name}</span>
+                </a>`;
+            });
+
+            artistsHTML += `</div>
+                <div style="flex-grow:1;">
+                    <h3 style="margin-top:0;">Все треки артистов</h3>
+                    <p style="color:var(--text-secondary); font-size:0.9rem;">Выберите артиста слева, чтобы посмотреть его релизы.</p>
+                </div>
+            </div>`;
+
+            layout.innerHTML = artistsHTML;
+        }
+
+        function renderSongsTable() {
+            const table = document.getElementById('songs-list-table');
+            if (!table) return;
+            table.innerHTML = '';
+
+            if (window.musicSongs.length === 0) {
+                table.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-secondary);">У вас пока нет импортированных песен.</td></tr>`;
+                return;
+            }
+
+            window.musicSongs.forEach((song, index) => {
+                const tr = document.createElement('tr');
+                tr.id = `song-row-${song.id}`;
+                tr.className = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex] && playlist[trackIndex].id === song.id) ? 'active' : '';
+                tr.innerHTML = `
+                    <td class="track-num">
+                        <span class="track-num-txt">${index + 1}</span>
+                        <button class="play-row-btn" onclick="playSongFromFlatList('${song.id}')">▶</button>
+                    </td>
+                    <td style="font-weight:600;">${song.title}</td>
+                    <td style="color:#fa243c; cursor:pointer;" onclick="window.location.hash='#artist-details?id=${song.artistId}'">${song.artistName}</td>
+                    <td style="color:var(--text-secondary); cursor:pointer;" onclick="window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</td>
+                    <td class="track-duration">${formatTime(song.duration)}</td>
+                `;
+                table.appendChild(tr);
+            });
+        }
+
+        function renderAlbumDetails(albumId) {
+            const album = window.musicAlbums.find(a => a.id === albumId);
+            if (!album) return;
+
+            const coverEl = document.getElementById('album-details-cover');
+            if (coverEl) coverEl.src = album.coverUrl || 'https://via.placeholder.com/200';
+            
+            const titleEl = document.getElementById('album-details-title');
+            if (titleEl) titleEl.innerText = album.title;
+            
+            const artistEl = document.getElementById('album-details-artist');
+            if (artistEl) {
+                artistEl.innerText = album.artistName;
+                artistEl.onclick = () => window.location.hash = '#artist-details?id=' + album.artistId;
+            }
+            
+            const metaEl = document.getElementById('album-details-meta');
+            if (metaEl) metaEl.innerText = `Год: ${album.year || "Разное"} • Жанр: ${album.genre || "Музыка"}`;
+
+            const deleteBtn = document.getElementById('btn-delete-album');
+            if (deleteBtn) {
+                deleteBtn.style.display = 'block';
+                deleteBtn.onclick = () => deleteAlbum(albumId);
+            }
+
+            const tracksBody = document.getElementById('album-tracks-table');
+            if (!tracksBody) return;
+            tracksBody.innerHTML = '';
+
+            const albumSongs = window.musicSongs
+                .filter(s => s.albumId === albumId)
+                .sort((a,b) => a.index - b.index);
+
+            if (albumSongs.length === 0) {
+                tracksBody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--text-secondary);">Нет доступных треков.</td></tr>`;
+                return;
+            }
+
+            albumSongs.forEach((song, idx) => {
+                const tr = document.createElement('tr');
+                tr.id = `album-song-row-${song.id}`;
+                tr.className = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex] && playlist[trackIndex].id === song.id) ? 'active' : '';
+                tr.innerHTML = `
+                    <td class="track-num">
+                        <span class="track-num-txt">${idx + 1}</span>
+                        <button class="play-row-btn" onclick="playSongFromAlbum('${albumId}', '${song.id}')">▶</button>
+                    </td>
+                    <td style="font-weight:600;">${song.title}</td>
+                    <td class="track-duration">${formatTime(song.duration)}</td>
+                `;
+                tracksBody.appendChild(tr);
+            });
+        }
+
+        function renderArtistDetails(artistId) {
+            const artistName = window.musicSongs.find(s => s.artistId === artistId)?.artistName || "Исполнитель";
+            
+            const nameEl = document.getElementById('artist-details-name');
+            if (nameEl) nameEl.innerText = artistName;
+
+            const artistAlbums = window.musicAlbums.filter(a => a.artistId === artistId);
+            const grid = document.getElementById('artist-albums-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            if (artistAlbums.length === 0) {
+                grid.innerHTML = `<p style="color:var(--text-secondary);">У этого артиста нет загруженных релизов.</p>`;
+                return;
+            }
+
+            artistAlbums.forEach(album => {
+                grid.appendChild(createAlbumCard(album));
+            });
+        }
+
+        // Playback Hooks
+        function playSongFromAlbum(albumId, songId) {
+            const albumSongs = window.musicSongs
+                .filter(s => s.albumId === albumId)
+                .sort((a,b) => a.index - b.index);
+            
+            playlist = albumSongs.map(s => ({
+                id: s.id,
+                title: s.title,
+                artistName: s.artistName,
+                albumName: s.albumName,
+                duration: s.duration
+            }));
+            
+            trackIndex = playlist.findIndex(s => s.id === songId);
+            if (trackIndex === -1) trackIndex = 0;
+            
+            currentDeck = 1;
+            loadDeck(p1, trackIndex, true);
+            isPlaying = true;
+            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
+            renderPlaylist();
+            updateUI();
+            updateUrlState();
+        }
+
+        function playSongFromFlatList(songId) {
+            playlist = window.musicSongs.map(s => ({
+                id: s.id,
+                title: s.title,
+                artistName: s.artistName,
+                albumName: s.albumName,
+                duration: s.duration
+            }));
+            trackIndex = playlist.findIndex(s => s.id === songId);
+            if (trackIndex === -1) trackIndex = 0;
+            
+            currentDeck = 1;
+            loadDeck(p1, trackIndex, true);
+            isPlaying = true;
+            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
+            renderPlaylist();
+            updateUI();
+            updateUrlState();
+        }
+
+        function playAlbumDirect(event, albumId) {
+            if (event) event.stopPropagation();
+            const albumSongs = window.musicSongs
+                .filter(s => s.albumId === albumId)
+                .sort((a,b) => a.index - b.index);
+            if (albumSongs.length === 0) return;
+            
+            playlist = albumSongs.map(s => ({
+                id: s.id,
+                title: s.title,
+                artistName: s.artistName,
+                albumName: s.albumName,
+                duration: s.duration
+            }));
+            trackIndex = 0;
+            
+            currentDeck = 1;
+            loadDeck(p1, trackIndex, true);
+            isPlaying = true;
+            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
+            renderPlaylist();
+            updateUI();
+            updateUrlState();
+        }
+
+        function playCurrentAlbum() {
+            const hash = window.location.hash;
+            const albumId = hash.split('?id=')[1] || '';
+            if (!albumId) return;
+            playAlbumDirect(null, albumId);
+        }
+
+        function shuffleCurrentAlbum() {
+            const hash = window.location.hash;
+            const albumId = hash.split('?id=')[1] || '';
+            if (!albumId) return;
+            
+            const albumSongs = window.musicSongs
+                .filter(s => s.albumId === albumId);
+            if (albumSongs.length === 0) return;
+            
+            playlist = albumSongs.map(s => ({
+                id: s.id,
+                title: s.title,
+                artistName: s.artistName,
+                albumName: s.albumName,
+                duration: s.duration
+            }));
+            
+            playlist.sort(() => Math.random() - 0.5);
+            trackIndex = 0;
+            
+            currentDeck = 1;
+            loadDeck(p1, trackIndex, true);
+            isPlaying = true;
+            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
+            renderPlaylist();
+            updateUI();
+            updateUrlState();
+        }
+
+        function playAllSongs() {
+            if (window.musicSongs.length === 0) return;
+            playlist = window.musicSongs.map(s => ({
+                id: s.id,
+                title: s.title,
+                artistName: s.artistName,
+                albumName: s.albumName,
+                duration: s.duration
+            }));
+            trackIndex = 0;
+            
+            currentDeck = 1;
+            loadDeck(p1, trackIndex, true);
+            isPlaying = true;
+            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
+            renderPlaylist();
+            updateUI();
+            updateUrlState();
+        }
     </script>
 
-
+    <!-- МОДАЛЬНОЕ ОКНО ИМПОРТА/ДОБАВЛЕНИЯ АЛЬБОМА -->
+    <div id="addAlbumModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Импорт альбома из YouTube Music</h3>
+                <button class="modal-close" onclick="closeAddAlbumModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="display:flex; flex-direction:column; gap:16px;">
+                <style>
+                    .edit-icon-btn {
+                        transition: color 0.2s, transform 0.2s;
+                    }
+                    .edit-icon-btn:hover {
+                        color: #fa243c !important;
+                        transform: scale(1.1);
+                    }
+                </style>
+                <div class="modal-field">
+                    <label for="modalAlbumUrl">Ссылка на альбом или плейлист</label>
+                    <input type="text" id="modalAlbumUrl" class="modal-input"
+                        placeholder="https://music.youtube.com/playlist?list=OLAK5uy_..." autocomplete="off" oninput="handleUrlInput(this.value)">
+                </div>
+                
+                <!-- Контейнер с деталями (изначально скрыт) -->
+                <div id="import-details-container" style="display: none; flex-direction: column; gap: 16px;">
+                    <div class="modal-field">
+                        <label for="modalAlbumTitle">Название альбома</label>
+                        <div style="position: relative; display: flex; align-items: center; width: 100%;">
+                            <input type="text" id="modalAlbumTitle" class="modal-input" readonly style="padding-right: 40px; cursor: default; width: 100%;" autocomplete="off">
+                            <span class="edit-icon-btn" onclick="toggleEditField('modalAlbumTitle', this)" style="position: absolute; right: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; color: var(--text-secondary);">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-field">
+                        <label for="modalAlbumArtist">Исполнитель альбома</label>
+                        <div style="position: relative; display: flex; align-items: center; width: 100%;">
+                            <input type="text" id="modalAlbumArtist" class="modal-input" readonly style="padding-right: 40px; cursor: default; width: 100%;" autocomplete="off">
+                            <span class="edit-icon-btn" onclick="toggleEditField('modalAlbumArtist', this)" style="position: absolute; right: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; color: var(--text-secondary);">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <span id="import-status-text" style="font-size:0.8rem; color:#fa243c; display:none; margin-top:8px;">Импорт треков альбома, пожалуйста подождите...</span>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-modal-cancel" id="btn-import-cancel" onclick="closeAddAlbumModal()">Отмена</button>
+                <button class="btn-modal btn-modal-submit" id="btn-import-submit" onclick="submitImportAlbum()">Импортировать</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Модальное окно добавления плейлиста -->
     <div id="addPlaylistModal" class="modal-overlay">

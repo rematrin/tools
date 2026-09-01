@@ -2064,7 +2064,7 @@
             margin-left: 2px;
         }
 
-        /* Radio Banners */
+        /* Radio Banners & Enhanced Section Styles */
         .radio-hero-banner {
             position: relative;
             height: 176px;
@@ -2073,11 +2073,12 @@
             cursor: pointer;
             background: #171717;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transition: box-shadow 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: box-shadow 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.2s ease;
         }
 
         .radio-hero-banner:hover {
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
         }
 
         .radio-hero-banner img {
@@ -2086,18 +2087,18 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            opacity: 0.7;
-            transition: transform 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            opacity: 0.75;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         .radio-hero-banner:hover img {
-            transform: scale(1.02);
+            transform: scale(1.04);
         }
 
         .radio-hero-overlay {
             position: absolute;
             inset: 0;
-            background: linear-gradient(to top-right, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.35) 60%, transparent 100%);
+            background: linear-gradient(to top-right, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%);
         }
 
         .radio-badge {
@@ -2145,7 +2146,7 @@
             width: 28px;
             height: 28px;
             border-radius: 50%;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.45);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             display: flex;
@@ -2153,6 +2154,243 @@
             justify-content: center;
             color: #fff;
             z-index: 10;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        /* Radio Filter Tabs & Pills */
+        .radio-tabs-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 24px;
+            scrollbar-width: none;
+        }
+        .radio-tabs-bar::-webkit-scrollbar {
+            display: none;
+        }
+        .radio-tab-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border-radius: 20px;
+            background: var(--hover-bg);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .radio-tab-pill:hover {
+            background: var(--active-bg);
+            color: var(--text);
+        }
+        .radio-tab-pill.active {
+            background: var(--text);
+            color: var(--bg);
+            border-color: var(--text);
+        }
+
+        /* Radio Search Box */
+        .radio-search-container {
+            position: relative;
+            margin-bottom: 24px;
+            max-width: 480px;
+            width: 100%;
+        }
+        .radio-search-input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 0.9rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            box-sizing: border-box;
+        }
+        .radio-search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(252, 60, 68, 0.15);
+        }
+        .radio-search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+        }
+        .radio-search-clear {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: none;
+            padding: 4px;
+            border-radius: 50%;
+        }
+        .radio-search-clear:hover {
+            color: var(--text);
+        }
+
+        /* Radio Card Style */
+        .radio-card {
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s ease;
+        }
+        .radio-card:hover {
+            transform: translateY(-4px);
+        }
+        .radio-card-cover {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+        }
+        .radio-card-img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        .radio-card:hover .radio-card-img {
+            transform: scale(1.05);
+        }
+        .radio-card-logo-fallback {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(252, 60, 68, 0.12), rgba(0, 229, 255, 0.12));
+            color: var(--accent);
+            font-weight: 800;
+            font-size: 1.8rem;
+            text-transform: uppercase;
+        }
+        .radio-card-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s ease;
+        }
+        .radio-card:hover .radio-card-overlay,
+        .radio-card.playing .radio-card-overlay {
+            opacity: 1;
+        }
+        .radio-card.playing .radio-card-cover {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent);
+        }
+        .radio-card-play-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(252, 60, 68, 0.4);
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+        .radio-card-play-btn:hover {
+            transform: scale(1.08);
+            background: var(--accent-hover);
+        }
+        .radio-card-info {
+            margin-top: 10px;
+        }
+        .radio-card-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .radio-card-tags {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .radio-bitrate-badge {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 4px;
+            background: var(--hover-bg);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        .radio-live-eq {
+            display: none;
+            align-items: flex-end;
+            gap: 2px;
+            height: 14px;
+        }
+        .radio-card.playing .radio-live-eq {
+            display: flex;
+        }
+        .radio-live-eq-bar {
+            width: 3px;
+            background: var(--accent);
+            border-radius: 1px;
+            animation: radio-eq 0.8s ease-in-out infinite alternate;
+        }
+        .radio-live-eq-bar:nth-child(1) { height: 100%; animation-delay: 0.1s; }
+        .radio-live-eq-bar:nth-child(2) { height: 60%; animation-delay: 0.3s; }
+        .radio-live-eq-bar:nth-child(3) { height: 80%; animation-delay: 0.2s; }
+        @keyframes radio-eq {
+            0% { height: 20%; }
+            100% { height: 100%; }
+        }
+
+        /* Playbar in Radio Mode (No expansion, no underlines) */
+        .bottom-playbar.is-radio .playbar-title {
+            cursor: default !important;
+            text-decoration: none !important;
+        }
+        .bottom-playbar.is-radio .playbar-title:hover {
+            text-decoration: none !important;
+        }
+        .bottom-playbar.is-radio .playbar-thumbnail {
+            cursor: default !important;
         }
 
         /* Playlist Track Row & Hover Play Icon */
@@ -3881,15 +4119,53 @@
                 title = 'Радио';
                 content = `
                     <div style="text-align: left; padding-top: 10px;">
-                        <h2 style="font-size: 2rem; font-weight: 800; color: var(--text); margin-bottom: 24px; letter-spacing: -0.03em;">Радио</h2>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                            <h2 style="font-size: 2rem; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -0.03em;">Радио</h2>
+                            
+                            <!-- Radio Search Box -->
+                            <div class="radio-search-container" style="margin-bottom: 0;">
+                                <span class="radio-search-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                </span>
+                                <input type="text" id="radio-search-input" class="radio-search-input" placeholder="Поиск среди 45 000+ радиостанций..." oninput="handleRadioSearchInput(this.value)" autocomplete="off">
+                                <button id="radio-search-clear-btn" class="radio-search-clear" onclick="clearRadioSearch()" title="Очистить">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 12px; height: 12px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Radio Filter Tabs -->
+                        <div class="radio-tabs-bar" id="radio-category-tabs">
+                            <button class="radio-tab-pill active" onclick="switchRadioTab('featured', this)">
+                                <span>⭐ Популярное</span>
+                            </button>
+                            <button class="radio-tab-pill" onclick="switchRadioTab('hits', this)">
+                                <span>🔥 Хиты & Поп</span>
+                            </button>
+                            <button class="radio-tab-pill" onclick="switchRadioTab('dance', this)">
+                                <span>⚡ Electronic & Dance</span>
+                            </button>
+                            <button class="radio-tab-pill" onclick="switchRadioTab('chill', this)">
+                                <span>☕ Chill & Lo-Fi</span>
+                            </button>
+                            <button class="radio-tab-pill" onclick="switchRadioTab('rock', this)">
+                                <span>🎸 Рок & Альтернатива</span>
+                            </button>
+                            <button class="radio-tab-pill" onclick="switchRadioTab('jazz', this)">
+                                <span>🎷 Jazz & Classical</span>
+                            </button>
+                            <button class="radio-tab-pill" onclick="switchRadioTab('global', this)">
+                                <span>🌍 Мировое радио</span>
+                            </button>
+                        </div>
                         
-                        <!-- Прямой эфир -->
-                        <section style="margin-bottom: 36px;">
-                            <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text); margin-bottom: 16px; letter-spacing: -0.02em;">Прямой эфир</h3>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-                                <!-- Station 1 -->
-                                <div class="radio-hero-banner" onclick="alert('Воспроизведение радио: Моя станция')">
-                                    <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&q=80">
+                        <!-- Прямой эфир (Featured Banners) -->
+                        <section id="radio-featured-section" style="margin-bottom: 32px;">
+                            <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin-bottom: 16px; letter-spacing: -0.02em;">Прямой эфир</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;" id="radio-hero-banners-grid">
+                                <!-- Banner 1: Record -->
+                                <div class="radio-hero-banner" onclick="playPresetRadioStation('record')">
+                                    <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80">
                                     <div class="radio-hero-overlay"></div>
                                     <div style="position: absolute; inset: 0; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; z-index: 10;">
                                         <span class="radio-badge">
@@ -3898,18 +4174,18 @@
                                         </span>
                                         <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;">
                                             <div style="color: #fff;">
-                                                <span style="font-size: 10px; color: rgba(255,255,255,0.6); tracking-wider; text-transform: uppercase; font-weight: 600;">Персональное радио</span>
-                                                <h4 style="font-size: 1.25rem; font-weight: 800; margin: 4px 0 0 0; letter-spacing: -0.01em;">Моя станция</h4>
-                                                <p style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin: 6px 0 0 0; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;">Музыка, подобранная специально для вас на основе вкусов.</p>
+                                                <span style="font-size: 10px; color: rgba(255,255,255,0.7); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Танцевальная станция №1</span>
+                                                <h4 style="font-size: 1.3rem; font-weight: 800; margin: 4px 0 0 0; letter-spacing: -0.01em;">Радио Рекорд</h4>
+                                                <p style="font-size: 0.78rem; color: rgba(255,255,255,0.75); margin: 6px 0 0 0; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;">Главная танцевальная радиостанция страны. Лучшая электронная музыка.</p>
                                             </div>
-                                            <button class="editorial-card-play" style="opacity: 1; transform: scale(1); flex-shrink: 0;">
+                                            <button class="editorial-card-play" style="opacity: 1; transform: scale(1); flex-shrink: 0;" title="Слушать Радио Рекорд">
                                                 <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Station 2 -->
-                                <div class="radio-hero-banner" onclick="alert('Воспроизведение радио: Хиты')">
+                                <!-- Banner 2: Europa Plus -->
+                                <div class="radio-hero-banner" onclick="playPresetRadioStation('europaplus')">
                                     <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80">
                                     <div class="radio-hero-overlay"></div>
                                     <div style="position: absolute; inset: 0; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; z-index: 10;">
@@ -3919,11 +4195,11 @@
                                         </span>
                                         <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;">
                                             <div style="color: #fff;">
-                                                <span style="font-size: 10px; color: rgba(255,255,255,0.6); tracking-wider; text-transform: uppercase; font-weight: 600;">Apple Music 1</span>
-                                                <h4 style="font-size: 1.25rem; font-weight: 800; margin: 4px 0 0 0; letter-spacing: -0.01em;">Хиты</h4>
-                                                <p style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin: 6px 0 0 0; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;">Главная мировая поп-станция. Прямые эфиры с лучшими ведущими.</p>
+                                                <span style="font-size: 10px; color: rgba(255,255,255,0.7); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Европа Плюс</span>
+                                                <h4 style="font-size: 1.3rem; font-weight: 800; margin: 4px 0 0 0; letter-spacing: -0.01em;">Европа Плюс Live</h4>
+                                                <p style="font-size: 0.78rem; color: rgba(255,255,255,0.75); margin: 6px 0 0 0; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;">Больше хитов! Больше музыки! Главные мировые и российские чарты.</p>
                                             </div>
-                                            <button class="editorial-card-play" style="opacity: 1; transform: scale(1); flex-shrink: 0;">
+                                            <button class="editorial-card-play" style="opacity: 1; transform: scale(1); flex-shrink: 0;" title="Слушать Европа Плюс">
                                                 <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
                                             </button>
                                         </div>
@@ -3932,82 +4208,28 @@
                             </div>
                         </section>
 
-                        <!-- Музыкальные станции -->
+                        <!-- Список радиостанций (Динамическая сетка) -->
                         <section>
-                            <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text); margin-bottom: 16px; letter-spacing: -0.02em;">Музыкальные станции</h3>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px;">
-                                <!-- Station 3 -->
-                                <div style="cursor: pointer;" onclick="alert('Воспроизведение радио: Chill Station')">
-                                    <div class="album-card-wrapper" style="position: relative;">
-                                        <img src="https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
-                                        <div class="album-card-overlay">
-                                            <button class="album-card-play">
-                                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-                                            </button>
-                                        </div>
-                                        <div class="radio-antenna-badge">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
-                                        </div>
-                                    </div>
-                                    <div style="margin-top: 8px;">
-                                        <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Chill Station</div>
-                                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Спокойная музыка</div>
-                                    </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                                <h3 id="radio-grid-title" style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Радиостанции</h3>
+                                <span id="radio-grid-count" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;"></span>
+                            </div>
+                            <div id="radio-stations-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px;">
+                                <!-- Заполняется динамически -->
+                            </div>
+                        </section>
+
+                        <!-- Недавно прослушанные радиостанции (Последние 10 станций) -->
+                        <section id="radio-recent-section" style="margin-top: 40px; display: none;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                                <div>
+                                    <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Недавно прослушанные</h3>
+                                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 4px 0 0 0;">Станции, которые вы недавно включали</p>
                                 </div>
-                                <!-- Station 4 -->
-                                <div style="cursor: pointer;" onclick="alert('Воспроизведение радио: Alternative Live')">
-                                    <div class="album-card-wrapper" style="position: relative;">
-                                        <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
-                                        <div class="album-card-overlay">
-                                            <button class="album-card-play">
-                                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-                                            </button>
-                                        </div>
-                                        <div class="radio-antenna-badge">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
-                                        </div>
-                                    </div>
-                                    <div style="margin-top: 8px;">
-                                        <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Alternative Live</div>
-                                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Инди и Рок</div>
-                                    </div>
-                                </div>
-                                <!-- Station 5 -->
-                                <div style="cursor: pointer;" onclick="alert('Воспроизведение радио: Electronic Beat')">
-                                    <div class="album-card-wrapper" style="position: relative;">
-                                        <img src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
-                                        <div class="album-card-overlay">
-                                            <button class="album-card-play">
-                                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-                                            </button>
-                                        </div>
-                                        <div class="radio-antenna-badge">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
-                                        </div>
-                                    </div>
-                                    <div style="margin-top: 8px;">
-                                        <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Electronic Beat</div>
-                                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Танцевальное радио</div>
-                                    </div>
-                                </div>
-                                <!-- Station 6 -->
-                                <div style="cursor: pointer;" onclick="alert('Воспроизведение радио: Hip-Hop Flow')">
-                                    <div class="album-card-wrapper" style="position: relative;">
-                                        <img src="https://images.unsplash.com/photo-1482440308425-276ad0f28b19?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
-                                        <div class="album-card-overlay">
-                                            <button class="album-card-play">
-                                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-                                            </button>
-                                        </div>
-                                        <div class="radio-antenna-badge">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
-                                        </div>
-                                    </div>
-                                    <div style="margin-top: 8px;">
-                                        <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Hip-Hop Flow</div>
-                                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Рэп и Хип-Хоп</div>
-                                    </div>
-                                </div>
+                                <button onclick="clearRecentRadioStations()" style="background: none; border: none; font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-secondary)'">Очистить историю</button>
+                            </div>
+                            <div id="radio-recent-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px;">
+                                <!-- Заполняется динамически -->
                             </div>
                         </section>
                     </div>
@@ -4279,6 +4501,9 @@
             stubView.innerHTML = content;
             if (hash === '#home') {
                 renderHomePlaylists();
+            } else if (hash === '#radio') {
+                renderRadioStationsGrid(window.activeRadioTab || 'featured');
+                renderRecentRadioStations();
             }
         }
 
@@ -4672,6 +4897,7 @@
             updateDeckVisibility();
             updateButtons();
             toggleTurboMix(isTurboMixEnabled);
+            updateRadioUIState();
 
             // Update sidebar highlights
             renderSavedPlaylists(window.currentSavedPlaylists);
@@ -4825,6 +5051,11 @@
         // --- PLAYER CORE ---
 
         function togglePlay() {
+            if (window.currentRadioStation) {
+                toggleRadioPlay();
+                return;
+            }
+
             if (playersReadyCount < 2) return;
 
             let activeP = (currentDeck === 1) ? p1 : p2;
@@ -4844,6 +5075,9 @@
         }
 
         function startMix() {
+            if (window.currentRadioStation) {
+                stopRadioPlayback();
+            }
             if (playlist.length === 0) return;
             let activeP = (currentDeck === 1) ? p1 : p2;
 
@@ -5394,6 +5628,10 @@
             if (topVol) topVol.value = playerVolume;
             const volumeVal = document.getElementById('volumeValue');
             if (volumeVal) volumeVal.innerText = playerVolume;
+
+            if (window.radioAudioPlayer) {
+                window.radioAudioPlayer.volume = playerVolume / 100;
+            }
 
             if (!isCrossfading) {
                 let activeP = (currentDeck === 1) ? p1 : p2;
@@ -6348,6 +6586,9 @@
 
         function playTrackFromDetails(urlStr, name, tracklist, index) {
             if (isPlaying && isCrossfading) { alert("Подождите конца перехода"); return; }
+            if (window.currentRadioStation) {
+                stopRadioPlayback();
+            }
 
             playlist = [...tracklist];
             trackIndex = index;
@@ -7544,6 +7785,7 @@
         }
 
         function expandFullPlayerCard() {
+            if (window.currentRadioStation) return; // Не открываем плеер при воспроизведении радио
             const cardEl = document.getElementById('main-player-card');
             if (cardEl && !cardEl.classList.contains('active')) {
                 toggleFullPlayerCard();
@@ -8887,6 +9129,7 @@
         }
 
         function playAllSongs() {
+            if (window.currentRadioStation) stopRadioPlayback();
             if (window.musicSongs.length === 0) return;
             playlist = window.musicSongs.map(s => ({
                 id: s.id,
@@ -8937,6 +9180,946 @@
                 handleAlbumsSearch('');
             } else if (type === 'songs') {
                 handleSongsSearch('');
+            }
+        }
+
+        // ==========================================
+        // === RADIO SYSTEM & RADIO BROWSER API ===
+        // ==========================================
+
+        window.radioAudioPlayer = new Audio();
+        window.currentRadioStation = null;
+        window.isRadioPlaying = false;
+        window.activeRadioTab = 'featured';
+        window.radioSearchDebounce = null;
+
+        // Популярные радиостанции (Вариант 2 — Проверенные быстрые потоки)
+        const PRESET_RADIO_STATIONS = {
+            featured: [
+                {
+                    id: 'record',
+                    name: 'Радио Рекорд (Record)',
+                    genre: 'Dance / EDM',
+                    streamUrl: 'https://radiorecord.hostingradio.ru/rr_main96.aacp',
+                    logo: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80',
+                    bitrate: 'AAC 96k',
+                    country: 'RU'
+                },
+                {
+                    id: 'europaplus',
+                    name: 'Европа Плюс',
+                    genre: 'Top 40 / Pop',
+                    streamUrl: 'https://ep128.hostingradio.ru:8030/ep128.mp3',
+                    logo: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80',
+                    bitrate: 'MP3 128k',
+                    country: 'RU'
+                },
+                {
+                    id: 'record-deep',
+                    name: 'Record Deep',
+                    genre: 'Deep House / Lounge',
+                    streamUrl: 'https://radiorecord.hostingradio.ru/deep96.aacp',
+                    logo: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&q=80',
+                    bitrate: 'AAC 96k',
+                    country: 'RU'
+                },
+                {
+                    id: 'dfm',
+                    name: 'DFM Dance Radio',
+                    genre: 'Club / Dance Hits',
+                    streamUrl: 'https://dfm.hostingradio.ru/dfm96.aacp',
+                    logo: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500&q=80',
+                    bitrate: 'AAC 96k',
+                    country: 'RU'
+                },
+                {
+                    id: 'chillhop',
+                    name: 'Chillhop Radio',
+                    genre: 'Lo-Fi / Chill Beats',
+                    streamUrl: 'https://stream.zeno.fm/f3wvbbqmdg8uv',
+                    logo: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=500&q=80',
+                    bitrate: 'MP3 128k',
+                    country: 'NL'
+                },
+                {
+                    id: 'ibiza-global',
+                    name: 'Ibiza Global Radio',
+                    genre: 'Ibiza / Electronic',
+                    streamUrl: 'https://listenssl.ibizaglobalradio.com:8024/ibizaglobalradio.mp3',
+                    logo: 'https://images.unsplash.com/photo-1571266028243-3716f02d2d2e?w=500&q=80',
+                    bitrate: 'MP3 128k',
+                    country: 'ES'
+                },
+                {
+                    id: 'jazz24',
+                    name: 'Jazz24 Worldwide',
+                    genre: 'Jazz / Blues',
+                    streamUrl: 'https://live.wostreaming.net/manifest/knkx-jazz24aac-ibc1.m3u8',
+                    logo: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=500&q=80',
+                    bitrate: 'AAC 128k',
+                    country: 'US'
+                },
+                {
+                    id: 'radiocaprice-ambient',
+                    name: 'Ambient & Space Music',
+                    genre: 'Ambient / Relax',
+                    streamUrl: 'http://79.111.14.76:8000/ambient',
+                    logo: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&q=80',
+                    bitrate: 'MP3 128k',
+                    country: 'RU'
+                }
+            ],
+            hits: [
+                {
+                    id: 'europaplus',
+                    name: 'Европа Плюс',
+                    genre: 'Top 40 / Pop',
+                    streamUrl: 'https://ep128.hostingradio.ru:8030/ep128.mp3',
+                    logo: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'RU'
+                },
+                {
+                    id: 'nrj',
+                    name: 'NRJ Russia (Energy)',
+                    genre: 'Pop / Dance',
+                    streamUrl: 'https://pub0202.sslstream.com/energy_russia.mp3',
+                    logo: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'RU'
+                },
+                {
+                    id: 'bbc-radio1',
+                    name: 'BBC Radio 1',
+                    genre: 'Top 40 / UK Pop',
+                    streamUrl: 'http://stream.live.vc.bbcmedia.co.uk/bbc_radio_one',
+                    logo: 'https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'GB'
+                },
+                {
+                    id: 'novoe-radio',
+                    name: 'Новое Радио',
+                    genre: 'Русская Поп Музыка',
+                    streamUrl: 'https://icecast-newradio.cdnvideo.ru/newradio3',
+                    logo: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'RU'
+                },
+                {
+                    id: 'capital-fm',
+                    name: 'Capital FM London',
+                    genre: 'UK Top Hits',
+                    streamUrl: 'https://media-ice.musicradio.com/CapitalMP3',
+                    logo: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'GB'
+                }
+            ],
+            dance: [
+                {
+                    id: 'record',
+                    name: 'Радио Рекорд',
+                    genre: 'EDM / Dance',
+                    streamUrl: 'https://radiorecord.hostingradio.ru/rr_main96.aacp',
+                    logo: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80',
+                    bitrate: 'AAC 96k',
+                    country: 'RU'
+                },
+                {
+                    id: 'record-deep',
+                    name: 'Record Deep House',
+                    genre: 'Deep / Vocal House',
+                    streamUrl: 'https://radiorecord.hostingradio.ru/deep96.aacp',
+                    logo: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&q=80',
+                    bitrate: 'AAC 96k',
+                    country: 'RU'
+                },
+                {
+                    id: 'ibiza-global',
+                    name: 'Ibiza Global Radio',
+                    genre: 'Underground / Tech',
+                    streamUrl: 'https://listenssl.ibizaglobalradio.com:8024/ibizaglobalradio.mp3',
+                    logo: 'https://images.unsplash.com/photo-1571266028243-3716f02d2d2e?w=500&q=80',
+                    bitrate: 'MP3 128k',
+                    country: 'ES'
+                },
+                {
+                    id: 'dfm',
+                    name: 'DFM Club',
+                    genre: 'Club Hits',
+                    streamUrl: 'https://dfm.hostingradio.ru/dfm96.aacp',
+                    logo: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500&q=80',
+                    bitrate: 'AAC 96k',
+                    country: 'RU'
+                },
+                {
+                    id: 'defected',
+                    name: 'Defected Radio',
+                    genre: 'House / Disco',
+                    streamUrl: 'https://icecast.defected.com/stream',
+                    logo: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'GB'
+                }
+            ],
+            chill: [
+                {
+                    id: 'chillhop',
+                    name: 'Chillhop Beats',
+                    genre: 'Lofi / Study Beats',
+                    streamUrl: 'https://stream.zeno.fm/f3wvbbqmdg8uv',
+                    logo: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'NL'
+                },
+                {
+                    id: 'record-chill',
+                    name: 'Record Chill-Out',
+                    genre: 'Chillout / Downtempo',
+                    streamUrl: 'https://radiorecord.hostingradio.ru/chil96.aacp',
+                    logo: 'https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?w=500&q=80',
+                    bitrate: 'AAC 96k',
+                    country: 'RU'
+                },
+                {
+                    id: 'somafm-groovesalad',
+                    name: 'SomaFM: Groove Salad',
+                    genre: 'Downtempo / Ambient',
+                    streamUrl: 'https://ice2.somafm.com/groovesalad-128-mp3',
+                    logo: 'https://images.unsplash.com/photo-1445307806294-bff7f67ff225?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'US'
+                },
+                {
+                    id: 'lofi-girl',
+                    name: 'Lofi Hip Hop Radio',
+                    genre: 'Lo-Fi / Relax',
+                    streamUrl: 'https://play.streamafrica.net/lofiradio',
+                    logo: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'FR'
+                }
+            ],
+            rock: [
+                {
+                    id: 'nashe-radio',
+                    name: 'Наше Радио',
+                    genre: 'Русский Рок',
+                    streamUrl: 'https://nashe1.hostingradio.ru/nashe-128.mp3',
+                    logo: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'RU'
+                },
+                {
+                    id: 'record-rock',
+                    name: 'Record Rock',
+                    genre: 'Alternative / Modern Rock',
+                    streamUrl: 'https://radiorecord.hostingradio.ru/rock96.aacp',
+                    logo: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=500&q=80',
+                    bitrate: 'AAC 96k',
+                    country: 'RU'
+                },
+                {
+                    id: 'kexp',
+                    name: 'KEXP 90.3 FM Seattle',
+                    genre: 'Indie / Alt Rock',
+                    streamUrl: 'https://kexp.streamguys1.com/kexp160.aac',
+                    logo: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80',
+                    bitrate: 'AAC 160k',
+                    country: 'US'
+                },
+                {
+                    id: 'radio-ultra',
+                    name: 'Радио ULTRA',
+                    genre: 'Modern Rock / Metal',
+                    streamUrl: 'https://nashe1.hostingradio.ru/ultra-128.mp3',
+                    logo: 'https://images.unsplash.com/photo-1526478806334-5fd488fcaabc?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'RU'
+                }
+            ],
+            jazz: [
+                {
+                    id: 'jazz-fm',
+                    name: 'Радио JAZZ (Jazz FM)',
+                    genre: 'Smooth Jazz / Classic Jazz',
+                    streamUrl: 'https://nashe1.hostingradio.ru/jazz-128.mp3',
+                    logo: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'RU'
+                },
+                {
+                    id: 'swiss-jazz',
+                    name: 'Radio Swiss Jazz',
+                    genre: 'Jazz / Standards',
+                    streamUrl: 'http://stream.srg-ssr.ch/m/rsj/mp3_128',
+                    logo: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'CH'
+                },
+                {
+                    id: 'classic-fm',
+                    name: 'Classic FM',
+                    genre: 'Classical / Symphonic',
+                    streamUrl: 'https://media-ice.musicradio.com/ClassicFMMP3',
+                    logo: 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'GB'
+                }
+            ],
+            global: [
+                {
+                    id: 'bbc-world',
+                    name: 'BBC World Service',
+                    genre: 'News / World Talk',
+                    streamUrl: 'http://stream.live.vc.bbcmedia.co.uk/bbc_world_service',
+                    logo: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'GB'
+                },
+                {
+                    id: 'fip',
+                    name: 'FIP Radio Paris',
+                    genre: 'Eclectic / World / Jazz',
+                    streamUrl: 'https://icecast.radiofrance.fr/fip-midfi.mp3',
+                    logo: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'FR'
+                },
+                {
+                    id: 'antenne-bayern',
+                    name: 'Antenne Bayern',
+                    genre: 'Pop / German Hits',
+                    streamUrl: 'https://s2-webradio.antenne.de/antenne',
+                    logo: 'https://images.unsplash.com/photo-1467810563316-b5476525c0f9?w=500&q=80',
+                    bitrate: '128k',
+                    country: 'DE'
+                }
+            ]
+        };
+
+        // Radio Browser API Серверы (с автоматическим фолбэком)
+        const RADIO_API_SERVERS = [
+            'https://de1.api.radio-browser.info',
+            'https://nl1.api.radio-browser.info',
+            'https://at1.api.radio-browser.info',
+            'https://fr1.api.radio-browser.info'
+        ];
+
+        async function fetchFromRadioBrowser(endpoint) {
+            for (let server of RADIO_API_SERVERS) {
+                try {
+                    const response = await fetch(`${server}/json/${endpoint}`, {
+                        headers: { 'User-Agent': 'AppleMusicWebPlayer/1.0' }
+                    });
+                    if (response.ok) {
+                        return await response.json();
+                    }
+                } catch (e) {
+                    console.warn(`Radio API error on ${server}, trying next mirror...`);
+                }
+            }
+            return [];
+        }
+
+        window.radioTrackFetchInterval = null;
+        window.currentRadioSongTitle = null;
+
+        // Комплексная очистка названий станций в стиле Apple Music (убираем суффиксы битрейтов, кодеков, частот, скобок)
+        function formatRadioStationName(rawName) {
+            if (!rawName) return 'Радио';
+            return rawName
+                .replace(/[-–—|/]?\s*\d+\s*(?:kb\/?s|kbps|kbit|k|mp3|aac\+?|aacp|flac|ogg|hls|stereo|mono|hd|hq|live|online|stream)\b.*$/i, '')
+                .replace(/[-–—|/]?\s*(?:128|192|256|320|64|96|48|32)\s*(?:kb\/?s|kbps|kbit|k|mp3|aac\+?|aacp|flac|ogg)?\b.*$/i, '')
+                .replace(/\[\s*(?:128|192|256|320|64|96|aac|mp3|flac|hd|hq|live).*?\]/gi, '')
+                .replace(/\(\s*(?:128|192|256|320|64|96|aac|mp3|flac|hd|hq|live|128kbps|320kbps|128k|320k).*?\)/gi, '')
+                .replace(/[-–—|/]\s*$/g, '')
+                .trim() || rawName.trim();
+        }
+
+        // Запрос текущего трека в эфире (Now Playing Metadata с безопасной обработкой)
+        async function fetchRadioNowPlaying(station) {
+            if (!station || !window.isRadioPlaying) return;
+
+            let songTitle = null;
+
+            // 1. Прямые API станций с открытым CORS
+            if (station.id === 'somafm-groovesalad') {
+                try {
+                    const res = await fetch('https://somafm.com/groovesalad.json');
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.songs && data.songs[0]) {
+                            songTitle = `${data.songs[0].artist} — ${data.songs[0].title}`;
+                        }
+                    }
+                } catch (e) { }
+            }
+
+            if (songTitle && window.currentRadioStation && window.currentRadioStation.streamUrl === station.streamUrl) {
+                window.currentRadioSongTitle = songTitle;
+                const titleEl = document.getElementById('playbar-track-title');
+                const subEl = document.getElementById('playbar-track-subtitle');
+                if (titleEl) titleEl.innerText = songTitle;
+                if (subEl) subEl.innerText = `${formatRadioStationName(station.name)} • Прямой эфир`;
+                document.title = `${songTitle} – ${formatRadioStationName(station.name)}`;
+            }
+        }
+
+        function startRadioMetadataPolling(station) {
+            clearInterval(window.radioTrackFetchInterval);
+            window.currentRadioSongTitle = null;
+            if (station && station.id === 'somafm-groovesalad') {
+                fetchRadioNowPlaying(station);
+                window.radioTrackFetchInterval = setInterval(() => {
+                    if (window.currentRadioStation && window.isRadioPlaying) {
+                        fetchRadioNowPlaying(window.currentRadioStation);
+                    }
+                }, 15000);
+            }
+        }
+
+        // Клик по карточке радиостанции (глобальная функция)
+        function handleRadioCardClick(encodedData) {
+            try {
+                const station = JSON.parse(decodeURIComponent(encodedData));
+                if (window.currentRadioStation && window.currentRadioStation.streamUrl === station.streamUrl && window.isRadioPlaying) {
+                    toggleRadioPlay();
+                } else {
+                    playRadioStream(station);
+                }
+            } catch (e) {
+                console.error("Error clicking radio station:", e);
+            }
+        }
+        window.handleRadioCardClick = handleRadioCardClick;
+
+        // Запуск радиостанции по пресету
+        function playPresetRadioStation(presetId) {
+            let found = null;
+            for (let cat in PRESET_RADIO_STATIONS) {
+                const s = PRESET_RADIO_STATIONS[cat].find(item => item.id === presetId);
+                if (s) { found = s; break; }
+            }
+            if (found) {
+                playRadioStream(found);
+            }
+        }
+
+        // Запуск воспроизведения радио-потока (HTML5 Audio с мгновенным откликом и fallback)
+        function playRadioStream(station) {
+            if (!station || !station.streamUrl) return;
+
+            // Останавливаем YouTube плееры
+            if (p1 && typeof p1.pauseVideo === 'function') {
+                try { p1.pauseVideo(); } catch (e) { }
+            }
+            if (p2 && typeof p2.pauseVideo === 'function') {
+                try { p2.pauseVideo(); } catch (e) { }
+            }
+            isPlaying = false;
+            window.isRadioPlaying = true;
+            window.currentRadioStation = station;
+
+            // Мгновенно обновляем интерфейс, чтобы пользователь сразу видел запуск
+            updateRadioUIState();
+            addToRecentRadioStations(station);
+
+            let streamUrl = station.streamUrl;
+            // Если страница открыта по HTTPS, преобразуем HTTP потоки если возможно
+            if (window.location.protocol === 'https:' && streamUrl.startsWith('http:')) {
+                streamUrl = streamUrl.replace('http:', 'https:');
+            }
+
+            const player = window.radioAudioPlayer;
+            player.pause();
+            player.preload = "auto";
+            player.crossOrigin = "anonymous";
+            player.src = streamUrl;
+            player.volume = (playerVolume || 100) / 100;
+
+            const playPromise = player.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    window.isRadioPlaying = true;
+                    updateRadioUIState();
+                    startRadioMetadataPolling(station);
+                }).catch(err => {
+                    console.warn("First attempt play error, trying raw stream:", err);
+                    // Если была попытка HTTPS, пробуем оригинальный URL
+                    if (streamUrl !== station.streamUrl) {
+                        player.src = station.streamUrl;
+                        player.play().catch(e => {
+                            console.error("Secondary play error:", e);
+                        });
+                    }
+                });
+            }
+
+            // Настраиваем слушатели плеера
+            player.onplaying = () => {
+                window.isRadioPlaying = true;
+                updateRadioUIState();
+            };
+            player.onwaiting = () => {
+                // Буферизация потока
+                console.log("Radio buffering...");
+            };
+            player.onpause = () => {
+                window.isRadioPlaying = false;
+                updateRadioUIState();
+            };
+            player.onerror = (e) => {
+                console.warn("Radio player error:", e);
+                // Если поток упал, пробуем еще раз без crossOrigin
+                if (player.crossOrigin) {
+                    player.removeAttribute('crossorigin');
+                    player.src = station.streamUrl;
+                    player.play().catch(() => {});
+                }
+            };
+        }
+
+        // Остановка / Пауза радио
+        function toggleRadioPlay() {
+            const player = window.radioAudioPlayer;
+            if (window.isRadioPlaying) {
+                player.pause();
+                window.isRadioPlaying = false;
+            } else if (window.currentRadioStation) {
+                player.play().catch(e => console.error(e));
+                window.isRadioPlaying = true;
+                startRadioMetadataPolling(window.currentRadioStation);
+            }
+            updateRadioUIState();
+        }
+
+        function stopRadioPlayback() {
+            clearInterval(window.radioTrackFetchInterval);
+            if (window.radioAudioPlayer) {
+                window.radioAudioPlayer.pause();
+                window.radioAudioPlayer.src = '';
+            }
+            window.isRadioPlaying = false;
+            window.currentRadioStation = null;
+            window.currentRadioSongTitle = null;
+            updateRadioUIState();
+        }
+
+        // Обновление интерфейса при воспроизведении радио
+        function updateRadioUIState() {
+            const playbar = document.getElementById('bottom-playbar');
+            const playIcon = document.getElementById('playbar-icon-play');
+            const pauseIcon = document.getElementById('playbar-icon-pause');
+            const repeatBtn = document.getElementById('playbar-repeatBtn');
+            const shuffleBtn = document.querySelector('.playbar-right button[onclick="shufflePlaylist()"]');
+            const chevronBtn = document.getElementById('bottom-chevron-btn');
+            const turboContainer = document.querySelector('.playbar-turbo-container');
+            const prevBtn = document.getElementById('playbar-prevBtn');
+            const nextBtn = document.getElementById('playbar-nextBtn');
+            const timeline = document.getElementById('playbar-timeline-container');
+            const playbarTimeWrapper = document.querySelector('.playbar-time > span');
+
+            if (window.currentRadioStation) {
+                if (playbar) {
+                    playbar.style.display = 'flex';
+                    playbar.classList.add('is-radio');
+                }
+
+                // Скрываем элементы, не применимые к прямому эфиру радио (как в Apple Music)
+                if (repeatBtn) repeatBtn.style.display = 'none';
+                if (shuffleBtn) shuffleBtn.style.display = 'none';
+                if (chevronBtn) chevronBtn.style.display = 'none';
+                if (turboContainer) turboContainer.style.display = 'none';
+                if (prevBtn) prevBtn.style.display = 'none';
+                if (nextBtn) nextBtn.style.display = 'none';
+                if (timeline) timeline.style.display = 'none'; // Полностью скрываем полоску воспроизведения для радио
+
+                const titleEl = document.getElementById('playbar-track-title');
+                const subEl = document.getElementById('playbar-track-subtitle');
+                const coverEl = document.getElementById('playbar-track-cover');
+
+                const cleanStationName = formatRadioStationName(window.currentRadioStation.name);
+
+                if (titleEl) {
+                    titleEl.innerText = window.currentRadioSongTitle || cleanStationName;
+                }
+                if (subEl) {
+                    subEl.innerText = window.currentRadioSongTitle 
+                        ? `${cleanStationName} • Прямой эфир` 
+                        : `Прямой эфир • ${window.currentRadioStation.genre || 'Радио'}`;
+                }
+                if (coverEl) {
+                    coverEl.style.backgroundImage = `url('${window.currentRadioStation.logo || "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80"}')`;
+                }
+
+                // Показываем только чистый бейдж ● LIVE без технического текста и слэшей
+                if (playbarTimeWrapper) {
+                    playbarTimeWrapper.innerHTML = '<span style="color:#fc3c44; font-weight:800; font-size:11px; letter-spacing:0.06em; text-transform:uppercase;">● LIVE</span>';
+                }
+
+                if (playIcon) playIcon.style.display = window.isRadioPlaying ? 'none' : 'block';
+                if (pauseIcon) pauseIcon.style.display = window.isRadioPlaying ? 'block' : 'none';
+
+                document.title = window.currentRadioSongTitle 
+                    ? `${window.currentRadioSongTitle} – ${cleanStationName}` 
+                    : `${cleanStationName} – Радио (Прямой эфир)`;
+            } else {
+                if (playbar) {
+                    playbar.classList.remove('is-radio');
+                }
+                // Восстанавливаем кнопки, таймлайн и структуру времени обычного плеера треков
+                if (repeatBtn) repeatBtn.style.display = '';
+                if (shuffleBtn) shuffleBtn.style.display = '';
+                if (chevronBtn) chevronBtn.style.display = '';
+                if (turboContainer) turboContainer.style.display = '';
+                if (prevBtn) prevBtn.style.display = '';
+                if (nextBtn) nextBtn.style.display = '';
+                if (timeline) timeline.style.display = '';
+
+                if (playbarTimeWrapper && !playbarTimeWrapper.querySelector('#playbar-currentTime')) {
+                    playbarTimeWrapper.innerHTML = '<span id="playbar-currentTime">0:00</span> / <span id="playbar-totalTime">0:00</span>';
+                }
+            }
+
+            // Обновляем визуальное состояние карточек на странице
+            const cards = document.querySelectorAll('.radio-card');
+            cards.forEach(card => {
+                const sUrl = card.getAttribute('data-stream');
+                if (window.currentRadioStation && sUrl === window.currentRadioStation.streamUrl && window.isRadioPlaying) {
+                    card.classList.add('playing');
+                } else {
+                    card.classList.remove('playing');
+                }
+            });
+        }
+
+        // Переключение вкладок в разделе #radio
+        function switchRadioTab(tabKey, btnElement) {
+            window.activeRadioTab = tabKey;
+
+            // Обновляем активный стиль вкладки
+            const pills = document.querySelectorAll('.radio-tab-pill');
+            pills.forEach(p => p.classList.remove('active'));
+            if (btnElement) btnElement.classList.add('active');
+
+            // Показываем/скрываем промо-баннеры
+            const featSection = document.getElementById('radio-featured-section');
+            if (featSection) {
+                featSection.style.display = (tabKey === 'featured') ? 'block' : 'none';
+            }
+
+            const gridTitle = document.getElementById('radio-grid-title');
+            const titlesMap = {
+                featured: 'Рекомендуемые радиостанции',
+                hits: 'Хиты и Поп-музыка',
+                dance: 'Electronic, Club & Dance',
+                chill: 'Chill, Lo-Fi & Downtempo',
+                rock: 'Рок и Альтернатива',
+                jazz: 'Jazz, Blues & Classical',
+                global: 'Мировые радиостанции'
+            };
+            if (gridTitle) gridTitle.innerText = titlesMap[tabKey] || 'Радиостанции';
+
+            renderRadioStationsGrid(tabKey);
+        }
+
+        // Рендеринг карточек станций в сетку (мгновенное отображение)
+        async function renderRadioStationsGrid(category) {
+            const grid = document.getElementById('radio-stations-grid');
+            const countEl = document.getElementById('radio-grid-count');
+            if (!grid) return;
+
+            let stations = [...(PRESET_RADIO_STATIONS[category] || [])];
+
+            // 1. Мгновенно рендерим встроенные быстрые станции без ожидания сети
+            const renderCards = (list) => {
+                if (countEl) countEl.innerText = `${list.length} станций`;
+                if (list.length === 0) {
+                    grid.innerHTML = `<div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-secondary);">Станции не найдены</div>`;
+                    return;
+                }
+                grid.innerHTML = list.map(station => {
+                    const isCurrentPlaying = window.currentRadioStation && window.currentRadioStation.streamUrl === station.streamUrl && window.isRadioPlaying;
+                    const displayName = formatRadioStationName(station.name);
+                    const encodedStation = encodeURIComponent(JSON.stringify(station));
+                    return `
+                        <div class="radio-card ${isCurrentPlaying ? 'playing' : ''}" data-stream="${station.streamUrl}" onclick="handleRadioCardClick('${encodedStation}')">
+                            <div class="radio-card-cover">
+                                ${station.logo ? `<img class="radio-card-img" src="${station.logo}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+                                <div class="radio-card-logo-fallback" style="${station.logo ? 'display:none;' : 'display:flex;'}">
+                                    ${displayName.substring(0, 2)}
+                                </div>
+                                <div class="radio-antenna-badge">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
+                                </div>
+                                <div class="radio-card-overlay">
+                                    <button class="radio-card-play-btn" title="Воспроизвести">
+                                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="radio-card-info">
+                                <div class="radio-card-title" title="${displayName}">${displayName}</div>
+                                <div class="radio-card-tags">
+                                    <span class="radio-bitrate-badge">${station.country ? station.country + ' • ' : ''}${station.bitrate || '128k'}</span>
+                                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${station.genre || 'Радио'}</span>
+                                    <div class="radio-live-eq" style="margin-left: auto;">
+                                        <div class="radio-live-eq-bar"></div>
+                                        <div class="radio-live-eq-bar"></div>
+                                        <div class="radio-live-eq-bar"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            };
+
+            // Мгновенный рендер
+            if (stations.length > 0) {
+                renderCards(stations);
+            } else {
+                grid.innerHTML = `
+                    <div style="grid-column: 1 / -1; padding: 30px; text-align: center; color: var(--text-secondary);">
+                        <div style="font-size: 1.5rem; margin-bottom: 8px;">📻</div>
+                        Загрузка станций...
+                    </div>
+                `;
+            }
+
+            // 2. Фоновая подгрузка станций из Radio Browser API без блокировки интерфейса
+            if (category === 'hits' || category === 'dance' || category === 'rock' || category === 'jazz' || category === 'global') {
+                const tagMap = {
+                    hits: 'pop',
+                    dance: 'dance',
+                    rock: 'rock',
+                    jazz: 'jazz',
+                    global: 'news'
+                };
+                const apiTag = tagMap[category] || 'pop';
+                try {
+                    const apiStations = await fetchFromRadioBrowser(`stations/bytag/${apiTag}?limit=12&order=clickcount&reverse=true&hidebroken=true`);
+                    if (apiStations && apiStations.length > 0 && window.activeRadioTab === category) {
+                        const formatted = apiStations.filter(s => s.url_resolved && s.name).map(s => ({
+                            id: s.stationuuid,
+                            name: s.name.trim(),
+                            genre: s.tags ? s.tags.split(',').slice(0, 2).join(', ') : category,
+                            streamUrl: s.url_resolved,
+                            logo: s.favicon && s.favicon.startsWith('http') ? s.favicon : null,
+                            bitrate: s.bitrate ? `${s.bitrate}k` : '128k',
+                            country: s.countrycode || ''
+                        }));
+                        const existingUrls = new Set(stations.map(s => s.streamUrl));
+                        formatted.forEach(s => {
+                            if (!existingUrls.has(s.streamUrl)) stations.push(s);
+                        });
+                        renderCards(stations);
+                    }
+                } catch (e) { }
+            }
+        }
+
+        // ==========================================
+        // === RECENT RADIO STATIONS STORAGE & UI ===
+        // ==========================================
+
+        function getRecentRadioStations() {
+            try {
+                const stored = localStorage.getItem('music-recent-radio-stations');
+                return stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function addToRecentRadioStations(station) {
+            if (!station || !station.streamUrl) return;
+            try {
+                let recents = getRecentRadioStations();
+                // Удаляем дубликат, если станция уже есть в списке
+                recents = recents.filter(s => s.streamUrl !== station.streamUrl && s.id !== station.id);
+                // Добавляем станцию в начало
+                recents.unshift({
+                    id: station.id,
+                    name: station.name,
+                    genre: station.genre || 'Радио',
+                    streamUrl: station.streamUrl,
+                    logo: station.logo || null,
+                    bitrate: station.bitrate || '128k',
+                    country: station.country || ''
+                });
+                // Оставляем не более 10 последних станций
+                recents = recents.slice(0, 10);
+                localStorage.setItem('music-recent-radio-stations', JSON.stringify(recents));
+                renderRecentRadioStations();
+            } catch (e) {
+                console.error("Failed to save recent station:", e);
+            }
+        }
+
+        function clearRecentRadioStations() {
+            localStorage.removeItem('music-recent-radio-stations');
+            renderRecentRadioStations();
+        }
+
+        function renderRecentRadioStations() {
+            const section = document.getElementById('radio-recent-section');
+            const grid = document.getElementById('radio-recent-grid');
+            if (!section || !grid) return;
+
+            const recents = getRecentRadioStations();
+            if (recents.length === 0) {
+                section.style.display = 'none';
+                grid.innerHTML = '';
+                return;
+            }
+
+            section.style.display = 'block';
+            grid.innerHTML = recents.map(station => {
+                const isCurrentPlaying = window.currentRadioStation && window.currentRadioStation.streamUrl === station.streamUrl && window.isRadioPlaying;
+                const displayName = formatRadioStationName(station.name);
+                const encodedStation = encodeURIComponent(JSON.stringify(station));
+                return `
+                    <div class="radio-card ${isCurrentPlaying ? 'playing' : ''}" data-stream="${station.streamUrl}" onclick="handleRadioCardClick('${encodedStation}')">
+                        <div class="radio-card-cover">
+                            ${station.logo ? `<img class="radio-card-img" src="${station.logo}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+                            <div class="radio-card-logo-fallback" style="${station.logo ? 'display:none;' : 'display:flex;'}">
+                                ${displayName.substring(0, 2)}
+                            </div>
+                            <div class="radio-antenna-badge">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
+                            </div>
+                            <div class="radio-card-overlay">
+                                <button class="radio-card-play-btn" title="Воспроизвести">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="radio-card-info">
+                            <div class="radio-card-title" title="${displayName}">${displayName}</div>
+                            <div class="radio-card-tags">
+                                <span class="radio-bitrate-badge">${station.country ? station.country + ' • ' : ''}${station.bitrate || '128k'}</span>
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${station.genre || 'Радио'}</span>
+                                <div class="radio-live-eq" style="margin-left: auto;">
+                                    <div class="radio-live-eq-bar"></div>
+                                    <div class="radio-live-eq-bar"></div>
+                                    <div class="radio-live-eq-bar"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Поиск по Radio Browser API в реальном времени
+        function handleRadioSearchInput(query) {
+            const clearBtn = document.getElementById('radio-search-clear-btn');
+            if (clearBtn) {
+                clearBtn.style.display = query.trim() ? 'flex' : 'none';
+            }
+
+            clearTimeout(window.radioSearchDebounce);
+            window.radioSearchDebounce = setTimeout(() => {
+                executeRadioSearch(query.trim());
+            }, 300);
+        }
+
+        function clearRadioSearch() {
+            const input = document.getElementById('radio-search-input');
+            if (input) {
+                input.value = '';
+                input.focus();
+            }
+            const clearBtn = document.getElementById('radio-search-clear-btn');
+            if (clearBtn) clearBtn.style.display = 'none';
+            switchRadioTab(window.activeRadioTab || 'featured', document.querySelector('.radio-tab-pill.active'));
+        }
+
+        async function executeRadioSearch(query) {
+            if (!query) {
+                switchRadioTab(window.activeRadioTab || 'featured', document.querySelector('.radio-tab-pill.active'));
+                return;
+            }
+
+            const grid = document.getElementById('radio-stations-grid');
+            const countEl = document.getElementById('radio-grid-count');
+            const gridTitle = document.getElementById('radio-grid-title');
+            const featSection = document.getElementById('radio-featured-section');
+
+            if (featSection) featSection.style.display = 'none';
+            if (gridTitle) gridTitle.innerText = `Результаты поиска: "${query}"`;
+
+            if (grid) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-secondary);">
+                        <div style="font-size: 1.5rem; margin-bottom: 8px;">🔍</div>
+                        Поиск радиостанций...
+                    </div>
+                `;
+            }
+
+            try {
+                const results = await fetchFromRadioBrowser(`stations/byname/${encodeURIComponent(query)}?limit=24&order=clickcount&reverse=true&hidebroken=true`);
+                if (!results || results.length === 0) {
+                    if (grid) grid.innerHTML = `<div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-secondary);">По запросу "${query}" ничего не найдено</div>`;
+                    if (countEl) countEl.innerText = '0 станций';
+                    return;
+                }
+
+                const stations = results.filter(s => s.url_resolved && s.name).map(s => ({
+                    id: s.stationuuid,
+                    name: s.name.trim(),
+                    genre: s.tags ? s.tags.split(',').slice(0, 2).join(', ') : (s.country || 'Радио'),
+                    streamUrl: s.url_resolved,
+                    logo: s.favicon && s.favicon.startsWith('http') ? s.favicon : null,
+                    bitrate: s.bitrate ? `${s.bitrate}k` : '128k',
+                    country: s.countrycode || ''
+                }));
+
+                if (countEl) countEl.innerText = `Найдено: ${stations.length}`;
+
+                grid.innerHTML = stations.map(station => {
+                    const isCurrentPlaying = window.currentRadioStation && window.currentRadioStation.streamUrl === station.streamUrl && window.isRadioPlaying;
+                    const displayName = formatRadioStationName(station.name);
+                    const encodedStation = encodeURIComponent(JSON.stringify(station));
+                    return `
+                        <div class="radio-card ${isCurrentPlaying ? 'playing' : ''}" data-stream="${station.streamUrl}" onclick="handleRadioCardClick('${encodedStation}')">
+                            <div class="radio-card-cover">
+                                ${station.logo ? `<img class="radio-card-img" src="${station.logo}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+                                <div class="radio-card-logo-fallback" style="${station.logo ? 'display:none;' : 'display:flex;'}">
+                                    ${displayName.substring(0, 2)}
+                                </div>
+                                <div class="radio-antenna-badge">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
+                                </div>
+                                <div class="radio-card-overlay">
+                                    <button class="radio-card-play-btn" title="Воспроизвести">
+                                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="radio-card-info">
+                                <div class="radio-card-title" title="${displayName}">${displayName}</div>
+                                <div class="radio-card-tags">
+                                    <span class="radio-bitrate-badge">${station.country ? station.country + ' • ' : ''}${station.bitrate || '128k'}</span>
+                                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${station.genre || 'Радио'}</span>
+                                    <div class="radio-live-eq" style="margin-left: auto;">
+                                        <div class="radio-live-eq-bar"></div>
+                                        <div class="radio-live-eq-bar"></div>
+                                        <div class="radio-live-eq-bar"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                console.error("Search radio error:", e);
+                if (grid) grid.innerHTML = `<div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-secondary);">Ошибка поиска станций. Попробуйте снова.</div>`;
             }
         }
     </script>

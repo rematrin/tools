@@ -2421,9 +2421,39 @@
             color: #fa243c;
         }
 
+        .tracks-table tr.active td {
+            color: #fa243c;
+        }
+
         .track-num {
             width: 40px;
             color: var(--text-secondary);
+            position: relative;
+        }
+
+        .track-num-txt {
+            display: inline-block;
+        }
+
+        .track-eq-anim {
+            display: none;
+        }
+
+        .tracks-table tr.active.playing .track-num-txt {
+            display: none;
+        }
+
+        .tracks-table tr.active.playing .track-eq-anim {
+            display: flex;
+        }
+
+        .tracks-table tr.active.paused .track-num-txt {
+            display: none;
+        }
+
+        .tracks-table tr.active.paused .play-row-btn {
+            display: inline-block;
+            color: #fa243c;
         }
 
         .track-play-cell {
@@ -2437,6 +2467,7 @@
             cursor: pointer;
             display: none;
             padding: 0;
+            line-height: 1;
         }
 
         .tracks-table tr:hover .play-row-btn {
@@ -2444,6 +2475,10 @@
         }
 
         .tracks-table tr:hover .track-num-txt {
+            display: none;
+        }
+
+        .tracks-table tr:hover.playing .track-eq-anim {
             display: none;
         }
 
@@ -4103,6 +4138,51 @@
             const detailsView = document.getElementById('playlist-details-view');
             if (detailsView && detailsView.style.display === 'block' && window.refreshDetailsTracksCallback) {
                 window.refreshDetailsTracksCallback();
+            }
+            updateActiveMediaRowHighlight();
+        }
+
+        function updateActiveMediaRowHighlight() {
+            const currentSongId = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex].id : null;
+
+            // 1. Album tracks table rows
+            const albumTable = document.getElementById('album-tracks-table');
+            if (albumTable) {
+                const rows = albumTable.querySelectorAll('tr');
+                rows.forEach(row => {
+                    if (currentSongId && row.id === `album-song-row-${currentSongId}`) {
+                        row.classList.add('active');
+                        if (isPlaying) {
+                            row.classList.add('playing');
+                            row.classList.remove('paused');
+                        } else {
+                            row.classList.add('paused');
+                            row.classList.remove('playing');
+                        }
+                    } else {
+                        row.classList.remove('active', 'playing', 'paused');
+                    }
+                });
+            }
+
+            // 2. All Songs table rows
+            const songsTable = document.getElementById('songs-list-table');
+            if (songsTable) {
+                const rows = songsTable.querySelectorAll('tr');
+                rows.forEach(row => {
+                    if (currentSongId && row.id === `song-row-${currentSongId}`) {
+                        row.classList.add('active');
+                        if (isPlaying) {
+                            row.classList.add('playing');
+                            row.classList.remove('paused');
+                        } else {
+                            row.classList.add('paused');
+                            row.classList.remove('playing');
+                        }
+                    } else {
+                        row.classList.remove('active', 'playing', 'paused');
+                    }
+                });
             }
         }
 
@@ -7678,18 +7758,35 @@
                 return;
             }
 
+            const currentSongId = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex].id : null;
+
             window.musicSongs.forEach((song, index) => {
                 const tr = document.createElement('tr');
                 tr.id = `song-row-${song.id}`;
-                tr.className = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex] && playlist[trackIndex].id === song.id) ? 'active' : '';
+                tr.style.cursor = 'pointer';
+                const isCurrent = (currentSongId === song.id);
+                let stateClass = '';
+                if (isCurrent) {
+                    stateClass = isPlaying ? 'active playing' : 'active paused';
+                }
+                tr.className = stateClass;
+                tr.onclick = (e) => {
+                    if (e.target.closest('a') || e.target.getAttribute('onclick')?.includes('location.hash')) return;
+                    playSongFromFlatList('${song.id}');
+                };
                 tr.innerHTML = `
                     <td class="track-num">
                         <span class="track-num-txt">${index + 1}</span>
-                        <button class="play-row-btn" onclick="playSongFromFlatList('${song.id}')">▶</button>
+                        <div class="eq-container track-eq-anim">
+                            <div class="eq-bar eq-bar-1"></div>
+                            <div class="eq-bar eq-bar-2"></div>
+                            <div class="eq-bar eq-bar-3"></div>
+                        </div>
+                        <button class="play-row-btn" onclick="event.stopPropagation(); playSongFromFlatList('${song.id}')">▶</button>
                     </td>
                     <td style="font-weight:600;">${song.title}</td>
-                    <td style="color:#fa243c; cursor:pointer;" onclick="window.location.hash='#artist-details?id=${song.artistId}'">${song.artistName}</td>
-                    <td style="color:var(--text-secondary); cursor:pointer;" onclick="window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</td>
+                    <td style="color:#fa243c; cursor:pointer;" onclick="event.stopPropagation(); window.location.hash='#artist-details?id=${song.artistId}'">${song.artistName}</td>
+                    <td style="color:var(--text-secondary); cursor:pointer;" onclick="event.stopPropagation(); window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</td>
                     <td class="track-duration">${formatTime(song.duration)}</td>
                 `;
                 table.appendChild(tr);
@@ -7761,14 +7858,30 @@
                 return;
             }
 
+            const currentSongId = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex].id : null;
+
             albumSongs.forEach((song, idx) => {
                 const tr = document.createElement('tr');
                 tr.id = `album-song-row-${song.id}`;
-                tr.className = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex] && playlist[trackIndex].id === song.id) ? 'active' : '';
+                tr.style.cursor = 'pointer';
+                const isCurrent = (currentSongId === song.id);
+                let stateClass = '';
+                if (isCurrent) {
+                    stateClass = isPlaying ? 'active playing' : 'active paused';
+                }
+                tr.className = stateClass;
+                tr.onclick = (e) => {
+                    playSongFromAlbum(albumId, song.id);
+                };
                 tr.innerHTML = `
                     <td class="track-num">
                         <span class="track-num-txt">${idx + 1}</span>
-                        <button class="play-row-btn" onclick="playSongFromAlbum('${albumId}', '${song.id}')">▶</button>
+                        <div class="eq-container track-eq-anim">
+                            <div class="eq-bar eq-bar-1"></div>
+                            <div class="eq-bar eq-bar-2"></div>
+                            <div class="eq-bar eq-bar-3"></div>
+                        </div>
+                        <button class="play-row-btn" onclick="event.stopPropagation(); playSongFromAlbum('${albumId}', '${song.id}')">▶</button>
                     </td>
                     <td style="font-weight:600;">${song.title}</td>
                     <td class="track-duration">${formatTime(song.duration)}</td>
@@ -7800,6 +7913,12 @@
 
         // Playback Hooks
         function playSongFromAlbum(albumId, songId) {
+            const currentSong = playlist[trackIndex];
+            if (currentSong && currentSong.id === songId) {
+                togglePlay();
+                return;
+            }
+
             updateAlbumLastPlayed(albumId);
             const albumSongs = window.musicSongs
                 .filter(s => s.albumId === albumId)
@@ -7826,6 +7945,12 @@
         }
 
         function playSongFromFlatList(songId) {
+            const currentSong = playlist[trackIndex];
+            if (currentSong && currentSong.id === songId) {
+                togglePlay();
+                return;
+            }
+
             playlist = window.musicSongs.map(s => ({
                 id: s.id,
                 title: s.title,

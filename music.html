@@ -2013,13 +2013,15 @@
         .album-card-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.2);
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.45) 0%, transparent 60%);
             opacity: 0;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            align-items: flex-end;
+            justify-content: flex-end;
+            padding: 10px;
+            box-sizing: border-box;
             transition: opacity 0.2s ease;
-            pointer-events: auto;
+            pointer-events: none;
         }
 
         .album-card-wrapper:hover .album-card-overlay {
@@ -2027,22 +2029,28 @@
         }
 
         .album-card-play {
-            width: 44px;
-            height: 44px;
-            background: rgba(255, 255, 255, 0.95);
+            width: 38px;
+            height: 38px;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-            border: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             cursor: pointer;
-            color: #1d1d1f;
-            transition: transform 0.2s ease;
+            color: #ffffff;
+            transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+            pointer-events: auto;
         }
 
         .album-card-play:hover {
-            transform: scale(1.05);
+            transform: scale(1.08);
+            background: rgba(250, 36, 60, 0.95);
+            color: #ffffff;
+            border-color: transparent;
         }
 
         .album-card-play:active {
@@ -2050,8 +2058,8 @@
         }
 
         .album-card-play svg {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             fill: currentColor;
             margin-left: 2px;
         }
@@ -2287,16 +2295,16 @@
 
         .album-hover-play {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.4);
+            inset: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.45) 0%, transparent 60%);
             display: flex;
-            align-items: center;
-            justify-content: center;
+            align-items: flex-end;
+            justify-content: flex-end;
+            padding: 8px;
+            box-sizing: border-box;
             opacity: 0;
             transition: opacity 0.2s ease;
+            pointer-events: none;
         }
 
         .album-card:hover .album-hover-play {
@@ -2304,20 +2312,32 @@
         }
 
         .play-btn-circle {
-            width: 50px;
-            height: 50px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.9);
-            color: #111;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: transform 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .play-btn-circle svg {
+            margin-left: 2px;
         }
 
         .play-btn-circle:hover {
             transform: scale(1.08);
+            background: rgba(250, 36, 60, 0.95);
+            color: #ffffff;
+            border-color: transparent;
         }
 
         .album-title {
@@ -2486,6 +2506,315 @@
             text-align: right;
             width: 60px;
             color: var(--text-secondary);
+        }
+
+        /* Artist Master-Detail Layout (Apple Music Style) */
+        .artists-split-container {
+            display: flex;
+            gap: 24px;
+            width: 100%;
+            height: calc(100vh - 180px);
+            min-height: 520px;
+        }
+
+        .artists-sidebar-pane {
+            width: 280px;
+            min-width: 280px;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding-right: 12px;
+        }
+
+        .artists-search-wrapper {
+            margin-bottom: 12px;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .artists-search-input {
+            width: 100%;
+            padding: 8px 32px 8px 36px;
+            border-radius: 8px;
+            background: var(--hover-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 0.88rem;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        .artists-search-input:focus {
+            border-color: var(--accent);
+        }
+
+        .artists-search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .artists-search-clear-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            transition: color 0.15s ease, opacity 0.15s ease;
+            opacity: 0.7;
+        }
+
+        .artists-search-clear-btn:hover {
+            color: var(--text);
+            opacity: 1;
+        }
+
+        .artist-list-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: var(--text);
+            font-weight: 500;
+            font-size: 0.95rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.15s ease, color 0.15s ease;
+            user-select: none;
+        }
+
+        .artist-list-item:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .artist-list-item.active {
+            background-color: #fa243c;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+
+        .artist-list-item.active .artist-avatar {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .artist-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--hover-bg);
+            border: 1px solid var(--border);
+            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .artist-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .artist-name-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .artists-detail-pane {
+            flex: 1;
+            min-width: 0;
+            overflow-y: auto;
+            padding-right: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .artists-empty-selection {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 380px;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.02em;
+        }
+
+        .artist-detail-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 6px;
+        }
+
+        .artist-detail-name {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text);
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+
+        .artist-action-btn-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--hover-bg);
+            border: 1px solid var(--border);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text);
+            transition: all 0.2s ease;
+        }
+
+        .artist-action-btn-circle:hover {
+            background: var(--active-bg);
+            color: #fa243c;
+            transform: scale(1.05);
+        }
+
+        .artist-action-btn-circle.accent {
+            background: #fa243c;
+            border-color: #fa243c;
+            color: #ffffff;
+        }
+
+        .artist-action-btn-circle.accent:hover {
+            background: #e01f35;
+            color: #ffffff;
+        }
+
+        .artist-view-mode-toggle {
+            display: inline-flex;
+            background: var(--hover-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .artist-view-mode-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            padding: 0;
+        }
+
+        .artist-view-mode-btn:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .artist-view-mode-btn.active {
+            background: var(--card-bg, #282828);
+            color: #fa243c;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+        }
+
+        .artist-detail-meta-text {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            margin-bottom: 18px;
+        }
+
+        .artist-detail-divider {
+            height: 1px;
+            background: var(--border);
+            margin-bottom: 24px;
+        }
+
+        .artist-albums-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 16px;
+        }
+
+        .artist-album-block {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 32px;
+            align-items: flex-start;
+        }
+
+        .artist-album-cover-side {
+            width: 140px;
+            min-width: 140px;
+            flex-shrink: 0;
+        }
+
+        .artist-album-cover-img {
+            width: 140px;
+            height: 140px;
+            border-radius: 10px;
+            object-fit: cover;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .artist-album-cover-img:hover {
+            transform: scale(1.02);
+        }
+
+        .artist-album-main-side {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .artist-album-heading {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 0 0 4px 0;
+            cursor: pointer;
+        }
+
+        .artist-album-heading:hover {
+            color: #fa243c;
+        }
+
+        .artist-album-submeta {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
         }
 
         /* Artist Detail Layout */
@@ -3661,8 +3990,7 @@
                 title = 'Артисты';
                 content = `
                     <div style="text-align: left; padding-top: 10px;">
-                        <h2 style="font-size: 2rem; font-weight: 800; color: var(--text); margin-bottom: 24px; letter-spacing: -0.03em;">Артисты</h2>
-                        <div class="artist-details-layout" id="artists-master-detail">
+                        <div id="artists-master-detail">
                             <!-- Заполняется динамически -->
                         </div>
                     </div>
@@ -4171,6 +4499,26 @@
                 const rows = songsTable.querySelectorAll('tr');
                 rows.forEach(row => {
                     if (currentSongId && row.id === `song-row-${currentSongId}`) {
+                        row.classList.add('active');
+                        if (isPlaying) {
+                            row.classList.add('playing');
+                            row.classList.remove('paused');
+                        } else {
+                            row.classList.add('paused');
+                            row.classList.remove('playing');
+                        }
+                    } else {
+                        row.classList.remove('active', 'playing', 'paused');
+                    }
+                });
+            }
+
+            // 3. Artist view album track rows
+            const artistPane = document.getElementById('artists-detail-pane');
+            if (artistPane) {
+                const rows = artistPane.querySelectorAll('tr[id^="artist-view-song-row-"]');
+                rows.forEach(row => {
+                    if (currentSongId && row.id === `artist-view-song-row-${currentSongId}`) {
                         row.classList.add('active');
                         if (isPlaying) {
                             row.classList.add('playing');
@@ -6501,7 +6849,7 @@
                     <div class="playlist-card-cover">
                         ${coverHtml}
                         <div class="album-card-overlay">
-                            <button class="album-card-play">
+                            <button class="album-card-play" onclick="event.stopPropagation(); playPlaylistDirectlyByUrl('${escapeHtml(p.url)}', '${escapeHtml(p.name)}')">
                                 <svg viewBox="0 0 24 24" fill="currentColor" style="width: 18px; height: 18px;"><path d="M8 5v14l11-7z"></path></svg>
                             </button>
                         </div>
@@ -7719,7 +8067,9 @@
             return card;
         }
 
-        function renderArtistsLayout() {
+        window.selectedArtistId = null;
+
+        function renderArtistsLayout(forceArtistId = null) {
             const layout = document.getElementById('artists-master-detail');
             if (!layout) return;
 
@@ -7728,24 +8078,389 @@
                 return;
             }
 
-            let artistsHTML = `<div style="display:flex; gap:30px; width: 100%;">
-                <div style="width:240px; border-right:1px solid var(--border); max-height:550px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; padding-right:16px;">`;
+            // Check if there's an artist ID in hash or param
+            const hash = window.location.hash;
+            let currentArtistId = forceArtistId || window.selectedArtistId;
+            if (!currentArtistId && hash.startsWith('#artist-details')) {
+                currentArtistId = hash.split('?id=')[1] || null;
+            }
 
-            window.musicArtists.forEach((artist) => {
-                artistsHTML += `<a href="#artist-details?id=${artist.id}" class="sidebar-item" style="color:var(--text); font-weight:600; padding: 8px 12px; border-radius: 8px; display: flex; align-items: center; gap: 12px; text-decoration: none;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
-                    <span>${artist.name}</span>
-                </a>`;
-            });
+            // If selected artist not found in list, do not force first artist - keep null as default unselected
+            if (currentArtistId && !window.musicArtists.some(a => a.id === currentArtistId)) {
+                currentArtistId = null;
+            }
+            window.selectedArtistId = currentArtistId;
 
-            artistsHTML += `</div>
-                <div style="flex-grow:1;">
-                    <h3 style="margin-top:0;">Все треки артистов</h3>
-                    <p style="color:var(--text-secondary); font-size:0.9rem;">Выберите артиста слева, чтобы посмотреть его релизы.</p>
+            // Compute artists with avatar cover from their first album
+            const artistItemsHTML = renderArtistListItemsHTML(window.musicArtists, currentArtistId);
+
+            layout.innerHTML = `
+                <div class="artists-split-container">
+                    <div class="artists-sidebar-pane">
+                        <div style="font-size: 1.4rem; font-weight: 800; color: var(--text); padding: 0 4px 10px 4px; letter-spacing: -0.02em;">Артисты</div>
+                        <div class="artists-search-wrapper">
+                            <span class="artists-search-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </span>
+                            <input type="text" id="artists-search-input" class="artists-search-input" placeholder="Поиск артиста..." oninput="handleArtistSearch(this.value)" autocomplete="off">
+                            <button id="artists-search-clear" class="artists-search-clear-btn" onclick="clearArtistSearch()" title="Очистить">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 11px; height: 11px;">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="artists-list-sidebar-container" style="display: flex; flex-direction: column; gap: 2px;">
+                            ${artistItemsHTML}
+                        </div>
+                    </div>
+                    <div class="artists-detail-pane" id="artists-detail-pane">
+                        <!-- Контент правого экрана -->
+                    </div>
                 </div>
-            </div>`;
+            `;
 
-            layout.innerHTML = artistsHTML;
+            renderSelectedArtistDetail(currentArtistId);
+        }
+
+        function renderArtistListItemsHTML(artistsList, activeArtistId) {
+            if (!artistsList || artistsList.length === 0) {
+                return `<div style="padding: 16px 8px; color: var(--text-secondary); font-size: 0.88rem;">Артисты не найдены</div>`;
+            }
+            return artistsList.map(artist => {
+                const isActive = (artist.id === activeArtistId);
+                const artistAlbum = window.musicAlbums.find(a => a.artistId === artist.id && a.coverUrl);
+                const avatarSrc = artistAlbum ? artistAlbum.coverUrl : '';
+                
+                return `
+                    <div class="artist-list-item ${isActive ? 'active' : ''}" id="artist-item-${artist.id}" onclick="selectArtist('${artist.id}')">
+                        <div class="artist-avatar">
+                            ${avatarSrc ? `<img src="${avatarSrc}" alt="${artist.name}" loading="lazy">` : `<span>🎤</span>`}
+                        </div>
+                        <span class="artist-name-text">${artist.name}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleArtistSearch(query) {
+            const container = document.getElementById('artists-list-sidebar-container');
+            const clearBtn = document.getElementById('artists-search-clear');
+            if (clearBtn) {
+                clearBtn.style.display = query && query.length > 0 ? 'inline-flex' : 'none';
+            }
+            if (!container) return;
+            const q = (query || '').trim().toLowerCase();
+            const filtered = window.musicArtists.filter(a => a.name.toLowerCase().includes(q));
+            container.innerHTML = renderArtistListItemsHTML(filtered, window.selectedArtistId);
+        }
+
+        function clearArtistSearch() {
+            const input = document.getElementById('artists-search-input');
+            if (input) {
+                input.value = '';
+                input.focus();
+            }
+            handleArtistSearch('');
+        }
+
+        function selectArtist(artistId) {
+            window.selectedArtistId = artistId;
+            
+            // Update active styling in sidebar
+            const items = document.querySelectorAll('.artist-list-item');
+            items.forEach(el => el.classList.remove('active'));
+            const activeEl = document.getElementById(`artist-item-${artistId}`);
+            if (activeEl) {
+                activeEl.classList.add('active');
+            }
+
+            renderSelectedArtistDetail(artistId);
+        }
+
+        window.artistViewMode = localStorage.getItem('artist_view_mode') || 'grid'; // 'grid' (overview with albums grid + songs list) or 'expanded' (expanded albums with inline tracks)
+
+        function setArtistViewMode(mode) {
+            window.artistViewMode = mode;
+            try {
+                localStorage.setItem('artist_view_mode', mode);
+            } catch (e) {}
+            if (window.selectedArtistId) {
+                renderSelectedArtistDetail(window.selectedArtistId);
+            }
+        }
+
+        function renderSelectedArtistDetail(artistId) {
+            const pane = document.getElementById('artists-detail-pane');
+            if (!pane) return;
+
+            if (!artistId) {
+                pane.innerHTML = `<div class="artists-empty-selection">Выберите артиста</div>`;
+                return;
+            }
+
+            const artist = window.musicArtists.find(a => a.id === artistId);
+            const artistName = artist?.name || window.musicSongs.find(s => s.artistId === artistId)?.artistName || "Исполнитель";
+            
+            const artistAlbums = window.musicAlbums
+                .filter(a => a.artistId === artistId)
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            const artistSongs = window.musicSongs
+                .filter(s => s.artistId === artistId)
+                .sort((a, b) => (a.albumName || '').localeCompare(b.albumName || '') || (a.index - b.index));
+
+            const albumsCount = artistAlbums.length;
+            const songsCount = artistSongs.length;
+
+            const albumsStr = `${albumsCount} ${getPlural(albumsCount, 'альбом', 'альбома', 'альбомов')}`;
+            const songsStr = `${songsCount} ${getPlural(songsCount, 'песня', 'песни', 'песен')}`;
+
+            let bodyContentHTML = '';
+            const currentSongId = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex].id : null;
+
+            if (artistAlbums.length === 0 && artistSongs.length === 0) {
+                bodyContentHTML = `<div style="padding: 30px 0; color: var(--text-secondary); text-align: left;">У этого артиста пока нет добавленных релизов.</div>`;
+            } else if (window.artistViewMode === 'grid') {
+                // View 1: Albums Grid + Full All Songs list below
+                let albumsCardsHTML = '';
+                artistAlbums.forEach(album => {
+                    albumsCardsHTML += `
+                        <div class="album-card" onclick="window.location.hash='#album-details?id=${album.id}'">
+                            <div class="album-cover-wrapper">
+                                <img class="album-cover" src="${album.coverUrl || 'https://via.placeholder.com/200'}" loading="lazy">
+                                <div class="album-hover-play">
+                                    <div class="play-btn-circle" style="width: 40px; height: 40px;" onclick="playAlbumDirect(event, '${album.id}')">
+                                        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                                            <polygon points="6 4 20 12 6 20 6 4"></polygon>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <h3 class="album-title">${album.title}</h3>
+                            <p class="album-artist">${album.artistName}</p>
+                        </div>
+                    `;
+                });
+
+                let songsTableRowsHTML = '';
+                artistSongs.forEach((song, idx) => {
+                    const isCurrent = (currentSongId === song.id);
+                    let stateClass = '';
+                    if (isCurrent) {
+                        stateClass = isPlaying ? 'active playing' : 'active paused';
+                    }
+                    songsTableRowsHTML += `
+                        <tr id="artist-view-song-row-${song.id}" class="${stateClass}" style="cursor: pointer;" onclick="playSongFromFlatList('${song.id}')">
+                            <td class="track-num">
+                                <span class="track-num-txt">${idx + 1}</span>
+                                <div class="eq-container track-eq-anim">
+                                    <div class="eq-bar eq-bar-1"></div>
+                                    <div class="eq-bar eq-bar-2"></div>
+                                    <div class="eq-bar eq-bar-3"></div>
+                                </div>
+                                <button class="play-row-btn" onclick="event.stopPropagation(); playSongFromFlatList('${song.id}')">▶</button>
+                            </td>
+                            <td style="font-weight:600;">${song.title}</td>
+                            <td style="color:var(--text-secondary); cursor:pointer;" onclick="event.stopPropagation(); window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</td>
+                            <td class="track-duration">${formatTime(song.duration)}</td>
+                        </tr>
+                    `;
+                });
+
+                bodyContentHTML = `
+                    <div style="margin-bottom: 32px;">
+                        <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--text); margin: 0 0 16px 0; letter-spacing: -0.02em;">Альбомы</h2>
+                        <div class="artist-albums-grid">
+                            ${albumsCardsHTML || '<p style="color:var(--text-secondary);">Альбомов нет</p>'}
+                        </div>
+                    </div>
+                    <div>
+                        <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--text); margin: 0 0 16px 0; letter-spacing: -0.02em;">Песни</h2>
+                        <div class="album-details-tracks">
+                            <table class="tracks-table">
+                                <thead>
+                                    <tr>
+                                        <th class="track-num">#</th>
+                                        <th>Песня</th>
+                                        <th>Альбом</th>
+                                        <th class="track-duration">Длительность</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${songsTableRowsHTML || '<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-secondary);">Песен нет</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // View 2: Expanded releases with covers on the left and tracks list on the right
+                let expandedAlbumsHTML = '';
+                artistAlbums.forEach(album => {
+                    const albumSongs = window.musicSongs
+                        .filter(s => s.albumId === album.id)
+                        .sort((a, b) => a.index - b.index);
+
+                    const rowsHTML = albumSongs.map((song, idx) => {
+                        const isCurrent = (currentSongId === song.id);
+                        let stateClass = '';
+                        if (isCurrent) {
+                            stateClass = isPlaying ? 'active playing' : 'active paused';
+                        }
+                        return `
+                            <tr id="artist-view-song-row-${song.id}" class="${stateClass}" style="cursor: pointer;" onclick="playSongFromAlbum('${album.id}', '${song.id}')">
+                                <td class="track-num">
+                                    <span class="track-num-txt">${idx + 1}</span>
+                                    <div class="eq-container track-eq-anim">
+                                        <div class="eq-bar eq-bar-1"></div>
+                                        <div class="eq-bar eq-bar-2"></div>
+                                        <div class="eq-bar eq-bar-3"></div>
+                                    </div>
+                                    <button class="play-row-btn" onclick="event.stopPropagation(); playSongFromAlbum('${album.id}', '${song.id}')">▶</button>
+                                </td>
+                                <td style="font-weight:600;">${song.title}</td>
+                                <td class="track-duration">${formatTime(song.duration)}</td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    expandedAlbumsHTML += `
+                        <div class="artist-album-block">
+                            <div class="artist-album-cover-side">
+                                <img class="artist-album-cover-img" src="${album.coverUrl || 'https://via.placeholder.com/200'}" alt="${album.title}" onclick="window.location.hash='#album-details?id=${album.id}'" loading="lazy">
+                            </div>
+                            <div class="artist-album-main-side">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                                    <h3 class="artist-album-heading" onclick="window.location.hash='#album-details?id=${album.id}'">${album.title}</h3>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <button class="artist-action-btn-circle" onclick="playAlbumDirect(event, '${album.id}')" title="Воспроизвести альбом" style="width: 30px; height: 30px;">
+                                            <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                                                <polygon points="6 4 20 12 6 20 6 4"></polygon>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="artist-album-submeta">${album.artistName || artistName}</div>
+                                <div class="album-details-tracks">
+                                    <table class="tracks-table">
+                                        <tbody>
+                                            ${rowsHTML || '<tr><td colspan="3" style="text-align:center; padding:15px; color:var(--text-secondary);">Нет треков</td></tr>'}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                bodyContentHTML = expandedAlbumsHTML;
+            }
+
+            pane.innerHTML = `
+                <div class="artist-detail-header-row">
+                    <h1 class="artist-detail-name">${artistName}</h1>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <button class="artist-action-btn-circle accent" onclick="playAllArtistTracks('${artistId}')" title="Воспроизвести все треки артиста">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="margin-left: 2px;">
+                                <polygon points="6 4 20 12 6 20 6 4"></polygon>
+                            </svg>
+                        </button>
+                        <button class="artist-action-btn-circle" onclick="shuffleAllArtistTracks('${artistId}')" title="В перемешку">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                                <path d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3"/>
+                            </svg>
+                        </button>
+                        <div class="artist-view-mode-toggle">
+                            <button class="artist-view-mode-btn ${window.artistViewMode === 'grid' ? 'active' : ''}" onclick="setArtistViewMode('grid')" title="Сетка альбомов и все песни">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                            </button>
+                            <button class="artist-view-mode-btn ${window.artistViewMode === 'expanded' ? 'active' : ''}" onclick="setArtistViewMode('expanded')" title="Развернутый вид альбомов">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <button class="artist-action-btn-circle" style="opacity: 0.7; cursor: default;" title="Дополнительно">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                <circle cx="5" cy="12" r="2"></circle>
+                                <circle cx="12" cy="12" r="2"></circle>
+                                <circle cx="19" cy="12" r="2"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="artist-detail-meta-text">Альбомов: ${albumsCount}, Песен: ${songsCount}</div>
+                <div class="artist-detail-divider"></div>
+                <div class="artist-albums-container">
+                    ${bodyContentHTML}
+                </div>
+            `;
+        }
+
+        function playAllArtistTracks(artistId) {
+            const songs = window.musicSongs
+                .filter(s => s.artistId === artistId)
+                .sort((a, b) => a.index - b.index);
+            if (songs.length === 0) return;
+
+            playlist = songs.map(s => ({
+                id: s.id,
+                title: s.title,
+                artistName: s.artistName,
+                albumName: s.albumName,
+                duration: s.duration
+            }));
+            trackIndex = 0;
+
+            currentDeck = 1;
+            loadDeck(p1, trackIndex, true);
+            isPlaying = true;
+            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
+            renderPlaylist();
+            updateUI();
+            updateUrlState();
+        }
+
+        function shuffleAllArtistTracks(artistId) {
+            const songs = window.musicSongs.filter(s => s.artistId === artistId);
+            if (songs.length === 0) return;
+
+            playlist = songs.map(s => ({
+                id: s.id,
+                title: s.title,
+                artistName: s.artistName,
+                albumName: s.albumName,
+                duration: s.duration
+            }));
+
+            playlist.sort(() => Math.random() - 0.5);
+            trackIndex = 0;
+
+            currentDeck = 1;
+            loadDeck(p1, trackIndex, true);
+            isPlaying = true;
+            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
+            renderPlaylist();
+            updateUI();
+            updateUrlState();
+        }
+
+        function renderArtistDetails(artistId) {
+            window.selectedArtistId = artistId;
+            window.location.hash = '#artists';
         }
 
         function renderSongsTable() {
@@ -7772,7 +8487,7 @@
                 tr.className = stateClass;
                 tr.onclick = (e) => {
                     if (e.target.closest('a') || e.target.getAttribute('onclick')?.includes('location.hash')) return;
-                    playSongFromFlatList('${song.id}');
+                    playSongFromFlatList(song.id);
                 };
                 tr.innerHTML = `
                     <td class="track-num">
@@ -7887,27 +8602,6 @@
                     <td class="track-duration">${formatTime(song.duration)}</td>
                 `;
                 tracksBody.appendChild(tr);
-            });
-        }
-
-        function renderArtistDetails(artistId) {
-            const artistName = window.musicSongs.find(s => s.artistId === artistId)?.artistName || "Исполнитель";
-
-            const nameEl = document.getElementById('artist-details-name');
-            if (nameEl) nameEl.innerText = artistName;
-
-            const artistAlbums = window.musicAlbums.filter(a => a.artistId === artistId);
-            const grid = document.getElementById('artist-albums-grid');
-            if (!grid) return;
-            grid.innerHTML = '';
-
-            if (artistAlbums.length === 0) {
-                grid.innerHTML = `<p style="color:var(--text-secondary);">У этого артиста нет загруженных релизов.</p>`;
-                return;
-            }
-
-            artistAlbums.forEach(album => {
-                grid.appendChild(createAlbumCard(album));
             });
         }
 

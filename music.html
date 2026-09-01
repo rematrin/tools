@@ -4338,7 +4338,7 @@
             if (playlist.length === 0) return;
             let activeP = (currentDeck === 1) ? p1 : p2;
 
-            activeP.setVolume(100);
+            activeP.setVolume(playerVolume);
             activeP.hasRandomized = false;
             activeP.randomMixTargetEnd = null;
             activeP.lastRandomStart = undefined;
@@ -4359,7 +4359,11 @@
         function loadDeck(player, idx, play = true) {
             if (!playlist[idx]) return;
             if (play) {
+                if (player && typeof player.setVolume === 'function') {
+                    player.setVolume(playerVolume);
+                }
                 player.loadVideoById(playlist[idx].id);
+                startLoop();
             } else {
                 player.cueVideoById(playlist[idx].id);
             }
@@ -4822,6 +4826,11 @@
             }
 
             currentDeck = (currentDeck === 1) ? 2 : 1;
+            let activeP = (currentDeck === 1) ? p1 : p2;
+            if (activeP && typeof activeP.setVolume === 'function') {
+                activeP.setVolume(playerVolume);
+            }
+
             if (window.nextTrackIndex !== null && window.nextTrackIndex !== undefined) {
                 trackIndex = window.nextTrackIndex;
             } else {
@@ -5207,13 +5216,15 @@
                 if (event.data === YT.PlayerState.PLAYING) {
                     clearVideoLoadingTimeout();
 
+                    if (activePlayer && typeof activePlayer.setVolume === 'function') {
+                        activePlayer.setVolume(playerVolume);
+                    }
+
                     applyRandomMixSettings(activePlayer);
 
-                    if (!isPlaying) {
-                        isPlaying = true;
-                        updatePlayPauseIcon();
-                        startLoop();
-                    }
+                    isPlaying = true;
+                    updatePlayPauseIcon();
+                    startLoop();
                     updatePlayerLoop();
                     updateUI();
                 }
@@ -6439,7 +6450,7 @@
                 }
 
                 const playlists = (window.currentSavedPlaylists || []).filter(p => p && p.name && p.url);
-                const albums = (window.musicAlbums || []).filter(a => a && a.title);
+                const albums = (window.musicAlbums || []).filter(a => a && (a.title || a.name));
 
                 const unifiedItems = [
                     ...playlists.map(p => ({
@@ -6447,18 +6458,18 @@
                         id: p.id,
                         name: p.name,
                         url: p.url,
-                        coverUrl: p.cover_url,
-                        firstVideoId: p.first_video_id,
-                        createdAt: p.created_at ? new Date(p.created_at) : new Date(parseInt(p.id) || 0),
-                        lastPlayedAt: p.last_played_at ? new Date(p.last_played_at) : null
+                        coverUrl: p.cover_url || p.coverUrl,
+                        firstVideoId: p.first_video_id || p.firstVideoId,
+                        createdAt: (p.created_at || p.createdAt) ? new Date(p.created_at || p.createdAt) : new Date(parseInt(p.id) || 0),
+                        lastPlayedAt: (p.last_played_at || p.lastPlayedAt) ? new Date(p.last_played_at || p.lastPlayedAt) : null
                     })),
                     ...albums.map(a => ({
                         type: 'album',
                         id: a.id,
-                        name: a.title,
-                        coverUrl: a.coverUrl,
-                        createdAt: a.createdAt ? new Date(a.createdAt) : new Date(0),
-                        lastPlayedAt: a.last_played_at ? new Date(a.last_played_at) : null
+                        name: a.title || a.name,
+                        coverUrl: a.coverUrl || a.cover_url,
+                        createdAt: (a.createdAt || a.created_at) ? new Date(a.createdAt || a.created_at) : new Date(parseInt(a.id) || 0),
+                        lastPlayedAt: (a.last_played_at || a.lastPlayedAt) ? new Date(a.last_played_at || a.lastPlayedAt) : null
                     }))
                 ];
 
@@ -7473,6 +7484,9 @@
 
                 if (['#albums', '#artists', '#songs', '#album-details', '#artist-details'].some(p => window.location.hash.startsWith(p))) {
                     renderCurrentView();
+                }
+                if (!window.location.hash || window.location.hash === '#home') {
+                    renderHomePlaylists();
                 }
             } catch (e) {
                 console.error("Ошибка загрузки медиатеки из Firestore:", e);

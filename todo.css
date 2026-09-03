@@ -7851,6 +7851,22 @@ body.dark .sidebar-bottom-bar {
     color: var(--text);
 }
 
+.view-display-badge {
+    background-color: var(--accent);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 2px 5px;
+    border-radius: 10px;
+    margin-left: 2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+}
+
 .view-display-dropdown {
     display: none;
     position: absolute;
@@ -8087,6 +8103,7 @@ input:checked + .view-slider:before {
     position: relative;
     display: inline-flex;
     align-items: center;
+    width: 140px;
 }
 
 .view-select-input {
@@ -8102,6 +8119,7 @@ input:checked + .view-slider:before {
     outline: none;
     cursor: pointer;
     transition: border-color 0.15s;
+    width: 100%;
 }
 
 .view-select-input:focus {

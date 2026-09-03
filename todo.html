@@ -315,6 +315,7 @@
                                     <line x1="7" y1="16" x2="17" y2="16"></line>
                                 </svg>
                                 <span>Отображение</span>
+                                <span class="view-display-badge" id="viewDisplayBadge" style="display: none;">0</span>
                             </button>
 
                             <div class="view-display-dropdown" id="viewDisplayDropdown">
@@ -445,8 +446,13 @@
                                         <div class="view-select-row">
                                             <span class="select-row-label">Срок</span>
                                             <div class="custom-view-select-wrapper">
-                                                <select class="view-select-input" disabled>
+                                                <select class="view-select-input" id="viewFilterDueDateSelect">
                                                     <option value="all">Все</option>
+                                                    <option value="today">Сегодня</option>
+                                                    <option value="tomorrow">Завтра</option>
+                                                    <option value="this_week">На этой неделе</option>
+                                                    <option value="this_month">В этом месяце</option>
+                                                    <option value="no_date">Без срока</option>
                                                 </select>
                                                 <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                                     <polyline points="6 9 12 15 18 9"></polyline>
@@ -456,8 +462,12 @@
                                         <div class="view-select-row">
                                             <span class="select-row-label">Приоритет</span>
                                             <div class="custom-view-select-wrapper">
-                                                <select class="view-select-input" disabled>
+                                                <select class="view-select-input" id="viewFilterPrioritySelect">
                                                     <option value="all">Все</option>
+                                                    <option value="3">Приоритет 1</option>
+                                                    <option value="2">Приоритет 2</option>
+                                                    <option value="1">Приоритет 3</option>
+                                                    <option value="0">Приоритет 4</option>
                                                 </select>
                                                 <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                                     <polyline points="6 9 12 15 18 9"></polyline>
@@ -465,9 +475,9 @@
                                             </div>
                                         </div>
                                         <div class="view-select-row">
-                                            <span class="select-row-label">Метка</span>
+                                            <span class="select-row-label">Теги</span>
                                             <div class="custom-view-select-wrapper">
-                                                <select class="view-select-input" disabled>
+                                                <select class="view-select-input" id="viewFilterTagSelect" disabled>
                                                     <option value="all">Все</option>
                                                 </select>
                                                 <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">

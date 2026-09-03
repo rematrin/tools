@@ -4143,6 +4143,65 @@ function renderTasks() {
     // Выполненные подзадачи скрываются из главного экрана
     displayCompletedTasks = displayCompletedTasks.filter(t => !t.parentId);
 
+    // Применяем фильтры из меню отображения (Срок, Приоритет)
+    let currentFilterDueDate = 'all';
+    let currentFilterPriority = 'all';
+    if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
+        currentFilterDueDate = localStorage.getItem(`todo_filter_date_${currentRoute}`) || 'all';
+        currentFilterPriority = localStorage.getItem(`todo_filter_prio_${currentRoute}`) || 'all';
+    } else if (currentRoute.startsWith('project/')) {
+        const projectId = currentRoute.split('/')[1];
+        const project = projectsList.find(p => p.id === projectId);
+        if (project) {
+            currentFilterDueDate = project.filterDueDate || 'all';
+            currentFilterPriority = project.filterPriority || 'all';
+        }
+    }
+
+    if (currentFilterDueDate !== 'all' || currentFilterPriority !== 'all') {
+        const applyTaskViewFilters = (t) => {
+            if (currentFilterPriority !== 'all') {
+                const p = (t.priority !== undefined && t.priority !== null) ? String(t.priority) : '0';
+                if (p !== currentFilterPriority) return false;
+            }
+
+            if (currentFilterDueDate !== 'all') {
+                if (currentFilterDueDate === 'no_date') {
+                    if (t.dueDate) return false;
+                } else if (currentFilterDueDate === 'today') {
+                    if (t.dueDate !== todayStr) return false;
+                } else if (currentFilterDueDate === 'tomorrow') {
+                    if (t.dueDate !== tomorrowStr) return false;
+                } else if (currentFilterDueDate === 'this_week') {
+                    if (!t.dueDate) return false;
+                    const now = new Date();
+                    const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+                    const startOfWeek = new Date(now);
+                    startOfWeek.setDate(now.getDate() - dayOfWeek + 1);
+                    startOfWeek.setHours(0, 0, 0, 0);
+
+                    const endOfWeek = new Date(startOfWeek);
+                    endOfWeek.setDate(startOfWeek.getDate() + 6);
+                    endOfWeek.setHours(23, 59, 59, 999);
+
+                    const startStr = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`;
+                    const endStr = `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, '0')}-${String(endOfWeek.getDate()).padStart(2, '0')}`;
+
+                    if (t.dueDate < startStr || t.dueDate > endStr) return false;
+                } else if (currentFilterDueDate === 'this_month') {
+                    if (!t.dueDate) return false;
+                    const now = new Date();
+                    const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                    if (!t.dueDate.startsWith(monthPrefix)) return false;
+                }
+            }
+            return true;
+        };
+
+        displayActiveTasks = displayActiveTasks.filter(applyTaskViewFilters);
+        displayCompletedTasks = displayCompletedTasks.filter(applyTaskViewFilters);
+    }
+
     // Обновляем виджет прогресса на вкладке "Сегодня"
     const todayProgressWidget = document.getElementById('todayProgressWidget');
     if (todayProgressWidget) {
@@ -6699,6 +6758,48 @@ function syncViewDisplayDropdownState() {
         sortDirBtn.classList.toggle('desc', sortDir === 'desc');
         sortDirBtn.classList.toggle('active', sortDir === 'desc');
     }
+
+    let filterDueDate = 'all';
+    let filterPriority = 'all';
+    if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
+        filterDueDate = localStorage.getItem(`todo_filter_date_${currentRoute}`) || 'all';
+        filterPriority = localStorage.getItem(`todo_filter_prio_${currentRoute}`) || 'all';
+    } else if (currentRoute.startsWith('project/')) {
+        const projectId = currentRoute.split('/')[1];
+        const project = projectsList.find(p => p.id === projectId);
+        if (project) {
+            filterDueDate = project.filterDueDate || 'all';
+            filterPriority = project.filterPriority || 'all';
+        }
+    }
+
+    const filterDateSelect = document.getElementById('viewFilterDueDateSelect');
+    if (filterDateSelect) {
+        filterDateSelect.value = filterDueDate;
+    }
+
+    const filterPrioSelect = document.getElementById('viewFilterPrioritySelect');
+    if (filterPrioSelect) {
+        filterPrioSelect.value = filterPriority;
+    }
+
+    // Подсчитываем количество активных (не по умолчанию) настроек в меню Отображение
+    let activeSettingsCount = 0;
+    if (groupBy !== 'none') activeSettingsCount++;
+    if (sortBy !== 'manual') activeSettingsCount++;
+    if (filterDueDate !== 'all') activeSettingsCount++;
+    if (filterPriority !== 'all') activeSettingsCount++;
+    if (isCompletedHidden) activeSettingsCount++;
+
+    const badgeEl = document.getElementById('viewDisplayBadge');
+    if (badgeEl) {
+        if (activeSettingsCount > 0) {
+            badgeEl.textContent = activeSettingsCount;
+            badgeEl.style.display = 'inline-flex';
+        } else {
+            badgeEl.style.display = 'none';
+        }
+    }
 }
 
 // Переключение скрыть/показать выполненные задачи из меню Отображение
@@ -6869,6 +6970,61 @@ if (viewSortBySelect) {
                     });
                 } catch (err) {
                     console.error("Ошибка при обновлении сортировки проекта:", err);
+                }
+                syncViewDisplayDropdownState();
+                renderTasks();
+            }
+        }
+    });
+}
+
+// Фильтры в меню Отображение
+const viewFilterDueDateSelect = document.getElementById('viewFilterDueDateSelect');
+if (viewFilterDueDateSelect) {
+    viewFilterDueDateSelect.addEventListener('change', async (e) => {
+        const val = e.target.value;
+        if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
+            localStorage.setItem(`todo_filter_date_${currentRoute}`, val);
+            syncViewDisplayDropdownState();
+            renderTasks();
+        } else if (currentRoute.startsWith('project/')) {
+            const projectId = currentRoute.split('/')[1];
+            const project = projectsList.find(p => p.id === projectId);
+            if (project) {
+                project.filterDueDate = val;
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                        filterDueDate: val
+                    });
+                } catch (err) {
+                    console.error("Ошибка сохранения фильтра по сроку:", err);
+                }
+                syncViewDisplayDropdownState();
+                renderTasks();
+            }
+        }
+    });
+}
+
+const viewFilterPrioritySelect = document.getElementById('viewFilterPrioritySelect');
+if (viewFilterPrioritySelect) {
+    viewFilterPrioritySelect.addEventListener('change', async (e) => {
+        const val = e.target.value;
+        if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
+            localStorage.setItem(`todo_filter_prio_${currentRoute}`, val);
+            syncViewDisplayDropdownState();
+            renderTasks();
+        } else if (currentRoute.startsWith('project/')) {
+            const projectId = currentRoute.split('/')[1];
+            const project = projectsList.find(p => p.id === projectId);
+            if (project) {
+                project.filterPriority = val;
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                        filterPriority: val
+                    });
+                } catch (err) {
+                    console.error("Ошибка сохранения фильтра по приоритету:", err);
                 }
                 syncViewDisplayDropdownState();
                 renderTasks();

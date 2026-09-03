@@ -6783,13 +6783,12 @@ function syncViewDisplayDropdownState() {
         filterPrioSelect.value = filterPriority;
     }
 
-    // Подсчитываем количество активных (не по умолчанию) настроек в меню Отображение
+    // Подсчитываем количество активных (не по умолчанию) настроек в меню Отображение (Группировка, Сортировка, Фильтры)
     let activeSettingsCount = 0;
     if (groupBy !== 'none') activeSettingsCount++;
     if (sortBy !== 'manual') activeSettingsCount++;
     if (filterDueDate !== 'all') activeSettingsCount++;
     if (filterPriority !== 'all') activeSettingsCount++;
-    if (isCompletedHidden) activeSettingsCount++;
 
     const badgeEl = document.getElementById('viewDisplayBadge');
     if (badgeEl) {

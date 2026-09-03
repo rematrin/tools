@@ -305,10 +305,15 @@
                             </button>
                         </div>
                     </div>
-                    <div class="header-right-actions" style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
-                        <div class="view-display-container" id="viewDisplayContainer" style="display: none; position: relative;">
-                            <button class="view-display-btn" id="viewDisplayBtn" aria-label="Отображение" title="Отображение">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                    <div class="header-right-actions"
+                        style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
+                        <div class="view-display-container" id="viewDisplayContainer"
+                            style="display: none; position: relative;">
+                            <button class="view-display-btn" id="viewDisplayBtn" aria-label="Отображение"
+                                title="Отображение">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="flex-shrink: 0;">
                                     <rect x="3" y="4" width="18" height="16" rx="2"></rect>
                                     <line x1="7" y1="8" x2="17" y2="8"></line>
                                     <line x1="7" y1="12" x2="17" y2="12"></line>
@@ -323,7 +328,9 @@
                                     <div class="view-display-header">
                                         <span>Раскладка</span>
                                         <button class="view-display-help-btn" title="Справка" type="button">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round">
                                                 <circle cx="12" cy="12" r="10"></circle>
                                                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
                                                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
@@ -333,7 +340,9 @@
                                     <div class="view-layout-grid">
                                         <button class="view-layout-card active" type="button">
                                             <div class="layout-card-icon">
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                    stroke-linejoin="round">
                                                     <rect x="3" y="4" width="18" height="16" rx="2"></rect>
                                                     <line x1="7" y1="8" x2="17" y2="8"></line>
                                                     <line x1="7" y1="12" x2="17" y2="12"></line>
@@ -344,7 +353,9 @@
                                         </button>
                                         <button class="view-layout-card disabled" type="button">
                                             <div class="layout-card-icon">
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                                    stroke-linejoin="round">
                                                     <rect x="3" y="4" width="5" height="16" rx="1"></rect>
                                                     <rect x="10" y="4" width="5" height="16" rx="1"></rect>
                                                     <rect x="17" y="4" width="4" height="16" rx="1"></rect>
@@ -355,7 +366,9 @@
                                         <button class="view-layout-card disabled" type="button">
                                             <div class="layout-card-badge-container">
                                                 <div class="layout-card-icon">
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                                        stroke-linejoin="round">
                                                         <rect x="3" y="4" width="18" height="16" rx="2"></rect>
                                                         <line x1="16" y1="2" x2="16" y2="6"></line>
                                                         <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -382,17 +395,24 @@
                                 <div class="view-display-group">
                                     <button class="view-group-header" id="btnGroupAccordion" type="button">
                                         <span class="group-header-title">Сортировка</span>
-                                        <svg class="group-header-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <svg class="group-header-chevron" width="14" height="14" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2">
                                             <polyline points="6 9 12 15 18 9"></polyline>
                                         </svg>
                                     </button>
-                                    <div class="view-group-content" id="groupAccordionContent" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                                    <div class="view-group-content" id="groupAccordionContent"
+                                        style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
                                         <div class="view-select-row">
                                             <span class="select-row-label">Группировка</span>
                                             <div style="display: flex; align-items: center; gap: 6px;">
-                                                <button class="sort-direction-btn" id="btnGroupDirection" type="button" aria-label="Направление группировки" title="По возрастанию / по убыванию">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="sort-direction-icon">
-                                                        <path d="M7 20V4M7 4L3 8M7 4L11 8M17 4v16M17 20l4-4M17 20l-4-4"></path>
+                                                <button class="sort-direction-btn" id="btnGroupDirection" type="button"
+                                                    aria-label="Направление группировки"
+                                                    title="По возрастанию / по убыванию">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                                                        stroke-linejoin="round" class="sort-direction-icon">
+                                                        <path d="M7 20V4M7 4L3 8M7 4L11 8M17 4v16M17 20l4-4M17 20l-4-4">
+                                                        </path>
                                                     </svg>
                                                 </button>
                                                 <div class="custom-view-select-wrapper">
@@ -401,9 +421,11 @@
                                                         <option value="date">По датам</option>
                                                         <option value="project">По проекту</option>
                                                         <option value="priority">По приоритету</option>
-                                                        <option value="tag" disabled>По метке</option>
+                                                        <option value="tag" disabled>По тегам</option>
                                                     </select>
-                                                    <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                    <svg class="select-chevron" width="12" height="12"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2.5">
                                                         <polyline points="6 9 12 15 18 9"></polyline>
                                                     </svg>
                                                 </div>
@@ -412,9 +434,14 @@
                                         <div class="view-select-row">
                                             <span class="select-row-label">Сортировка</span>
                                             <div style="display: flex; align-items: center; gap: 6px;">
-                                                <button class="sort-direction-btn" id="btnSortDirection" type="button" aria-label="Направление сортировки" title="По возрастанию / по убыванию">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="sort-direction-icon">
-                                                        <path d="M7 20V4M7 4L3 8M7 4L11 8M17 4v16M17 20l4-4M17 20l-4-4"></path>
+                                                <button class="sort-direction-btn" id="btnSortDirection" type="button"
+                                                    aria-label="Направление сортировки"
+                                                    title="По возрастанию / по убыванию">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                                                        stroke-linejoin="round" class="sort-direction-icon">
+                                                        <path d="M7 20V4M7 4L3 8M7 4L11 8M17 4v16M17 20l4-4M17 20l-4-4">
+                                                        </path>
                                                     </svg>
                                                 </button>
                                                 <div class="custom-view-select-wrapper">
@@ -424,7 +451,9 @@
                                                         <option value="alphabetical">По алфавиту</option>
                                                         <option value="priority">По приоритету</option>
                                                     </select>
-                                                    <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                    <svg class="select-chevron" width="12" height="12"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2.5">
                                                         <polyline points="6 9 12 15 18 9"></polyline>
                                                     </svg>
                                                 </div>
@@ -438,11 +467,13 @@
                                 <div class="view-display-group">
                                     <button class="view-group-header" id="btnFilterAccordion" type="button">
                                         <span class="group-header-title">Фильтр</span>
-                                        <svg class="group-header-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <svg class="group-header-chevron" width="14" height="14" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2">
                                             <polyline points="6 9 12 15 18 9"></polyline>
                                         </svg>
                                     </button>
-                                    <div class="view-group-content" id="filterAccordionContent" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                                    <div class="view-group-content" id="filterAccordionContent"
+                                        style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
                                         <div class="view-select-row">
                                             <span class="select-row-label">Срок</span>
                                             <div class="custom-view-select-wrapper">
@@ -454,7 +485,8 @@
                                                     <option value="this_month">В этом месяце</option>
                                                     <option value="no_date">Без срока</option>
                                                 </select>
-                                                <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24"
+                                                    fill="none" stroke="currentColor" stroke-width="2.5">
                                                     <polyline points="6 9 12 15 18 9"></polyline>
                                                 </svg>
                                             </div>
@@ -469,7 +501,8 @@
                                                     <option value="1">Приоритет 3</option>
                                                     <option value="0">Приоритет 4</option>
                                                 </select>
-                                                <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24"
+                                                    fill="none" stroke="currentColor" stroke-width="2.5">
                                                     <polyline points="6 9 12 15 18 9"></polyline>
                                                 </svg>
                                             </div>
@@ -480,7 +513,8 @@
                                                 <select class="view-select-input" id="viewFilterTagSelect" disabled>
                                                     <option value="all">Все</option>
                                                 </select>
-                                                <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24"
+                                                    fill="none" stroke="currentColor" stroke-width="2.5">
                                                     <polyline points="6 9 12 15 18 9"></polyline>
                                                 </svg>
                                             </div>
@@ -492,8 +526,8 @@
 
                         <div class="project-header-actions" id="projectHeaderActions"
                             style="display: none; position: relative;">
-                            <button class="project-header-more-btn" id="projectHeaderMoreBtn" aria-label="Действия проекта"
-                                title="Действия"
+                            <button class="project-header-more-btn" id="projectHeaderMoreBtn"
+                                aria-label="Действия проекта" title="Действия"
                                 style="background: transparent; border: none; color: var(--text-secondary); opacity: 0.5; cursor: pointer; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background-color 0.15s, opacity 0.15s;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -885,8 +919,10 @@
                             style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--border);">
                             <div class="settings-field-info">
                                 <label
-                                    style="display: block; font-weight: 600; font-size: 0.95rem; color: var(--text); margin-bottom: 2px;">Тема оформления</label>
-                                <span style="font-size: 0.82rem; color: var(--text-secondary);">Выберите светлую, темную или системную тему</span>
+                                    style="display: block; font-weight: 600; font-size: 0.95rem; color: var(--text); margin-bottom: 2px;">Тема
+                                    оформления</label>
+                                <span style="font-size: 0.82rem; color: var(--text-secondary);">Выберите светлую, темную
+                                    или системную тему</span>
                             </div>
                             <select id="prefThemeMode"
                                 style="background: var(--hover-bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-weight: 600; outline: none; cursor: pointer;">

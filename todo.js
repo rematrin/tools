@@ -3806,64 +3806,66 @@ function renderTasksGroup(tasksGroup, containerEl) {
     // Сортируем задачи по выбранному критерию
     const sortGroupTasks = (tasks) => {
         let sortBy = 'manual';
+        let sortDir = 'asc';
         if (currentRoute.startsWith('project/')) {
             const projectId = currentRoute.split('/')[1];
             const project = projectsList.find(p => p.id === projectId);
-            if (project && project.sortBy) {
-                sortBy = project.sortBy;
+            if (project) {
+                if (project.sortBy) sortBy = project.sortBy;
+                if (project.sortDir) sortDir = project.sortDir;
             }
         } else if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
             sortBy = localStorage.getItem(`todo_sort_${currentRoute}`) || 'manual';
+            sortDir = localStorage.getItem(`todo_sort_dir_${currentRoute}`) || 'asc';
         }
+
+        const isDesc = sortDir === 'desc';
+        const mult = isDesc ? -1 : 1;
 
         if (sortBy === 'date') {
             tasks.sort((a, b) => {
-                const dateA = a.dueDate || '9999-12-31';
-                const dateB = b.dueDate || '9999-12-31';
-                if (dateA !== dateB) return dateA.localeCompare(dateB);
+                if (!a.dueDate && !b.dueDate) return 0;
+                if (!a.dueDate) return 1;
+                if (!b.dueDate) return -1;
+
+                const cmp = a.dueDate.localeCompare(b.dueDate);
+                if (cmp !== 0) return isDesc ? -cmp : cmp;
 
                 const timeA = a.dueTime || '23:59';
                 const timeB = b.dueTime || '23:59';
-                if (timeA !== timeB) return timeA.localeCompare(timeB);
+                const timeCmp = timeA.localeCompare(timeB);
+                if (timeCmp !== 0) return isDesc ? -timeCmp : timeCmp;
 
                 const orderA = a.order !== undefined ? a.order : 0;
                 const orderB = b.order !== undefined ? b.order : 0;
-                if (orderA !== orderB) return orderA - orderB;
-
-                const cTimeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
-                const cTimeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
-                return cTimeB - cTimeA;
+                return isDesc ? (orderB - orderA) : (orderA - orderB);
             });
         } else if (sortBy === 'alphabetical') {
             tasks.sort((a, b) => {
                 const titleA = a.title || '';
                 const titleB = b.title || '';
-                return titleA.localeCompare(titleB);
+                return titleA.localeCompare(titleB) * mult;
             });
         } else if (sortBy === 'priority') {
             tasks.sort((a, b) => {
                 const pA = a.priority !== undefined ? a.priority : 0;
                 const pB = b.priority !== undefined ? b.priority : 0;
-                if (pA !== pB) return pB - pA; // High priority (3) first
+                if (pA !== pB) return (pB - pA) * mult;
 
                 const orderA = a.order !== undefined ? a.order : 0;
                 const orderB = b.order !== undefined ? b.order : 0;
-                if (orderA !== orderB) return orderA - orderB;
-
-                const cTimeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
-                const cTimeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
-                return cTimeB - cTimeA;
+                return (orderA - orderB) * mult;
             });
         } else {
             // manual
             tasks.sort((a, b) => {
                 const orderA = a.order !== undefined ? a.order : 0;
                 const orderB = b.order !== undefined ? b.order : 0;
-                if (orderA !== orderB) return orderA - orderB;
+                if (orderA !== orderB) return (orderA - orderB) * mult;
 
                 const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
                 const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
-                return timeB - timeA; // Новые вверху
+                return (timeB - timeA) * mult;
             });
         }
     };
@@ -4233,53 +4235,55 @@ function renderTasks() {
     // Сортируем задачи по полю 'order', а при равенстве или его отсутствии — по 'createdAt'
     const sortTasksByOrder = (tasks) => {
         let sortBy = 'manual';
+        let sortDir = 'asc';
         if (currentRoute.startsWith('project/')) {
             const projectId = currentRoute.split('/')[1];
             const project = projectsList.find(p => p.id === projectId);
-            if (project && project.sortBy) {
-                sortBy = project.sortBy;
+            if (project) {
+                if (project.sortBy) sortBy = project.sortBy;
+                if (project.sortDir) sortDir = project.sortDir;
             }
         } else if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
             sortBy = localStorage.getItem(`todo_sort_${currentRoute}`) || 'manual';
+            sortDir = localStorage.getItem(`todo_sort_dir_${currentRoute}`) || 'asc';
         }
+
+        const isDesc = sortDir === 'desc';
+        const mult = isDesc ? -1 : 1;
 
         if (sortBy === 'date') {
             tasks.sort((a, b) => {
-                const dateA = a.dueDate || '9999-12-31';
-                const dateB = b.dueDate || '9999-12-31';
-                if (dateA !== dateB) return dateA.localeCompare(dateB);
+                if (!a.dueDate && !b.dueDate) return 0;
+                if (!a.dueDate) return 1;
+                if (!b.dueDate) return -1;
+
+                const cmp = a.dueDate.localeCompare(b.dueDate);
+                if (cmp !== 0) return isDesc ? -cmp : cmp;
 
                 const timeA = a.dueTime || '23:59';
                 const timeB = b.dueTime || '23:59';
-                if (timeA !== timeB) return timeA.localeCompare(timeB);
+                const timeCmp = timeA.localeCompare(timeB);
+                if (timeCmp !== 0) return isDesc ? -timeCmp : timeCmp;
 
                 const orderA = a.order !== undefined ? a.order : 0;
                 const orderB = b.order !== undefined ? b.order : 0;
-                if (orderA !== orderB) return orderA - orderB;
-
-                const cTimeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
-                const cTimeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
-                return cTimeB - cTimeA;
+                return isDesc ? (orderB - orderA) : (orderA - orderB);
             });
         } else if (sortBy === 'alphabetical') {
             tasks.sort((a, b) => {
                 const titleA = a.title || '';
                 const titleB = b.title || '';
-                return titleA.localeCompare(titleB);
+                return titleA.localeCompare(titleB) * mult;
             });
         } else if (sortBy === 'priority') {
             tasks.sort((a, b) => {
                 const pA = a.priority !== undefined ? a.priority : 0;
                 const pB = b.priority !== undefined ? b.priority : 0;
-                if (pA !== pB) return pB - pA; // High priority (3) first
+                if (pA !== pB) return (pB - pA) * mult;
 
                 const orderA = a.order !== undefined ? a.order : 0;
                 const orderB = b.order !== undefined ? b.order : 0;
-                if (orderA !== orderB) return orderA - orderB;
-
-                const cTimeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
-                const cTimeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
-                return cTimeB - cTimeA;
+                return (orderA - orderB) * mult;
             });
         } else {
             // manual
@@ -4290,7 +4294,7 @@ function renderTasks() {
 
                 const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
                 const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
-                return timeB - timeA; // Новые вверху
+                return (timeB - timeA) * mult;
             });
         }
     };
@@ -4347,10 +4351,20 @@ function renderTasks() {
                 dateGroups[dateKey].tasks.push(t);
             });
 
+            let groupDir = 'asc';
+            if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
+                groupDir = localStorage.getItem(`todo_group_dir_${currentRoute}`) || 'asc';
+            } else if (currentRoute.startsWith('project/')) {
+                const projectId = currentRoute.split('/')[1];
+                const project = projectsList.find(p => p.id === projectId);
+                if (project && project.groupDir) groupDir = project.groupDir;
+            }
+            const isGroupDesc = groupDir === 'desc';
+
             dateOrder.sort((a, b) => {
                 if (a === 'no_date') return 1;
                 if (b === 'no_date') return -1;
-                return a.localeCompare(b);
+                return isGroupDesc ? b.localeCompare(a) : a.localeCompare(b);
             });
 
             dateOrder.forEach(dKey => {
@@ -4407,12 +4421,17 @@ function renderTasks() {
             });
 
             const groupKeys = Object.keys(groupsMap);
+            let groupDir = 'asc';
+            if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
+                groupDir = localStorage.getItem(`todo_group_dir_${currentRoute}`) || 'asc';
+            }
+            const isGroupDesc = groupDir === 'desc';
             groupKeys.sort((a, b) => {
                 if (a === 'inbox') return -1;
                 if (b === 'inbox') return 1;
                 const indexA = projectsList.findIndex(p => p.id === a);
                 const indexB = projectsList.findIndex(p => p.id === b);
-                return indexA - indexB;
+                return isGroupDesc ? (indexB - indexA) : (indexA - indexB);
             });
 
             groupKeys.forEach(key => {
@@ -4476,7 +4495,15 @@ function renderTasks() {
                 }
             });
 
-            const levels = [3, 2, 1, 0];
+            let groupDir = 'asc';
+            if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
+                groupDir = localStorage.getItem(`todo_group_dir_${currentRoute}`) || 'asc';
+            } else if (currentRoute.startsWith('project/')) {
+                const projectId = currentRoute.split('/')[1];
+                const project = projectsList.find(p => p.id === projectId);
+                if (project && project.groupDir) groupDir = project.groupDir;
+            }
+            const levels = groupDir === 'desc' ? [0, 1, 2, 3] : [3, 2, 1, 0];
             levels.forEach(lvl => {
                 const groupTasks = priorityGroups[lvl];
                 if (groupTasks.length === 0) return;
@@ -6640,9 +6667,37 @@ function syncViewDisplayDropdownState() {
         groupSelect.value = groupBy;
     }
 
+    let sortDir = 'asc';
+    let groupDir = 'asc';
+    if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
+        sortDir = localStorage.getItem(`todo_sort_dir_${currentRoute}`) || 'asc';
+        groupDir = localStorage.getItem(`todo_group_dir_${currentRoute}`) || 'asc';
+    } else if (currentRoute.startsWith('project/')) {
+        const projectId = currentRoute.split('/')[1];
+        const project = projectsList.find(p => p.id === projectId);
+        if (project) {
+            sortDir = project.sortDir || 'asc';
+            groupDir = project.groupDir || 'asc';
+        }
+    }
+
     const sortSelect = document.getElementById('viewSortBySelect');
     if (sortSelect) {
         sortSelect.value = sortBy;
+    }
+
+    const groupDirBtn = document.getElementById('btnGroupDirection');
+    if (groupDirBtn) {
+        groupDirBtn.style.display = (groupBy === 'none') ? 'none' : 'inline-flex';
+        groupDirBtn.classList.toggle('desc', groupDir === 'desc');
+        groupDirBtn.classList.toggle('active', groupDir === 'desc');
+    }
+
+    const sortDirBtn = document.getElementById('btnSortDirection');
+    if (sortDirBtn) {
+        sortDirBtn.style.display = (sortBy === 'manual') ? 'none' : 'inline-flex';
+        sortDirBtn.classList.toggle('desc', sortDir === 'desc');
+        sortDirBtn.classList.toggle('active', sortDir === 'desc');
     }
 }
 
@@ -6684,6 +6739,7 @@ if (viewGroupBySelect) {
         if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
             const groupKey = `todo_group_${currentRoute}`;
             localStorage.setItem(groupKey, groupByVal);
+            syncViewDisplayDropdownState();
             renderTasks();
         } else if (currentRoute.startsWith('project/')) {
             const projectId = currentRoute.split('/')[1];
@@ -6700,6 +6756,91 @@ if (viewGroupBySelect) {
                 } catch (err) {
                     console.error("Ошибка при обновлении группировки проекта:", err);
                 }
+                syncViewDisplayDropdownState();
+                renderTasks();
+            }
+        }
+    });
+}
+
+// Переключение направления группировки (по возрастанию / по убыванию)
+const btnGroupDirection = document.getElementById('btnGroupDirection');
+if (btnGroupDirection) {
+    btnGroupDirection.addEventListener('click', async (e) => {
+        e.stopPropagation();
+
+        let currentDir = 'asc';
+        if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
+            currentDir = localStorage.getItem(`todo_group_dir_${currentRoute}`) || 'asc';
+        } else if (currentRoute.startsWith('project/')) {
+            const projectId = currentRoute.split('/')[1];
+            const project = projectsList.find(p => p.id === projectId);
+            if (project) {
+                currentDir = project.groupDir || 'asc';
+            }
+        }
+
+        const newDir = currentDir === 'asc' ? 'desc' : 'asc';
+
+        if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
+            localStorage.setItem(`todo_group_dir_${currentRoute}`, newDir);
+            syncViewDisplayDropdownState();
+            renderTasks();
+        } else if (currentRoute.startsWith('project/')) {
+            const projectId = currentRoute.split('/')[1];
+            const project = projectsList.find(p => p.id === projectId);
+            if (project) {
+                project.groupDir = newDir;
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                        groupDir: newDir
+                    });
+                } catch (err) {
+                    console.error("Ошибка при обновлении направления группировки проекта:", err);
+                }
+                syncViewDisplayDropdownState();
+                renderTasks();
+            }
+        }
+    });
+}
+
+// Переключение направления сортировки (по возрастанию / по убыванию)
+const btnSortDirection = document.getElementById('btnSortDirection');
+if (btnSortDirection) {
+    btnSortDirection.addEventListener('click', async (e) => {
+        e.stopPropagation();
+
+        let currentDir = 'asc';
+        if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
+            currentDir = localStorage.getItem(`todo_sort_dir_${currentRoute}`) || 'asc';
+        } else if (currentRoute.startsWith('project/')) {
+            const projectId = currentRoute.split('/')[1];
+            const project = projectsList.find(p => p.id === projectId);
+            if (project) {
+                currentDir = project.sortDir || 'asc';
+            }
+        }
+
+        const newDir = currentDir === 'asc' ? 'desc' : 'asc';
+
+        if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
+            localStorage.setItem(`todo_sort_dir_${currentRoute}`, newDir);
+            syncViewDisplayDropdownState();
+            renderTasks();
+        } else if (currentRoute.startsWith('project/')) {
+            const projectId = currentRoute.split('/')[1];
+            const project = projectsList.find(p => p.id === projectId);
+            if (project) {
+                project.sortDir = newDir;
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                        sortDir: newDir
+                    });
+                } catch (err) {
+                    console.error("Ошибка при обновлении направления сортировки проекта:", err);
+                }
+                syncViewDisplayDropdownState();
                 renderTasks();
             }
         }
@@ -6715,6 +6856,7 @@ if (viewSortBySelect) {
         if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
             const sortKey = `todo_sort_${currentRoute}`;
             localStorage.setItem(sortKey, sortByVal);
+            syncViewDisplayDropdownState();
             renderTasks();
         } else if (currentRoute.startsWith('project/')) {
             const projectId = currentRoute.split('/')[1];
@@ -6728,6 +6870,7 @@ if (viewSortBySelect) {
                 } catch (err) {
                     console.error("Ошибка при обновлении сортировки проекта:", err);
                 }
+                syncViewDisplayDropdownState();
                 renderTasks();
             }
         }

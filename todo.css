@@ -8119,3 +8119,31 @@ input:checked + .view-slider:before {
     pointer-events: none;
     color: var(--text-secondary);
 }
+
+.sort-direction-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 6px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.2s ease;
+}
+
+.sort-direction-btn:hover {
+    background-color: var(--hover-bg);
+    color: var(--text);
+}
+
+.sort-direction-btn.active {
+    background-color: var(--active-bg);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.sort-direction-btn.desc svg {
+    transform: rotate(180deg);
+}

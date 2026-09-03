@@ -409,7 +409,46 @@ body.dark .add-task-form.expanded {
 
 }
 
+.task-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.task-input-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    color: transparent;
+    font-size: 0.95rem;
+    font-weight: 400;
+    font-family: inherit;
+    line-height: normal;
+    padding: 4px 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow: hidden;
+    z-index: 2;
+}
+
+.date-highlight-chip {
+    background-color: rgba(235, 137, 85, 0.22);
+    color: transparent;
+    border-radius: 4px;
+    padding: 1px 4px;
+    margin: 0 -4px;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+body.dark .date-highlight-chip {
+    background-color: rgba(245, 158, 11, 0.28);
+}
+
 .task-input {
+    position: relative;
     border: none;
     background: transparent;
     color: var(--text);
@@ -422,6 +461,7 @@ body.dark .add-task-form.expanded {
     resize: none;
     overflow-y: hidden;
     min-height: 24px;
+    z-index: 1;
 }
 
 .task-input::placeholder {

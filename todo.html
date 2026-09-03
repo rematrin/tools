@@ -669,8 +669,11 @@
 
         <!-- Панель быстрого добавления -->
         <div class="add-task-form">
-            <textarea id="taskTitleInput" class="task-input" placeholder="+ Добавить задачу" rows="1" autocomplete="off"
-                style="height: auto;"></textarea>
+            <div class="task-input-wrapper">
+                <div id="taskTitleBackdrop" class="task-input-backdrop"></div>
+                <textarea id="taskTitleInput" class="task-input" placeholder="+ Добавить задачу" rows="1" autocomplete="off"
+                    style="height: auto;"></textarea>
+            </div>
             <div id="charLimitWarning" class="char-limit-warning">Лимит названия задачи: 0 / 500</div>
             <div class="form-actions">
                 <div class="form-actions-left" style="display: flex; gap: 8px; align-items: center;">

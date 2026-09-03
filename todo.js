@@ -367,6 +367,7 @@ if (btnDueDate) {
 if (btnClearDueDate) {
     btnClearDueDate.addEventListener('click', (e) => {
         e.stopPropagation(); // Предотвращаем открытие выпадающего меню
+        removeDetectedDateWord();
         setDueDate(null);
         closeDueDateDropdown();
     });
@@ -2501,9 +2502,180 @@ function updateAddFormCharCount() {
         if (btnAddTask) btnAddTask.disabled = false;
     }
 }
+
+// === ЛОГИКА АВТОДЕТЕКЦИИ ДАТЫ В СТИЛЕ TODOIST ===
+const taskTitleBackdrop = document.getElementById('taskTitleBackdrop');
+let detectedDateMatch = null; // { matchText: string, dateStr: string, timeStr: string | null }
+let disabledWords = new Set(); // Набор сброшенных вручную слов даты для текущего ввода
+
+function parseNaturalLanguageDate(text) {
+    if (!text || typeof text !== 'string') return null;
+
+    const lower = text.toLowerCase();
+    const today = new Date();
+
+    // 1. Вчера, Сегодня, Завтра, Послезавтра
+    const relRegex = /(?:^|\s+)(сегодня|завтра|послезавтра|вчера)(?:\s+(?:в\s+)?(\d{1,2}:\d{2}))?(?=\s+|$)/gi;
+    let match;
+    while ((match = relRegex.exec(lower)) !== null) {
+        const matchText = match[0].trim();
+        if (disabledWords.has(matchText.toLowerCase())) continue;
+
+        const keyword = match[1];
+        const timeStr = match[2] || null;
+        const targetDate = new Date(today);
+
+        if (keyword === 'вчера') {
+            targetDate.setDate(today.getDate() - 1);
+        } else if (keyword === 'завтра') {
+            targetDate.setDate(today.getDate() + 1);
+        } else if (keyword === 'послезавтра') {
+            targetDate.setDate(today.getDate() + 2);
+        }
+
+        const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+        return {
+            matchText: matchText,
+            dateStr: dateStr,
+            timeStr: timeStr
+        };
+    }
+
+    // 2. Выходные, след неделя
+    const quickRegex = /(?:^|\s+)(в\s+эти\s+выходные|в\s+выходные|выходные|на\s+след\s+неделе|на\s+следующей\s+неделе|след\s+неделя|следующая\s+неделя)(?:\s+(?:в\s+)?(\d{1,2}:\d{2}))?(?=\s+|$)/gi;
+    while ((match = quickRegex.exec(lower)) !== null) {
+        const matchText = match[0].trim();
+        if (disabledWords.has(matchText.toLowerCase())) continue;
+
+        const keyword = match[1];
+        const timeStr = match[2] || null;
+        const targetDate = new Date(today);
+
+        if (keyword.includes('выходн')) {
+            const currentDay = today.getDay();
+            const daysToSat = currentDay === 6 ? 7 : (currentDay === 0 ? 6 : 6 - currentDay);
+            targetDate.setDate(today.getDate() + daysToSat);
+        } else {
+            const currentDay = today.getDay();
+            const daysToMon = currentDay === 1 ? 7 : (currentDay === 0 ? 1 : 8 - currentDay);
+            targetDate.setDate(today.getDate() + daysToMon);
+        }
+
+        const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+        return {
+            matchText: matchText,
+            dateStr: dateStr,
+            timeStr: timeStr
+        };
+    }
+
+    // 3. Дни недели (в пн, в понедельник, субботу, в вс и т.д.)
+    const dayMap = {
+        'пн': 1, 'понедельник': 1,
+        'вт': 2, 'вторник': 2,
+        'ср': 3, 'среда': 3, 'среду': 3,
+        'чт': 4, 'четверг': 4,
+        'пт': 5, 'пятница': 5, 'пятницу': 5,
+        'сб': 6, 'суббота': 6, 'субботу': 6,
+        'вс': 0, 'воскресенье': 0
+    };
+
+    const dayKeys = Object.keys(dayMap).sort((a, b) => b.length - a.length).join('|');
+    const dayRegex = new RegExp(`(?:^|\\s+)(?:в\\s+)?(${dayKeys})(?:\\s+(?:в\\s+)?(\\d{1,2}:\\d{2}))?(?=\\s+|$)`, 'gi');
+    while ((match = dayRegex.exec(lower)) !== null) {
+        const matchText = match[0].trim();
+        if (disabledWords.has(matchText.toLowerCase())) continue;
+
+        const dayKey = match[1];
+        const timeStr = match[2] || null;
+        const targetDayIndex = dayMap[dayKey];
+        const currentDayIndex = today.getDay();
+
+        let daysToAdd = targetDayIndex - currentDayIndex;
+        if (daysToAdd <= 0) {
+            daysToAdd += 7;
+        }
+
+        const targetDate = new Date(today);
+        targetDate.setDate(today.getDate() + daysToAdd);
+
+        const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+        return {
+            matchText: matchText,
+            dateStr: dateStr,
+            timeStr: timeStr
+        };
+    }
+
+    return null;
+}
+
+function removeDetectedDateWord() {
+    if (!taskTitleInput || !detectedDateMatch) return;
+
+    if (detectedDateMatch.matchText) {
+        disabledWords.add(detectedDateMatch.matchText.toLowerCase());
+    }
+
+    detectedDateMatch = null;
+    setDueDate(getDefaultDueDate());
+
+    if (taskTitleBackdrop) {
+        taskTitleBackdrop.innerHTML = escapeHtml(taskTitleInput.value);
+    }
+    taskTitleInput.focus();
+}
+
+function updateDateDetectionHighlight() {
+    if (!taskTitleInput) return;
+    const text = taskTitleInput.value;
+
+    if (!text.trim()) {
+        disabledWords.clear(); // Сбрасываем список отмененных слов при полной очистке ввода
+    }
+
+    const parsed = parseNaturalLanguageDate(text);
+
+    if (parsed) {
+        detectedDateMatch = parsed;
+        setDueDate(parsed.dateStr, parsed.timeStr || null);
+
+        if (taskTitleBackdrop) {
+            const idx = text.toLowerCase().indexOf(parsed.matchText.toLowerCase());
+            if (idx !== -1) {
+                const before = escapeHtml(text.substring(0, idx));
+                const match = escapeHtml(text.substring(idx, idx + parsed.matchText.length));
+                const after = escapeHtml(text.substring(idx + parsed.matchText.length));
+                taskTitleBackdrop.innerHTML = `${before}<span class="date-highlight-chip">${match}</span>${after}`;
+            } else {
+                taskTitleBackdrop.innerHTML = escapeHtml(text);
+            }
+        }
+    } else {
+        if (detectedDateMatch) {
+            detectedDateMatch = null;
+            setDueDate(getDefaultDueDate());
+        }
+    }
+}
+
+
+
+
+
 async function handleAddTask() {
-    const titleText = taskTitleInput.value.trim();
+    let titleText = taskTitleInput.value.trim();
     if (!titleText || titleText.length > 500 || !currentUid) return;
+
+    // Если была автоопределена дата, удаляем совпавший фрагмент из названия задачи
+    if (detectedDateMatch && detectedDateMatch.matchText) {
+        const regex = new RegExp(detectedDateMatch.matchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        titleText = titleText.replace(regex, '').replace(/\s+/g, ' ').trim();
+        // Если весь текст состоял только из даты, оставляем исходный matchText
+        if (!titleText) {
+            titleText = detectedDateMatch.matchText;
+        }
+    }
 
     // Сохраняем значения для БД перед сбросом
     const dueDateForDb = selectedDueDate;
@@ -2585,6 +2757,10 @@ async function handleAddTask() {
         });
 
         taskTitleInput.value = '';
+        if (taskTitleBackdrop) taskTitleBackdrop.innerHTML = '';
+        detectedDateMatch = null;
+        disabledWords.clear();
+
         selectedDueTime = null;
         selectedDueRepeat = null;
         selectedDueEndDate = null;
@@ -2619,6 +2795,9 @@ if (taskTitleInput) {
             e.preventDefault();
             const form = document.querySelector('.add-task-form');
             taskTitleInput.value = '';
+            if (taskTitleBackdrop) taskTitleBackdrop.innerHTML = '';
+            detectedDateMatch = null;
+            disabledWords.clear();
             taskTitleInput.blur();
             if (form) {
                 form.classList.remove('expanded');
@@ -2635,7 +2814,27 @@ if (taskTitleInput) {
         taskTitleInput.style.height = 'auto';
         taskTitleInput.style.height = taskTitleInput.scrollHeight + 'px';
         updateAddFormCharCount();
+        updateDateDetectionHighlight();
     });
+
+    taskTitleInput.addEventListener('scroll', () => {
+        if (taskTitleBackdrop) {
+            taskTitleBackdrop.scrollTop = taskTitleInput.scrollTop;
+            taskTitleBackdrop.scrollLeft = taskTitleInput.scrollLeft;
+        }
+    });
+}
+
+if (taskTitleBackdrop) {
+    const handleChipClick = (e) => {
+        if (e.target && e.target.classList.contains('date-highlight-chip')) {
+            e.preventDefault();
+            e.stopPropagation();
+            removeDetectedDateWord();
+        }
+    };
+    taskTitleBackdrop.addEventListener('mousedown', handleChipClick);
+    taskTitleBackdrop.addEventListener('click', handleChipClick);
 }
 
 // Удаление задачи (перемещение в Корзину)

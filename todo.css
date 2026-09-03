@@ -7823,3 +7823,299 @@ body.dark .sidebar-bottom-bar {
     white-space: nowrap;
     font-size: 10px;
 }
+
+/* === КНОПКА И МЕНЮ ОТОБРАЖЕНИЯ (VIEW DISPLAY) === */
+.view-display-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.view-display-btn:hover {
+    background-color: var(--hover-bg);
+    color: var(--text);
+}
+
+.view-display-btn.active {
+    background-color: var(--hover-bg);
+    color: var(--text);
+}
+
+.view-display-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    width: 280px;
+    padding: 12px;
+    box-sizing: border-box;
+    flex-direction: column;
+    gap: 12px;
+}
+
+body.dark .view-display-dropdown {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.view-display-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+
+.view-display-help-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: opacity 0.15s, color 0.15s;
+}
+
+.view-display-help-btn:hover {
+    opacity: 1;
+    color: var(--text);
+}
+
+.view-layout-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    background-color: rgba(0, 0, 0, 0.04);
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+body.dark .view-layout-grid {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.view-layout-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 4px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    gap: 6px;
+    transition: background-color 0.15s, color 0.15s, transform 0.1s;
+}
+
+.view-layout-card.active {
+    background-color: var(--card-bg);
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    font-weight: 600;
+}
+
+body.dark .view-layout-card.active {
+    background-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.view-layout-card.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.layout-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.layout-card-badge-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pro-sparkle-badge {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    background: #e67e22;
+    color: #fff;
+    font-size: 8px;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.layout-card-label {
+    font-size: 0.75rem;
+}
+
+.view-display-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--text);
+    font-weight: 500;
+    padding: 4px 0;
+}
+
+/* Switch toggle */
+.view-switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+}
+
+.view-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.view-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .2s;
+    border-radius: 20px;
+}
+
+body.dark .view-slider {
+    background-color: #444;
+}
+
+.view-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .2s;
+    border-radius: 50%;
+}
+
+input:checked + .view-slider {
+    background-color: var(--accent, #e44332);
+}
+
+input:checked + .view-slider:before {
+    transform: translateX(16px);
+}
+
+.view-display-divider {
+    height: 1px;
+    background-color: var(--border);
+    opacity: 0.6;
+    margin: 2px 0;
+}
+
+.view-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 2px 0;
+    color: var(--text);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.group-header-chevron {
+    transition: transform 0.2s ease;
+}
+
+.view-group-header.collapsed .group-header-chevron {
+    transform: rotate(-90deg);
+}
+
+.view-select-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    color: var(--text);
+    gap: 12px;
+}
+
+.select-row-label {
+    color: var(--text-secondary);
+}
+
+.custom-view-select-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.view-select-input {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 24px 4px 10px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.view-select-input:focus {
+    border-color: var(--accent);
+}
+
+.view-select-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.select-chevron {
+    position: absolute;
+    right: 8px;
+    pointer-events: none;
+    color: var(--text-secondary);
+}

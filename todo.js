@@ -465,12 +465,21 @@ document.addEventListener('click', (e) => {
         }
     });
 
-    // 5. Закрытие меню действий проекта в шапке при клике вне
+    // 5. Закрытие меню действий проекта и отображения в шапке при клике вне
     const projectHeaderDropdown = document.getElementById('projectHeaderDropdown');
     if (projectHeaderDropdown && projectHeaderDropdown.style.display !== 'none') {
         const headerActions = document.getElementById('projectHeaderActions');
         if (headerActions && !headerActions.contains(e.target)) {
             projectHeaderDropdown.style.display = 'none';
+        }
+    }
+
+    const viewDisplayDropdown = document.getElementById('viewDisplayDropdown');
+    if (viewDisplayDropdown && viewDisplayDropdown.style.display !== 'none') {
+        const viewDisplayContainer = document.getElementById('viewDisplayContainer');
+        if (viewDisplayContainer && !viewDisplayContainer.contains(e.target)) {
+            viewDisplayDropdown.style.display = 'none';
+            document.getElementById('viewDisplayBtn')?.classList.remove('active');
         }
     }
 
@@ -4097,6 +4106,11 @@ function renderTasks() {
         projectHeaderActions.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') ? 'block' : 'none');
     }
 
+    const viewDisplayContainer = document.getElementById('viewDisplayContainer');
+    if (viewDisplayContainer) {
+        viewDisplayContainer.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') ? 'block' : 'none');
+    }
+
     // Фильтруем задачи для отображения в зависимости от текущей вкладки (роута)
     let displayActiveTasks = [];
     let displayCompletedTasks = [];
@@ -4290,15 +4304,90 @@ function renderTasks() {
     activeTasksContainer.innerHTML = '';
 
     const systemGroupKey = `todo_group_${currentRoute}`;
-    const systemGroupBy = (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') ? (localStorage.getItem(systemGroupKey) || 'none') : 'none';
+    let systemGroupBy = 'none';
+    if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
+        systemGroupBy = localStorage.getItem(systemGroupKey) || 'none';
+    } else if (currentRoute.startsWith('project/')) {
+        const projectId = currentRoute.split('/')[1];
+        const project = projectsList.find(p => p.id === projectId);
+        if (project) {
+            systemGroupBy = project.groupByDate ? 'date' : (project.groupBy || 'none');
+        }
+    }
 
-    if (systemGroupBy !== 'none' && !currentRoute.startsWith('project/')) {
+    if (systemGroupBy !== 'none') {
         const overdueActiveTasks = (currentRoute === 'today') ? activeTasks.filter(t => t.dueDate && t.dueDate < todayStr) : [];
         sortTasksByOrder(overdueActiveTasks);
         const tasksToGroup = currentRoute === 'today' ? [...overdueActiveTasks, ...displayActiveTasks] : displayActiveTasks;
 
         if (tasksToGroup.length === 0) {
             activeTasksContainer.innerHTML = getEmptyStateHtml();
+        } else if (systemGroupBy === 'date') {
+            const dateGroups = {};
+            const dateOrder = [];
+
+            tasksToGroup.forEach(t => {
+                let dateKey = 'no_date';
+                let dateLabel = 'Без срока';
+
+                if (t.dueDate) {
+                    dateKey = t.dueDate;
+                    if (t.dueDate === todayStr) {
+                        dateLabel = 'Сегодня';
+                    } else {
+                        const d = new Date(t.dueDate + 'T00:00:00');
+                        dateLabel = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', weekday: 'short' });
+                    }
+                }
+
+                if (!dateGroups[dateKey]) {
+                    dateGroups[dateKey] = { key: dateKey, label: dateLabel, tasks: [] };
+                    dateOrder.push(dateKey);
+                }
+                dateGroups[dateKey].tasks.push(t);
+            });
+
+            dateOrder.sort((a, b) => {
+                if (a === 'no_date') return 1;
+                if (b === 'no_date') return -1;
+                return a.localeCompare(b);
+            });
+
+            dateOrder.forEach(dKey => {
+                const group = dateGroups[dKey];
+                sortTasksByOrder(group.tasks);
+
+                const collapseKey = `group_${currentRoute}_date_${dKey}`;
+                const isCollapsed = isSectionCollapsed(collapseKey);
+
+                const calSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 6px; flex-shrink: 0; color: var(--accent);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
+
+                const sectionEl = document.createElement('div');
+                sectionEl.className = `project-section ${isCollapsed ? 'collapsed' : ''}`;
+                sectionEl.style.marginTop = '16px';
+                sectionEl.innerHTML = `
+                    <div class="project-section-header" style="cursor: pointer;">
+                        <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
+                            <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        ${calSvg}
+                        <span class="section-title-text" style="font-weight: 600;">${group.label}</span>
+                        <span class="section-count-badge" style="margin-left: 6px;">${group.tasks.length}</span>
+                    </div>
+                    <div class="section-tasks-container" style="${isCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
+                `;
+                activeTasksContainer.appendChild(sectionEl);
+
+                const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
+                renderTasksGroup(group.tasks, sectionTasksContainer);
+
+                sectionEl.querySelector('.project-section-header').addEventListener('click', () => {
+                    toggleSectionCollapsed(collapseKey);
+                    renderTasks();
+                });
+            });
         } else if (systemGroupBy === 'project') {
             const groupsMap = {};
             tasksToGroup.forEach(t => {
@@ -6487,6 +6576,187 @@ if (btnAddProject) {
     });
 }
 
+// === ЛОГИКА ОТОБРАЖЕНИЯ (VIEW DISPLAY MODAL) ===
+const viewDisplayBtn = document.getElementById('viewDisplayBtn');
+const viewDisplayDropdown = document.getElementById('viewDisplayDropdown');
+
+if (viewDisplayBtn && viewDisplayDropdown) {
+    viewDisplayBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (viewDisplayDropdown.style.display === 'none' || viewDisplayDropdown.style.display === '') {
+            syncViewDisplayDropdownState();
+            viewDisplayDropdown.style.display = 'flex';
+            viewDisplayBtn.classList.add('active');
+        } else {
+            viewDisplayDropdown.style.display = 'none';
+            viewDisplayBtn.classList.remove('active');
+        }
+    });
+}
+
+function syncViewDisplayDropdownState() {
+    if (!viewDisplayDropdown) return;
+
+    let isCompletedHidden = false;
+    let groupBy = 'none';
+    let sortBy = 'manual';
+
+    const groupSelect = document.getElementById('viewGroupBySelect');
+    if (groupSelect) {
+        const isProjectRoute = currentRoute.startsWith('project/');
+        groupSelect.querySelectorAll('option').forEach(opt => {
+            if (opt.value === 'project') {
+                opt.style.display = isProjectRoute ? 'none' : 'block';
+                opt.disabled = isProjectRoute;
+            }
+        });
+    }
+
+    if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
+        const keyCompleted = `todo_hide_completed_${currentRoute}`;
+        isCompletedHidden = localStorage.getItem(keyCompleted) === 'true';
+
+        const sortKey = `todo_sort_${currentRoute}`;
+        sortBy = localStorage.getItem(sortKey) || 'manual';
+
+        const groupKey = `todo_group_${currentRoute}`;
+        groupBy = localStorage.getItem(groupKey) || 'none';
+    } else if (currentRoute.startsWith('project/')) {
+        const projectId = currentRoute.split('/')[1];
+        const project = projectsList.find(p => p.id === projectId);
+        if (project) {
+            isCompletedHidden = project.hideCompleted === true;
+            sortBy = project.sortBy || 'manual';
+            groupBy = project.groupByDate ? 'date' : (project.groupBy || 'none');
+        }
+    }
+
+    const toggleCheckbox = document.getElementById('viewToggleCompletedCheckbox');
+    if (toggleCheckbox) {
+        toggleCheckbox.checked = !isCompletedHidden;
+    }
+
+    if (groupSelect) {
+        groupSelect.value = groupBy;
+    }
+
+    const sortSelect = document.getElementById('viewSortBySelect');
+    if (sortSelect) {
+        sortSelect.value = sortBy;
+    }
+}
+
+// Переключение скрыть/показать выполненные задачи из меню Отображение
+const viewToggleCompletedCheckbox = document.getElementById('viewToggleCompletedCheckbox');
+if (viewToggleCompletedCheckbox) {
+    viewToggleCompletedCheckbox.addEventListener('change', async (e) => {
+        const showCompleted = e.target.checked;
+        const hideCompleted = !showCompleted;
+
+        if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
+            const keyCompleted = `todo_hide_completed_${currentRoute}`;
+            localStorage.setItem(keyCompleted, hideCompleted ? 'true' : 'false');
+            renderTasks();
+        } else if (currentRoute.startsWith('project/')) {
+            const projectId = currentRoute.split('/')[1];
+            const project = projectsList.find(p => p.id === projectId);
+            if (project) {
+                project.hideCompleted = hideCompleted;
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                        hideCompleted: hideCompleted
+                    });
+                } catch (err) {
+                    console.error("Ошибка при обновлении скрытия выполненных задач:", err);
+                }
+                renderTasks();
+            }
+        }
+    });
+}
+
+// Переключение группировки из меню Отображение
+const viewGroupBySelect = document.getElementById('viewGroupBySelect');
+if (viewGroupBySelect) {
+    viewGroupBySelect.addEventListener('change', async (e) => {
+        const groupByVal = e.target.value;
+
+        if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
+            const groupKey = `todo_group_${currentRoute}`;
+            localStorage.setItem(groupKey, groupByVal);
+            renderTasks();
+        } else if (currentRoute.startsWith('project/')) {
+            const projectId = currentRoute.split('/')[1];
+            const project = projectsList.find(p => p.id === projectId);
+            if (project) {
+                const groupByDate = groupByVal === 'date';
+                project.groupByDate = groupByDate;
+                project.groupBy = groupByVal;
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                        groupByDate: groupByDate,
+                        groupBy: groupByVal
+                    });
+                } catch (err) {
+                    console.error("Ошибка при обновлении группировки проекта:", err);
+                }
+                renderTasks();
+            }
+        }
+    });
+}
+
+// Переключение сортировки из меню Отображение
+const viewSortBySelect = document.getElementById('viewSortBySelect');
+if (viewSortBySelect) {
+    viewSortBySelect.addEventListener('change', async (e) => {
+        const sortByVal = e.target.value;
+
+        if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
+            const sortKey = `todo_sort_${currentRoute}`;
+            localStorage.setItem(sortKey, sortByVal);
+            renderTasks();
+        } else if (currentRoute.startsWith('project/')) {
+            const projectId = currentRoute.split('/')[1];
+            const project = projectsList.find(p => p.id === projectId);
+            if (project) {
+                project.sortBy = sortByVal;
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                        sortBy: sortByVal
+                    });
+                } catch (err) {
+                    console.error("Ошибка при обновлении сортировки проекта:", err);
+                }
+                renderTasks();
+            }
+        }
+    });
+}
+
+// Аккордеоны для Сортировки и Фильтра в меню отображения
+const btnGroupAccordion = document.getElementById('btnGroupAccordion');
+const groupAccordionContent = document.getElementById('groupAccordionContent');
+if (btnGroupAccordion && groupAccordionContent) {
+    btnGroupAccordion.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = groupAccordionContent.style.display === 'none';
+        groupAccordionContent.style.display = isHidden ? 'flex' : 'none';
+        btnGroupAccordion.classList.toggle('collapsed', !isHidden);
+    });
+}
+
+const btnFilterAccordion = document.getElementById('btnFilterAccordion');
+const filterAccordionContent = document.getElementById('filterAccordionContent');
+if (btnFilterAccordion && filterAccordionContent) {
+    btnFilterAccordion.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = filterAccordionContent.style.display === 'none';
+        filterAccordionContent.style.display = isHidden ? 'flex' : 'none';
+        btnFilterAccordion.classList.toggle('collapsed', !isHidden);
+    });
+}
+
 // === ЛОГИКА РАЗДЕЛОВ (ДОБАВЛЕНИЕ, ПЕРЕИМЕНОВАНИЕ, УДАЛЕНИЕ, ПЕРЕНОС) ===
 const projectHeaderMoreBtn = document.getElementById('projectHeaderMoreBtn');
 const projectHeaderDropdown = document.getElementById('projectHeaderDropdown');
@@ -6575,36 +6845,13 @@ function addSectionForCurrentProject() {
 
 function renderProjectHeaderDropdown() {
     if (!projectHeaderDropdown) return;
+    syncViewDisplayDropdownState();
 
     if (currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') {
-        const keyCompleted = `todo_hide_completed_${currentRoute}`;
-        const isCompletedHidden = localStorage.getItem(keyCompleted) === 'true';
-
         const keyCount = `todo_hide_counter_${currentRoute}`;
         const isCountHidden = localStorage.getItem(keyCount) === 'true';
 
-        const sortKey = `todo_sort_${currentRoute}`;
-        const sortBy = localStorage.getItem(sortKey) || 'manual';
-
-        const groupKey = `todo_group_${currentRoute}`;
-        const groupBy = localStorage.getItem(groupKey) || 'none';
-
         projectHeaderDropdown.innerHTML = `
-            <button class="dropdown-item" id="btnProjectToggleCompleted">
-                ${isCompletedHidden ? `
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                    <span>Показать выполненные</span>
-                ` : `
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                    </svg>
-                    <span>Скрыть выполненные</span>
-                `}
-            </button>
             <button class="dropdown-item" id="btnProjectToggleCount">
                 ${isCountHidden ? `
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
@@ -6620,129 +6867,14 @@ function renderProjectHeaderDropdown() {
                     <span>Скрыть количество в боковом меню</span>
                 `}
             </button>
-            <div class="dropdown-divider"></div>
-            <div class="dropdown-submenu-container group-submenu-container" style="position: relative; width: 100%;">
-                <button class="dropdown-item btn-group-submenu-trigger" type="button" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <span style="display: flex; align-items: center; gap: 8px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
-                            <rect x="3" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="14" width="7" height="7"></rect>
-                            <rect x="3" y="14" width="7" height="7"></rect>
-                        </svg>
-                        <span>Группировка: ${
-                            groupBy === 'project' ? 'По проекту' :
-                            groupBy === 'priority' ? 'По приоритету' : 'Без группировки'
-                        }</span>
-                    </span>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="opacity: 0.6;">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                </button>
-                <div class="dropdown-submenu group-submenu" style="display: none; position: absolute; left: 100%; top: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 4px; min-width: 160px; z-index: 1010; flex-direction: column; gap: 2px;">
-                    <button class="dropdown-item group-option-btn ${groupBy === 'none' || !groupBy ? 'selected' : ''}" data-group="none" type="button">Без группировки</button>
-                    <button class="dropdown-item group-option-btn ${groupBy === 'project' ? 'selected' : ''}" data-group="project" type="button">По проекту</button>
-                    <button class="dropdown-item group-option-btn ${groupBy === 'priority' ? 'selected' : ''}" data-group="priority" type="button">По приоритету</button>
-                </div>
-            </div>
-            <div class="dropdown-submenu-container sort-submenu-container" style="position: relative; width: 100%;">
-                <button class="dropdown-item btn-sort-submenu-trigger" type="button" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <span style="display: flex; align-items: center; gap: 8px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
-                            <path d="M15 18H3M21 14H3M17 10H3M12 6H3"></path>
-                        </svg>
-                        <span>Сортировка: ${
-                            sortBy === 'date' ? 'По дате' :
-                            sortBy === 'alphabetical' ? 'По алфавиту' :
-                            sortBy === 'priority' ? 'По приоритету' : 'Вручную'
-                        }</span>
-                    </span>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="opacity: 0.6;">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                </button>
-                <div class="dropdown-submenu sort-submenu" style="display: none; position: absolute; left: 100%; top: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 4px; min-width: 160px; z-index: 1010; flex-direction: column; gap: 2px;">
-                    <button class="dropdown-item sort-option-btn ${sortBy === 'manual' ? 'selected' : ''}" data-sort="manual" type="button">Вручную</button>
-                    <button class="dropdown-item sort-option-btn ${sortBy === 'date' ? 'selected' : ''}" data-sort="date" type="button">По дате и времени</button>
-                    <button class="dropdown-item sort-option-btn ${sortBy === 'alphabetical' ? 'selected' : ''}" data-sort="alphabetical" type="button">По алфавиту</button>
-                    <button class="dropdown-item sort-option-btn ${sortBy === 'priority' ? 'selected' : ''}" data-sort="priority" type="button">По приоритету</button>
-                </div>
-            </div>
         `;
 
-        document.getElementById('btnProjectToggleCompleted').addEventListener('click', (e) => {
-            e.stopPropagation();
-            projectHeaderDropdown.style.display = 'none';
-            localStorage.setItem(keyCompleted, isCompletedHidden ? 'false' : 'true');
-            renderTasks();
-        });
-
-        document.getElementById('btnProjectToggleCount').addEventListener('click', (e) => {
+        document.getElementById('btnProjectToggleCount')?.addEventListener('click', (e) => {
             e.stopPropagation();
             projectHeaderDropdown.style.display = 'none';
             localStorage.setItem(keyCount, isCountHidden ? 'false' : 'true');
             renderTasks();
         });
-
-        // Обработчик подменю группировки
-        const groupSubmenuTrigger = projectHeaderDropdown.querySelector('.btn-group-submenu-trigger');
-        const groupSubmenu = projectHeaderDropdown.querySelector('.group-submenu');
-        if (groupSubmenuTrigger && groupSubmenu) {
-            groupSubmenuTrigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isVisible = groupSubmenu.style.display === 'flex';
-                groupSubmenu.style.display = isVisible ? 'none' : 'flex';
-            });
-            groupSubmenuTrigger.addEventListener('mouseenter', () => {
-                groupSubmenu.style.display = 'flex';
-            });
-            const groupContainer = projectHeaderDropdown.querySelector('.group-submenu-container');
-            if (groupContainer) {
-                groupContainer.addEventListener('mouseleave', () => {
-                    groupSubmenu.style.display = 'none';
-                });
-            }
-
-            groupSubmenu.querySelectorAll('.group-option-btn').forEach(btn => {
-                btn.addEventListener('click', (evt) => {
-                    evt.stopPropagation();
-                    projectHeaderDropdown.style.display = 'none';
-                    const groupByVal = btn.getAttribute('data-group');
-                    localStorage.setItem(groupKey, groupByVal);
-                    renderTasks();
-                });
-            });
-        }
-
-        // Добавляем обработчик подменю сортировки для общих экранов
-        const submenuTrigger = projectHeaderDropdown.querySelector('.btn-sort-submenu-trigger');
-        const submenu = projectHeaderDropdown.querySelector('.sort-submenu');
-        if (submenuTrigger && submenu) {
-            submenuTrigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isVisible = submenu.style.display === 'flex';
-                submenu.style.display = isVisible ? 'none' : 'flex';
-            });
-            submenuTrigger.addEventListener('mouseenter', () => {
-                submenu.style.display = 'flex';
-            });
-            const container = projectHeaderDropdown.querySelector('.sort-submenu-container');
-            if (container) {
-                container.addEventListener('mouseleave', () => {
-                    submenu.style.display = 'none';
-                });
-            }
-
-            submenu.querySelectorAll('.sort-option-btn').forEach(btn => {
-                btn.addEventListener('click', (evt) => {
-                    evt.stopPropagation();
-                    projectHeaderDropdown.style.display = 'none';
-                    const sortByVal = btn.getAttribute('data-sort');
-                    localStorage.setItem(sortKey, sortByVal);
-                    renderTasks();
-                });
-            });
-        }
         return;
     }
 
@@ -6774,40 +6906,6 @@ function renderProjectHeaderDropdown() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="5" fill="currentColor"></circle></svg>
             <span>Изменить цвет</span>
         </button>
-        <button class="dropdown-item" id="btnProjectToggleGroupByDate">
-            ${isGroupByDate ? `
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <span>Отключить группировку по датам</span>
-            ` : `
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <span>Группировать по датам</span>
-            `}
-        </button>
-        <button class="dropdown-item" id="btnProjectToggleCompleted">
-            ${isCompletedHidden ? `
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <span>Показать выполненные</span>
-            ` : `
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-                <span>Скрыть выполненные</span>
-            `}
-        </button>
         <button class="dropdown-item" id="btnProjectToggleCount">
             ${isCountHidden ? `
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
@@ -6824,30 +6922,6 @@ function renderProjectHeaderDropdown() {
             `}
         </button>
         <div class="dropdown-divider"></div>
-        <div class="dropdown-submenu-container" style="position: relative; width: 100%;">
-            <button class="dropdown-item btn-sort-submenu-trigger" type="button" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <span style="display: flex; align-items: center; gap: 8px;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
-                        <path d="M15 18H3M21 14H3M17 10H3M12 6H3"></path>
-                    </svg>
-                    <span>Сортировка: ${
-                        project.sortBy === 'date' ? 'По дате' :
-                        project.sortBy === 'alphabetical' ? 'По алфавиту' :
-                        project.sortBy === 'priority' ? 'По приоритету' : 'Вручную'
-                    }</span>
-                </span>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="opacity: 0.6;">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-            </button>
-            <div class="dropdown-submenu" style="display: none; position: absolute; left: 100%; top: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 4px; min-width: 160px; z-index: 1010; flex-direction: column; gap: 2px;">
-                <button class="dropdown-item sort-option-btn ${!project.sortBy || project.sortBy === 'manual' ? 'selected' : ''}" data-sort="manual" type="button">Вручную</button>
-                <button class="dropdown-item sort-option-btn ${project.sortBy === 'date' ? 'selected' : ''}" data-sort="date" type="button">По дате и времени</button>
-                <button class="dropdown-item sort-option-btn ${project.sortBy === 'alphabetical' ? 'selected' : ''}" data-sort="alphabetical" type="button">По алфавиту</button>
-                <button class="dropdown-item sort-option-btn ${project.sortBy === 'priority' ? 'selected' : ''}" data-sort="priority" type="button">По приоритету</button>
-            </div>
-        </div>
-        <div class="dropdown-divider"></div>
         <button class="dropdown-item btn-delete" id="btnProjectDelete">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0; color: #ef4444;">
                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -6858,48 +6932,24 @@ function renderProjectHeaderDropdown() {
     `;
 
     // Bind listeners
-    document.getElementById('btnProjectAddSection').addEventListener('click', (e) => {
+    document.getElementById('btnProjectAddSection')?.addEventListener('click', (e) => {
         e.stopPropagation();
         addSectionForCurrentProject();
     });
 
-    document.getElementById('btnProjectRename').addEventListener('click', (e) => {
+    document.getElementById('btnProjectRename')?.addEventListener('click', (e) => {
         e.stopPropagation();
         projectHeaderDropdown.style.display = 'none';
         enableHeaderProjectInlineEdit(projectId, project.name);
     });
 
-    document.getElementById('btnProjectChangeColor').addEventListener('click', (e) => {
+    document.getElementById('btnProjectChangeColor')?.addEventListener('click', (e) => {
         e.stopPropagation();
         projectHeaderDropdown.style.display = 'none';
         showProjectColorModal(projectId);
     });
 
-    document.getElementById('btnProjectToggleGroupByDate').addEventListener('click', async (e) => {
-        e.stopPropagation();
-        projectHeaderDropdown.style.display = 'none';
-        try {
-            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
-                groupByDate: !isGroupByDate
-            });
-        } catch (err) {
-            console.error("Ошибка при изменении группировки по датам:", err);
-        }
-    });
-
-    document.getElementById('btnProjectToggleCompleted').addEventListener('click', async (e) => {
-        e.stopPropagation();
-        projectHeaderDropdown.style.display = 'none';
-        try {
-            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
-                hideCompleted: !isCompletedHidden
-            });
-        } catch (err) {
-            console.error("Ошибка при изменении видимости выполненных задач:", err);
-        }
-    });
-
-    document.getElementById('btnProjectToggleCount').addEventListener('click', async (e) => {
+    document.getElementById('btnProjectToggleCount')?.addEventListener('click', async (e) => {
         e.stopPropagation();
         projectHeaderDropdown.style.display = 'none';
         try {
@@ -6911,43 +6961,7 @@ function renderProjectHeaderDropdown() {
         }
     });
 
-    // Добавляем обработчик подменю сортировки
-    const submenuTrigger = projectHeaderDropdown.querySelector('.btn-sort-submenu-trigger');
-    const submenu = projectHeaderDropdown.querySelector('.dropdown-submenu');
-    if (submenuTrigger && submenu) {
-        // На компьютерах показываем при наведении, на телефонах при клике
-        submenuTrigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isVisible = submenu.style.display === 'flex';
-            submenu.style.display = isVisible ? 'none' : 'flex';
-        });
-        submenuTrigger.addEventListener('mouseenter', () => {
-            submenu.style.display = 'flex';
-        });
-        const container = projectHeaderDropdown.querySelector('.dropdown-submenu-container');
-        if (container) {
-            container.addEventListener('mouseleave', () => {
-                submenu.style.display = 'none';
-            });
-        }
-
-        submenu.querySelectorAll('.sort-option-btn').forEach(btn => {
-            btn.addEventListener('click', async (evt) => {
-                evt.stopPropagation();
-                projectHeaderDropdown.style.display = 'none';
-                const sortByVal = btn.getAttribute('data-sort');
-                try {
-                    await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
-                        sortBy: sortByVal
-                    });
-                } catch (err) {
-                    console.error("Ошибка при изменении сортировки проекта:", err);
-                }
-            });
-        });
-    }
-
-    document.getElementById('btnProjectDelete').addEventListener('click', (e) => {
+    document.getElementById('btnProjectDelete')?.addEventListener('click', (e) => {
         e.stopPropagation();
         projectHeaderDropdown.style.display = 'none';
         showCustomConfirm(
@@ -7793,15 +7807,6 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="5" fill="currentColor"></circle></svg>
             <span>Изменить цвет</span>
         </div>
-        <div class="ctx-item" id="ctx-toggle-group-project">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-            <span>${isGroupByDate ? 'Отключить группировку по датам' : 'Группировать по датам'}</span>
-        </div>
         <div class="ctx-item" id="ctx-toggle-count-project">
             ${isCountHidden ? `
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -7855,25 +7860,11 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
     menu.style.top = `${y}px`;
 
     // Обработчик изменения цвета проекта
-    menu.querySelector('#ctx-change-color-project').addEventListener('click', (evt) => {
+    menu.querySelector('#ctx-change-color-project')?.addEventListener('click', (evt) => {
         evt.stopPropagation();
         menu.remove();
         activeContextMenu = null;
         showProjectColorModal(projectId);
-    });
-
-    // Обработчик переключения группировки по датам
-    menu.querySelector('#ctx-toggle-group-project').addEventListener('click', async (evt) => {
-        evt.stopPropagation();
-        menu.remove();
-        activeContextMenu = null;
-        try {
-            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
-                groupByDate: !isGroupByDate
-            });
-        } catch (err) {
-            console.error("Ошибка при изменении группировки по датам:", err);
-        }
     });
 
     // Обработчик переключения видимости счетчика проекта

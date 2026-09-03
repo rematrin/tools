@@ -305,28 +305,189 @@
                             </button>
                         </div>
                     </div>
-                    <div class="project-header-actions" id="projectHeaderActions"
-                        style="display: none; margin-left: auto; position: relative;">
-                        <button class="project-header-more-btn" id="projectHeaderMoreBtn" aria-label="Действия проекта"
-                            title="Действия"
-                            style="background: transparent; border: none; color: var(--text-secondary); opacity: 0.5; cursor: pointer; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background-color 0.15s, opacity 0.15s;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="1.5"></circle>
-                                <circle cx="5" cy="12" r="1.5"></circle>
-                                <circle cx="19" cy="12" r="1.5"></circle>
-                            </svg>
-                        </button>
-                        <div class="project-header-dropdown" id="projectHeaderDropdown"
-                            style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); z-index: 1000; width: 240px; padding: 4px; box-sizing: border-box; flex-direction: column; gap: 2px;">
-                            <button class="dropdown-item" id="btnProjectAddSection">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2.5" style="margin-right: 6px; flex-shrink: 0;">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <div class="header-right-actions" style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
+                        <div class="view-display-container" id="viewDisplayContainer" style="display: none; position: relative;">
+                            <button class="view-display-btn" id="viewDisplayBtn" aria-label="Отображение" title="Отображение">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                                    <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                                    <line x1="7" y1="8" x2="17" y2="8"></line>
+                                    <line x1="7" y1="12" x2="17" y2="12"></line>
+                                    <line x1="7" y1="16" x2="17" y2="16"></line>
                                 </svg>
-                                <span>Добавить раздел</span>
+                                <span>Отображение</span>
                             </button>
+
+                            <div class="view-display-dropdown" id="viewDisplayDropdown">
+                                <div class="view-display-section">
+                                    <div class="view-display-header">
+                                        <span>Раскладка</span>
+                                        <button class="view-display-help-btn" title="Справка" type="button">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="view-layout-grid">
+                                        <button class="view-layout-card active" type="button">
+                                            <div class="layout-card-icon">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                                                    <line x1="7" y1="8" x2="17" y2="8"></line>
+                                                    <line x1="7" y1="12" x2="17" y2="12"></line>
+                                                    <line x1="7" y1="16" x2="17" y2="16"></line>
+                                                </svg>
+                                            </div>
+                                            <span class="layout-card-label">Список</span>
+                                        </button>
+                                        <button class="view-layout-card disabled" type="button">
+                                            <div class="layout-card-icon">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="3" y="4" width="5" height="16" rx="1"></rect>
+                                                    <rect x="10" y="4" width="5" height="16" rx="1"></rect>
+                                                    <rect x="17" y="4" width="4" height="16" rx="1"></rect>
+                                                </svg>
+                                            </div>
+                                            <span class="layout-card-label">Доска</span>
+                                        </button>
+                                        <button class="view-layout-card disabled" type="button">
+                                            <div class="layout-card-badge-container">
+                                                <div class="layout-card-icon">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                        <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                                    </svg>
+                                                </div>
+                                                <span class="pro-sparkle-badge">★</span>
+                                            </div>
+                                            <span class="layout-card-label">Календарь</span>
+                                        </button>
+                                    </div>
+
+                                    <div class="view-display-toggle-row">
+                                        <span class="toggle-row-label">Выполненные задачи</span>
+                                        <label class="view-switch">
+                                            <input type="checkbox" id="viewToggleCompletedCheckbox">
+                                            <span class="view-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="view-display-divider"></div>
+
+                                <div class="view-display-group">
+                                    <button class="view-group-header" id="btnGroupAccordion" type="button">
+                                        <span class="group-header-title">Сортировка</span>
+                                        <svg class="group-header-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </button>
+                                    <div class="view-group-content" id="groupAccordionContent" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                                        <div class="view-select-row">
+                                            <span class="select-row-label">Группировка</span>
+                                            <div class="custom-view-select-wrapper">
+                                                <select class="view-select-input" id="viewGroupBySelect">
+                                                    <option value="none">Нет</option>
+                                                    <option value="date">По датам</option>
+                                                    <option value="project">По проекту</option>
+                                                    <option value="priority">По приоритету</option>
+                                                </select>
+                                                <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="view-select-row">
+                                            <span class="select-row-label">Сортировка</span>
+                                            <div class="custom-view-select-wrapper">
+                                                <select class="view-select-input" id="viewSortBySelect">
+                                                    <option value="manual">Вручную</option>
+                                                    <option value="date">По дате</option>
+                                                    <option value="alphabetical">По алфавиту</option>
+                                                    <option value="priority">По приоритету</option>
+                                                </select>
+                                                <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="view-display-divider"></div>
+
+                                <div class="view-display-group">
+                                    <button class="view-group-header" id="btnFilterAccordion" type="button">
+                                        <span class="group-header-title">Фильтр</span>
+                                        <svg class="group-header-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </button>
+                                    <div class="view-group-content" id="filterAccordionContent" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                                        <div class="view-select-row">
+                                            <span class="select-row-label">Срок</span>
+                                            <div class="custom-view-select-wrapper">
+                                                <select class="view-select-input" disabled>
+                                                    <option value="all">Все</option>
+                                                </select>
+                                                <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="view-select-row">
+                                            <span class="select-row-label">Приоритет</span>
+                                            <div class="custom-view-select-wrapper">
+                                                <select class="view-select-input" disabled>
+                                                    <option value="all">Все</option>
+                                                </select>
+                                                <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="view-select-row">
+                                            <span class="select-row-label">Метка</span>
+                                            <div class="custom-view-select-wrapper">
+                                                <select class="view-select-input" disabled>
+                                                    <option value="all">Все</option>
+                                                </select>
+                                                <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="project-header-actions" id="projectHeaderActions"
+                            style="display: none; position: relative;">
+                            <button class="project-header-more-btn" id="projectHeaderMoreBtn" aria-label="Действия проекта"
+                                title="Действия"
+                                style="background: transparent; border: none; color: var(--text-secondary); opacity: 0.5; cursor: pointer; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background-color 0.15s, opacity 0.15s;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="1.5"></circle>
+                                    <circle cx="5" cy="12" r="1.5"></circle>
+                                    <circle cx="19" cy="12" r="1.5"></circle>
+                                </svg>
+                            </button>
+                            <div class="project-header-dropdown" id="projectHeaderDropdown"
+                                style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); z-index: 1000; width: 240px; padding: 4px; box-sizing: border-box; flex-direction: column; gap: 2px;">
+                                <button class="dropdown-item" id="btnProjectAddSection">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2.5" style="margin-right: 6px; flex-shrink: 0;">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    <span>Добавить раздел</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

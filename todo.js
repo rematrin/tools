@@ -4289,7 +4289,145 @@ function renderTasks() {
     // 1. РЕНДЕРИМ АКТИВНЫЕ ЗАДАЧИ
     activeTasksContainer.innerHTML = '';
 
-    if (displayActiveTasks.length === 0 && !currentRoute.startsWith('project/')) {
+    const systemGroupKey = `todo_group_${currentRoute}`;
+    const systemGroupBy = (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') ? (localStorage.getItem(systemGroupKey) || 'none') : 'none';
+
+    if (systemGroupBy !== 'none' && !currentRoute.startsWith('project/')) {
+        const overdueActiveTasks = (currentRoute === 'today') ? activeTasks.filter(t => t.dueDate && t.dueDate < todayStr) : [];
+        sortTasksByOrder(overdueActiveTasks);
+        const tasksToGroup = currentRoute === 'today' ? [...overdueActiveTasks, ...displayActiveTasks] : displayActiveTasks;
+
+        if (tasksToGroup.length === 0) {
+            activeTasksContainer.innerHTML = getEmptyStateHtml();
+        } else if (systemGroupBy === 'project') {
+            const groupsMap = {};
+            tasksToGroup.forEach(t => {
+                const projId = t.projectId;
+                const proj = projId ? projectsList.find(p => p.id === projId) : null;
+                const key = (projId && proj) ? projId : 'inbox';
+                if (!groupsMap[key]) {
+                    groupsMap[key] = {
+                        id: key,
+                        name: proj ? proj.name : 'Входящие',
+                        iconUrl: proj ? proj.iconUrl : null,
+                        color: proj ? proj.color : null,
+                        tasks: []
+                    };
+                }
+                groupsMap[key].tasks.push(t);
+            });
+
+            const groupKeys = Object.keys(groupsMap);
+            groupKeys.sort((a, b) => {
+                if (a === 'inbox') return -1;
+                if (b === 'inbox') return 1;
+                const indexA = projectsList.findIndex(p => p.id === a);
+                const indexB = projectsList.findIndex(p => p.id === b);
+                return indexA - indexB;
+            });
+
+            groupKeys.forEach(key => {
+                const group = groupsMap[key];
+                sortTasksByOrder(group.tasks);
+
+                const collapseKey = `group_${currentRoute}_proj_${group.id}`;
+                const isCollapsed = isSectionCollapsed(collapseKey);
+
+                let iconHtml = '';
+                if (group.id === 'inbox') {
+                    iconHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="margin-right: 6px; flex-shrink: 0; color: var(--accent);"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>`;
+                } else {
+                    const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0; margin-right: 6px;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+                    iconHtml = getProjectIconHtml(group.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 6px;');
+                }
+
+                const sectionEl = document.createElement('div');
+                sectionEl.className = `project-section ${isCollapsed ? 'collapsed' : ''}`;
+                sectionEl.setAttribute('data-group-project-id', group.id);
+                sectionEl.style.marginTop = '16px';
+                sectionEl.innerHTML = `
+                    <div class="project-section-header" style="cursor: pointer;">
+                        <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
+                            <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        ${iconHtml}
+                        <span class="section-title-text" style="font-weight: 600;">${escapeHtml(group.name)}</span>
+                        <span class="section-count-badge" style="margin-left: 6px;">${group.tasks.length}</span>
+                    </div>
+                    <div class="section-tasks-container" style="${isCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
+                `;
+                activeTasksContainer.appendChild(sectionEl);
+
+                const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
+                renderTasksGroup(group.tasks, sectionTasksContainer);
+
+                sectionEl.querySelector('.project-section-header').addEventListener('click', () => {
+                    toggleSectionCollapsed(collapseKey);
+                    renderTasks();
+                });
+            });
+        } else if (systemGroupBy === 'priority') {
+            const priorityMeta = {
+                3: { name: 'Приоритет 1', color: '#dc2626' },
+                2: { name: 'Приоритет 2', color: '#d97706' },
+                1: { name: 'Приоритет 3', color: '#2563eb' },
+                0: { name: 'Приоритет 4', color: '#808080' }
+            };
+
+            const priorityGroups = { 3: [], 2: [], 1: [], 0: [] };
+
+            tasksToGroup.forEach(t => {
+                const prio = (t.priority !== undefined && t.priority !== null) ? t.priority : 0;
+                if (priorityGroups[prio] !== undefined) {
+                    priorityGroups[prio].push(t);
+                } else {
+                    priorityGroups[0].push(t);
+                }
+            });
+
+            const levels = [3, 2, 1, 0];
+            levels.forEach(lvl => {
+                const groupTasks = priorityGroups[lvl];
+                if (groupTasks.length === 0) return;
+
+                sortTasksByOrder(groupTasks);
+                const meta = priorityMeta[lvl];
+                const collapseKey = `group_${currentRoute}_prio_${lvl}`;
+                const isCollapsed = isSectionCollapsed(collapseKey);
+
+                const flagSvg = `<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="margin-right: 6px; flex-shrink: 0; color: ${meta.color};"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z"/></svg>`;
+
+                const sectionEl = document.createElement('div');
+                sectionEl.className = `project-section ${isCollapsed ? 'collapsed' : ''}`;
+                sectionEl.setAttribute('data-group-priority', lvl);
+                sectionEl.style.marginTop = '16px';
+                sectionEl.innerHTML = `
+                    <div class="project-section-header" style="cursor: pointer;">
+                        <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
+                            <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        ${flagSvg}
+                        <span class="section-title-text" style="font-weight: 600;">${meta.name}</span>
+                        <span class="section-count-badge" style="margin-left: 6px;">${groupTasks.length}</span>
+                    </div>
+                    <div class="section-tasks-container" style="${isCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
+                `;
+                activeTasksContainer.appendChild(sectionEl);
+
+                const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
+                renderTasksGroup(groupTasks, sectionTasksContainer);
+
+                sectionEl.querySelector('.project-section-header').addEventListener('click', () => {
+                    toggleSectionCollapsed(collapseKey);
+                    renderTasks();
+                });
+            });
+        }
+    } else if (displayActiveTasks.length === 0 && !currentRoute.startsWith('project/')) {
         if (currentRoute === 'trash') {
             activeTasksContainer.innerHTML = `
                 <div class="empty-state">
@@ -6448,6 +6586,9 @@ function renderProjectHeaderDropdown() {
         const sortKey = `todo_sort_${currentRoute}`;
         const sortBy = localStorage.getItem(sortKey) || 'manual';
 
+        const groupKey = `todo_group_${currentRoute}`;
+        const groupBy = localStorage.getItem(groupKey) || 'none';
+
         projectHeaderDropdown.innerHTML = `
             <button class="dropdown-item" id="btnProjectToggleCompleted">
                 ${isCompletedHidden ? `
@@ -6480,7 +6621,31 @@ function renderProjectHeaderDropdown() {
                 `}
             </button>
             <div class="dropdown-divider"></div>
-            <div class="dropdown-submenu-container" style="position: relative; width: 100%;">
+            <div class="dropdown-submenu-container group-submenu-container" style="position: relative; width: 100%;">
+                <button class="dropdown-item btn-group-submenu-trigger" type="button" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Группировка: ${
+                            groupBy === 'project' ? 'По проекту' :
+                            groupBy === 'priority' ? 'По приоритету' : 'Без группировки'
+                        }</span>
+                    </span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="opacity: 0.6;">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+                <div class="dropdown-submenu group-submenu" style="display: none; position: absolute; left: 100%; top: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 4px; min-width: 160px; z-index: 1010; flex-direction: column; gap: 2px;">
+                    <button class="dropdown-item group-option-btn ${groupBy === 'none' || !groupBy ? 'selected' : ''}" data-group="none" type="button">Без группировки</button>
+                    <button class="dropdown-item group-option-btn ${groupBy === 'project' ? 'selected' : ''}" data-group="project" type="button">По проекту</button>
+                    <button class="dropdown-item group-option-btn ${groupBy === 'priority' ? 'selected' : ''}" data-group="priority" type="button">По приоритету</button>
+                </div>
+            </div>
+            <div class="dropdown-submenu-container sort-submenu-container" style="position: relative; width: 100%;">
                 <button class="dropdown-item btn-sort-submenu-trigger" type="button" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <span style="display: flex; align-items: center; gap: 8px;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
@@ -6496,7 +6661,7 @@ function renderProjectHeaderDropdown() {
                         <polyline points="9 18 15 12 9 6"></polyline>
                     </svg>
                 </button>
-                <div class="dropdown-submenu" style="display: none; position: absolute; left: 100%; top: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 4px; min-width: 160px; z-index: 1010; flex-direction: column; gap: 2px;">
+                <div class="dropdown-submenu sort-submenu" style="display: none; position: absolute; left: 100%; top: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 4px; min-width: 160px; z-index: 1010; flex-direction: column; gap: 2px;">
                     <button class="dropdown-item sort-option-btn ${sortBy === 'manual' ? 'selected' : ''}" data-sort="manual" type="button">Вручную</button>
                     <button class="dropdown-item sort-option-btn ${sortBy === 'date' ? 'selected' : ''}" data-sort="date" type="button">По дате и времени</button>
                     <button class="dropdown-item sort-option-btn ${sortBy === 'alphabetical' ? 'selected' : ''}" data-sort="alphabetical" type="button">По алфавиту</button>
@@ -6519,9 +6684,39 @@ function renderProjectHeaderDropdown() {
             renderTasks();
         });
 
+        // Обработчик подменю группировки
+        const groupSubmenuTrigger = projectHeaderDropdown.querySelector('.btn-group-submenu-trigger');
+        const groupSubmenu = projectHeaderDropdown.querySelector('.group-submenu');
+        if (groupSubmenuTrigger && groupSubmenu) {
+            groupSubmenuTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = groupSubmenu.style.display === 'flex';
+                groupSubmenu.style.display = isVisible ? 'none' : 'flex';
+            });
+            groupSubmenuTrigger.addEventListener('mouseenter', () => {
+                groupSubmenu.style.display = 'flex';
+            });
+            const groupContainer = projectHeaderDropdown.querySelector('.group-submenu-container');
+            if (groupContainer) {
+                groupContainer.addEventListener('mouseleave', () => {
+                    groupSubmenu.style.display = 'none';
+                });
+            }
+
+            groupSubmenu.querySelectorAll('.group-option-btn').forEach(btn => {
+                btn.addEventListener('click', (evt) => {
+                    evt.stopPropagation();
+                    projectHeaderDropdown.style.display = 'none';
+                    const groupByVal = btn.getAttribute('data-group');
+                    localStorage.setItem(groupKey, groupByVal);
+                    renderTasks();
+                });
+            });
+        }
+
         // Добавляем обработчик подменю сортировки для общих экранов
         const submenuTrigger = projectHeaderDropdown.querySelector('.btn-sort-submenu-trigger');
-        const submenu = projectHeaderDropdown.querySelector('.dropdown-submenu');
+        const submenu = projectHeaderDropdown.querySelector('.sort-submenu');
         if (submenuTrigger && submenu) {
             submenuTrigger.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -6531,7 +6726,7 @@ function renderProjectHeaderDropdown() {
             submenuTrigger.addEventListener('mouseenter', () => {
                 submenu.style.display = 'flex';
             });
-            const container = projectHeaderDropdown.querySelector('.dropdown-submenu-container');
+            const container = projectHeaderDropdown.querySelector('.sort-submenu-container');
             if (container) {
                 container.addEventListener('mouseleave', () => {
                     submenu.style.display = 'none';
@@ -7345,6 +7540,29 @@ function initDragAndDrop() {
                 sectionId: targetSectionId
             };
 
+            if (parentContainer) {
+                const groupProjSectEl = parentContainer.closest('.project-section[data-group-project-id]');
+                if (groupProjSectEl) {
+                    const groupProjId = groupProjSectEl.getAttribute('data-group-project-id');
+                    const targetProjId = (groupProjId === 'inbox') ? null : groupProjId;
+                    updateFields.projectId = targetProjId;
+                    if (task) {
+                        task.projectId = targetProjId;
+                    }
+                }
+
+                const groupPrioSectEl = parentContainer.closest('.project-section[data-group-priority]');
+                if (groupPrioSectEl) {
+                    const targetPrio = parseInt(groupPrioSectEl.getAttribute('data-group-priority'), 10);
+                    if (!isNaN(targetPrio)) {
+                        updateFields.priority = targetPrio;
+                        if (task) {
+                            task.priority = targetPrio;
+                        }
+                    }
+                }
+            }
+
             if (currentRoute === 'today' && parentContainer) {
                 const sectEl = parentContainer.closest('.project-section');
                 if (sectEl && sectEl.classList.contains('today-current-section')) {
@@ -7512,18 +7730,25 @@ function initDragAndDrop() {
                     const promises = [];
                     promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), updateFields));
 
-                    if (targetParentId) {
+                    if (targetParentId || updateFields.projectId !== undefined || updateFields.priority !== undefined) {
                         const subtasks = allTasks.filter(t => t.parentId === taskId && !t.deleted);
                         subtasks.forEach(sub => {
-                            promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', sub.id), {
-                                parentId: targetParentId,
-                                projectId: updateFields.projectId || null,
-                                sectionId: updateFields.sectionId || null
-                            }));
+                            const subUpdate = {};
+                            if (targetParentId !== undefined) subUpdate.parentId = targetParentId;
+                            if (updateFields.projectId !== undefined) subUpdate.projectId = updateFields.projectId;
+                            if (updateFields.sectionId !== undefined) subUpdate.sectionId = updateFields.sectionId;
+                            if (updateFields.priority !== undefined) subUpdate.priority = updateFields.priority;
+
+                            if (Object.keys(subUpdate).length > 0) {
+                                promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', sub.id), subUpdate));
+                                if (subUpdate.projectId !== undefined) sub.projectId = subUpdate.projectId;
+                                if (subUpdate.priority !== undefined) sub.priority = subUpdate.priority;
+                            }
                         });
                     }
 
                     await Promise.all(promises);
+                    renderTasks();
                 } catch (err) {
                     console.error("Ошибка при перетаскивании и переупорядочивании задач:", err);
                 }
@@ -15411,6 +15636,9 @@ function showSystemRouteContextMenu(e, routeId, routeName, itemContainer) {
     const keyCount = `todo_hide_counter_${routeId}`;
     const isCountHidden = localStorage.getItem(keyCount) === 'true';
 
+    const groupKey = `todo_group_${routeId}`;
+    const groupBy = localStorage.getItem(groupKey) || 'none';
+
     const menu = document.createElement('div');
     menu.className = 'custom-context-menu';
     menu.innerHTML = `
@@ -15429,6 +15657,19 @@ function showSystemRouteContextMenu(e, routeId, routeName, itemContainer) {
                 <span>Скрыть количество</span>
             `}
         </div>
+        <div class="ctx-divider" style="height: 1px; background-color: var(--border); margin: 4px 0;"></div>
+        <div class="ctx-item ctx-group-item ${groupBy === 'none' ? 'selected' : ''}" data-group="none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
+            <span>Без группировки</span>
+        </div>
+        <div class="ctx-item ctx-group-item ${groupBy === 'project' ? 'selected' : ''}" data-group="project">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            <span>Группировать по проекту</span>
+        </div>
+        <div class="ctx-item ctx-group-item ${groupBy === 'priority' ? 'selected' : ''}" data-group="priority">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z"/></svg>
+            <span>Группировать по приоритету</span>
+        </div>
     `;
 
     document.body.appendChild(menu);
@@ -15442,8 +15683,8 @@ function showSystemRouteContextMenu(e, routeId, routeName, itemContainer) {
         x = e.clientX;
         y = e.clientY + window.scrollY;
 
-        if (x + 150 > window.innerWidth) {
-            x = window.innerWidth - 160;
+        if (x + 180 > window.innerWidth) {
+            x = window.innerWidth - 190;
         }
         if (x < 10) x = 10;
     } else {
@@ -15451,8 +15692,8 @@ function showSystemRouteContextMenu(e, routeId, routeName, itemContainer) {
         x = rect.left - 130;
         y = rect.bottom + window.scrollY + 4;
 
-        if (x + 150 > window.innerWidth) {
-            x = window.innerWidth - 160;
+        if (x + 180 > window.innerWidth) {
+            x = window.innerWidth - 190;
         }
         if (x < 10) x = 10;
     }
@@ -15466,6 +15707,17 @@ function showSystemRouteContextMenu(e, routeId, routeName, itemContainer) {
         activeContextMenu = null;
         localStorage.setItem(keyCount, isCountHidden ? 'false' : 'true');
         renderTasks();
+    });
+
+    menu.querySelectorAll('.ctx-group-item').forEach(btn => {
+        btn.addEventListener('click', (evt) => {
+            evt.stopPropagation();
+            menu.remove();
+            activeContextMenu = null;
+            const groupVal = btn.getAttribute('data-group');
+            localStorage.setItem(groupKey, groupVal);
+            renderTasks();
+        });
     });
 }
 

@@ -2656,6 +2656,9 @@ function updateDateDetectionHighlight() {
             detectedDateMatch = null;
             setDueDate(getDefaultDueDate());
         }
+        if (taskTitleBackdrop) {
+            taskTitleBackdrop.innerHTML = escapeHtml(text);
+        }
     }
 }
 

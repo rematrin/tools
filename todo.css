@@ -425,8 +425,11 @@ body.dark .add-task-form.expanded {
     font-size: 0.95rem;
     font-weight: 400;
     font-family: inherit;
-    line-height: normal;
+    line-height: 1.4;
+    letter-spacing: normal;
+    box-sizing: border-box;
     padding: 4px 0;
+    margin: 0;
     white-space: pre-wrap;
     word-wrap: break-word;
     overflow: hidden;
@@ -455,9 +458,13 @@ body.dark .date-highlight-chip {
     font-size: 0.95rem;
     font-weight: 400;
     font-family: inherit;
+    line-height: 1.4;
+    letter-spacing: normal;
+    box-sizing: border-box;
     outline: none;
     width: 100%;
     padding: 4px 0;
+    margin: 0;
     resize: none;
     overflow-y: hidden;
     min-height: 24px;

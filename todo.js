@@ -12800,6 +12800,11 @@ async function syncTasksFromGCal(allowInteractive = false, force = false) {
 
         for (const calId of calendarIds) {
             try {
+                // Автоматическая очистка сдублированных событий в Google Календаре
+                if (window.GCalendarService && typeof window.GCalendarService.cleanupDuplicateEvents === 'function') {
+                    await window.GCalendarService.cleanupDuplicateEvents(calId, allowInteractive);
+                }
+
                 const events = await window.GCalendarService.fetchEventsForRange(calId, timeMin, timeMax, allowInteractive);
                 if (!Array.isArray(events)) continue;
 

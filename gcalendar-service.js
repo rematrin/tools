@@ -216,6 +216,44 @@ const GCalendarService = {
         return result.items || [];
     },
 
+    // Очистка дубликатов событий в Google Календаре
+    async cleanupDuplicateEvents(calendarId, allowInteractive = false) {
+        if (!calendarId) return 0;
+        try {
+            const timeMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+            const timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+            const events = await this.fetchEventsForRange(calendarId, timeMin, timeMax, allowInteractive);
+            if (!Array.isArray(events) || events.length === 0) return 0;
+
+            const seenEvents = new Map();
+            let duplicatesDeleted = 0;
+
+            for (const event of events) {
+                if (!event || !event.id || event.status === 'cancelled') continue;
+                const summary = (event.summary || '').trim();
+                const startDate = event.start ? (event.start.date || (event.start.dateTime ? event.start.dateTime.split('T')[0] : '')) : '';
+                if (!summary || !startDate) continue;
+
+                const key = `${summary.toLowerCase()}|${startDate}`;
+                if (seenEvents.has(key)) {
+                    try {
+                        await this.deleteTaskFromGoogle(event.id, calendarId, allowInteractive);
+                        duplicatesDeleted++;
+                        console.log(`[GCal Cleanup] Удален дубликат события "${summary}" (${event.id}) на дату ${startDate}`);
+                    } catch (e) {
+                        console.error(`[GCal Cleanup] Не удалось удалить дубликат ${event.id}:`, e);
+                    }
+                } else {
+                    seenEvents.set(key, event.id);
+                }
+            }
+            return duplicatesDeleted;
+        } catch (err) {
+            console.error('[GCal Cleanup] Ошибка очистки дубликатов:', err);
+            return 0;
+        }
+    },
+
     // Конструктор данных события для Google Calendar API
     buildEventData(task) {
         const title = task.title || 'Без названия';

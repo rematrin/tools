@@ -343,20 +343,26 @@ if (btnDueDate) {
 
             openDueDateDropdown();
 
-            dueDateDropdown.style.position = 'fixed';
-            const rect = btnDueDate.getBoundingClientRect();
-            let x = rect.left;
-            let y = rect.bottom + 8;
+            if (window.innerWidth <= 768) {
+                dueDateDropdown.style.position = '';
+                dueDateDropdown.style.left = '';
+                dueDateDropdown.style.top = '';
+            } else {
+                dueDateDropdown.style.position = 'fixed';
+                const rect = btnDueDate.getBoundingClientRect();
+                let x = rect.left;
+                let y = rect.bottom + 8;
 
-            const menuWidth = 710;
-            const menuHeight = 380;
-            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
-            if (y + menuHeight > window.innerHeight) y = rect.top - menuHeight - 8;
-            if (x < 10) x = 10;
-            if (y < 10) y = 10;
+                const menuWidth = 710;
+                const menuHeight = 380;
+                if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+                if (y + menuHeight > window.innerHeight) y = rect.top - menuHeight - 8;
+                if (x < 10) x = 10;
+                if (y < 10) y = 10;
 
-            dueDateDropdown.style.left = `${x}px`;
-            dueDateDropdown.style.top = `${y}px`;
+                dueDateDropdown.style.left = `${x}px`;
+                dueDateDropdown.style.top = `${y}px`;
+            }
         } else {
             closeDueDateDropdown();
         }
@@ -14875,6 +14881,11 @@ function createHabitCardElement(habit) {
             if (circleBtn.classList.contains('disabled')) return;
             if (!currentUid) return;
 
+            if (!circleBtn.classList.contains('checked')) {
+                const completedSound = new Audio('completed.mp3');
+                completedSound.play().catch(err => console.log('Audio playback failed:', err));
+            }
+
             const targetDate = circleBtn.getAttribute('data-date');
             const monthPrefix = circleBtn.getAttribute('data-month-prefix');
             let newHistory = [...historyArray];
@@ -15244,6 +15255,11 @@ function openHabitStatsModal(habit) {
                     e.stopPropagation();
                     if (!currentUid) return;
 
+                    if (!isCompleted) {
+                        const completedSound = new Audio('completed.mp3');
+                        completedSound.play().catch(err => console.log('Audio playback failed:', err));
+                    }
+
                     let newHistory = [...historyArray];
                     if (isCompleted) {
                         newHistory = newHistory.filter(x => !x.startsWith(monthPrefix));
@@ -15314,6 +15330,11 @@ function openHabitStatsModal(habit) {
                     e.stopPropagation();
                     if (!isActiveDay) return;
                     if (!currentUid) return;
+
+                    if (!historySet.has(dateStr)) {
+                        const completedSound = new Audio('completed.mp3');
+                        completedSound.play().catch(err => console.log('Audio playback failed:', err));
+                    }
 
                     let newHistory = [...historyArray];
                     if (historySet.has(dateStr)) {

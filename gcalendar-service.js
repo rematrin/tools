@@ -319,6 +319,82 @@ const GCalendarService = {
         }
 
         return event;
+    },
+
+    // Распарсить данные из события Google Calendar в формат задачи Todo
+    parseEventToTaskData(event) {
+        if (!event) return null;
+
+        const title = event.summary || '';
+        const description = event.description || '';
+
+        let dueDate = null;
+        let dueTime = null;
+        let dueEndDate = null;
+        let dueEndTime = null;
+
+        if (event.start && event.start.dateTime) {
+            const startDate = new Date(event.start.dateTime);
+            const year = startDate.getFullYear();
+            const month = String(startDate.getMonth() + 1).padStart(2, '0');
+            const day = String(startDate.getDate()).padStart(2, '0');
+            dueDate = `${year}-${month}-${day}`;
+
+            const hours = String(startDate.getHours()).padStart(2, '0');
+            const minutes = String(startDate.getMinutes()).padStart(2, '0');
+            dueTime = `${hours}:${minutes}`;
+
+            if (event.end && event.end.dateTime) {
+                const endDate = new Date(event.end.dateTime);
+                const endYear = endDate.getFullYear();
+                const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+                const endDay = String(endDate.getDate()).padStart(2, '0');
+                const endDueDateStr = `${endYear}-${endMonth}-${endDay}`;
+
+                const endHours = String(endDate.getHours()).padStart(2, '0');
+                const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
+                const endDueTimeStr = `${endHours}:${endMinutes}`;
+
+                const durationMs = endDate.getTime() - startDate.getTime();
+                const isDefault30Min = durationMs === 30 * 60 * 1000 && endDueDateStr === dueDate;
+
+                if (!isDefault30Min) {
+                    if (endDueDateStr !== dueDate) {
+                        dueEndDate = endDueDateStr;
+                        dueEndTime = endDueTimeStr;
+                    } else {
+                        dueEndTime = endDueTimeStr;
+                    }
+                }
+            }
+        } else if (event.start && event.start.date) {
+            dueDate = event.start.date;
+            dueTime = null;
+            dueEndTime = null;
+
+            if (event.end && event.end.date) {
+                // В Google Calendar API end.date включительно не входит (exclusive)
+                const endDateObj = new Date(event.end.date + 'T00:00:00');
+                endDateObj.setDate(endDateObj.getDate() - 1);
+                const endYear = endDateObj.getFullYear();
+                const endMonth = String(endDateObj.getMonth() + 1).padStart(2, '0');
+                const endDay = String(endDateObj.getDate()).padStart(2, '0');
+                const endDueDateStr = `${endYear}-${endMonth}-${endDay}`;
+
+                if (endDueDateStr !== dueDate) {
+                    dueEndDate = endDueDateStr;
+                }
+            }
+        }
+
+        return {
+            title,
+            description,
+            dueDate,
+            dueTime,
+            dueEndDate,
+            dueEndTime
+        };
     }
 };
 

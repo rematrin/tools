@@ -12617,6 +12617,7 @@ async function fetchAndRenderGCalEvents(force = false, allowInteractive = false)
         gcalLastFetchTime = Date.now();
 
         renderGCalEventsBanner(allEvents);
+        syncTasksFromGCal(allowInteractive).catch(err => console.error("Ошибка двусторонней синхронизации GCal:", err));
     } catch (err) {
         if (currentRoute !== routeAtStart) {
             if (currentRoute !== 'today' && currentRoute !== 'tomorrow') {
@@ -12670,6 +12671,175 @@ async function fetchAndRenderGCalEvents(force = false, allowInteractive = false)
         gcalIsFetching = false;
     }
 }
+
+async function syncTasksFromGCal(allowInteractive = false) {
+    if (!currentUid || !gcalSyncTasks) return;
+    const token = localStorage.getItem('google_calendar_access_token');
+    if (!token) return;
+
+    if (!gcalMappings || typeof gcalMappings !== 'object') return;
+
+    // Собираем привязанные календари
+    const mappedEntries = Object.entries(gcalMappings).filter(([k, calId]) => Boolean(calId));
+    if (mappedEntries.length === 0) return;
+
+    // Собираем привязанные ключи для каждого календаря
+    const calIdToKeysMap = new Map();
+    for (const [projKey, calId] of mappedEntries) {
+        if (!calIdToKeysMap.has(calId)) {
+            calIdToKeysMap.set(calId, []);
+        }
+        calIdToKeysMap.get(calId).push(projKey);
+    }
+
+    // Определение целевого проекта: если календарь привязан к нескольким проектам или к 'all'/'inbox' — импортируем во Входящие (null)
+    const calIdToProjectMap = new Map();
+    for (const [calId, keys] of calIdToKeysMap.entries()) {
+        if (keys.length > 1 || keys.includes('all') || keys.includes('inbox')) {
+            calIdToProjectMap.set(calId, null);
+        } else {
+            calIdToProjectMap.set(calId, keys[0]);
+        }
+    }
+
+    const calendarIds = Array.from(calIdToProjectMap.keys());
+    if (calendarIds.length === 0) return;
+
+    // Диапазон: запрашиваем от начала сегодняшнего дня до +60 дней вперед
+    const todayObj = new Date();
+    const startOfToday = new Date(todayObj.getFullYear(), todayObj.getMonth(), todayObj.getDate(), 0, 0, 0);
+    const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+
+    const timeMin = startOfToday.toISOString();
+    const timeMax = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+
+    let taskUpdated = false;
+
+    for (const calId of calendarIds) {
+        try {
+            const events = await window.GCalendarService.fetchEventsForRange(calId, timeMin, timeMax, allowInteractive);
+            if (!Array.isArray(events)) continue;
+
+            const targetProjectId = calIdToProjectMap.get(calId);
+
+            for (const event of events) {
+                if (!event || !event.id || event.status === 'cancelled') continue;
+
+                const parsed = window.GCalendarService.parseEventToTaskData(event);
+                if (!parsed || !parsed.dueDate) continue;
+
+                // 1. ЗАЩИТА ОТ ПРОШЛЫХ ДАТ: Игнорируем события за прошедшие дни
+                if (parsed.dueDate < todayStr) continue;
+
+                // Находим существующую задачу в Todo (сверяем gcal_event_id и recurringEventId)
+                const existingTask = (allTasks || []).find(t =>
+                    t.gcal_event_id === event.id ||
+                    (event.recurringEventId && t.gcal_event_id === event.recurringEventId)
+                );
+
+                if (existingTask) {
+                    if (existingTask.deleted || existingTask.completed) continue;
+
+                    // Обновляем существующую задачу при изменениях в Google Календаре
+                    const titleChanged = parsed.title && parsed.title !== existingTask.title;
+                    const descChanged = parsed.description !== undefined && parsed.description !== (existingTask.description || '');
+                    const dueDateChanged = parsed.dueDate !== existingTask.dueDate;
+                    const dueTimeChanged = parsed.dueTime !== (existingTask.dueTime || null);
+                    const dueEndDateChanged = parsed.dueEndDate !== (existingTask.dueEndDate || null);
+                    const dueEndTimeChanged = parsed.dueEndTime !== (existingTask.dueEndTime || null);
+
+                    if (titleChanged || descChanged || dueDateChanged || dueTimeChanged || dueEndDateChanged || dueEndTimeChanged) {
+                        console.log(`[GCal->Todo] Обновление задачи "${existingTask.title}" (${existingTask.id}):`, parsed);
+
+                        const updatedFields = {
+                            dueDate: parsed.dueDate,
+                            dueTime: parsed.dueTime || null,
+                            dueEndDate: parsed.dueEndDate || null,
+                            dueEndTime: parsed.dueEndTime || null
+                        };
+                        if (parsed.title) updatedFields.title = parsed.title;
+                        if (parsed.description !== undefined) updatedFields.description = parsed.description;
+
+                        const newTitle = updatedFields.title || existingTask.title || '';
+                        const newDesc = updatedFields.description !== undefined ? updatedFields.description : (existingTask.description || '');
+                        const newHash = `${newTitle}|${updatedFields.dueDate || ''}|${updatedFields.dueTime || ''}|${existingTask.dueRepeat || ''}|${updatedFields.dueEndDate || ''}|${updatedFields.dueEndTime || ''}|${existingTask.completed}|${newDesc}`;
+                        updatedFields.gcal_last_sync_hash = newHash;
+
+                        syncingTasks.add(existingTask.id);
+                        const lockKey = `gcal_sync_lock_${existingTask.id}`;
+                        localStorage.setItem(lockKey, Date.now().toString());
+
+                        try {
+                            await updateDoc(doc(db, 'users', currentUid, 'tasks', existingTask.id), updatedFields);
+                            Object.assign(existingTask, updatedFields);
+                            taskUpdated = true;
+                        } catch (err) {
+                            console.error(`Ошибка при сохранении задачи ${existingTask.id} из GCal:`, err);
+                        } finally {
+                            syncingTasks.delete(existingTask.id);
+                            localStorage.removeItem(lockKey);
+                        }
+                    }
+                } else {
+                    // 2. ЗАЩИТА ОТ ПОВТОРОВ И ПОДПИСОК: Не импортируем регулярные/повторяющиеся события календаря
+                    if (event.recurringEventId || /_\d{8}T/.test(event.id) || (event.recurrence && event.recurrence.length > 0)) {
+                        continue;
+                    }
+
+                    // ИМПОРТ НОВОГО ОДНОРАЗОВОГО СОБЫТИЯ ИЗ GOOGLE КАЛЕНДАРЯ
+                    console.log(`[GCal->Todo] Импорт нового события из Календаря "${event.summary}" (${event.id}) в проект: ${targetProjectId || 'Inbox'}`);
+
+                    const taskTitle = parsed.title || event.summary || 'Новое событие из Google Календаря';
+                    const taskDesc = parsed.description || '';
+
+                    const newHash = `${taskTitle}|${parsed.dueDate || ''}|${parsed.dueTime || ''}||${parsed.dueEndDate || ''}|${parsed.dueEndTime || ''}|false|${taskDesc}`;
+
+                    const newTaskData = {
+                        title: taskTitle,
+                        description: taskDesc,
+                        completed: false,
+                        dueDate: parsed.dueDate,
+                        dueTime: parsed.dueTime || null,
+                        dueRepeat: null,
+                        dueEndDate: parsed.dueEndDate || null,
+                        dueEndTime: parsed.dueEndTime || null,
+                        projectId: targetProjectId || null,
+                        priority: 0,
+                        order: 0,
+                        gcal_event_id: event.id,
+                        gcal_calendar_id: calId,
+                        gcal_last_sync_hash: newHash,
+                        createdAt: serverTimestamp()
+                    };
+
+                    try {
+                        const docRef = await addDoc(collection(db, 'users', currentUid, 'tasks'), newTaskData);
+                        if (docRef && docRef.id) {
+                            syncingTasks.add(docRef.id);
+                            const lockKey = `gcal_sync_lock_${docRef.id}`;
+                            localStorage.setItem(lockKey, Date.now().toString());
+                            setTimeout(() => {
+                                syncingTasks.delete(docRef.id);
+                                localStorage.removeItem(lockKey);
+                            }, 5000);
+                        }
+                        taskUpdated = true;
+                    } catch (err) {
+                        console.error(`Ошибка при импорте нового события из GCal в Todo:`, err);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error(`Ошибка при получении событий из календаря ${calId}:`, err);
+        }
+    }
+
+    if (taskUpdated && typeof renderTasks === 'function') {
+        renderTasks();
+    }
+}
+
+window.syncTasksFromGCal = syncTasksFromGCal;
 
 function renderGCalEventsBanner(events) {
     const banner = document.getElementById('gcalEventsBanner');

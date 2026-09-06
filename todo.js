@@ -6392,15 +6392,16 @@ function createTaskRowElement(task, isStandalone = false) {
         });
     });
 
-    // Настройка активации draggable при взаимодействии с карточкой (drag-and-drop по всей площади)
+    // Настройка активации draggable только при удерживании иконки перетаскивания
     item.addEventListener('mousedown', (e) => {
-        // Исключаем интерактивные элементы (за исключением самой иконки перетаскивания)
-        if (e.target.closest('button:not(.task-drag-handle), input, textarea, a, .checkbox-wrapper, .custom-checkbox, .task-actions-dropdown')) {
-            return;
+        if (e.target.closest('.task-drag-handle')) {
+            item.setAttribute('draggable', 'true');
         }
-        item.setAttribute('draggable', 'true');
     });
     item.addEventListener('mouseup', () => {
+        item.removeAttribute('draggable');
+    });
+    item.addEventListener('mouseleave', () => {
         item.removeAttribute('draggable');
     });
 
@@ -12466,7 +12467,7 @@ async function syncAllTasksForProject(projectId) {
         syncingTasks.add(task.id);
 
         try {
-            const currentTaskHash = `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.dueRepeat || ''}|${task.dueEndDate || ''}|${task.dueEndTime || ''}|${task.completed}|${task.description || ''}`;
+            const currentTaskHash = getTaskSyncHash(task);
             const eventId = await window.GCalendarService.syncTaskToGoogle(task, calendarId);
             if (eventId) {
                 await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
@@ -12823,9 +12824,10 @@ async function syncTasksFromGCal(allowInteractive = false) {
                         if (parsed.title) updatedFields.title = parsed.title;
                         if (parsed.description !== undefined) updatedFields.description = parsed.description;
 
-                        const newTitle = updatedFields.title || existingTask.title || '';
-                        const newDesc = updatedFields.description !== undefined ? updatedFields.description : (existingTask.description || '');
-                        const newHash = `${newTitle}|${updatedFields.dueDate || ''}|${updatedFields.dueTime || ''}|${existingTask.dueRepeat || ''}|${updatedFields.dueEndDate || ''}|${updatedFields.dueEndTime || ''}|${existingTask.completed}|${newDesc}`;
+                        const newHash = getTaskSyncHash({
+                            ...existingTask,
+                            ...updatedFields
+                        });
                         updatedFields.gcal_last_sync_hash = newHash;
 
                         syncingTasks.add(existingTask.id);
@@ -12840,7 +12842,7 @@ async function syncTasksFromGCal(allowInteractive = false) {
                             console.error(`Ошибка при сохранении задачи ${existingTask.id} из GCal:`, err);
                         } finally {
                             syncingTasks.delete(existingTask.id);
-                            localStorage.removeItem(lockKey);
+                            setTimeout(() => localStorage.removeItem(lockKey), 5000);
                         }
                     }
                 } else {
@@ -12855,7 +12857,16 @@ async function syncTasksFromGCal(allowInteractive = false) {
                     const taskTitle = parsed.title || event.summary || 'Новое событие из Google Календаря';
                     const taskDesc = parsed.description || '';
 
-                    const newHash = `${taskTitle}|${parsed.dueDate || ''}|${parsed.dueTime || ''}||${parsed.dueEndDate || ''}|${parsed.dueEndTime || ''}|false|${taskDesc}`;
+                    const newHash = getTaskSyncHash({
+                        title: taskTitle,
+                        dueDate: parsed.dueDate,
+                        dueTime: parsed.dueTime,
+                        dueRepeat: null,
+                        dueEndDate: parsed.dueEndDate,
+                        dueEndTime: parsed.dueEndTime,
+                        completed: false,
+                        description: taskDesc
+                    });
 
                     const newTaskData = {
                         title: taskTitle,
@@ -14747,7 +14758,7 @@ async function handleCountdownSync(cd) {
             console.error("Ошибка при синхронизации обратного отсчета с Google:", err);
         } finally {
             syncingCountdowns.delete(cd.id);
-            localStorage.removeItem(lockKey);
+            setTimeout(() => localStorage.removeItem(lockKey), 5000);
         }
     } else {
         if (cd.gcal_event_id && cd.gcal_calendar_id) {
@@ -14764,7 +14775,7 @@ async function handleCountdownSync(cd) {
                 console.error("Ошибка при удалении события обратного отсчета из Google:", err);
             } finally {
                 syncingCountdowns.delete(cd.id);
-                localStorage.removeItem(lockKey);
+                setTimeout(() => localStorage.removeItem(lockKey), 5000);
             }
         }
     }

@@ -2602,7 +2602,6 @@ body.dark .btn-empty-trash:hover {
     justify-content: center;
     color: var(--text-secondary);
     opacity: 0;
-    pointer-events: none;
     cursor: grab;
     transition: opacity 0.2s ease, color 0.2s ease;
     background: transparent;
@@ -2625,7 +2624,6 @@ body.dark .btn-empty-trash:hover {
 @media (hover: hover) {
     .task-item:hover .task-drag-handle {
         opacity: 0.6;
-        pointer-events: auto;
     }
 
     .task-item:hover .task-drag-handle:hover {

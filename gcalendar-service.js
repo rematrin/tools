@@ -216,42 +216,50 @@ const GCalendarService = {
         return result.items || [];
     },
 
-    // Очистка дубликатов событий в Google Календаре
+    // Очистка дубликатов событий в конкретном Google Календаре
     async cleanupDuplicateEvents(calendarId, allowInteractive = false) {
-        if (!calendarId) return 0;
-        try {
-            const timeMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-            const timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
-            const events = await this.fetchEventsForRange(calendarId, timeMin, timeMax, allowInteractive);
-            if (!Array.isArray(events) || events.length === 0) return 0;
+        return this.cleanupAllDuplicateEvents([calendarId], allowInteractive);
+    },
 
-            const seenEvents = new Map();
-            let duplicatesDeleted = 0;
+    // Глобальная очистка дубликатов между ВСЕМИ подключенными календарями
+    async cleanupAllDuplicateEvents(calendarIds, allowInteractive = false) {
+        if (!Array.isArray(calendarIds) || calendarIds.length === 0) return 0;
+        const uniqueCalendarIds = [...new Set(calendarIds.filter(Boolean))];
+        const globalSeenEvents = new Map();
+        let totalDeleted = 0;
 
-            for (const event of events) {
-                if (!event || !event.id || event.status === 'cancelled') continue;
-                const summary = (event.summary || '').trim();
-                const startDate = event.start ? (event.start.date || (event.start.dateTime ? event.start.dateTime.split('T')[0] : '')) : '';
-                if (!summary || !startDate) continue;
+        const timeMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
 
-                const key = `${summary.toLowerCase()}|${startDate}`;
-                if (seenEvents.has(key)) {
-                    try {
-                        await this.deleteTaskFromGoogle(event.id, calendarId, allowInteractive);
-                        duplicatesDeleted++;
-                        console.log(`[GCal Cleanup] Удален дубликат события "${summary}" (${event.id}) на дату ${startDate}`);
-                    } catch (e) {
-                        console.error(`[GCal Cleanup] Не удалось удалить дубликат ${event.id}:`, e);
+        for (const calId of uniqueCalendarIds) {
+            try {
+                const events = await this.fetchEventsForRange(calId, timeMin, timeMax, allowInteractive);
+                if (!Array.isArray(events)) continue;
+
+                for (const event of events) {
+                    if (!event || !event.id || event.status === 'cancelled') continue;
+                    const summary = (event.summary || '').trim();
+                    const startDate = event.start ? (event.start.date || (event.start.dateTime ? event.start.dateTime.split('T')[0] : '')) : '';
+                    if (!summary || !startDate) continue;
+
+                    const key = `${summary.toLowerCase()}|${startDate}`;
+                    if (globalSeenEvents.has(key)) {
+                        try {
+                            await this.deleteTaskFromGoogle(event.id, calId, allowInteractive);
+                            totalDeleted++;
+                            console.log(`[GCal Cleanup] Удален дубликат между календарями "${summary}" (${event.id}) из календаря ${calId}`);
+                        } catch (e) {
+                            console.error(`[GCal Cleanup] Не удалось удалить дубликат ${event.id}:`, e);
+                        }
+                    } else {
+                        globalSeenEvents.set(key, { id: event.id, calendarId: calId });
                     }
-                } else {
-                    seenEvents.set(key, event.id);
                 }
+            } catch (err) {
+                console.error(`[GCal Cleanup] Ошибка при очистке календаря ${calId}:`, err);
             }
-            return duplicatesDeleted;
-        } catch (err) {
-            console.error('[GCal Cleanup] Ошибка очистки дубликатов:', err);
-            return 0;
         }
+        return totalDeleted;
     },
 
     // Конструктор данных события для Google Calendar API
@@ -331,30 +339,9 @@ const GCalendarService = {
             };
         }
 
-        // Поддержка правил повторения (Recurrence RRULE)
-        if (task.dueRepeat) {
-            let rrule = '';
-            switch (task.dueRepeat) {
-                case 'daily':
-                    rrule = 'RRULE:FREQ=DAILY';
-                    break;
-                case 'weekly':
-                    rrule = 'RRULE:FREQ=WEEKLY';
-                    break;
-                case 'weekday':
-                    rrule = 'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR';
-                    break;
-                case 'monthly':
-                    rrule = 'RRULE:FREQ=MONTHLY';
-                    break;
-                case 'yearly':
-                    rrule = 'RRULE:FREQ=YEARLY';
-                    break;
-            }
-            if (rrule) {
-                event.recurrence = [rrule];
-            }
-        }
+        // Каждая задача из Todo синхронизируется как одиночное событие на свою конкретную дату (dueDate).
+        // Повторение задач управляемся внутренним механизмом Todo при выполнении,
+        // чтобы избежать размножения дублирующихся правил RRULE в Google Календаре.
 
         return event;
     },

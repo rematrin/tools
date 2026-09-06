@@ -12507,8 +12507,11 @@ async function handleTaskSync(task) {
 
     if (!gcalSyncTasks) return;
 
-    // Сначала проверяем общую синхронизацию ("all"), затем точечную
-    const mappedCalendarId = gcalMappings['all'] || gcalMappings[task.projectId || 'inbox'];
+    // Сохраняем привязку к исходному календарю, если он уже есть и валиден
+    const isExistingCalValid = task.gcal_calendar_id && Object.values(gcalMappings).includes(task.gcal_calendar_id);
+    const mappedCalendarId = isExistingCalValid
+        ? task.gcal_calendar_id
+        : (gcalMappings['all'] || gcalMappings[task.projectId || 'inbox']);
 
     const isAllDay = !task.dueTime;
     const shouldHaveEvent = !task.completed && !task.deleted && task.dueDate && mappedCalendarId && (!isAllDay || gcalSyncAllDay);
@@ -12788,6 +12791,11 @@ async function syncTasksFromGCal(allowInteractive = false, force = false) {
         const calendarIds = Array.from(calIdToProjectMap.keys());
         if (calendarIds.length === 0) return;
 
+        // Глобальная очистка дубликатов во всех подключенных Google Календарях
+        if (window.GCalendarService && typeof window.GCalendarService.cleanupAllDuplicateEvents === 'function') {
+            await window.GCalendarService.cleanupAllDuplicateEvents(calendarIds, allowInteractive);
+        }
+
         // Диапазон: запрашиваем от начала сегодняшнего дня до +60 дней вперед
         const todayObj = new Date();
         const startOfToday = new Date(todayObj.getFullYear(), todayObj.getMonth(), todayObj.getDate(), 0, 0, 0);
@@ -12800,11 +12808,6 @@ async function syncTasksFromGCal(allowInteractive = false, force = false) {
 
         for (const calId of calendarIds) {
             try {
-                // Автоматическая очистка сдублированных событий в Google Календаре
-                if (window.GCalendarService && typeof window.GCalendarService.cleanupDuplicateEvents === 'function') {
-                    await window.GCalendarService.cleanupDuplicateEvents(calId, allowInteractive);
-                }
-
                 const events = await window.GCalendarService.fetchEventsForRange(calId, timeMin, timeMax, allowInteractive);
                 if (!Array.isArray(events)) continue;
 

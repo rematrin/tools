@@ -69,6 +69,7 @@ if (mobileNavTodayEl) {
 let currentUid = null;
 let unsubscribeTasks = null;
 let allTasks = [];
+let previousTaskVisualHashes = {};
 let currentRoute = 'inbox'; // 'inbox' или 'today'
 let isCompletedSectionCollapsed = localStorage.getItem('todo_completed_collapsed') === 'true';
 let activeContextMenu = null;
@@ -2430,6 +2431,25 @@ window.addEventListener('authChanged', (e) => {
     }
 });
 
+function getTaskSyncHash(task) {
+    if (!task) return '';
+    const title = (task.title || '').trim();
+    const dueDate = task.dueDate || '';
+    const dueTime = task.dueTime || '';
+    const dueRepeat = task.dueRepeat || '';
+    const dueEndDate = task.dueEndDate || '';
+    const dueEndTime = task.dueEndTime || '';
+    const completed = task.completed ? 'true' : 'false';
+    const description = (task.description || '').trim();
+    return `${title}|${dueDate}|${dueTime}|${dueRepeat}|${dueEndDate}|${dueEndTime}|${completed}|${description}`;
+}
+
+function getTaskVisualHash(task) {
+    if (!task) return '';
+    const subCount = task.subtasks ? task.subtasks.length : 0;
+    return `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.dueRepeat || ''}|${task.dueEndDate || ''}|${task.dueEndTime || ''}|${task.completed ? '1' : '0'}|${task.deleted ? '1' : '0'}|${task.projectId || ''}|${task.order ?? 0}|${task.description || ''}|${subCount}`;
+}
+
 // Загрузка данных пользователя
 function startTodoForUser(uid) {
     if (unsubscribeTasks) unsubscribeTasks();
@@ -2464,22 +2484,37 @@ function startTodoForUser(uid) {
         });
 
         // Синхронизация изменений с Google Календарем
+        let hasVisualTaskChanges = false;
+
         snapshot.docChanges().forEach((change) => {
             const docData = change.doc.data();
             const task = { id: change.doc.id, ...docData };
 
             if (change.type === "added" || change.type === "modified") {
-                if (typeof handleTaskSync === 'function') {
-                    handleTaskSync(task);
+                const currentSyncHash = getTaskSyncHash(task);
+                if (!docData.gcal_last_sync_hash || docData.gcal_last_sync_hash !== currentSyncHash) {
+                    if (typeof handleTaskSync === 'function') {
+                        handleTaskSync(task);
+                    }
+                }
+
+                const currentVisualHash = getTaskVisualHash(task);
+                if (previousTaskVisualHashes[task.id] !== currentVisualHash) {
+                    hasVisualTaskChanges = true;
+                    previousTaskVisualHashes[task.id] = currentVisualHash;
                 }
             } else if (change.type === "removed") {
                 if (typeof handleTaskDelete === 'function') {
                     handleTaskDelete(task);
                 }
+                delete previousTaskVisualHashes[task.id];
+                hasVisualTaskChanges = true;
             }
         });
 
-        renderTasks();
+        if (hasVisualTaskChanges) {
+            renderTasks();
+        }
     }, (error) => {
         console.error("Ошибка при получении списка задач:", error);
     });
@@ -2492,6 +2527,7 @@ function stopTodoForUser() {
         unsubscribeTasks = null;
     }
     allTasks = [];
+    previousTaskVisualHashes = {};
 }
 
 // Функция обновления счетчика символов для формы добавления
@@ -4190,8 +4226,35 @@ window.addEventListener('offline', () => {
 // Run status update after DOM initialization
 setTimeout(updateNetworkStatus, 100);
 
-// Отрендерить задачи в UI
-function renderTasks() {
+// Отрендерить задачи в UI с троттлингом (предотвращает мерцание DOM при фоновом обновлении)
+let renderTasksTimer = null;
+let lastRenderTime = 0;
+
+function renderTasks(immediate = false) {
+    const now = Date.now();
+
+    if (immediate || (now - lastRenderTime > 300)) {
+        if (renderTasksTimer) {
+            clearTimeout(renderTasksTimer);
+            renderTasksTimer = null;
+        }
+        lastRenderTime = now;
+        doRenderTasks();
+        return;
+    }
+
+    if (renderTasksTimer) return;
+
+    renderTasksTimer = setTimeout(() => {
+        renderTasksTimer = null;
+        lastRenderTime = Date.now();
+        doRenderTasks();
+    }, 150);
+}
+
+window.renderTasks = renderTasks;
+
+function doRenderTasks() {
     // Устанавливаем класс роута на body
     document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash', 'route-pomodoro', 'route-countdown', 'route-habit');
     if (currentRoute === 'today') {
@@ -12443,7 +12506,7 @@ async function handleTaskSync(task) {
 
     const isAllDay = !task.dueTime;
     const shouldHaveEvent = !task.completed && !task.deleted && task.dueDate && mappedCalendarId && (!isAllDay || gcalSyncAllDay);
-    const currentTaskHash = `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.dueRepeat || ''}|${task.dueEndDate || ''}|${task.dueEndTime || ''}|${task.completed}|${task.description || ''}`;
+    const currentTaskHash = getTaskSyncHash(task);
 
     if (shouldHaveEvent) {
         // Если уже есть корректная привязка и данные не изменились — ничего не делаем
@@ -12476,7 +12539,7 @@ async function handleTaskSync(task) {
             console.error("Ошибка при синхронизации задачи с Google:", err);
         } finally {
             syncingTasks.delete(task.id);
-            localStorage.removeItem(lockKey);
+            setTimeout(() => localStorage.removeItem(lockKey), 5000);
         }
     } else {
         if (task.gcal_event_id && task.gcal_calendar_id) {
@@ -12493,7 +12556,7 @@ async function handleTaskSync(task) {
                 console.error("Ошибка при удалении события из Google:", err);
             } finally {
                 syncingTasks.delete(task.id);
-                localStorage.removeItem(lockKey);
+                setTimeout(() => localStorage.removeItem(lockKey), 5000);
             }
         }
     }

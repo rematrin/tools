@@ -2593,10 +2593,10 @@ body.dark .btn-empty-trash:hover {
 /* Кнопка-иконка перетаскивания */
 .task-drag-handle {
     position: absolute;
-    left: -27px;
+    left: -24px;
     top: 0;
     bottom: 0;
-    width: 32px;
+    width: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2870,12 +2870,9 @@ body.dark .user-profile-menu {
 }
 
 /* Сброс залипания ховера после drag & drop */
-.disable-hover .task-item,
 .disable-hover .task-actions,
 .disable-hover .task-drag-handle {
     pointer-events: none !important;
-    opacity: 0 !important;
-    box-shadow: none !important;
 }
 
 /* Стили для модального окна загрузки иконки проекта */

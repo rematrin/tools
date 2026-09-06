@@ -8629,7 +8629,7 @@
                         stateClass = isPlaying ? 'active playing' : 'active paused';
                     }
                     songsTableRowsHTML += `
-                        <tr id="artist-view-song-row-${song.id}" class="${stateClass}" style="cursor: pointer;" onclick="playSongFromFlatList('${song.id}')">
+                        <tr id="artist-view-song-row-${song.id}" class="${stateClass}" style="cursor: pointer;" onclick="playSongFromArtist('${artistId}', '${song.id}')">
                             <td class="track-num">
                                 <span class="track-num-txt">${idx + 1}</span>
                                 <div class="eq-container track-eq-anim">
@@ -8637,7 +8637,7 @@
                                     <div class="eq-bar eq-bar-2"></div>
                                     <div class="eq-bar eq-bar-3"></div>
                                 </div>
-                                <button class="play-row-btn" onclick="event.stopPropagation(); playSongFromFlatList('${song.id}')">▶</button>
+                                <button class="play-row-btn" onclick="event.stopPropagation(); playSongFromArtist('${artistId}', '${song.id}')">▶</button>
                             </td>
                             <td style="font-weight:600;">${song.title}</td>
                             <td style="color:var(--text-secondary); cursor:pointer;" onclick="event.stopPropagation(); window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</td>
@@ -9028,6 +9028,37 @@
                 duration: s.duration
             }));
 
+            trackIndex = playlist.findIndex(s => s.id === songId);
+            if (trackIndex === -1) trackIndex = 0;
+
+            currentDeck = 1;
+            loadDeck(p1, trackIndex, true);
+            isPlaying = true;
+            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
+            renderPlaylist();
+            updateUI();
+            updateUrlState();
+        }
+
+        function playSongFromArtist(artistId, songId) {
+            if (window.currentRadioStation) stopRadioPlayback();
+            const currentSong = playlist[trackIndex];
+            if (currentSong && currentSong.id === songId) {
+                togglePlay();
+                return;
+            }
+
+            const artistSongs = window.musicSongs
+                .filter(s => s.artistId === artistId)
+                .sort((a, b) => a.index - b.index);
+
+            playlist = artistSongs.map(s => ({
+                id: s.id,
+                title: s.title,
+                artistName: s.artistName,
+                albumName: s.albumName,
+                duration: s.duration
+            }));
             trackIndex = playlist.findIndex(s => s.id === songId);
             if (trackIndex === -1) trackIndex = 0;
 

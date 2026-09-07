@@ -1741,7 +1741,8 @@ function openSettingsModal() {
     }
 
     // Подставляем значение настройки темы оформления
-    const currentTheme = localStorage.getItem('themeMode') || 'system';
+    const themeKey = (typeof window.getThemeStorageKey === 'function') ? window.getThemeStorageKey() : 'themeMode_todo';
+    const currentTheme = localStorage.getItem(themeKey) || 'system';
     const prefThemeModeSelect = document.getElementById('prefThemeMode');
     if (prefThemeModeSelect) {
         prefThemeModeSelect.value = currentTheme;

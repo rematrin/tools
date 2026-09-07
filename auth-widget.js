@@ -157,7 +157,8 @@ function initAuthWidget() {
         }
 
         // Фолбэк, если лоадер еще не загрузился или произошла ошибка
-        const stored = localStorage.getItem('themeMode');
+        const themeKey = (typeof window.getThemeStorageKey === 'function') ? window.getThemeStorageKey() : 'themeMode';
+        const stored = localStorage.getItem(themeKey);
         if (stored === 'system') return 'auto';
         if (stored === 'light' || stored === 'dark') return stored;
         return 'auto';
@@ -250,7 +251,8 @@ function initAuthWidget() {
                         document.body.classList.add('dark');
                     }
                 }
-                localStorage.setItem('themeMode', selectedTheme === 'auto' ? 'system' : selectedTheme);
+                const themeKey = (typeof window.getThemeStorageKey === 'function') ? window.getThemeStorageKey() : 'themeMode';
+                localStorage.setItem(themeKey, selectedTheme === 'auto' ? 'system' : selectedTheme);
             }
         });
     });

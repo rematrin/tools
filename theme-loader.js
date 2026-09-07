@@ -6,15 +6,24 @@
 
     const themeModes = ['system', 'light', 'dark'];
 
+    // Определяем автономный ключ для todo.html и music.html, для остальных оставляем общий ключ themeMode
+    const pagePath = window.location.pathname.toLowerCase();
+    let themeStorageKey = 'themeMode';
+    if (pagePath.endsWith('/todo.html') || pagePath.endsWith('/todo') || pagePath.includes('todo.html')) {
+        themeStorageKey = 'themeMode_todo';
+    } else if (pagePath.endsWith('/music.html') || pagePath.endsWith('/music') || pagePath.includes('music.html')) {
+        themeStorageKey = 'themeMode_music';
+    }
+
     // Читаем сохраненную настройку или ставим 'system' по умолчанию
-    let currentThemeMode = localStorage.getItem('themeMode') || 'system';
+    let currentThemeMode = localStorage.getItem(themeStorageKey) || 'system';
 
     // Функция применения темы к body
     function applyTheme(mode) {
-        console.log('[ThemeLoader] Applying mode:', mode);
+        console.log('[ThemeLoader] Applying mode:', mode, 'for key:', themeStorageKey);
 
         // Сохраняем выбор в память
-        localStorage.setItem('themeMode', mode);
+        localStorage.setItem(themeStorageKey, mode);
         currentThemeMode = mode;
 
         if (!document.body) {
@@ -53,6 +62,11 @@
     window.getThemeMode = function () {
         // Если у нас 'system', возвращаем виджету 'auto'
         return currentThemeMode === 'system' ? 'auto' : currentThemeMode;
+    };
+
+    // 3. window.getThemeStorageKey: Возвращает ключ хранения для текущей страницы
+    window.getThemeStorageKey = function () {
+        return themeStorageKey;
     };
 
     // Слушатель системных изменений (срабатывает только если выбран режим system)

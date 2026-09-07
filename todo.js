@@ -144,7 +144,7 @@ const btnConfirmDeleteCoform = document.getElementById('btnConfirmDeleteCoform')
 const taskTitleInput = document.getElementById('taskTitleInput');
 const btnAddTask = document.getElementById('btnAddTask');
 const activeTasksContainer = document.getElementById('activeTasksContainer');
-const addTaskForm = document.querySelector('.add-task-form');
+const addTaskForm = document.getElementById('mainAddTaskForm');
 
 // Элементы выбора срока
 const btnDueDate = document.getElementById('btnDueDate');
@@ -433,7 +433,7 @@ document.addEventListener('click', (e) => {
     });
 
     // 2. Сворачивание формы добавления задачи при клике вне
-    if (addTaskForm && addTaskForm.classList.contains('expanded')) {
+    if (addTaskForm && !isMobileCreateTaskOpen() && addTaskForm.classList.contains('expanded')) {
         const isClickInsideForm = addTaskForm.contains(e.target) ||
             (dueDateDropdown && dueDateDropdown.contains(e.target)) ||
             (addTaskProjectDropdown && addTaskProjectDropdown.contains(e.target)) ||
@@ -2714,7 +2714,10 @@ function updateDateDetectionHighlight() {
 
 
 
+let isAddingTask = false;
+
 async function handleAddTask() {
+    if (isAddingTask) return;
     let titleText = taskTitleInput.value.trim();
     if (!titleText || titleText.length > 500 || !currentUid) return;
 
@@ -2792,6 +2795,8 @@ async function handleAddTask() {
         newOrder = foundAny ? minOrder - 1 : 0;
     }
 
+    isAddingTask = true;
+    syncMobileCreateTaskSubmit();
     try {
         await addDoc(collection(db, 'users', currentUid, 'tasks'), {
             title: titleText,
@@ -2828,10 +2833,15 @@ async function handleAddTask() {
 
         taskTitleInput.style.height = 'auto';
         updateAddFormCharCount();
+        isAddingTask = false;
+        closeMobileCreateTask();
     } catch (err) {
         console.error("Не удалось добавить задачу:", err);
+        if (isMobileCreateTaskOpen()) document.getElementById("mobileCreateTaskError").hidden = false;
     } finally {
+        isAddingTask = false;
         btnAddTask.disabled = false;
+        syncMobileCreateTaskSubmit();
     }
 }
 if (btnAddTask) {
@@ -2839,12 +2849,13 @@ if (btnAddTask) {
 }
 if (taskTitleInput) {
     taskTitleInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' && !isMobileCreateTaskOpen() && !e.isComposing) {
             e.preventDefault();
             handleAddTask();
         } else if (e.key === 'Escape') {
+            if (isMobileCreateTaskOpen()) return;
             e.preventDefault();
-            const form = document.querySelector('.add-task-form');
+            const form = document.getElementById('mainAddTaskForm');
             taskTitleInput.value = '';
             if (taskTitleBackdrop) taskTitleBackdrop.innerHTML = '';
             detectedDateMatch = null;
@@ -4371,12 +4382,13 @@ function doRenderTasks() {
 
     // Переключаем отображение баннера Корзины и формы быстрого добавления
     const trashNoticeBanner = document.getElementById('trashNoticeBanner');
-    const addTaskFormEl = document.querySelector('.add-task-form');
+    const addTaskFormEl = document.getElementById('mainAddTaskForm');
 
     if (trashNoticeBanner) {
         trashNoticeBanner.style.display = currentRoute === 'trash' ? 'flex' : 'none';
     }
     if (addTaskFormEl) {
+        updateMobileFabVisibility();
         addTaskFormEl.style.display = (currentRoute === 'trash' || currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit') ? 'none' : 'flex';
     }
 
@@ -9955,7 +9967,8 @@ if (mobileBottomNavEl) {
 
 // --- ЛОГИКА ДЛЯ МОБИЛЬНОГО БОТОМ-ШИТа И FAB ---
 function adjustAddTaskFormLocation() {
-    const addTaskForm = document.querySelector('.add-task-form');
+    const addTaskForm = document.getElementById('mainAddTaskForm');
+    if (isMobileCreateTaskOpen()) return;
     const activeTasksContainer = document.getElementById('activeTasksContainer');
     if (activeTasksContainer && addTaskForm && addTaskForm.parentNode !== activeTasksContainer.parentNode) {
         activeTasksContainer.parentNode.insertBefore(addTaskForm, activeTasksContainer);
@@ -10097,6 +10110,7 @@ function openTaskDetailsModal(taskId) {
 
     if (taskDetailsModal) {
         taskDetailsModal.style.display = 'flex';
+        updateMobileFabVisibility();
         const card = taskDetailsModal.querySelector('.task-details-modal-card');
         if (card) {
             card.classList.remove('expanded');
@@ -10131,6 +10145,7 @@ function closeTaskDetailsModal() {
         setTimeout(() => {
             if (currentModalTaskId === null) {
                 taskDetailsModal.style.display = 'none';
+                updateMobileFabVisibility();
             }
         }, 300);
     }
@@ -16572,3 +16587,94 @@ initSystemRouteActions();
 
 
 
+
+
+// Separate mobile creation dialog; reuse the creation controls and their state.
+function isMobileCreateTaskOpen() {
+    return document.getElementById('mobileCreateTaskSheet')?.hidden === false;
+}
+
+function updateMobileFabVisibility() {
+    const fab = document.getElementById('mobileCreateTaskFab');
+    if (fab) fab.hidden = ['trash', 'pomodoro', 'countdown', 'habit'].includes(currentRoute) ||
+        document.getElementById('taskDetailsModal')?.style.display === 'flex';
+}
+
+function syncMobileCreateTaskSubmit() {
+    const submit = document.getElementById('mobileCreateTaskSubmit');
+    if (submit) {
+        const title = taskTitleInput.value.trim();
+        submit.disabled = isAddingTask || !title || title.length > 500;
+        submit.textContent = isAddingTask ? 'Добавляем…' : 'Добавить';
+    }
+}
+
+function syncMobileCreateTaskViewport() {
+    const sheet = document.getElementById('mobileCreateTaskSheet');
+    if (!sheet || sheet.hidden) return;
+    const viewport = window.visualViewport;
+    const topGap = Math.min(64, window.innerHeight * 0.08);
+    sheet.style.height = `${Math.max(0, (viewport ? viewport.height : window.innerHeight) - topGap)}px`;
+    sheet.style.top = `${(viewport ? viewport.offsetTop : 0) + topGap}px`;
+}
+
+function closeMobileCreateTask() {
+    if (!isMobileCreateTaskOpen() || isAddingTask) return;
+    const sheet = document.getElementById('mobileCreateTaskSheet');
+    closeDueDateDropdown();
+    addTaskProjectDropdown.style.display = 'none';
+    priorityDropdown.style.display = 'none';
+    taskTitleInput.blur();
+    sheet.hidden = true;
+    document.body.classList.remove('mobile-create-task-open');
+    addTaskForm.classList.remove('expanded');
+    taskTitleInput.placeholder = '+ Добавить задачу';
+    adjustAddTaskFormLocation();
+    document.getElementById('mobileCreateTaskFab').focus({ preventScroll: true });
+}
+
+const mobileCreateTaskFab = document.getElementById('mobileCreateTaskFab');
+if (mobileCreateTaskFab) {
+    const sheet = document.getElementById('mobileCreateTaskSheet');
+    // Keep the fixed dialog outside containers that may establish a stacking context.
+    document.body.append(sheet);
+    mobileCreateTaskFab.addEventListener('click', () => {
+        if (!window.matchMedia('(max-width: 768px)').matches) return;
+        document.getElementById('mobileCreateTaskBody').append(addTaskForm);
+        sheet.hidden = false;
+        document.getElementById('mobileCreateTaskError').hidden = true;
+        document.body.classList.add('mobile-create-task-open');
+        addTaskForm.classList.add('expanded');
+        taskTitleInput.placeholder = 'Что нужно сделать?';
+        taskTitleInput.setAttribute('aria-label', 'Название задачи');
+        syncMobileCreateTaskViewport();
+        syncMobileCreateTaskSubmit();
+        // Synchronous focus within the tap is required for the iOS keyboard.
+        taskTitleInput.focus({ preventScroll: true });
+    });
+    document.getElementById('mobileCreateTaskCancel').addEventListener('click', closeMobileCreateTask);
+    document.getElementById('mobileCreateTaskSubmit').addEventListener('click', handleAddTask);
+    taskTitleInput.addEventListener('input', syncMobileCreateTaskSubmit);
+    document.addEventListener('keydown', (event) => {
+        if (!isMobileCreateTaskOpen()) return;
+        if (event.key === 'Escape') {
+            // Let an open picker consume Escape first.
+            if (document.getElementById('dueModalOverlay')?.style.display === 'flex') return;
+            event.preventDefault();
+            closeMobileCreateTask();
+        }
+        if (event.key === 'Tab') {
+            const controls = [...sheet.querySelectorAll('button:not(:disabled), textarea')].filter(el => el.getClientRects().length);
+            const first = controls[0], last = controls[controls.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }
+    });
+    window.visualViewport?.addEventListener('resize', syncMobileCreateTaskViewport);
+    window.visualViewport?.addEventListener('scroll', syncMobileCreateTaskViewport);
+    window.addEventListener('resize', () => {
+        if (!window.matchMedia('(max-width: 768px)').matches) closeMobileCreateTask();
+        else syncMobileCreateTaskViewport();
+    });
+    updateMobileFabVisibility();
+}

@@ -185,25 +185,86 @@
             box-sizing: border-box;
         }
 
-        #main-player-card.has-dynamic-bg {
-            background: linear-gradient(135deg, var(--dynamic-bg-start), var(--dynamic-bg-end)) !important;
+        @property --dynamic-bg-start {
+            syntax: '<color>';
+            inherits: true;
+            initial-value: #303038;
         }
 
-        #main-player-card::before {
-            content: '';
+        @property --dynamic-bg-end {
+            syntax: '<color>';
+            inherits: true;
+            initial-value: #202028;
+        }
+
+        #main-player-card {
+            transition: --dynamic-bg-start 1.8s ease, --dynamic-bg-end 1.8s ease,
+                transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+        }
+
+        /* Clip only the ambient layers so player controls can keep their overflow. */
+        .player-ambient {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
+            overflow: hidden;
             border-radius: inherit;
             pointer-events: none;
             z-index: 0;
-            transition: background 0.5s ease;
+            opacity: 0;
+            background: #171719;
+            transition: opacity 1.2s ease;
         }
 
-        #main-player-card.has-dynamic-bg::before {
-            background: rgba(0, 0, 0, 0.3);
+        .has-dynamic-bg .player-ambient { opacity: 1; }
+
+        .player-ambient::before,
+        .player-ambient::after {
+            content: '';
+            position: absolute;
+            inset: -45%;
+            background:
+                radial-gradient(ellipse at 28% 32%, var(--dynamic-bg-start) 0%, transparent 55%),
+                radial-gradient(ellipse at 72% 68%, var(--dynamic-bg-end) 0%, transparent 55%);
+            filter: blur(45px) saturate(1.6);
+            opacity: 0.75;
+            animation: ambient-orbit 24s ease-in-out infinite;
+            animation-play-state: paused;
+        }
+
+        .player-ambient::after {
+            background:
+                radial-gradient(ellipse at 68% 28%, var(--dynamic-bg-end) 0%, transparent 48%),
+                radial-gradient(ellipse at 32% 72%, var(--dynamic-bg-start) 0%, transparent 48%);
+            opacity: 0.5;
+            animation-name: ambient-drift;
+            animation-duration: 19s;
+            animation-delay: -9s;
+        }
+
+        #main-player-card.active.has-dynamic-bg.is-playing .player-ambient::before,
+        #main-player-card.active.has-dynamic-bg.is-playing .player-ambient::after {
+            animation-play-state: running;
+        }
+
+        @keyframes ambient-orbit {
+            0%, 100% { transform: translate(-6%, -4%) rotate(0deg) scale(1); }
+            33% { transform: translate(7%, -5%) rotate(55deg) scale(1.12); }
+            66% { transform: translate(-3%, 7%) rotate(125deg) scale(1.04); }
+        }
+
+        @keyframes ambient-drift {
+            0%, 100% { transform: translate(6%, 4%) rotate(15deg) scale(1.1); }
+            50% { transform: translate(-8%, -6%) rotate(-80deg) scale(1.22); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #main-player-card .player-ambient::before,
+            #main-player-card .player-ambient::after { animation: none; }
+        }
+
+        html.page-hidden #main-player-card .player-ambient::before,
+        html.page-hidden #main-player-card .player-ambient::after {
+            animation-play-state: paused;
         }
 
         #main-player-card.active {
@@ -3419,6 +3480,7 @@
                 </div>
 
                 <div class="card" id="main-player-card">
+                    <div class="player-ambient" aria-hidden="true"></div>
                     <div id="player-container">
 
                         <div id="playlist-sidebar">
@@ -4841,7 +4903,12 @@
             }
         }
 
+        document.addEventListener('visibilitychange', () => {
+            document.documentElement.classList.toggle('page-hidden', document.hidden);
+        });
+
         function updatePlayPauseIcon() {
+            document.getElementById('main-player-card')?.classList.toggle('is-playing', isPlaying);
             const playIcon = document.getElementById('playbar-icon-play');
             const pauseIcon = document.getElementById('playbar-icon-pause');
             if (playIcon) playIcon.style.display = isPlaying ? 'none' : 'block';
@@ -4904,7 +4971,10 @@
             renderSavedPlaylists(window.currentSavedPlaylists);
         }
 
+        let dynamicBackgroundTrackId;
         function updateDynamicBackground(trackId, title) {
+            if (dynamicBackgroundTrackId === trackId) return;
+            dynamicBackgroundTrackId = trackId;
             if (!trackId) {
                 const card = document.getElementById('main-player-card');
                 if (card) card.classList.remove('has-dynamic-bg');
@@ -4915,6 +4985,7 @@
             const img = new Image();
             img.crossOrigin = "anonymous";
             img.onload = function () {
+                if (dynamicBackgroundTrackId !== trackId) return;
                 try {
                     const canvas = document.createElement('canvas');
                     canvas.width = 30;
@@ -4971,6 +5042,7 @@
                 }
             };
             img.onerror = function (err) {
+                if (dynamicBackgroundTrackId !== trackId) return;
                 console.warn("Failed to load image for dynamic bg, falling back to hash colors:", imgUrl, err);
                 applyFallbackColors(trackId, title);
             };

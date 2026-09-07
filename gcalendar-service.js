@@ -238,6 +238,9 @@ const GCalendarService = {
 
                 for (const event of events) {
                     if (!event || !event.id || event.status === 'cancelled') continue;
+                    // Не удаляем инстансы повторяющихся событий (события, развернутые из RRULE)
+                    if (event.recurringEventId) continue;
+
                     const summary = (event.summary || '').trim();
                     const startDate = event.start ? (event.start.date || (event.start.dateTime ? event.start.dateTime.split('T')[0] : '')) : '';
                     if (!summary || !startDate) continue;
@@ -339,11 +342,45 @@ const GCalendarService = {
             };
         }
 
-        // Каждая задача из Todo синхронизируется как одиночное событие на свою конкретную дату (dueDate).
-        // Повторение задач управляемся внутренним механизмом Todo при выполнении,
-        // чтобы избежать размножения дублирующихся правил RRULE в Google Календаре.
+        // Формирование правила повторения (RRULE) для Google Календаря, если задача повторяющаяся
+        if (task.dueRepeat) {
+            const rrule = this.buildRecurrenceRule(task.dueRepeat, task.dueDate);
+            if (rrule) {
+                event.recurrence = [rrule];
+            }
+        }
 
         return event;
+    },
+
+    // Построить строку правила повторения по стандарту RFC 5545 для Google Calendar API
+    buildRecurrenceRule(dueRepeat, dueDate) {
+        if (!dueRepeat) return null;
+
+        switch (dueRepeat) {
+            case 'daily':
+                return 'RRULE:FREQ=DAILY';
+            case 'weekday':
+                return 'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR';
+            case 'weekly': {
+                if (dueDate) {
+                    const daysMap = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+                    const [year, month, day] = dueDate.split('-').map(Number);
+                    const dateObj = new Date(year, month - 1, day);
+                    const dayCode = daysMap[dateObj.getDay()];
+                    if (dayCode) {
+                        return `RRULE:FREQ=WEEKLY;BYDAY=${dayCode}`;
+                    }
+                }
+                return 'RRULE:FREQ=WEEKLY';
+            }
+            case 'monthly':
+                return 'RRULE:FREQ=MONTHLY';
+            case 'yearly':
+                return 'RRULE:FREQ=YEARLY';
+            default:
+                return null;
+        }
     },
 
     // Распарсить данные из события Google Calendar в формат задачи Todo

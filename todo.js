@@ -2795,8 +2795,32 @@ async function handleAddTask() {
         newOrder = foundAny ? minOrder - 1 : 0;
     }
 
-    isAddingTask = true;
+    // Мгновенный сброс полей ввода и закрытие мобильного модального окна для ощущения мгновенного добавления
+    taskTitleInput.value = '';
+    if (taskTitleBackdrop) taskTitleBackdrop.innerHTML = '';
+    detectedDateMatch = null;
+    disabledWords.clear();
+
+    selectedDueTime = null;
+    selectedDueRepeat = null;
+    selectedDueEndDate = null;
+    selectedDueEndTime = null;
+    setDueDate(getDefaultDueDate());
+    setPriority(0);
+
+    if (currentRoute.startsWith('project/')) {
+        const projectId = currentRoute.split('/')[1];
+        setAddTaskProject(projectId);
+    } else {
+        setAddTaskProject(null);
+    }
+
+    taskTitleInput.style.height = 'auto';
+    updateAddFormCharCount();
+    closeMobileCreateTask();
     syncMobileCreateTaskSubmit();
+
+    isAddingTask = true;
     try {
         await addDoc(collection(db, 'users', currentUid, 'tasks'), {
             title: titleText,
@@ -2811,36 +2835,11 @@ async function handleAddTask() {
             order: newOrder,
             createdAt: serverTimestamp()
         });
-
-        taskTitleInput.value = '';
-        if (taskTitleBackdrop) taskTitleBackdrop.innerHTML = '';
-        detectedDateMatch = null;
-        disabledWords.clear();
-
-        selectedDueTime = null;
-        selectedDueRepeat = null;
-        selectedDueEndDate = null;
-        selectedDueEndTime = null;
-        setDueDate(getDefaultDueDate());
-        setPriority(0);
-
-        if (currentRoute.startsWith('project/')) {
-            const projectId = currentRoute.split('/')[1];
-            setAddTaskProject(projectId);
-        } else {
-            setAddTaskProject(null);
-        }
-
-        taskTitleInput.style.height = 'auto';
-        updateAddFormCharCount();
-        isAddingTask = false;
-        closeMobileCreateTask();
     } catch (err) {
         console.error("Не удалось добавить задачу:", err);
-        if (isMobileCreateTaskOpen()) document.getElementById("mobileCreateTaskError").hidden = false;
     } finally {
         isAddingTask = false;
-        btnAddTask.disabled = false;
+        if (btnAddTask) btnAddTask.disabled = false;
         syncMobileCreateTaskSubmit();
     }
 }
@@ -16606,7 +16605,7 @@ function syncMobileCreateTaskSubmit() {
     if (submit) {
         const title = taskTitleInput.value.trim();
         submit.disabled = isAddingTask || !title || title.length > 500;
-        submit.textContent = isAddingTask ? 'Добавляем…' : 'Добавить';
+        submit.textContent = 'Добавить';
     }
 }
 
@@ -16623,7 +16622,7 @@ function syncMobileCreateTaskViewport() {
 }
 
 function closeMobileCreateTask() {
-    if (!isMobileCreateTaskOpen() || isAddingTask) return;
+    if (!isMobileCreateTaskOpen()) return;
     const sheet = document.getElementById('mobileCreateTaskSheet');
     closeDueDateDropdown();
     addTaskProjectDropdown.style.display = 'none';

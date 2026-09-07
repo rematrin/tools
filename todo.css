@@ -8224,6 +8224,7 @@ input:checked + .view-slider:before {
     transform: rotate(180deg);
 }
 /* Mobile task creation belongs only to the main todo form. */
+.mobile-create-task-backdrop,
 .mobile-create-task-fab,
 .mobile-create-task-sheet {
     display: none;
@@ -8249,8 +8250,9 @@ input:checked + .view-slider:before {
         -webkit-tap-highlight-color: transparent;
     }
     body.mobile-create-task-open { overflow: hidden; }
-    body.mobile-create-task-open::after {
-        content: '';
+    .mobile-create-task-backdrop:not([hidden]) {
+        display: block;
+        background: rgba(0, 0, 0, .45);
         position: fixed;
         inset: 0;
         z-index: 2399;
@@ -8263,9 +8265,10 @@ input:checked + .view-slider:before {
         position: fixed;
         inset: 0 0 auto;
         height: 100dvh;
+        min-height: calc(100lvh - 64px);
         box-sizing: border-box;
         border-radius: 20px 20px 0 0;
-        box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .45), 0 -8px 30px rgba(0, 0, 0, .12);
+        box-shadow: 0 -8px 30px rgba(0, 0, 0, .12);
         background: var(--hover-bg);
         color: var(--text);
         z-index: 2400;
@@ -8345,10 +8348,10 @@ input:checked + .view-slider:before {
     }
     #mobileCreateTaskSheet .task-input { min-height: 64px; }
     #mobileCreateTaskSheet .form-actions {
-        position: static;
+        position: relative;
         flex-shrink: 0;
-        margin-top: auto !important;
-        padding: 16px 0 max(16px, env(safe-area-inset-bottom, 0px));
+        margin-top: 12px !important;
+        padding: 0 0 16px;
     }
     #mobileCreateTaskSheet .form-actions-left {
         flex-wrap: wrap !important;
@@ -8361,11 +8364,12 @@ input:checked + .view-slider:before {
     #mobileCreateTaskSheet #btnAddTask { display: none !important; }
     #mobileCreateTaskSheet .project-dropdown,
     #mobileCreateTaskSheet .priority-dropdown {
-        bottom: 80px !important;
+        top: 100% !important;
+        bottom: auto !important;
         left: 12px !important;
         right: 12px !important;
         width: auto !important;
-        max-height: calc(100% - 100px) !important;
+        max-height: 40vh !important;
     }
     #mobileCreateTaskError { margin: 12px 20px 0; color: #dc2626; font-size: 14px; }
     @keyframes mobile-create-task-enter {
@@ -8375,4 +8379,8 @@ input:checked + .view-slider:before {
 }
 @media (prefers-reduced-motion: reduce) {
     .mobile-create-task-sheet:not([hidden]) { animation: none; }
+}
+
+@media (max-width: 768px) {
+    body:has(#todoSidebar.mobile-open) .mobile-create-task-fab { display: none !important; }
 }

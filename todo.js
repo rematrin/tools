@@ -2849,7 +2849,7 @@ if (btnAddTask) {
 }
 if (taskTitleInput) {
     taskTitleInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !isMobileCreateTaskOpen() && !e.isComposing) {
+        if (e.key === 'Enter' && !e.isComposing) {
             e.preventDefault();
             handleAddTask();
         } else if (e.key === 'Escape') {
@@ -16597,7 +16597,8 @@ function isMobileCreateTaskOpen() {
 function updateMobileFabVisibility() {
     const fab = document.getElementById('mobileCreateTaskFab');
     if (fab) fab.hidden = ['trash', 'pomodoro', 'countdown', 'habit'].includes(currentRoute) ||
-        document.getElementById('taskDetailsModal')?.style.display === 'flex';
+        document.getElementById('taskDetailsModal')?.style.display === 'flex' ||
+        document.getElementById('todoSidebar')?.classList.contains('mobile-open');
 }
 
 function syncMobileCreateTaskSubmit() {
@@ -16614,8 +16615,11 @@ function syncMobileCreateTaskViewport() {
     if (!sheet || sheet.hidden) return;
     const viewport = window.visualViewport;
     const topGap = Math.min(64, window.innerHeight * 0.08);
-    sheet.style.height = `${Math.max(0, (viewport ? viewport.height : window.innerHeight) - topGap)}px`;
-    sheet.style.top = `${(viewport ? viewport.offsetTop : 0) + topGap}px`;
+    // Paint through the full layout viewport, including behind iOS keyboard controls.
+    const fullHeight = Math.max(document.documentElement.clientHeight, window.innerHeight,
+        viewport ? viewport.height + viewport.offsetTop : 0);
+    sheet.style.height = `${fullHeight - topGap}px`;
+    sheet.style.top = `${topGap}px`;
 }
 
 function closeMobileCreateTask() {
@@ -16626,6 +16630,7 @@ function closeMobileCreateTask() {
     priorityDropdown.style.display = 'none';
     taskTitleInput.blur();
     sheet.hidden = true;
+    document.getElementById('mobileCreateTaskBackdrop').hidden = true;
     document.body.classList.remove('mobile-create-task-open');
     addTaskForm.classList.remove('expanded');
     taskTitleInput.placeholder = '+ Добавить задачу';
@@ -16637,11 +16642,15 @@ const mobileCreateTaskFab = document.getElementById('mobileCreateTaskFab');
 if (mobileCreateTaskFab) {
     const sheet = document.getElementById('mobileCreateTaskSheet');
     // Keep the fixed dialog outside containers that may establish a stacking context.
-    document.body.append(sheet);
+    const backdrop = document.getElementById('mobileCreateTaskBackdrop');
+    document.body.append(backdrop, sheet);
+    backdrop.addEventListener('click', closeMobileCreateTask);
     mobileCreateTaskFab.addEventListener('click', () => {
         if (!window.matchMedia('(max-width: 768px)').matches) return;
         document.getElementById('mobileCreateTaskBody').append(addTaskForm);
         sheet.hidden = false;
+        backdrop.hidden = false;
+        taskTitleInput.setAttribute('enterkeyhint', 'done');
         document.getElementById('mobileCreateTaskError').hidden = true;
         document.body.classList.add('mobile-create-task-open');
         addTaskForm.classList.add('expanded');

@@ -675,7 +675,7 @@
 
         #playlist-count-text {
             font-size: 0.8rem;
-            color: var(--text-secondary);
+            color: #fff;
         }
 
         .playlist-header-actions {
@@ -830,9 +830,34 @@
             flex-shrink: 0;
         }
 
-        .playlist-item.active .playlist-index {
-            color: var(--accent);
-            font-size: 0.75rem;
+        #main-player-card .playlist-index { color: #fff; }
+
+        .playlist-thumb { position: relative; }
+        .queue-cover-control {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            border: 0; padding: 0; color: #fff; background: rgba(0, 0, 0, 0.5);
+            opacity: 0; cursor: pointer; transition: opacity 0.15s ease;
+        }
+        .queue-cover-control svg { width: 22px; height: 22px; fill: currentColor; }
+        .queue-cover-control .queue-pause-icon,
+        .queue-cover-control .eq-container { display: none; }
+        :is(.playlist-item, .playlist-track-row):hover .queue-cover-control,
+        :is(.playlist-item, .playlist-track-row):focus-within .queue-cover-control,
+        :is(.playlist-item, .playlist-track-row).playing .queue-cover-control { opacity: 1; }
+        :is(.playlist-item, .playlist-track-row).playing .queue-play-icon { display: none; }
+        :is(.playlist-item, .playlist-track-row).playing .eq-container { display: flex; }
+        :is(.playlist-item, .playlist-track-row).playing:hover .eq-container,
+        :is(.playlist-item, .playlist-track-row).playing:focus-within .eq-container { display: none; }
+        :is(.playlist-item, .playlist-track-row).playing:hover .queue-pause-icon,
+        :is(.playlist-item, .playlist-track-row).playing:focus-within .queue-pause-icon { display: block; }
+        .queue-cover-control .eq-bar { background: #fff; }
+        .queue-cover-control:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+        @media (hover: none) {
+            .queue-cover-control { opacity: 1; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .queue-cover-control .eq-bar { animation: none; }
         }
 
         .playlist-thumb {
@@ -2199,6 +2224,36 @@
                 opacity: 0.4;
             }
         }
+
+        .radio-favorite-btn {
+            width: 34px; height: 34px; padding: 7px; border: none;
+            border-radius: 50%; background: rgba(0, 0, 0, 0.55);
+            color: #fff; cursor: pointer; display: inline-flex;
+            align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .radio-card-cover > .radio-favorite-btn,
+        .radio-hero-banner > .radio-favorite-btn {
+            position: absolute; top: 8px; left: 8px; z-index: 20;
+        }
+        @media (hover: hover) {
+            .radio-card-cover > .radio-favorite-btn,
+            .radio-hero-banner > .radio-favorite-btn {
+                opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+            }
+            .radio-card:hover .radio-favorite-btn,
+            .radio-card:focus-within .radio-favorite-btn,
+            .radio-hero-banner:hover > .radio-favorite-btn,
+            .radio-hero-banner:focus-within > .radio-favorite-btn {
+                opacity: 1; pointer-events: auto;
+            }
+        }
+        .radio-hero-banner .radio-badge { margin-left: 36px; }
+        .radio-favorite-btn[aria-pressed="true"] { color: #ffd66b; }
+        .radio-favorite-btn:hover { background: rgba(0, 0, 0, 0.8); }
+        .radio-favorite-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+        .radio-favorite-btn:disabled { opacity: 0.55; cursor: wait; }
+        .radio-favorite-btn svg { width: 20px; height: 20px; }
+        .radio-live-controls { display: inline-flex; align-items: center; gap: 10px; }
 
         .radio-antenna-badge {
             position: absolute;
@@ -3861,6 +3916,11 @@
 
 
 
+        const initialPlaylistAutoplay = window.location.hash === '#playlist';
+        function shouldAutoplayInitialPlaylist() {
+            return initialPlaylistAutoplay && window.location.hash === '#playlist' && !window.currentRadioStation;
+        }
+
         function onPlayerReady(event) {
             event.target.setVolume(playerVolume);
             playersReadyCount++;
@@ -3871,7 +3931,7 @@
 
 
                 if (listId) {
-                    importPlaylist(listId, true);
+                    importPlaylist(listId, true, shouldAutoplayInitialPlaylist);
                 } else if (vIds) {
                     let ids = vIds.split(',');
                     playlist = [];
@@ -3880,7 +3940,7 @@
                     window.currentListId = null;
                     renderPlaylist();
                     fetchTitlesForPlaylist();
-                    loadDeck(p1, 0, false);
+                    loadDeck(p1, 0, shouldAutoplayInitialPlaylist());
                     prepareNext();
                     updateUI();
                 } else {
@@ -4227,6 +4287,7 @@
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;" id="radio-hero-banners-grid">
                                 <!-- Banner 1: Record -->
                                 <div class="radio-hero-banner" onclick="playPresetRadioStation('record')">
+                                    ${radioFavoriteButton(Object.values(PRESET_RADIO_STATIONS).flat().find(s => s.id === 'record'))}
                                     <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80">
                                     <div class="radio-hero-overlay"></div>
                                     <div style="position: absolute; inset: 0; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; z-index: 10;">
@@ -4248,6 +4309,7 @@
                                 </div>
                                 <!-- Banner 2: Europa Plus -->
                                 <div class="radio-hero-banner" onclick="playPresetRadioStation('europaplus')">
+                                    ${radioFavoriteButton(Object.values(PRESET_RADIO_STATIONS).flat().find(s => s.id === 'europaplus'))}
                                     <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80">
                                     <div class="radio-hero-overlay"></div>
                                     <div style="position: absolute; inset: 0; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; z-index: 10;">
@@ -4279,6 +4341,12 @@
                             <div id="radio-stations-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px;">
                                 <!-- Заполняется динамически -->
                             </div>
+                        </section>
+
+                        <section id="radio-favorites-section" style="margin-top: 40px;">
+                            <h3 style="font-size: 1.25rem; margin: 0 0 16px;">Избранные радиостанции</h3>
+                            <p id="radio-favorites-status" role="status" style="color: var(--text-secondary); font-size: 0.85rem;"></p>
+                            <div id="radio-favorites-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px;"></div>
                         </section>
 
                         <!-- Недавно прослушанные радиостанции (Последние 10 станций) -->
@@ -4566,6 +4634,7 @@
             } else if (hash === '#radio') {
                 renderRadioStationsGrid(window.activeRadioTab || 'featured');
                 renderRecentRadioStations();
+                refreshRadioFavorites();
             }
         }
 
@@ -4812,23 +4881,46 @@
                 const isErrClass = track.isError ? ' error-track' : '';
                 div.className = `playlist-item${isActive}${isErrClass}`;
 
-                let indexContent = isActive ? '▶' : (index + 1);
+                let indexContent = index + 1;
 
                 div.innerHTML = `
                 <div class="playlist-index">${indexContent}</div>
                 <div class="playlist-thumb">
                     <img src="${thumbUrl}" loading="lazy" draggable="false">
+                    <button type="button" class="queue-cover-control" aria-label="Воспроизвести">
+                        <svg class="queue-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <svg class="queue-pause-icon" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+                        <span class="eq-container" aria-hidden="true"><span class="eq-bar eq-bar-1"></span><span class="eq-bar eq-bar-2"></span><span class="eq-bar eq-bar-3"></span></span>
+                    </button>
                 </div>
                 <div class="playlist-info">
                     <div class="playlist-title">${track.title}</div>
                 </div>
             `;
-                div.onclick = (e) => {
-                    jumpToTrack(index);
+                const activateTrack = () => {
+                    if (index === trackIndex && !window.currentRadioStation) togglePlay();
+                    else jumpToTrack(index);
+                };
+                div.onclick = activateTrack;
+                div.querySelector('.queue-cover-control').onclick = event => {
+                    event.stopPropagation();
+                    activateTrack();
                 };
                 list.appendChild(div);
             });
+            updateQueuePlaybackState();
             updateButtons();
+        }
+
+        function updateQueuePlaybackState() {
+            document.querySelectorAll('#playlist-list .playlist-item').forEach((row, index) => {
+                const playing = index === trackIndex && isPlaying && !window.currentRadioStation;
+                row.classList.toggle('active', index === trackIndex);
+                row.classList.toggle('playing', playing);
+                const button = row.querySelector('.queue-cover-control');
+                button.disabled = !!playlist[index]?.isError;
+                button.setAttribute('aria-label', playing ? 'Пауза' : 'Воспроизвести');
+            });
         }
 
         function refreshPlaylistDetailsIfVisible() {
@@ -4908,6 +5000,7 @@
         });
 
         function updatePlayPauseIcon() {
+            updateQueuePlaybackState();
             document.getElementById('main-player-card')?.classList.toggle('is-playing', isPlaying);
             const playIcon = document.getElementById('playbar-icon-play');
             const pauseIcon = document.getElementById('playbar-icon-pause');
@@ -5244,8 +5337,15 @@
 
             trackIndex = nextIdx;
 
-            // Start playing the next track
-            startMix();
+            // A failed cued track must not turn a paused queue into playback.
+            if (isPlaying) {
+                startMix();
+            } else {
+                loadDeck(currentDeck === 1 ? p1 : p2, trackIndex, false);
+                prepareNext();
+                renderPlaylist();
+                updateUI();
+            }
         }
 
         function onPlayerError(event, deckNum) {
@@ -5873,7 +5973,7 @@
             return videoItems;
         }
 
-        async function importPlaylist(listId, autoReplace = false) {
+        async function importPlaylist(listId, autoReplace = false, shouldAutoplay = () => false) {
             if (isPlaying && isCrossfading) { alert("Подождите конца перехода"); return; }
 
             window.isScanning = true;
@@ -5941,7 +6041,7 @@
                 updateUrlState();
 
                 if (!isPlaying) {
-                    loadDeck(p1, 0, false);
+                    loadDeck(p1, 0, shouldAutoplay());
                     prepareNext();
                     updateUI();
                 }
@@ -5975,7 +6075,7 @@
                         if (e.data === 5) {
                             clearTimeout(scanTimeout);
                         }
-                        onPlayerStateChange(e);
+                        onPlayerStateChange(e, shouldAutoplay());
                     },
                     'onError': (e) => {
                         console.error("Scanner player error:", e.data);
@@ -6027,7 +6127,7 @@
             }
         }
 
-        function onPlayerStateChange(event) {
+        function onPlayerStateChange(event, autoplayImportedPlaylist = false) {
             // --- 1. ЛОГИКА СИНХРОНИЗАЦИИ КНОПКИ ---
             let activePlayer = (currentDeck === 1) ? p1 : p2;
             let nextPlayer = (currentDeck === 1) ? p2 : p1;
@@ -6138,7 +6238,7 @@
 
                     if (!isPlaying) {
                         if (shouldReplace) {
-                            loadDeck(p1, 0, false);
+                            loadDeck(p1, 0, autoplayImportedPlaylist);
                             prepareNext();
                         }
                         updateUI();
@@ -6555,7 +6655,7 @@
 
                         row.onclick = () => {
                             const currentTrack = playlist[trackIndex];
-                            const isCurrent = (currentTrack && currentTrack.id === track.id);
+                            const isCurrent = (currentTrack && currentTrack.id === track.id && !window.currentRadioStation);
                             if (isCurrent) {
                                 togglePlay();
                             } else {
@@ -6568,43 +6668,33 @@
 
                         // Check if active playing track is this one
                         const currentTrack = playlist[trackIndex];
-                        const isCurrent = (currentTrack && currentTrack.id === track.id);
+                        const isCurrent = (currentTrack && currentTrack.id === track.id && !window.currentRadioStation);
 
-                        let trackNumContent = `<span class="track-num-label">${index + 1}</span>`;
-                        let titleStyle = 'font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
-                        let activeClass = '';
-
-                        if (isCurrent) {
-                            titleStyle = 'font-weight: 600; color: #fa243c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
-                            if (isPlaying) {
-                                activeClass = ' playing';
-                                trackNumContent = `
-                                    <div class="eq-container">
-                                        <div class="eq-bar eq-bar-1"></div>
-                                        <div class="eq-bar eq-bar-2"></div>
-                                        <div class="eq-bar eq-bar-3"></div>
-                                    </div>
-                                    <svg class="track-pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
-                                `;
-                            } else {
-                                activeClass = ' paused';
-                                trackNumContent = `<svg class="track-play-icon" viewBox="0 0 24 24" style="display: block; color: #fa243c;"><path d="M8 5v14l11-7z"></path></svg>`;
-                            }
-                        }
+                        const playing = isCurrent && isPlaying;
+                        row.classList.toggle('playing', playing);
+                        const titleStyle = `font-weight: 600; color: ${isCurrent ? '#fa243c' : 'var(--text)'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
 
                         row.innerHTML = `
-                            <div class="playlist-track-number${activeClass}">
-                                ${trackNumContent}
-                                ${isCurrent ? '' : '<svg class="track-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>'}
-                            </div>
+                            <div class="playlist-track-number">${index + 1}</div>
                             <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                                <div class="playlist-thumb">
                                 <img src="${thumbnail}" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 40 40\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23555\\'/></svg>'">
+                                    <button type="button" class="queue-cover-control" aria-label="${playing ? 'Пауза' : 'Воспроизвести'}">
+                                        <svg class="queue-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                        <svg class="queue-pause-icon" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+                                        <span class="eq-container" aria-hidden="true"><span class="eq-bar eq-bar-1"></span><span class="eq-bar eq-bar-2"></span><span class="eq-bar eq-bar-3"></span></span>
+                                    </button>
+                                </div>
                                 <span style="${titleStyle}">${track.title || "Загрузка..."}</span>
                             </div>
                             <div style="color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayChannel}</div>
                             <div style="text-align: right; padding-right: 16px; color: var(--text-secondary); font-variant-numeric: tabular-nums;">${track.duration || "--:--"}</div>
                             <div style="color: var(--text-secondary); text-align: center;">•••</div>
                         `;
+                        row.querySelector('.queue-cover-control').onclick = event => {
+                            event.stopPropagation();
+                            row.onclick();
+                        };
                         tracksList.appendChild(row);
                     });
                 }
@@ -7787,6 +7877,7 @@
         window.addEventListener('authChanged', async (e) => {
             const user = e.detail.user;
             window.currentUser = user;
+            subscribeRadioFavorites(user);
 
             const sidebarName = document.getElementById('sidebar-user-name');
             const sidebarAvatar = document.getElementById('sidebar-user-avatar');
@@ -7804,21 +7895,6 @@
                 await loadSavedPlaylistsFromFirebase(user.uid);
                 await loadMediaLibrary(user.uid);
 
-                // Восстановление плейлиста после логина, если обновили страницу на вкладке плеера
-                if (window.location.hash === '#playlist' && playlist.length === 0) {
-                    let urlParams = new URLSearchParams(window.location.search);
-                    const listId = urlParams.get('list');
-                    const videoId = urlParams.get('v');
-                    if (listId || videoId) {
-                        let targetUrl = listId ? `playlists.html?list=${listId}` : `playlists.html?v=${videoId}`;
-                        let targetName = "Плейлист";
-                        if (listId && window.currentSavedPlaylists) {
-                            const found = window.currentSavedPlaylists.find(p => p.url && p.url.includes(`list=${listId}`));
-                            if (found) targetName = found.name;
-                        }
-                        restorePlaylistPlayback(targetUrl, targetName);
-                    }
-                }
             } else {
                 if (sidebarName) sidebarName.innerText = "Войти";
                 if (sidebarAvatar) {
@@ -9788,6 +9864,7 @@
 
         // Обновление интерфейса при воспроизведении радио
         function updateRadioUIState() {
+            updateQueuePlaybackState();
             const playbar = document.getElementById('bottom-playbar');
             const playIcon = document.getElementById('playbar-icon-play');
             const pauseIcon = document.getElementById('playbar-icon-pause');
@@ -9835,7 +9912,7 @@
 
                 // Показываем только чистый бейдж ● LIVE без технического текста и слэшей
                 if (playbarTimeWrapper) {
-                    playbarTimeWrapper.innerHTML = '<span style="color:#fc3c44; font-weight:800; font-size:11px; letter-spacing:0.06em; text-transform:uppercase;">● LIVE</span>';
+                    playbarTimeWrapper.innerHTML = `<span class="radio-live-controls"><span style="color:#fc3c44; font-weight:800; font-size:11px; letter-spacing:0.06em;">● LIVE</span>${radioFavoriteButton(window.currentRadioStation)}</span>`;
                 }
 
                 if (playIcon) playIcon.style.display = window.isRadioPlaying ? 'none' : 'block';
@@ -9919,41 +9996,7 @@
                     grid.innerHTML = `<div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-secondary);">Станции не найдены</div>`;
                     return;
                 }
-                grid.innerHTML = list.map(station => {
-                    const isCurrentPlaying = window.currentRadioStation && window.currentRadioStation.streamUrl === station.streamUrl && window.isRadioPlaying;
-                    const displayName = formatRadioStationName(station.name);
-                    const encodedStation = encodeURIComponent(JSON.stringify(station));
-                    return `
-                        <div class="radio-card ${isCurrentPlaying ? 'playing' : ''}" data-stream="${station.streamUrl}" onclick="handleRadioCardClick('${encodedStation}')">
-                            <div class="radio-card-cover">
-                                ${station.logo ? `<img class="radio-card-img" src="${station.logo}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
-                                <div class="radio-card-logo-fallback" style="${station.logo ? 'display:none;' : 'display:flex;'}">
-                                    ${displayName.substring(0, 2)}
-                                </div>
-                                <div class="radio-antenna-badge">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
-                                </div>
-                                <div class="radio-card-overlay">
-                                    <button class="radio-card-play-btn" title="Воспроизвести">
-                                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="radio-card-info">
-                                <div class="radio-card-title" title="${displayName}">${displayName}</div>
-                                <div class="radio-card-tags">
-                                    <span class="radio-bitrate-badge">${station.country ? station.country + ' • ' : ''}${station.bitrate || '128k'}</span>
-                                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${station.genre || 'Радио'}</span>
-                                    <div class="radio-live-eq" style="margin-left: auto;">
-                                        <div class="radio-live-eq-bar"></div>
-                                        <div class="radio-live-eq-bar"></div>
-                                        <div class="radio-live-eq-bar"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+                grid.innerHTML = list.map(renderRadioStationCard).join('');
             };
 
             // Мгновенный рендер
@@ -10003,6 +10046,162 @@
         // ==========================================
         // === RECENT RADIO STATIONS STORAGE & UI ===
         // ==========================================
+
+        // Each station has its own document: concurrent saves do not overwrite other favorites.
+        let radioFavorites = new Map();
+        let radioFavoritePending = new Map();
+        let radioFavoritesUnsubscribe = null;
+        let radioFavoritesSession = 0;
+        let radioFavoritesReady = false;
+        let radioFavoritesError = false;
+
+        function escapeRadioHTML(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
+        }
+
+        function visibleRadioFavorites() {
+            const result = new Map(radioFavorites);
+            radioFavoritePending.forEach((station, url) => station ? result.set(url, station) : result.delete(url));
+            return result;
+        }
+
+        function radioFavoriteButton(station) {
+            if (!station?.streamUrl) return '';
+            const saved = visibleRadioFavorites().has(station.streamUrl);
+            const label = saved ? 'Убрать из избранного' : 'Добавить в избранное';
+            const encoded = encodeURIComponent(JSON.stringify(station)).replace(/'/g, '%27');
+            return `<button type="button" class="radio-favorite-btn" data-radio-station="${encoded}" aria-label="${label}" title="${label}" aria-pressed="${saved}" ${radioFavoritePending.has(station.streamUrl) ? 'disabled' : ''} onclick="event.stopPropagation(); toggleRadioFavorite(JSON.parse(decodeURIComponent(this.dataset.radioStation)))"><svg viewBox="0 0 24 24" fill="${saved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.6l6.2-.9Z"/></svg></button>`;
+        }
+
+        function refreshRadioFavorites() {
+            const grid = document.getElementById('radio-favorites-grid');
+            const status = document.getElementById('radio-favorites-status');
+            const favorites = [...visibleRadioFavorites().values()].sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+            if (grid) grid.innerHTML = favorites.map(renderRadioStationCard).join('');
+            if (status) {
+                status.textContent = !window.currentUser ? 'Войдите в аккаунт, чтобы сохранять радиостанции.'
+                    : radioFavoritesError ? 'Не удалось загрузить избранное. Проверьте подключение и обновите страницу.'
+                    : !radioFavoritesReady ? 'Загрузка избранного…'
+                    : favorites.length ? '' : 'Нажмите звёздочку на станции или рядом с LIVE — она появится здесь.';
+                status.hidden = !status.textContent;
+            }
+            document.querySelectorAll('.radio-favorite-btn').forEach(button => {
+                const station = JSON.parse(decodeURIComponent(button.dataset.radioStation));
+                const saved = visibleRadioFavorites().has(station.streamUrl);
+                const label = saved ? 'Убрать из избранного' : 'Добавить в избранное';
+                button.setAttribute('aria-pressed', String(saved));
+                button.setAttribute('aria-label', label);
+                button.title = label;
+                button.disabled = radioFavoritePending.has(station.streamUrl);
+                button.querySelector('svg').setAttribute('fill', saved ? 'currentColor' : 'none');
+            });
+        }
+
+        function subscribeRadioFavorites(user) {
+            const session = ++radioFavoritesSession;
+            if (radioFavoritesUnsubscribe) radioFavoritesUnsubscribe();
+            radioFavoritesUnsubscribe = null;
+            radioFavorites.clear();
+            radioFavoritePending.clear();
+            radioFavoritesReady = false;
+            radioFavoritesError = false;
+            refreshRadioFavorites();
+            if (!user) return;
+            radioFavoritesUnsubscribe = window.onSnapshot(
+                window.collection(window.db, 'users', user.uid, 'music_radio_favorites'),
+                snapshot => {
+                    if (session !== radioFavoritesSession) return;
+                    radioFavorites = new Map(snapshot.docs.map(doc => doc.data()).filter(s => s.streamUrl && s.name).map(s => [s.streamUrl, s]));
+                    radioFavoritesReady = true;
+                    radioFavoritesError = false;
+                    refreshRadioFavorites();
+                },
+                error => {
+                    if (session !== radioFavoritesSession) return;
+                    console.error('Failed to load radio favorites:', error);
+                    radioFavoritesError = true;
+                    radioFavoritesReady = false;
+                    refreshRadioFavorites();
+                }
+            );
+        }
+
+        async function toggleRadioFavorite(station) {
+            const user = window.currentUser;
+            if (!user) {
+                showAlertModal('Войдите в аккаунт', 'Избранные радиостанции сохраняются в вашем аккаунте. Войдите, чтобы добавить станцию.');
+                return;
+            }
+            if (!station?.streamUrl || radioFavoritePending.has(station.streamUrl)) return;
+            if (!radioFavoritesReady) {
+                showAlertModal('Избранное пока недоступно', 'Дождитесь загрузки избранного. Если оно не загружается, проверьте подключение и обновите страницу.');
+                return;
+            }
+            const session = radioFavoritesSession;
+            const remove = radioFavorites.has(station.streamUrl);
+            const data = {
+                id: station.id || '', name: station.name || 'Радио',
+                streamUrl: station.streamUrl, logo: station.logo || null,
+                genre: station.genre || 'Радио', bitrate: station.bitrate || '128k',
+                country: station.country || '', savedAt: Date.now()
+            };
+            radioFavoritePending.set(station.streamUrl, remove ? null : data);
+            refreshRadioFavorites();
+            try {
+                const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(station.streamUrl));
+                if (session !== radioFavoritesSession) return;
+                const id = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+                const ref = window.doc(window.db, 'users', user.uid, 'music_radio_favorites', id);
+                if (remove) await window.deleteDoc(ref);
+                else await window.setDoc(ref, data);
+            } catch (error) {
+                if (session !== radioFavoritesSession) return;
+                console.error('Failed to save radio favorite:', error);
+                showAlertModal('Не удалось сохранить', 'Изменение избранного не сохранено. Проверьте подключение и попробуйте ещё раз.');
+            } finally {
+                if (session === radioFavoritesSession) {
+                    radioFavoritePending.delete(station.streamUrl);
+                    refreshRadioFavorites();
+                }
+            }
+        }
+
+        function renderRadioStationCard(station) {
+                const isCurrentPlaying = window.currentRadioStation && window.currentRadioStation.streamUrl === station.streamUrl && window.isRadioPlaying;
+                const displayName = escapeRadioHTML(formatRadioStationName(station.name));
+                const encodedStation = encodeURIComponent(JSON.stringify(station)).replace(/'/g, '%27');
+                return `
+                    <div class="radio-card ${isCurrentPlaying ? 'playing' : ''}" data-stream="${escapeRadioHTML(station.streamUrl)}" onclick="handleRadioCardClick('${encodedStation}')">
+                        <div class="radio-card-cover">
+                            ${station.logo ? `<img class="radio-card-img" src="${escapeRadioHTML(station.logo)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+                            <div class="radio-card-logo-fallback" style="${station.logo ? 'display:none;' : 'display:flex;'}">
+                                ${displayName.substring(0, 2)}
+                            </div>
+                            ${radioFavoriteButton(station)}
+                            <div class="radio-antenna-badge">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
+                            </div>
+                            <div class="radio-card-overlay">
+                                <button class="radio-card-play-btn" title="Воспроизвести">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="radio-card-info">
+                            <div class="radio-card-title" title="${displayName}">${displayName}</div>
+                            <div class="radio-card-tags">
+                                <span class="radio-bitrate-badge">${station.country ? escapeRadioHTML(station.country) + ' • ' : ''}${escapeRadioHTML(station.bitrate || '128k')}</span>
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeRadioHTML(station.genre || 'Радио')}</span>
+                                <div class="radio-live-eq" style="margin-left: auto;">
+                                    <div class="radio-live-eq-bar"></div>
+                                    <div class="radio-live-eq-bar"></div>
+                                    <div class="radio-live-eq-bar"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+        }
 
         function getRecentRadioStations() {
             try {
@@ -10056,41 +10255,7 @@
             }
 
             section.style.display = 'block';
-            grid.innerHTML = recents.map(station => {
-                const isCurrentPlaying = window.currentRadioStation && window.currentRadioStation.streamUrl === station.streamUrl && window.isRadioPlaying;
-                const displayName = formatRadioStationName(station.name);
-                const encodedStation = encodeURIComponent(JSON.stringify(station));
-                return `
-                    <div class="radio-card ${isCurrentPlaying ? 'playing' : ''}" data-stream="${station.streamUrl}" onclick="handleRadioCardClick('${encodedStation}')">
-                        <div class="radio-card-cover">
-                            ${station.logo ? `<img class="radio-card-img" src="${station.logo}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
-                            <div class="radio-card-logo-fallback" style="${station.logo ? 'display:none;' : 'display:flex;'}">
-                                ${displayName.substring(0, 2)}
-                            </div>
-                            <div class="radio-antenna-badge">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
-                            </div>
-                            <div class="radio-card-overlay">
-                                <button class="radio-card-play-btn" title="Воспроизвести">
-                                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="radio-card-info">
-                            <div class="radio-card-title" title="${displayName}">${displayName}</div>
-                            <div class="radio-card-tags">
-                                <span class="radio-bitrate-badge">${station.country ? station.country + ' • ' : ''}${station.bitrate || '128k'}</span>
-                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${station.genre || 'Радио'}</span>
-                                <div class="radio-live-eq" style="margin-left: auto;">
-                                    <div class="radio-live-eq-bar"></div>
-                                    <div class="radio-live-eq-bar"></div>
-                                    <div class="radio-live-eq-bar"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            grid.innerHTML = recents.map(renderRadioStationCard).join('');
         }
 
         // Поиск по Radio Browser API в реальном времени
@@ -10160,41 +10325,7 @@
 
                 if (countEl) countEl.innerText = `Найдено: ${stations.length}`;
 
-                grid.innerHTML = stations.map(station => {
-                    const isCurrentPlaying = window.currentRadioStation && window.currentRadioStation.streamUrl === station.streamUrl && window.isRadioPlaying;
-                    const displayName = formatRadioStationName(station.name);
-                    const encodedStation = encodeURIComponent(JSON.stringify(station));
-                    return `
-                        <div class="radio-card ${isCurrentPlaying ? 'playing' : ''}" data-stream="${station.streamUrl}" onclick="handleRadioCardClick('${encodedStation}')">
-                            <div class="radio-card-cover">
-                                ${station.logo ? `<img class="radio-card-img" src="${station.logo}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
-                                <div class="radio-card-logo-fallback" style="${station.logo ? 'display:none;' : 'display:flex;'}">
-                                    ${displayName.substring(0, 2)}
-                                </div>
-                                <div class="radio-antenna-badge">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
-                                </div>
-                                <div class="radio-card-overlay">
-                                    <button class="radio-card-play-btn" title="Воспроизвести">
-                                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px; height:18px; margin-left: 2px;"><path d="M8 5v14l11-7z"></path></svg>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="radio-card-info">
-                                <div class="radio-card-title" title="${displayName}">${displayName}</div>
-                                <div class="radio-card-tags">
-                                    <span class="radio-bitrate-badge">${station.country ? station.country + ' • ' : ''}${station.bitrate || '128k'}</span>
-                                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${station.genre || 'Радио'}</span>
-                                    <div class="radio-live-eq" style="margin-left: auto;">
-                                        <div class="radio-live-eq-bar"></div>
-                                        <div class="radio-live-eq-bar"></div>
-                                        <div class="radio-live-eq-bar"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+                grid.innerHTML = stations.map(renderRadioStationCard).join('');
 
             } catch (e) {
                 console.error("Search radio error:", e);

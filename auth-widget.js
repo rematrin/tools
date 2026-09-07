@@ -19,6 +19,7 @@ import {
     deleteDoc,
     collection,
     getDocs,
+    onSnapshot,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -39,6 +40,7 @@ window.getDoc = getDoc;
 window.deleteDoc = deleteDoc;
 window.collection = collection;
 window.getDocs = getDocs;
+window.onSnapshot = onSnapshot;
 window.updateDoc = (d, data) => setDoc(d, data, { merge: true }); // Упрощенный update
 window.serverTimestamp = serverTimestamp;
 

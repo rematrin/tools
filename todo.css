@@ -45,6 +45,42 @@ body {
     justify-content: space-between;
 }
 
+.sidebar-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sidebar-settings-btn {
+    display: none !important;
+}
+
+.sidebar-section-title-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sidebar-section-chevron {
+    display: none;
+}
+
+.projects-manage-btn {
+    display: none;
+}
+
+.bottom-bar-item-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.bottom-bar-chevron {
+    display: none !important;
+}
+
 .sidebar-close-toggle {
     display: inline-flex;
     background: transparent;
@@ -1376,30 +1412,87 @@ body.dark .dropdown-submenu {
         transform: translateX(-100%);
         width: 100% !important;
         bottom: 0 !important;
+        top: 0 !important;
         transition: none !important;
-    }
-
-    .sidebar-footer-menu {
-        padding-bottom: calc(max(10px, calc(env(safe-area-inset-bottom, 0px) - 10px)) + 74px) !important;
-    }
-
-    .sidebar-bottom-bar {
-        background-color: transparent !important;
-        border: none !important;
-        border-radius: 0 !important;
-        padding: 4px 6px !important;
-        margin: 8px 12px 4px 12px !important;
-        box-shadow: none !important;
-    }
-
-    body.dark .sidebar-bottom-bar {
-        background-color: transparent !important;
-        border-color: transparent !important;
-        box-shadow: none !important;
+        background-color: var(--sidebar-bg) !important;
+        padding: max(16px, env(safe-area-inset-top, 0px)) 16px calc(max(10px, calc(env(safe-area-inset-bottom, 0px) - 10px)) + 100px) 16px !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
     }
 
     .todo-sidebar.mobile-open {
         transform: translateX(0);
+    }
+
+    /* Верхний блок: профиль в овальной карточке + иконка настроек справа */
+    .todo-sidebar .sidebar-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 8px 0 16px 0 !important;
+        border-bottom: none !important;
+        background: transparent !important;
+    }
+
+    .todo-sidebar .sidebar-user {
+        background: var(--card-bg) !important;
+        border-radius: 30px !important;
+        padding: 6px 18px 6px 8px !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        margin: 0 !important;
+        cursor: pointer;
+    }
+
+    .todo-sidebar .sidebar-avatar {
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 50% !important;
+    }
+
+    .todo-sidebar .sidebar-name {
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        color: var(--text) !important;
+    }
+
+    .todo-sidebar .sidebar-header-actions {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    .todo-sidebar .sidebar-settings-btn {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 50% !important;
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+        color: var(--text) !important;
+        cursor: pointer;
+        padding: 0 !important;
+    }
+
+    .todo-sidebar .sidebar-close-toggle {
+        display: none !important;
+    }
+
+    .todo-sidebar .sidebar-menu {
+        padding: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+        height: auto !important;
+        min-height: 0 !important;
+        flex: none !important;
     }
 
     #inboxSidebarContainer,
@@ -1408,14 +1501,182 @@ body.dark .dropdown-submenu {
         display: none !important;
     }
 
-    .todo-sidebar .sidebar-menu {
-        padding-top: 8px !important;
-    }
-
+    /* Заголовок секции Проектов */
     .todo-sidebar .sidebar-section-title {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
         border-top: none !important;
         margin-top: 0 !important;
-        padding-top: 8px !important;
+        padding: 4px 4px 6px 4px !important;
+    }
+
+    .todo-sidebar .sidebar-section-title-left {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        font-size: 17px !important;
+        font-weight: 700 !important;
+        color: var(--text) !important;
+    }
+
+    .todo-sidebar .sidebar-section-chevron {
+        display: inline-block !important;
+        color: var(--text-secondary) !important;
+        opacity: 0.6;
+    }
+
+    .todo-sidebar .sidebar-section-title-right {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    .todo-sidebar .btn-add-project {
+        width: 32px !important;
+        height: 32px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: transparent !important;
+        color: var(--text-secondary) !important;
+        border: none !important;
+        border-radius: 50% !important;
+    }
+
+    /* Белый закругленный блок списка проектов */
+    .todo-sidebar .projects-list-wrapper {
+        background: var(--card-bg) !important;
+        border-radius: 24px !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        margin-bottom: 4px !important;
+        height: auto !important;
+        flex: none !important;
+    }
+
+    .todo-sidebar .projects-list {
+        display: flex !important;
+        flex-direction: column !important;
+        height: auto !important;
+    }
+
+    .todo-sidebar .project-item-container {
+        border-bottom: 1px solid var(--border) !important;
+    }
+
+    .todo-sidebar .project-item-container:last-child {
+        border-bottom: none !important;
+    }
+
+    .todo-sidebar .project-item-container .menu-item {
+        padding: 14px 18px !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        color: var(--text) !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+    }
+
+    /* Цифры задач без овала/фона как на референсе */
+    .todo-sidebar .menu-counter,
+    .project-item-container .menu-counter {
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        color: var(--text-secondary) !important;
+        font-size: 15px !important;
+        font-weight: 500 !important;
+        box-shadow: none !important;
+    }
+
+    .todo-sidebar .projects-manage-btn {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        width: 100% !important;
+        padding: 14px 18px !important;
+        background: transparent !important;
+        border: none !important;
+        border-top: 1px solid var(--border) !important;
+        color: var(--text-secondary) !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        cursor: pointer;
+        text-align: left;
+    }
+
+    /* Белый закругленный блок вместо "Добавить команду": Отслеж, Помодоро, Отчёт */
+    .todo-sidebar .sidebar-footer-menu {
+        padding-bottom: 0 !important;
+        margin-top: 0 !important;
+        flex: none !important;
+    }
+
+    .todo-sidebar .sidebar-bottom-bar {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 24px !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+    }
+
+    .todo-sidebar .bottom-bar-item {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        padding: 14px 18px !important;
+        border-bottom: 1px solid var(--border) !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        color: var(--text) !important;
+        text-decoration: none !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        gap: 12px !important;
+        text-align: left !important;
+    }
+
+    .todo-sidebar .bottom-bar-item:last-child {
+        border-bottom: none !important;
+    }
+
+    .todo-sidebar .bottom-bar-item-left {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+    }
+
+    .todo-sidebar .bottom-bar-icon {
+        width: 20px !important;
+        height: 20px !important;
+        color: var(--accent) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .todo-sidebar .bottom-bar-label {
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        color: var(--text) !important;
+    }
+
+    .todo-sidebar .bottom-bar-chevron {
+        display: flex !important;
+        align-items: center !important;
+        color: var(--text-secondary) !important;
+        opacity: 0.5 !important;
+        margin-left: 2px !important;
     }
 
     .sidebar-resizer {
@@ -1438,7 +1699,6 @@ body.dark .dropdown-submenu {
 
     .content-nav-toggle {
         display: none !important;
-        /* Скрываем кнопку меню у заголовка на телефоне */
     }
 
     /* Предотвращение автоматического приближения (zoom) на iOS при фокусе */
@@ -1451,13 +1711,8 @@ body.dark .dropdown-submenu {
         font-size: 16px !important;
     }
 
-    .sidebar-close-toggle {
-        display: none !important;
-    }
-
     .sidebar-overlay.active {
         display: none !important;
-        /* Нам больше не нужен полупрозрачный оверлей, так как меню на весь экран */
     }
 
     .project-actions-btn {
@@ -1466,10 +1721,6 @@ body.dark .dropdown-submenu {
 
     .project-item-container .menu-item {
         padding-right: 14px !important;
-    }
-
-    .project-item-container .menu-counter {
-        margin-right: 0 !important;
     }
 }
 
@@ -1490,10 +1741,30 @@ body.dark .dropdown-submenu {
     z-index: 1000;
     justify-content: space-around;
     align-items: center;
-    padding: 4px 12px;
+    padding: 4px;
     box-shadow: 0 8px 26px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
+    overflow: hidden !important;
+}
+
+/* Плавный переезжающий фоновый овал-индикатор */
+.mobile-nav-indicator {
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 4px;
+    width: calc(25% - 2px);
+    background-color: var(--active-bg);
+    border-radius: 24px;
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.mobile-nav-indicator.active {
+    opacity: 1;
 }
 
 body.dark .mobile-bottom-nav {
@@ -1503,23 +1774,25 @@ body.dark .mobile-bottom-nav {
 }
 
 .mobile-nav-item {
+    position: relative;
+    z-index: 2;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: transparent;
+    background: transparent !important;
     border: none;
     color: var(--text-secondary);
     text-decoration: none;
     font-size: 0.75rem;
     font-weight: 500;
     flex: 1;
-    height: 100%;
-    gap: 3px;
+    height: 48px;
+    gap: 2px;
     cursor: pointer;
-    padding: 6px 4px;
-    border-radius: 20px;
-    transition: color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+    padding: 4px 8px;
+    border-radius: 24px;
+    transition: color 0.2s ease, transform 0.1s ease;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -1531,27 +1804,43 @@ body.dark .mobile-bottom-nav {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
 }
 
 .mobile-nav-icon svg {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     stroke-width: 2;
     stroke: currentColor;
     fill: none;
-    transition: stroke 0.15s ease;
+    transition: stroke 0.2s ease;
 }
 
 /* Активное состояние кнопок меню */
 .mobile-nav-item.active {
-    color: var(--accent);
-    font-weight: 600;
+    color: var(--accent) !important;
+    font-weight: 700 !important;
+    background: transparent !important;
 }
 
 .mobile-nav-item.active .mobile-nav-icon svg {
-    stroke: var(--accent);
+    stroke: var(--accent) !important;
+}
+
+body.dark .mobile-nav-item.active {
+    background-color: transparent !important;
+    color: var(--accent) !important;
+}
+
+body.dark .mobile-nav-item.active .mobile-nav-icon svg {
+    stroke: var(--accent) !important;
+}
+
+@media (max-width: 768px) {
+    .mobile-bottom-nav {
+        display: flex;
+    }
 }
 
 @media (max-width: 768px) {
@@ -8416,4 +8705,74 @@ input:checked + .view-slider:before {
 
 @media (max-width: 768px) {
     body:has(#todoSidebar.mobile-open) .mobile-create-task-fab { display: none !important; }
+
+    /* Выравнивание иконок инструментов (Отслеж., Помодоро, Отчёт) строго по левой сетке проектов */
+    .todo-sidebar .sidebar-bottom-bar {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 24px !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .todo-sidebar .sidebar-bottom-bar .bottom-bar-item {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        padding: 14px 18px !important;
+        border-bottom: 1px solid var(--border) !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        color: var(--text) !important;
+        text-decoration: none !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        gap: 12px !important;
+        text-align: left !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        flex: none !important;
+    }
+
+    .todo-sidebar .sidebar-bottom-bar .bottom-bar-item:last-child {
+        border-bottom: none !important;
+    }
+
+    .todo-sidebar .sidebar-bottom-bar .bottom-bar-item-left {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 12px !important;
+    }
+
+    .todo-sidebar .sidebar-bottom-bar .bottom-bar-icon {
+        width: 20px !important;
+        height: 20px !important;
+        color: var(--accent) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .todo-sidebar .sidebar-bottom-bar .bottom-bar-label {
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        color: var(--text) !important;
+    }
+
+    .todo-sidebar .sidebar-bottom-bar .bottom-bar-chevron {
+        display: flex !important;
+        align-items: center !important;
+        color: var(--text-secondary) !important;
+        opacity: 0.5 !important;
+        margin-left: auto !important;
+    }
 }

@@ -2144,6 +2144,30 @@ if (contentSidebarToggle && todoSidebar && sidebarOverlay) {
             }
         });
     }
+
+    // Обработчик кнопки настроек в шапке сайдбара
+    const sidebarSettingsBtn = document.getElementById('sidebarSettingsBtn');
+    if (sidebarSettingsBtn) {
+        sidebarSettingsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof openSettingsModal === 'function') {
+                openSettingsModal();
+            }
+        });
+    }
+
+    // Обработчик кнопки "Настройка проектов" в мобильном списке
+    const btnManageProjects = document.getElementById('btnManageProjects');
+    if (btnManageProjects) {
+        btnManageProjects.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (btnAddProject) {
+                btnAddProject.click();
+            }
+        });
+    }
 }
 
 // Переключение секции выполненных задач
@@ -2349,7 +2373,12 @@ function handleRoute() {
 function updateBackButtonVisibility() {
     const contentBackBtn = document.getElementById('contentBackBtn');
     if (!contentBackBtn) return;
-    if (window.innerWidth <= 768 && (currentRoute === 'trash' || currentRoute.startsWith('project/'))) {
+    const isSubPage = currentRoute === 'trash' || 
+                      currentRoute === 'habit' || 
+                      currentRoute === 'pomodoro' || 
+                      currentRoute === 'countdown' || 
+                      currentRoute.startsWith('project/');
+    if (window.innerWidth <= 768 && isSubPage) {
         contentBackBtn.style.display = 'inline-flex';
     } else {
         contentBackBtn.style.display = 'none';
@@ -2361,6 +2390,8 @@ function updateMobileBottomNavActiveState() {
     const mobileNavToday = document.getElementById('mobileNavToday');
     const mobileNavInbox = document.getElementById('mobileNavInbox');
     const mobileNavMore = document.getElementById('mobileNavMore');
+    const mobileNavIndicator = document.getElementById('mobileNavIndicator');
+    const mobileBottomNav = document.getElementById('mobileBottomNav');
 
     if (!mobileNavToday || !mobileNavInbox || !mobileNavMore) return;
 
@@ -2369,18 +2400,35 @@ function updateMobileBottomNavActiveState() {
     mobileNavInbox.classList.remove('active');
     mobileNavMore.classList.remove('active');
 
+    let activeIndex = 3;
+
     if (todoSidebar && todoSidebar.classList.contains('mobile-open')) {
         mobileNavMore.classList.add('active');
+        activeIndex = 3;
     } else if (currentRoute === 'tomorrow') {
         if (mobileNavTomorrow) mobileNavTomorrow.classList.add('active');
+        activeIndex = 0;
     } else if (currentRoute === 'today') {
         mobileNavToday.classList.add('active');
+        activeIndex = 1;
     } else if (currentRoute === 'inbox') {
         mobileNavInbox.classList.add('active');
+        activeIndex = 2;
     } else {
         mobileNavMore.classList.add('active');
+        activeIndex = 3;
+    }
+
+    if (mobileNavIndicator) {
+        mobileNavIndicator.style.transform = `translateX(${activeIndex * 100}%)`;
+        mobileNavIndicator.classList.add('active');
     }
 }
+
+window.addEventListener('resize', () => {
+    updateMobileBottomNavActiveState();
+    updateBackButtonVisibility();
+});
 
 // Слушаем изменение URL хэша
 window.addEventListener('hashchange', handleRoute);

@@ -58,7 +58,7 @@
         <!-- Боковое меню -->
         <aside class="todo-sidebar" id="todoSidebar">
             <div class="sidebar-header">
-                <div class="sidebar-user">
+                <div class="sidebar-user" id="sidebarUserBtn">
                     <img src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" alt="Avatar" class="sidebar-avatar"
                         id="sidebarAvatar" style="display:none">
                     <div class="sidebar-user-info">
@@ -67,13 +67,25 @@
                             style="display: none;">Оффлайн</span>
                     </div>
                 </div>
-                <button class="sidebar-close-toggle" id="sidebarCloseToggle" aria-label="Закрыть меню">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                        viewBox="0 0 16 16">
-                        <path
-                            d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm5-1v12h9a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM4 2H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h2z" />
-                    </svg>
-                </button>
+                <div class="sidebar-header-actions">
+                    <button class="sidebar-settings-btn" id="sidebarSettingsBtn" aria-label="Настройки"
+                        title="Настройки">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+                            </path>
+                        </svg>
+                    </button>
+                    <button class="sidebar-close-toggle" id="sidebarCloseToggle" aria-label="Закрыть меню">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                            viewBox="0 0 16 16">
+                            <path
+                                d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm5-1v12h9a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM4 2H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h2z" />
+                        </svg>
+                    </button>
+                </div>
             </div>
             <nav class="sidebar-menu">
                 <div class="project-item-container" id="inboxSidebarContainer">
@@ -155,52 +167,82 @@
                 </div>
 
                 <div class="sidebar-section-title">
-                    <span>Проекты</span>
-                    <button class="btn-add-project" id="btnAddProject" title="Создать проект">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12"
-                            height="12">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <div class="sidebar-section-title-left">
+                        <span>Мои проекты</span>
+                        <svg class="sidebar-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                            <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
-                    </button>
+                    </div>
+                    <div class="sidebar-section-title-right">
+                        <button class="btn-add-project" id="btnAddProject" title="Создать проект">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14"
+                                height="14">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="projects-list-wrapper">
                     <div class="projects-list" id="projectsList"></div>
-
                 </div>
 
-                <div class="sidebar-footer-menu"
-                    style="margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
+                <div class="sidebar-footer-menu">
                     <div class="sidebar-bottom-bar">
                         <a href="#habit" class="bottom-bar-item" id="bottomNavHabit">
-                            <span class="bottom-bar-icon">
+                            <span class="bottom-bar-item-left">
+                                <span class="bottom-bar-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                </span>
+                                <span class="bottom-bar-label">Отслеж.</span>
+                            </span>
+                            <span class="bottom-bar-chevron">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
                                 </svg>
                             </span>
-                            <span class="bottom-bar-label">Отслеж.</span>
                         </a>
                         <a href="#pomodoro" class="bottom-bar-item" id="bottomNavPomodoro">
-                            <span class="bottom-bar-icon">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path
-                                        d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12 14.5 13.3807 13.3807 14.5 12 14.5 10.6193 14.5 9.5 13.3807 9.5 12 9.5 10.6193 10.6193 9.5 12 9.5ZM12 2C17.5228 2 22 6.47715 22 12 22 17.5228 17.5228 22 12 22 6.47715 22 2 17.5228 2 12 2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12 4 16.4183 7.58172 20 12 20 16.4183 20 20 16.4183 20 12 20 7.58172 16.4183 4 12 4Z">
-                                    </path>
+                            <span class="bottom-bar-item-left">
+                                <span class="bottom-bar-icon">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path
+                                            d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12 14.5 13.3807 13.3807 14.5 12 14.5 10.6193 14.5 9.5 13.3807 9.5 12 9.5 10.6193 10.6193 9.5 12 9.5ZM12 2C17.5228 2 22 6.47715 22 12 22 17.5228 17.5228 22 12 22 6.47715 22 2 17.5228 2 12 2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12 4 16.4183 7.58172 20 12 20 16.4183 20 20 16.4183 20 12 20 7.58172 16.4183 4 12 4Z">
+                                        </path>
+                                    </svg>
+                                </span>
+                                <span class="bottom-bar-label">Помодоро</span>
+                            </span>
+                            <span class="bottom-bar-chevron">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                    stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
                                 </svg>
                             </span>
-                            <span class="bottom-bar-label">Помодоро</span>
                         </a>
                         <a href="#countdown" class="bottom-bar-item" id="bottomNavCountdown">
-                            <span class="bottom-bar-icon">
+                            <span class="bottom-bar-item-left">
+                                <span class="bottom-bar-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                </span>
+                                <span class="bottom-bar-label">Отсчёт</span>
+                            </span>
+                            <span class="bottom-bar-chevron">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                    stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
                                 </svg>
                             </span>
-                            <span class="bottom-bar-label">Отчёт</span>
                         </a>
                     </div>
                 </div>
@@ -671,8 +713,8 @@
         <div class="add-task-form" id="mainAddTaskForm">
             <div class="task-input-wrapper">
                 <div id="taskTitleBackdrop" class="task-input-backdrop"></div>
-                <textarea id="taskTitleInput" class="task-input" placeholder="+ Добавить задачу" rows="1" autocomplete="off"
-                    style="height: auto;"></textarea>
+                <textarea id="taskTitleInput" class="task-input" placeholder="+ Добавить задачу" rows="1"
+                    autocomplete="off" style="height: auto;"></textarea>
             </div>
             <div id="charLimitWarning" class="char-limit-warning">Лимит названия задачи: 0 / 500</div>
             <div class="form-actions">
@@ -781,11 +823,16 @@
             </div>
         </div>
 
-        <button id="mobileCreateTaskFab" class="mobile-create-task-fab" type="button" aria-label="Создать задачу" aria-haspopup="dialog">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        <button id="mobileCreateTaskFab" class="mobile-create-task-fab" type="button" aria-label="Создать задачу"
+            aria-haspopup="dialog">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                aria-hidden="true">
+                <path d="M12 5v14M5 12h14" />
+            </svg>
         </button>
         <div id="mobileCreateTaskBackdrop" class="mobile-create-task-backdrop" hidden></div>
-        <section id="mobileCreateTaskSheet" class="mobile-create-task-sheet" role="dialog" aria-modal="true" aria-labelledby="mobileCreateTaskHeading" hidden>
+        <section id="mobileCreateTaskSheet" class="mobile-create-task-sheet" role="dialog" aria-modal="true"
+            aria-labelledby="mobileCreateTaskHeading" hidden>
             <header class="mobile-create-task-header">
                 <button id="mobileCreateTaskCancel" type="button">Отмена</button>
                 <h2 id="mobileCreateTaskHeading">Новая задача</h2>
@@ -797,6 +844,7 @@
 
         <!-- Нижнее меню для мобильных -->
         <nav class="mobile-bottom-nav" id="mobileBottomNav">
+            <div class="mobile-nav-indicator" id="mobileNavIndicator"></div>
             <a href="#tomorrow" class="mobile-nav-item" id="mobileNavTomorrow">
                 <span class="mobile-nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"

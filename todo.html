@@ -34,9 +34,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
     <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
     <script>
-        window.addEventListener('touchmove', function () { }, { passive: false });
         if (typeof MobileDragDrop !== 'undefined') {
             MobileDragDrop.polyfill({
+                holdToDrag: 400,
                 dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
             });
         }

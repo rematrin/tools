@@ -9366,7 +9366,7 @@ function initTouchDragAndDrop() {
 
     const handleTouchMovePassive = (e) => {
         const touch = e.touches[0];
-        if (Math.abs(touch.clientY - startY) > 10 || Math.abs(touch.clientX - startX) > 10) {
+        if (Math.abs(touch.clientY - startY) > 5 || Math.abs(touch.clientX - startX) > 5) {
             if (touchStartTimer) {
                 clearTimeout(touchStartTimer);
                 touchStartTimer = null;
@@ -9420,6 +9420,8 @@ function initTouchDragAndDrop() {
         if (type === 'task') {
             targetEl = e.target.closest('.task-item');
         } else if (type === 'project') {
+            // Перетаскивание проектов разрешено только при длительном нажатии на иконку .menu-icon
+            if (!e.target.closest('.menu-icon')) return;
             targetEl = e.target.closest('.project-item-container');
         } else if (type === 'section') {
             const header = e.target.closest('.project-section-header');

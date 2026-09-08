@@ -5208,3 +5208,586 @@ body.dark .bulk-actions-toolbar {
     from { transform: translate(-50%, 20px); opacity: 0; }
     to { transform: translate(-50%, 0); opacity: 1; }
 }
+
+/* === КНОПКА ПЕРЕХОДА НА СТРАНИЦУ КАНАЛА (↗) И АВАТАР === */
+.channel-pill-avatar-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    flex-shrink: 0;
+}
+
+.channel-pill-avatar-wrap:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 2px var(--ch-purple);
+}
+
+.channel-pill-link-btn {
+    background: transparent;
+    border: none;
+    padding: 2px;
+    margin-left: 2px;
+    margin-right: -4px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ch-text-gray);
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.channel-pill-link-btn:hover {
+    opacity: 1;
+    color: var(--ch-purple);
+    background: rgba(99, 102, 241, 0.12);
+    transform: translateY(-1px);
+}
+
+.channel-pill-btn.active .channel-pill-link-btn {
+    color: #4f46e5;
+    opacity: 0.8;
+}
+
+.channel-pill-btn.active .channel-pill-link-btn:hover {
+    opacity: 1;
+    background: rgba(99, 102, 241, 0.18);
+}
+
+/* === СТРАНИЦА КОНКРЕТНОГО КАНАЛА (2-й уровень) === */
+.channel-page-container {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--ch-bg);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    animation: fadeIn 0.25s ease-out;
+}
+
+/* Баннер канала: центрирован, по ширине блоков */
+.channel-page-banner-wrap {
+    position: relative;
+    max-width: 1200px;
+    width: calc(100% - 80px);
+    margin: 24px auto 0;
+    min-height: 220px;
+    background: #0f141f;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 22px 32px 24px;
+    box-sizing: border-box;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: var(--ch-shadow);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.channel-page-banner-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.4;
+    filter: blur(1px);
+    transition: opacity 0.3s;
+}
+
+.channel-page-banner-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(15, 20, 31, 0.4) 0%, rgba(15, 20, 31, 0.88) 100%);
+}
+
+.channel-page-top-bar {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.btn-channel-back-banner {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    padding: 7px 14px 7px 10px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-channel-back-banner:hover {
+    background: rgba(255, 255, 255, 0.28);
+    transform: translateX(-2px);
+}
+
+.btn-channel-edit-header {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    padding: 7px 12px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-channel-edit-header:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+/* Профиль в баннере */
+.channel-page-profile-hero {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 24px;
+}
+
+.channel-page-avatar-wrap {
+    flex-shrink: 0;
+}
+
+.channel-page-avatar-img {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    border: 3px solid rgba(255, 255, 255, 0.85);
+}
+
+.channel-page-avatar-placeholder {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: var(--ch-purple);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    border: 3px solid rgba(255, 255, 255, 0.85);
+}
+
+.channel-page-hero-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: #ffffff;
+}
+
+.channel-page-title {
+    margin: 0;
+    font-size: 1.85rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+}
+
+.channel-page-sub-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.channel-platform-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+}
+
+.channel-meta-dot {
+    opacity: 0.6;
+}
+
+.channel-video-count-badge {
+    font-weight: 500;
+}
+
+.channel-page-tagline {
+    margin: 4px 0 0 0;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 400;
+    max-width: 650px;
+    line-height: 1.4;
+}
+
+/* Контент и сетка дашборда канала */
+.channel-page-content {
+    flex: 1;
+    padding: 28px 40px 48px;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.channel-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+/* Карточки дашборда */
+.channel-card {
+    background: var(--ch-card-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: var(--ch-radius);
+    padding: 20px;
+    box-shadow: var(--ch-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.channel-card:hover {
+    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.08);
+}
+
+.channel-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.channel-card-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.channel-card-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ch-text-dark);
+}
+
+.channel-card-action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ch-text-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.channel-card-action-btn:hover {
+    color: var(--ch-purple);
+    background: var(--ch-purple-light);
+}
+
+.channel-card-action-btn.add-btn {
+    font-size: 1.15rem;
+    line-height: 1;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--ch-border);
+    background: var(--ch-bg);
+    border-radius: 50%;
+}
+
+.channel-card-action-btn.add-btn:hover {
+    border-color: var(--ch-purple);
+    color: var(--ch-purple);
+    background: var(--ch-purple-light);
+}
+
+.channel-card-body {
+    flex: 1;
+}
+
+/* О канале */
+.channel-about-text {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--ch-text-gray);
+    line-height: 1.55;
+}
+
+/* Акцентная карточка: Цель / Миссия */
+.channel-card.card-mission {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.04) 0%, rgba(139, 92, 246, 0.08) 100%);
+    border-color: rgba(99, 102, 241, 0.18);
+}
+
+.channel-card-icon-target {
+    color: var(--ch-purple);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.channel-mission-desc {
+    margin: 0 0 14px 0;
+    font-size: 0.9rem;
+    color: var(--ch-text-dark);
+    line-height: 1.5;
+}
+
+.channel-quote-box {
+    background: var(--ch-card-bg);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--ch-purple);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.05);
+}
+
+/* Ключевые цели */
+.channel-goals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.channel-goal-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: var(--ch-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: 10px;
+    font-size: 0.88rem;
+    transition: all 0.2s;
+}
+
+.channel-goal-item:hover {
+    border-color: var(--ch-purple);
+}
+
+.channel-goal-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ch-text-dark);
+    font-weight: 500;
+}
+
+.channel-goal-circle {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--ch-text-gray);
+    opacity: 0.5;
+    flex-shrink: 0;
+}
+
+.channel-goal-circle.done {
+    background: var(--ch-purple);
+    border-color: var(--ch-purple);
+}
+
+.channel-goal-metric {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ch-purple);
+    background: var(--ch-purple-light);
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+/* Списки Пайплайнов и Монетизации */
+.channel-pipelines-list,
+.channel-monetization-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.channel-pipeline-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--ch-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: 10px;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--ch-text-dark);
+    transition: all 0.2s ease;
+}
+
+.channel-pipeline-item:hover {
+    border-color: var(--ch-purple);
+    background: var(--ch-card-bg);
+    transform: translateX(3px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.channel-pipeline-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 0.88rem;
+}
+
+.channel-pipeline-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    border-radius: 6px;
+}
+
+.channel-pipeline-icon img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.channel-pipeline-chevron {
+    color: var(--ch-text-gray);
+    opacity: 0.6;
+    transition: transform 0.2s;
+}
+
+.channel-pipeline-item:hover .channel-pipeline-chevron {
+    color: var(--ch-purple);
+    opacity: 1;
+    transform: translateX(2px);
+}
+
+/* Монетизация */
+.channel-monetization-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--ch-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.channel-monetization-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.channel-monetization-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.channel-monetization-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--ch-text-dark);
+}
+
+.channel-monetization-desc {
+    font-size: 0.78rem;
+    color: var(--ch-text-gray);
+}
+
+.monetization-status-pill {
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.monetization-status-pill.active {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+}
+
+.monetization-status-pill.planned {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
+}
+
+.monetization-status-pill.inactive {
+    background: rgba(100, 116, 139, 0.12);
+    color: var(--ch-text-gray);
+}
+
+/* Адаптивность под планшеты и смартфоны */
+@media (max-width: 1024px) {
+    .channel-dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .channel-page-banner-wrap {
+        width: calc(100% - 32px);
+        margin: 16px auto 0;
+        padding: 16px 20px 20px;
+        min-height: 200px;
+        border-radius: 16px;
+    }
+    .channel-page-profile-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .channel-page-avatar-img,
+    .channel-page-avatar-placeholder {
+        width: 64px;
+        height: 64px;
+        font-size: 1.6rem;
+    }
+    .channel-page-title {
+        font-size: 1.45rem;
+    }
+    .channel-page-content {
+        padding: 20px 16px 36px;
+    }
+    .channel-dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}

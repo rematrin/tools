@@ -1646,11 +1646,24 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function handleHashRoute() {
-    const hash = window.location.hash.replace("#", "");
+    const rawHash = window.location.hash.replace("#", "");
+    
+    // Проверяем роут отдельной страницы канала: #channel/ch_123 или #channel_123 или #channel-123
+    if (rawHash.startsWith("channel/") || rawHash.startsWith("channel_") || rawHash.startsWith("channel-")) {
+        const chId = rawHash.replace(/^channel[\/_ -]/, "");
+        if (chId) {
+            openChannelPage(chId, false);
+            return;
+        }
+    }
+
+    // Если открыта страница канала, но hash изменился на фильтр (например, пользователь нажал назад в браузере)
+    closeChannelPage(false);
+
     const validFilters = ["idea", "in_progress", "editing", "published", "trash"];
     
-    if (validFilters.includes(hash)) {
-        currentFilter = hash;
+    if (validFilters.includes(rawHash)) {
+        currentFilter = rawHash;
     } else {
         currentFilter = "idea";
         window.location.hash = "idea";
@@ -2806,6 +2819,7 @@ window.addEventListener('authChanged', (e) => {
                     renderChannelSwitcher();
                     renderVideosList();
                     updateStatsCounters();
+                    handleHashRoute();
                 } else {
                     updateDoc(doc(db, "users", currentUid), {
                         channels: channels
@@ -6283,6 +6297,917 @@ function getDueDateBadgeHtml(dueDateStr) {
 
 // === Управление каналами ===
 
+// === Переменные для модального окна выбора иконки ===
+let onIconPickerSelectedCallback = null;
+let currentIconPickerValue = "📁";
+let activeEditingPipelineIndex = null;
+let activeEditingMonetizationIndex = null;
+
+function showIconPickerModal(initialValue, onSelected) {
+    currentIconPickerValue = initialValue || "📁";
+    onIconPickerSelectedCallback = onSelected;
+
+    const modal = document.getElementById("chIconPickerModal");
+    const preview = document.getElementById("iconPickerPreview");
+    const emojiInput = document.getElementById("iconPickerEmojiInput");
+    if (!modal) return;
+
+    function updatePreview(val) {
+        if (!preview) return;
+        if (val.startsWith("http") || val.startsWith("data:")) {
+            preview.innerHTML = `<img src="${val}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">`;
+        } else {
+            preview.innerHTML = `<span style="font-size: 2rem;">${val}</span>`;
+        }
+    }
+
+    updatePreview(currentIconPickerValue);
+    if (emojiInput) {
+        emojiInput.value = (currentIconPickerValue.startsWith("http") || currentIconPickerValue.startsWith("data:")) ? "" : currentIconPickerValue;
+        emojiInput.oninput = () => {
+            const v = emojiInput.value.trim();
+            if (v) {
+                currentIconPickerValue = v;
+                updatePreview(v);
+            }
+        };
+    }
+
+    // Быстрые эмодзи
+    const quickList = document.getElementById("iconPickerQuickEmojis");
+    if (quickList) {
+        quickList.querySelectorAll(".quick-emoji-opt").forEach(opt => {
+            opt.onclick = () => {
+                currentIconPickerValue = opt.textContent.trim();
+                if (emojiInput) emojiInput.value = currentIconPickerValue;
+                updatePreview(currentIconPickerValue);
+            };
+        });
+    }
+
+    // Загрузка файла
+    const uploadBtn = document.getElementById("btnIconPickerUploadFile");
+    const fileInput = document.getElementById("iconPickerFileInput");
+    if (uploadBtn && fileInput) {
+        uploadBtn.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                try {
+                    const compressed = await resizeAndCompressImage(evt.target.result, 64, 64);
+                    const imgUrl = await uploadToImgBB(compressed);
+                    currentIconPickerValue = imgUrl;
+                    updatePreview(currentIconPickerValue);
+                } catch (err) {
+                    console.error("Error loading icon:", err);
+                    alert("Не удалось загрузить картинку.");
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+    }
+
+    const btnConfirm = document.getElementById("btnIconPickerConfirm");
+    if (btnConfirm) {
+        btnConfirm.onclick = () => {
+            modal.style.display = "none";
+            if (onIconPickerSelectedCallback) {
+                onIconPickerSelectedCallback(currentIconPickerValue);
+            }
+        };
+    }
+
+    const btnClose = document.getElementById("btnIconPickerClose");
+    const btnCancel = document.getElementById("btnIconPickerCancel");
+    [btnClose, btnCancel].forEach(b => {
+        if (b) b.onclick = () => { modal.style.display = "none"; };
+    });
+
+    modal.style.display = "flex";
+}
+
+// === Контекстное меню ПКМ для элементов страницы канала (пайплайны, монетизация, цели) ===
+let currentChannelContextMenuTarget = null;
+
+function showChannelItemContextMenu(e, type, channelId, itemIndex) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    currentChannelContextMenuTarget = { type, channelId, index: itemIndex };
+    
+    const menu = document.getElementById("channelItemContextMenu");
+    if (!menu) return;
+    
+    menu.style.display = "flex";
+    
+    const x = e.clientX;
+    const y = e.clientY;
+    const menuWidth = 170;
+    const menuHeight = 90;
+    
+    const posX = (x + menuWidth > window.innerWidth) ? (window.innerWidth - menuWidth - 10) : x;
+    const posY = (y + menuHeight > window.innerHeight) ? (window.innerHeight - menuHeight - 10) : y;
+    
+    menu.style.left = `${posX}px`;
+    menu.style.top = `${posY}px`;
+}
+
+function hideChannelItemContextMenu() {
+    const menu = document.getElementById("channelItemContextMenu");
+    if (menu) menu.style.display = "none";
+    currentChannelContextMenuTarget = null;
+}
+
+document.addEventListener("click", (e) => {
+    const menu = document.getElementById("channelItemContextMenu");
+    if (menu && menu.style.display !== "none" && !menu.contains(e.target)) {
+        hideChannelItemContextMenu();
+    }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    const btnEdit = document.getElementById("btnChannelItemEdit");
+    const btnDelete = document.getElementById("btnChannelItemDelete");
+    
+    if (btnEdit) {
+        btnEdit.addEventListener("click", () => {
+            if (!currentChannelContextMenuTarget) return;
+            const { type, channelId, index } = currentChannelContextMenuTarget;
+            hideChannelItemContextMenu();
+            
+            if (type === "pipeline") {
+                openPipelineEditModal(channelId, index);
+            } else if (type === "monetization") {
+                openMonetizationEditModal(channelId, index);
+            } else if (type === "goal") {
+                openGoalEditModal(channelId, index);
+            }
+        });
+    }
+    
+    if (btnDelete) {
+        btnDelete.addEventListener("click", async () => {
+            if (!currentChannelContextMenuTarget) return;
+            const { type, channelId, index } = currentChannelContextMenuTarget;
+            hideChannelItemContextMenu();
+            
+            const ch = channels.find(c => c.id === channelId);
+            if (!ch) return;
+            
+            if (type === "pipeline") {
+                const item = ch.pipelines ? ch.pipelines[index] : null;
+                const confirmRes = await showCustomConfirm("Удалить пайплайн?", `Удалить пайплайн "${item ? item.name : ''}"?`);
+                if (confirmRes) {
+                    ch.pipelines.splice(index, 1);
+                    saveChannels();
+                    renderChannelPipelines(ch);
+                }
+            } else if (type === "monetization") {
+                const item = ch.monetization ? ch.monetization[index] : null;
+                const confirmRes = await showCustomConfirm("Удалить источник?", `Удалить источник монетизации "${item ? item.name : ''}"?`);
+                if (confirmRes) {
+                    ch.monetization.splice(index, 1);
+                    saveChannels();
+                    renderChannelMonetization(ch);
+                }
+            } else if (type === "goal") {
+                const item = ch.goals ? ch.goals[index] : null;
+                const confirmRes = await showCustomConfirm("Удалить цель?", `Удалить цель "${item ? item.title : ''}"?`);
+                if (confirmRes) {
+                    ch.goals.splice(index, 1);
+                    saveChannels();
+                    renderChannelGoals(ch);
+                }
+            }
+        });
+    }
+});
+
+function renderChannelPipelines(ch) {
+    const container = document.getElementById("channelPagePipelinesList");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const pipelines = ch.pipelines || [];
+    if (pipelines.length === 0) {
+        container.innerHTML = `<div style="font-size: 0.85rem; color: var(--ch-text-gray); padding: 12px 0; text-align: center;">Пайплайны пока не созданы. Нажмите +, чтобы добавить шаблон или ссылку на Notion.</div>`;
+        return;
+    }
+
+    pipelines.forEach((p, idx) => {
+        const item = document.createElement("div");
+        item.className = "channel-pipeline-item";
+
+        let iconHtml = "";
+        if (p.icon && (p.icon.startsWith("http") || p.icon.startsWith("data:"))) {
+            iconHtml = `<img src="${p.icon}" alt="icon">`;
+        } else {
+            iconHtml = `<span>${p.icon || "📁"}</span>`;
+        }
+
+        item.innerHTML = `
+            <div class="channel-pipeline-left">
+                <div class="channel-pipeline-icon">${iconHtml}</div>
+                <span>${escapeHtml(p.name)}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <svg class="channel-pipeline-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </div>
+        `;
+
+        item.addEventListener("click", () => {
+            if (p.url && p.url.trim()) {
+                window.open(p.url.trim(), "_blank");
+            } else {
+                openPipelineEditModal(ch.id, idx);
+            }
+        });
+
+        item.addEventListener("contextmenu", (e) => {
+            showChannelItemContextMenu(e, "pipeline", ch.id, idx);
+        });
+
+        container.appendChild(item);
+    });
+}
+
+function renderChannelMonetization(ch) {
+    const container = document.getElementById("channelPageMonetizationList");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const monetization = ch.monetization || [];
+    if (monetization.length === 0) {
+        container.innerHTML = `<div style="font-size: 0.85rem; color: var(--ch-text-gray); padding: 12px 0; text-align: center;">Источники монетизации пока не добавлены. Нажмите +, чтобы создать.</div>`;
+        return;
+    }
+
+    monetization.forEach((m, idx) => {
+        const item = document.createElement("div");
+        item.className = "channel-monetization-item";
+
+        let iconHtml = "";
+        if (m.icon && (m.icon.startsWith("http") || m.icon.startsWith("data:"))) {
+            iconHtml = `<img src="${m.icon}" style="width: 24px; height: 24px; object-fit: contain; border-radius: 6px;">`;
+        } else {
+            iconHtml = `<span style="font-size: 1.3rem;">${m.icon || "💰"}</span>`;
+        }
+
+        const statusLabels = {
+            active: "Активно",
+            planned: "Планирую",
+            inactive: "Пока нет"
+        };
+        const statusClass = m.status || "active";
+        const statusText = statusLabels[statusClass] || "Активно";
+
+        item.innerHTML = `
+            <div class="channel-monetization-left">
+                ${iconHtml}
+                <div class="channel-monetization-info">
+                    <span class="channel-monetization-title">${escapeHtml(m.name)}</span>
+                    ${m.desc ? `<span class="channel-monetization-desc">${escapeHtml(m.desc)}</span>` : ""}
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="monetization-status-pill ${statusClass}">${statusText}</span>
+            </div>
+        `;
+
+        item.style.cursor = "pointer";
+        item.addEventListener("click", () => {
+            openMonetizationEditModal(ch.id, idx);
+        });
+
+        item.addEventListener("contextmenu", (e) => {
+            showChannelItemContextMenu(e, "monetization", ch.id, idx);
+        });
+
+        container.appendChild(item);
+    });
+}
+
+function renderChannelGoals(ch) {
+    const container = document.getElementById("channelPageGoalsList");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const goals = ch.goals || [];
+    if (goals.length === 0) {
+        container.innerHTML = `<div style="font-size: 0.85rem; color: var(--ch-text-gray); padding: 8px 0; text-align: center;">Ключевые цели не добавлены. Нажмите +, чтобы создать цель.</div>`;
+        return;
+    }
+
+    goals.forEach((g, idx) => {
+        const item = document.createElement("div");
+        item.className = "channel-goal-item";
+
+        item.innerHTML = `
+            <div class="channel-goal-left">
+                <span class="channel-goal-circle ${g.done ? "done" : ""}"></span>
+                <span>${escapeHtml(g.title)}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                ${g.metric ? `<span class="channel-goal-metric">${escapeHtml(g.metric)}</span>` : ""}
+            </div>
+        `;
+
+        item.style.cursor = "pointer";
+        item.addEventListener("click", () => {
+            g.done = !g.done;
+            saveChannels();
+            renderChannelGoals(ch);
+        });
+
+        item.addEventListener("contextmenu", (e) => {
+            showChannelItemContextMenu(e, "goal", ch.id, idx);
+        });
+
+        container.appendChild(item);
+    });
+}
+
+function openPipelineEditModal(channelId, index = null) {
+    const ch = channels.find(c => c.id === channelId);
+    if (!ch) return;
+    if (!ch.pipelines) ch.pipelines = [];
+
+    activeEditingPipelineIndex = index;
+    const isEdit = (index !== null && ch.pipelines[index]);
+    const item = isEdit ? ch.pipelines[index] : { name: "", icon: "📁", url: "" };
+
+    const modal = document.getElementById("chPipelineModal");
+    const modalTitle = document.getElementById("chPipelineModalTitle");
+    const nameInput = document.getElementById("pipelineNameInput");
+    const urlInput = document.getElementById("pipelineUrlInput");
+    const iconBtn = document.getElementById("btnPipelineIconSelect");
+    const deleteBtn = document.getElementById("btnPipelineDelete");
+
+    if (!modal) return;
+
+    if (modalTitle) modalTitle.textContent = isEdit ? "Редактировать пайплайн" : "Новый пайплайн";
+    if (nameInput) nameInput.value = item.name || "";
+    if (urlInput) urlInput.value = item.url || "";
+    
+    let selectedIcon = item.icon || "📁";
+    function updateIconBtn() {
+        if (!iconBtn) return;
+        if (selectedIcon.startsWith("http") || selectedIcon.startsWith("data:")) {
+            iconBtn.innerHTML = `<img src="${selectedIcon}" style="width: 24px; height: 24px; object-fit: contain;">`;
+        } else {
+            iconBtn.innerHTML = `<span>${selectedIcon}</span>`;
+        }
+    }
+    updateIconBtn();
+
+    if (iconBtn) {
+        iconBtn.onclick = () => {
+            showIconPickerModal(selectedIcon, (newIcon) => {
+                selectedIcon = newIcon;
+                updateIconBtn();
+            });
+        };
+    }
+
+    if (deleteBtn) {
+        deleteBtn.style.display = isEdit ? "block" : "none";
+        deleteBtn.onclick = () => {
+            ch.pipelines.splice(index, 1);
+            saveChannels();
+            renderChannelPipelines(ch);
+            modal.style.display = "none";
+        };
+    }
+
+    const saveBtn = document.getElementById("btnPipelineSave");
+    if (saveBtn) {
+        saveBtn.onclick = () => {
+            const nameVal = nameInput.value.trim();
+            if (!nameVal) {
+                alert("Пожалуйста, введите название пайплайна.");
+                return;
+            }
+            const newItem = {
+                name: nameVal,
+                icon: selectedIcon,
+                url: urlInput ? urlInput.value.trim() : ""
+            };
+
+            if (isEdit) {
+                ch.pipelines[index] = newItem;
+            } else {
+                ch.pipelines.push(newItem);
+            }
+
+            saveChannels();
+            renderChannelPipelines(ch);
+            modal.style.display = "none";
+        };
+    }
+
+    const closeBtn = document.getElementById("btnPipelineModalClose");
+    const cancelBtn = document.getElementById("btnPipelineCancel");
+    [closeBtn, cancelBtn].forEach(b => {
+        if (b) b.onclick = () => { modal.style.display = "none"; };
+    });
+
+    modal.style.display = "flex";
+    if (nameInput) nameInput.focus();
+}
+
+function openMonetizationEditModal(channelId, index = null) {
+    const ch = channels.find(c => c.id === channelId);
+    if (!ch) return;
+    if (!ch.monetization) ch.monetization = [];
+
+    activeEditingMonetizationIndex = index;
+    const isEdit = (index !== null && ch.monetization[index]);
+    const item = isEdit ? ch.monetization[index] : { name: "", icon: "💰", desc: "", status: "active" };
+
+    const modal = document.getElementById("chMonetizationModal");
+    const modalTitle = document.getElementById("chMonetizationModalTitle");
+    const nameInput = document.getElementById("monetizationNameInput");
+    const descInput = document.getElementById("monetizationDescInput");
+    const statusSelect = document.getElementById("monetizationStatusSelect");
+    const iconBtn = document.getElementById("btnMonetizationIconSelect");
+    const deleteBtn = document.getElementById("btnMonetizationDelete");
+
+    if (!modal) return;
+
+    if (modalTitle) modalTitle.textContent = isEdit ? "Редактировать источник" : "Новый источник монетизации";
+    if (nameInput) nameInput.value = item.name || "";
+    if (descInput) descInput.value = item.desc || "";
+    if (statusSelect) statusSelect.value = item.status || "active";
+
+    let selectedIcon = item.icon || "💰";
+    function updateIconBtn() {
+        if (!iconBtn) return;
+        if (selectedIcon.startsWith("http") || selectedIcon.startsWith("data:")) {
+            iconBtn.innerHTML = `<img src="${selectedIcon}" style="width: 24px; height: 24px; object-fit: contain;">`;
+        } else {
+            iconBtn.innerHTML = `<span>${selectedIcon}</span>`;
+        }
+    }
+    updateIconBtn();
+
+    if (iconBtn) {
+        iconBtn.onclick = () => {
+            showIconPickerModal(selectedIcon, (newIcon) => {
+                selectedIcon = newIcon;
+                updateIconBtn();
+            });
+        };
+    }
+
+    if (deleteBtn) {
+        deleteBtn.style.display = isEdit ? "block" : "none";
+        deleteBtn.onclick = () => {
+            ch.monetization.splice(index, 1);
+            saveChannels();
+            renderChannelMonetization(ch);
+            modal.style.display = "none";
+        };
+    }
+
+    const saveBtn = document.getElementById("btnMonetizationSave");
+    if (saveBtn) {
+        saveBtn.onclick = () => {
+            const nameVal = nameInput.value.trim();
+            if (!nameVal) {
+                alert("Пожалуйста, введите название источника монетизации.");
+                return;
+            }
+            const newItem = {
+                name: nameVal,
+                icon: selectedIcon,
+                desc: descInput ? descInput.value.trim() : "",
+                status: statusSelect ? statusSelect.value : "active"
+            };
+
+            if (isEdit) {
+                ch.monetization[index] = newItem;
+            } else {
+                ch.monetization.push(newItem);
+            }
+
+            saveChannels();
+            renderChannelMonetization(ch);
+            modal.style.display = "none";
+        };
+    }
+
+    const closeBtn = document.getElementById("btnMonetizationModalClose");
+    const cancelBtn = document.getElementById("btnMonetizationCancel");
+    [closeBtn, cancelBtn].forEach(b => {
+        if (b) b.onclick = () => { modal.style.display = "none"; };
+    });
+
+    modal.style.display = "flex";
+    if (nameInput) nameInput.focus();
+}
+
+function openGoalEditModal(channelId, index = null) {
+    const ch = channels.find(c => c.id === channelId);
+    if (!ch) return;
+    if (!ch.goals) ch.goals = [];
+
+    const isEdit = (index !== null && ch.goals[index]);
+    const item = isEdit ? ch.goals[index] : { title: "", metric: "", done: false };
+
+    const modal = document.getElementById("chGoalModal");
+    const modalTitle = document.getElementById("chGoalModalTitle");
+    const titleInput = document.getElementById("goalTitleInput");
+    const metricInput = document.getElementById("goalMetricInput");
+    const deleteBtn = document.getElementById("btnGoalDelete");
+    const saveBtn = document.getElementById("btnGoalSave");
+    const cancelBtn = document.getElementById("btnGoalCancel");
+    const closeBtn = document.getElementById("btnGoalModalClose");
+
+    if (!modal) return;
+
+    if (modalTitle) modalTitle.textContent = isEdit ? "Редактировать цель" : "Новая цель";
+    if (titleInput) titleInput.value = item.title || "";
+    if (metricInput) metricInput.value = item.metric || "";
+
+    if (deleteBtn) {
+        deleteBtn.style.display = isEdit ? "block" : "none";
+        deleteBtn.onclick = () => {
+            ch.goals.splice(index, 1);
+            saveChannels();
+            renderChannelGoals(ch);
+            modal.style.display = "none";
+        };
+    }
+
+    if (saveBtn) {
+        saveBtn.onclick = () => {
+            const titleVal = titleInput ? titleInput.value.trim() : "";
+            if (!titleVal) {
+                alert("Пожалуйста, введите название цели.");
+                return;
+            }
+            const newItem = {
+                title: titleVal,
+                metric: metricInput ? metricInput.value.trim() : "",
+                done: isEdit ? item.done : false
+            };
+
+            if (isEdit) {
+                ch.goals[index] = newItem;
+            } else {
+                ch.goals.push(newItem);
+            }
+
+            saveChannels();
+            renderChannelGoals(ch);
+            modal.style.display = "none";
+        };
+    }
+
+    const closeModal = () => { modal.style.display = "none"; };
+    if (closeBtn) closeBtn.onclick = closeModal;
+    if (cancelBtn) cancelBtn.onclick = closeModal;
+
+    modal.style.display = "flex";
+    if (titleInput) titleInput.focus();
+}
+
+function openChannelSpecificSettingsModal(channelId) {
+    const ch = channels.find(c => c.id === channelId);
+    if (!ch) return;
+
+    const modal = document.getElementById("chChannelSettingsModal");
+    const bannerPreview = document.getElementById("channelSettingsBannerPreview");
+    const bannerPlaceholder = document.getElementById("channelSettingsBannerPlaceholder");
+    const bannerFile = document.getElementById("channelSettingsBannerFile");
+    const btnRemoveBanner = document.getElementById("btnRemoveChannelBanner");
+
+    const avatarImg = document.getElementById("channelSettingsAvatarImg");
+    const avatarPlaceholder = document.getElementById("channelSettingsAvatarPlaceholder");
+    const avatarWrapper = document.getElementById("channelSettingsAvatarWrapper");
+    const avatarFile = document.getElementById("channelSettingsAvatarFile");
+
+    const nameInput = document.getElementById("channelSettingsNameInput");
+    const saveBtn = document.getElementById("btnChannelSettingsSave");
+    const cancelBtn = document.getElementById("btnChannelSettingsCancel");
+    const closeBtn = document.getElementById("btnChannelSettingsModalClose");
+
+    if (!modal) return;
+
+    let currentBanner = ch.bannerUrl || "";
+    let currentAvatar = ch.avatarUrl || "";
+
+    function updateBannerUI() {
+        if (currentBanner) {
+            bannerPreview.style.backgroundImage = `url(${currentBanner})`;
+            bannerPlaceholder.style.display = "none";
+            btnRemoveBanner.style.display = "inline-block";
+        } else {
+            bannerPreview.style.backgroundImage = "none";
+            bannerPlaceholder.style.display = "block";
+            btnRemoveBanner.style.display = "none";
+        }
+    }
+
+    function updateAvatarUI() {
+        if (currentAvatar) {
+            avatarImg.src = currentAvatar;
+            avatarImg.style.display = "block";
+            avatarPlaceholder.style.display = "none";
+        } else {
+            avatarImg.style.display = "none";
+            avatarPlaceholder.style.display = "block";
+            const nameVal = nameInput ? nameInput.value.trim() : (ch.name || "");
+            avatarPlaceholder.textContent = nameVal ? nameVal.charAt(0).toUpperCase() : "?";
+        }
+    }
+
+    if (nameInput) {
+        nameInput.value = ch.name || "";
+        nameInput.oninput = () => {
+            if (!currentAvatar) {
+                const nameVal = nameInput.value.trim();
+                avatarPlaceholder.textContent = nameVal ? nameVal.charAt(0).toUpperCase() : "?";
+            }
+        };
+    }
+
+    updateBannerUI();
+    updateAvatarUI();
+
+    bannerPreview.onclick = () => {
+        if (bannerFile) bannerFile.click();
+    };
+
+    if (bannerFile) {
+        bannerFile.value = "";
+        bannerFile.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                try {
+                    bannerPlaceholder.textContent = "Загрузка...";
+                    bannerPlaceholder.style.display = "block";
+                    // Сжимаем баннер под формат 1200x320
+                    const compressed = await resizeAndCompressImage(evt.target.result, 1200, 320);
+                    const uploadedUrl = await uploadToImgBB(compressed);
+                    currentBanner = uploadedUrl;
+                    updateBannerUI();
+                } catch (err) {
+                    console.error("Ошибка загрузки баннера:", err);
+                    alert("Не удалось загрузить баннер. Попробуйте еще раз.");
+                } finally {
+                    bannerPlaceholder.textContent = "Нажмите для загрузки баннера";
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+    }
+
+    if (btnRemoveBanner) {
+        btnRemoveBanner.onclick = (e) => {
+            e.stopPropagation();
+            currentBanner = "";
+            updateBannerUI();
+        };
+    }
+
+    avatarWrapper.onclick = () => {
+        if (avatarFile) avatarFile.click();
+    };
+
+    if (avatarFile) {
+        avatarFile.value = "";
+        avatarFile.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                try {
+                    avatarPlaceholder.textContent = "...";
+                    // Сжимаем аватар до 128x128
+                    const compressed = await resizeAndCompressImage(evt.target.result, 128, 128);
+                    const uploadedUrl = await uploadToImgBB(compressed);
+                    currentAvatar = uploadedUrl;
+                    updateAvatarUI();
+                } catch (err) {
+                    console.error("Ошибка загрузки аватара:", err);
+                    alert("Не удалось загрузить аватарку. Попробуйте еще раз.");
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+    }
+
+    const closeModal = () => {
+        modal.style.display = "none";
+    };
+
+    if (closeBtn) closeBtn.onclick = closeModal;
+    if (cancelBtn) cancelBtn.onclick = closeModal;
+
+    if (saveBtn) {
+        saveBtn.onclick = () => {
+            const newName = nameInput ? nameInput.value.trim() : "";
+            if (!newName) {
+                alert("Пожалуйста, введите название канала.");
+                return;
+            }
+
+            ch.name = newName;
+            ch.bannerUrl = currentBanner;
+            ch.avatarUrl = currentAvatar;
+
+            saveChannels();
+            renderChannelSwitcher();
+            renderSettingsChannels();
+            openChannelPage(ch.id, false);
+
+            closeModal();
+        };
+    }
+
+    modal.style.display = "flex";
+    if (nameInput) nameInput.focus();
+}
+
+function openChannelPage(channelId, updateHash = true) {
+    const ch = channels.find(c => c.id === channelId);
+    if (!ch) return;
+
+    // Переключаем активный канал, чтобы контекст синхронизировался
+    currentChannelId = ch.id;
+    localStorage.setItem("creatorhub_current_channel_id", ch.id);
+    const row = document.getElementById("channelsSwitcherRow");
+    if (row) {
+        row.querySelectorAll(".channel-pill-btn").forEach(b => {
+            b.classList.toggle("active", b.getAttribute("data-channel-id") === ch.id);
+        });
+    }
+
+    const page = document.getElementById("channelPageContainer");
+    const avatarWrap = document.getElementById("channelPageAvatarWrap");
+    const titleEl = document.getElementById("channelPageTitle");
+    const videosCountEl = document.getElementById("channelPageVideosCount");
+    const aboutTextEl = document.getElementById("channelPageAboutText");
+    const missionDescEl = document.getElementById("channelPageMissionDesc");
+    const missionQuoteBox = document.getElementById("channelPageMissionQuoteBox");
+    const missionQuoteEl = document.getElementById("channelPageMissionQuote");
+    const bannerBg = document.getElementById("channelPageBannerBg");
+
+    if (titleEl) {
+        titleEl.textContent = ch.name || "Канал";
+    }
+
+    // Количество опубликованных видео канала
+    const publishedCount = videos.filter(v => !v.deleted && v.channelId === ch.id && v.status === "published").length;
+    if (videosCountEl) {
+        videosCountEl.textContent = `${publishedCount} видео`;
+    }
+
+    // Текст "О канале"
+    if (aboutTextEl) {
+        if (ch.about && ch.about.trim()) {
+            aboutTextEl.textContent = ch.about;
+            aboutTextEl.style.fontStyle = "normal";
+            aboutTextEl.style.color = "var(--ch-text-gray)";
+        } else {
+            aboutTextEl.textContent = "Описание канала пока не заполнено. Нажмите иконку редактирования, чтобы добавить.";
+            aboutTextEl.style.fontStyle = "italic";
+            aboutTextEl.style.color = "var(--ch-text-gray)";
+            aboutTextEl.style.opacity = "0.75";
+        }
+    }
+
+    // Цель и цитата
+    if (missionDescEl) {
+        if (ch.missionDesc && ch.missionDesc.trim()) {
+            missionDescEl.textContent = ch.missionDesc;
+            missionDescEl.style.fontStyle = "normal";
+            missionDescEl.style.opacity = "1";
+        } else {
+            missionDescEl.textContent = "Главная цель канала еще не указана. Нажмите иконку редактирования, чтобы описать миссию.";
+            missionDescEl.style.fontStyle = "italic";
+            missionDescEl.style.opacity = "0.75";
+        }
+    }
+    if (missionQuoteBox && missionQuoteEl) {
+        if (ch.missionQuote && ch.missionQuote.trim()) {
+            missionQuoteEl.textContent = ch.missionQuote;
+            missionQuoteBox.style.display = "block";
+        } else {
+            missionQuoteBox.style.display = "none";
+        }
+    }
+
+    // Баннер: если у канала задан баннер, показываем его; иначе нейтральный фон
+    if (bannerBg) {
+        if (ch.bannerUrl) {
+            bannerBg.style.backgroundImage = `url(${ch.bannerUrl})`;
+        } else {
+            bannerBg.style.backgroundImage = "none";
+        }
+    }
+
+    // Аватарка
+    if (avatarWrap) {
+        avatarWrap.innerHTML = "";
+        if (ch.avatarUrl) {
+            const img = document.createElement("img");
+            img.src = ch.avatarUrl;
+            img.alt = ch.name;
+            img.className = "channel-page-avatar-img";
+            avatarWrap.appendChild(img);
+        } else {
+            const placeholder = document.createElement("div");
+            placeholder.className = "channel-page-avatar-placeholder";
+            placeholder.textContent = ch.name ? ch.name.charAt(0) : "?";
+            avatarWrap.appendChild(placeholder);
+        }
+    }
+
+    // Рендерим модули
+    renderChannelPipelines(ch);
+    renderChannelMonetization(ch);
+    renderChannelGoals(ch);
+
+    // Слушатели кнопок страницы канала
+    const btnEditAbout = document.getElementById("btnEditChannelAbout");
+    if (btnEditAbout) {
+        btnEditAbout.onclick = async () => {
+            const newText = await showCustomPrompt("О канале", "Описание канала:", ch.about || "");
+            if (newText !== null) {
+                ch.about = newText.trim();
+                saveChannels();
+                openChannelPage(ch.id, false);
+            }
+        };
+    }
+
+    const btnEditMission = document.getElementById("btnEditChannelMission");
+    if (btnEditMission) {
+        btnEditMission.onclick = async () => {
+            const newDesc = await showCustomPrompt("Цель канала", "Миссия / Видение:", ch.missionDesc || "");
+            if (newDesc !== null) {
+                ch.missionDesc = newDesc.trim();
+                const newQuote = await showCustomPrompt("Девиз / Цитата", "Короткая мотивирующая фраза (необязательно):", ch.missionQuote || "");
+                if (newQuote !== null) {
+                    ch.missionQuote = newQuote.trim();
+                }
+                saveChannels();
+                openChannelPage(ch.id, false);
+            }
+        };
+    }
+
+    const btnAddPipeline = document.getElementById("btnAddChannelPipeline");
+    if (btnAddPipeline) {
+        btnAddPipeline.onclick = () => openPipelineEditModal(ch.id, null);
+    }
+
+    const btnAddMonetization = document.getElementById("btnAddChannelMonetization");
+    if (btnAddMonetization) {
+        btnAddMonetization.onclick = () => openMonetizationEditModal(ch.id, null);
+    }
+
+    const btnAddGoal = document.getElementById("btnAddChannelGoal");
+    if (btnAddGoal) {
+        btnAddGoal.onclick = () => openGoalEditModal(ch.id, null);
+    }
+
+    // Кнопка настроек в шапке канала — открывает настройки именно этого канала
+    const btnHeaderEdit = document.getElementById("btnChannelEditHeader");
+    if (btnHeaderEdit) {
+        btnHeaderEdit.onclick = () => {
+            openChannelSpecificSettingsModal(ch.id);
+        };
+    }
+
+    if (page) {
+        page.style.display = "flex";
+    }
+
+    if (updateHash) {
+        window.location.hash = "channel/" + ch.id;
+    }
+}
+
+function closeChannelPage(updateHash = true) {
+    const page = document.getElementById("channelPageContainer");
+    if (page) {
+        page.style.display = "none";
+    }
+
+    if (updateHash) {
+        window.location.hash = currentFilter || "idea";
+    }
+}
+
 function renderChannelSwitcher() {
     const row = document.getElementById("channelsSwitcherRow");
     if (!row) return;
@@ -6300,17 +7225,29 @@ function renderChannelSwitcher() {
         btn.className = "channel-pill-btn" + (ch.id === currentChannelId ? " active" : "");
         btn.setAttribute("data-channel-id", ch.id);
 
+        // Обертка для аватарки канала, клик по которой открывает отдельную страницу канала
+        const avatarWrap = document.createElement("span");
+        avatarWrap.className = "channel-pill-avatar-wrap";
+        avatarWrap.title = `Открыть пространство ${ch.name}`;
+
         if (ch.avatarUrl) {
             const img = document.createElement("img");
             img.src = ch.avatarUrl;
             img.className = "channel-pill-avatar";
-            btn.appendChild(img);
+            avatarWrap.appendChild(img);
         } else {
             const placeholder = document.createElement("div");
             placeholder.className = "channel-pill-avatar-placeholder";
             placeholder.textContent = ch.name ? ch.name.charAt(0) : "?";
-            btn.appendChild(placeholder);
+            avatarWrap.appendChild(placeholder);
         }
+
+        avatarWrap.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openChannelPage(ch.id);
+        });
+
+        btn.appendChild(avatarWrap);
 
         const nameSpan = document.createElement("span");
         nameSpan.textContent = ch.name;
@@ -6323,6 +7260,22 @@ function renderChannelSwitcher() {
         countSpan.className = "channel-pill-count";
         countSpan.textContent = count;
         btn.appendChild(countSpan);
+
+        // Кнопка быстрого перехода ↗ на отдельную страницу канала
+        const openBtn = document.createElement("span");
+        openBtn.className = "channel-pill-link-btn";
+        openBtn.title = `Открыть страницу канала ${ch.name}`;
+        openBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+                <line x1="7" y1="17" x2="17" y2="7"></line>
+                <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+        `;
+        openBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openChannelPage(ch.id);
+        });
+        btn.appendChild(openBtn);
 
         btn.addEventListener("click", () => {
             currentChannelId = ch.id;
@@ -6673,6 +7626,13 @@ function updateBulkActionsToolbar() {
 
 document.addEventListener("DOMContentLoaded", () => {
     renderChannelSwitcher();
+
+    const btnChannelPageBack = document.getElementById("btnChannelPageBack");
+    if (btnChannelPageBack) {
+        btnChannelPageBack.addEventListener("click", () => {
+            closeChannelPage();
+        });
+    }
 
     const btnHeaderGear = document.getElementById("btnHeaderGear");
     if (btnHeaderGear) {
@@ -7074,11 +8034,20 @@ function resizeAndCompressImage(base64Image, targetWidth = 128, targetHeight = 1
             canvas.height = targetHeight;
             const ctx = canvas.getContext("2d");
             
-            const minSize = Math.min(img.width, img.height);
-            const sx = (img.width - minSize) / 2;
-            const sy = (img.height - minSize) / 2;
+            // Cover fit: масштабирование с заполнением без искажения пропорций
+            const sourceRatio = img.width / img.height;
+            const targetRatio = targetWidth / targetHeight;
+            let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height;
             
-            ctx.drawImage(img, sx, sy, minSize, minSize, 0, 0, targetWidth, targetHeight);
+            if (sourceRatio > targetRatio) {
+                sWidth = img.height * targetRatio;
+                sx = (img.width - sWidth) / 2;
+            } else {
+                sHeight = img.width / targetRatio;
+                sy = (img.height - sHeight) / 2;
+            }
+            
+            ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
             resolve(canvas.toDataURL("image/jpeg", 0.85));
         };
         img.onerror = function(err) {

@@ -606,6 +606,160 @@
             </div>
             </div> <!-- /detail-sidebar-content-wrapper -->
         </aside>
+
+        <!-- Страница конкретного канала (2-й уровень приложения) -->
+        <div class="channel-page-container" id="channelPageContainer" style="display: none;">
+            <!-- Шапка/Баннер канала -->
+            <div class="channel-page-banner-wrap" id="channelPageBannerWrap">
+                <div class="channel-page-banner-bg" id="channelPageBannerBg"></div>
+                <div class="channel-page-banner-overlay"></div>
+                
+                <!-- Верхняя панель на баннере с кнопкой назад -->
+                <div class="channel-page-top-bar">
+                    <button type="button" class="btn-channel-back-banner" id="btnChannelPageBack" title="Назад в CreatorHub">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        <span>Назад</span>
+                    </button>
+                    <button type="button" class="btn-channel-edit-header" id="btnChannelEditHeader" title="Редактировать канал">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        <span>Настройки</span>
+                    </button>
+                </div>
+
+                <!-- Профиль канала поверх нижней части баннера -->
+                <div class="channel-page-profile-hero">
+                    <div class="channel-page-avatar-wrap" id="channelPageAvatarWrap">
+                        <!-- Аватарка рендерится динамически -->
+                    </div>
+                    <div class="channel-page-hero-meta">
+                        <div class="channel-page-title-row">
+                            <h1 class="channel-page-title" id="channelPageTitle">Рэмми</h1>
+                        </div>
+                        <div class="channel-page-sub-badge-row">
+                            <span class="channel-platform-pill">
+                                <svg viewBox="0 0 24 24" fill="#ff0000" width="14" height="14">
+                                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                </svg>
+                                <span>YouTube канал</span>
+                            </span>
+                            <span class="channel-meta-dot">•</span>
+                            <span class="channel-video-count-badge" id="channelPageVideosCount">0 видео</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Основной контент страницы канала: Модульная сетка блоков -->
+            <main class="channel-page-content">
+                <div class="channel-dashboard-grid">
+                    <!-- Блок: О канале -->
+                    <div class="channel-card card-about">
+                        <div class="channel-card-header">
+                            <div class="channel-card-title-group">
+                                <h3 class="channel-card-title">О канале</h3>
+                                <button type="button" class="channel-card-action-btn" id="btnEditChannelAbout" title="Редактировать описание">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="channel-card-body">
+                            <p class="channel-about-text" id="channelPageAboutText"></p>
+                        </div>
+                    </div>
+
+                    <!-- Блок: Цель / Миссия (акцентный фиолетовый) -->
+                    <div class="channel-card card-mission">
+                        <div class="channel-card-header">
+                            <div class="channel-card-title-group">
+                                <div class="channel-card-icon-target">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <circle cx="12" cy="12" r="6"></circle>
+                                        <circle cx="12" cy="12" r="2"></circle>
+                                    </svg>
+                                </div>
+                                <h3 class="channel-card-title">Цель</h3>
+                            </div>
+                            <button type="button" class="channel-card-action-btn" id="btnEditChannelMission" title="Редактировать цель">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="channel-card-body">
+                            <p class="channel-mission-desc" id="channelPageMissionDesc"></p>
+                            <div class="channel-quote-box" id="channelPageMissionQuoteBox" style="display: none;">
+                                <span class="quote-text" id="channelPageMissionQuote"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Блок: Ключевые цели (метрики / майлстоуны) -->
+                    <div class="channel-card card-goals">
+                        <div class="channel-card-header">
+                            <h3 class="channel-card-title">Ключевые цели</h3>
+                            <button type="button" class="channel-card-action-btn add-btn" id="btnAddChannelGoal" title="Добавить цель">+</button>
+                        </div>
+                        <div class="channel-card-body">
+                            <div class="channel-goals-list" id="channelPageGoalsList">
+                                <!-- Рендерится динамически -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Блок: Пайплайны (шаблоны создания контента со ссылками Notion) -->
+                    <div class="channel-card card-pipelines">
+                        <div class="channel-card-header">
+                            <div class="channel-card-title-group">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="color: var(--ch-purple);">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                <h3 class="channel-card-title">Пайплайны</h3>
+                            </div>
+                            <button type="button" class="channel-card-action-btn add-btn" id="btnAddChannelPipeline" title="Добавить пайплайн">+</button>
+                        </div>
+                        <div class="channel-card-body">
+                            <div class="channel-pipelines-list" id="channelPagePipelinesList">
+                                <!-- Рендерится динамически -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Блок: Монетизация (способы заработка) -->
+                    <div class="channel-card card-monetization">
+                        <div class="channel-card-header">
+                            <div class="channel-card-title-group">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="color: #10b981;">
+                                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                                </svg>
+                                <h3 class="channel-card-title">Монетизация</h3>
+                            </div>
+                            <button type="button" class="channel-card-action-btn add-btn" id="btnAddChannelMonetization" title="Добавить монетизацию">+</button>
+                        </div>
+                        <div class="channel-card-body">
+                            <div class="channel-monetization-list" id="channelPageMonetizationList">
+                                <!-- Рендерится динамически -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
     </div>
     <!-- Меню действий видео -->
     <div class="video-actions-dropdown" id="videoActionsDropdown" style="display: none; width: 200px;">
@@ -695,6 +849,25 @@
                 <polyline points="7 3 7 8 15 8"></polyline>
             </svg>
             <span>Переместить в канал</span>
+        </button>
+    </div>
+
+    <!-- Контекстное меню ПКМ для элементов страницы канала (Пайплайны, Монетизация, Цели) -->
+    <div class="video-actions-dropdown" id="channelItemContextMenu" style="display: none; width: 170px; z-index: 25000;">
+        <button class="dropdown-item" id="btnChannelItemEdit">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Редактировать</span>
+        </button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item btn-delete" id="btnChannelItemDelete">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Удалить</span>
         </button>
     </div>
 
@@ -881,6 +1054,225 @@
                 Удалить
             </button>
             <button id="btnBulkCancel" class="bulk-action-btn cancel">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Настройки конкретного канала (Баннер, Аватар, Название) -->
+    <div class="confirm-modal-overlay" id="chChannelSettingsModal" style="display: none; z-index: 25000;">
+        <div class="confirm-modal-card" style="max-width: 460px; width: 92%;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <h3 class="confirm-modal-title" style="margin: 0;">Настройки канала</h3>
+                <button type="button" class="settings-close-btn" id="btnChannelSettingsModalClose" style="position: static; font-size: 1.4rem;">&times;</button>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <!-- Баннер канала -->
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--ch-text-gray); margin-bottom: 6px;">Баннер канала</label>
+                    <div id="channelSettingsBannerPreview" style="width: 100%; height: 110px; border-radius: 12px; border: 1px dashed var(--ch-border); background-size: cover; background-position: center; background-color: var(--ch-bg); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; cursor: pointer;">
+                        <span id="channelSettingsBannerPlaceholder" style="font-size: 0.85rem; color: var(--ch-text-gray); font-weight: 500;">Нажмите для загрузки баннера</span>
+                    </div>
+                    <input type="file" id="channelSettingsBannerFile" accept="image/*" style="display: none;">
+                    <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                        <button type="button" id="btnRemoveChannelBanner" style="background: none; border: none; color: #ef4444; font-size: 0.78rem; cursor: pointer; display: none;">Удалить баннер</button>
+                    </div>
+                </div>
+
+                <!-- Аватарка и название канала -->
+                <div style="display: flex; gap: 14px; align-items: center;">
+                    <div id="channelSettingsAvatarWrapper" style="position: relative; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; cursor: pointer; border: 2px solid var(--ch-border); flex-shrink: 0; background: var(--ch-purple); display: flex; align-items: center; justify-content: center;">
+                        <img id="channelSettingsAvatarImg" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        <span id="channelSettingsAvatarPlaceholder" style="color: #fff; font-weight: 700; font-size: 1.4rem;">?</span>
+                        <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0'">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        </div>
+                    </div>
+                    <input type="file" id="channelSettingsAvatarFile" accept="image/*" style="display: none;">
+                    
+                    <div style="flex: 1;">
+                        <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--ch-text-gray); margin-bottom: 6px;">Название канала</label>
+                        <input type="text" id="channelSettingsNameInput" placeholder="Название канала" style="width: 100%; border: 1px solid var(--ch-border); border-radius: 10px; padding: 10px 14px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 0.95rem; box-sizing: border-box; outline: none;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="confirm-modal-actions" style="margin-top: 22px; display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="confirm-btn-cancel" id="btnChannelSettingsCancel">Отмена</button>
+                <button type="button" class="confirm-btn-danger" id="btnChannelSettingsSave" style="background: var(--ch-purple); border-color: var(--ch-purple);">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Добавить/Редактировать Пайплайн -->
+    <div class="confirm-modal-overlay" id="chPipelineModal" style="display: none; z-index: 25000;">
+        <div class="confirm-modal-card" style="max-width: 440px; width: 92%;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <h3 class="confirm-modal-title" id="chPipelineModalTitle" style="margin: 0;">Новый пайплайн</h3>
+                <button type="button" class="settings-close-btn" id="btnPipelineModalClose" style="position: static; font-size: 1.4rem;">&times;</button>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+                <!-- Выбор иконки и название -->
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button type="button" id="btnPipelineIconSelect" class="item-icon-picker-btn" title="Выбрать иконку" style="width: 44px; height: 44px; border-radius: 10px; border: 1px dashed var(--ch-purple); background: var(--ch-purple-light); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; font-size: 1.4rem;">
+                        📁
+                    </button>
+                    <input type="text" id="pipelineNameInput" placeholder="Название (например: Стандартный ролик)" style="flex: 1; border: 1px solid var(--ch-border); border-radius: 10px; padding: 10px 14px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 0.95rem; outline: none;">
+                </div>
+
+                <!-- Ссылка на Notion -->
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--ch-text-gray); margin-bottom: 6px;">Ссылка на Notion / Документ</label>
+                    <input type="url" id="pipelineUrlInput" placeholder="https://notion.so/..." style="width: 100%; border: 1px solid var(--ch-border); border-radius: 10px; padding: 10px 14px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 0.95rem; box-sizing: border-box; outline: none;">
+                </div>
+            </div>
+
+            <div class="confirm-modal-actions" style="margin-top: 22px; display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" class="confirm-btn-cancel" id="btnPipelineDelete" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">Удалить</button>
+                <div style="display: flex; gap: 8px; margin-left: auto;">
+                    <button type="button" class="confirm-btn-cancel" id="btnPipelineCancel">Отмена</button>
+                    <button type="button" class="confirm-btn-danger" id="btnPipelineSave" style="background: var(--ch-purple); border-color: var(--ch-purple);">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Добавить/Редактировать Монетизацию -->
+    <div class="confirm-modal-overlay" id="chMonetizationModal" style="display: none; z-index: 25000;">
+        <div class="confirm-modal-card" style="max-width: 440px; width: 92%;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <h3 class="confirm-modal-title" id="chMonetizationModalTitle" style="margin: 0;">Новый источник монетизации</h3>
+                <button type="button" class="settings-close-btn" id="btnMonetizationModalClose" style="position: static; font-size: 1.4rem;">&times;</button>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+                <!-- Выбор иконки и название -->
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button type="button" id="btnMonetizationIconSelect" class="item-icon-picker-btn" title="Выбрать иконку" style="width: 44px; height: 44px; border-radius: 10px; border: 1px dashed var(--ch-purple); background: var(--ch-purple-light); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; font-size: 1.4rem;">
+                        💰
+                    </button>
+                    <input type="text" id="monetizationNameInput" placeholder="Название (например: YouTube AdSense)" style="flex: 1; border: 1px solid var(--ch-border); border-radius: 10px; padding: 10px 14px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 0.95rem; outline: none;">
+                </div>
+
+                <!-- Подзаголовок / описание источника -->
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--ch-text-gray); margin-bottom: 6px;">Описание / Детали</label>
+                    <input type="text" id="monetizationDescInput" placeholder="Например: Доход с просмотров, партнёрка" style="width: 100%; border: 1px solid var(--ch-border); border-radius: 10px; padding: 10px 14px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 0.95rem; box-sizing: border-box; outline: none;">
+                </div>
+
+                <!-- Статус активности -->
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--ch-text-gray); margin-bottom: 6px;">Статус</label>
+                    <select id="monetizationStatusSelect" style="width: 100%; border: 1px solid var(--ch-border); border-radius: 10px; padding: 10px 14px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 0.95rem; outline: none; cursor: pointer;">
+                        <option value="active">Активно</option>
+                        <option value="planned">Планирую</option>
+                        <option value="inactive">Пока нет</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="confirm-modal-actions" style="margin-top: 22px; display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" class="confirm-btn-cancel" id="btnMonetizationDelete" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">Удалить</button>
+                <div style="display: flex; gap: 8px; margin-left: auto;">
+                    <button type="button" class="confirm-btn-cancel" id="btnMonetizationCancel">Отмена</button>
+                    <button type="button" class="confirm-btn-danger" id="btnMonetizationSave" style="background: var(--ch-purple); border-color: var(--ch-purple);">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Добавить/Редактировать Ключевую Цель -->
+    <div class="confirm-modal-overlay" id="chGoalModal" style="display: none; z-index: 25000;">
+        <div class="confirm-modal-card" style="max-width: 440px; width: 92%;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <h3 class="confirm-modal-title" id="chGoalModalTitle" style="margin: 0;">Новая цель</h3>
+                <button type="button" class="settings-close-btn" id="btnGoalModalClose" style="position: static; font-size: 1.4rem;">&times;</button>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--ch-text-gray); margin-bottom: 6px;">Название цели</label>
+                    <input type="text" id="goalTitleInput" placeholder="Например: 100 000 подписчиков" style="width: 100%; border: 1px solid var(--ch-border); border-radius: 10px; padding: 10px 14px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 0.95rem; box-sizing: border-box; outline: none;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--ch-text-gray); margin-bottom: 6px;">Метрика / Прогресс (необязательно)</label>
+                    <input type="text" id="goalMetricInput" placeholder="Например: 12K / 100K" style="width: 100%; border: 1px solid var(--ch-border); border-radius: 10px; padding: 10px 14px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 0.95rem; box-sizing: border-box; outline: none;">
+                </div>
+            </div>
+
+            <div class="confirm-modal-actions" style="margin-top: 22px; display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" class="confirm-btn-cancel" id="btnGoalDelete" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">Удалить</button>
+                <div style="display: flex; gap: 8px; margin-left: auto;">
+                    <button type="button" class="confirm-btn-cancel" id="btnGoalCancel">Отмена</button>
+                    <button type="button" class="confirm-btn-danger" id="btnGoalSave" style="background: var(--ch-purple); border-color: var(--ch-purple);">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно выбора иконки (эмодзи / загрузка / популярные) -->
+    <div class="confirm-modal-overlay" id="chIconPickerModal" style="display: none; z-index: 35000;">
+        <div class="confirm-modal-card" style="max-width: 380px; width: 92%; padding: 22px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <h3 class="confirm-modal-title" style="margin: 0; font-size: 1.1rem;">Выбор иконки</h3>
+                <button type="button" class="settings-close-btn" id="btnIconPickerClose" style="position: static; font-size: 1.4rem;">&times;</button>
+            </div>
+
+            <p style="font-size: 0.85rem; color: var(--ch-text-gray); margin-top: 0; margin-bottom: 16px; line-height: 1.4;">
+                Введите эмодзи, загрузите картинку или выберите из списка.
+            </p>
+
+            <!-- Предпросмотр -->
+            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                <div id="iconPickerPreview" style="width: 56px; height: 56px; border-radius: 14px; background: var(--ch-bg); border: 2px solid var(--ch-border); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; overflow: hidden;">
+                    📁
+                </div>
+            </div>
+
+            <!-- Вкладки / типы выбора -->
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <!-- Эмодзи инпут -->
+                <div>
+                    <label style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--ch-text-gray); margin-bottom: 4px;">Эмодзи</label>
+                    <input type="text" id="iconPickerEmojiInput" placeholder="Введите эмодзи (например 🚀 или 🎬)" style="width: 100%; border: 1px solid var(--ch-border); border-radius: 8px; padding: 8px 12px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 1rem; box-sizing: border-box; outline: none;">
+                </div>
+
+                <!-- Кнопка загрузки файла -->
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="confirm-btn-cancel" id="btnIconPickerUploadFile" style="flex: 1; padding: 8px; border-radius: 8px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Загрузить файл
+                    </button>
+                    <input type="file" id="iconPickerFileInput" accept="image/*" style="display: none;">
+                </div>
+
+                <!-- Быстрый выбор популярных эмодзи -->
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--ch-text-gray); margin-bottom: 6px;">Популярные</label>
+                    <div id="iconPickerQuickEmojis" style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        <span class="quick-emoji-opt" style="cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 1.15rem; background: var(--ch-bg); border: 1px solid var(--ch-border);">🎬</span>
+                        <span class="quick-emoji-opt" style="cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 1.15rem; background: var(--ch-bg); border: 1px solid var(--ch-border);">🤖</span>
+                        <span class="quick-emoji-opt" style="cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 1.15rem; background: var(--ch-bg); border: 1px solid var(--ch-border);">🔬</span>
+                        <span class="quick-emoji-opt" style="cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 1.15rem; background: var(--ch-bg); border: 1px solid var(--ch-border);">🎮</span>
+                        <span class="quick-emoji-opt" style="cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 1.15rem; background: var(--ch-bg); border: 1px solid var(--ch-border);">⚡</span>
+                        <span class="quick-emoji-opt" style="cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 1.15rem; background: var(--ch-bg); border: 1px solid var(--ch-border);">📱</span>
+                        <span class="quick-emoji-opt" style="cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 1.15rem; background: var(--ch-bg); border: 1px solid var(--ch-border);">💰</span>
+                        <span class="quick-emoji-opt" style="cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 1.15rem; background: var(--ch-bg); border: 1px solid var(--ch-border);">🤝</span>
+                        <span class="quick-emoji-opt" style="cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 1.15rem; background: var(--ch-bg); border: 1px solid var(--ch-border);">📦</span>
+                        <span class="quick-emoji-opt" style="cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 1.15rem; background: var(--ch-bg); border: 1px solid var(--ch-border);">🔗</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="confirm-modal-actions" style="margin-top: 20px; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="confirm-btn-cancel" id="btnIconPickerCancel">Отмена</button>
+                <button type="button" class="confirm-btn-danger" id="btnIconPickerConfirm" style="background: var(--ch-purple); border-color: var(--ch-purple);">Выбрать</button>
+            </div>
         </div>
     </div>
 

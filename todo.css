@@ -1415,7 +1415,7 @@ body.dark .dropdown-submenu {
         top: 0 !important;
         transition: none !important;
         background-color: var(--sidebar-bg) !important;
-        padding: max(16px, env(safe-area-inset-top, 0px)) 16px calc(max(10px, calc(env(safe-area-inset-bottom, 0px) - 10px)) + 100px) 16px !important;
+        padding: max(16px, env(safe-area-inset-top, 0px)) 16px calc(max(20px, env(safe-area-inset-bottom, 0px)) + 180px) 16px !important;
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch;
         box-sizing: border-box;
@@ -1446,24 +1446,24 @@ body.dark .dropdown-submenu {
     .todo-sidebar .sidebar-user {
         background: var(--card-bg) !important;
         border-radius: 30px !important;
-        padding: 4px 12px 4px 6px !important;
+        padding: 5px 14px 5px 6px !important;
         border: 1px solid var(--border) !important;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
         display: flex !important;
         align-items: center !important;
-        gap: 8px !important;
+        gap: 9px !important;
         margin: 0 !important;
         cursor: pointer;
     }
 
     .todo-sidebar .sidebar-avatar {
-        width: 24px !important;
-        height: 24px !important;
+        width: 28px !important;
+        height: 28px !important;
         border-radius: 50% !important;
     }
 
     .todo-sidebar .sidebar-name {
-        font-size: 13.5px !important;
+        font-size: 15px !important;
         font-weight: 600 !important;
         color: var(--text) !important;
     }
@@ -1478,8 +1478,8 @@ body.dark .dropdown-submenu {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        width: 34px !important;
-        height: 34px !important;
+        width: 38px !important;
+        height: 38px !important;
         border-radius: 50% !important;
         background: var(--card-bg) !important;
         border: 1px solid var(--border) !important;
@@ -1490,8 +1490,8 @@ body.dark .dropdown-submenu {
     }
 
     .todo-sidebar .sidebar-settings-btn svg {
-        width: 17px !important;
-        height: 17px !important;
+        width: 19px !important;
+        height: 19px !important;
     }
 
     .todo-sidebar .sidebar-close-toggle {
@@ -8176,12 +8176,12 @@ body.dark .sidebar-bottom-bar {
     flex: 1;
     padding: 6px 4px;
     border-radius: 12px;
-    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
     cursor: pointer;
 }
 
 .bottom-bar-item:active {
-    transform: scale(0.95);
+    transform: none !important;
 }
 
 @media (hover: hover) {
@@ -8726,7 +8726,7 @@ input:checked + .view-slider:before {
         border-radius: 24px !important;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
         padding: 0 !important;
-        margin: 0 !important;
+        margin: 0 0 40px 0 !important;
         display: flex !important;
         flex-direction: column !important;
         overflow: hidden !important;

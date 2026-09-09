@@ -1502,7 +1502,7 @@ body.dark .dropdown-submenu {
         padding: 0 !important;
         display: flex !important;
         flex-direction: column !important;
-        gap: 16px !important;
+        gap: 4px !important;
         height: auto !important;
         min-height: 0 !important;
         flex: none !important;
@@ -1521,7 +1521,7 @@ body.dark .dropdown-submenu {
         justify-content: space-between !important;
         border-top: none !important;
         margin-top: 0 !important;
-        padding: 4px 4px 6px 4px !important;
+        padding: 4px 4px 2px 4px !important;
     }
 
     .todo-sidebar .sidebar-section-title-left {
@@ -1534,9 +1534,7 @@ body.dark .dropdown-submenu {
     }
 
     .todo-sidebar .sidebar-section-chevron {
-        display: inline-block !important;
-        color: var(--text-secondary) !important;
-        opacity: 0.6;
+        display: none !important;
     }
 
     .todo-sidebar .sidebar-section-title-right {
@@ -1759,6 +1757,9 @@ body.dark .dropdown-submenu {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     overflow: hidden !important;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 /* Плавный переезжающий фоновый овал-индикатор */
@@ -1774,6 +1775,10 @@ body.dark .dropdown-submenu {
     z-index: 1;
     pointer-events: none;
     opacity: 0;
+}
+
+.mobile-nav-indicator.dragging {
+    transition: none !important;
 }
 
 .mobile-nav-indicator.active {

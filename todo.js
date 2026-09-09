@@ -2394,6 +2394,7 @@ function updateMobileBottomNavActiveState() {
     const mobileBottomNav = document.getElementById('mobileBottomNav');
 
     if (!mobileNavToday || !mobileNavInbox || !mobileNavMore) return;
+    if (mobileNavIndicator && mobileNavIndicator.classList.contains('dragging')) return;
 
     if (mobileNavTomorrow) mobileNavTomorrow.classList.remove('active');
     mobileNavToday.classList.remove('active');
@@ -2424,6 +2425,146 @@ function updateMobileBottomNavActiveState() {
         mobileNavIndicator.classList.add('active');
     }
 }
+
+function initMobileBottomNavDragGesture() {
+    const mobileBottomNav = document.getElementById('mobileBottomNav');
+    const mobileNavIndicator = document.getElementById('mobileNavIndicator');
+    if (!mobileBottomNav || !mobileNavIndicator) return;
+
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let hasMoved = false;
+    let rect = null;
+
+    function getItems() {
+        return [
+            document.getElementById('mobileNavTomorrow'),
+            document.getElementById('mobileNavToday'),
+            document.getElementById('mobileNavInbox'),
+            document.getElementById('mobileNavMore')
+        ].filter(Boolean);
+    }
+
+    function updateActiveItems(hoveredIndex) {
+        const navItems = getItems();
+        navItems.forEach((item, index) => {
+            if (index === hoveredIndex) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+
+    function onPointerDown(e) {
+        if (e.type === 'pointerdown' && e.pointerType === 'touch') return;
+        if (e.button && e.button !== 0) return;
+
+        rect = mobileBottomNav.getBoundingClientRect();
+        if (!rect || !rect.width) return;
+
+        isDragging = true;
+        hasMoved = false;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        startX = clientX;
+        startY = clientY;
+        currentX = clientX;
+    }
+
+    function onPointerMove(e) {
+        if (!isDragging) return;
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        const deltaX = Math.abs(clientX - startX);
+        const deltaY = Math.abs(clientY - startY);
+
+        if (!hasMoved) {
+            if (deltaX > 8 && deltaX > deltaY) {
+                hasMoved = true;
+                mobileNavIndicator.classList.add('dragging');
+            } else if (deltaY > 8) {
+                isDragging = false;
+                return;
+            }
+        }
+
+        if (hasMoved) {
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+
+            currentX = clientX;
+            const touchX = currentX - rect.left;
+            let fraction = (touchX - (rect.width / 8)) / (rect.width / 4);
+            fraction = Math.max(-0.15, Math.min(3.15, fraction));
+
+            mobileNavIndicator.style.transform = `translateX(${fraction * 100}%)`;
+
+            const hoveredIndex = Math.max(0, Math.min(3, Math.floor(touchX / (rect.width / 4))));
+            updateActiveItems(hoveredIndex);
+        }
+    }
+
+    function onPointerEnd(e) {
+        if (!isDragging) return;
+        isDragging = false;
+
+        if (!hasMoved) {
+            // Simple tap: do nothing, let native click handler fire cleanly
+            return;
+        }
+
+        mobileNavIndicator.classList.remove('dragging');
+
+        if (!rect || !rect.width) {
+            updateMobileBottomNavActiveState();
+            return;
+        }
+
+        const touchX = currentX - rect.left;
+        const targetIndex = Math.max(0, Math.min(3, Math.floor(touchX / (rect.width / 4))));
+
+        mobileNavIndicator.style.transform = `translateX(${targetIndex * 100}%)`;
+        updateActiveItems(targetIndex);
+
+        if (targetIndex === 0) {
+            if (todoSidebar && todoSidebar.classList.contains('mobile-open')) toggleSidebar();
+            if (currentRoute !== 'tomorrow') window.location.hash = '#tomorrow';
+        } else if (targetIndex === 1) {
+            if (todoSidebar && todoSidebar.classList.contains('mobile-open')) toggleSidebar();
+            if (currentRoute !== 'today') window.location.hash = '#today';
+        } else if (targetIndex === 2) {
+            if (todoSidebar && todoSidebar.classList.contains('mobile-open')) toggleSidebar();
+            if (currentRoute !== 'inbox') window.location.hash = '#inbox';
+        } else if (targetIndex === 3) {
+            if (todoSidebar && !todoSidebar.classList.contains('mobile-open')) toggleSidebar();
+        }
+
+        const preventClick = (clickEvent) => {
+            clickEvent.preventDefault();
+            clickEvent.stopPropagation();
+            window.removeEventListener('click', preventClick, true);
+        };
+        window.addEventListener('click', preventClick, true);
+        setTimeout(() => window.removeEventListener('click', preventClick, true), 100);
+    }
+
+    mobileBottomNav.addEventListener('touchstart', onPointerDown, { passive: true });
+    window.addEventListener('touchmove', onPointerMove, { passive: false });
+    window.addEventListener('touchend', onPointerEnd);
+    window.addEventListener('touchcancel', onPointerEnd);
+
+    mobileBottomNav.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerEnd);
+}
+
+initMobileBottomNavDragGesture();
 
 window.addEventListener('resize', () => {
     updateMobileBottomNavActiveState();

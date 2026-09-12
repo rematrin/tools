@@ -7068,12 +7068,22 @@
         function openEditAlbumModal(albumId, currentTitle, currentArtist, event) {
             if (event) event.stopPropagation();
             activeEditAlbumId = albumId;
+            const album = window.musicAlbums ? window.musicAlbums.find(a => a.id === albumId) : null;
+
             const modal = document.getElementById('editAlbumModal');
             const titleInput = document.getElementById('modalEditAlbumTitle');
             const artistInput = document.getElementById('modalEditAlbumArtist');
+            const yearInput = document.getElementById('modalEditAlbumYear');
+            const genreInput = document.getElementById('modalEditAlbumGenre');
+            const coverInput = document.getElementById('modalEditAlbumCoverUrl');
+
             if (modal && titleInput && artistInput) {
-                titleInput.value = currentTitle;
-                artistInput.value = currentArtist;
+                titleInput.value = currentTitle || '';
+                artistInput.value = currentArtist || '';
+                if (yearInput) yearInput.value = album ? (album.year || '') : '';
+                if (genreInput) genreInput.value = album ? (album.genre || '') : '';
+                if (coverInput) coverInput.value = album ? (album.coverUrl || album.cover_url || '') : '';
+
                 modal.style.display = 'flex';
                 setTimeout(() => modal.classList.add('active'), 10);
                 titleInput.focus();
@@ -7093,8 +7103,16 @@
             if (!activeEditAlbumId) return;
             const titleInput = document.getElementById('modalEditAlbumTitle');
             const artistInput = document.getElementById('modalEditAlbumArtist');
+            const yearInput = document.getElementById('modalEditAlbumYear');
+            const genreInput = document.getElementById('modalEditAlbumGenre');
+            const coverInput = document.getElementById('modalEditAlbumCoverUrl');
+
             const newTitle = titleInput.value.trim();
             const newArtist = artistInput.value.trim();
+            const newYear = yearInput ? yearInput.value.trim() : '';
+            const newGenre = genreInput ? genreInput.value.trim() : '';
+            const newCoverUrl = coverInput ? coverInput.value.trim() : '';
+
             if (!newTitle || !newArtist) {
                 alert("Пожалуйста, введите название и артиста.");
                 return;
@@ -7110,14 +7128,19 @@
                     id: newArtistId,
                     name: newArtist,
                     createdAt: new Date().toISOString()
-                });
+                }, { merge: true });
 
                 const albumRef = window.doc(window.db, "users", uid, "music_albums", activeEditAlbumId);
-                await window.updateDoc(albumRef, {
+                const updatePayload = {
                     title: newTitle,
                     artistName: newArtist,
                     artistId: newArtistId
-                });
+                };
+                if (newYear) updatePayload.year = newYear;
+                if (newGenre) updatePayload.genre = newGenre;
+                if (newCoverUrl) updatePayload.coverUrl = newCoverUrl;
+
+                await window.updateDoc(albumRef, updatePayload);
 
                 if (window.musicAlbums) {
                     let albumToEdit = window.musicAlbums.find(a => a.id === activeEditAlbumId);
@@ -7125,6 +7148,9 @@
                         albumToEdit.title = newTitle;
                         albumToEdit.artistName = newArtist;
                         albumToEdit.artistId = newArtistId;
+                        if (newYear) albumToEdit.year = newYear;
+                        if (newGenre) albumToEdit.genre = newGenre;
+                        if (newCoverUrl) albumToEdit.coverUrl = newCoverUrl;
 
                         const titleEl = document.getElementById('album-details-title');
                         if (titleEl) titleEl.innerText = newTitle;
@@ -7134,6 +7160,9 @@
                             artistEl.innerText = newArtist;
                             artistEl.onclick = () => window.location.hash = '#artist-details?id=' + newArtistId;
                         }
+
+                        const coverEl = document.querySelector(`.album-cover-img[data-album-id="${activeEditAlbumId}"]`) || document.getElementById('album-details-cover');
+                        if (coverEl && newCoverUrl) coverEl.src = newCoverUrl;
                     }
                 }
 
@@ -7143,6 +7172,7 @@
                             song.albumName = newTitle;
                             song.artistName = newArtist;
                             song.artistId = newArtistId;
+                            if (newCoverUrl && !song.coverUrl) song.coverUrl = newCoverUrl;
 
                             const songRef = window.doc(window.db, "users", uid, "music_songs", song.id);
                             await window.updateDoc(songRef, {
@@ -7156,11 +7186,323 @@
 
                 alert("Альбом успешно отредактирован.");
                 closeEditAlbumModal();
-                renderCurrentView();
+                if (typeof renderCurrentView === 'function') renderCurrentView();
             } catch (e) {
                 console.error("Ошибка при редактировании альбома:", e);
-                alert("Не удалось сохранить изменения.");
+                alert("Не удалось сохранить изменения: " + e.message);
             }
+        }
+
+        let currentMetadataResults = [];
+        let selectedMetadataIndex = -1;
+        let userGeniusToken = null;
+
+        async function fetchUserGeniusToken() {
+            if (window.currentUser && window.db) {
+                try {
+                    const userRef = window.doc(window.db, "users", window.currentUser.uid);
+                    const docSnap = await window.getDoc(userRef);
+                    if (docSnap.exists() && docSnap.data().genius_access_token) {
+                        userGeniusToken = docSnap.data().genius_access_token;
+                        return userGeniusToken;
+                    }
+                } catch (e) {
+                    console.warn("Error loading Genius token from Firebase:", e);
+                }
+            }
+            userGeniusToken = localStorage.getItem('genius_access_token') || null;
+            return userGeniusToken;
+        }
+
+        async function openMetadataSearchModal() {
+            const artistInput = document.getElementById('modalEditAlbumArtist');
+            const titleInput = document.getElementById('modalEditAlbumTitle');
+            const searchInput = document.getElementById('metadataSearchInput');
+            
+            let query = "";
+            if (artistInput && artistInput.value.trim()) query += artistInput.value.trim() + " ";
+            if (titleInput && titleInput.value.trim()) query += titleInput.value.trim();
+
+            if (searchInput) {
+                searchInput.value = query.trim();
+            }
+
+            const modal = document.getElementById('metadataSearchModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                setTimeout(() => modal.classList.add('active'), 10);
+            }
+
+            await fetchUserGeniusToken();
+            updateGeniusTokenUI();
+
+            if (query.trim()) {
+                performMetadataSearch();
+            }
+        }
+
+        function closeMetadataSearchModal() {
+            const modal = document.getElementById('metadataSearchModal');
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => { modal.style.display = 'none'; }, 250);
+            }
+            currentMetadataResults = [];
+            selectedMetadataIndex = -1;
+            const btnSelect = document.getElementById('btnSelectMetadata');
+            if (btnSelect) btnSelect.disabled = true;
+        }
+
+        function handleMetadataSourceChange() {
+            const select = document.getElementById('metadataSourceSelect');
+            const tokenRow = document.getElementById('geniusTokenConfigRow');
+            if (select && tokenRow) {
+                if (select.value === 'genius' || select.value === 'all') {
+                    tokenRow.style.display = 'block';
+                    updateGeniusTokenUI();
+                } else {
+                    tokenRow.style.display = 'none';
+                }
+            }
+        }
+
+        function updateGeniusTokenUI() {
+            const tokenInput = document.getElementById('geniusTokenInput');
+            const badge = document.getElementById('geniusTokenStatusBadge');
+            if (tokenInput && userGeniusToken) {
+                tokenInput.value = userGeniusToken;
+            }
+            if (badge) {
+                if (userGeniusToken) {
+                    badge.innerText = "✓ Сохранен в профиле";
+                    badge.style.background = "rgba(46, 204, 113, 0.15)";
+                    badge.style.color = "#2ecc71";
+                } else {
+                    badge.innerText = "Не настроен";
+                    badge.style.background = "rgba(0, 0, 0, 0.1)";
+                    badge.style.color = "var(--text-secondary)";
+                }
+            }
+        }
+
+        async function saveGeniusTokenToFirebase() {
+            const tokenInput = document.getElementById('geniusTokenInput');
+            if (!tokenInput) return;
+            const token = tokenInput.value.trim();
+
+            const uid = window.currentUser ? window.currentUser.uid : null;
+            if (!uid) {
+                alert("Ошибка: Пожалуйста, войдите в свой аккаунт Firebase!");
+                return;
+            }
+
+            try {
+                const userRef = window.doc(window.db, "users", uid);
+                await window.setDoc(userRef, { genius_access_token: token }, { merge: true });
+                userGeniusToken = token;
+                if (token) localStorage.setItem('genius_access_token', token);
+                else localStorage.removeItem('genius_access_token');
+
+                updateGeniusTokenUI();
+                alert(token ? "Токен Genius сохранен в ваш профиль Firebase!" : "Токен Genius удален.");
+                performMetadataSearch();
+            } catch (err) {
+                console.error("Ошибка при сохранении токена в Firebase:", err);
+                alert("Не удалось сохранить токен в Firebase: " + err.message);
+            }
+        }
+
+        async function performMetadataSearch() {
+            const searchInput = document.getElementById('metadataSearchInput');
+            const sourceSelect = document.getElementById('metadataSourceSelect');
+            const container = document.getElementById('metadataResultsContainer');
+            const btnSelect = document.getElementById('btnSelectMetadata');
+            if (!searchInput || !container) return;
+
+            const query = searchInput.value.trim();
+            if (!query) return;
+
+            container.innerHTML = `
+                <div style="text-align: center; color: var(--text-secondary); padding: 40px 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <div style="width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                    Поиск метаданных...
+                </div>
+            `;
+            if (btnSelect) btnSelect.disabled = true;
+            selectedMetadataIndex = -1;
+            currentMetadataResults = [];
+
+            const source = sourceSelect ? sourceSelect.value : 'genius';
+            let results = [];
+            let geniusErrorMsg = null;
+
+            try {
+                // 1. Genius API (Приоритетный источник, с токеном Firebase)
+                if (source === 'all' || source === 'genius') {
+                    if (!userGeniusToken) {
+                        await fetchUserGeniusToken();
+                    }
+
+                    if (userGeniusToken) {
+                        try {
+                            const cleanToken = userGeniusToken.trim();
+                            const rawUrl = `https://api.genius.com/search?q=${encodeURIComponent(query)}&access_token=${encodeURIComponent(cleanToken)}`;
+                            let gRes = null;
+                            
+                            // Попытка 1: Прямой запрос с Bearer токеном
+                            try {
+                                gRes = await fetch(`https://api.genius.com/search?q=${encodeURIComponent(query)}`, {
+                                    headers: { 'Authorization': `Bearer ${cleanToken}` }
+                                });
+                            } catch (e) {
+                                console.warn("Direct Genius fetch failed (CORS), trying proxy...", e);
+                            }
+
+                            // Попытка 2: CORS прокси corsproxy.io
+                            if (!gRes || !gRes.ok) {
+                                try {
+                                    gRes = await fetch(`https://corsproxy.io/?url=` + encodeURIComponent(rawUrl));
+                                } catch (e) {
+                                    console.warn("corsproxy failed, trying allorigins...", e);
+                                }
+                            }
+
+                            // Попытка 3: CORS прокси allorigins.win
+                            if (!gRes || !gRes.ok) {
+                                try {
+                                    gRes = await fetch(`https://api.allorigins.win/raw?url=` + encodeURIComponent(rawUrl));
+                                } catch (e) {
+                                    console.warn("allorigins failed...", e);
+                                }
+                            }
+
+                            if (gRes && gRes.ok) {
+                                const gData = await gRes.json();
+                                if (gData.response && gData.response.hits && gData.response.hits.length > 0) {
+                                    gData.response.hits.forEach(hit => {
+                                        const song = hit.result;
+                                        if (song) {
+                                            results.push({
+                                                title: song.title || '',
+                                                artist: song.primary_artist ? song.primary_artist.name : '',
+                                                year: song.release_date_for_display ? song.release_date_for_display.split(' ').pop() : '',
+                                                genre: '',
+                                                coverUrl: song.song_art_image_thumbnail_url || song.header_image_thumbnail_url || '',
+                                                source: 'Genius'
+                                            });
+                                        }
+                                    });
+                                }
+                            } else if (gRes && (gRes.status === 401 || gRes.status === 403)) {
+                                geniusErrorMsg = `⚠️ Genius вернул ошибку ${gRes.status} (Недействительный токен Genius). Введите правильный Client Access Token в поле выше.`;
+                            } else if (gRes) {
+                                geniusErrorMsg = `⚠️ Ошибка сервера Genius (Статус: ${gRes.status}).`;
+                            }
+                        } catch (e) {
+                            console.warn("Genius search fetch error:", e);
+                            geniusErrorMsg = `⚠️ Ошибка сети при запросе к Genius: ${e.message}`;
+                        }
+                    } else if (source === 'genius') {
+                        container.innerHTML = `
+                            <div style="text-align: center; color: var(--accent); padding: 30px; line-height: 1.6;">
+                                ⚠️ В вашем профиле Firebase не сохранен токен Genius.<br>
+                                Введите ваш <b>Client Access Token</b> от Genius в поле выше и нажмите <b>«Сохранить в профиль»</b>.
+                            </div>
+                        `;
+                        return;
+                    }
+                }
+
+                // 2. iTunes Music API (в качестве альтернативы)
+                if (source === 'all' || source === 'itunes' || (source === 'genius' && results.length === 0 && !geniusErrorMsg)) {
+                    try {
+                        const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=album&limit=10`);
+                        const data = await res.json();
+                        if (data.results && data.results.length > 0) {
+                            data.results.forEach(item => {
+                                results.push({
+                                    title: item.collectionName || item.trackName || '',
+                                    artist: item.artistName || '',
+                                    year: item.releaseDate ? new Date(item.releaseDate).getFullYear().toString() : '',
+                                    genre: item.primaryGenreName || '',
+                                    coverUrl: item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb', '600x600bb') : '',
+                                    source: 'iTunes'
+                                });
+                            });
+                        }
+                    } catch (e) {
+                        console.warn("iTunes search error:", e);
+                    }
+                }
+
+                if (results.length === 0 && geniusErrorMsg) {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: var(--accent); padding: 30px; line-height: 1.6;">
+                            ${geniusErrorMsg}
+                        </div>
+                    `;
+                    return;
+                }
+
+                currentMetadataResults = results;
+                renderMetadataResults();
+
+            } catch (err) {
+                console.error("Metadata search failed:", err);
+                container.innerHTML = `<div style="text-align: center; color: var(--accent); padding: 30px;">Ошибка при выполнении запроса: ${err.message}</div>`;
+            }
+        }
+
+        function renderMetadataResults() {
+            const container = document.getElementById('metadataResultsContainer');
+            if (!container) return;
+
+            if (currentMetadataResults.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 40px 0;">Ничего не найдено по запросу.</div>`;
+                return;
+            }
+
+            container.innerHTML = currentMetadataResults.map((item, idx) => `
+                <div class="metadata-item ${selectedMetadataIndex === idx ? 'selected' : ''}" 
+                     onclick="selectMetadataResult(${idx})" 
+                     ondblclick="applySelectedMetadata()"
+                     style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; border: 1.5px solid ${selectedMetadataIndex === idx ? 'var(--accent)' : 'var(--border)'}; background: ${selectedMetadataIndex === idx ? 'var(--active-bg)' : 'var(--card-bg)'}; cursor: pointer; transition: all 0.2s ease;">
+                    <img src="${item.coverUrl || 'https://via.placeholder.com/60'}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover; background: #222;" onerror="this.src='https://via.placeholder.com/60'">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.title}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${item.artist} ${item.year ? '• ' + item.year : ''} ${item.genre ? '• ' + item.genre : ''}
+                        </div>
+                    </div>
+                    <span style="font-size: 0.75rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; background: rgba(252, 60, 68, 0.1); color: var(--accent);">${item.source}</span>
+                </div>
+            `).join('');
+        }
+
+        function selectMetadataResult(index) {
+            selectedMetadataIndex = index;
+            renderMetadataResults();
+            const btnSelect = document.getElementById('btnSelectMetadata');
+            if (btnSelect) btnSelect.disabled = false;
+        }
+
+        function applySelectedMetadata() {
+            if (selectedMetadataIndex < 0 || selectedMetadataIndex >= currentMetadataResults.length) return;
+            const item = currentMetadataResults[selectedMetadataIndex];
+
+            const titleInput = document.getElementById('modalEditAlbumTitle');
+            const artistInput = document.getElementById('modalEditAlbumArtist');
+            const yearInput = document.getElementById('modalEditAlbumYear');
+            const genreInput = document.getElementById('modalEditAlbumGenre');
+            const coverInput = document.getElementById('modalEditAlbumCoverUrl');
+
+            if (titleInput && item.title) titleInput.value = item.title;
+            if (artistInput && item.artist) artistInput.value = item.artist;
+            if (yearInput && item.year) yearInput.value = item.year;
+            if (genreInput && item.genre) genreInput.value = item.genre;
+            if (coverInput && item.coverUrl) coverInput.value = item.coverUrl;
+
+            closeMetadataSearchModal();
         }
 
         let playlistsSortOrder = localStorage.getItem('playlists-sort-order') || 'added-desc';
@@ -10452,13 +10794,13 @@
 
     <!-- Модальное окно редактирования альбома -->
     <div id="editAlbumModal" class="modal-overlay">
-        <div class="modal-card">
+        <div class="modal-card" style="max-width: 520px;">
             <div class="modal-header">
                 <h3 class="modal-title">Редактировать альбом</h3>
                 <button class="modal-close" onclick="closeEditAlbumModal()">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="modal-field" style="margin-bottom: 16px;">
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+                <div class="modal-field">
                     <label for="modalEditAlbumTitle">Название альбома</label>
                     <input type="text" id="modalEditAlbumTitle" class="modal-input" placeholder="Название альбома"
                         autocomplete="off">
@@ -10468,10 +10810,86 @@
                     <input type="text" id="modalEditAlbumArtist" class="modal-input" placeholder="Исполнитель"
                         autocomplete="off">
                 </div>
+                <div style="display: flex; gap: 12px;">
+                    <div class="modal-field" style="flex: 1;">
+                        <label for="modalEditAlbumYear">Год выпуска</label>
+                        <input type="text" id="modalEditAlbumYear" class="modal-input" placeholder="например, 2024"
+                            autocomplete="off">
+                    </div>
+                    <div class="modal-field" style="flex: 1.5;">
+                        <label for="modalEditAlbumGenre">Жанр</label>
+                        <input type="text" id="modalEditAlbumGenre" class="modal-input" placeholder="например, Pop / Rock"
+                            autocomplete="off">
+                    </div>
+                </div>
+                <div class="modal-field">
+                    <label for="modalEditAlbumCoverUrl">URL Обложки (ссылка)</label>
+                    <input type="text" id="modalEditAlbumCoverUrl" class="modal-input" placeholder="https://..."
+                        autocomplete="off">
+                </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn-modal btn-modal-cancel" onclick="closeEditAlbumModal()">Отмена</button>
-                <button class="btn-modal btn-modal-submit" onclick="submitEditAlbum()">Сохранить</button>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <button class="btn-modal" onclick="openMetadataSearchModal()" style="background: rgba(252, 60, 68, 0.12); color: var(--accent); border: 1px solid rgba(252, 60, 68, 0.25); display: flex; align-items: center; gap: 6px; font-weight: 600; padding: 8px 14px; border-radius: 10px; cursor: pointer;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    Загрузить метаданные...
+                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-modal btn-modal-cancel" onclick="closeEditAlbumModal()">Отмена</button>
+                    <button class="btn-modal btn-modal-submit" onclick="submitEditAlbum()">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно "Получить метаданные" (в стиле Playnite) -->
+    <div id="metadataSearchModal" class="modal-overlay" style="z-index: 2100;">
+        <div class="modal-card" style="max-width: 600px; width: 92%; max-height: 85vh; display: flex; flex-direction: column; padding: 20px;">
+            <div class="modal-header" style="margin-bottom: 12px;">
+                <h3 class="modal-title">Получить метаданные</h3>
+                <button class="modal-close" onclick="closeMetadataSearchModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body" style="flex: 1; overflow-y: auto; padding-right: 4px; min-height: 260px; max-height: 380px;">
+                <div id="geniusTokenConfigRow" style="display: none; margin-bottom: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(252, 60, 68, 0.08); border: 1px dashed rgba(252, 60, 68, 0.3); font-size: 0.85rem;">
+                    <div style="font-weight: 600; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>🔥 Ваш токен Genius (в профиле Firebase)</span>
+                        <span id="geniusTokenStatusBadge" style="font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; background: rgba(0,0,0,0.1); color: var(--text-secondary);">Не настроен</span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="password" id="geniusTokenInput" class="modal-input" placeholder="Client Access Token от Genius..." style="flex: 1; font-size: 0.85rem; padding: 7px 10px;">
+                        <button onclick="saveGeniusTokenToFirebase()" class="btn-modal btn-modal-submit" style="padding: 7px 14px; font-size: 0.82rem; white-space: nowrap;">Сохранить в профиль</button>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px; line-height: 1.4;">
+                        Токен привязывается к вашему аккаунту Firebase. Бесплатный ключ создается на <a href="https://genius.com/api-clients" target="_blank" style="color: var(--accent); text-decoration: underline;">genius.com/api-clients</a>.
+                    </div>
+                </div>
+
+                <div id="metadataResultsContainer" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="text-align: center; color: var(--text-secondary); padding: 50px 0; font-size: 0.95rem;">
+                        Введите запрос внизу и нажмите «Поиск»
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer" style="flex-direction: column; gap: 12px; border-top: 1px solid var(--border); padding-top: 14px; margin-top: 8px;">
+                <!-- Строка поиска с выбором источника -->
+                <div style="display: flex; gap: 8px; width: 100%;">
+                    <select id="metadataSourceSelect" class="modal-input" style="width: auto; flex-shrink: 0; padding: 8px 10px; font-size: 0.85rem; border-radius: 10px;" onchange="handleMetadataSourceChange()">
+                        <option value="all">Все источники</option>
+                        <option value="genius" selected>Genius</option>
+                        <option value="itunes">iTunes Music</option>
+                    </select>
+                    <input type="text" id="metadataSearchInput" class="modal-input" style="flex: 1; padding: 8px 12px; font-size: 0.9rem;" placeholder="Название / Исполнитель..." onkeydown="if(event.key==='Enter') performMetadataSearch()">
+                    <button class="btn-modal btn-modal-submit" onclick="performMetadataSearch()" style="padding: 8px 16px; font-size: 0.88rem;">Поиск</button>
+                </div>
+                <!-- Кнопки выбора/отмены -->
+                <div style="display: flex; justify-content: flex-end; gap: 8px; width: 100%;">
+                    <button id="btnSelectMetadata" class="btn-modal btn-modal-submit" onclick="applySelectedMetadata()" disabled style="padding: 8px 20px;">Выбрать</button>
+                    <button class="btn-modal btn-modal-cancel" onclick="closeMetadataSearchModal()" style="padding: 8px 16px;">Отменить</button>
+                </div>
             </div>
         </div>
     </div>

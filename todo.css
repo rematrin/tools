@@ -1398,14 +1398,20 @@ body.dark .dropdown-submenu {
     html,
     body {
         height: 100dvh;
-        overflow: hidden;
+        overflow-x: hidden !important;
+        overflow-y: hidden;
+        max-width: 100vw;
+        width: 100%;
     }
 
     .todo-app {
         height: 100dvh;
-        overflow: hidden;
+        overflow-x: hidden !important;
+        overflow-y: hidden;
         display: flex;
         flex-direction: column;
+        max-width: 100vw;
+        width: 100%;
     }
 
     .todo-sidebar {
@@ -1699,13 +1705,85 @@ body.dark .dropdown-submenu {
         padding: 32px 16px 24px 16px;
         flex: 1;
         overflow-y: auto;
+        overflow-x: hidden !important;
         padding-bottom: 180px;
         display: block;
         -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .todo-main-layout {
         margin: 0 auto;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow-x: hidden;
+    }
+
+    /* Предотвращение вылезания фонового сплиттера задачи за правую границу */
+    .task-item::before {
+        left: 0 !important;
+        right: 0 !important;
+    }
+
+    /* Адаптивность заголовка списка задач */
+    .list-header {
+        max-width: 100%;
+        box-sizing: border-box;
+        flex-wrap: wrap;
+    }
+
+    .list-title {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        word-break: break-word;
+    }
+
+    /* Предотвращение переполнения текстом задач */
+    .task-item,
+    .task-title,
+    .task-text,
+    .task-description {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    /* Ограничение ширины для всех модальных окон, выпадающих списков и плашек */
+    .confirm-modal-card,
+    .confirm-box,
+    .thumbnail-confirm-box,
+    .auth-required-state,
+    .empty-text,
+    .gcal-modal-card,
+    .countdown-modal-card,
+    .habit-stats-card,
+    .habit-modal-card,
+    .offline-notification-banner,
+    #pomodoroContainer .timer-controls,
+    .task-details-modal-card,
+    .settings-modal-card {
+        max-width: calc(100vw - 32px) !important;
+        box-sizing: border-box !important;
+    }
+
+    .due-date-dropdown.new-modal-layout {
+        width: min(320px, calc(100vw - 32px)) !important;
+        max-width: calc(100vw - 32px) !important;
+        box-sizing: border-box !important;
+    }
+
+    .view-display-dropdown,
+    .project-header-dropdown,
+    .habitHeaderDropdown {
+        max-width: calc(100vw - 32px) !important;
+        box-sizing: border-box !important;
+    }
+
+    .habit-grid {
+        grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)) !important;
     }
 
     .content-nav-toggle {

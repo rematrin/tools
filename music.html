@@ -7553,8 +7553,10 @@
                         if (songData.response && songData.response.song) {
                             const songObj = songData.response.song;
                             if (songObj.album) {
-                                if (songObj.album.name) item.title = songObj.album.name;
-                                if (songObj.album.cover_art_url) item.coverUrl = songObj.album.cover_art_url;
+                                if (!item.title && songObj.album.name) item.title = songObj.album.name;
+                                if ((!item.coverUrl || item.coverUrl.includes('default_cover_image')) && songObj.album.cover_art_url && !songObj.album.cover_art_url.includes('default_cover_image')) {
+                                    item.coverUrl = songObj.album.cover_art_url;
+                                }
                             }
                             // Если в Genius есть теги / жанр
                             if (songObj.primary_tag && songObj.primary_tag.name) {

@@ -7073,6 +7073,7 @@
             const modal = document.getElementById('editAlbumModal');
             const titleInput = document.getElementById('modalEditAlbumTitle');
             const artistInput = document.getElementById('modalEditAlbumArtist');
+            const typeInput = document.getElementById('modalEditAlbumType');
             const yearInput = document.getElementById('modalEditAlbumYear');
             const genreInput = document.getElementById('modalEditAlbumGenre');
             const coverInput = document.getElementById('modalEditAlbumCoverUrl');
@@ -7080,6 +7081,7 @@
             if (modal && titleInput && artistInput) {
                 titleInput.value = currentTitle || '';
                 artistInput.value = currentArtist || '';
+                if (typeInput) typeInput.value = album ? (album.releaseType || album.type || 'Альбом') : 'Альбом';
                 if (yearInput) yearInput.value = album ? (album.year || '') : '';
                 if (genreInput) genreInput.value = album ? (album.genre || '') : '';
                 if (coverInput) coverInput.value = album ? (album.coverUrl || album.cover_url || '') : '';
@@ -7103,12 +7105,14 @@
             if (!activeEditAlbumId) return;
             const titleInput = document.getElementById('modalEditAlbumTitle');
             const artistInput = document.getElementById('modalEditAlbumArtist');
+            const typeInput = document.getElementById('modalEditAlbumType');
             const yearInput = document.getElementById('modalEditAlbumYear');
             const genreInput = document.getElementById('modalEditAlbumGenre');
             const coverInput = document.getElementById('modalEditAlbumCoverUrl');
 
             const newTitle = titleInput.value.trim();
             const newArtist = artistInput.value.trim();
+            const newReleaseType = typeInput ? typeInput.value : 'Альбом';
             const newYear = yearInput ? yearInput.value.trim() : '';
             const newGenre = genreInput ? genreInput.value.trim() : '';
             const newCoverUrl = coverInput ? coverInput.value.trim() : '';
@@ -7134,7 +7138,8 @@
                 const updatePayload = {
                     title: newTitle,
                     artistName: newArtist,
-                    artistId: newArtistId
+                    artistId: newArtistId,
+                    releaseType: newReleaseType
                 };
                 if (newYear) updatePayload.year = newYear;
                 if (newGenre) updatePayload.genre = newGenre;
@@ -7148,6 +7153,7 @@
                         albumToEdit.title = newTitle;
                         albumToEdit.artistName = newArtist;
                         albumToEdit.artistId = newArtistId;
+                        albumToEdit.releaseType = newReleaseType;
                         if (newYear) albumToEdit.year = newYear;
                         if (newGenre) albumToEdit.genre = newGenre;
                         if (newCoverUrl) albumToEdit.coverUrl = newCoverUrl;
@@ -7184,7 +7190,6 @@
                     }
                 }
 
-                alert("Альбом успешно отредактирован.");
                 closeEditAlbumModal();
                 if (typeof renderCurrentView === 'function') renderCurrentView();
             } catch (e) {
@@ -7319,8 +7324,11 @@
             const btnSelect = document.getElementById('btnSelectMetadata');
             if (!searchInput || !container) return;
 
-            const query = searchInput.value.trim();
-            if (!query) return;
+            let rawQuery = searchInput.value.trim();
+            if (!rawQuery) return;
+
+            // Очищаем скобки с продублированными названиями в запросах (например, "АРТЁМ (ARTYOM)" -> "АРТЁМ") для идеального поиска альбома
+            let query = rawQuery.replace(/\s*\([^)]*\)/g, '').trim() || rawQuery;
 
             container.innerHTML = `
                 <div style="text-align: center; color: var(--text-secondary); padding: 40px 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
@@ -7332,7 +7340,7 @@
             selectedMetadataIndex = -1;
             currentMetadataResults = [];
 
-            const source = sourceSelect ? sourceSelect.value : 'genius';
+            const source = sourceSelect ? sourceSelect.value : 'all';
             let results = [];
             let geniusErrorMsg = null;
 
@@ -7346,61 +7354,71 @@
                     if (userGeniusToken) {
                         try {
                             const cleanToken = userGeniusToken.trim();
-                            const rawUrl = `https://api.genius.com/search?q=${encodeURIComponent(query)}&access_token=${encodeURIComponent(cleanToken)}`;
-                            let gRes = null;
-                            
-                            // Попытка 1: Прямой запрос с Bearer токеном
+                            let hits = [];
+                            let fetchedOk = false;
+
+                            // Прямой запрос к Genius API (Genius изначально поддерживает CORS Access-Control-Allow-Origin: *)
                             try {
-                                gRes = await fetch(`https://api.genius.com/search?q=${encodeURIComponent(query)}`, {
-                                    headers: { 'Authorization': `Bearer ${cleanToken}` }
-                                });
+                                const directUrl = `https://api.genius.com/search?q=${encodeURIComponent(query)}&access_token=${encodeURIComponent(cleanToken)}`;
+                                const gRes = await fetch(directUrl);
+                                if (gRes.ok) {
+                                    const gData = await gRes.json();
+                                    if (gData.response && gData.response.hits) {
+                                        hits = gData.response.hits;
+                                        fetchedOk = true;
+                                    }
+                                } else if (gRes.status === 401 || gRes.status === 403) {
+                                    geniusErrorMsg = "⚠️ Genius вернул ошибку 401 (Недействительный токен). Убедитесь, что ввели Client Access Token.";
+                                }
                             } catch (e) {
-                                console.warn("Direct Genius fetch failed (CORS), trying proxy...", e);
+                                console.warn("Direct fetch failed, fallback to allorigins...", e);
                             }
 
-                            // Попытка 2: CORS прокси corsproxy.io
-                            if (!gRes || !gRes.ok) {
+                            // Резервный способ через AllOrigins (если у клиента блокер)
+                            if (!fetchedOk && !geniusErrorMsg) {
                                 try {
-                                    gRes = await fetch(`https://corsproxy.io/?url=` + encodeURIComponent(rawUrl));
-                                } catch (e) {
-                                    console.warn("corsproxy failed, trying allorigins...", e);
-                                }
-                            }
-
-                            // Попытка 3: CORS прокси allorigins.win
-                            if (!gRes || !gRes.ok) {
-                                try {
-                                    gRes = await fetch(`https://api.allorigins.win/raw?url=` + encodeURIComponent(rawUrl));
-                                } catch (e) {
-                                    console.warn("allorigins failed...", e);
-                                }
-                            }
-
-                            if (gRes && gRes.ok) {
-                                const gData = await gRes.json();
-                                if (gData.response && gData.response.hits && gData.response.hits.length > 0) {
-                                    gData.response.hits.forEach(hit => {
-                                        const song = hit.result;
-                                        if (song) {
-                                            results.push({
-                                                title: song.title || '',
-                                                artist: song.primary_artist ? song.primary_artist.name : '',
-                                                year: song.release_date_for_display ? song.release_date_for_display.split(' ').pop() : '',
-                                                genre: '',
-                                                coverUrl: song.song_art_image_thumbnail_url || song.header_image_thumbnail_url || '',
-                                                source: 'Genius'
-                                            });
+                                    const targetApiUrl = `https://api.genius.com/search?q=${encodeURIComponent(query)}&access_token=${encodeURIComponent(cleanToken)}`;
+                                    const aoRes = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetApiUrl)}`);
+                                    if (aoRes.ok) {
+                                        const aoData = await aoRes.json();
+                                        if (aoData.contents) {
+                                            const gData = typeof aoData.contents === 'string' ? JSON.parse(aoData.contents) : aoData.contents;
+                                            if (gData.response && gData.response.hits) {
+                                                hits = gData.response.hits;
+                                                fetchedOk = true;
+                                            }
                                         }
-                                    });
+                                    }
+                                } catch (e) {
+                                    console.warn("Allorigins fetch failed:", e);
                                 }
-                            } else if (gRes && (gRes.status === 401 || gRes.status === 403)) {
-                                geniusErrorMsg = `⚠️ Genius вернул ошибку ${gRes.status} (Недействительный токен Genius). Введите правильный Client Access Token в поле выше.`;
-                            } else if (gRes) {
-                                geniusErrorMsg = `⚠️ Ошибка сервера Genius (Статус: ${gRes.status}).`;
+                            }
+
+                            if (hits && hits.length > 0) {
+                                hits.forEach(hit => {
+                                    const song = hit.result;
+                                    if (song) {
+                                        let rType = "Альбом";
+                                        const lowerTitle = (song.title || '').toLowerCase();
+                                        if (lowerTitle.includes("single")) {
+                                            rType = "Сингл";
+                                        }
+                                        results.push({
+                                            songId: song.id,
+                                            title: song.title || '',
+                                            artist: song.primary_artist ? song.primary_artist.name : '',
+                                            releaseType: rType,
+                                            year: song.release_date_for_display ? song.release_date_for_display.split(' ').pop() : '',
+                                            genre: '',
+                                            coverUrl: song.song_art_image_thumbnail_url || song.header_image_thumbnail_url || '',
+                                            source: 'Genius'
+                                        });
+                                    }
+                                });
                             }
                         } catch (e) {
                             console.warn("Genius search fetch error:", e);
-                            geniusErrorMsg = `⚠️ Ошибка сети при запросе к Genius: ${e.message}`;
+                            geniusErrorMsg = `⚠️ Ошибка при вызове Genius API: ${e.message}`;
                         }
                     } else if (source === 'genius') {
                         container.innerHTML = `
@@ -7416,13 +7434,42 @@
                 // 2. iTunes Music API (в качестве альтернативы)
                 if (source === 'all' || source === 'itunes' || (source === 'genius' && results.length === 0 && !geniusErrorMsg)) {
                     try {
-                        const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=album&limit=10`);
-                        const data = await res.json();
-                        if (data.results && data.results.length > 0) {
-                            data.results.forEach(item => {
+                        let itunesHits = [];
+                        const termsToTry = [query];
+                        const noBrackets = rawQuery.replace(/\([^)]*\)/g, '').trim();
+                        if (noBrackets && noBrackets !== query) termsToTry.push(noBrackets);
+
+                        for (const t of termsToTry) {
+                            if (itunesHits.length > 0) break;
+                            for (const country of ['RU', 'US', '']) {
+                                const countryParam = country ? `&country=${country}` : '';
+                                const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(t)}&entity=album&limit=10${countryParam}`);
+                                if (res.ok) {
+                                    const data = await res.json();
+                                    if (data.results && data.results.length > 0) {
+                                        itunesHits = data.results;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (itunesHits.length > 0) {
+                            itunesHits.forEach(item => {
+                                let rType = "Альбом";
+                                const lowerName = (item.collectionName || '').toLowerCase();
+                                if (lowerName.includes("- single") || lowerName.includes("(single)") || lowerName.endsWith("single")) {
+                                    rType = "Сингл";
+                                } else if (lowerName.includes("- ep") || lowerName.includes("(ep)") || lowerName.endsWith("ep")) {
+                                    rType = "EP";
+                                } else if (item.trackCount === 1 || item.trackCount === 2) {
+                                    rType = "Сингл";
+                                }
+
                                 results.push({
                                     title: item.collectionName || item.trackName || '',
                                     artist: item.artistName || '',
+                                    releaseType: rType,
                                     year: item.releaseDate ? new Date(item.releaseDate).getFullYear().toString() : '',
                                     genre: item.primaryGenreName || '',
                                     coverUrl: item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb', '600x600bb') : '',
@@ -7471,7 +7518,7 @@
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-weight: 600; font-size: 0.95rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.title}</div>
                         <div style="font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            ${item.artist} ${item.year ? '• ' + item.year : ''} ${item.genre ? '• ' + item.genre : ''}
+                            <span style="color: var(--accent); font-weight: 600;">${item.releaseType || 'Альбом'}</span> • ${item.artist} ${item.year ? '• ' + item.year : ''} ${item.genre ? '• ' + item.genre : ''}
                         </div>
                     </div>
                     <span style="font-size: 0.75rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; background: rgba(252, 60, 68, 0.1); color: var(--accent);">${item.source}</span>
@@ -7486,21 +7533,74 @@
             if (btnSelect) btnSelect.disabled = false;
         }
 
-        function applySelectedMetadata() {
+        async function applySelectedMetadata() {
             if (selectedMetadataIndex < 0 || selectedMetadataIndex >= currentMetadataResults.length) return;
             const item = currentMetadataResults[selectedMetadataIndex];
 
             const titleInput = document.getElementById('modalEditAlbumTitle');
             const artistInput = document.getElementById('modalEditAlbumArtist');
+            const typeInput = document.getElementById('modalEditAlbumType');
             const yearInput = document.getElementById('modalEditAlbumYear');
             const genreInput = document.getElementById('modalEditAlbumGenre');
             const coverInput = document.getElementById('modalEditAlbumCoverUrl');
 
+            // Если выбран Genius, запросим детали трека / альбома по songId
+            if (item.source === 'Genius' && item.songId && userGeniusToken) {
+                try {
+                    const songRes = await fetch(`https://api.genius.com/songs/${item.songId}?access_token=${encodeURIComponent(userGeniusToken.trim())}`);
+                    if (songRes.ok) {
+                        const songData = await songRes.json();
+                        if (songData.response && songData.response.song) {
+                            const songObj = songData.response.song;
+                            if (songObj.album) {
+                                if (songObj.album.name) item.title = songObj.album.name;
+                                if (songObj.album.cover_art_url) item.coverUrl = songObj.album.cover_art_url;
+                            }
+                            // Если в Genius есть теги / жанр
+                            if (songObj.primary_tag && songObj.primary_tag.name) {
+                                item.genre = songObj.primary_tag.name;
+                            } else if (songObj.tags && songObj.tags.length > 0 && songObj.tags[0].name) {
+                                item.genre = songObj.tags[0].name;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Genius album fetch error:", e);
+                }
+            }
+
+            let genre = item.genre || '';
+
+            // Если жанр пуст, мягко подтягиваем ТОЛЬКО музыкальный жанр (без изменения названия, обложки или типа релиза)
+            if (!genre && item.artist) {
+                try {
+                    const gRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(item.artist + ' ' + (item.title || ''))}&entity=album&limit=1`);
+                    if (gRes.ok) {
+                        const gData = await gRes.json();
+                        if (gData.results && gData.results[0] && gData.results[0].primaryGenreName) {
+                            genre = gData.results[0].primaryGenreName;
+                        }
+                    }
+                    if (!genre) {
+                        const aRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(item.artist)}&entity=musicArtist&limit=1`);
+                        if (aRes.ok) {
+                            const aData = await aRes.json();
+                            if (aData.results && aData.results[0] && aData.results[0].primaryGenreName) {
+                                genre = aData.results[0].primaryGenreName;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Genre fallback error:", e);
+                }
+            }
+
             if (titleInput && item.title) titleInput.value = item.title;
             if (artistInput && item.artist) artistInput.value = item.artist;
+            if (typeInput && item.releaseType) typeInput.value = item.releaseType;
             if (yearInput && item.year) yearInput.value = item.year;
-            if (genreInput && item.genre) genreInput.value = item.genre;
             if (coverInput && item.coverUrl) coverInput.value = item.coverUrl;
+            if (genreInput) genreInput.value = genre;
 
             closeMetadataSearchModal();
         }
@@ -8634,8 +8734,8 @@
                     artistId: artistId,
                     artistName: artistName,
                     coverUrl: coverUrl,
-                    genre: "Разное",
-                    year: new Date().getFullYear().toString(),
+                    genre: "",
+                    year: "",
                     songIds: songIds,
                     createdAt: new Date().toISOString()
                 });
@@ -9426,10 +9526,17 @@
             const tracksStr = `${totalTracks} ${getPlural(totalTracks, 'трек', 'трека', 'треков')}`;
             const durationStr = formatDurationRussian(totalSeconds);
 
+            const releaseType = album.releaseType || album.type || 'Альбом';
+            const genreYearParts = [];
+            if (album.genre && album.genre !== 'Разное') genreYearParts.push(album.genre);
+            if (album.year) genreYearParts.push(album.year);
+            const genreYearStr = genreYearParts.join(' • ');
+
             const metaEl = document.getElementById('album-details-meta');
             if (metaEl) {
                 metaEl.innerHTML = `
-                    <div style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 4px;">Альбом</div>
+                    <div style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 2px;">${releaseType}</div>
+                    ${genreYearStr ? `<div style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 4px;">${genreYearStr}</div>` : ''}
                     <div style="font-size: 0.85rem; color: var(--text-secondary);">${tracksStr} • ${durationStr}</div>
                 `;
             }
@@ -10810,15 +10917,23 @@
                     <input type="text" id="modalEditAlbumArtist" class="modal-input" placeholder="Исполнитель"
                         autocomplete="off">
                 </div>
-                <div style="display: flex; gap: 12px;">
-                    <div class="modal-field" style="flex: 1;">
-                        <label for="modalEditAlbumYear">Год выпуска</label>
-                        <input type="text" id="modalEditAlbumYear" class="modal-input" placeholder="например, 2024"
+                <div style="display: flex; gap: 10px;">
+                    <div class="modal-field" style="flex: 1.2;">
+                        <label for="modalEditAlbumType">Тип релиза</label>
+                        <select id="modalEditAlbumType" class="modal-input" style="padding: 9px 8px; font-size: 0.88rem;">
+                            <option value="Альбом">Альбом</option>
+                            <option value="Сингл">Сингл</option>
+                            <option value="EP">EP (Мини-альбом)</option>
+                        </select>
+                    </div>
+                    <div class="modal-field" style="flex: 0.8;">
+                        <label for="modalEditAlbumYear">Год</label>
+                        <input type="text" id="modalEditAlbumYear" class="modal-input" placeholder="2024"
                             autocomplete="off">
                     </div>
-                    <div class="modal-field" style="flex: 1.5;">
+                    <div class="modal-field" style="flex: 1.2;">
                         <label for="modalEditAlbumGenre">Жанр</label>
-                        <input type="text" id="modalEditAlbumGenre" class="modal-input" placeholder="например, Pop / Rock"
+                        <input type="text" id="modalEditAlbumGenre" class="modal-input" placeholder="Pop / Rock"
                             autocomplete="off">
                     </div>
                 </div>
@@ -10863,7 +10978,8 @@
                         <button onclick="saveGeniusTokenToFirebase()" class="btn-modal btn-modal-submit" style="padding: 7px 14px; font-size: 0.82rem; white-space: nowrap;">Сохранить в профиль</button>
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px; line-height: 1.4;">
-                        Токен привязывается к вашему аккаунту Firebase. Бесплатный ключ создается на <a href="https://genius.com/api-clients" target="_blank" style="color: var(--accent); text-decoration: underline;">genius.com/api-clients</a>.
+                        Токен сохраняется в профиле Firebase. Создается на <a href="https://genius.com/api-clients" target="_blank" style="color: var(--accent); text-decoration: underline;">genius.com/api-clients</a>.<br>
+                        <span style="color: var(--accent); font-weight: 600;">⚠️ Важно:</span> Вставляйте именно <b>Client Access Token</b> (кнопка Generate Access Token), НЕ Client ID!
                     </div>
                 </div>
 
@@ -10878,8 +10994,8 @@
                 <!-- Строка поиска с выбором источника -->
                 <div style="display: flex; gap: 8px; width: 100%;">
                     <select id="metadataSourceSelect" class="modal-input" style="width: auto; flex-shrink: 0; padding: 8px 10px; font-size: 0.85rem; border-radius: 10px;" onchange="handleMetadataSourceChange()">
-                        <option value="all">Все источники</option>
-                        <option value="genius" selected>Genius</option>
+                        <option value="all" selected>Все источники</option>
+                        <option value="genius">Genius</option>
                         <option value="itunes">iTunes Music</option>
                     </select>
                     <input type="text" id="metadataSearchInput" class="modal-input" style="flex: 1; padding: 8px 12px; font-size: 0.9rem;" placeholder="Название / Исполнитель..." onkeydown="if(event.key==='Enter') performMetadataSearch()">

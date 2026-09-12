@@ -5209,7 +5209,7 @@ body.dark .bulk-actions-toolbar {
     to { transform: translate(-50%, 0); opacity: 1; }
 }
 
-/* === КНОПКА ПЕРЕХОДА НА СТРАНИЦУ КАНАЛА (↗) И АВАТАР === */
+/* === КНОПКА ПЕРЕХОДА НА СТРАНИЦУ КАНАЛА И АВАТАР === */
 .channel-pill-avatar-wrap {
     display: inline-flex;
     align-items: center;
@@ -5217,81 +5217,90 @@ body.dark .bulk-actions-toolbar {
     position: relative;
     cursor: pointer;
     border-radius: 50%;
+    overflow: hidden;
     transition: transform 0.18s ease, box-shadow 0.18s ease;
     flex-shrink: 0;
 }
 
 .channel-pill-avatar-wrap:hover {
-    transform: scale(1.15);
+    transform: scale(1.08);
     box-shadow: 0 0 0 2px var(--ch-purple);
 }
 
-.channel-pill-link-btn {
-    background: transparent;
-    border: none;
-    padding: 2px;
-    margin-left: 2px;
-    margin-right: -4px;
-    border-radius: 6px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--ch-text-gray);
-    opacity: 0.6;
-    transition: all 0.2s ease;
-    line-height: 1;
-}
-
-.channel-pill-link-btn:hover {
-    opacity: 1;
-    color: var(--ch-purple);
-    background: rgba(99, 102, 241, 0.12);
-    transform: translateY(-1px);
-}
-
-.channel-pill-btn.active .channel-pill-link-btn {
-    color: #4f46e5;
-    opacity: 0.8;
-}
-
-.channel-pill-btn.active .channel-pill-link-btn:hover {
-    opacity: 1;
-    background: rgba(99, 102, 241, 0.18);
-}
-
-/* === СТРАНИЦА КОНКРЕТНОГО КАНАЛА (2-й уровень) === */
-.channel-page-container {
+.channel-pill-avatar-hover-overlay {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--ch-bg);
-    z-index: 200;
+    background: rgba(0, 0, 0, 0.48);
     display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    animation: fadeIn 0.25s ease-out;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: 50%;
+    z-index: 2;
 }
 
-/* Баннер канала: центрирован, по ширине блоков */
+.channel-pill-avatar-wrap:hover .channel-pill-avatar-hover-overlay {
+    opacity: 1;
+}
+
+.channel-pill-link-btn {
+    display: none !important;
+}
+
+/* === МОДАЛЬНОЕ ОКНО СТРАНИЦЫ КАНАЛА === */
+.channel-page-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.channel-page-modal-card {
+    position: relative;
+    max-width: 660px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow: hidden;
+    background: var(--ch-card-bg, #ffffff);
+    border-radius: 24px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--ch-border, rgba(255, 255, 255, 0.12));
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    animation: modalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Баннер канала в модальном окне */
 .channel-page-banner-wrap {
     position: relative;
-    max-width: 1200px;
-    width: calc(100% - 80px);
-    margin: 24px auto 0;
-    min-height: 220px;
+    width: 100%;
+    margin: 0;
+    min-height: 190px;
     background: #0f141f;
-    border-radius: 20px;
+    border-radius: 0;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 22px 32px 24px;
+    padding: 20px 24px 20px;
     box-sizing: border-box;
     overflow: hidden;
     flex-shrink: 0;
-    box-shadow: var(--ch-shadow);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .channel-page-banner-bg {
@@ -5763,11 +5772,11 @@ body.dark .bulk-actions-toolbar {
 
 @media (max-width: 768px) {
     .channel-page-banner-wrap {
-        width: calc(100% - 32px);
-        margin: 16px auto 0;
+        width: 100%;
+        margin: 0;
         padding: 16px 20px 20px;
-        min-height: 200px;
-        border-radius: 16px;
+        min-height: 180px;
+        border-radius: 0;
     }
     .channel-page-profile-hero {
         flex-direction: column;

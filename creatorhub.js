@@ -864,7 +864,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.addEventListener("click", () => {
             const filterVal = btn.dataset.filter;
             if (currentFilter !== filterVal) {
-                window.location.hash = filterVal;
+                updateHashRoute(filterVal, currentChannelId);
             }
         });
     });
@@ -1645,31 +1645,88 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
+function getHashForState(filter = currentFilter, channelId = currentChannelId) {
+    const validFilters = ["idea", "in_progress", "editing", "published", "trash"];
+    const f = validFilters.includes(filter) ? filter : "idea";
+    if (channelId) {
+        return `${f}?channel=${channelId}`;
+    }
+    return f;
+}
+
+function updateHashRoute(filter = currentFilter, channelId = currentChannelId) {
+    const targetHash = getHashForState(filter, channelId);
+    if (window.location.hash.replace("#", "") !== targetHash) {
+        window.location.hash = targetHash;
+    }
+}
+
 function handleHashRoute() {
-    const rawHash = window.location.hash.replace("#", "");
+    const rawHash = decodeURIComponent(window.location.hash.replace("#", "").trim());
     
     // Проверяем роут отдельной страницы канала: #channel/ch_123 или #channel_123 или #channel-123
     if (rawHash.startsWith("channel/") || rawHash.startsWith("channel_") || rawHash.startsWith("channel-")) {
         const chId = rawHash.replace(/^channel[\/_ -]/, "");
-        if (chId) {
+        if (chId && !chId.includes("/")) {
             openChannelPage(chId, false);
             return;
         }
     }
 
-    // Если открыта страница канала, но hash изменился на фильтр (например, пользователь нажал назад в браузере)
+    // Если была открыта страница канала, но hash изменился на фильтр (например, пользователь нажал назад в браузере)
     closeChannelPage(false);
 
     const validFilters = ["idea", "in_progress", "editing", "published", "trash"];
-    
-    if (validFilters.includes(rawHash)) {
-        currentFilter = rawHash;
+    let detectedFilter = null;
+    let detectedChannelId = null;
+
+    // Вариант А: Query параметры (? или &), например: #idea?channel=ch_123 или #idea?ch=ch_123
+    if (rawHash.includes("?") || rawHash.includes("&")) {
+        const parts = rawHash.split(/[\?\&]/);
+        const routePart = parts[0];
+        if (validFilters.includes(routePart)) {
+            detectedFilter = routePart;
+        }
+        for (let i = 1; i < parts.length; i++) {
+            const [paramKey, paramVal] = parts[i].split("=");
+            if ((paramKey === "channel" || paramKey === "ch" || paramKey === "channelId") && paramVal) {
+                detectedChannelId = paramVal;
+            }
+        }
+    }
+
+    // Вариант Б: Разделение слэшем (/), например: #idea/ch_123 или #ch_123/idea или #idea/channel/ch_123
+    if (!detectedFilter && rawHash.includes("/")) {
+        const segments = rawHash.split("/").filter(Boolean);
+        for (const seg of segments) {
+            if (validFilters.includes(seg)) {
+                detectedFilter = seg;
+            } else if (seg.startsWith("channel=") || seg.startsWith("ch=")) {
+                detectedChannelId = seg.split("=")[1];
+            } else if (seg !== "channel") {
+                detectedChannelId = seg;
+            }
+        }
+    }
+
+    // Вариант В: Простой хэш (#idea)
+    if (!detectedFilter) {
+        if (validFilters.includes(rawHash)) {
+            detectedFilter = rawHash;
+        }
+    }
+
+    if (detectedFilter) {
+        currentFilter = detectedFilter;
     } else {
         currentFilter = "idea";
-        window.location.hash = "idea";
-        return;
     }
-    
+
+    if (detectedChannelId) {
+        currentChannelId = detectedChannelId;
+        localStorage.setItem("creatorhub_current_channel_id", currentChannelId);
+    }
+
     currentMenuRoute = (currentFilter === "trash" ? "trash" : "videos");
     
     // Update button states
@@ -1680,6 +1737,9 @@ function handleHashRoute() {
             btn.classList.remove("active");
         }
     });
+
+    // Update channel switcher UI state
+    renderChannelSwitcher();
     
     // Восстанавливаем сохраненный вид (список/сетка) для текущей вкладки
     const savedTabMode = localStorage.getItem(`creatorhub_view_mode_${currentFilter}`) || localStorage.getItem("creatorhub_view_mode") || "list";
@@ -1688,6 +1748,12 @@ function handleHashRoute() {
     loadSortForCurrentFilter();
     loadFiltersForCurrentFilter();
     updateViewForRoute();
+
+    // Синхронизируем хэш браузера до канонического вида, если в ссылке не хватало ID канала
+    const expectedHash = getHashForState(currentFilter, currentChannelId);
+    if (window.location.hash.replace("#", "") !== expectedHash) {
+        history.replaceState(null, "", "#" + expectedHash);
+    }
 }
 
 // Функция обновления интерфейса в зависимости от текущего фильтра
@@ -6892,6 +6958,7 @@ function openChannelSpecificSettingsModal(channelId) {
     const avatarFile = document.getElementById("channelSettingsAvatarFile");
 
     const nameInput = document.getElementById("channelSettingsNameInput");
+    const notionUrlInput = document.getElementById("channelSettingsNotionUrlInput");
     const saveBtn = document.getElementById("btnChannelSettingsSave");
     const cancelBtn = document.getElementById("btnChannelSettingsCancel");
     const closeBtn = document.getElementById("btnChannelSettingsModalClose");
@@ -6934,6 +7001,10 @@ function openChannelSpecificSettingsModal(channelId) {
                 avatarPlaceholder.textContent = nameVal ? nameVal.charAt(0).toUpperCase() : "?";
             }
         };
+    }
+
+    if (notionUrlInput) {
+        notionUrlInput.value = ch.notionUrl || "";
     }
 
     updateBannerUI();
@@ -7022,6 +7093,7 @@ function openChannelSpecificSettingsModal(channelId) {
             ch.name = newName;
             ch.bannerUrl = currentBanner;
             ch.avatarUrl = currentAvatar;
+            ch.notionUrl = notionUrlInput ? notionUrlInput.value.trim() : "";
 
             saveChannels();
             renderChannelSwitcher();
@@ -7054,10 +7126,6 @@ function openChannelPage(channelId, updateHash = true) {
     const avatarWrap = document.getElementById("channelPageAvatarWrap");
     const titleEl = document.getElementById("channelPageTitle");
     const videosCountEl = document.getElementById("channelPageVideosCount");
-    const aboutTextEl = document.getElementById("channelPageAboutText");
-    const missionDescEl = document.getElementById("channelPageMissionDesc");
-    const missionQuoteBox = document.getElementById("channelPageMissionQuoteBox");
-    const missionQuoteEl = document.getElementById("channelPageMissionQuote");
     const bannerBg = document.getElementById("channelPageBannerBg");
 
     if (titleEl) {
@@ -7068,41 +7136,6 @@ function openChannelPage(channelId, updateHash = true) {
     const publishedCount = videos.filter(v => !v.deleted && v.channelId === ch.id && v.status === "published").length;
     if (videosCountEl) {
         videosCountEl.textContent = `${publishedCount} видео`;
-    }
-
-    // Текст "О канале"
-    if (aboutTextEl) {
-        if (ch.about && ch.about.trim()) {
-            aboutTextEl.textContent = ch.about;
-            aboutTextEl.style.fontStyle = "normal";
-            aboutTextEl.style.color = "var(--ch-text-gray)";
-        } else {
-            aboutTextEl.textContent = "Описание канала пока не заполнено. Нажмите иконку редактирования, чтобы добавить.";
-            aboutTextEl.style.fontStyle = "italic";
-            aboutTextEl.style.color = "var(--ch-text-gray)";
-            aboutTextEl.style.opacity = "0.75";
-        }
-    }
-
-    // Цель и цитата
-    if (missionDescEl) {
-        if (ch.missionDesc && ch.missionDesc.trim()) {
-            missionDescEl.textContent = ch.missionDesc;
-            missionDescEl.style.fontStyle = "normal";
-            missionDescEl.style.opacity = "1";
-        } else {
-            missionDescEl.textContent = "Главная цель канала еще не указана. Нажмите иконку редактирования, чтобы описать миссию.";
-            missionDescEl.style.fontStyle = "italic";
-            missionDescEl.style.opacity = "0.75";
-        }
-    }
-    if (missionQuoteBox && missionQuoteEl) {
-        if (ch.missionQuote && ch.missionQuote.trim()) {
-            missionQuoteEl.textContent = ch.missionQuote;
-            missionQuoteBox.style.display = "block";
-        } else {
-            missionQuoteBox.style.display = "none";
-        }
     }
 
     // Баннер: если у канала задан баннер, показываем его; иначе нейтральный фон
@@ -7131,53 +7164,30 @@ function openChannelPage(channelId, updateHash = true) {
         }
     }
 
-    // Рендерим модули
-    renderChannelPipelines(ch);
-    renderChannelMonetization(ch);
-    renderChannelGoals(ch);
+    // Настройка кнопки перехода в Notion
+    const btnOpenNotion = document.getElementById("btnChannelOpenNotion");
+    const noticeNotion = document.getElementById("channelPageNotionNotice");
 
-    // Слушатели кнопок страницы канала
-    const btnEditAbout = document.getElementById("btnEditChannelAbout");
-    if (btnEditAbout) {
-        btnEditAbout.onclick = async () => {
-            const newText = await showCustomPrompt("О канале", "Описание канала:", ch.about || "");
-            if (newText !== null) {
-                ch.about = newText.trim();
-                saveChannels();
-                openChannelPage(ch.id, false);
-            }
-        };
+    if (btnOpenNotion) {
+        if (ch.notionUrl && ch.notionUrl.trim()) {
+            btnOpenNotion.href = ch.notionUrl.trim();
+            btnOpenNotion.target = "_blank";
+            btnOpenNotion.onclick = null;
+            if (noticeNotion) noticeNotion.style.display = "none";
+        } else {
+            btnOpenNotion.href = "javascript:void(0)";
+            btnOpenNotion.onclick = (e) => {
+                e.preventDefault();
+                openChannelSpecificSettingsModal(ch.id);
+            };
+            if (noticeNotion) noticeNotion.style.display = "block";
+        }
     }
 
-    const btnEditMission = document.getElementById("btnEditChannelMission");
-    if (btnEditMission) {
-        btnEditMission.onclick = async () => {
-            const newDesc = await showCustomPrompt("Цель канала", "Миссия / Видение:", ch.missionDesc || "");
-            if (newDesc !== null) {
-                ch.missionDesc = newDesc.trim();
-                const newQuote = await showCustomPrompt("Девиз / Цитата", "Короткая мотивирующая фраза (необязательно):", ch.missionQuote || "");
-                if (newQuote !== null) {
-                    ch.missionQuote = newQuote.trim();
-                }
-                saveChannels();
-                openChannelPage(ch.id, false);
-            }
-        };
-    }
-
-    const btnAddPipeline = document.getElementById("btnAddChannelPipeline");
-    if (btnAddPipeline) {
-        btnAddPipeline.onclick = () => openPipelineEditModal(ch.id, null);
-    }
-
-    const btnAddMonetization = document.getElementById("btnAddChannelMonetization");
-    if (btnAddMonetization) {
-        btnAddMonetization.onclick = () => openMonetizationEditModal(ch.id, null);
-    }
-
-    const btnAddGoal = document.getElementById("btnAddChannelGoal");
-    if (btnAddGoal) {
-        btnAddGoal.onclick = () => openGoalEditModal(ch.id, null);
+    // Кнопка закрытия/назад на баннере
+    const btnBack = document.getElementById("btnChannelPageBack");
+    if (btnBack) {
+        btnBack.onclick = () => closeChannelPage();
     }
 
     // Кнопка настроек в шапке канала — открывает настройки именно этого канала
@@ -7190,6 +7200,11 @@ function openChannelPage(channelId, updateHash = true) {
 
     if (page) {
         page.style.display = "flex";
+        page.onclick = (e) => {
+            if (e.target === page) {
+                closeChannelPage();
+            }
+        };
     }
 
     if (updateHash) {
@@ -7201,10 +7216,11 @@ function closeChannelPage(updateHash = true) {
     const page = document.getElementById("channelPageContainer");
     if (page) {
         page.style.display = "none";
+        page.onclick = null;
     }
 
     if (updateHash) {
-        window.location.hash = currentFilter || "idea";
+        updateHashRoute(currentFilter || "idea", currentChannelId);
     }
 }
 
@@ -7242,6 +7258,17 @@ function renderChannelSwitcher() {
             avatarWrap.appendChild(placeholder);
         }
 
+        // Оверлей стрелки ↗ при наведении на аватар
+        const hoverOverlay = document.createElement("span");
+        hoverOverlay.className = "channel-pill-avatar-hover-overlay";
+        hoverOverlay.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+                <line x1="7" y1="17" x2="17" y2="7"></line>
+                <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+        `;
+        avatarWrap.appendChild(hoverOverlay);
+
         avatarWrap.addEventListener("click", (e) => {
             e.stopPropagation();
             openChannelPage(ch.id);
@@ -7261,25 +7288,10 @@ function renderChannelSwitcher() {
         countSpan.textContent = count;
         btn.appendChild(countSpan);
 
-        // Кнопка быстрого перехода ↗ на отдельную страницу канала
-        const openBtn = document.createElement("span");
-        openBtn.className = "channel-pill-link-btn";
-        openBtn.title = `Открыть страницу канала ${ch.name}`;
-        openBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
-                <line x1="7" y1="17" x2="17" y2="7"></line>
-                <polyline points="7 7 17 7 17 17"></polyline>
-            </svg>
-        `;
-        openBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            openChannelPage(ch.id);
-        });
-        btn.appendChild(openBtn);
-
         btn.addEventListener("click", () => {
             currentChannelId = ch.id;
             localStorage.setItem("creatorhub_current_channel_id", ch.id);
+            updateHashRoute(currentFilter, ch.id);
             
             row.querySelectorAll(".channel-pill-btn").forEach(b => {
                 b.classList.toggle("active", b.getAttribute("data-channel-id") === ch.id);
@@ -7319,6 +7331,7 @@ function renderChannelSwitcher() {
         btn.addEventListener("click", () => {
             currentChannelId = "no_channel";
             localStorage.setItem("creatorhub_current_channel_id", "no_channel");
+            updateHashRoute(currentFilter, "no_channel");
             
             row.querySelectorAll(".channel-pill-btn").forEach(b => {
                 b.classList.toggle("active", b.getAttribute("data-channel-id") === "no_channel");
@@ -7534,6 +7547,7 @@ function renderSettingsChannels() {
             if (currentChannelId === ch.id) {
                 currentChannelId = channels[0] ? channels[0].id : null;
                 localStorage.setItem("creatorhub_current_channel_id", currentChannelId || "");
+                updateHashRoute(currentFilter, currentChannelId);
             }
 
             // Обработка видео в канале

@@ -73,6 +73,7 @@ let previousTaskVisualHashes = {};
 let currentRoute = 'inbox'; // 'inbox' или 'today'
 let isCompletedSectionCollapsed = localStorage.getItem('todo_completed_collapsed') === 'true';
 let activeContextMenu = null;
+let currentActiveInlineEditFinish = null;
 
 let projectsList = [];
 let unsubscribeProjects = null;
@@ -472,6 +473,16 @@ document.addEventListener('click', (e) => {
             }
         }
     });
+
+    // 5. Автосохранение и закрытие редактирования задачи при клике вне
+    if (currentActiveInlineEditFinish && typeof currentActiveInlineEditFinish === 'function') {
+        const editingItem = document.querySelector('.task-item.editing');
+        if (editingItem && !editingItem.contains(e.target) && !e.target.closest('.due-date-dropdown, .due-modal-overlay, .project-dropdown, .priority-dropdown, .flatpickr-calendar')) {
+            const finishActive = currentActiveInlineEditFinish;
+            currentActiveInlineEditFinish = null;
+            finishActive();
+        }
+    }
 
     // 5. Закрытие меню действий проекта и отображения в шапке при клике вне
     const projectHeaderDropdown = document.getElementById('projectHeaderDropdown');
@@ -3848,6 +3859,13 @@ function initCalendarForWrapper(wrapperEl, activeDate, activeTime, activeRepeat,
 function enableInlineEdit(taskItemEl, task, titleSpan) {
     if (taskItemEl.classList.contains('editing')) return;
 
+    // Автоматически завершаем и сохраняем редактирование предыдущей задачи
+    if (currentActiveInlineEditFinish && typeof currentActiveInlineEditFinish === 'function') {
+        const finishPrev = currentActiveInlineEditFinish;
+        currentActiveInlineEditFinish = null;
+        finishPrev();
+    }
+
     taskItemEl.classList.add('editing');
 
     let editSelectedDueDate = task.dueDate;
@@ -4190,8 +4208,14 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
     });
 
     const finishEdit = async () => {
+        if (currentActiveInlineEditFinish === finishEdit) {
+            currentActiveInlineEditFinish = null;
+        }
         const newTitle = input.value.trim();
-        if (!newTitle || newTitle.length > 500) return;
+        if (!newTitle || newTitle.length > 500) {
+            cancelEdit();
+            return;
+        }
 
         taskItemEl.classList.remove('editing');
         editContainer.remove();
@@ -4206,6 +4230,19 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
         const priorityChanged = editSelectedPriority !== (task.priority || 0);
 
         if (titleChanged || dateChanged || timeChanged || repeatChanged || endDateChanged || endTimeChanged || projectChanged || priorityChanged) {
+            task.title = newTitle;
+            task.dueDate = editSelectedDueDate;
+            task.dueTime = editSelectedDueTime;
+            task.dueRepeat = editSelectedDueRepeat;
+            task.dueEndDate = editSelectedDueEndDate;
+            task.dueEndTime = editSelectedDueEndTime;
+            task.projectId = editSelectedProjectId;
+            task.priority = editSelectedPriority;
+
+            if (titleSpan) {
+                titleSpan.innerHTML = formatTaskTitle(newTitle);
+            }
+
             try {
                 await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                     title: newTitle,
@@ -4219,25 +4256,42 @@ function enableInlineEdit(taskItemEl, task, titleSpan) {
                 });
             } catch (err) {
                 console.error("Ошибка сохранения задачи:", err);
-                renderTasks();
             }
-        } else {
-            renderTasks();
         }
     };
 
     const cancelEdit = () => {
+        if (currentActiveInlineEditFinish === finishEdit) {
+            currentActiveInlineEditFinish = null;
+        }
         taskItemEl.classList.remove('editing');
         editContainer.remove();
-        renderTasks();
     };
 
-    btnSave.addEventListener('click', (e) => {
+    currentActiveInlineEditFinish = finishEdit;
+
+    btnSave.addEventListener('mousedown', (e) => {
+        e.preventDefault();
         e.stopPropagation();
+    });
+
+    btnCancel.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    btnSave.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!input.value.trim()) {
+            cancelEdit();
+            return;
+        }
         finishEdit();
     });
 
     btnCancel.addEventListener('click', (e) => {
+        e.preventDefault();
         e.stopPropagation();
         cancelEdit();
     });

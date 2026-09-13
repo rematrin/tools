@@ -956,8 +956,9 @@ body.dark .task-title-link {
     align-items: stretch;
     background-color: var(--card-bg);
     border: 1.5px solid var(--accent) !important;
-    border-radius: 16px;
-    padding: 12px 16px 10px 16px;
+    border-radius: 11px;
+    padding: 10px 14px 8px 14px;
+    margin: 3px 3px;
     gap: 0;
     z-index: 60;
     /* Поверх остальных задач при редактировании */
@@ -987,6 +988,9 @@ body.dark .task-title-link {
     font-size: 0.95rem;
     cursor: pointer;
     transition: background-color 0.2s, transform 0.1s;
+    position: relative;
+    z-index: 10;
+    pointer-events: auto !important;
 }
 
 .btn-cancel:hover {
@@ -1007,6 +1011,9 @@ body.dark .task-title-link {
     font-size: 0.95rem;
     cursor: pointer;
     transition: background-color 0.2s, transform 0.1s;
+    position: relative;
+    z-index: 10;
+    pointer-events: auto !important;
 }
 
 .btn-save:hover {

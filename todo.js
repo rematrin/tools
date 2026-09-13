@@ -2560,7 +2560,7 @@ function initMobileBottomNavDragGesture() {
             currentX = clientX;
             const touchX = currentX - rect.left;
             let fraction = (touchX - (rect.width / 8)) / (rect.width / 4);
-            fraction = Math.max(-0.15, Math.min(3.15, fraction));
+            fraction = Math.max(0, Math.min(3, fraction));
 
             mobileNavIndicator.style.transform = `translateX(${fraction * 100}%)`;
 

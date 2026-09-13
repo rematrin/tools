@@ -763,6 +763,52 @@ function setDueDate(dateStr, timeStr = undefined, repeatStr = undefined, endDate
 }
 
 // Форматирование даты для кнопки и карточек
+function formatDateOnlyDisplay(dateStr, timeStr = null, endDateStr = null, endTimeStr = null) {
+    if (!dateStr) return 'Срок';
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+    const formatDatePart = (dStr) => {
+        if (dStr === todayStr) return 'Сегодня';
+        if (dStr === tomorrowStr) return 'Завтра';
+        if (dStr === yesterdayStr) return 'Вчера';
+        const [year, month, day] = dStr.split('-');
+        const monthsRuShort = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+        let l = `${parseInt(day, 10)} ${monthsRuShort[parseInt(month, 10) - 1]}`;
+        if (parseInt(year, 10) !== today.getFullYear()) {
+            l += ` ${year}`;
+        }
+        return l;
+    };
+
+    let label = formatDatePart(dateStr);
+
+    if (timeStr) {
+        if (endTimeStr) {
+            if (!endDateStr || endDateStr === dateStr) {
+                label += ` в ${timeStr}-${endTimeStr}`;
+            } else {
+                label += ` в ${timeStr} - ${formatDatePart(endDateStr)} в ${endTimeStr}`;
+            }
+        } else {
+            label += ` в ${timeStr}`;
+        }
+    } else if (endDateStr && endDateStr !== dateStr) {
+        label += ` - ${formatDatePart(endDateStr)}`;
+    }
+
+    return label;
+}
+
 function formatDueDateDisplay(dateStr, timeStr = null, repeatStr = null, endDateStr = null, endTimeStr = null) {
     if (!dateStr) return 'Срок';
 
@@ -2183,10 +2229,12 @@ function updateCompletedToggleUI() {
     if (isCompletedSectionCollapsed) {
         completedToggle.classList.add('collapsed');
         completedTasksContainer.classList.add('collapsed');
+        if (completedSection) completedSection.classList.add('collapsed');
         if (completedClearBtn) completedClearBtn.style.display = 'none';
     } else {
         completedToggle.classList.remove('collapsed');
         completedTasksContainer.classList.remove('collapsed');
+        if (completedSection) completedSection.classList.remove('collapsed');
         if (completedClearBtn) completedClearBtn.style.display = 'block';
     }
 }
@@ -3476,8 +3524,8 @@ function createDropdownHtml() {
                 <!-- Повтор -->
                 <div class="due-row-repeat-trigger">
                     <div class="due-checkbox-label">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px; vertical-align: middle; color: var(--text-secondary);">
-                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="margin-right: 4px; vertical-align: middle; color: var(--text-secondary);">
+                            <path d="M21.5 2v6h-6"></path><path d="M21.34 8A10 10 0 0 0 4.16 6.34L2.5 8"></path><path d="M2.5 22v-6h6"></path><path d="M2.66 16a10 10 0 0 0 17.18 1.66L21.5 16"></path>
                         </svg>
                         <span>Повтор</span>
                     </div>
@@ -5327,12 +5375,16 @@ function doRenderTasks() {
 
                     const unsectionedTasks = displayActiveTasks.filter(t => !t.sectionId || !projectSections.some(s => s.id === t.sectionId));
 
-                    // Render unsectioned tasks first
-                    const unsectionedContainer = document.createElement('div');
-                    unsectionedContainer.className = 'unsectioned-tasks-container';
-                    unsectionedContainer.style.minHeight = '20px';
-                    activeTasksContainer.appendChild(unsectionedContainer);
-                    renderTasksGroup(unsectionedTasks, unsectionedContainer);
+                    // Render unsectioned tasks first wrapped in double-background project-section card
+                    if (unsectionedTasks.length > 0) {
+                        const unsectionedOuter = document.createElement('div');
+                        unsectionedOuter.className = 'project-section unsectioned-card';
+                        unsectionedOuter.style.marginTop = '0px';
+                        unsectionedOuter.innerHTML = `<div class="section-tasks-container unsectioned-tasks-container"></div>`;
+                        activeTasksContainer.appendChild(unsectionedOuter);
+                        const innerContainer = unsectionedOuter.querySelector('.section-tasks-container');
+                        renderTasksGroup(unsectionedTasks, innerContainer);
+                    }
 
                 // Render each section
                 projectSections.forEach(section => {
@@ -5351,18 +5403,18 @@ function doRenderTasks() {
                                 </svg>
                             </button>
                             <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
-                                <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
-                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16">
+                                    <polyline points="18 15 12 9 6 15"></polyline>
                                 </svg>
                             </button>
                             <span class="section-title-text">${escapeHtml(section.name)}</span>
                             <span class="section-count-badge">${sectionTasks.length}</span>
                             <div class="section-actions-wrapper" style="position: relative; margin-left: auto; display: flex; align-items: center; gap: 4px;">
                                 <button class="section-actions-btn" title="Действия" type="button">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="5" cy="12" r="1.5"></circle>
                                         <circle cx="12" cy="12" r="1.5"></circle>
-                                        <circle cx="12" cy="5" r="1.5"></circle>
-                                        <circle cx="12" cy="19" r="1.5"></circle>
+                                        <circle cx="19" cy="12" r="1.5"></circle>
                                     </svg>
                                 </button>
                                 <div class="section-actions-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); right: 0; background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); z-index: 1000; width: 170px; padding: 4px; box-sizing: border-box; flex-direction: column; gap: 2px;">
@@ -5597,13 +5649,37 @@ function doRenderTasks() {
                             renderTasks();
                         });
                     } else {
-                        // Render standard list without headers
-                        renderTasksGroup(displayActiveTasks, activeTasksContainer);
+                        // Render standard list without headers wrapped in double-background card
+                        if (displayActiveTasks.length > 0) {
+                            const unsectionedOuter = document.createElement('div');
+                            unsectionedOuter.className = 'project-section unsectioned-card';
+                            unsectionedOuter.style.marginTop = '0px';
+                            unsectionedOuter.innerHTML = `<div class="section-tasks-container unsectioned-tasks-container"></div>`;
+                            activeTasksContainer.appendChild(unsectionedOuter);
+                            const innerContainer = unsectionedOuter.querySelector('.section-tasks-container');
+                            renderTasksGroup(displayActiveTasks, innerContainer);
+                        }
                     }
                 } else if (currentRoute === 'tomorrow') {
-                    renderTasksGroup(displayActiveTasks, activeTasksContainer);
+                    if (displayActiveTasks.length > 0) {
+                        const unsectionedOuter = document.createElement('div');
+                        unsectionedOuter.className = 'project-section unsectioned-card';
+                        unsectionedOuter.style.marginTop = '0px';
+                        unsectionedOuter.innerHTML = `<div class="section-tasks-container unsectioned-tasks-container"></div>`;
+                        activeTasksContainer.appendChild(unsectionedOuter);
+                        const innerContainer = unsectionedOuter.querySelector('.section-tasks-container');
+                        renderTasksGroup(displayActiveTasks, innerContainer);
+                    }
                 } else {
-                    renderTasksGroup(displayActiveTasks, activeTasksContainer);
+                    if (displayActiveTasks.length > 0) {
+                        const unsectionedOuter = document.createElement('div');
+                        unsectionedOuter.className = 'project-section unsectioned-card';
+                        unsectionedOuter.style.marginTop = '0px';
+                        unsectionedOuter.innerHTML = `<div class="section-tasks-container unsectioned-tasks-container"></div>`;
+                        activeTasksContainer.appendChild(unsectionedOuter);
+                        const innerContainer = unsectionedOuter.querySelector('.section-tasks-container');
+                        renderTasksGroup(displayActiveTasks, innerContainer);
+                    }
                 }
             }
         }
@@ -5843,8 +5919,14 @@ function createTaskRowElement(task, isStandalone = false) {
     const isCollapsed = hasSubtasks && isParentTaskCollapsed(task.id);
 
     let dueLabel = '';
+    let dateOnlyLabel = '';
+    let repeatTextLabel = '';
     if (task.dueDate) {
         dueLabel = formatDueDateDisplay(task.dueDate, task.dueTime, task.dueRepeat, task.dueEndDate, task.dueEndTime);
+        dateOnlyLabel = formatDateOnlyDisplay(task.dueDate, task.dueTime, task.dueEndDate, task.dueEndTime);
+        if (task.dueRepeat) {
+            repeatTextLabel = getRepeatLabel(task.dueRepeat, task.dueDate);
+        }
         if (currentRoute === 'today' || currentRoute === 'tomorrow') {
             const today = new Date();
             const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -5856,6 +5938,7 @@ function createTaskRowElement(task, isStandalone = false) {
                 const project = projectsList.find(p => p.id === task.projectId);
                 const projectName = project ? project.name : 'Входящие';
                 dueLabel = dueLabel.replace('Сегодня', projectName).replace('Завтра', projectName);
+                dateOnlyLabel = dateOnlyLabel.replace('Сегодня', projectName).replace('Завтра', projectName);
             }
         }
     }
@@ -5896,8 +5979,8 @@ function createTaskRowElement(task, isStandalone = false) {
                     </svg>
                     <span style="vertical-align: middle;">${dueLabel}</span>
                     ${task.dueRepeat ? `
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
-                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
+                            <path d="M21.5 2v6h-6"></path><path d="M21.34 8A10 10 0 0 0 4.16 6.34L2.5 8"></path><path d="M2.5 22v-6h6"></path><path d="M2.66 16a10 10 0 0 0 17.18 1.66L21.5 16"></path>
                         </svg>
                     ` : ''}
                 </span>
@@ -5975,8 +6058,8 @@ function createTaskRowElement(task, isStandalone = false) {
         const isTodayTomorrowRoute = (currentRoute === 'today' || currentRoute === 'tomorrow');
 
         const repeatIconHtml = task.dueRepeat ? `
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
-                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
+                <path d="M21.5 2v6h-6"></path><path d="M21.34 8A10 10 0 0 0 4.16 6.34L2.5 8"></path><path d="M2.5 22v-6h6"></path><path d="M2.66 16a10 10 0 0 0 17.18 1.66L21.5 16"></path>
             </svg>
         ` : '';
 
@@ -6074,13 +6157,16 @@ function createTaskRowElement(task, isStandalone = false) {
                     <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
                 ` : ''}
-                <span style="vertical-align: middle;">${dueLabel}</span>
-                ${task.dueRepeat ? `
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
-                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
-                    </svg>
-                ` : ''}
+                <span style="vertical-align: middle;">${dateOnlyLabel || dueLabel}</span>
             </span>
+            ${repeatTextLabel ? `
+            <span class="task-repeat-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
+                    <path d="M21.5 2v6h-6"></path><path d="M21.34 8A10 10 0 0 0 4.16 6.34L2.5 8"></path><path d="M2.5 22v-6h6"></path><path d="M2.66 16a10 10 0 0 0 17.18 1.66L21.5 16"></path>
+                </svg>
+                <span style="vertical-align: middle;">${repeatTextLabel}</span>
+            </span>
+            ` : ''}
             `;
         })() : ''}
         <div class="task-actions">
@@ -11042,8 +11128,8 @@ function createSubtaskElement(subtask) {
                 </svg>
                 <span style="vertical-align: middle;">${label}</span>
                 ${subtask.dueRepeat ? `
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
-                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="10" height="10" style="vertical-align: middle; margin-left: 4px; display: inline-block;">
+                        <path d="M21.5 2v6h-6"></path><path d="M21.34 8A10 10 0 0 0 4.16 6.34L2.5 8"></path><path d="M2.5 22v-6h6"></path><path d="M2.66 16a10 10 0 0 0 17.18 1.66L21.5 16"></path>
                     </svg>
                 ` : ''}
             </span>

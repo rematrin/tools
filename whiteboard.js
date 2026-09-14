@@ -2997,33 +2997,173 @@ let startTouchPanX = 0;
 let startTouchPanY = 0;
 let startTouchZoom = 1;
 let startTouchDist = 0;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchedElementIdCandidate = null;
+let isTouchOnAlreadySelected = false;
 
 boardViewport.addEventListener('touchstart', (e) => {
     if (e.target.closest('a') || e.target.closest('button') || e.target.closest('[contenteditable="true"]') || e.target.closest('input') || e.target.closest('.pencilkit-dock') || e.target.closest('.element-options-panel')) {
         return; 
     }
 
-    const touchedElement = e.target.closest('.board-element');
-    const isSelectionHandle = e.target.closest('.selection-overlay-handle') || e.target.closest('.element-resize-handle');
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        touchedElementIdCandidate = null;
+        isTouchOnAlreadySelected = false;
 
-    if (e.touches.length === 1 && !isDrawing) {
-        if (touchedElement || isSelectionHandle) {
-            // Касание объекта или маркера: разрешаем перемещение объекта, отключаем панорамирование доски
+        const target = touch.target;
+        const rect = boardCanvas.getBoundingClientRect();
+        const clickX = (touch.clientX - rect.left) / zoom;
+        const clickY = (touch.clientY - rect.top) / zoom;
+
+        const touchedElement = target.closest('.board-element');
+        const handleEl = target.closest('.selection-overlay-handle') || target.closest('.element-resize-handle');
+
+        if (activeTool === 'draw') {
             isTouchPanning = false;
-        } else {
-            // Касание пустого места: снимаем выделение элементов и включаем навигацию по доске
-            if (activeTool !== 'draw' && selectedElementIds.size > 0) {
-                selectedElementIds.clear();
-                document.querySelectorAll('.board-element').forEach(el => el.classList.remove('selected'));
-                updateSelectionOverlay();
-                if (typeof updateElementOptionsPanel === 'function') {
-                    updateElementOptionsPanel();
+            if (localDrawingTool === 'select') {
+                let foundIndex = -1;
+                localStrokes.forEach((stroke, index) => {
+                    const touched = stroke.points.some(pt => {
+                        const dx = pt.x - clickX;
+                        const dy = pt.y - clickY;
+                        const r = Math.max(25, (stroke.baseWidth || 4) / 2 + 10);
+                        return Math.sqrt(dx * dx + dy * dy) < r;
+                    });
+                    if (touched) foundIndex = index;
+                });
+
+                if (foundIndex !== -1) {
+                    selectedLocalStrokeIndex = foundIndex;
+                    const strokeToMove = localStrokes[foundIndex];
+                    dragStartInfo = {
+                        type: 'local-stroke-drag',
+                        strokeIndex: foundIndex,
+                        startX: clickX,
+                        startY: clickY,
+                        initialPoints: strokeToMove.points.map(pt => ({ ...pt }))
+                    };
+                } else {
+                    selectedLocalStrokeIndex = -1;
+                    dragStartInfo = null;
                 }
+                redrawLocalStrokes();
+                return;
+            } else if (localDrawingTool === 'eraser') {
+                localStrokes = localStrokes.filter(stroke => {
+                    const touched = stroke.points.some(pt => {
+                        const dx = pt.x - clickX;
+                        const dy = pt.y - clickY;
+                        const r = Math.max(25, (stroke.baseWidth || 4) / 2 + 12);
+                        return Math.sqrt(dx * dx + dy * dy) < r;
+                    });
+                    return !touched;
+                });
+                redrawLocalStrokes();
+                dragStartInfo = { type: 'local-eraser-drag' };
+                return;
+            } else {
+                isDrawing = true;
+                activeDrawingPoints = [{ x: clickX, y: clickY, pressure: 0.5 }];
+                
+                const tool = localDrawingTool;
+                const baseW = toolSettings[tool] ? toolSettings[tool].width : 4;
+                const opacity = toolSettings[tool] ? toolSettings[tool].opacity : 1.0;
+
+                const { d, strokeWidth } = buildSvgPathAndWidth(activeDrawingPoints, baseW, tool);
+                activeDrawingPathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                activeDrawingPathEl.setAttribute("stroke", activeColor);
+                activeDrawingPathEl.setAttribute("stroke-width", strokeWidth.toFixed(1));
+                activeDrawingPathEl.setAttribute("fill", "none");
+                activeDrawingPathEl.setAttribute("stroke-linecap", tool === 'highlighter' ? "butt" : "round");
+                activeDrawingPathEl.setAttribute("stroke-linejoin", "round");
+                activeDrawingPathEl.setAttribute("stroke-opacity", opacity.toString());
+
+                if (tool === 'highlighter') {
+                    activeDrawingPathEl.style.mixBlendMode = 'multiply';
+                }
+
+                activeDrawingPathEl.setAttribute("d", d);
+                drawingLayer.appendChild(activeDrawingPathEl);
+                return;
             }
-            isTouchPanning = true;
-            startTouchPanX = e.touches[0].clientX - panX;
-            startTouchPanY = e.touches[0].clientY - panY;
         }
+
+        if (activeTool === 'eraser') {
+            isTouchPanning = false;
+            if (touchedElement) {
+                const elId = touchedElement.getAttribute('data-id');
+                deleteElement(elId);
+            }
+            return;
+        }
+
+        if (handleEl) {
+            isTouchPanning = false;
+            saveUndoState();
+            const handleType = handleEl.className.split(' ').find(c => c.startsWith('handle-')) ? handleEl.className.split(' ').find(c => c.startsWith('handle-')).replace('handle-', '') : 'br';
+            
+            let singleId = touchedElement ? touchedElement.getAttribute('data-id') : (selectedElementIds.size === 1 ? Array.from(selectedElementIds)[0] : null);
+            if (singleId && elements[singleId]) {
+                dragStartInfo = {
+                    type: 'resize',
+                    id: singleId,
+                    handle: handleType,
+                    startX: touch.clientX,
+                    startY: touch.clientY,
+                    startW: elements[singleId].width,
+                    startH: elements[singleId].height,
+                    startXPos: elements[singleId].x,
+                    startYPos: elements[singleId].y
+                };
+            }
+            return;
+        }
+
+        if (touchedElement) {
+            const elId = touchedElement.getAttribute('data-id');
+            isTouchOnAlreadySelected = selectedElementIds.has(elId);
+
+            if (isTouchOnAlreadySelected) {
+                // Элемент УЖЕ выделен -> можно сразу сдвигать его
+                isTouchPanning = false;
+                saveUndoState();
+                dragStartInfo = {
+                    type: 'element',
+                    id: elId,
+                    startX: touch.clientX,
+                    startY: touch.clientY,
+                    initialPositions: {}
+                };
+                selectedElementIds.forEach(id => {
+                    const elObj = elements[id];
+                    if (elObj) {
+                        const elDiv = document.querySelector(`.board-element[data-id="${id}"]`);
+                        if (elDiv) {
+                            elObj.width = elDiv.offsetWidth;
+                            elObj.height = elDiv.offsetHeight;
+                        }
+                        dragStartInfo.initialPositions[id] = { x: elObj.x, y: elObj.y };
+                    }
+                });
+            } else {
+                // Элемент НЕ выделен -> кандидат на выделение ТАПОМ. По умолчанию заготовляем панорамирование доски
+                touchedElementIdCandidate = elId;
+                isTouchPanning = false;
+                startTouchPanX = touch.clientX - panX;
+                startTouchPanY = touch.clientY - panY;
+            }
+            return;
+        }
+
+        // Касание пустого места
+        isTouchPanning = true;
+        startTouchPanX = touch.clientX - panX;
+        startTouchPanY = touch.clientY - panY;
+
     } else if (e.touches.length === 2) {
         isTouchPanning = false;
         startTouchZoom = zoom;
@@ -3031,13 +3171,159 @@ boardViewport.addEventListener('touchstart', (e) => {
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         startTouchDist = Math.sqrt(dx * dx + dy * dy);
     }
-}, { passive: true });
+}, { passive: false });
 
 boardViewport.addEventListener('touchmove', (e) => {
-    if (e.touches.length === 1 && isTouchPanning && !isDrawing) {
-        panX = e.touches[0].clientX - startTouchPanX;
-        panY = e.touches[0].clientY - startTouchPanY;
-        updateTransform();
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = boardCanvas.getBoundingClientRect();
+        const curX = (touch.clientX - rect.left) / zoom;
+        const curY = (touch.clientY - rect.top) / zoom;
+        const dist = Math.hypot(touch.clientX - touchStartX, touch.clientY - touchStartY);
+
+        // Если касание началось на НЕВЫДЕЛЕННОМ элементе, но палец сдвинулся (> 8px) -> это движение/скролл доски
+        if (touchedElementIdCandidate && dist > 8) {
+            isTouchPanning = true;
+            touchedElementIdCandidate = null; // Отменяем кандидатуру выделения
+        }
+
+        if (isTouchPanning) {
+            panX = touch.clientX - startTouchPanX;
+            panY = touch.clientY - startTouchPanY;
+            updateTransform();
+            return;
+        }
+
+        if (isDrawing && activeDrawingPathEl) {
+            activeDrawingPoints.push({ x: curX, y: curY, pressure: 0.5 });
+            const tool = localDrawingTool;
+            const baseW = toolSettings[tool] ? toolSettings[tool].width : 4;
+            const { d, strokeWidth } = buildSvgPathAndWidth(activeDrawingPoints, baseW, tool);
+            activeDrawingPathEl.setAttribute("d", d);
+            activeDrawingPathEl.setAttribute("stroke-width", strokeWidth.toFixed(1));
+            if (e.cancelable) e.preventDefault();
+            return;
+        }
+
+        if (dragStartInfo) {
+            if (e.cancelable) e.preventDefault();
+
+            if (dragStartInfo.type === 'local-stroke-drag') {
+                const deltaX = curX - dragStartInfo.startX;
+                const deltaY = curY - dragStartInfo.startY;
+                const stroke = localStrokes[dragStartInfo.strokeIndex];
+                if (stroke && dragStartInfo.initialPoints) {
+                    stroke.points = dragStartInfo.initialPoints.map(pt => ({
+                        ...pt,
+                        x: pt.x + deltaX,
+                        y: pt.y + deltaY
+                    }));
+                    redrawLocalStrokes();
+                }
+                return;
+            }
+
+            if (dragStartInfo.type === 'local-eraser-drag') {
+                localStrokes = localStrokes.filter(stroke => {
+                    const touched = stroke.points.some(pt => {
+                        const dx = pt.x - curX;
+                        const dy = pt.y - curY;
+                        const r = Math.max(25, (stroke.baseWidth || 4) / 2 + 12);
+                        return Math.sqrt(dx * dx + dy * dy) < r;
+                    });
+                    return !touched;
+                });
+                redrawLocalStrokes();
+                return;
+            }
+
+            const deltaX = (touch.clientX - dragStartInfo.startX) / zoom;
+            const deltaY = (touch.clientY - dragStartInfo.startY) / zoom;
+
+            if (dragStartInfo.type === 'element') {
+                selectedElementIds.forEach(id => {
+                    const el = elements[id];
+                    const startPos = dragStartInfo.initialPositions[id];
+                    if (el && startPos) {
+                        const prevX = el.x;
+                        const prevY = el.y;
+                        
+                        el.x = Math.max(0, Math.min(startPos.x + deltaX, boardConfig.width - el.width));
+                        el.y = Math.max(0, Math.min(startPos.y + deltaY, boardConfig.height - el.height));
+                        
+                        if (el.type === 'frame' || el.type === 'column') {
+                            const dX = el.x - prevX;
+                            const dY = el.y - prevY;
+                            Object.values(elements).forEach(child => {
+                                if (child.parentId === el.id) {
+                                    child.x += dX;
+                                    child.y += dY;
+                                    const childDiv = document.querySelector(`.board-element[data-id="${child.id}"]`);
+                                    if (childDiv) {
+                                        childDiv.style.left = `${child.x}px`;
+                                        childDiv.style.top = `${child.y}px`;
+                                    }
+                                }
+                            });
+                        }
+
+                        const elDiv = document.querySelector(`.board-element[data-id="${el.id}"]`);
+                        if (elDiv) {
+                            elDiv.style.left = `${el.x}px`;
+                            elDiv.style.top = `${el.y}px`;
+                        }
+                    }
+                });
+                updateSelectionOverlay();
+                if (typeof updateElementOptionsPanel === 'function') {
+                    updateElementOptionsPanel();
+                }
+            } else if (dragStartInfo.type === 'resize') {
+                const el = elements[dragStartInfo.id];
+                if (el) {
+                    const handle = dragStartInfo.handle;
+                    let minW = el.type === 'text' ? 160 : (el.type === 'sticker' ? 80 : 60);
+                    let minH = el.type === 'text' ? 48 : (el.type === 'sticker' ? 80 : 40);
+
+                    let newWidth = el.width;
+                    let newHeight = el.height;
+                    let newX = el.x;
+                    let newY = el.y;
+
+                    if (handle === 'br') {
+                        newWidth = Math.max(minW, dragStartInfo.startW + deltaX);
+                        newHeight = Math.max(minH, dragStartInfo.startH + deltaY);
+                    } else if (handle === 'bl') {
+                        newWidth = Math.max(minW, dragStartInfo.startW - deltaX);
+                        newHeight = Math.max(minH, dragStartInfo.startH + deltaY);
+                        if (newWidth > minW) newX = dragStartInfo.startXPos + deltaX;
+                    } else if (handle === 'tr') {
+                        newWidth = Math.max(minW, dragStartInfo.startW + deltaX);
+                        newHeight = Math.max(minH, dragStartInfo.startH - deltaY);
+                        if (newHeight > minH) newY = dragStartInfo.startYPos + deltaY;
+                    } else if (handle === 'tl') {
+                        newWidth = Math.max(minW, dragStartInfo.startW - deltaX);
+                        newHeight = Math.max(minH, dragStartInfo.startH - deltaY);
+                        if (newWidth > minW) newX = dragStartInfo.startXPos + deltaX;
+                        if (newHeight > minH) newY = dragStartInfo.startYPos + deltaY;
+                    }
+
+                    el.width = newWidth;
+                    el.height = newHeight;
+                    el.x = newX;
+                    el.y = newY;
+
+                    const elDiv = document.querySelector(`.board-element[data-id="${el.id}"]`);
+                    if (elDiv) {
+                        elDiv.style.width = `${el.width}px`;
+                        elDiv.style.height = `${el.height}px`;
+                        elDiv.style.left = `${el.x}px`;
+                        elDiv.style.top = `${el.y}px`;
+                    }
+                    updateSelectionOverlay();
+                }
+            }
+        }
     } else if (e.touches.length === 2) {
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
@@ -3053,10 +3339,81 @@ boardViewport.addEventListener('touchmove', (e) => {
         
         zoomTo(startTouchZoom * factor, mouseX, mouseY);
     }
-}, { passive: true });
+}, { passive: false });
 
-boardViewport.addEventListener('touchend', () => {
+boardViewport.addEventListener('touchend', (e) => {
     isTouchPanning = false;
+
+    let endX = touchStartX;
+    let endY = touchStartY;
+    if (e.changedTouches && e.changedTouches.length > 0) {
+        endX = e.changedTouches[0].clientX;
+        endY = e.changedTouches[0].clientY;
+    }
+    const dist = Math.hypot(endX - touchStartX, endY - touchStartY);
+
+    // Если это был ТАП (короткий клик пальцем без сдвига) по НЕВЫДЕЛЕННОМУ элементу -> ВЫДЕЛЯЕМ
+    if (touchedElementIdCandidate && dist <= 8) {
+        selectedElementIds.clear();
+        document.querySelectorAll('.board-element').forEach(el => el.classList.remove('selected'));
+        selectedElementIds.add(touchedElementIdCandidate);
+        const elDiv = document.querySelector(`.board-element[data-id="${touchedElementIdCandidate}"]`);
+        if (elDiv) elDiv.classList.add('selected');
+
+        const allElementsArray = Object.values(elements);
+        const maxZ = allElementsArray.reduce((max, el) => Math.max(max, el.zIndex || 0), 0);
+        if (elements[touchedElementIdCandidate] && elements[touchedElementIdCandidate].zIndex !== maxZ) {
+            elements[touchedElementIdCandidate].zIndex = maxZ + 1;
+            saveElement(elements[touchedElementIdCandidate]);
+        }
+    } else if (!touchedElementIdCandidate && !isTouchOnAlreadySelected && dist <= 8 && activeTool !== 'draw') {
+        // ТАП по пустому месту -> СНИМАЕМ выделение
+        selectedElementIds.clear();
+        document.querySelectorAll('.board-element').forEach(el => el.classList.remove('selected'));
+    }
+
+    touchedElementIdCandidate = null;
+    isTouchOnAlreadySelected = false;
+
+    if (isDrawing) {
+        isDrawing = false;
+        if (activeDrawingPoints.length > 1) {
+            const tool = localDrawingTool;
+            const baseW = toolSettings[tool] ? toolSettings[tool].width : 4;
+            const opacity = toolSettings[tool] ? toolSettings[tool].opacity : 1.0;
+            localStrokes.push({
+                color: activeColor,
+                toolType: tool,
+                baseWidth: baseW,
+                opacity: opacity,
+                points: activeDrawingPoints
+            });
+            localRedoStrokes = [];
+        }
+        if (activeDrawingPathEl) {
+            activeDrawingPathEl.remove();
+            activeDrawingPathEl = null;
+        }
+        redrawLocalStrokes();
+    }
+
+    if (dragStartInfo) {
+        if (dragStartInfo.type === 'element') {
+            selectedElementIds.forEach(id => {
+                const el = elements[id];
+                if (el) saveElement(el);
+            });
+        } else if (dragStartInfo.type === 'resize') {
+            if (elements[dragStartInfo.id]) {
+                saveElement(elements[dragStartInfo.id]);
+            }
+        }
+        dragStartInfo = null;
+    }
+    updateSelectionOverlay();
+    if (typeof updateElementOptionsPanel === 'function') {
+        updateElementOptionsPanel();
+    }
 }, { passive: true });
 
 // === ОБРАБОТКА ПОИНТЕР-СОБЫТИЙ ДЛЯ APPLE PENCIL И СТИЛУСОВ ===

@@ -3124,6 +3124,24 @@ boardViewport.addEventListener('touchstart', (e) => {
         }
 
         if (touchedElement) {
+            const textContentEl = target.closest('.el-text-content');
+            if (textContentEl) {
+                const textRect = textContentEl.getBoundingClientRect();
+                const isScrollbarArea = (touch.clientX >= textRect.right - 28);
+                if (isScrollbarArea && textContentEl.scrollHeight > textContentEl.clientHeight) {
+                    isTouchPanning = false;
+                    dragStartInfo = {
+                        type: 'text-scrollbar-scroll',
+                        el: textContentEl,
+                        startY: touch.clientY,
+                        startScrollTop: textContentEl.scrollTop,
+                        rect: textRect
+                    };
+                    if (e.cancelable) e.preventDefault();
+                    return;
+                }
+            }
+
             const elId = touchedElement.getAttribute('data-id');
             isTouchOnAlreadySelected = selectedElementIds.has(elId);
 
@@ -3207,6 +3225,15 @@ boardViewport.addEventListener('touchmove', (e) => {
 
         if (dragStartInfo) {
             if (e.cancelable) e.preventDefault();
+
+            if (dragStartInfo.type === 'text-scrollbar-scroll') {
+                const deltaY = touch.clientY - dragStartInfo.startY;
+                const scrollableH = dragStartInfo.el.scrollHeight - dragStartInfo.el.clientHeight;
+                const trackH = dragStartInfo.rect.height;
+                const ratio = scrollableH / Math.max(1, trackH - 30);
+                dragStartInfo.el.scrollTop = Math.max(0, Math.min(scrollableH, dragStartInfo.startScrollTop + deltaY * Math.max(1, ratio)));
+                return;
+            }
 
             if (dragStartInfo.type === 'local-stroke-drag') {
                 const deltaX = curX - dragStartInfo.startX;

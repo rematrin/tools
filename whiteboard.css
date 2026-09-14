@@ -467,10 +467,27 @@ body {
     word-break: break-word;
     color: var(--text-color);
     cursor: pointer;
+    touch-action: none; /* Отключаем свайп-скроллинг текста пальцем на планшетах */
+}
+
+.el-text-content::-webkit-scrollbar {
+    width: 8px;
+}
+.el-text-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 4px;
+}
+.el-text-content::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.6);
+    border-radius: 4px;
+}
+.el-text-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.9);
 }
 
 .el-text-content[contenteditable="true"] {
     cursor: text;
+    touch-action: auto;
 }
 
 /* Тип: Стикер */

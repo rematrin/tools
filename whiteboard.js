@@ -2991,134 +2991,73 @@ boardTitleInput.addEventListener('keydown', (e) => {
     }
 });
 
-// Переменная отслеживания первого центрирования
-let hasCenteredOnLoad = false;
+// === ОБРАБОТКА ТАЧ-СОБЫТИЙ ДЛЯ ПЛАНШЕТОВ / СЕНСОРНЫХ ЭКРАНОВ ===
+let isTouchPanning = false;
+let startTouchPanX = 0;
+let startTouchPanY = 0;
+let startTouchZoom = 1;
+let startTouchDist = 0;
 
-function centerBoardOnElements() {
-    const els = Object.values(elements);
-    const headerEl = document.querySelector('.board-header');
-    const headerHeight = headerEl ? headerEl.offsetHeight : 64;
-    const bannerEl = document.getElementById('mobileReadOnlyBanner');
-    const bannerHeight = (bannerEl && mobileReadOnlyBanner.style.display !== 'none') ? 40 : 0;
-    
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight - headerHeight - bannerHeight;
-
-    if (isMobileOrTablet) {
-        // На мобильных подбираем зум, чтобы уместить все элементы на экране
-        if (els.length > 0) {
-            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-            els.forEach(el => {
-                minX = Math.min(minX, el.x);
-                maxX = Math.max(maxX, el.x + el.width);
-                minY = Math.min(minY, el.y);
-                maxY = Math.max(maxY, el.y + el.height);
-            });
-            const contentWidth = maxX - minX;
-            const contentHeight = maxY - minY;
-            
-            // Задаем масштаб с запасом 80px по бокам
-            zoom = Math.min(viewportWidth / (contentWidth + 80), viewportHeight / (contentHeight + 80));
-            zoom = Math.min(Math.max(zoom, 0.15), 1.2); // Ограничиваем сверху 1.2
-            
-            const centerX = minX + contentWidth / 2;
-            const centerY = minY + contentHeight / 2;
-            
-            panX = viewportWidth / 2 - centerX * zoom;
-            panY = (headerHeight + bannerHeight) + viewportHeight / 2 - centerY * zoom;
-        } else {
-            // Если доска пустая, вмещаем весь холст в экран
-            zoom = Math.min(viewportWidth / boardConfig.width, viewportHeight / boardConfig.height) * 0.95;
-            zoom = Math.min(Math.max(zoom, 0.15), 1.0);
-            
-            panX = (viewportWidth - boardConfig.width * zoom) / 2;
-            panY = (headerHeight + bannerHeight) + (viewportHeight - boardConfig.height * zoom) / 2;
-        }
-    } else {
-        // На десктопе сохраняем текущий масштаб, центрируем с учетом шапки
-        if (els.length > 0) {
-            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-            els.forEach(el => {
-                minX = Math.min(minX, el.x);
-                maxX = Math.max(maxX, el.x + el.width);
-                minY = Math.min(minY, el.y);
-                maxY = Math.max(maxY, el.y + el.height);
-            });
-            const centerX = minX + (maxX - minX) / 2;
-            const centerY = minY + (maxY - minY) / 2;
-            
-            panX = viewportWidth / 2 - centerX * zoom;
-            panY = (headerHeight + bannerHeight) + viewportHeight / 2 - centerY * zoom;
-        } else {
-            panX = (viewportWidth - boardConfig.width * zoom) / 2;
-            panY = (headerHeight + bannerHeight) + (viewportHeight - boardConfig.height * zoom) / 2;
-        }
+boardViewport.addEventListener('touchstart', (e) => {
+    if (e.target.closest('a') || e.target.closest('button') || e.target.closest('[contenteditable="true"]') || e.target.closest('input') || e.target.closest('.pencilkit-dock') || e.target.closest('.element-options-panel')) {
+        return; 
     }
-    updateTransform();
-}
 
-// === МОБИЛЬНАЯ АДАПТИВНОСТЬ И ПОДДЕРЖКА APPLE PENCIL / IPAD ===
-const isSmallMobile = window.innerWidth < 640 && (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
+    const touchedElement = e.target.closest('.board-element');
+    const isSelectionHandle = e.target.closest('.selection-overlay-handle') || e.target.closest('.element-resize-handle');
 
-if (isSmallMobile) {
-    const mobileReadOnlyBanner = document.getElementById('mobileReadOnlyBanner');
-    if (mobileReadOnlyBanner) {
-        mobileReadOnlyBanner.style.display = 'flex';
-    }
-    document.body.classList.add('mobile-readonly-mode');
-}
-
-// Тач-навигация (панорамирование и 2-пальцевый зум для планшетов и iPad)
-if (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) {
-    let startTouchPanX = 0;
-    let startTouchPanY = 0;
-    let isTouchPanning = false;
-    let startTouchDist = 0;
-    let startTouchZoom = 1.0;
-
-    boardViewport.addEventListener('touchstart', (e) => {
-        if (e.target.closest('a') || e.target.closest('button') || e.target.closest('[contenteditable="true"]')) {
-            return; 
-        }
-        if (e.touches.length === 1 && !isDrawing) {
+    if (e.touches.length === 1 && !isDrawing) {
+        if (touchedElement || isSelectionHandle) {
+            // Касание объекта или маркера: разрешаем перемещение объекта, отключаем панорамирование доски
+            isTouchPanning = false;
+        } else {
+            // Касание пустого места: снимаем выделение элементов и включаем навигацию по доске
+            if (activeTool !== 'draw' && selectedElementIds.size > 0) {
+                selectedElementIds.clear();
+                document.querySelectorAll('.board-element').forEach(el => el.classList.remove('selected'));
+                updateSelectionOverlay();
+                if (typeof updateElementOptionsPanel === 'function') {
+                    updateElementOptionsPanel();
+                }
+            }
             isTouchPanning = true;
             startTouchPanX = e.touches[0].clientX - panX;
             startTouchPanY = e.touches[0].clientY - panY;
-        } else if (e.touches.length === 2) {
-            isTouchPanning = false;
-            startTouchZoom = zoom;
-            const dx = e.touches[0].clientX - e.touches[1].clientX;
-            const dy = e.touches[0].clientY - e.touches[1].clientY;
-            startTouchDist = Math.sqrt(dx * dx + dy * dy);
         }
-    }, { passive: true });
-
-    boardViewport.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 1 && isTouchPanning && !isDrawing) {
-            panX = e.touches[0].clientX - startTouchPanX;
-            panY = e.touches[0].clientY - startTouchPanY;
-            updateTransform();
-        } else if (e.touches.length === 2) {
-            const dx = e.touches[0].clientX - e.touches[1].clientX;
-            const dy = e.touches[0].clientY - e.touches[1].clientY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            
-            const factor = dist / Math.max(1, startTouchDist);
-            const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-            const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-            
-            const rect = boardViewport.getBoundingClientRect();
-            const mouseX = centerX - rect.left;
-            const mouseY = centerY - rect.top;
-            
-            zoomTo(startTouchZoom * factor, mouseX, mouseY);
-        }
-    }, { passive: true });
-
-    boardViewport.addEventListener('touchend', () => {
+    } else if (e.touches.length === 2) {
         isTouchPanning = false;
-    }, { passive: true });
-}
+        startTouchZoom = zoom;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        startTouchDist = Math.sqrt(dx * dx + dy * dy);
+    }
+}, { passive: true });
+
+boardViewport.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1 && isTouchPanning && !isDrawing) {
+        panX = e.touches[0].clientX - startTouchPanX;
+        panY = e.touches[0].clientY - startTouchPanY;
+        updateTransform();
+    } else if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        const factor = dist / Math.max(1, startTouchDist);
+        const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        
+        const rect = boardViewport.getBoundingClientRect();
+        const mouseX = centerX - rect.left;
+        const mouseY = centerY - rect.top;
+        
+        zoomTo(startTouchZoom * factor, mouseX, mouseY);
+    }
+}, { passive: true });
+
+boardViewport.addEventListener('touchend', () => {
+    isTouchPanning = false;
+}, { passive: true });
 
 // === ОБРАБОТКА ПОИНТЕР-СОБЫТИЙ ДЛЯ APPLE PENCIL И СТИЛУСОВ ===
 let isPenDrawing = false;

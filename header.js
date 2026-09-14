@@ -53,9 +53,21 @@ fetch('header.html')
             });
         }
 
-        const auth = getAuth();
-        onAuthStateChanged(auth, (user) => {
-            updateHeaderData(user);
+        if (window.currentUser !== undefined) {
+            updateHeaderData(window.currentUser);
+        }
+
+        window.addEventListener('authChanged', (e) => {
+            updateHeaderData(e.detail ? e.detail.user : null);
         });
+
+        try {
+            const auth = getAuth();
+            onAuthStateChanged(auth, (user) => {
+                updateHeaderData(user);
+            });
+        } catch (e) {
+            // Firebase app initialization is handled by auth-widget.js which dispatches authChanged
+        }
     })
     .catch(error => console.error("Ошибка:", error));

@@ -1,9 +1,10 @@
 /* whiteboard.css */
 
 :root {
-    --board-bg: #f8fafc;
-    --canvas-bg: #ffffff;
-    --grid-color: rgba(203, 213, 225, 0.6);
+    --board-bg: #e2e8f0;
+    --canvas-bg: #f3f4f6;
+    --grid-color: rgba(148, 163, 184, 0.6);
+
     --border-color: #e2e8f0;
     --toolbar-bg: rgba(255, 255, 255, 0.85);
     --header-bg: rgba(255, 255, 255, 0.85);
@@ -208,7 +209,9 @@ body {
     height: 100vh;
     overflow: hidden;
     z-index: 1;
+    background-color: var(--board-bg);
 }
+
 
 .board-canvas-holder {
     position: absolute;

@@ -979,6 +979,41 @@ btnDrawSave.addEventListener('click', () => {
     exitDrawingMode(true);
 });
 
+function buildSvgPathAndWidth(points, defaultWidth = 4) {
+    if (!points || points.length === 0) return { d: '', strokeWidth: defaultWidth };
+    
+    let totalP = 0, countP = 0;
+    points.forEach(pt => {
+        if (pt.pressure !== undefined && pt.pressure > 0) {
+            totalP += pt.pressure;
+            countP++;
+        }
+    });
+    
+    let strokeWidth = defaultWidth;
+    if (countP > 0) {
+        const avgP = totalP / countP;
+        strokeWidth = Math.max(1.5, Math.min(18, defaultWidth * (0.35 + avgP * 1.3)));
+    }
+    
+    if (points.length === 1) {
+        return {
+            d: `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)} L ${(points[0].x + 0.1).toFixed(1)} ${(points[0].y + 0.1).toFixed(1)}`,
+            strokeWidth
+        };
+    }
+    
+    let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+    for (let i = 1; i < points.length - 1; i++) {
+        const xc = (points[i].x + points[i + 1].x) / 2;
+        const yc = (points[i].y + points[i + 1].y) / 2;
+        d += ` Q ${points[i].x.toFixed(1)} ${points[i].y.toFixed(1)} ${xc.toFixed(1)} ${yc.toFixed(1)}`;
+    }
+    d += ` L ${points[points.length - 1].x.toFixed(1)} ${points[points.length - 1].y.toFixed(1)}`;
+    
+    return { d, strokeWidth };
+}
+
 function exitDrawingMode(save = false) {
     document.body.classList.remove('drawing-mode-active');
     drawingModePanel.classList.remove('active');
@@ -999,9 +1034,11 @@ function exitDrawingMode(save = false) {
         const shiftedStrokes = localStrokes.map(s => {
             return {
                 color: s.color,
+                baseWidth: s.baseWidth || 4,
                 points: s.points.map(pt => ({
                     x: pt.x - minX,
-                    y: pt.y - minY
+                    y: pt.y - minY,
+                    pressure: pt.pressure !== undefined ? pt.pressure : 0.5
                 }))
             };
         });
@@ -1037,19 +1074,15 @@ function exitDrawingMode(save = false) {
 
 function redrawLocalStrokes() {
     drawingLayer.innerHTML = '';
-    localStrokes.forEach((stroke, strokeIdx) => {
+    localStrokes.forEach((stroke) => {
         if (!stroke.points || stroke.points.length === 0) return;
+        const { d, strokeWidth } = buildSvgPathAndWidth(stroke.points, stroke.baseWidth || 4);
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("stroke", stroke.color);
-        path.setAttribute("stroke-width", "4");
+        path.setAttribute("stroke", stroke.color || activeColor);
+        path.setAttribute("stroke-width", strokeWidth.toFixed(1));
         path.setAttribute("fill", "none");
         path.setAttribute("stroke-linecap", "round");
         path.setAttribute("stroke-linejoin", "round");
-        
-        let d = `M ${stroke.points[0].x} ${stroke.points[0].y}`;
-        for (let i = 1; i < stroke.points.length; i++) {
-            d += ` L ${stroke.points[i].x} ${stroke.points[i].y}`;
-        }
         path.setAttribute("d", d);
         drawingLayer.appendChild(path);
     });
@@ -1621,17 +1654,13 @@ function renderElements() {
             if (el.strokes) {
                 el.strokes.forEach(stroke => {
                     if (!stroke.points || stroke.points.length === 0) return;
+                    const { d, strokeWidth } = buildSvgPathAndWidth(stroke.points, stroke.baseWidth || 4);
                     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
                     path.setAttribute("stroke", stroke.color || "#000");
-                    path.setAttribute("stroke-width", "4");
+                    path.setAttribute("stroke-width", strokeWidth.toFixed(1));
                     path.setAttribute("fill", "none");
                     path.setAttribute("stroke-linecap", "round");
                     path.setAttribute("stroke-linejoin", "round");
-                    
-                    let d = `M ${stroke.points[0].x} ${stroke.points[0].y}`;
-                    for (let i = 1; i < stroke.points.length; i++) {
-                        d += ` L ${stroke.points[i].x} ${stroke.points[i].y}`;
-                    }
                     path.setAttribute("d", d);
                     svgEl.appendChild(path);
                 });
@@ -2625,19 +2654,19 @@ function centerBoardOnElements() {
     updateTransform();
 }
 
-// === МОБИЛЬНАЯ АДАПТИВНОСТЬ И ТАЧ-СОБЫТИЯ ===
-const isMobileOrTablet = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+// === МОБИЛЬНАЯ АДАПТИВНОСТЬ И ПОДДЕРЖКА APPLE PENCIL / IPAD ===
+const isSmallMobile = window.innerWidth < 640 && (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
 
-if (isMobileOrTablet) {
+if (isSmallMobile) {
     const mobileReadOnlyBanner = document.getElementById('mobileReadOnlyBanner');
     if (mobileReadOnlyBanner) {
         mobileReadOnlyBanner.style.display = 'flex';
     }
-    
-    // Скрываем маркеры ресайза и тулбары в режиме просмотра
     document.body.classList.add('mobile-readonly-mode');
-    
-    // Инициализация тач-событий для навигации
+}
+
+// Тач-навигация (панорамирование и 2-пальцевый зум для планшетов и iPad)
+if (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) {
     let startTouchPanX = 0;
     let startTouchPanY = 0;
     let isTouchPanning = false;
@@ -2645,10 +2674,10 @@ if (isMobileOrTablet) {
     let startTouchZoom = 1.0;
 
     boardViewport.addEventListener('touchstart', (e) => {
-        if (e.target.closest('a') || e.target.closest('button')) {
+        if (e.target.closest('a') || e.target.closest('button') || e.target.closest('[contenteditable="true"]')) {
             return; 
         }
-        if (e.touches.length === 1) {
+        if (e.touches.length === 1 && !isDrawing) {
             isTouchPanning = true;
             startTouchPanX = e.touches[0].clientX - panX;
             startTouchPanY = e.touches[0].clientY - panY;
@@ -2662,7 +2691,7 @@ if (isMobileOrTablet) {
     }, { passive: true });
 
     boardViewport.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 1 && isTouchPanning) {
+        if (e.touches.length === 1 && isTouchPanning && !isDrawing) {
             panX = e.touches[0].clientX - startTouchPanX;
             panY = e.touches[0].clientY - startTouchPanY;
             updateTransform();
@@ -2671,7 +2700,7 @@ if (isMobileOrTablet) {
             const dy = e.touches[0].clientY - e.touches[1].clientY;
             const dist = Math.sqrt(dx * dx + dy * dy);
             
-            const factor = dist / startTouchDist;
+            const factor = dist / Math.max(1, startTouchDist);
             const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
             const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
             
@@ -2683,10 +2712,130 @@ if (isMobileOrTablet) {
         }
     }, { passive: true });
 
-    boardViewport.addEventListener('touchend', (e) => {
+    boardViewport.addEventListener('touchend', () => {
         isTouchPanning = false;
     }, { passive: true });
 }
+
+// === ОБРАБОТКА ПОИНТЕР-СОБЫТИЙ ДЛЯ APPLE PENCIL И СТИЛУСОВ ===
+let isPenDrawing = false;
+let activePenPointerId = null;
+
+boardViewport.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'pen') return;
+
+    if (e.target.closest('[contenteditable="true"]') || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.closest('button')) {
+        return;
+    }
+
+    const isEraserPen = (e.button === 5 || (e.buttons & 32) || (e.pointerType === 'pen' && e.button === 2));
+
+    if (activeTool !== 'draw' && activeTool !== 'eraser' && !isEraserPen) {
+        setTool('draw');
+    }
+
+    const rect = boardCanvas.getBoundingClientRect();
+    const clickX = (e.clientX - rect.left) / zoom;
+    const clickY = (e.clientY - rect.top) / zoom;
+    const pressure = (e.pressure !== undefined && e.pressure > 0) ? e.pressure : 0.5;
+
+    isPenDrawing = true;
+    activePenPointerId = e.pointerId;
+
+    if (activeTool === 'eraser' || isEraserPen) {
+        localStrokes = localStrokes.filter(stroke => {
+            const touched = stroke.points.some(pt => {
+                const dx = pt.x - clickX;
+                const dy = pt.y - clickY;
+                return Math.sqrt(dx * dx + dy * dy) < 20;
+            });
+            return !touched;
+        });
+        redrawLocalStrokes();
+        dragStartInfo = { type: 'local-eraser-drag' };
+    } else {
+        isDrawing = true;
+        activeDrawingPoints = [{ x: clickX, y: clickY, pressure: pressure }];
+        
+        activeDrawingPathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        activeDrawingPathEl.setAttribute("stroke", activeColor);
+        activeDrawingPathEl.setAttribute("stroke-width", (4 * (0.35 + pressure * 1.3)).toFixed(1));
+        activeDrawingPathEl.setAttribute("fill", "none");
+        activeDrawingPathEl.setAttribute("stroke-linecap", "round");
+        activeDrawingPathEl.setAttribute("stroke-linejoin", "round");
+        activeDrawingPathEl.setAttribute("d", `M ${clickX.toFixed(1)} ${clickY.toFixed(1)}`);
+        drawingLayer.appendChild(activeDrawingPathEl);
+    }
+
+    e.preventDefault();
+}, { passive: false });
+
+boardViewport.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'pen' || !isPenDrawing || activePenPointerId !== e.pointerId) return;
+
+    const rect = boardCanvas.getBoundingClientRect();
+    const coalescedEvents = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+
+    if (dragStartInfo && dragStartInfo.type === 'local-eraser-drag') {
+        coalescedEvents.forEach(evt => {
+            const curX = (evt.clientX - rect.left) / zoom;
+            const curY = (evt.clientY - rect.top) / zoom;
+            localStrokes = localStrokes.filter(stroke => {
+                const touched = stroke.points.some(pt => {
+                    const dx = pt.x - curX;
+                    const dy = pt.y - curY;
+                    return Math.sqrt(dx * dx + dy * dy) < 20;
+                });
+                return !touched;
+            });
+        });
+        redrawLocalStrokes();
+        return;
+    }
+
+    if (isDrawing && activeDrawingPathEl) {
+        coalescedEvents.forEach(evt => {
+            const curX = (evt.clientX - rect.left) / zoom;
+            const curY = (evt.clientY - rect.top) / zoom;
+            const pressure = (evt.pressure !== undefined && evt.pressure > 0) ? evt.pressure : 0.5;
+            activeDrawingPoints.push({ x: curX, y: curY, pressure: pressure });
+        });
+
+        const { d, strokeWidth } = buildSvgPathAndWidth(activeDrawingPoints, 4);
+        activeDrawingPathEl.setAttribute("d", d);
+        activeDrawingPathEl.setAttribute("stroke-width", strokeWidth.toFixed(1));
+    }
+
+    e.preventDefault();
+}, { passive: false });
+
+const endPenDrawing = (e) => {
+    if (e.pointerType !== 'pen' || activePenPointerId !== e.pointerId) return;
+    
+    isPenDrawing = false;
+    activePenPointerId = null;
+
+    if (isDrawing) {
+        isDrawing = false;
+        if (activeDrawingPoints.length > 1) {
+            localStrokes.push({
+                color: activeColor,
+                baseWidth: 4,
+                points: activeDrawingPoints
+            });
+            localRedoStrokes = [];
+        }
+        if (activeDrawingPathEl) {
+            activeDrawingPathEl.remove();
+            activeDrawingPathEl = null;
+        }
+        redrawLocalStrokes();
+    }
+    dragStartInfo = null;
+};
+
+boardViewport.addEventListener('pointerup', endPenDrawing);
+boardViewport.addEventListener('pointercancel', endPenDrawing);
 
 // Запуск центрирования при первой загрузке данных
 setTimeout(() => {

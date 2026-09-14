@@ -1090,6 +1090,13 @@ body.drawing-mode-active .board-canvas {
     overflow: visible !important;
 }
 
+/* Touch and Apple Pencil optimizations */
+.board-container, .board-canvas-holder, .board-canvas, .drawing-layer {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
 /* === МОБИЛЬНАЯ АДАПТИВНОСТЬ И БАННЕР === */
 .mobile-readonly-banner {
     position: fixed;
@@ -1117,16 +1124,27 @@ body.dark .mobile-readonly-banner {
     border-color: #92400e;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 640px) {
     .board-toolbar {
-        display: none !important;
+        left: 6px;
+        padding: 4px;
+        gap: 4px;
     }
     .board-header {
         padding: 0 8px;
     }
-    /* Сдвигаем рабочую область ниже, чтобы баннер не перекрывал ее */
     body.mobile-readonly-mode .board-container {
         top: 104px !important;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+    .board-toolbar {
+        display: flex !important;
+        left: 10px;
+    }
+    .board-header {
+        padding: 0 12px;
     }
 }
 

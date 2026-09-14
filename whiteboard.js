@@ -807,7 +807,7 @@ function updateTransform() {
 
 function zoomTo(newZoom, centerX, centerY) {
     const prevZoom = zoom;
-    zoom = Math.min(Math.max(newZoom, 0.15), 4);
+    zoom = Math.min(Math.max(newZoom, 0.2), 3.0);
     panX = centerX - ((centerX - panX) * zoom) / prevZoom;
     panY = centerY - ((centerY - panY) * zoom) / prevZoom;
     updateTransform();
@@ -1393,8 +1393,8 @@ function createNewElement(type, x, y, extra = {}) {
         width = 280;
         height = 110;
     } else if (type === 'board') {
-        width = 220;
-        height = 80;
+        width = 240;
+        height = 84;
     } else if (type === 'column') {
         width = 240;
         height = 300;
@@ -1413,7 +1413,7 @@ function createNewElement(type, x, y, extra = {}) {
         width: finalWidth,
         height: finalHeight,
         zIndex: maxZ + 1,
-        color: (type === 'text' || type === 'board' || type === 'column' || type === 'frame' || type === 'link') ? '#ffffff' : activeColor, // Текстовый блок, встроенная доска, столбец, группа и ссылка изначально белые
+        color: (type === 'board') ? null : ((type === 'text' || type === 'column' || type === 'frame' || type === 'link') ? '#ffffff' : activeColor), // Текстовый блок, столбец, группа и ссылка изначально белые
         ...extra
     };
 
@@ -1791,6 +1791,97 @@ tools.image.addEventListener('click', () => {
     });
 });
 
+// === ХЕЛПЕРЫ СТАТИСТИКИ И ЦВЕТОВ ВСТРОЕННЫХ ДОСОК ===
+const BOARD_PASTEL_COLORS = [
+    '#F08E51', // Warm Orange
+    '#9D85C4', // Purple
+    '#8083B8', // Slate Indigo
+    '#E66862', // Coral Red
+    '#DFAB5F', // Muted Gold
+    '#48A3E3', // Soft Sky Blue
+    '#4BB885'  // Emerald Green
+];
+
+function getBoardIconColor(el) {
+    if (el.iconColor) return el.iconColor;
+    if (el.color) return el.color;
+    let str = (el.id || '') + (el.content || '');
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % BOARD_PASTEL_COLORS.length;
+    return BOARD_PASTEL_COLORS[index];
+}
+
+function getBoardIconStrokeColor(bgColor) {
+    if (!bgColor || bgColor === 'transparent') return 'var(--accent-color)';
+    const lower = bgColor.toLowerCase();
+    if (lower === '#ffffff' || lower === '#fff' || lower === '#fef08a' || lower === 'white') {
+        return '#1e293b';
+    }
+    return '#ffffff';
+}
+
+function formatElementsCount(elsArr) {
+    if (!elsArr || elsArr.length === 0) return '0 карточек';
+    
+    let boardCount = 0;
+    let cardCount = 0;
+    let docCount = 0;
+    let otherCount = 0;
+
+    elsArr.forEach(e => {
+        if (e.type === 'board') {
+            boardCount++;
+        } else if (e.type === 'text' || e.type === 'sticker' || e.type === 'column' || e.type === 'frame') {
+            cardCount++;
+        } else if (e.type === 'link' || e.type === 'image') {
+            docCount++;
+        } else {
+            otherCount++;
+        }
+    });
+
+    const parts = [];
+    if (boardCount > 0) {
+        if (boardCount === 1) parts.push('1 доска');
+        else if (boardCount >= 2 && boardCount <= 4) parts.push(`${boardCount} доски`);
+        else parts.push(`${boardCount} досок`);
+    }
+    if (cardCount > 0) {
+        if (cardCount === 1) parts.push('1 карточка');
+        else if (cardCount >= 2 && cardCount <= 4) parts.push(`${cardCount} карточки`);
+        else parts.push(`${cardCount} карточек`);
+    }
+    if (docCount > 0) {
+        if (docCount === 1) parts.push('1 документ');
+        else if (docCount >= 2 && docCount <= 4) parts.push(`${docCount} документа`);
+        else parts.push(`${docCount} документов`);
+    }
+    if (otherCount > 0) {
+        if (otherCount === 1) parts.push('1 элемент');
+        else if (otherCount >= 2 && otherCount <= 4) parts.push(`${otherCount} элемента`);
+        else parts.push(`${otherCount} элементов`);
+    }
+
+    if (parts.length > 0) return parts.join(', ');
+    return `${elsArr.length} элементов`;
+}
+
+function getSubboardStatsText(targetBoardId) {
+    if (!targetBoardId) return '0 карточек';
+    try {
+        const raw = localStorage.getItem(`board_elements_${targetBoardId}`);
+        if (raw) {
+            const els = JSON.parse(raw);
+            const elsArr = Object.values(els);
+            return formatElementsCount(elsArr);
+        }
+    } catch(e) {}
+    return '0 карточек';
+}
+
 // === РЕНДЕРИНГ ЭЛЕМЕНТОВ ===
 function renderElements() {
     if (typeof layoutColumns === 'function') {
@@ -2088,19 +2179,10 @@ function renderElements() {
             });
             colHeader.appendChild(colTitle);
 
-            const childrenCount = Object.values(elements).filter(child => child.parentId === el.id).length;
+            const childElements = Object.values(elements).filter(child => child.parentId === el.id);
             const colSubtitle = document.createElement('div');
             colSubtitle.className = 'column-subtitle';
-            
-            let countText = '';
-            if (childrenCount === 1) {
-                countText = '1 элемент';
-            } else if (childrenCount >= 2 && childrenCount <= 4) {
-                countText = `${childrenCount} элемента`;
-            } else {
-                countText = `${childrenCount} элементов`;
-            }
-            colSubtitle.innerText = countText;
+            colSubtitle.innerText = formatElementsCount(childElements);
             colHeader.appendChild(colSubtitle);
 
             elDiv.appendChild(colHeader);
@@ -2207,13 +2289,20 @@ function renderElements() {
             
             const iconDiv = document.createElement('div');
             iconDiv.className = 'board-link-icon';
+            const iconBgColor = getBoardIconColor(el);
+            const iconStroke = getBoardIconStrokeColor(iconBgColor);
+            iconDiv.style.backgroundColor = iconBgColor;
+            if (iconBgColor === '#ffffff' || iconBgColor === '#fff' || iconBgColor === 'white') {
+                iconDiv.style.border = '1px solid rgba(0, 0, 0, 0.12)';
+            } else {
+                iconDiv.style.border = 'none';
+            }
             iconDiv.innerHTML = `
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="9" y1="3" x2="9" y2="21"></line>
-                    <line x1="15" y1="3" x2="15" y2="21"></line>
-                    <line x1="3" y1="9" x2="21" y2="9"></line>
-                    <line x1="3" y1="15" x2="21" y2="15"></line>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${iconStroke}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                    <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                    <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                    <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
                 </svg>
             `;
             boardLink.appendChild(iconDiv);
@@ -2225,6 +2314,23 @@ function renderElements() {
             title.className = 'board-link-title';
             title.innerText = el.content || 'Встроенная доска';
             contentDiv.appendChild(title);
+
+            const desc = document.createElement('div');
+            desc.className = 'board-link-desc';
+            desc.innerText = getSubboardStatsText(el.targetBoardId);
+            contentDiv.appendChild(desc);
+
+            if (currentUid && db && el.targetBoardId) {
+                const subElementsColl = collection(db, "users", currentUid, "whiteboards", el.targetBoardId, "elements");
+                getDocs(subElementsColl).then(snap => {
+                    const subElsArr = [];
+                    snap.forEach(d => subElsArr.push(d.data()));
+                    desc.innerText = formatElementsCount(subElsArr);
+                    const localObj = {};
+                    subElsArr.forEach(item => { localObj[item.id] = item; });
+                    localStorage.setItem(`board_elements_${el.targetBoardId}`, JSON.stringify(localObj));
+                }).catch(() => {});
+            }
 
             boardLink.appendChild(contentDiv);
             elDiv.appendChild(boardLink);
@@ -3744,8 +3850,9 @@ function updateElementOptionsPanel() {
             
             if (!isMultiSelect && singleEl && singleEl.type !== 'drawing' && singleEl.type !== 'image') {
                 // Синхронизируем цвета
+                const currentColor = singleEl.type === 'board' ? getBoardIconColor(singleEl) : singleEl.color;
                 popup.querySelectorAll('.popup-color-opt').forEach(opt => {
-                    if (opt.getAttribute('data-color') === singleEl.color) {
+                    if (opt.getAttribute('data-color') === currentColor || opt.getAttribute('data-color') === singleEl.color) {
                         opt.classList.add('active');
                     } else {
                         opt.classList.remove('active');
@@ -3898,6 +4005,7 @@ function initElementOptionsPanel() {
                 saveUndoState();
                 elements[id].color = color;
                 saveElement(elements[id]);
+                renderElements();
                 
                 popup.querySelectorAll('.popup-color-opt').forEach(o => o.classList.remove('active'));
                 opt.classList.add('active');
@@ -3911,6 +4019,7 @@ function initElementOptionsPanel() {
             const id = Array.from(selectedElementIds)[0];
             elements[id].color = e.target.value;
             saveElement(elements[id]);
+            renderElements();
         }
     });
     customColorInput.addEventListener('change', (e) => {
@@ -4358,16 +4467,21 @@ function layoutColumns(shouldSave = false) {
             const targetX = col.x + 12;
             const targetY = currentY;
             const targetWidth = colWidth - 24;
+            let targetHeight = child.height;
+            if (child.type === 'board') {
+                targetHeight = Math.max(84, child.height);
+            }
             
-            if (child.x !== targetX || child.y !== targetY || child.width !== targetWidth) {
+            if (child.x !== targetX || child.y !== targetY || child.width !== targetWidth || (child.type === 'board' && child.height !== targetHeight)) {
                 child.x = targetX;
                 child.y = targetY;
                 child.width = targetWidth;
+                if (child.type === 'board') child.height = targetHeight;
                 if (shouldSave) {
                     saveElement(child);
                 }
             }
-            currentY += child.height + 12;
+            currentY += targetHeight + 12;
         });
         
         const targetHeight = Math.max(120, currentY - col.y + 12);

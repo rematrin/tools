@@ -258,35 +258,123 @@
     <!-- Скрытый инпут загрузки картинок -->
     <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
 
-    <!-- Панель режима режима рисования (Milanote style) -->
-    <div class="drawing-mode-panel" id="drawingModePanel">
-        <div class="drawing-tools-group">
-            <button class="drawing-panel-btn active" id="drawBtnPencil" title="Карандаш">
+    <!-- Панель режима рисования в стиле iOS PencilKit -->
+    <div class="drawing-mode-panel pencilkit-dock" id="drawingModePanel">
+        <!-- Кнопки шага назад/вперед прямо на доке -->
+        <div class="pencilkit-action-group">
+            <button class="pencilkit-btn-icon" id="dockBtnUndo" title="Шаг назад (Ctrl+Z)">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    <path d="M3 7v6h6"></path>
+                    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
                 </svg>
             </button>
-            <button class="drawing-panel-btn" id="drawBtnEraser" title="Ластик">
+            <button class="pencilkit-btn-icon" id="dockBtnRedo" title="Шаг вперед (Ctrl+Y)">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 7v6h-6"></path>
+                    <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="drawing-panel-divider"></div>
+
+        <!-- Выбор инструментов: Карандаш, Маркер, Перо, Ластик -->
+        <div class="drawing-tools-group">
+            <!-- Карандаш -->
+            <button class="drawing-panel-btn tool-pencil active" id="drawBtnPencil" title="Карандаш">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                </svg>
+                <span class="tool-label">Карандаш</span>
+            </button>
+
+            <!-- Курсор / Выделение и перемещение -->
+            <button class="drawing-panel-btn tool-select" id="drawBtnSelect" title="Курсор / Выделение и перемещение">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
+                    <path d="m13 13 6 6"></path>
+                </svg>
+                <span class="tool-label">Выбор</span>
+            </button>
+
+
+            <!-- Маркер / Выделитель -->
+            <button class="drawing-panel-btn tool-highlighter" id="drawBtnHighlighter" title="Маркер-выделитель">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9"></path>
+                    <path d="m16.5 3.5 4 4L7 20 2 20l0-5L16.5 3.5z"></path>
+                    <line x1="13.5" y1="6.5" x2="17.5" y2="10.5"></line>
+                </svg>
+                <span class="tool-label">Маркер</span>
+            </button>
+
+            <!-- Перо / Линер -->
+            <button class="drawing-panel-btn tool-pen" id="drawBtnPen" title="Перо / Линер">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m12 19 7-7 3 3-7 7-3-3z"></path>
+                    <path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                </svg>
+                <span class="tool-label">Перо</span>
+            </button>
+
+            <!-- Ластик -->
+            <button class="drawing-panel-btn tool-eraser" id="drawBtnEraser" title="Ластик">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20 20H7L3 16C2 15 2 13 3 12L13 2C14 1 16 1 17 2L21 6C22 7 22 9 21 10L12 19L20 20Z"></path>
                 </svg>
+                <span class="tool-label">Ластик</span>
             </button>
         </div>
+
         <div class="drawing-panel-divider"></div>
+
+        <!-- Настройка размера и прозрачности активного инструмента -->
+        <button class="pencilkit-size-btn" id="dockToolSettingsBtn" title="Толщина и прозрачность инструмента">
+            <span class="size-preview-dot" id="dockSizePreviewDot"></span>
+            <span class="size-val-text" id="dockSizeBtnLabel">4px</span>
+        </button>
+
+        <div class="drawing-panel-divider"></div>
+
+        <!-- Палитра цветов (7 пресетов + свой цвет) -->
         <div class="drawing-colors-group">
-            <div class="draw-color-opt active" style="background-color: #111827;" data-color="#111827"></div>
-            <div class="draw-color-opt" style="background-color: #3b82f6;" data-color="#3b82f6"></div>
-            <div class="draw-color-opt" style="background-color: #ef4444;" data-color="#ef4444"></div>
-            <div class="draw-color-opt" style="background-color: #10b981;" data-color="#10b981"></div>
-            <div class="draw-color-opt" style="background-color: #f59e0b;" data-color="#f59e0b"></div>
-            <div class="draw-color-opt" style="background-color: #8b5cf6;" data-color="#8b5cf6"></div>
-            <div class="draw-color-opt" style="background-color: #ec4899;" data-color="#ec4899"></div>
+            <div class="draw-color-opt active" style="background-color: #111827;" data-color="#111827" title="Черный"></div>
+            <div class="draw-color-opt" style="background-color: #3b82f6;" data-color="#3b82f6" title="Синий"></div>
+            <div class="draw-color-opt" style="background-color: #ef4444;" data-color="#ef4444" title="Красный"></div>
+            <div class="draw-color-opt" style="background-color: #10b981;" data-color="#10b981" title="Зеленый"></div>
+            <div class="draw-color-opt" style="background-color: #f59e0b;" data-color="#f59e0b" title="Желтый"></div>
+            <div class="draw-color-opt" style="background-color: #8b5cf6;" data-color="#8b5cf6" title="Фиолетовый"></div>
+            <div class="draw-color-opt" style="background-color: #ec4899;" data-color="#ec4899" title="Розовый"></div>
+            <div class="draw-color-opt color-picker-trigger" id="dockCustomColorTrigger" title="Свой цвет">
+                <input type="color" id="dockCustomColorInput" value="#8b5cf6" style="opacity: 0; width: 100%; height: 100%; cursor: pointer;">
+            </div>
         </div>
+
         <div class="drawing-panel-divider"></div>
+
         <div class="drawing-action-buttons">
             <button class="btn-draw-discard" id="btnDrawDiscard">Отмена</button>
             <button class="btn-draw-save" id="btnDrawSave">Сохранить</button>
+        </div>
+
+        <!-- Всплывающий поповер регулировки толщины и прозрачности -->
+        <div class="pencilkit-popover" id="dockSettingsPopover" style="display: none;">
+            <div class="popover-row">
+                <span class="popover-label">Толщина:</span>
+                <span class="popover-value" id="dockSizeValue">4px</span>
+            </div>
+            <input type="range" id="dockSizeSlider" min="1" max="60" value="4" class="pencilkit-slider">
+            <div class="pencilkit-slider-ticks">
+                <span>1px</span>
+                <span>30px</span>
+                <span>60px</span>
+            </div>
+
+            <div class="popover-row" style="margin-top: 12px;">
+                <span class="popover-label">Прозрачность:</span>
+                <span class="popover-value" id="dockOpacityValue">100%</span>
+            </div>
+            <input type="range" id="dockOpacitySlider" min="10" max="100" value="100" class="pencilkit-slider">
         </div>
     </div>
 
@@ -295,6 +383,12 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <path d="M12 2a15.3 15.3 0 0 1 4 7 15.3 15.3 0 0 1-4 7 15.3 15.3 0 0 1-4-7 15.3 15.3 0 0 1 4-7z"></path>
+            </svg>
+        </button>
+        <button class="options-panel-btn" id="btnOptEditDrawing" title="Редактировать рисунок" style="display: none; margin-right: 6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
             </svg>
         </button>
         <button class="options-panel-btn" id="btnOptAddText" title="Добавить описание" style="display: none; margin-right: 6px;">

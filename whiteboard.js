@@ -34,11 +34,21 @@ let isPanning = false;
 let startPanX = 0;
 let startPanY = 0;
 
-// Состояние сессии рисования (Milanote style)
+// Состояние сессии рисования (iOS PencilKit style)
 let isDrawing = false;
-let localStrokes = []; // Временные штрихи сессии рисования: { color, points: [] }
-let localRedoStrokes = []; // Буфер отмененных штрихов для redo в режиме рисования
-let localDrawingTool = 'pencil'; // 'pencil', 'eraser'
+let localStrokes = []; // Временные штрихи: { color, toolType, baseWidth, opacity, points: [] }
+let localRedoStrokes = []; // Буфер отмененных штрихов
+let localDrawingTool = 'pencil'; // 'pencil', 'select', 'highlighter', 'pen', 'eraser'
+let hoveredEraserStrokeIndices = new Set(); // Индексы штрихов, подсвеченных ластиком (в стиле Milanote)
+let selectedLocalStrokeIndex = -1; // Индекс выделенного синей обводкой штриха (в стиле Milanote)
+
+
+let toolSettings = {
+    pencil: { width: 4, opacity: 1.0 },
+    highlighter: { width: 18, opacity: 0.45 },
+    pen: { width: 3, opacity: 1.0 },
+    eraser: { width: 20, opacity: 1.0 }
+};
 let activeDrawingPoints = [];
 let activeDrawingPathEl = null;
 
@@ -47,6 +57,7 @@ let activeTool = 'select'; // 'select', 'text', 'sticker', 'frame', 'link', 'ima
 let activeColor = '#111827';
 let selectedElementIds = new Set(); // Поддержка множественного выделения
 let editingElementId = null; // ID элемента, который сейчас редактируется (сразу после создания)
+let editingDrawingId = null; // ID элемента рисунка, который редактируется повторно
 let savedTextRange = null; // Сохраненное выделение текста для создания ссылок
 
 // Временные данные для перетаскивания и ресайза
@@ -97,10 +108,30 @@ const btnUrlCancel = document.getElementById('btnUrlCancel');
 const btnUrlConfirm = document.getElementById('btnUrlConfirm');
 const imageFileInput = document.getElementById('imageFileInput');
 
-// DOM Элементы панели режима рисования (Milanote style)
+// DOM Элементы панели режима рисования (iOS PencilKit Dock)
 const drawingModePanel = document.getElementById('drawingModePanel');
 const drawBtnPencil = document.getElementById('drawBtnPencil');
+const drawBtnSelect = document.getElementById('drawBtnSelect');
+const drawBtnHighlighter = document.getElementById('drawBtnHighlighter');
+
+const drawBtnPen = document.getElementById('drawBtnPen');
 const drawBtnEraser = document.getElementById('drawBtnEraser');
+
+const dockBtnUndo = document.getElementById('dockBtnUndo');
+const dockBtnRedo = document.getElementById('dockBtnRedo');
+
+const dockToolSettingsBtn = document.getElementById('dockToolSettingsBtn');
+const dockSizePreviewDot = document.getElementById('dockSizePreviewDot');
+const dockSizeBtnLabel = document.getElementById('dockSizeBtnLabel');
+const dockSettingsPopover = document.getElementById('dockSettingsPopover');
+const dockSizeSlider = document.getElementById('dockSizeSlider');
+const dockSizeValue = document.getElementById('dockSizeValue');
+const dockOpacitySlider = document.getElementById('dockOpacitySlider');
+const dockOpacityValue = document.getElementById('dockOpacityValue');
+
+const dockCustomColorTrigger = document.getElementById('dockCustomColorTrigger');
+const dockCustomColorInput = document.getElementById('dockCustomColorInput');
+
 const btnDrawDiscard = document.getElementById('btnDrawDiscard');
 const btnDrawSave = document.getElementById('btnDrawSave');
 
@@ -839,6 +870,12 @@ window.addEventListener('keydown', (e) => {
         if (document.activeElement.tagName === 'INPUT' || document.activeElement.getAttribute('contenteditable') === 'true') {
             return;
         }
+        if (activeTool === 'draw' && selectedLocalStrokeIndex !== -1) {
+            localStrokes.splice(selectedLocalStrokeIndex, 1);
+            selectedLocalStrokeIndex = -1;
+            redrawLocalStrokes();
+            return;
+        }
         if (selectedElementIds.size > 0) {
             selectedElementIds.forEach(id => {
                 deleteElement(id);
@@ -846,6 +883,7 @@ window.addEventListener('keydown', (e) => {
             selectedElementIds.clear();
         }
     }
+
 });
 
 window.addEventListener('keyup', (e) => {
@@ -914,23 +952,33 @@ function setTool(toolName) {
     });
 
     if (toolName === 'draw') {
-        // Входим в сессию рисования Milanote style
         document.body.classList.add('drawing-mode-active');
         drawingModePanel.classList.add('active');
-        localStrokes = [];
-        localRedoStrokes = [];
-        localDrawingTool = 'pencil';
-        drawBtnPencil.classList.add('active');
-        drawBtnEraser.classList.remove('active');
-        
-        drawingLayer.innerHTML = '';
-        boardCanvas.style.cursor = 'crosshair';
+        if (!editingDrawingId) {
+            localStrokes = [];
+            localRedoStrokes = [];
+            drawingLayer.innerHTML = '';
+        }
+        if (boardCanvas) boardCanvas.style.cursor = '';
+        if (boardViewport) boardViewport.style.cursor = '';
+        setLocalDrawingTool(localDrawingTool || 'pencil');
         selectedElementIds.clear();
         document.querySelectorAll('.board-element').forEach(el => el.classList.remove('selected'));
+        renderElements();
     } else {
-        document.body.classList.remove('drawing-mode-active');
+        const cursorClasses = ['cursor-pencil', 'cursor-select', 'cursor-highlighter', 'cursor-pen', 'cursor-eraser'];
+        document.body.classList.remove('drawing-mode-active', ...cursorClasses);
+        if (boardCanvas) boardCanvas.classList.remove(...cursorClasses);
+        if (boardViewport) boardViewport.classList.remove(...cursorClasses);
         drawingModePanel.classList.remove('active');
+        if (editingDrawingId) {
+            editingDrawingId = null;
+            localStrokes = [];
+            drawingLayer.innerHTML = '';
+            renderElements();
+        }
     }
+
 
 
 
@@ -938,7 +986,11 @@ function setTool(toolName) {
         boardCanvas.style.cursor = 'cell';
     } else if (toolName !== 'draw') {
         boardCanvas.style.cursor = 'default';
+        document.querySelectorAll('.board-element.eraser-hover-target').forEach(el => {
+            el.classList.remove('eraser-hover-target');
+        });
     }
+
 }
 
 Object.keys(tools).forEach(name => {
@@ -956,20 +1008,149 @@ document.querySelectorAll('.draw-color-opt').forEach(opt => {
     });
 });
 
-// Кнопки управления сессией рисования
-drawBtnPencil.addEventListener('click', () => {
-    localDrawingTool = 'pencil';
-    drawBtnPencil.classList.add('active');
-    drawBtnEraser.classList.remove('active');
-    boardCanvas.style.cursor = 'crosshair';
+// Управление активным инструментом в доке PencilKit
+function setLocalDrawingTool(toolName) {
+    localDrawingTool = toolName;
+    
+    // Переключаем активные классы на кнопках инструментов
+    if (drawBtnPencil) drawBtnPencil.classList.toggle('active', toolName === 'pencil');
+    if (drawBtnSelect) drawBtnSelect.classList.toggle('active', toolName === 'select');
+    if (drawBtnHighlighter) drawBtnHighlighter.classList.toggle('active', toolName === 'highlighter');
+    if (drawBtnPen) drawBtnPen.classList.toggle('active', toolName === 'pen');
+    if (drawBtnEraser) drawBtnEraser.classList.toggle('active', toolName === 'eraser');
+    
+    // Сбрасываем инлайновые курсоры, мешающие CSS
+    if (boardCanvas) boardCanvas.style.cursor = '';
+    if (boardViewport) boardViewport.style.cursor = '';
+
+    // Устанавливаем класс курсора на body, boardCanvas и boardViewport
+    const cursorClasses = ['cursor-pencil', 'cursor-select', 'cursor-highlighter', 'cursor-pen', 'cursor-eraser'];
+    document.body.classList.remove(...cursorClasses);
+    document.body.classList.add(`cursor-${toolName}`);
+    if (boardCanvas) {
+        boardCanvas.classList.remove(...cursorClasses);
+        boardCanvas.classList.add(`cursor-${toolName}`);
+    }
+    if (boardViewport) {
+        boardViewport.classList.remove(...cursorClasses);
+        boardViewport.classList.add(`cursor-${toolName}`);
+    }
+
+
+    if (toolName !== 'eraser') {
+        if (hoveredEraserStrokeIndices.size > 0) {
+            hoveredEraserStrokeIndices.clear();
+            redrawLocalStrokes();
+        }
+    }
+
+    if (toolName !== 'select') {
+        if (selectedLocalStrokeIndex !== -1) {
+            selectedLocalStrokeIndex = -1;
+            redrawLocalStrokes();
+        }
+    }
+
+    // Синхронизируем слайдеры под настройки выбранного инструмента
+    if (toolSettings[toolName]) {
+        const settings = toolSettings[toolName];
+        if (dockSizeSlider) dockSizeSlider.value = settings.width;
+        if (dockSizeValue) dockSizeValue.innerText = `${settings.width}px`;
+        if (dockSizeBtnLabel) dockSizeBtnLabel.innerText = `${settings.width}px`;
+        
+        const opacityPct = Math.round(settings.opacity * 100);
+        if (dockOpacitySlider) dockOpacitySlider.value = opacityPct;
+        if (dockOpacityValue) dockOpacityValue.innerText = `${opacityPct}%`;
+        
+        if (dockSizePreviewDot) {
+            const dotSize = Math.max(4, Math.min(18, settings.width / 2.5));
+            dockSizePreviewDot.style.width = `${dotSize}px`;
+            dockSizePreviewDot.style.height = `${dotSize}px`;
+            dockSizePreviewDot.style.backgroundColor = activeColor;
+        }
+    }
+}
+
+if (drawBtnPencil) drawBtnPencil.addEventListener('click', () => setLocalDrawingTool('pencil'));
+if (drawBtnSelect) drawBtnSelect.addEventListener('click', () => setLocalDrawingTool('select'));
+if (drawBtnHighlighter) drawBtnHighlighter.addEventListener('click', () => setLocalDrawingTool('highlighter'));
+if (drawBtnPen) drawBtnPen.addEventListener('click', () => setLocalDrawingTool('pen'));
+if (drawBtnEraser) drawBtnEraser.addEventListener('click', () => setLocalDrawingTool('eraser'));
+
+
+// Кнопки Undo / Redo в доке
+if (dockBtnUndo) {
+    dockBtnUndo.addEventListener('click', () => {
+        if (localStrokes.length > 0) {
+            const undone = localStrokes.pop();
+            localRedoStrokes.push(undone);
+            redrawLocalStrokes();
+        }
+    });
+}
+
+if (dockBtnRedo) {
+    dockBtnRedo.addEventListener('click', () => {
+        if (localRedoStrokes.length > 0) {
+            const redone = localRedoStrokes.pop();
+            localStrokes.push(redone);
+            redrawLocalStrokes();
+        }
+    });
+}
+
+// Поповер настроек размера и прозрачности
+if (dockToolSettingsBtn) {
+    dockToolSettingsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (dockSettingsPopover) {
+            const isHidden = dockSettingsPopover.style.display === 'none' || !dockSettingsPopover.style.display;
+            dockSettingsPopover.style.display = isHidden ? 'block' : 'none';
+        }
+    });
+}
+
+document.addEventListener('click', (e) => {
+    if (dockSettingsPopover && !e.target.closest('#dockSettingsPopover') && !e.target.closest('#dockToolSettingsBtn')) {
+        dockSettingsPopover.style.display = 'none';
+    }
 });
 
-drawBtnEraser.addEventListener('click', () => {
-    localDrawingTool = 'eraser';
-    drawBtnEraser.classList.add('active');
-    drawBtnPencil.classList.remove('active');
-    boardCanvas.style.cursor = 'cell';
-});
+if (dockSizeSlider) {
+    dockSizeSlider.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        if (toolSettings[localDrawingTool]) {
+            toolSettings[localDrawingTool].width = val;
+        }
+        if (dockSizeValue) dockSizeValue.innerText = `${val}px`;
+        if (dockSizeBtnLabel) dockSizeBtnLabel.innerText = `${val}px`;
+        if (dockSizePreviewDot) {
+            const dotSize = Math.max(4, Math.min(18, val / 2.5));
+            dockSizePreviewDot.style.width = `${dotSize}px`;
+            dockSizePreviewDot.style.height = `${dotSize}px`;
+        }
+    });
+}
+
+if (dockOpacitySlider) {
+    dockOpacitySlider.addEventListener('input', (e) => {
+        const pct = parseInt(e.target.value);
+        const opacityVal = pct / 100;
+        if (toolSettings[localDrawingTool]) {
+            toolSettings[localDrawingTool].opacity = opacityVal;
+        }
+        if (dockOpacityValue) dockOpacityValue.innerText = `${pct}%`;
+    });
+}
+
+if (dockCustomColorInput) {
+    dockCustomColorInput.addEventListener('input', (e) => {
+        activeColor = e.target.value;
+        document.querySelectorAll('.draw-color-opt').forEach(o => o.classList.remove('active'));
+        if (dockCustomColorTrigger) dockCustomColorTrigger.classList.add('active');
+        if (dockSizePreviewDot) dockSizePreviewDot.style.backgroundColor = activeColor;
+    });
+}
 
 btnDrawDiscard.addEventListener('click', () => {
     exitDrawingMode(false);
@@ -979,7 +1160,7 @@ btnDrawSave.addEventListener('click', () => {
     exitDrawingMode(true);
 });
 
-function buildSvgPathAndWidth(points, defaultWidth = 4) {
+function buildSvgPathAndWidth(points, defaultWidth = 4, toolType = 'pencil') {
     if (!points || points.length === 0) return { d: '', strokeWidth: defaultWidth };
     
     let totalP = 0, countP = 0;
@@ -993,7 +1174,13 @@ function buildSvgPathAndWidth(points, defaultWidth = 4) {
     let strokeWidth = defaultWidth;
     if (countP > 0) {
         const avgP = totalP / countP;
-        strokeWidth = Math.max(1.5, Math.min(18, defaultWidth * (0.35 + avgP * 1.3)));
+        if (toolType === 'pen') {
+            strokeWidth = Math.max(1, Math.min(80, defaultWidth * (0.5 + avgP * 1.0)));
+        } else if (toolType === 'highlighter') {
+            strokeWidth = Math.max(8, Math.min(100, defaultWidth * (0.8 + avgP * 0.4)));
+        } else {
+            strokeWidth = Math.max(1.5, Math.min(60, defaultWidth * (0.35 + avgP * 1.3)));
+        }
     }
     
     if (points.length === 1) {
@@ -1014,58 +1201,105 @@ function buildSvgPathAndWidth(points, defaultWidth = 4) {
     return { d, strokeWidth };
 }
 
+function editExistingDrawing(elId) {
+    const el = elements[elId];
+    if (!el || el.type !== 'drawing') return;
+
+    editingDrawingId = elId;
+    
+    // Переводим точки из локальных координат элемента обратно в глобальные координаты холста
+    localStrokes = (el.strokes || []).map(s => {
+        return {
+            color: s.color || activeColor,
+            toolType: s.toolType || 'pencil',
+            baseWidth: s.baseWidth || 4,
+            opacity: s.opacity !== undefined ? s.opacity : 1.0,
+            points: (s.points || []).map(pt => ({
+                x: pt.x + el.x,
+                y: pt.y + el.y,
+                pressure: pt.pressure !== undefined ? pt.pressure : 0.5
+            }))
+        };
+    });
+    localRedoStrokes = [];
+
+    // Входим в режим рисования
+    setTool('draw');
+    redrawLocalStrokes();
+}
+
 function exitDrawingMode(save = false) {
     document.body.classList.remove('drawing-mode-active');
     drawingModePanel.classList.remove('active');
+    if (dockSettingsPopover) dockSettingsPopover.style.display = 'none';
     
-    if (save && localStrokes.length > 0) {
-        // Находим bounding box всех нарисованных линий
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        localStrokes.forEach(s => {
-            s.points.forEach(pt => {
-                if (pt.x < minX) minX = pt.x;
-                if (pt.x > maxX) maxX = pt.x;
-                if (pt.y < minY) minY = pt.y;
-                if (pt.y > maxY) maxY = pt.y;
+    if (save) {
+        if (localStrokes.length > 0) {
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            localStrokes.forEach(s => {
+                s.points.forEach(pt => {
+                    if (pt.x < minX) minX = pt.x;
+                    if (pt.x > maxX) maxX = pt.x;
+                    if (pt.y < minY) minY = pt.y;
+                    if (pt.y > maxY) maxY = pt.y;
+                });
             });
-        });
 
-        // Смещение всех точек относительно верхнего левого угла (minX, minY)
-        const shiftedStrokes = localStrokes.map(s => {
-            return {
-                color: s.color,
-                baseWidth: s.baseWidth || 4,
-                points: s.points.map(pt => ({
-                    x: pt.x - minX,
-                    y: pt.y - minY,
-                    pressure: pt.pressure !== undefined ? pt.pressure : 0.5
-                }))
-            };
-        });
+            const shiftedStrokes = localStrokes.map(s => {
+                return {
+                    color: s.color,
+                    toolType: s.toolType || 'pencil',
+                    baseWidth: s.baseWidth || 4,
+                    opacity: s.opacity !== undefined ? s.opacity : 1.0,
+                    points: s.points.map(pt => ({
+                        x: pt.x - minX,
+                        y: pt.y - minY,
+                        pressure: pt.pressure !== undefined ? pt.pressure : 0.5
+                    }))
+                };
+            });
 
-        const w = Math.max(40, maxX - minX);
-        const h = Math.max(40, maxY - minY);
+            const w = Math.max(40, maxX - minX);
+            const h = Math.max(40, maxY - minY);
 
-        saveUndoState();
+            saveUndoState();
 
-        const id = "el_" + Math.random().toString(36).substring(2, 11);
-        const maxZ = Object.values(elements).reduce((max, el) => Math.max(max, el.zIndex || 0), 0);
-        const elData = {
-            id,
-            type: 'drawing',
-            x: minX,
-            y: minY,
-            width: w,
-            height: h,
-            originalWidth: w,
-            originalHeight: h,
-            strokes: shiftedStrokes,
-            zIndex: maxZ + 1
-        };
-
-        saveElement(elData);
+            if (editingDrawingId && elements[editingDrawingId]) {
+                // Обновляем существующий элемент рисунка на месте
+                const el = elements[editingDrawingId];
+                el.x = minX;
+                el.y = minY;
+                el.width = w;
+                el.height = h;
+                el.originalWidth = w;
+                el.originalHeight = h;
+                el.strokes = shiftedStrokes;
+                saveElement(el);
+            } else {
+                // Создаем новый элемент рисунка
+                const id = "el_" + Math.random().toString(36).substring(2, 11);
+                const maxZ = Object.values(elements).reduce((max, el) => Math.max(max, el.zIndex || 0), 0);
+                const elData = {
+                    id,
+                    type: 'drawing',
+                    x: minX,
+                    y: minY,
+                    width: w,
+                    height: h,
+                    originalWidth: w,
+                    originalHeight: h,
+                    strokes: shiftedStrokes,
+                    zIndex: maxZ + 1
+                };
+                saveElement(elData);
+            }
+        } else if (editingDrawingId) {
+            // Если в режиме редактирования все линии были стерты, удаляем элемент
+            deleteElement(editingDrawingId);
+        }
     }
 
+    editingDrawingId = null;
     localStrokes = [];
     drawingLayer.innerHTML = '';
     setTool('select');
@@ -1074,19 +1308,58 @@ function exitDrawingMode(save = false) {
 
 function redrawLocalStrokes() {
     drawingLayer.innerHTML = '';
-    localStrokes.forEach((stroke) => {
+    localStrokes.forEach((stroke, index) => {
         if (!stroke.points || stroke.points.length === 0) return;
-        const { d, strokeWidth } = buildSvgPathAndWidth(stroke.points, stroke.baseWidth || 4);
+        const toolType = stroke.toolType || 'pencil';
+        const baseW = stroke.baseWidth || (toolType === 'highlighter' ? 18 : 4);
+        const opacity = stroke.opacity !== undefined ? stroke.opacity : (toolType === 'highlighter' ? 0.45 : 1.0);
+
+        const { d, strokeWidth } = buildSvgPathAndWidth(stroke.points, baseW, toolType);
+
+        // В стиле Milanote: выделенный синей обводкой штрих (инструмент Выбор/Курсор)
+        if (index === selectedLocalStrokeIndex) {
+            const blueOutline = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            blueOutline.setAttribute("stroke", "#3b82f6");
+            blueOutline.setAttribute("stroke-width", (strokeWidth + 6).toFixed(1));
+            blueOutline.setAttribute("fill", "none");
+            blueOutline.setAttribute("stroke-linecap", toolType === 'highlighter' ? "butt" : "round");
+            blueOutline.setAttribute("stroke-linejoin", "round");
+            blueOutline.setAttribute("stroke-opacity", "0.95");
+            blueOutline.setAttribute("d", d);
+            drawingLayer.appendChild(blueOutline);
+        }
+
+        // В стиле Milanote: подсвечиваем штрихи, подлежащие удалению, яркой красной обводкой
+        if (hoveredEraserStrokeIndices.has(index)) {
+
+            const outlinePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            outlinePath.setAttribute("stroke", "#ef4444");
+            outlinePath.setAttribute("stroke-width", (strokeWidth + 5).toFixed(1));
+            outlinePath.setAttribute("fill", "none");
+            outlinePath.setAttribute("stroke-linecap", toolType === 'highlighter' ? "butt" : "round");
+            outlinePath.setAttribute("stroke-linejoin", "round");
+            outlinePath.setAttribute("stroke-opacity", "0.95");
+            outlinePath.setAttribute("d", d);
+            drawingLayer.appendChild(outlinePath);
+        }
+
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         path.setAttribute("stroke", stroke.color || activeColor);
         path.setAttribute("stroke-width", strokeWidth.toFixed(1));
         path.setAttribute("fill", "none");
-        path.setAttribute("stroke-linecap", "round");
+        path.setAttribute("stroke-linecap", toolType === 'highlighter' ? "butt" : "round");
         path.setAttribute("stroke-linejoin", "round");
+        path.setAttribute("stroke-opacity", opacity.toString());
+
+        if (toolType === 'highlighter') {
+            path.style.mixBlendMode = 'multiply';
+        }
+
         path.setAttribute("d", d);
         drawingLayer.appendChild(path);
     });
 }
+
 
 // === СОЗДАНИЕ ЭЛЕМЕНТОВ ===
 function createNewElement(type, x, y, extra = {}) {
@@ -1529,24 +1802,9 @@ function renderElements() {
     // Всегда очищаем SVG-слой перед перерисовкой
     drawingLayer.innerHTML = '';
 
-    // Если мы в режиме активного рисования, рисуем временные штрихи сессии
+    // Если мы в режиме активного рисования, перерисовываем штрихи сессии
     if (activeTool === 'draw') {
-        localStrokes.forEach((stroke) => {
-            if (!stroke.points || stroke.points.length === 0) return;
-            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            path.setAttribute("stroke", stroke.color);
-            path.setAttribute("stroke-width", "4");
-            path.setAttribute("fill", "none");
-            path.setAttribute("stroke-linecap", "round");
-            path.setAttribute("stroke-linejoin", "round");
-            
-            let d = `M ${stroke.points[0].x} ${stroke.points[0].y}`;
-            for (let i = 1; i < stroke.points.length; i++) {
-                d += ` L ${stroke.points[i].x} ${stroke.points[i].y}`;
-            }
-            path.setAttribute("d", d);
-            drawingLayer.appendChild(path);
-        });
+        redrawLocalStrokes();
     }
 
     const sortedElements = Object.values(elements).sort((a, b) => {
@@ -1558,6 +1816,9 @@ function renderElements() {
     });
 
     sortedElements.forEach(el => {
+        if (editingDrawingId && el.id === editingDrawingId) {
+            return; // Скрываем редактируемый рисунок с элементов, пока он отображается на слое рисования
+        }
         const elDiv = document.createElement('div');
         let resizeHandle = null;
         elDiv.className = `board-element el-${el.type}`;
@@ -1654,18 +1915,32 @@ function renderElements() {
             if (el.strokes) {
                 el.strokes.forEach(stroke => {
                     if (!stroke.points || stroke.points.length === 0) return;
-                    const { d, strokeWidth } = buildSvgPathAndWidth(stroke.points, stroke.baseWidth || 4);
+                    const toolType = stroke.toolType || 'pencil';
+                    const baseW = stroke.baseWidth || (toolType === 'highlighter' ? 18 : 4);
+                    const opacity = stroke.opacity !== undefined ? stroke.opacity : (toolType === 'highlighter' ? 0.45 : 1.0);
+
+                    const { d, strokeWidth } = buildSvgPathAndWidth(stroke.points, baseW, toolType);
                     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
                     path.setAttribute("stroke", stroke.color || "#000");
                     path.setAttribute("stroke-width", strokeWidth.toFixed(1));
                     path.setAttribute("fill", "none");
-                    path.setAttribute("stroke-linecap", "round");
+                    path.setAttribute("stroke-linecap", toolType === 'highlighter' ? "butt" : "round");
                     path.setAttribute("stroke-linejoin", "round");
+                    path.setAttribute("stroke-opacity", opacity.toString());
+
+                    if (toolType === 'highlighter') {
+                        path.style.mixBlendMode = 'multiply';
+                    }
+
                     path.setAttribute("d", d);
                     svgEl.appendChild(path);
                 });
             }
             elDiv.appendChild(svgEl);
+            elDiv.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                editExistingDrawing(el.id);
+            });
         }
         else if (el.type === 'text' || el.type === 'sticker') {
             const textEl = document.createElement('div');
@@ -1986,32 +2261,73 @@ boardViewport.addEventListener('mousedown', (e) => {
         window.getSelection().removeAllRanges();
     }
 
-    // 1. Рисование внутри сессии (Milanote style)
+    // 1. Рисование внутри сессии (PencilKit style)
     if (activeTool === 'draw') {
-        if (localDrawingTool === 'pencil') {
-            isDrawing = true;
-            activeDrawingPoints = [{ x: clickX, y: clickY }];
-            
-            activeDrawingPathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            activeDrawingPathEl.setAttribute("stroke", activeColor);
-            activeDrawingPathEl.setAttribute("stroke-width", "4");
-            activeDrawingPathEl.setAttribute("fill", "none");
-            activeDrawingPathEl.setAttribute("stroke-linecap", "round");
-            activeDrawingPathEl.setAttribute("stroke-linejoin", "round");
-            activeDrawingPathEl.setAttribute("d", `M ${clickX} ${clickY}`);
-            drawingLayer.appendChild(activeDrawingPathEl);
-        }
-        else if (localDrawingTool === 'eraser') {
+        if (localDrawingTool === 'select') {
+            let foundIndex = -1;
+            localStrokes.forEach((stroke, index) => {
+                const touched = stroke.points.some(pt => {
+                    const dx = pt.x - clickX;
+                    const dy = pt.y - clickY;
+                    const r = Math.max(25, (stroke.baseWidth || 4) / 2 + 10);
+                    return Math.sqrt(dx * dx + dy * dy) < r;
+                });
+                if (touched) foundIndex = index;
+            });
+
+            if (foundIndex !== -1) {
+                selectedLocalStrokeIndex = foundIndex;
+                const strokeToMove = localStrokes[foundIndex];
+                dragStartInfo = {
+                    type: 'local-stroke-drag',
+                    strokeIndex: foundIndex,
+                    startX: clickX,
+                    startY: clickY,
+                    initialPoints: strokeToMove.points.map(pt => ({ ...pt }))
+                };
+            } else {
+                selectedLocalStrokeIndex = -1;
+                dragStartInfo = null;
+            }
+            redrawLocalStrokes();
+            e.preventDefault();
+            return;
+        } else if (localDrawingTool === 'eraser') {
             localStrokes = localStrokes.filter(stroke => {
                 const touched = stroke.points.some(pt => {
                     const dx = pt.x - clickX;
                     const dy = pt.y - clickY;
-                    return Math.sqrt(dx*dx + dy*dy) < 20;
+                    const r = Math.max(25, (stroke.baseWidth || 4) / 2 + 12);
+                    return Math.sqrt(dx*dx + dy*dy) < r;
                 });
                 return !touched;
             });
             redrawLocalStrokes();
             dragStartInfo = { type: 'local-eraser-drag' };
+        } else {
+
+            isDrawing = true;
+            activeDrawingPoints = [{ x: clickX, y: clickY, pressure: 0.5 }];
+            
+            const tool = localDrawingTool;
+            const baseW = toolSettings[tool] ? toolSettings[tool].width : 4;
+            const opacity = toolSettings[tool] ? toolSettings[tool].opacity : 1.0;
+
+            const { d, strokeWidth } = buildSvgPathAndWidth(activeDrawingPoints, baseW, tool);
+            activeDrawingPathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            activeDrawingPathEl.setAttribute("stroke", activeColor);
+            activeDrawingPathEl.setAttribute("stroke-width", strokeWidth.toFixed(1));
+            activeDrawingPathEl.setAttribute("fill", "none");
+            activeDrawingPathEl.setAttribute("stroke-linecap", tool === 'highlighter' ? "butt" : "round");
+            activeDrawingPathEl.setAttribute("stroke-linejoin", "round");
+            activeDrawingPathEl.setAttribute("stroke-opacity", opacity.toString());
+
+            if (tool === 'highlighter') {
+                activeDrawingPathEl.style.mixBlendMode = 'multiply';
+            }
+
+            activeDrawingPathEl.setAttribute("d", d);
+            drawingLayer.appendChild(activeDrawingPathEl);
         }
         e.preventDefault();
         return;
@@ -2174,29 +2490,98 @@ boardViewport.addEventListener('mousemove', (e) => {
     const curX = (e.clientX - rect.left) / zoom;
     const curY = (e.clientY - rect.top) / zoom;
 
+    // Подсветка штрихов красным контуром в стиле Milanote при наведении ластика
+    const isEraserActive = (activeTool === 'draw' && localDrawingTool === 'eraser') || activeTool === 'eraser';
+    if (isEraserActive && !isDrawing && !dragStartInfo) {
+        const newHovered = new Set();
+        localStrokes.forEach((stroke, index) => {
+            const touched = stroke.points.some(pt => {
+                const dx = pt.x - curX;
+                const dy = pt.y - curY;
+                const r = Math.max(25, (stroke.baseWidth || 4) / 2 + 12);
+                return Math.sqrt(dx * dx + dy * dy) < r;
+            });
+            if (touched) newHovered.add(index);
+        });
+
+        let changed = newHovered.size !== hoveredEraserStrokeIndices.size;
+        if (!changed) {
+            for (let idx of newHovered) {
+                if (!hoveredEraserStrokeIndices.has(idx)) {
+                    changed = true;
+                    break;
+                }
+            }
+        }
+
+        if (changed) {
+            hoveredEraserStrokeIndices = newHovered;
+            redrawLocalStrokes();
+        }
+    } else if (hoveredEraserStrokeIndices.size > 0 && !dragStartInfo) {
+        hoveredEraserStrokeIndices.clear();
+        redrawLocalStrokes();
+    }
+
+    // Подсветка элементов доски при глобальном ластике
+    if (activeTool === 'eraser' && !dragStartInfo) {
+        const elementDiv = e.target.closest ? e.target.closest('.board-element') : null;
+        document.querySelectorAll('.board-element.eraser-hover-target').forEach(el => {
+            if (el !== elementDiv) el.classList.remove('eraser-hover-target');
+        });
+        if (elementDiv) {
+            elementDiv.classList.add('eraser-hover-target');
+        }
+    } else {
+        document.querySelectorAll('.board-element.eraser-hover-target').forEach(el => {
+            el.classList.remove('eraser-hover-target');
+        });
+    }
+
+    if (dragStartInfo && dragStartInfo.type === 'local-stroke-drag') {
+        const deltaX = curX - dragStartInfo.startX;
+        const deltaY = curY - dragStartInfo.startY;
+        const stroke = localStrokes[dragStartInfo.strokeIndex];
+        if (stroke && dragStartInfo.initialPoints) {
+            stroke.points = dragStartInfo.initialPoints.map(pt => ({
+                ...pt,
+                x: pt.x + deltaX,
+                y: pt.y + deltaY
+            }));
+            redrawLocalStrokes();
+        }
+        return;
+    }
+
     if (dragStartInfo && dragStartInfo.type === 'local-eraser-drag') {
         localStrokes = localStrokes.filter(stroke => {
             const touched = stroke.points.some(pt => {
                 const dx = pt.x - curX;
                 const dy = pt.y - curY;
-                return Math.sqrt(dx*dx + dy*dy) < 20;
+                const r = Math.max(25, (stroke.baseWidth || 4) / 2 + 12);
+                return Math.sqrt(dx*dx + dy*dy) < r;
             });
             return !touched;
         });
+        hoveredEraserStrokeIndices.clear();
         redrawLocalStrokes();
         return;
     }
 
+
     if (isDrawing && activeDrawingPathEl) {
-        activeDrawingPoints.push({ x: curX, y: curY });
+        activeDrawingPoints.push({ x: curX, y: curY, pressure: 0.5 });
         
-        let d = activeDrawingPathEl.getAttribute("d");
-        d += ` L ${curX} ${curY}`;
+        const tool = localDrawingTool;
+        const baseW = toolSettings[tool] ? toolSettings[tool].width : 4;
+        const { d, strokeWidth } = buildSvgPathAndWidth(activeDrawingPoints, baseW, tool);
         activeDrawingPathEl.setAttribute("d", d);
+        activeDrawingPathEl.setAttribute("stroke-width", strokeWidth.toFixed(1));
         return;
     }
 
     if (!dragStartInfo) return;
+
 
     const deltaX = (e.clientX - dragStartInfo.startX) / zoom;
     const deltaY = (e.clientY - dragStartInfo.startY) / zoom;
@@ -2454,6 +2839,17 @@ boardViewport.addEventListener('mousemove', (e) => {
     updateSelectionOverlay();
 });
 
+
+boardViewport.addEventListener('mouseleave', () => {
+    if (hoveredEraserStrokeIndices.size > 0) {
+        hoveredEraserStrokeIndices.clear();
+        redrawLocalStrokes();
+    }
+    document.querySelectorAll('.board-element.eraser-hover-target').forEach(el => {
+        el.classList.remove('eraser-hover-target');
+    });
+});
+
 boardViewport.addEventListener('mouseup', (e) => {
     setTimeout(() => {
         updateSelectionOverlay();
@@ -2471,8 +2867,14 @@ boardViewport.addEventListener('mouseup', (e) => {
     if (isDrawing) {
         isDrawing = false;
         if (activeDrawingPoints.length > 1) {
+            const tool = localDrawingTool;
+            const baseW = toolSettings[tool] ? toolSettings[tool].width : 4;
+            const opacity = toolSettings[tool] ? toolSettings[tool].opacity : 1.0;
             localStrokes.push({
                 color: activeColor,
+                toolType: tool,
+                baseWidth: baseW,
+                opacity: opacity,
                 points: activeDrawingPoints
             });
             localRedoStrokes = []; // Очищаем redo-буфер при рисовании нового штриха
@@ -2487,10 +2889,11 @@ boardViewport.addEventListener('mouseup', (e) => {
 
     if (!dragStartInfo) return;
 
-    if (dragStartInfo.type === 'local-eraser-drag') {
+    if (dragStartInfo.type === 'local-stroke-drag' || dragStartInfo.type === 'local-eraser-drag') {
         dragStartInfo = null;
         return;
     }
+
 
     if (dragStartInfo.type === 'selection-marquee') {
         if (dragStartInfo.marqueeEl) {
@@ -2742,12 +3145,45 @@ boardViewport.addEventListener('pointerdown', (e) => {
     isPenDrawing = true;
     activePenPointerId = e.pointerId;
 
+    if (activeTool === 'draw' && localDrawingTool === 'select') {
+        let foundIndex = -1;
+        localStrokes.forEach((stroke, index) => {
+            const touched = stroke.points.some(pt => {
+                const dx = pt.x - clickX;
+                const dy = pt.y - clickY;
+                const r = Math.max(25, (stroke.baseWidth || 4) / 2 + 10);
+                return Math.sqrt(dx * dx + dy * dy) < r;
+            });
+            if (touched) foundIndex = index;
+        });
+
+        if (foundIndex !== -1) {
+            selectedLocalStrokeIndex = foundIndex;
+            const strokeToMove = localStrokes[foundIndex];
+            dragStartInfo = {
+                type: 'local-stroke-drag',
+                strokeIndex: foundIndex,
+                startX: clickX,
+                startY: clickY,
+                initialPoints: strokeToMove.points.map(pt => ({ ...pt }))
+            };
+        } else {
+            selectedLocalStrokeIndex = -1;
+            dragStartInfo = null;
+        }
+        redrawLocalStrokes();
+        e.preventDefault();
+        return;
+    }
+
     if (activeTool === 'eraser' || isEraserPen) {
+
         localStrokes = localStrokes.filter(stroke => {
             const touched = stroke.points.some(pt => {
                 const dx = pt.x - clickX;
                 const dy = pt.y - clickY;
-                return Math.sqrt(dx * dx + dy * dy) < 20;
+                const r = Math.max(25, (stroke.baseWidth || 4) / 2 + 12);
+                return Math.sqrt(dx * dx + dy * dy) < r;
             });
             return !touched;
         });
@@ -2757,13 +3193,24 @@ boardViewport.addEventListener('pointerdown', (e) => {
         isDrawing = true;
         activeDrawingPoints = [{ x: clickX, y: clickY, pressure: pressure }];
         
+        const tool = localDrawingTool;
+        const baseW = toolSettings[tool] ? toolSettings[tool].width : 4;
+        const opacity = toolSettings[tool] ? toolSettings[tool].opacity : 1.0;
+
+        const { d, strokeWidth } = buildSvgPathAndWidth(activeDrawingPoints, baseW, tool);
         activeDrawingPathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
         activeDrawingPathEl.setAttribute("stroke", activeColor);
-        activeDrawingPathEl.setAttribute("stroke-width", (4 * (0.35 + pressure * 1.3)).toFixed(1));
+        activeDrawingPathEl.setAttribute("stroke-width", strokeWidth.toFixed(1));
         activeDrawingPathEl.setAttribute("fill", "none");
-        activeDrawingPathEl.setAttribute("stroke-linecap", "round");
+        activeDrawingPathEl.setAttribute("stroke-linecap", tool === 'highlighter' ? "butt" : "round");
         activeDrawingPathEl.setAttribute("stroke-linejoin", "round");
-        activeDrawingPathEl.setAttribute("d", `M ${clickX.toFixed(1)} ${clickY.toFixed(1)}`);
+        activeDrawingPathEl.setAttribute("stroke-opacity", opacity.toString());
+
+        if (tool === 'highlighter') {
+            activeDrawingPathEl.style.mixBlendMode = 'multiply';
+        }
+
+        activeDrawingPathEl.setAttribute("d", d);
         drawingLayer.appendChild(activeDrawingPathEl);
     }
 
@@ -2771,12 +3218,67 @@ boardViewport.addEventListener('pointerdown', (e) => {
 }, { passive: false });
 
 boardViewport.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'pen' && !isPenDrawing) {
+        const rect = boardCanvas.getBoundingClientRect();
+        const curX = (e.clientX - rect.left) / zoom;
+        const curY = (e.clientY - rect.top) / zoom;
+        const isEraserActive = (activeTool === 'draw' && localDrawingTool === 'eraser') || activeTool === 'eraser';
+        if (isEraserActive) {
+            const newHovered = new Set();
+            localStrokes.forEach((stroke, index) => {
+                const touched = stroke.points.some(pt => {
+                    const dx = pt.x - curX;
+                    const dy = pt.y - curY;
+                    const r = Math.max(25, (stroke.baseWidth || 4) / 2 + 12);
+                    return Math.sqrt(dx * dx + dy * dy) < r;
+                });
+                if (touched) newHovered.add(index);
+            });
+
+            let changed = newHovered.size !== hoveredEraserStrokeIndices.size;
+            if (!changed) {
+                for (let idx of newHovered) {
+                    if (!hoveredEraserStrokeIndices.has(idx)) {
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+
+            if (changed) {
+                hoveredEraserStrokeIndices = newHovered;
+                redrawLocalStrokes();
+            }
+        }
+    }
+
     if (e.pointerType !== 'pen' || !isPenDrawing || activePenPointerId !== e.pointerId) return;
+
 
     const rect = boardCanvas.getBoundingClientRect();
     const coalescedEvents = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
 
+    if (dragStartInfo && dragStartInfo.type === 'local-stroke-drag') {
+        coalescedEvents.forEach(evt => {
+            const curX = (evt.clientX - rect.left) / zoom;
+            const curY = (evt.clientY - rect.top) / zoom;
+            const deltaX = curX - dragStartInfo.startX;
+            const deltaY = curY - dragStartInfo.startY;
+            const stroke = localStrokes[dragStartInfo.strokeIndex];
+            if (stroke && dragStartInfo.initialPoints) {
+                stroke.points = dragStartInfo.initialPoints.map(pt => ({
+                    ...pt,
+                    x: pt.x + deltaX,
+                    y: pt.y + deltaY
+                }));
+            }
+        });
+        redrawLocalStrokes();
+        return;
+    }
+
     if (dragStartInfo && dragStartInfo.type === 'local-eraser-drag') {
+
         coalescedEvents.forEach(evt => {
             const curX = (evt.clientX - rect.left) / zoom;
             const curY = (evt.clientY - rect.top) / zoom;
@@ -2784,7 +3286,8 @@ boardViewport.addEventListener('pointermove', (e) => {
                 const touched = stroke.points.some(pt => {
                     const dx = pt.x - curX;
                     const dy = pt.y - curY;
-                    return Math.sqrt(dx * dx + dy * dy) < 20;
+                    const r = Math.max(25, (stroke.baseWidth || 4) / 2 + 12);
+                    return Math.sqrt(dx * dx + dy * dy) < r;
                 });
                 return !touched;
             });
@@ -2801,7 +3304,9 @@ boardViewport.addEventListener('pointermove', (e) => {
             activeDrawingPoints.push({ x: curX, y: curY, pressure: pressure });
         });
 
-        const { d, strokeWidth } = buildSvgPathAndWidth(activeDrawingPoints, 4);
+        const tool = localDrawingTool;
+        const baseW = toolSettings[tool] ? toolSettings[tool].width : 4;
+        const { d, strokeWidth } = buildSvgPathAndWidth(activeDrawingPoints, baseW, tool);
         activeDrawingPathEl.setAttribute("d", d);
         activeDrawingPathEl.setAttribute("stroke-width", strokeWidth.toFixed(1));
     }
@@ -2818,9 +3323,14 @@ const endPenDrawing = (e) => {
     if (isDrawing) {
         isDrawing = false;
         if (activeDrawingPoints.length > 1) {
+            const tool = localDrawingTool;
+            const baseW = toolSettings[tool] ? toolSettings[tool].width : 4;
+            const opacity = toolSettings[tool] ? toolSettings[tool].opacity : 1.0;
             localStrokes.push({
                 color: activeColor,
-                baseWidth: 4,
+                toolType: tool,
+                baseWidth: baseW,
+                opacity: opacity,
                 points: activeDrawingPoints
             });
             localRedoStrokes = [];
@@ -2877,12 +3387,19 @@ function updateElementOptionsPanel() {
             
             const btnAddText = document.getElementById('btnOptAddText');
             const btnEditImage = document.getElementById('btnOptEditImage');
+            const btnEditDrawing = document.getElementById('btnOptEditDrawing');
 
             if (isMultiSelect || (singleEl && (singleEl.type === 'drawing' || singleEl.type === 'image'))) {
                 btnColor.style.display = 'none';
                 popup.classList.remove('active');
             } else {
                 btnColor.style.display = 'block';
+            }
+
+            if (!isMultiSelect && singleEl && singleEl.type === 'drawing') {
+                if (btnEditDrawing) btnEditDrawing.style.display = 'block';
+            } else {
+                if (btnEditDrawing) btnEditDrawing.style.display = 'none';
             }
 
             if (!isMultiSelect && singleEl && singleEl.type === 'image') {
@@ -2946,6 +3463,17 @@ function initElementOptionsPanel() {
     const sliderBr = document.getElementById('sliderCornerRadius');
     const labelBr = document.getElementById('lblCornerRadiusValue');
     const customColorInput = document.getElementById('optCustomColorInput');
+
+    const btnEditDrawing = document.getElementById('btnOptEditDrawing');
+    if (btnEditDrawing) {
+        btnEditDrawing.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (selectedElementIds.size === 1) {
+                const id = Array.from(selectedElementIds)[0];
+                editExistingDrawing(id);
+            }
+        });
+    }
 
     btnColor.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -3258,10 +3786,11 @@ function updateSelectionOverlay() {
         boardCanvas.appendChild(overlay);
     }
     
-    if (selectedElementIds.size === 0) {
+    if (activeTool === 'draw' || selectedElementIds.size === 0) {
         overlay.style.display = 'none';
         return;
     }
+
     
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     let hasValidElement = false;

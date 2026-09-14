@@ -954,25 +954,63 @@ body.drawing-mode-active .board-canvas {
     background-color: #f3f4f6 !important; /* Фокусирующий светло-серый оттенок холста */
 }
 
-.drawing-mode-panel {
+/* === ПЛАВАЮЩИЙ ДОК APPLE PENCIL (PENCILKIT STYLE) === */
+.drawing-mode-panel.pencilkit-dock {
     position: fixed;
-    bottom: -80px;
+    bottom: -110px;
     left: 50%;
     transform: translateX(-50%);
-    background: var(--canvas-bg);
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-lg);
-    padding: 8px 18px;
-    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 8px 16px;
+    border-radius: 28px;
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     z-index: 10000;
-    transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: bottom 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.25);
 }
 
-.drawing-mode-panel.active {
+body.dark .drawing-mode-panel.pencilkit-dock {
+    background: rgba(30, 41, 59, 0.88);
+    border-color: rgba(51, 65, 85, 0.8);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.drawing-mode-panel.pencilkit-dock.active {
     bottom: 24px;
+}
+
+.pencilkit-action-group {
+    display: flex;
+    gap: 4px;
+}
+
+.pencilkit-btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-sec);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.pencilkit-btn-icon:hover {
+    background: var(--border-color);
+    color: var(--text-color);
+}
+
+.pencilkit-btn-icon:disabled {
+    opacity: 0.3;
+    cursor: default;
 }
 
 .drawing-tools-group {
@@ -981,27 +1019,58 @@ body.drawing-mode-active .board-canvas {
 }
 
 .drawing-panel-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    position: relative;
+    padding: 6px 10px;
+    height: 38px;
+    border-radius: 12px;
     border: none;
     background: transparent;
     color: var(--text-sec);
     cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
+    gap: 6px;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.drawing-panel-btn .tool-label {
+    font-size: 0.78rem;
+    font-weight: 550;
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .drawing-panel-btn .tool-label {
+        display: inline;
+    }
 }
 
 .drawing-panel-btn:hover {
     background: var(--border-color);
     color: var(--text-color);
+    transform: translateY(-2px);
 }
 
 .drawing-panel-btn.active {
     background: var(--accent-color);
     color: white;
+    box-shadow: 0 4px 12px rgba(16, 112, 229, 0.3);
+    transform: translateY(-4px);
+}
+
+.drawing-panel-btn.tool-highlighter.active {
+    background: #f59e0b;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.drawing-panel-btn.tool-pen.active {
+    background: #10b981;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.drawing-panel-btn.tool-eraser.active {
+    background: #ef4444;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .drawing-panel-divider {
@@ -1010,14 +1079,85 @@ body.drawing-mode-active .board-canvas {
     background: var(--border-color);
 }
 
+.pencilkit-size-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--canvas-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.pencilkit-size-btn:hover {
+    background: var(--border-color);
+}
+
+.size-preview-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-color);
+}
+
+.pencilkit-popover {
+    position: absolute;
+    bottom: calc(100% + 14px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--canvas-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+    border-radius: 16px;
+    padding: 16px;
+    width: 220px;
+    z-index: 10005;
+    animation: popoverFadeIn 0.2s ease-out;
+}
+
+@keyframes popoverFadeIn {
+    from { opacity: 0; transform: translate(-50%, 8px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.popover-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 6px;
+}
+
+.pencilkit-slider {
+    width: 100%;
+    accent-color: var(--accent-color);
+    cursor: pointer;
+}
+
+.pencilkit-slider-ticks {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: var(--text-sec);
+    margin-top: 2px;
+}
+
 .drawing-colors-group {
     display: flex;
     gap: 6px;
 }
 
 .draw-color-opt {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     cursor: pointer;
     border: 2px solid transparent;
@@ -1032,6 +1172,70 @@ body.drawing-mode-active .board-canvas {
     border-color: var(--text-color);
     box-shadow: 0 0 0 2px var(--canvas-bg) inset;
 }
+
+.draw-color-opt.color-picker-trigger {
+    background: conic-gradient(from 0deg, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0000ff, #8000ff, #ff0080, #ff0000);
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}
+
+/* Подсветка элементов и рисунков красной обводкой при наведении ластиком (в стиле Milanote) */
+.board-element.eraser-hover-target {
+    outline: 2.5px solid #ef4444 !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.5) !important;
+    transition: outline 0.1s ease, box-shadow 0.1s ease !important;
+}
+
+.board-element.eraser-hover-target svg path {
+    stroke: #ef4444 !important;
+    filter: drop-shadow(0 0 3px rgba(239, 68, 68, 0.8));
+}
+
+/* Пользовательские курсоры в стиле Milanote для инструментов рисования */
+body.drawing-mode-active.cursor-pencil,
+body.drawing-mode-active.cursor-pencil #boardViewport,
+body.drawing-mode-active.cursor-pencil #boardCanvas,
+body.drawing-mode-active.cursor-pencil #drawingLayer,
+body.drawing-mode-active .cursor-pencil {
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M17%203a2.828%202.828%200%201%201%204%204L7.5%2020.5%202%2022l1.5-5.5L17%203z%22%20fill%3D%22%23ffffff%22%2F%3E%3C%2Fsvg%3E") 2 22, crosshair !important;
+}
+
+body.drawing-mode-active.cursor-highlighter,
+body.drawing-mode-active.cursor-highlighter #boardViewport,
+body.drawing-mode-active.cursor-highlighter #boardCanvas,
+body.drawing-mode-active.cursor-highlighter #drawingLayer,
+body.drawing-mode-active .cursor-highlighter {
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%2020h9%22%2F%3E%3Cpath%20d%3D%22m16.5%203.5%204%204L7%2020%202%2020l0-5L16.5%203.5z%22%20fill%3D%22%23fef08a%22%2F%3E%3Cline%20x1%3D%2213.5%22%20y1%3D%226.5%22%20x2%3D%2217.5%22%20y2%3D%2210.5%22%2F%3E%3C%2Fsvg%3E") 2 20, crosshair !important;
+}
+
+body.drawing-mode-active.cursor-pen,
+body.drawing-mode-active.cursor-pen #boardViewport,
+body.drawing-mode-active.cursor-pen #boardCanvas,
+body.drawing-mode-active.cursor-pen #drawingLayer,
+body.drawing-mode-active .cursor-pen {
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m12%2019%207-7%203%203-7%207-3-3z%22%2F%3E%3Cpath%20d%3D%22m18%2013-1.5-7.5L2%202l3.5%2014.5L13%2018l5-5z%22%20fill%3D%22%23ffffff%22%2F%3E%3C%2Fsvg%3E") 2 2, crosshair !important;
+}
+
+body.drawing-mode-active.cursor-eraser,
+body.drawing-mode-active.cursor-eraser #boardViewport,
+body.drawing-mode-active.cursor-eraser #boardCanvas,
+body.drawing-mode-active.cursor-eraser #drawingLayer,
+body.drawing-mode-active .cursor-eraser {
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M20%2020H7L3%2016C2%2015%202%2013%203%2012L13%202C14%201%2016%201%2017%202L21%206C22%207%2022%209%2021%2010L12%2019L20%2020Z%22%20fill%3D%22%23ffffff%22%2F%3E%3Cline%20x1%3D%2218%22%20y1%3D%229%22%20x2%3D%2210%22%20y2%3D%2217%22%20stroke%3D%22%2394a3b8%22%2F%3E%3C%2Fsvg%3E") 3 16, cell !important;
+}
+
+body.drawing-mode-active.cursor-select,
+body.drawing-mode-active.cursor-select #boardViewport,
+body.drawing-mode-active.cursor-select #boardCanvas,
+body.drawing-mode-active.cursor-select #drawingLayer,
+body.drawing-mode-active .cursor-select {
+    cursor: default !important;
+}
+
+
+
 
 .drawing-action-buttons {
     display: flex;

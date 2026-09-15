@@ -6360,6 +6360,13 @@ function createTaskRowElement(task, isStandalone = false) {
             </button>
             <div class="task-actions-dropdown" style="display: none;">
                 ${task.completed ? `
+                <button class="dropdown-item btn-toggle-pomodoro">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="margin-right: 2.5px;" width="14" height="14">
+                        <path d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12 14.5 13.3807 13.3807 14.5 12 14.5 10.6193 14.5 9.5 13.3807 9.5 12 9.5 10.6193 10.6193 9.5 12 9.5ZM12 2C17.5228 2 22 6.47715 22 12 22 17.5228 17.5228 22 12 22 6.47715 22 2 17.5228 2 12 2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12 4 16.4183 7.58172 20 12 20 16.4183 20 20 16.4183 20 12 20 7.58172 16.4183 4 12 4Z"></path>
+                    </svg>
+                    <span>${task.inPomodoro ? 'Удалить из Помодоро' : 'Добавить в Помодоро'}</span>
+                </button>
+                <div class="dropdown-divider"></div>
                 <button class="dropdown-item btn-delete">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
                         <polyline points="3 6 5 6 21 6"></polyline>
@@ -6592,7 +6599,7 @@ function createTaskRowElement(task, isStandalone = false) {
 
                 // Проверяем, чтобы меню не вылезало за пределы экрана
                 const menuWidth = 230;
-                const menuHeight = task.completed ? 80 : 340;
+                const menuHeight = task.completed ? 90 : 340;
                 if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
                 if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
 
@@ -6894,7 +6901,7 @@ function createTaskRowElement(task, isStandalone = false) {
 
     // Клик на саму задачу открывает модалку деталей
     item.addEventListener('click', (e) => {
-        if (e.target.closest('button, input, textarea, a, .checkbox-wrapper, .custom-checkbox, .task-actions-dropdown, .task-drag-handle, .new-subtask-temp')) {
+        if (e.target.closest('button, input, textarea, a, .checkbox-wrapper, .custom-checkbox, .task-actions-dropdown, .task-drag-handle, .new-subtask-temp, .pomo-task-count-badge, .pomo-select-target-btn')) {
             return;
         }
         if (item.classList.contains('editing')) {
@@ -13866,6 +13873,7 @@ function pomoRenderTasks() {
 
         // Создаем кнопку-переключатель (буллит) выбора задачи для Помодоро
         const targetBtn = document.createElement('button');
+        targetBtn.type = 'button';
         targetBtn.className = 'pomo-select-target-btn';
         targetBtn.title = isActive ? 'Текущая задача для фокуса' : 'Выбрать эту задачу для фокуса';
         targetBtn.style.background = 'none';
@@ -13880,6 +13888,8 @@ function pomoRenderTasks() {
         targetBtn.style.color = isActive ? 'var(--accent, #4b6bfb)' : 'var(--text-secondary, #818c99)';
         targetBtn.style.opacity = isActive ? '1' : '0.4';
         targetBtn.style.transition = 'opacity 0.2s, color 0.2s';
+        targetBtn.style.position = 'relative';
+        targetBtn.style.zIndex = '2';
 
         if (isActive) {
             targetBtn.innerHTML = `
@@ -13911,7 +13921,8 @@ function pomoRenderTasks() {
             pomoRenderTasks();
         });
 
-        const countBadge = document.createElement('span');
+        const countBadge = document.createElement('button');
+        countBadge.type = 'button';
         countBadge.className = 'pomo-task-count-badge';
         countBadge.style.marginRight = '12px';
         countBadge.style.fontFamily = "'Nunito', sans-serif";
@@ -13921,6 +13932,10 @@ function pomoRenderTasks() {
         countBadge.style.padding = '4px 8px';
         countBadge.style.borderRadius = '6px';
         countBadge.style.transition = 'background-color 0.2s';
+        countBadge.style.background = 'transparent';
+        countBadge.style.border = 'none';
+        countBadge.style.position = 'relative';
+        countBadge.style.zIndex = '2';
 
         countBadge.addEventListener('mouseenter', () => {
             countBadge.style.backgroundColor = 'var(--hover-bg, rgba(0,0,0,0.05))';

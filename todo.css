@@ -813,6 +813,7 @@ body.dark .task-item:hover {
 }
 
 .custom-checkbox {
+    position: relative;
     width: 20px;
     height: 20px;
     border: 1.5px solid #b8bac2;
@@ -828,6 +829,17 @@ body.dark .task-item:hover {
     box-sizing: border-box;
     outline: none;
     flex-shrink: 0;
+}
+
+/* Расширенная кликабельная область вокруг галочки */
+.custom-checkbox::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    bottom: -6px;
+    left: -6px;
+    right: -6px;
+    border-radius: 50%;
 }
 
 body.dark .custom-checkbox {

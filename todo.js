@@ -5819,7 +5819,72 @@ function doRenderTasks() {
     if (gcalCachedEvents && gcalCachedEvents.length > 0 && typeof renderGCalEventsBanner === 'function') {
         renderGCalEventsBanner(gcalCachedEvents);
     }
+
+    // Динамическое выравнивание плашек времени по самой левой плашке в текущем списке
+    requestAnimationFrame(() => {
+        alignTaskTimeBadges();
+    });
 }
+
+// Динамическое выравнивание левого края плашек времени по максимальному вылету влево
+function alignTaskTimeBadges() {
+    if (window.innerWidth <= 480) return;
+
+    const containers = document.querySelectorAll('#activeTasksContainer, #completedTasksContainer, .section-tasks-container');
+    containers.forEach(container => {
+        if (container.offsetWidth === 0 && container.offsetHeight === 0) return;
+
+        const rows = Array.from(container.querySelectorAll('.task-item')).filter(r => r.offsetWidth > 0);
+        if (rows.length === 0) return;
+
+        // Сбрасываем правый отступ у колонок времени для точного измерения
+        rows.forEach(row => {
+            const timeCol = row.querySelector('.task-time-col');
+            if (timeCol) {
+                timeCol.style.marginRight = '';
+            }
+        });
+
+        let maxOffsetFromRight = 0;
+        const rowDataList = [];
+
+        rows.forEach(row => {
+            const timeCol = row.querySelector('.task-time-col');
+            if (!timeCol) return;
+
+            const timeBadge = timeCol.querySelector('.task-due-badge');
+            const projCol = row.querySelector('.task-proj-col');
+            const projBadge = projCol ? projCol.querySelector('.task-project-badge') : null;
+
+            const timeWidth = timeBadge ? timeBadge.offsetWidth : timeCol.offsetWidth;
+            const projWidth = projBadge ? projBadge.offsetWidth : (projCol ? projCol.offsetWidth : 0);
+
+            if (timeWidth === 0) return;
+
+            const offsetFromRight = projWidth + (projWidth > 0 ? 6 : 0) + timeWidth;
+            if (offsetFromRight > maxOffsetFromRight) {
+                maxOffsetFromRight = offsetFromRight;
+            }
+
+            rowDataList.push({
+                timeCol,
+                timeWidth,
+                projWidth
+            });
+        });
+
+        if (maxOffsetFromRight === 0 || rowDataList.length === 0) return;
+
+        rowDataList.forEach(({ timeCol, timeWidth, projWidth }) => {
+            const requiredMarginRight = maxOffsetFromRight - timeWidth - projWidth;
+            timeCol.style.marginRight = `${Math.max(6, requiredMarginRight)}px`;
+        });
+    });
+}
+
+window.addEventListener('resize', () => {
+    alignTaskTimeBadges();
+});
 
 // Проверка свернутости родительской задачи
 function isParentTaskCollapsed(taskId) {
@@ -5980,20 +6045,6 @@ function createTaskRowElement(task, isStandalone = false) {
         dateOnlyLabel = formatDateOnlyDisplay(task.dueDate, task.dueTime, task.dueEndDate, task.dueEndTime);
         if (task.dueRepeat) {
             repeatTextLabel = getRepeatLabel(task.dueRepeat, task.dueDate);
-        }
-        if (currentRoute === 'today' || currentRoute === 'tomorrow') {
-            const today = new Date();
-            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
-
-            if (task.dueDate === todayStr || task.dueDate === tomorrowStr) {
-                const project = projectsList.find(p => p.id === task.projectId);
-                const projectName = project ? project.name : 'Входящие';
-                dueLabel = dueLabel.replace('Сегодня', projectName).replace('Завтра', projectName);
-                dateOnlyLabel = dateOnlyLabel.replace('Сегодня', projectName).replace('Завтра', projectName);
-            }
         }
     }
 
@@ -6182,46 +6233,122 @@ function createTaskRowElement(task, isStandalone = false) {
             ${mobileMetaHtml}
         </div>
         ${task.dueDate ? (() => {
-            let isProj = false;
-            if (task.dueDate && (currentRoute === 'today' || currentRoute === 'tomorrow')) {
-                const tdy = new Date();
-                const tdyS = tdy.getFullYear() + '-' + String(tdy.getMonth() + 1).padStart(2, '0') + '-' + String(tdy.getDate()).padStart(2, '0');
-                const tmr = new Date();
-                tmr.setDate(tmr.getDate() + 1);
-                const tmrS = tmr.getFullYear() + '-' + String(tmr.getMonth() + 1).padStart(2, '0') + '-' + String(tmr.getDate()).padStart(2, '0');
-                if (task.dueDate === tdyS || task.dueDate === tmrS) {
-                    isProj = true;
-                }
-            }
-            let bStyle = 'style="margin-left: auto;"';
-            if (isProj) {
-                if (project && project.color) {
-                    bStyle = `style="color: ${project.color} !important; border-color: ${hexToRgba(project.color, 0.15)} !important; background-color: ${hexToRgba(project.color, 0.08)} !important; margin-left: auto;"`;
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+
+            const isTodayTomorrowRoute = (currentRoute === 'today' || currentRoute === 'tomorrow');
+            const isTodayOrTomorrowDate = (task.dueDate === todayStr || task.dueDate === tomorrowStr);
+
+            let badgesHtml = '';
+            let hasFirstBadge = false;
+
+            if (isTodayTomorrowRoute) {
+                if (isTodayOrTomorrowDate) {
+                    if (task.dueTime) {
+                        let timeStr = task.dueTime;
+                        if (task.dueEndTime) {
+                            timeStr += `-${task.dueEndTime}`;
+                        }
+                        const badgeClass = isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '');
+                        badgesHtml += `
+                        <span class="task-time-col" style="margin-left: auto;">
+                            <span class="task-due-badge ${badgeClass}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                <span style="vertical-align: middle;">${timeStr}</span>
+                            </span>
+                        </span>
+                        `;
+                        hasFirstBadge = true;
+                    }
+
+                    const proj = task.projectId ? projectsList.find(p => p.id === task.projectId) : null;
+                    const projName = proj ? proj.name : 'Входящие';
+                    let projStyle = '';
+                    if (proj && proj.color) {
+                        projStyle = `style="color: ${proj.color} !important; border-color: ${hexToRgba(proj.color, 0.22)} !important; background-color: ${hexToRgba(proj.color, 0.14)} !important;"`;
+                    } else {
+                        projStyle = `style="color: #6366f1 !important; border-color: rgba(99, 102, 241, 0.22) !important; background-color: rgba(99, 102, 241, 0.14) !important;"`;
+                    }
+
+                    badgesHtml += `
+                    <span class="task-proj-col" style="${!hasFirstBadge ? 'margin-left: auto;' : ''}">
+                        <span class="task-due-badge task-project-badge" ${projStyle}>
+                            <span style="vertical-align: middle;">${projName}</span>
+                        </span>
+                    </span>
+                    `;
+                    hasFirstBadge = true;
                 } else {
-                    bStyle = `style="color: #71717a !important; border-color: rgba(113, 113, 122, 0.15) !important; background-color: rgba(113, 113, 122, 0.08) !important; margin-left: auto;"`;
+                    const rawDueLabel = dateOnlyLabel || dueLabel;
+                    const badgeClass = isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '');
+                    badgesHtml += `
+                    <span class="task-time-col" style="margin-left: auto;">
+                        <span class="task-due-badge ${badgeClass}">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            <span style="vertical-align: middle;">${rawDueLabel}</span>
+                        </span>
+                    </span>
+                    `;
+                    hasFirstBadge = true;
+
+                    const proj = task.projectId ? projectsList.find(p => p.id === task.projectId) : null;
+                    const projName = proj ? proj.name : 'Входящие';
+                    let projStyle = '';
+                    if (proj && proj.color) {
+                        projStyle = `style="color: ${proj.color} !important; border-color: ${hexToRgba(proj.color, 0.22)} !important; background-color: ${hexToRgba(proj.color, 0.14)} !important;"`;
+                    } else {
+                        projStyle = `style="color: #6366f1 !important; border-color: rgba(99, 102, 241, 0.22) !important; background-color: rgba(99, 102, 241, 0.14) !important;"`;
+                    }
+                    badgesHtml += `
+                    <span class="task-proj-col">
+                        <span class="task-due-badge task-project-badge" ${projStyle}>
+                            <span style="vertical-align: middle;">${projName}</span>
+                        </span>
+                    </span>
+                    `;
                 }
+            } else {
+                const rawDueLabel = dateOnlyLabel || dueLabel;
+                const badgeClass = isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '');
+                badgesHtml += `
+                <span class="task-due-badge ${badgeClass}" style="margin-left: auto;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span style="vertical-align: middle;">${rawDueLabel}</span>
+                </span>
+                `;
+                hasFirstBadge = true;
             }
-            return `
-            <span class="task-due-badge ${isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '')}" ${bStyle}>
-                ${!isProj ? `
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                ` : ''}
-                <span style="vertical-align: middle;">${dateOnlyLabel || dueLabel}</span>
-            </span>
-            ${repeatTextLabel ? `
-            <span class="task-repeat-badge">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
-                    <path d="M21.5 2v6h-6"></path><path d="M21.34 8A10 10 0 0 0 4.16 6.34L2.5 8"></path><path d="M2.5 22v-6h6"></path><path d="M2.66 16a10 10 0 0 0 17.18 1.66L21.5 16"></path>
-                </svg>
-                <span style="vertical-align: middle;">${repeatTextLabel}</span>
-            </span>
-            ` : ''}
-            `;
+
+            if (repeatTextLabel) {
+                badgesHtml += `
+                <span class="task-repeat-badge" style="${!hasFirstBadge ? 'margin-left: auto;' : 'margin-left: 6px;'}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
+                        <path d="M21.5 2v6h-6"></path><path d="M21.34 8A10 10 0 0 0 4.16 6.34L2.5 8"></path><path d="M2.5 22v-6h6"></path><path d="M2.66 16a10 10 0 0 0 17.18 1.66L21.5 16"></path>
+                    </svg>
+                    <span style="vertical-align: middle;">${repeatTextLabel}</span>
+                </span>
+                `;
+            }
+
+            return badgesHtml;
         })() : ''}
         <div class="task-actions">
             <button class="action-btn btn-more" title="Действия">
@@ -6748,7 +6875,9 @@ function createTaskRowElement(task, isStandalone = false) {
         item.removeAttribute('draggable');
     });
     item.addEventListener('mouseleave', () => {
-        item.removeAttribute('draggable');
+        if (!item.classList.contains('dragging')) {
+            item.removeAttribute('draggable');
+        }
     });
 
     // Обработчик кнопки свертывания/развертывания подзадач
@@ -8209,7 +8338,7 @@ function initDragAndDrop() {
                 placeholder.removeAttribute('data-target-parent-id');
 
                 let targetContainer = container;
-                if (container === activeTasksContainer && (currentRoute.startsWith('project/') || (currentRoute === 'today' && activeTasksContainer.querySelector('.section-tasks-container')))) {
+                if (container === activeTasksContainer && activeTasksContainer.querySelector('.section-tasks-container, .unsectioned-tasks-container')) {
                     // Determine which section or unsectioned container the cursor is hovering over
                     targetContainer = e.target.closest('.unsectioned-tasks-container, .section-tasks-container');
                     if (!targetContainer) {
@@ -8369,6 +8498,7 @@ function initDragAndDrop() {
             if (draggingElement) {
                 draggingElement.style.display = '';
                 draggingElement.classList.remove('dragging');
+                draggingElement.removeAttribute('draggable');
             }
 
             const taskId = draggingElement.getAttribute('data-id');
@@ -8390,6 +8520,7 @@ function initDragAndDrop() {
             // Determine targetParentId and newOrder
             let targetParentId = targetParentIdAttr || null;
             let newOrder = 0;
+            const promises = [];
 
             if (targetParentIdAttr) {
                 const siblingSubtasks = allTasks.filter(t => t.parentId === targetParentIdAttr && !t.deleted);
@@ -8452,7 +8583,7 @@ function initDragAndDrop() {
                 tempNode.remove();
 
                 if (!prevSibling && !nextSibling) {
-                    newOrder = 0;
+                    newOrder = 1000;
                 } else if (!prevSibling) {
                     newOrder = (nextSibling.order !== undefined ? nextSibling.order : 0) - 1000;
                 } else if (!nextSibling) {
@@ -8460,7 +8591,41 @@ function initDragAndDrop() {
                 } else {
                     const prevOrder = prevSibling.order !== undefined ? prevSibling.order : 0;
                     const nextOrder = nextSibling.order !== undefined ? nextSibling.order : 0;
-                    newOrder = (prevOrder + nextOrder) / 2;
+                    if (prevOrder < nextOrder) {
+                        newOrder = (prevOrder + nextOrder) / 2;
+                    } else {
+                        // Normalize all tasks in container if orders are equal or unordered
+                        const containerTasks = [];
+                        if (parentContainer) {
+                            [...parentContainer.children].forEach(childEl => {
+                                if (childEl.classList && childEl.classList.contains('task-item')) {
+                                    const tId = childEl.getAttribute('data-id');
+                                    const tObj = allTasks.find(item => item.id === tId);
+                                    if (tObj && !containerTasks.some(o => o.id === tObj.id)) {
+                                        containerTasks.push(tObj);
+                                    }
+                                }
+                            });
+                        }
+                        if (!containerTasks.some(t => t.id === taskId)) {
+                            const prevIdx = containerTasks.findIndex(t => t.id === prevSibling.id);
+                            if (prevIdx !== -1) {
+                                containerTasks.splice(prevIdx + 1, 0, task);
+                            } else {
+                                containerTasks.push(task);
+                            }
+                        }
+                        let counter = 1000;
+                        containerTasks.forEach(tObj => {
+                            tObj.order = counter;
+                            if (tObj.id === taskId) {
+                                newOrder = counter;
+                            } else if (currentUid) {
+                                promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', tObj.id), { order: counter }));
+                            }
+                            counter += 1000;
+                        });
+                    }
                 }
             }
 
@@ -8470,15 +8635,20 @@ function initDragAndDrop() {
                 sectionId: targetSectionId
             };
 
+            // Immediately update local task memory object
+            if (task) {
+                task.order = newOrder;
+                task.parentId = targetParentId;
+                task.sectionId = targetSectionId;
+            }
+
             if (parentContainer) {
                 const groupProjSectEl = parentContainer.closest('.project-section[data-group-project-id]');
                 if (groupProjSectEl) {
                     const groupProjId = groupProjSectEl.getAttribute('data-group-project-id');
                     const targetProjId = (groupProjId === 'inbox') ? null : groupProjId;
                     updateFields.projectId = targetProjId;
-                    if (task) {
-                        task.projectId = targetProjId;
-                    }
+                    if (task) task.projectId = targetProjId;
                 }
 
                 const groupPrioSectEl = parentContainer.closest('.project-section[data-group-priority]');
@@ -8486,9 +8656,7 @@ function initDragAndDrop() {
                     const targetPrio = parseInt(groupPrioSectEl.getAttribute('data-group-priority'), 10);
                     if (!isNaN(targetPrio)) {
                         updateFields.priority = targetPrio;
-                        if (task) {
-                            task.priority = targetPrio;
-                        }
+                        if (task) task.priority = targetPrio;
                     }
                 }
             }
@@ -8499,10 +8667,7 @@ function initDragAndDrop() {
                     const today = new Date();
                     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
                     updateFields.dueDate = todayStr;
-                    const task = allTasks.find(t => t.id === taskId);
-                    if (task) {
-                        task.dueDate = todayStr;
-                    }
+                    if (task) task.dueDate = todayStr;
                 }
             }
 
@@ -8519,7 +8684,6 @@ function initDragAndDrop() {
                         tomorrow.setDate(tomorrow.getDate() + 1);
                         const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
 
-                        const task = allTasks.find(t => t.id === taskId);
                         let alreadyMatches = false;
                         if (task) {
                             const currentDueDate = task.dueDate;
@@ -8534,61 +8698,6 @@ function initDragAndDrop() {
                                     alreadyMatches = currentDueDate === tomorrowStr;
                                 } else if (dateGroupId.startsWith('date-')) {
                                     alreadyMatches = currentDueDate === dateGroupId.substring(5);
-                                } else {
-                                    const projectActiveTasks = allTasks.filter(t => t.projectId === projectId && !t.parentId && !t.deleted && !t.completed);
-                                    const tempCounts = {};
-                                    projectActiveTasks.forEach(pt => {
-                                        if (pt.dueDate) {
-                                            tempCounts[pt.dueDate] = (tempCounts[pt.dueDate] || 0) + 1;
-                                        }
-                                    });
-                                    
-                                    if (tempCounts[currentDueDate] > 2) {
-                                        alreadyMatches = (dateGroupId === 'date-' + currentDueDate);
-                                    } else {
-                                        const getPeriodBucketLocal = (dStr) => {
-                                            const [y, m, d] = dStr.split('-').map(Number);
-                                            const dObj = new Date(y, m - 1, d);
-                                            dObj.setHours(0,0,0,0);
-                                            const time = dObj.getTime();
-                                            
-                                            const todayObj = new Date();
-                                            todayObj.setHours(0,0,0,0);
-                                            const day = todayObj.getDay();
-                                            const daysToSunday = day === 0 ? 0 : 7 - day;
-                                            const sundayOfThisWeek = new Date(todayObj);
-                                            sundayOfThisWeek.setDate(todayObj.getDate() + daysToSunday);
-                                            sundayOfThisWeek.setHours(23, 59, 59, 999);
-
-                                            const nextMonday = new Date(sundayOfThisWeek);
-                                            nextMonday.setDate(nextMonday.getDate() + 1);
-                                            nextMonday.setHours(0,0,0,0);
-                                            const nextSunday = new Date(nextMonday);
-                                            nextSunday.setDate(nextSunday.getDate() + 6);
-                                            nextSunday.setHours(23,59,59,999);
-
-                                            const endOfThisMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 0);
-                                            endOfThisMonth.setHours(23,59,59,999);
-
-                                            const startOfNextMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 1);
-                                            startOfNextMonth.setHours(0,0,0,0);
-                                            const endOfNextMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 2, 0);
-                                            endOfNextMonth.setHours(23,59,59,999);
-
-                                            if (time <= sundayOfThisWeek.getTime()) {
-                                                return 'this_week';
-                                            } else if (time >= nextMonday.getTime() && time <= nextSunday.getTime()) {
-                                                return 'next_week';
-                                            } else if (time <= endOfThisMonth.getTime()) {
-                                                return 'this_month';
-                                            } else if (time >= startOfNextMonth.getTime() && time <= endOfNextMonth.getTime()) {
-                                                return 'next_month';
-                                            } else {
-                                                return 'later';
-                                            }
-                                        };
-                                        alreadyMatches = (getPeriodBucketLocal(currentDueDate) === dateGroupId);
-                                    }
                                 }
                             }
                         }
@@ -8604,37 +8713,6 @@ function initDragAndDrop() {
                                 updateFields.dueDate = null;
                             } else if (dateGroupId.startsWith('date-')) {
                                 updateFields.dueDate = dateGroupId.substring(5);
-                            } else if (dateGroupId === 'this_week') {
-                                const nextDay = new Date();
-                                nextDay.setDate(nextDay.getDate() + 2);
-                                updateFields.dueDate = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
-                            } else if (dateGroupId === 'next_week') {
-                                const nextWeekMon = new Date();
-                                const day = nextWeekMon.getDay();
-                                const daysToNextMonday = day === 0 ? 1 : 8 - day;
-                                nextWeekMon.setDate(nextWeekMon.getDate() + daysToNextMonday);
-                                updateFields.dueDate = `${nextWeekMon.getFullYear()}-${String(nextWeekMon.getMonth() + 1).padStart(2, '0')}-${String(nextWeekMon.getDate()).padStart(2, '0')}`;
-                            } else if (dateGroupId === 'this_month') {
-                                const thisMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                                updateFields.dueDate = `${thisMonthEnd.getFullYear()}-${String(thisMonthEnd.getMonth() + 1).padStart(2, '0')}-${String(thisMonthEnd.getDate()).padStart(2, '0')}`;
-                            } else if (dateGroupId === 'next_month') {
-                                const nextMonthFirst = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-                                updateFields.dueDate = `${nextMonthFirst.getFullYear()}-${String(nextMonthFirst.getMonth() + 1).padStart(2, '0')}-${String(nextMonthFirst.getDate()).padStart(2, '0')}`;
-                            } else if (dateGroupId === 'later') {
-                                const laterDate = new Date();
-                                laterDate.setDate(laterDate.getDate() + 45);
-                                updateFields.dueDate = `${laterDate.getFullYear()}-${String(laterDate.getMonth() + 1).padStart(2, '0')}-${String(laterDate.getDate()).padStart(2, '0')}`;
-                            } else if (dateGroupId === 'overdue') {
-                                if (task) {
-                                    if (!task.dueDate || task.dueDate >= todayStr) {
-                                        const yesterday = new Date();
-                                        yesterday.setDate(yesterday.getDate() - 1);
-                                        const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
-                                        updateFields.dueDate = yesterdayStr;
-                                    } else {
-                                        updateFields.dueDate = task.dueDate;
-                                    }
-                                }
                             }
                         }
 
@@ -8652,37 +8730,50 @@ function initDragAndDrop() {
                 if (parentTask) {
                     updateFields.projectId = parentTask.projectId || null;
                     updateFields.sectionId = parentTask.sectionId || null;
+                    if (task) {
+                        task.projectId = updateFields.projectId;
+                        task.sectionId = updateFields.sectionId;
+                    }
                 }
             }
 
             if (currentUid && taskId) {
                 try {
-                    const promises = [];
                     promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), updateFields));
 
                     if (targetParentId || updateFields.projectId !== undefined || updateFields.priority !== undefined) {
                         const subtasks = allTasks.filter(t => t.parentId === taskId && !t.deleted);
                         subtasks.forEach(sub => {
                             const subUpdate = {};
-                            if (targetParentId !== undefined) subUpdate.parentId = targetParentId;
-                            if (updateFields.projectId !== undefined) subUpdate.projectId = updateFields.projectId;
-                            if (updateFields.sectionId !== undefined) subUpdate.sectionId = updateFields.sectionId;
-                            if (updateFields.priority !== undefined) subUpdate.priority = updateFields.priority;
+                            if (targetParentId !== undefined) {
+                                subUpdate.parentId = targetParentId;
+                                sub.parentId = targetParentId;
+                            }
+                            if (updateFields.projectId !== undefined) {
+                                subUpdate.projectId = updateFields.projectId;
+                                sub.projectId = updateFields.projectId;
+                            }
+                            if (updateFields.sectionId !== undefined) {
+                                subUpdate.sectionId = updateFields.sectionId;
+                                sub.sectionId = updateFields.sectionId;
+                            }
+                            if (updateFields.priority !== undefined) {
+                                subUpdate.priority = updateFields.priority;
+                                sub.priority = updateFields.priority;
+                            }
 
                             if (Object.keys(subUpdate).length > 0) {
                                 promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', sub.id), subUpdate));
-                                if (subUpdate.projectId !== undefined) sub.projectId = subUpdate.projectId;
-                                if (subUpdate.priority !== undefined) sub.priority = subUpdate.priority;
                             }
                         });
                     }
 
                     await Promise.all(promises);
-                    renderTasks();
                 } catch (err) {
                     console.error("Ошибка при перетаскивании и переупорядочивании задач:", err);
                 }
             }
+            renderTasks();
             draggingElement = null;
         });
     });
@@ -11698,6 +11789,11 @@ function initSubtasksDragAndDrop() {
                 const prevOrder = prevSubtask.order !== undefined ? prevSubtask.order : 0;
                 const nextOrder = nextSubtask.order !== undefined ? nextSubtask.order : 0;
                 newOrder = (prevOrder + nextOrder) / 2;
+            }
+
+            const subTaskObj = allTasks.find(t => t.id === subtaskId);
+            if (subTaskObj) {
+                subTaskObj.order = newOrder;
             }
 
             if (currentUid && subtaskId) {

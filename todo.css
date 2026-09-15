@@ -2659,6 +2659,26 @@ body.dark .due-date-dropdown {
     color: var(--accent);
 }
 
+/* Кастомные колонки бэджей времени и проекта */
+.task-time-col {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-shrink: 0;
+}
+
+.task-proj-col {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
+
+.task-time-col .task-due-badge,
+.task-proj-col .task-due-badge {
+    margin-left: 0 !important;
+}
+
 /* Кастомный бэдж срока у задачи */
 .task-due-badge {
     display: inline-flex;
@@ -3233,9 +3253,20 @@ body.dark .btn-empty-trash:hover {
 
 /* Элемент в процессе перетаскивания */
 .task-item.dragging {
-    opacity: 0.3;
-    border-style: dashed;
-    background-color: var(--hover-bg);
+    opacity: 1 !important;
+    border-color: transparent !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+body.dark .task-item.dragging {
+    background-color: #1a1e28 !important;
+}
+
+.task-item.dragging .task-drag-handle {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    display: none !important;
 }
 
 .task-item.drag-over-above {
@@ -3300,11 +3331,11 @@ body.dark .btn-empty-trash:hover {
 
 .drag-placeholder {
     box-sizing: border-box;
-    border-radius: 14px;
+    border-radius: 10px;
     background-color: #e2e5ec;
     border: none;
-    margin: 0;
-    width: 100%;
+    margin: 2px 6px;
+    width: calc(100% - 12px);
 }
 
 body.dark .drag-placeholder {
@@ -4704,9 +4735,9 @@ body.dark .section-actions-btn:hover {
     gap: 2px;
 }
 
-.section-tasks-container:has(.task-item, .section-drag-placeholder, .task-drag-placeholder),
-.unsectioned-tasks-container:has(.task-item, .section-drag-placeholder, .task-drag-placeholder),
-#activeTasksContainer:has(> .task-item) {
+.section-tasks-container:has(.task-item, .section-drag-placeholder, .task-drag-placeholder, .drag-placeholder),
+.unsectioned-tasks-container:has(.task-item, .section-drag-placeholder, .task-drag-placeholder, .drag-placeholder),
+#activeTasksContainer:has(> .task-item, > .drag-placeholder) {
     background-color: #fefefe;
     border-radius: 14px;
     border: 1px solid #ebf0f5;
@@ -4717,15 +4748,15 @@ body.dark .section-actions-btn:hover {
     transition: min-height 0.2s, background-color 0.2s, border-color 0.2s;
 }
 
-body.dark .section-tasks-container:has(.task-item, .section-drag-placeholder, .task-drag-placeholder),
-body.dark .unsectioned-tasks-container:has(.task-item, .section-drag-placeholder, .task-drag-placeholder),
-body.dark #activeTasksContainer:has(> .task-item) {
+body.dark .section-tasks-container:has(.task-item, .section-drag-placeholder, .task-drag-placeholder, .drag-placeholder),
+body.dark .unsectioned-tasks-container:has(.task-item, .section-drag-placeholder, .task-drag-placeholder, .drag-placeholder),
+body.dark #activeTasksContainer:has(> .task-item, > .drag-placeholder) {
     background-color: #1a1e28;
     border-color: rgba(255, 255, 255, 0.08);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.section-tasks-container:not(:has(.task-item, .section-drag-placeholder, .task-drag-placeholder)) {
+.section-tasks-container:not(:has(.task-item, .section-drag-placeholder, .task-drag-placeholder, .drag-placeholder)) {
     background-color: transparent !important;
     border: none !important;
     box-shadow: none !important;
@@ -5577,7 +5608,9 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     }
 
     .task-due-badge,
-    .task-repeat-badge {
+    .task-repeat-badge,
+    .task-time-col,
+    .task-proj-col {
         display: none !important;
     }
 

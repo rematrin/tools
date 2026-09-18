@@ -2310,6 +2310,8 @@ function handleRoute() {
         currentRoute = 'today';
     } else if (hash === 'tomorrow') {
         currentRoute = 'tomorrow';
+    } else if (hash === 'calendar') {
+        currentRoute = 'calendar';
     } else if (hash === 'inbox') {
         currentRoute = 'inbox';
     } else if (hash === 'trash') {
@@ -2341,6 +2343,7 @@ function handleRoute() {
     const menuInbox = document.getElementById('menuInbox');
     const menuToday = document.getElementById('menuToday');
     const menuTomorrow = document.getElementById('menuTomorrow');
+    const menuCalendar = document.getElementById('menuCalendar');
     const menuTrash = document.getElementById('menuTrash');
 
     if (menuInbox) {
@@ -2354,6 +2357,10 @@ function handleRoute() {
     if (menuTomorrow) {
         if (currentRoute === 'tomorrow') menuTomorrow.classList.add('active');
         else menuTomorrow.classList.remove('active');
+    }
+    if (menuCalendar) {
+        if (currentRoute === 'calendar') menuCalendar.classList.add('active');
+        else menuCalendar.classList.remove('active');
     }
     if (menuTrash) {
         if (currentRoute === 'trash') menuTrash.classList.add('active');
@@ -2387,6 +2394,8 @@ function handleRoute() {
         if (titleEl) titleEl.textContent = 'Сегодня';
     } else if (currentRoute === 'tomorrow') {
         if (titleEl) titleEl.textContent = 'Завтра';
+    } else if (currentRoute === 'calendar') {
+        if (titleEl) titleEl.textContent = 'Календарь';
     } else if (currentRoute === 'trash') {
         if (titleEl) titleEl.textContent = 'Корзина';
     } else if (currentRoute === 'pomodoro') {
@@ -2766,9 +2775,7 @@ function startTodoForUser(uid) {
             }
         });
 
-        if (hasVisualTaskChanges) {
-            renderTasks();
-        }
+        renderTasks();
     }, (error) => {
         console.error("Ошибка при получении списка задач:", error);
     });
@@ -4563,11 +4570,14 @@ window.renderTasks = renderTasks;
 
 function doRenderTasks() {
     // Устанавливаем класс роута на body
-    document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash', 'route-pomodoro', 'route-countdown', 'route-habit');
+    document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash', 'route-pomodoro', 'route-countdown', 'route-habit', 'route-calendar');
+    document.documentElement.classList.toggle('route-calendar', currentRoute === 'calendar');
     if (currentRoute === 'today') {
         document.body.classList.add('route-today');
     } else if (currentRoute === 'tomorrow') {
         document.body.classList.add('route-tomorrow');
+    } else if (currentRoute === 'calendar') {
+        document.body.classList.add('route-calendar');
     } else if (currentRoute === 'trash') {
         document.body.classList.add('route-trash');
     } else if (currentRoute === 'inbox') {
@@ -4614,11 +4624,19 @@ function doRenderTasks() {
         habitHeaderActions.style.display = currentRoute === 'habit' ? 'flex' : 'none';
     }
 
+    const calendarContainer = document.getElementById('calendarContainer');
+    if (calendarContainer) {
+        calendarContainer.style.display = currentRoute === 'calendar' ? 'flex' : 'none';
+        if (currentRoute === 'calendar') {
+            renderCalendarView();
+        }
+    }
+
     if (activeTasksContainer) {
-        activeTasksContainer.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit') ? 'none' : 'block';
+        activeTasksContainer.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit' || currentRoute === 'calendar') ? 'none' : 'block';
     }
     const gcalBannerLocal = document.getElementById('gcalEventsBanner');
-    if (gcalBannerLocal && (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit')) {
+    if (gcalBannerLocal && (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit' || currentRoute === 'calendar')) {
         gcalBannerLocal.style.display = 'none';
     }
 
@@ -4644,6 +4662,7 @@ function doRenderTasks() {
     const inboxActiveCount = activeTasks.filter(t => !t.projectId).length;
     const todayActiveCount = activeTasks.filter(isTodayTask).length;
     const tomorrowActiveCount = activeTasks.filter(isTomorrowTask).length;
+    const calendarActiveCount = activeTasks.filter(t => !!t.dueDate).length;
 
     const showCounters = localStorage.getItem('todo_show_sidebar_counters') !== 'hide';
     const hideInboxCount = localStorage.getItem('todo_hide_counter_inbox') === 'true';
@@ -4662,6 +4681,11 @@ function doRenderTasks() {
         tomorrowCounter.textContent = tomorrowActiveCount;
         tomorrowCounter.style.display = (showCounters && !hideTomorrowCount && tomorrowActiveCount > 0) ? 'inline-block' : 'none';
     }
+    const calendarCounter = document.getElementById('calendarCounter');
+    if (calendarCounter) {
+        calendarCounter.textContent = calendarActiveCount;
+        calendarCounter.style.display = (showCounters && calendarActiveCount > 0) ? 'inline-block' : 'none';
+    }
 
     const trashCounter = document.getElementById('trashCounter');
     const trashActiveCount = trashTasks.length;
@@ -4673,23 +4697,27 @@ function doRenderTasks() {
     // Переключаем отображение баннера Корзины и формы быстрого добавления
     const trashNoticeBanner = document.getElementById('trashNoticeBanner');
     const addTaskFormEl = document.getElementById('mainAddTaskForm');
+    const listHeaderEl = document.querySelector('.list-header');
+    if (listHeaderEl) {
+        listHeaderEl.style.display = currentRoute === 'calendar' ? 'none' : 'flex';
+    }
 
     if (trashNoticeBanner) {
         trashNoticeBanner.style.display = currentRoute === 'trash' ? 'flex' : 'none';
     }
     if (addTaskFormEl) {
         updateMobileFabVisibility();
-        addTaskFormEl.style.display = (currentRoute === 'trash' || currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit') ? 'none' : 'flex';
+        addTaskFormEl.style.display = (currentRoute === 'trash' || currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit' || currentRoute === 'calendar') ? 'none' : 'flex';
     }
 
     const projectHeaderActions = document.getElementById('projectHeaderActions');
     if (projectHeaderActions) {
-        projectHeaderActions.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') ? 'block' : 'none');
+        projectHeaderActions.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit' || currentRoute === 'calendar') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') ? 'block' : 'none');
     }
 
     const viewDisplayContainer = document.getElementById('viewDisplayContainer');
     if (viewDisplayContainer) {
-        viewDisplayContainer.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') ? 'block' : 'none');
+        viewDisplayContainer.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit' || currentRoute === 'calendar') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') ? 'block' : 'none');
     }
 
     // Фильтруем задачи для отображения в зависимости от текущей вкладки (роута)
@@ -4711,7 +4739,7 @@ function doRenderTasks() {
     } else if (currentRoute === 'trash') {
         displayActiveTasks = trashTasks;
         displayCompletedTasks = [];
-    } else if (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit') {
+    } else if (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit' || currentRoute === 'calendar') {
         displayActiveTasks = [];
         displayCompletedTasks = [];
     } else { // inbox
@@ -17128,3 +17156,1017 @@ if (mobileCreateTaskFab) {
     });
     updateMobileFabVisibility();
 }
+
+/* ==========================================
+   TickTick-like Calendar View Implementation
+   ========================================== */
+
+let currentCalendarView = localStorage.getItem('todo_pref_calendar_view') || 'month';
+let currentCalendarDate = new Date();
+let calendarShowCompleted = localStorage.getItem('todo_pref_calendar_completed') !== 'false';
+let calendarSelectedProjects = new Set(['all']);
+let calendarGCalEvents = [];
+let calendarGCalLastRangeKey = '';
+let calendarGCalIsFetching = false;
+let calendarRenderCounter = 0;
+
+function formatIsoDate(dateObj) {
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function parseIsoDate(isoStr) {
+    if (!isoStr) return null;
+    const parts = isoStr.split('-');
+    if (parts.length < 3) return null;
+    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+}
+
+function getRangeForCalendarView(view, date) {
+    const current = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    if (view === 'month') {
+        const firstDayOfMonth = new Date(current.getFullYear(), current.getMonth(), 1);
+        const dayOfWeek = (firstDayOfMonth.getDay() + 6) % 7; // Monday = 0
+        const startDate = new Date(firstDayOfMonth);
+        startDate.setDate(startDate.getDate() - dayOfWeek);
+
+        const lastDayOfMonth = new Date(current.getFullYear(), current.getMonth() + 1, 0);
+        const endDayOfWeek = (lastDayOfMonth.getDay() + 6) % 7;
+        const endDate = new Date(lastDayOfMonth);
+        endDate.setDate(endDate.getDate() + (6 - endDayOfWeek));
+        endDate.setHours(23, 59, 59, 999);
+        return { start: startDate, end: endDate };
+    } else if (view === 'week') {
+        const dayOfWeek = (current.getDay() + 6) % 7;
+        const startDate = new Date(current);
+        startDate.setDate(startDate.getDate() - dayOfWeek);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + 6);
+        endDate.setHours(23, 59, 59, 999);
+        return { start: startDate, end: endDate };
+    } else { // day
+        const startDate = new Date(current);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(current);
+        endDate.setHours(23, 59, 59, 999);
+        return { start: startDate, end: endDate };
+    }
+}
+
+async function fetchCalendarGCalEvents(start, end) {
+    if (typeof window.GCalendarService === 'undefined') return [];
+    const rangeKey = `${start.toISOString()}_${end.toISOString()}`;
+    if (calendarGCalLastRangeKey === rangeKey && calendarGCalEvents.length > 0) {
+        return calendarGCalEvents;
+    }
+    if (calendarGCalIsFetching) return calendarGCalEvents;
+
+    calendarGCalIsFetching = true;
+    try {
+        const calendars = await window.GCalendarService.fetchCalendars(false);
+        const hiddenCals = (typeof gcalHiddenCalendars !== 'undefined') ? gcalHiddenCalendars : [];
+        const visibleCals = calendars.filter(c => !hiddenCals.includes(c.id));
+        if (visibleCals.length === 0) {
+            calendarGCalEvents = [];
+            return [];
+        }
+
+        const fetchPromises = visibleCals.map(async (cal) => {
+            try {
+                const events = await window.GCalendarService.fetchEventsForRange(
+                    cal.id,
+                    start.toISOString(),
+                    end.toISOString(),
+                    false
+                );
+                return events.map(e => ({
+                    ...e,
+                    calendarColor: cal.backgroundColor || '#4285F4',
+                    calendarName: cal.summary
+                }));
+            } catch (err) {
+                return [];
+            }
+        });
+
+        const results = await Promise.all(fetchPromises);
+        calendarGCalEvents = results.flat();
+        calendarGCalLastRangeKey = rangeKey;
+        if (typeof currentRoute !== 'undefined' && currentRoute === 'calendar') {
+            renderCalendarView();
+        }
+        return calendarGCalEvents;
+    } catch (err) {
+        return calendarGCalEvents;
+    } finally {
+        calendarGCalIsFetching = false;
+    }
+}
+
+function initCalendarEventListeners() {
+    const prevBtn = document.getElementById('calPrevBtn');
+    const nextBtn = document.getElementById('calNextBtn');
+    const todayBtn = document.getElementById('calTodayBtn');
+    const monthBtn = document.getElementById('calViewMonthBtn');
+    const weekBtn = document.getElementById('calViewWeekBtn');
+    const dayBtn = document.getElementById('calViewDayBtn');
+    const toggleCompletedBtn = document.getElementById('calToggleCompletedBtn');
+    const toggleSidebarBtn = document.getElementById('calToggleLeftSidebarBtn');
+
+    if (prevBtn) {
+        prevBtn.onclick = () => {
+            if (currentCalendarView === 'month') {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            } else if (currentCalendarView === 'week') {
+                currentCalendarDate.setDate(currentCalendarDate.getDate() - 7);
+            } else {
+                currentCalendarDate.setDate(currentCalendarDate.getDate() - 1);
+            }
+            renderCalendarView();
+        };
+    }
+
+    if (nextBtn) {
+        nextBtn.onclick = () => {
+            if (currentCalendarView === 'month') {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            } else if (currentCalendarView === 'week') {
+                currentCalendarDate.setDate(currentCalendarDate.getDate() + 7);
+            } else {
+                currentCalendarDate.setDate(currentCalendarDate.getDate() + 1);
+            }
+            renderCalendarView();
+        };
+    }
+
+    if (todayBtn) {
+        todayBtn.onclick = () => {
+            currentCalendarDate = new Date();
+            renderCalendarView();
+        };
+    }
+
+    const setView = (v) => {
+        currentCalendarView = v;
+        localStorage.setItem('todo_pref_calendar_view', v);
+        renderCalendarView();
+    };
+
+    if (monthBtn) monthBtn.onclick = () => setView('month');
+    if (weekBtn) weekBtn.onclick = () => setView('week');
+    if (dayBtn) dayBtn.onclick = () => setView('day');
+
+    if (toggleCompletedBtn) {
+        toggleCompletedBtn.onclick = () => {
+            calendarShowCompleted = !calendarShowCompleted;
+            localStorage.setItem('todo_pref_calendar_completed', calendarShowCompleted);
+            toggleCompletedBtn.classList.toggle('active', calendarShowCompleted);
+            renderCalendarView();
+        };
+    }
+
+    if (toggleSidebarBtn) {
+        toggleSidebarBtn.onclick = () => {
+            const sidebar = document.getElementById('calendarLeftSidebar');
+            if (sidebar) sidebar.classList.toggle('collapsed');
+        };
+    }
+}
+
+function renderMiniCalendar() {
+    const container = document.getElementById('calMiniCalendar');
+    if (!container) return;
+
+    const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    const curYear = currentCalendarDate.getFullYear();
+    const curMonth = currentCalendarDate.getMonth();
+
+    container.innerHTML = `
+        <div class="cal-mini-header">
+            <span class="cal-mini-title">${monthNames[curMonth]} ${curYear}</span>
+            <div class="cal-mini-nav">
+                <button class="cal-mini-btn" id="calMiniPrev"><</button>
+                <button class="cal-mini-btn" id="calMiniNext">></button>
+            </div>
+        </div>
+        <div class="cal-mini-grid">
+            <span class="cal-mini-weekday">Пн</span>
+            <span class="cal-mini-weekday">Вт</span>
+            <span class="cal-mini-weekday">Ср</span>
+            <span class="cal-mini-weekday">Чт</span>
+            <span class="cal-mini-weekday">Пт</span>
+            <span class="cal-mini-weekday">Сб</span>
+            <span class="cal-mini-weekday">Вс</span>
+        </div>
+    `;
+
+    const grid = container.querySelector('.cal-mini-grid');
+    const firstDay = new Date(curYear, curMonth, 1);
+    const dayOfWeek = (firstDay.getDay() + 6) % 7;
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - dayOfWeek);
+
+    const todayIso = formatIsoDate(new Date());
+    const selectedIso = formatIsoDate(currentCalendarDate);
+
+    for (let i = 0; i < 42; i++) {
+        const cellDate = new Date(startDate);
+        cellDate.setDate(cellDate.getDate() + i);
+        const cellIso = formatIsoDate(cellDate);
+
+        const isCurrentMonth = cellDate.getMonth() === curMonth;
+        const isToday = cellIso === todayIso;
+        const isSelected = cellIso === selectedIso;
+
+        const daySpan = document.createElement('span');
+        daySpan.className = `cal-mini-day${!isCurrentMonth ? ' other-month' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}`;
+        daySpan.textContent = cellDate.getDate();
+
+        const targetDate = new Date(cellDate);
+        daySpan.onclick = () => {
+            currentCalendarDate = targetDate;
+            renderCalendarView();
+        };
+
+        grid.appendChild(daySpan);
+    }
+
+    const prevBtn = container.querySelector('#calMiniPrev');
+    const nextBtn = container.querySelector('#calMiniNext');
+    if (prevBtn) prevBtn.onclick = () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        renderCalendarView();
+    };
+    if (nextBtn) nextBtn.onclick = () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        renderCalendarView();
+    };
+}
+
+function renderCalendarProjectFilters() {
+    const listEl = document.getElementById('calProjectFilterList');
+    if (!listEl) return;
+
+    listEl.innerHTML = '';
+
+    const isAllChecked = calendarSelectedProjects.has('all');
+
+    const createFilterItem = (name, color, isChecked, onToggle) => {
+        const item = document.createElement('div');
+        item.className = `cal-filter-item${isChecked ? ' checked' : ''}`;
+
+        const chk = document.createElement('div');
+        chk.className = 'cal-filter-checkbox';
+        chk.textContent = isChecked ? '✓' : '';
+        chk.style.borderColor = color;
+        if (isChecked) {
+            chk.style.backgroundColor = color;
+            chk.style.color = '#ffffff';
+        } else {
+            chk.style.backgroundColor = 'transparent';
+        }
+
+        const label = document.createElement('span');
+        label.textContent = name;
+
+        item.appendChild(chk);
+        item.appendChild(label);
+
+        item.onclick = onToggle;
+        return item;
+    };
+
+    // Item: Все
+    listEl.appendChild(createFilterItem('Все', '#4285f4', isAllChecked, () => {
+        if (calendarSelectedProjects.has('all')) {
+            calendarSelectedProjects.clear();
+        } else {
+            calendarSelectedProjects.clear();
+            calendarSelectedProjects.add('all');
+        }
+        renderCalendarView();
+    }));
+
+    // Item: Google Календарь (Before Inbox)
+    const isGCalChecked = isAllChecked || calendarSelectedProjects.has('gcal');
+    listEl.appendChild(createFilterItem('Google Календарь', '#4285f4', isGCalChecked, () => {
+        if (calendarSelectedProjects.has('all')) {
+            calendarSelectedProjects.clear();
+            calendarSelectedProjects.add('inbox');
+            projectsList.forEach(p => calendarSelectedProjects.add(p.id));
+        } else if (calendarSelectedProjects.has('gcal')) {
+            calendarSelectedProjects.delete('gcal');
+        } else {
+            calendarSelectedProjects.add('gcal');
+        }
+        renderCalendarView();
+    }));
+
+    // Item: Входящие
+    const isInboxChecked = isAllChecked || calendarSelectedProjects.has('inbox');
+    listEl.appendChild(createFilterItem('Входящие', '#4285f4', isInboxChecked, () => {
+        if (calendarSelectedProjects.has('all')) {
+            calendarSelectedProjects.clear();
+            calendarSelectedProjects.add('gcal');
+            projectsList.forEach(p => calendarSelectedProjects.add(p.id));
+        } else if (calendarSelectedProjects.has('inbox')) {
+            calendarSelectedProjects.delete('inbox');
+        } else {
+            calendarSelectedProjects.add('inbox');
+        }
+        renderCalendarView();
+    }));
+
+    // Items: My Projects
+    projectsList.forEach(proj => {
+        const projColor = proj.color || '#4285f4';
+        const isChecked = isAllChecked || calendarSelectedProjects.has(proj.id);
+        listEl.appendChild(createFilterItem(proj.name, projColor, isChecked, () => {
+            if (calendarSelectedProjects.has('all')) {
+                calendarSelectedProjects.clear();
+                calendarSelectedProjects.add('gcal');
+                calendarSelectedProjects.add('inbox');
+                projectsList.forEach(p => { if (p.id !== proj.id) calendarSelectedProjects.add(p.id); });
+            } else if (calendarSelectedProjects.has(proj.id)) {
+                calendarSelectedProjects.delete(proj.id);
+            } else {
+                calendarSelectedProjects.add(proj.id);
+            }
+            renderCalendarView();
+        }));
+    });
+}
+
+async function renderCalendarView() {
+    const renderId = ++calendarRenderCounter;
+
+    const gridContainer = document.getElementById('calendarGridContainer');
+    const titleEl = document.getElementById('calTitle');
+    const monthBtn = document.getElementById('calViewMonthBtn');
+    const weekBtn = document.getElementById('calViewWeekBtn');
+    const dayBtn = document.getElementById('calViewDayBtn');
+    const toggleCompletedBtn = document.getElementById('calToggleCompletedBtn');
+
+    if (!gridContainer) return;
+
+    renderMiniCalendar();
+    renderCalendarProjectFilters();
+
+    if (monthBtn) monthBtn.classList.toggle('active', currentCalendarView === 'month');
+    if (weekBtn) weekBtn.classList.toggle('active', currentCalendarView === 'week');
+    if (dayBtn) dayBtn.classList.toggle('active', currentCalendarView === 'day');
+    if (toggleCompletedBtn) toggleCompletedBtn.classList.toggle('active', calendarShowCompleted);
+
+    const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    const monthNamesGenitive = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
+    const range = getRangeForCalendarView(currentCalendarView, currentCalendarDate);
+
+    // Update Header Title
+    if (titleEl) {
+        if (currentCalendarView === 'month') {
+            titleEl.textContent = `${monthNames[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`;
+        } else if (currentCalendarView === 'week') {
+            const startStr = `${range.start.getDate()} ${monthNamesGenitive[range.start.getMonth()]}`;
+            const endStr = `${range.end.getDate()} ${monthNamesGenitive[range.end.getMonth()]} ${range.end.getFullYear()}`;
+            titleEl.textContent = `${startStr} — ${endStr}`;
+        } else {
+            titleEl.textContent = `${currentCalendarDate.getDate()} ${monthNamesGenitive[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`;
+        }
+    }
+
+    // Fetch Google Calendar Events if Google Calendar filter is checked
+    const isGCalVisible = calendarSelectedProjects.has('all') || calendarSelectedProjects.has('gcal');
+    const rawGCalEvents = await fetchCalendarGCalEvents(range.start, range.end);
+    
+    // Prevent stale renders if a newer render request was initiated during await
+    if (renderId !== calendarRenderCounter) return;
+
+    // Filter Tasks by date, completion, and selected project filter
+    const isProjectVisible = (t) => {
+        if (calendarSelectedProjects.has('all')) return true;
+        if (t.projectId) return calendarSelectedProjects.has(t.projectId);
+        return calendarSelectedProjects.has('inbox');
+    };
+
+    const tasks = allTasks.filter(t => !t.deleted && (!t.completed || calendarShowCompleted) && t.dueDate && isProjectVisible(t));
+    const gcalEvents = isGCalVisible ? rawGCalEvents : [];
+
+    gridContainer.innerHTML = '';
+
+    if (currentCalendarView === 'month') {
+        renderMonthView(gridContainer, tasks, gcalEvents, range);
+    } else if (currentCalendarView === 'week') {
+        renderWeekView(gridContainer, tasks, gcalEvents, range);
+    } else {
+        renderDayView(gridContainer, tasks, gcalEvents, currentCalendarDate);
+    }
+}
+
+function renderMonthView(container, tasks, gcalEvents, range) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'cal-month-view';
+
+    const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    const weekdaysRow = document.createElement('div');
+    weekdaysRow.className = 'cal-weekdays-row';
+    weekdays.forEach((day, idx) => {
+        const header = document.createElement('div');
+        header.className = `cal-weekday-header${idx >= 5 ? ' weekend' : ''}`;
+        header.textContent = day;
+        weekdaysRow.appendChild(header);
+    });
+    wrapper.appendChild(weekdaysRow);
+
+    const monthGrid = document.createElement('div');
+    monthGrid.className = 'cal-month-grid';
+
+    const todayIso = formatIsoDate(new Date());
+    const currDate = new Date(range.start);
+
+    while (currDate <= range.end) {
+        const dayIso = formatIsoDate(currDate);
+        const isCurrentMonth = currDate.getMonth() === currentCalendarDate.getMonth();
+        const isToday = dayIso === todayIso;
+
+        const cell = document.createElement('div');
+        cell.className = `cal-day-cell${!isCurrentMonth ? ' other-month' : ''}${isToday ? ' today' : ''}`;
+
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'cal-day-header';
+
+        const numberSpan = document.createElement('span');
+        numberSpan.className = 'cal-day-number';
+        numberSpan.textContent = currDate.getDate();
+
+        const addBtn = document.createElement('button');
+        addBtn.className = 'cal-add-btn';
+        addBtn.title = 'Добавить задачу';
+        addBtn.innerHTML = '+';
+        const targetDateIso = dayIso;
+        addBtn.onclick = (e) => {
+            e.stopPropagation();
+            setDueDate(targetDateIso);
+            const taskInput = document.getElementById('taskTitleInput');
+            if (taskInput) taskInput.focus();
+        };
+
+        headerDiv.appendChild(numberSpan);
+        headerDiv.appendChild(addBtn);
+        cell.appendChild(headerDiv);
+
+        const itemsContainer = document.createElement('div');
+        itemsContainer.className = 'cal-cell-items';
+
+        // Filter tasks for this day (normalize ISO string format)
+        const dayTasks = tasks.filter(t => t.dueDate && String(t.dueDate).split('T')[0].trim() === dayIso);
+        // Filter GCal events for this day
+        const dayGCal = gcalEvents.filter(e => {
+            const startDateStr = e.start.date || (e.start.dateTime ? e.start.dateTime.split('T')[0] : null);
+            return startDateStr === dayIso;
+        });
+
+        const totalItems = dayTasks.length + dayGCal.length;
+        const maxVisible = 3;
+        let renderedCount = 0;
+
+        // Render Tasks (Without Checkbox in Month View)
+        dayTasks.forEach(task => {
+            if (renderedCount >= maxVisible) return;
+            renderedCount++;
+
+            const project = task.projectId ? projectsList.find(p => p.id === task.projectId) : null;
+            const projColor = project ? project.color : '#4285f4';
+
+            const item = document.createElement('div');
+            item.className = `cal-item${task.completed ? ' completed' : ''}`;
+            item.style.borderLeftColor = projColor;
+
+            const title = document.createElement('span');
+            title.className = 'cal-item-title';
+            title.textContent = task.title;
+
+            if (task.dueTime) {
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'cal-item-time';
+                timeSpan.textContent = task.dueTime;
+                item.appendChild(timeSpan);
+            }
+            item.appendChild(title);
+
+            item.onclick = (e) => {
+                e.stopPropagation();
+                openTaskDetailsModal(task.id);
+            };
+
+            itemsContainer.appendChild(item);
+        });
+
+        // Render GCal Events
+        dayGCal.forEach(event => {
+            if (renderedCount >= maxVisible) return;
+            renderedCount++;
+
+            const item = document.createElement('div');
+            item.className = 'cal-item gcal-item';
+            if (event.calendarColor) item.style.borderLeftColor = event.calendarColor;
+
+            const title = document.createElement('span');
+            title.className = 'cal-item-title';
+            title.textContent = event.summary || 'Событие';
+
+            if (event.start.dateTime) {
+                const timeStr = event.start.dateTime.split('T')[1].substring(0, 5);
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'cal-item-time';
+                timeSpan.textContent = timeStr;
+                item.appendChild(timeSpan);
+            }
+            item.appendChild(title);
+
+            if (event.htmlLink) {
+                item.onclick = () => window.open(event.htmlLink, '_blank');
+            }
+
+            itemsContainer.appendChild(item);
+        });
+
+        if (totalItems > maxVisible) {
+            const moreBadge = document.createElement('div');
+            moreBadge.className = 'cal-more-badge';
+            moreBadge.textContent = `+${totalItems - maxVisible} еще`;
+            moreBadge.onclick = () => {
+                currentCalendarDate = new Date(targetDateIso);
+                currentCalendarView = 'day';
+                renderCalendarView();
+            };
+            itemsContainer.appendChild(moreBadge);
+        }
+
+        cell.appendChild(itemsContainer);
+        monthGrid.appendChild(cell);
+
+        currDate.setDate(currDate.getDate() + 1);
+    }
+
+    wrapper.appendChild(monthGrid);
+    container.appendChild(wrapper);
+}
+
+function renderWeekView(container, tasks, gcalEvents, range) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'cal-week-view';
+
+    // Sticky Top Header Wrapper
+    const stickyHeader = document.createElement('div');
+    stickyHeader.className = 'cal-sticky-header';
+
+    const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    const weekdaysRow = document.createElement('div');
+    weekdaysRow.className = 'cal-weekdays-row';
+
+    const cornerCell = document.createElement('div');
+    cornerCell.className = 'cal-weekday-corner';
+    weekdaysRow.appendChild(cornerCell);
+
+    const weekdaysCols = document.createElement('div');
+    weekdaysCols.className = 'cal-weekdays-cols';
+
+    const daysList = [];
+    const tempDate = new Date(range.start);
+    const todayIso = formatIsoDate(new Date());
+
+    for (let i = 0; i < 7; i++) {
+        daysList.push(new Date(tempDate));
+        const dayIso = formatIsoDate(tempDate);
+        const header = document.createElement('div');
+        header.className = `cal-weekday-header${i >= 5 ? ' weekend' : ''}${dayIso === todayIso ? ' today' : ''}`;
+        header.textContent = `${weekdays[i]} ${tempDate.getDate()}`;
+        weekdaysCols.appendChild(header);
+        tempDate.setDate(tempDate.getDate() + 1);
+    }
+    weekdaysRow.appendChild(weekdaysCols);
+    stickyHeader.appendChild(weekdaysRow);
+
+    // All-Day Row (Sticky Header)
+    const allDayRow = document.createElement('div');
+    allDayRow.className = 'cal-all-day-row';
+
+    const allDayLabel = document.createElement('div');
+    allDayLabel.className = 'cal-all-day-label';
+    allDayLabel.textContent = '';
+    allDayRow.appendChild(allDayLabel);
+
+    const allDayCols = document.createElement('div');
+    allDayCols.className = 'cal-all-day-cols';
+
+    daysList.forEach(dayObj => {
+        const dayIso = formatIsoDate(dayObj);
+        const cell = document.createElement('div');
+        cell.className = 'cal-all-day-cell';
+
+        // Filter timeless tasks (no dueTime)
+        const timelessTasks = tasks.filter(t => t.dueDate === dayIso && !t.dueTime);
+        timelessTasks.forEach(task => {
+            const project = task.projectId ? projectsList.find(p => p.id === task.projectId) : null;
+            const projColor = project ? project.color : '#4285f4';
+
+            const item = document.createElement('div');
+            item.className = `cal-item${task.completed ? ' completed' : ''}`;
+            item.style.borderLeftColor = projColor;
+
+            const chk = document.createElement('div');
+            chk.className = 'cal-item-checkbox';
+            chk.onclick = (e) => {
+                e.stopPropagation();
+                toggleTaskCompleted(task.id, task.completed);
+                renderCalendarView();
+            };
+
+            const title = document.createElement('span');
+            title.className = 'cal-item-title';
+            title.textContent = task.title;
+
+            item.appendChild(chk);
+            item.appendChild(title);
+            item.onclick = (e) => {
+                e.stopPropagation();
+                openTaskDetailsModal(task.id);
+            };
+
+            cell.appendChild(item);
+        });
+
+        // Filter all-day GCal events
+        const allDayGCal = gcalEvents.filter(e => {
+            const startDateStr = e.start.date || (e.start.dateTime ? e.start.dateTime.split('T')[0] : null);
+            return startDateStr === dayIso && !e.start.dateTime;
+        });
+
+        allDayGCal.forEach(event => {
+            const item = document.createElement('div');
+            item.className = 'cal-item gcal-item';
+            if (event.calendarColor) item.style.borderLeftColor = event.calendarColor;
+            const title = document.createElement('span');
+            title.className = 'cal-item-title';
+            title.textContent = event.summary || 'Событие';
+            item.appendChild(title);
+            if (event.htmlLink) {
+                item.onclick = () => window.open(event.htmlLink, '_blank');
+            }
+            cell.appendChild(item);
+        });
+
+        allDayCols.appendChild(cell);
+    });
+
+    allDayRow.appendChild(allDayCols);
+    stickyHeader.appendChild(allDayRow);
+
+    // Timeline Container (Scrollable 24 Hours)
+    const timelineContainer = document.createElement('div');
+    timelineContainer.className = 'cal-timeline-container';
+    timelineContainer.appendChild(stickyHeader);
+
+    const timelineBody = document.createElement('div');
+    timelineBody.className = 'cal-timeline-body';
+
+    const hoursCol = document.createElement('div');
+    hoursCol.className = 'cal-hours-column';
+    for (let h = 0; h < 24; h++) {
+        const hourLabel = document.createElement('div');
+        hourLabel.className = 'cal-hour-label';
+        hourLabel.textContent = `${String(h).padStart(2, '0')}:00`;
+        hoursCol.appendChild(hourLabel);
+    }
+    timelineBody.appendChild(hoursCol);
+
+    const columnsWrapper = document.createElement('div');
+    columnsWrapper.className = 'cal-columns-wrapper';
+
+    daysList.forEach(dayObj => {
+        const dayIso = formatIsoDate(dayObj);
+        const isToday = dayIso === todayIso;
+        const dayCol = document.createElement('div');
+        dayCol.className = `cal-day-column-view${isToday ? ' today' : ''}`;
+
+        for (let h = 0; h < 24; h++) {
+            const slot = document.createElement('div');
+            slot.className = 'cal-hour-slot';
+            dayCol.appendChild(slot);
+        }
+
+        // Render Timed Tasks for this day (tasks with dueTime)
+        const timedTasks = tasks.filter(t => t.dueDate === dayIso && !!t.dueTime);
+        timedTasks.forEach(task => {
+            const project = task.projectId ? projectsList.find(p => p.id === task.projectId) : null;
+            const projColor = project ? project.color : '#4285f4';
+
+            const parts = task.dueTime.split(':');
+            const hour = parseInt(parts[0], 10) || 0;
+            const min = parseInt(parts[1], 10) || 0;
+
+            const topPx = hour * 50 + (min / 60) * 50;
+            const item = document.createElement('div');
+            item.className = `cal-timed-item${task.completed ? ' completed' : ''}`;
+            item.style.top = `${topPx}px`;
+            item.style.height = '42px';
+            item.style.borderLeftColor = projColor;
+
+            item.innerHTML = `
+                <div style="font-weight: 700; font-size: 10px;">${task.dueTime}</div>
+                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${task.completed ? 'text-decoration: line-through;' : ''}">${task.title}</div>
+            `;
+            item.onclick = (e) => {
+                e.stopPropagation();
+                openTaskDetailsModal(task.id);
+            };
+
+            dayCol.appendChild(item);
+        });
+
+        // Render Timed GCal events for this day
+        const timedGCal = gcalEvents.filter(e => {
+            const startDateStr = e.start.date || (e.start.dateTime ? e.start.dateTime.split('T')[0] : null);
+            return startDateStr === dayIso && !!e.start.dateTime;
+        });
+
+        timedGCal.forEach(event => {
+            const timeStr = event.start.dateTime.split('T')[1];
+            const parts = timeStr.split(':');
+            const hour = parseInt(parts[0], 10) || 0;
+            const min = parseInt(parts[1], 10) || 0;
+
+            const topPx = hour * 50 + (min / 60) * 50;
+            const item = document.createElement('div');
+            item.className = 'cal-timed-item';
+            item.style.top = `${topPx}px`;
+            item.style.height = '42px';
+            if (event.calendarColor) item.style.borderLeftColor = event.calendarColor;
+            item.style.background = 'rgba(66, 133, 244, 0.12)';
+
+            item.innerHTML = `
+                <div style="font-weight: 700; font-size: 10px;">${timeStr.substring(0, 5)}</div>
+                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${event.summary || 'Событие'}</div>
+            `;
+            if (event.htmlLink) {
+                item.onclick = () => window.open(event.htmlLink, '_blank');
+            }
+
+            dayCol.appendChild(item);
+        });
+
+        // Render Red Now Line if this day is today
+        if (isToday) {
+            const now = new Date();
+            const nowPx = now.getHours() * 50 + (now.getMinutes() / 60) * 50;
+            const nowLine = document.createElement('div');
+            nowLine.className = 'cal-now-line';
+            nowLine.style.top = `${nowPx}px`;
+            dayCol.appendChild(nowLine);
+        }
+
+        columnsWrapper.appendChild(dayCol);
+    });
+
+    timelineBody.appendChild(columnsWrapper);
+    timelineContainer.appendChild(timelineBody);
+    wrapper.appendChild(timelineContainer);
+    container.appendChild(wrapper);
+
+    setTimeout(() => {
+        const hasToday = daysList.some(d => formatIsoDate(d) === todayIso);
+        if (hasToday) {
+            const now = new Date();
+            const nowPx = now.getHours() * 50 + (now.getMinutes() / 60) * 50;
+            timelineContainer.scrollTop = Math.max(0, nowPx - 150);
+        } else {
+            timelineContainer.scrollTop = 380;
+        }
+    }, 0);
+}
+
+function renderDayView(container, tasks, gcalEvents, dateObj) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'cal-day-view';
+
+    const dayIso = formatIsoDate(dateObj);
+
+    // Sticky Top Header Wrapper
+    const stickyHeader = document.createElement('div');
+    stickyHeader.className = 'cal-sticky-header';
+
+    const weekdays = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+    const weekdaysRow = document.createElement('div');
+    weekdaysRow.className = 'cal-weekdays-row';
+
+    const cornerCell = document.createElement('div');
+    cornerCell.className = 'cal-weekday-corner';
+    weekdaysRow.appendChild(cornerCell);
+
+    const weekdaysCols = document.createElement('div');
+    weekdaysCols.className = 'cal-weekdays-cols';
+
+    const header = document.createElement('div');
+    header.className = 'cal-weekday-header today';
+    header.textContent = `${weekdays[dateObj.getDay()]} ${dateObj.getDate()}`;
+    weekdaysCols.appendChild(header);
+    weekdaysRow.appendChild(weekdaysCols);
+    stickyHeader.appendChild(weekdaysRow);
+
+    // All-Day Row (Sticky Header)
+    const allDayRow = document.createElement('div');
+    allDayRow.className = 'cal-all-day-row';
+
+    const allDayLabel = document.createElement('div');
+    allDayLabel.className = 'cal-all-day-label';
+    allDayLabel.textContent = '';
+    allDayRow.appendChild(allDayLabel);
+
+    const allDayCols = document.createElement('div');
+    allDayCols.className = 'cal-all-day-cols';
+
+    const cell = document.createElement('div');
+    cell.className = 'cal-all-day-cell';
+
+    // Filter timeless tasks (no dueTime)
+    const timelessTasks = tasks.filter(t => t.dueDate === dayIso && !t.dueTime);
+    timelessTasks.forEach(task => {
+        const project = task.projectId ? projectsList.find(p => p.id === task.projectId) : null;
+        const projColor = project ? project.color : '#4285f4';
+
+        const item = document.createElement('div');
+        item.className = `cal-item${task.completed ? ' completed' : ''}`;
+        item.style.borderLeftColor = projColor;
+
+        const chk = document.createElement('div');
+        chk.className = 'cal-item-checkbox';
+        chk.onclick = (e) => {
+            e.stopPropagation();
+            toggleTaskCompleted(task.id, task.completed);
+            renderCalendarView();
+        };
+
+        const title = document.createElement('span');
+        title.className = 'cal-item-title';
+        title.textContent = task.title;
+
+        item.appendChild(chk);
+        item.appendChild(title);
+        item.onclick = (e) => {
+            e.stopPropagation();
+            openTaskDetailsModal(task.id);
+        };
+
+        cell.appendChild(item);
+    });
+
+    // Filter all-day GCal events
+    const allDayGCal = gcalEvents.filter(e => {
+        const startDateStr = e.start.date || (e.start.dateTime ? e.start.dateTime.split('T')[0] : null);
+        return startDateStr === dayIso && !e.start.dateTime;
+    });
+
+    allDayGCal.forEach(event => {
+        const item = document.createElement('div');
+        item.className = 'cal-item gcal-item';
+        if (event.calendarColor) item.style.borderLeftColor = event.calendarColor;
+        const title = document.createElement('span');
+        title.className = 'cal-item-title';
+        title.textContent = event.summary || 'Событие';
+        item.appendChild(title);
+        if (event.htmlLink) {
+            item.onclick = () => window.open(event.htmlLink, '_blank');
+        }
+        cell.appendChild(item);
+    });
+
+    allDayCols.appendChild(cell);
+    allDayRow.appendChild(allDayCols);
+    stickyHeader.appendChild(allDayRow);
+
+    // Timeline Container (Scrollable 24 Hours)
+    const timelineContainer = document.createElement('div');
+    timelineContainer.className = 'cal-timeline-container';
+    timelineContainer.appendChild(stickyHeader);
+
+    const timelineBody = document.createElement('div');
+    timelineBody.className = 'cal-timeline-body';
+
+    const hoursCol = document.createElement('div');
+    hoursCol.className = 'cal-hours-column';
+    for (let h = 0; h < 24; h++) {
+        const hourLabel = document.createElement('div');
+        hourLabel.className = 'cal-hour-label';
+        hourLabel.textContent = `${String(h).padStart(2, '0')}:00`;
+        hoursCol.appendChild(hourLabel);
+    }
+    timelineBody.appendChild(hoursCol);
+
+    const dayCol = document.createElement('div');
+    dayCol.className = 'cal-day-column-view';
+    dayCol.style.flex = '1';
+
+    for (let h = 0; h < 24; h++) {
+        const slot = document.createElement('div');
+        slot.className = 'cal-hour-slot';
+        dayCol.appendChild(slot);
+    }
+
+    // Render Timed Tasks for this day (tasks with dueTime)
+    const timedTasks = tasks.filter(t => t.dueDate === dayIso && !!t.dueTime);
+    timedTasks.forEach(task => {
+        const project = task.projectId ? projectsList.find(p => p.id === task.projectId) : null;
+        const projColor = project ? project.color : '#4285f4';
+
+        const parts = task.dueTime.split(':');
+        const hour = parseInt(parts[0], 10) || 0;
+        const min = parseInt(parts[1], 10) || 0;
+
+        const topPx = hour * 50 + (min / 60) * 50;
+        const item = document.createElement('div');
+        item.className = `cal-timed-item${task.completed ? ' completed' : ''}`;
+        item.style.top = `${topPx}px`;
+        item.style.height = '48px';
+        item.style.borderLeftColor = projColor;
+
+        item.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 700; font-size: 11px;">${task.dueTime}</span>
+                <span style="font-size: 11px; opacity: 0.8;">${project ? project.name : ''}</span>
+            </div>
+            <div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${task.completed ? 'text-decoration: line-through;' : ''}">${task.title}</div>
+        `;
+        item.onclick = (e) => {
+            e.stopPropagation();
+            openTaskDetailsModal(task.id);
+        };
+
+        dayCol.appendChild(item);
+    });
+
+    // Render Timed GCal events
+    const timedGCal = gcalEvents.filter(e => {
+        const startDateStr = e.start.date || (e.start.dateTime ? e.start.dateTime.split('T')[0] : null);
+        return startDateStr === dayIso && !!e.start.dateTime;
+    });
+
+    timedGCal.forEach(event => {
+        const timeStr = event.start.dateTime.split('T')[1];
+        const parts = timeStr.split(':');
+        const hour = parseInt(parts[0], 10) || 0;
+        const min = parseInt(parts[1], 10) || 0;
+
+        const topPx = hour * 50 + (min / 60) * 50;
+        const item = document.createElement('div');
+        item.className = 'cal-timed-item';
+        item.style.top = `${topPx}px`;
+        item.style.height = '48px';
+        if (event.calendarColor) item.style.borderLeftColor = event.calendarColor;
+        item.style.background = 'rgba(66, 133, 244, 0.12)';
+
+        item.innerHTML = `
+            <div style="font-weight: 700; font-size: 11px;">${timeStr.substring(0, 5)}</div>
+            <div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${event.summary || 'Событие'}</div>
+        `;
+        if (event.htmlLink) {
+            item.onclick = () => window.open(event.htmlLink, '_blank');
+        }
+
+        dayCol.appendChild(item);
+    });
+
+    const todayIso = formatIsoDate(new Date());
+    const isToday = dayIso === todayIso;
+
+    if (isToday) {
+        const now = new Date();
+        const nowPx = now.getHours() * 50 + (now.getMinutes() / 60) * 50;
+        const nowLine = document.createElement('div');
+        nowLine.className = 'cal-now-line';
+        nowLine.style.top = `${nowPx}px`;
+        dayCol.appendChild(nowLine);
+    }
+
+    timelineBody.appendChild(dayCol);
+    timelineContainer.appendChild(timelineBody);
+    wrapper.appendChild(timelineContainer);
+    container.appendChild(wrapper);
+
+    setTimeout(() => {
+        if (isToday) {
+            const now = new Date();
+            const nowPx = now.getHours() * 50 + (now.getMinutes() / 60) * 50;
+            timelineContainer.scrollTop = Math.max(0, nowPx - 150);
+        } else {
+            timelineContainer.scrollTop = 380;
+        }
+    }, 0);
+}
+
+// Initialize Calendar Listeners
+initCalendarEventListeners();
+

@@ -165,6 +165,23 @@
                         </svg>
                     </button>
                 </div>
+                <div class="project-item-container" id="calendarSidebarContainer">
+                    <a href="#calendar" class="menu-item" id="menuCalendar">
+                        <span class="menu-item-left">
+                            <span class="menu-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                            </span>
+                            <span>Календарь</span>
+                        </span>
+                        <span class="menu-counter" id="calendarCounter" style="display:none">0</span>
+                    </a>
+                </div>
 
                 <div class="sidebar-section-title">
                     <div class="sidebar-section-title-left">
@@ -683,6 +700,63 @@
                     <!-- Сетка привычек -->
                     <div class="habit-grid" id="habitGrid">
                         <!-- Динамические карточки привычек -->
+                    </div>
+                </div>
+
+                <!-- Блок Календаря -->
+                <div id="calendarContainer" class="calendar-view-wrapper" style="display: none; flex-direction: row; width: 100%; flex: 1; gap: 16px;">
+                    <!-- Левая панель календаря: мини-календарь + фильтры проектов -->
+                    <aside class="calendar-left-sidebar" id="calendarLeftSidebar">
+                        <div class="cal-mini-calendar" id="calMiniCalendar">
+                            <!-- Динамический мини-календарь -->
+                        </div>
+
+                        <div class="cal-filter-section">
+                            <div class="cal-filter-title">Проекты</div>
+                            <div class="cal-filter-list" id="calProjectFilterList">
+                                <!-- Список проектов с чекбоксами -->
+                            </div>
+                        </div>
+                    </aside>
+
+                    <!-- Основная область календаря -->
+                    <div class="calendar-main-area" style="display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 12px;">
+                        <div class="calendar-toolbar">
+                            <div class="calendar-nav-group">
+                                <button class="calendar-btn-icon" id="calToggleLeftSidebarBtn" title="Свернуть/развернуть панель фильтров">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                                </button>
+                                <button class="calendar-btn-icon" id="calPrevBtn" title="Предыдущий период">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="15 18 9 12 15 6"></polyline>
+                                    </svg>
+                                </button>
+                                <button class="calendar-btn-today" id="calTodayBtn">Сегодня</button>
+                                <button class="calendar-btn-icon" id="calNextBtn" title="Следующий период">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                    </svg>
+                                </button>
+                                <h2 class="calendar-current-title" id="calTitle">Сентябрь 2026</h2>
+                            </div>
+
+                            <div class="calendar-actions-group">
+                                <div class="calendar-view-switcher">
+                                    <button class="cal-switch-btn active" data-view="month" id="calViewMonthBtn">Месяц</button>
+                                    <button class="cal-switch-btn" data-view="week" id="calViewWeekBtn">Неделя</button>
+                                    <button class="cal-switch-btn" data-view="day" id="calViewDayBtn">День</button>
+                                </div>
+                                <button class="calendar-filter-btn active" id="calToggleCompletedBtn" title="Показывать выполненные задачи">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="calendar-grid-container" id="calendarGridContainer">
+                            <!-- Динамическая сетка календаря -->
+                        </div>
                     </div>
                 </div>
 

@@ -73,13 +73,22 @@ export class FolderManager {
         });
     }
 
-    open(folderData, index) {
-        this.activeFolderIndex = index;
+    open(folderData, indexOrRef) {
+        this.targetFolderRef = (typeof indexOrRef === 'object' && indexOrRef !== null) ? indexOrRef : null;
+        this.activeFolderIndex = typeof indexOrRef === 'number' ? indexOrRef : -1;
         this.isOpen = true;
         this.currentFolderData = JSON.parse(JSON.stringify(folderData));
 
         this.titleEl.innerText = this.currentFolderData.name;
         this.renderItems();
+
+        if (this.sortable) {
+            this.sortable.option("disabled", false);
+        }
+
+        if (document.body.classList.contains('edit-mode')) {
+            this.enableEditMode();
+        }
 
         document.body.classList.add('folder-open');
         this.overlay.classList.add('active');
@@ -92,10 +101,29 @@ export class FolderManager {
         this.header.style.pointerEvents = 'none';
     }
 
+    getRealFolderIndex(allApps) {
+        if (!this.currentFolderData || !Array.isArray(allApps)) return -1;
+        if (this.targetFolderRef) {
+            const idx = allApps.indexOf(this.targetFolderRef);
+            if (idx !== -1) return idx;
+        }
+        const currIdx = allApps.indexOf(this.currentFolderData);
+        if (currIdx !== -1) return currIdx;
+
+        if (this.activeFolderIndex >= 0 && this.activeFolderIndex < allApps.length) {
+            const candidate = allApps[this.activeFolderIndex];
+            if (candidate && candidate.type === 'folder' && candidate.name === this.currentFolderData.name) {
+                return this.activeFolderIndex;
+            }
+        }
+        return allApps.findIndex(a => a && a.type === 'folder' && a.name === this.currentFolderData.name);
+    }
+
     close() {
         if (!this.isOpen) return;
         this.isOpen = false;
         this.activeFolderIndex = -1;
+        this.targetFolderRef = null;
 
         this.overlay.classList.remove('active');
         document.body.classList.remove('folder-open');
@@ -116,7 +144,14 @@ export class FolderManager {
         if (this.animationController) this.animationController.disable();
         this.gridEl.innerHTML = '';
 
-        const items = this.currentFolderData.items || [];
+        const activeFilter = window.currentCategoryFilter;
+        const allItems = this.currentFolderData.items || [];
+        const items = allItems.filter(app => {
+            if (activeFilter && activeFilter !== 'Главная') {
+                return Array.isArray(app.category) ? app.category.includes(activeFilter) : app.category === activeFilter;
+            }
+            return window.isAppOnMain ? window.isAppOnMain(app) : !app._explicitNoMain;
+        });
 
         // Добавляем класс, если в папке больше 12 элементов (13 и более)
         if (items.length > 12) {
@@ -128,6 +163,7 @@ export class FolderManager {
         items.forEach((app, idx) => {
             const item = document.createElement('div');
             item.className = 'app-item';
+            item._appData = app;
             item.dataset.internalIndex = idx;
             item.dataset.appName = app.name; // Для поиска при сохранении
 
@@ -149,12 +185,13 @@ export class FolderManager {
             btnDel.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                const realIdx = this.currentFolderData.items.indexOf(app);
                 if (this.confirmModal) {
                     this.confirmModal.show(app.name, 'site', () => {
-                        this.deleteItem(idx);
+                        if (realIdx !== -1) this.deleteItem(realIdx);
                     });
                 } else {
-                    this.deleteItem(idx);
+                    if (realIdx !== -1) this.deleteItem(realIdx);
                 }
             };
 
@@ -164,11 +201,23 @@ export class FolderManager {
                 btnEdit.onclick = (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-
+                    const realIdx = this.currentFolderData.items.indexOf(app);
                     this.ctx.iconEditor.open((newData) => {
-                        this.currentFolderData.items[idx] = { ...app, ...newData };
-                        this.renderItems();
-                        this.syncToGlobalState();
+                        if (realIdx !== -1) {
+                            const updatedApp = { ...app, ...newData };
+                            const isOnMain = window.isAppOnMain ? window.isAppOnMain(updatedApp) : !updatedApp._explicitNoMain;
+                            if (!isOnMain) {
+                                this.currentFolderData.items.splice(realIdx, 1);
+                                const allApps = this.ctx.getApps();
+                                allApps.push(updatedApp);
+                                this.syncToGlobalState();
+                                this.renderItems();
+                            } else {
+                                this.currentFolderData.items[realIdx] = updatedApp;
+                                this.renderItems();
+                                this.syncToGlobalState();
+                            }
+                        }
                     }, app, window.userCategories);
                 };
             }
@@ -276,23 +325,21 @@ export class FolderManager {
 
         // Обновляем папку в глобальном стейте
         const allApps = this.ctx.getApps();
+        const targetIndex = this.getRealFolderIndex(allApps);
 
-        // Обновляем (или удаляем) папку в массиве
-        const isEmpty = !this.currentFolderData.items || this.currentFolderData.items.length === 0;
-        if (isEmpty) {
-            allApps.splice(this.activeFolderIndex, 1);
-            // Вставляем вынесенное приложение на место папки
-            allApps.splice(this.activeFolderIndex, 0, app);
-            this.close();
-        } else {
-            allApps[this.activeFolderIndex] = this.currentFolderData;
-            // Вставляем сразу после текущей папки
-            allApps.splice(this.activeFolderIndex + 1, 0, app);
+        if (targetIndex !== -1) {
+            const isEmpty = !this.currentFolderData.items || this.currentFolderData.items.length === 0;
+            if (isEmpty) {
+                allApps.splice(targetIndex, 1);
+                allApps.splice(targetIndex, 0, app);
+                this.close();
+            } else {
+                allApps[targetIndex] = this.currentFolderData;
+                allApps.splice(targetIndex + 1, 0, app);
+            }
+            this.ctx.saveApps(allApps);
+            this.ctx.renderMain(allApps, true);
         }
-
-        // Одна запись вместо двух
-        this.ctx.saveApps(allApps);
-        this.ctx.renderMain(allApps, true);
     }
 
     enableEditMode() {
@@ -326,51 +373,48 @@ export class FolderManager {
 
     saveOrderFromDOM() {
         const domItems = this.gridEl.querySelectorAll('.app-item');
-        const newItems = [];
-
+        const subRenderedList = [];
         domItems.forEach(el => {
-            // Используем dataset для надежности, если имена дублируются
-            const oldIdx = el.dataset.internalIndex;
-            if (oldIdx !== undefined && this.currentFolderData.items[oldIdx]) {
-                // Но так как sortable перемещает DOM, dataset едет вместе с элементом.
-                // Это ненадежно при multi-drag, но для simple sortable ок.
-                // Лучше искать по объекту:
-                const name = el.querySelector('.app-name').innerText;
-                const found = this.currentFolderData.items.find(i => i.name === name);
-                if (found) newItems.push(found);
+            if (el._appData) {
+                subRenderedList.push(el._appData);
             }
         });
 
-        // Fallback если выше не сработало (простое восстановление)
-        if (newItems.length !== this.currentFolderData.items.length) {
-            const domNames = Array.from(domItems).map(el => el.querySelector('.app-name').innerText);
-            const restored = [];
-            domNames.forEach(name => {
-                const item = this.currentFolderData.items.find(i => i.name === name);
-                if (item) restored.push(item);
-            });
-            if (restored.length === this.currentFolderData.items.length) {
-                this.currentFolderData.items = restored;
-                this.syncToGlobalState();
-                return;
-            }
-        }
+        if (subRenderedList.length > 0 && this.currentFolderData && Array.isArray(this.currentFolderData.items)) {
+            const allItems = this.currentFolderData.items;
 
-        this.currentFolderData.items = newItems;
-        this.syncToGlobalState();
+            // 1. Находим исходные индексы всех отображаемых элементов
+            const originalIndices = subRenderedList
+                .map(appObj => allItems.indexOf(appObj))
+                .filter(idx => idx !== -1);
+
+            // 2. Сортируем позиции по возрастанию
+            const sortedIndices = [...originalIndices].sort((a, b) => a - b);
+
+            // 3. Расставляем объекты в их новые позиции
+            subRenderedList.forEach((appObj, i) => {
+                if (i < sortedIndices.length) {
+                    allItems[sortedIndices[i]] = appObj;
+                }
+            });
+
+            this.syncToGlobalState();
+        }
     }
 
     syncToGlobalState() {
         const allApps = this.ctx.getApps();
-        if (allApps[this.activeFolderIndex]) {
+        const targetIndex = this.getRealFolderIndex(allApps);
+        if (targetIndex !== -1) {
             const isEmpty = !this.currentFolderData.items || this.currentFolderData.items.length === 0;
 
             if (isEmpty) {
                 // Если в папке ничего не осталось - удаляем её полностью
-                allApps.splice(this.activeFolderIndex, 1);
+                allApps.splice(targetIndex, 1);
                 this.close();
             } else {
-                allApps[this.activeFolderIndex] = this.currentFolderData;
+                allApps[targetIndex] = this.currentFolderData;
+                this.targetFolderRef = this.currentFolderData;
             }
 
             this.ctx.saveApps(allApps);

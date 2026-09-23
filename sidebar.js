@@ -466,7 +466,7 @@ export function initSidebarManager(context) {
                 context.iconEditor.open((data) => {
                     let u = data.url || "";
                     if (u && !u.startsWith('http')) u = 'https://' + u;
-                    const newApp = { name: data.name || "Новый сайт", url: u, icon: data.icon, category: data.category || [] };
+                    const newApp = { name: data.name || "Новый сайт", url: u, icon: data.icon, category: data.category || [], _explicitNoMain: data._explicitNoMain };
                     const currentApps = context.getAppsFromStorage();
                     currentApps.push(newApp);
                     context.renderAppsToDOM(currentApps);

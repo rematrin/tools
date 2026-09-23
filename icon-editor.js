@@ -48,12 +48,18 @@ export class IconEditor {
 
         this.selectedCategories = [];
 
-        if (initialData && initialData.category) {
-            if (Array.isArray(initialData.category)) {
-                this.selectedCategories = [...initialData.category];
+        if (initialData) {
+            if (initialData.category) {
+                if (Array.isArray(initialData.category)) {
+                    this.selectedCategories = [...initialData.category];
+                } else {
+                    this.selectedCategories = [initialData.category];
+                }
             } else {
-                this.selectedCategories = [initialData.category];
+                this.selectedCategories = ['Главная'];
             }
+        } else {
+            this.selectedCategories = ['Главная'];
         }
 
         const list = document.getElementById('editorAppCategoryList');
@@ -62,15 +68,41 @@ export class IconEditor {
         const fakeInput = document.getElementById('editorAppCategoryFakeInput');
 
         const updateHeaderText = () => {
-            if (this.selectedCategories.length === 0) fakeInput.value = '';
+            if (this.selectedCategories.length === 0) fakeInput.value = 'Без вкладок';
             else if (this.selectedCategories.length === 1) fakeInput.value = this.selectedCategories[0];
-            else fakeInput.value = `Выбрано: ${this.selectedCategories.length}`;
+            else fakeInput.value = this.selectedCategories.join(', ');
         };
 
         const renderCats = () => {
             if (!container) return;
             container.innerHTML = '';
-            userCategories.forEach((cat, idx) => {
+
+            // 1. Встроенный пункт "Главная"
+            const mainItem = document.createElement('div');
+            mainItem.className = 'category-dropdown-item';
+            const isMainSelected = this.selectedCategories.includes('Главная');
+            mainItem.innerHTML = `
+                <div style="width: 14px; margin-right: 4px; flex-shrink: 0;"></div>
+                <div class="cat-check-zone" style="display: flex; align-items: center; flex-grow: 1; gap: 10px; cursor: pointer;">
+                    <div class="cat-checkbox ${isMainSelected ? 'checked' : ''}"></div>
+                    <span class="cat-name" style="word-break: break-all; font-weight: 500;">Главная</span>
+                </div>
+            `;
+            mainItem.querySelector('.cat-check-zone').onclick = (e) => {
+                e.stopPropagation();
+                if (isMainSelected) {
+                    this.selectedCategories = this.selectedCategories.filter(c => c !== 'Главная');
+                } else {
+                    this.selectedCategories.unshift('Главная');
+                }
+                updateHeaderText();
+                renderCats();
+            };
+            container.appendChild(mainItem);
+
+            // 2. Пользовательские вкладки
+            const customCats = userCategories.filter(c => c !== 'Главная');
+            customCats.forEach((cat, idx) => {
                 const item = document.createElement('div');
                 item.className = 'category-dropdown-item';
                 const isSelected = this.selectedCategories.includes(cat);
@@ -213,7 +245,7 @@ export class IconEditor {
                     e.stopPropagation();
                     item.innerHTML = `
                         <div style="display: flex; flex-direction: column; width: 100%; gap: 8px; padding: 2px 0;">
-                            <span style="font-size: 13px; color: #ea4335; font-weight: 500; word-break: break-word;">Удалить категорию "${cat}"?</span>
+                            <span style="font-size: 13px; color: #ea4335; font-weight: 500; word-break: break-word;">Удалить вкладку "${cat}"?</span>
                             <div style="display: flex; gap: 8px;">
                                 <button class="cat-confirm-btn yes" style="flex: 1; background: #ea4335; color: white; border: none; padding: 6px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: opacity 0.2s;">Да</button>
                                 <button class="cat-confirm-btn no" style="flex: 1; background: #f1f3f4; color: #333; border: none; padding: 6px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: background 0.2s;">Нет</button>
@@ -298,6 +330,15 @@ export class IconEditor {
             this.cleanupOutsideClick = () => document.removeEventListener('click', outsideClick);
         }
 
+        const loadToken = {};
+        this.activeLoadToken = loadToken;
+
+        this.isImageModified = false;
+        this.originalIconUrl = initialData ? (initialData.icon || '') : '';
+
+        this.uploadedImage = null;
+        const btnOk = this.modal ? this.modal.querySelector('.btn-ok') : null;
+
         if (initialData) {
             this.resetEditor(false);
             const previewBox = document.getElementById('editorPreviewBox');
@@ -310,39 +351,78 @@ export class IconEditor {
             if (urlInput) urlInput.value = initialData.url || '';
 
             if (initialData.icon) {
-                this.uploadedImage = new Image();
-                this.uploadedImage.crossOrigin = "anonymous";
-                this.uploadedImage.onload = () => {
+                if (btnOk) {
+                    btnOk.disabled = true;
+                    btnOk.innerText = 'Загрузка...';
+                }
+
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = () => {
+                    if (this.activeLoadToken !== loadToken) return;
+                    this.uploadedImage = img;
                     this.resetImageState();
                     this.draw();
+                    if (btnOk) {
+                        btnOk.disabled = false;
+                        btnOk.innerText = 'Готово';
+                    }
                 };
-                this.uploadedImage.onerror = () => {
+                img.onerror = () => {
+                    if (this.activeLoadToken !== loadToken) return;
                     const fallbackProxy = `https://wsrv.nl/?url=${encodeURIComponent(initialData.icon)}&w=512&h=512&output=png`;
                     const fallbackImg = new Image();
                     fallbackImg.crossOrigin = "anonymous";
                     fallbackImg.onload = () => {
+                        if (this.activeLoadToken !== loadToken) return;
                         this.uploadedImage = fallbackImg;
                         this.resetImageState();
                         this.draw();
+                        if (btnOk) {
+                            btnOk.disabled = false;
+                            btnOk.innerText = 'Готово';
+                        }
                     };
                     fallbackImg.onerror = () => {
+                        if (this.activeLoadToken !== loadToken) return;
                         this.uploadedImage = null;
                         this.draw();
+                        if (btnOk) {
+                            btnOk.disabled = false;
+                            btnOk.innerText = 'Готово';
+                        }
                     };
                     fallbackImg.src = fallbackProxy;
                 };
 
-                if (initialData.icon.startsWith('data:')) {
-                    this.uploadedImage.src = initialData.icon;
-                } else {
-                    const separator = initialData.icon.includes('?') ? '&' : '?';
-                    this.uploadedImage.src = initialData.icon + separator + 'cb=' + new Date().getTime();
+                img.src = initialData.icon;
+                if (img.complete && img.naturalWidth !== 0) {
+                    if (this.activeLoadToken === loadToken) {
+                        this.uploadedImage = img;
+                        this.resetImageState();
+                        this.draw();
+                        if (btnOk) {
+                            btnOk.disabled = false;
+                            btnOk.innerText = 'Готово';
+                        }
+                    }
+                }
+            } else {
+                this.uploadedImage = null;
+                this.draw();
+                if (btnOk) {
+                    btnOk.disabled = false;
+                    btnOk.innerText = 'Готово';
                 }
             }
         } else {
             this.resetEditor(true);
             const previewBox = document.getElementById('editorPreviewBox');
             if (previewBox) previewBox.classList.remove('can-download');
+            if (btnOk) {
+                btnOk.disabled = false;
+                btnOk.innerText = 'Готово';
+            }
         }
     }
 
@@ -440,14 +520,14 @@ export class IconEditor {
                                 </div>
                                 <div class="modern-input-content" style="position: relative;">
                                     <input type="text" id="editorAppCategoryFakeInput" placeholder=" " readonly style="cursor: pointer; padding-right: 30px;">
-                                    <label for="editorAppCategoryFakeInput">Категория</label>
+                                    <label for="editorAppCategoryFakeInput">Вкладки</label>
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5f6368" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="category-chevron" style="position: absolute; right: 0px; top: 50%; transform: translateY(-50%); pointer-events: none;"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                     
                                     <div id="editorAppCategoryList" class="category-dropdown-list">
                                         <div id="categoryOptionsContainer"></div>
                                         <div class="category-dropdown-item add-new" id="categoryAddNewItem">
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                            <input type="text" id="newCategoryInput" placeholder="Добавить категорию..." autocomplete="off">
+                                            <input type="text" id="newCategoryInput" placeholder="Добавить вкладку..." autocomplete="off">
                                         </div>
                                     </div>
                                 </div>
@@ -933,6 +1013,7 @@ export class IconEditor {
                                 div.appendChild(img);
 
                                 div.addEventListener('click', () => {
+                                    this.isImageModified = true;
                                     const finalUrl = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
 
                                     this.uploadedImage = new Image();
@@ -996,6 +1077,7 @@ export class IconEditor {
                         const input = document.getElementById('iconEditorUrlInput');
                         const imgUrl = input.value;
                         if (imgUrl && imgUrl.trim() !== '') {
+                            this.isImageModified = true;
                             const originalBtnContent = btnLoadFromImgUrl.innerHTML;
                             btnLoadFromImgUrl.innerHTML = `<span>Загрузка...</span>`;
                             btnLoadFromImgUrl.style.opacity = 0.7;
@@ -1064,6 +1146,7 @@ export class IconEditor {
 
             const swatch = e.target.closest('.swatch');
             if (swatch && !swatch.classList.contains('swatch-rainbow')) {
+                this.isImageModified = true;
                 document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
                 swatch.classList.add('active');
                 this.state.bgColor = swatch.dataset.color;
@@ -1071,11 +1154,12 @@ export class IconEditor {
             }
 
             if (e.target.closest('.editor-close-btn') || e.target.closest('.btn-cancel')) this.close();
-            if (e.target.closest('.btn-reset')) this.resetEditor(false);
+            if (e.target.closest('.btn-reset')) { this.isImageModified = true; this.resetEditor(false); }
             if (e.target.closest('.btn-ok') && !e.target.closest('.btn-ok').disabled) this.save();
         });
 
         document.getElementById('editorCustomColorPicker').addEventListener('input', (e) => {
+            this.isImageModified = true;
             this.state.bgColor = e.target.value;
             document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
             e.target.parentElement.classList.add('active');
@@ -1093,6 +1177,7 @@ export class IconEditor {
     handleUpload(e) {
         const file = e.target.files[0];
         if (file) {
+            this.isImageModified = true;
             const reader = new FileReader();
             reader.onload = (event) => {
                 this.uploadedImage = new Image();
@@ -1104,9 +1189,9 @@ export class IconEditor {
         e.target.value = '';
     }
 
-    move(x, y) { this.state.offsetX += x; this.state.offsetY += y; this.draw(); }
-    zoom(delta) { this.state.scale += delta; if (this.state.scale < 0.01) this.state.scale = 0.01; this.draw(); }
-    rotate(deg) { this.state.rotation += deg; this.draw(); }
+    move(x, y) { this.isImageModified = true; this.state.offsetX += x; this.state.offsetY += y; this.draw(); }
+    zoom(delta) { this.isImageModified = true; this.state.scale += delta; if (this.state.scale < 0.01) this.state.scale = 0.01; this.draw(); }
+    rotate(deg) { this.isImageModified = true; this.state.rotation += deg; this.draw(); }
 
     resetImageState() {
         if (this.uploadedImage) {
@@ -1178,40 +1263,50 @@ export class IconEditor {
     async save() {
         if (this.onSaveCallback) {
             const btnOk = this.modal.querySelector('.btn-ok');
-            const originalText = btnOk.innerText;
-            btnOk.innerText = 'Загрузка...';
-            btnOk.disabled = true;
+            const originalText = btnOk ? btnOk.innerText : 'Готово';
 
             try {
-                const offscreenCanvas = document.createElement('canvas');
-                const offCtx = offscreenCanvas.getContext('2d');
-                offscreenCanvas.width = 256;
-                offscreenCanvas.height = 256;
-                offCtx.imageSmoothingEnabled = true;
-                offCtx.imageSmoothingQuality = 'high';
+                let hostedUrl = this.originalIconUrl || '';
 
-                if (this.state.bgColor !== 'transparent') {
-                    offCtx.fillStyle = this.state.bgColor;
-                    offCtx.fillRect(0, 0, 256, 256);
+                if (this.isImageModified || !hostedUrl) {
+                    if (btnOk) {
+                        btnOk.innerText = 'Загрузка...';
+                        btnOk.disabled = true;
+                    }
+
+                    const offscreenCanvas = document.createElement('canvas');
+                    const offCtx = offscreenCanvas.getContext('2d');
+                    offscreenCanvas.width = 256;
+                    offscreenCanvas.height = 256;
+                    offCtx.imageSmoothingEnabled = true;
+                    offCtx.imageSmoothingQuality = 'high';
+
+                    if (this.state.bgColor !== 'transparent') {
+                        offCtx.fillStyle = this.state.bgColor;
+                        offCtx.fillRect(0, 0, 256, 256);
+                    }
+
+                    offCtx.drawImage(this.canvas, 0, 0, 256, 256);
+
+                    const dataUrl = offscreenCanvas.toDataURL('image/png');
+                    hostedUrl = await this.uploadToImgBB(dataUrl);
                 }
-
-                offCtx.drawImage(this.canvas, 0, 0, 256, 256);
-
-                const dataUrl = offscreenCanvas.toDataURL('image/png');
-                const hostedUrl = await this.uploadToImgBB(dataUrl);
 
                 const name = document.getElementById('editorAppName').value.trim();
                 const url = document.getElementById('editorAppUrl').value.trim();
                 const category = this.selectedCategories && this.selectedCategories.length > 0 ? this.selectedCategories : null;
+                const explicitNoMain = !this.selectedCategories.includes('Главная');
 
-                this.onSaveCallback({ icon: hostedUrl, name: name, url: url, category: category });
+                this.onSaveCallback({ icon: hostedUrl, name: name, url: url, category: category, _explicitNoMain: explicitNoMain });
                 this.close();
 
             } catch (error) {
                 console.error('Save error:', error);
                 alert('Ошибка загрузки изображения. Проверьте интернет или API ключ.');
-                btnOk.innerText = originalText;
-                btnOk.disabled = false;
+                if (btnOk) {
+                    btnOk.innerText = originalText;
+                    btnOk.disabled = false;
+                }
             }
         }
     }

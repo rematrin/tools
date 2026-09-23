@@ -2689,7 +2689,23 @@
             bar.style.display = 'flex';
             bar.innerHTML = '';
 
-            window.userCategories.forEach(cat => {
+            // 1. Встроенная капсула "Главная"
+            const mainCapsule = document.createElement('div');
+            const isMainActive = (currentCategoryFilter === null || currentCategoryFilter === 'Главная') && !window.todoActive;
+            mainCapsule.className = 'category-capsule' + (isMainActive ? ' active' : '');
+            mainCapsule.innerText = 'Главная';
+            mainCapsule.onclick = () => {
+                if (window.todoActive) {
+                    window.toggleTodoView(false);
+                }
+                currentCategoryFilter = null;
+                renderCategoryBar();
+                renderAppsToDOM(currentApps);
+            };
+            bar.appendChild(mainCapsule);
+
+            // 2. Пользовательские капсулы вкладок
+            (window.userCategories || []).filter(cat => cat !== 'Главная').forEach(cat => {
                 const capsule = document.createElement('div');
                 capsule.className = 'category-capsule' + (currentCategoryFilter === cat && !window.todoActive ? ' active' : '');
                 capsule.innerText = cat;
@@ -2752,13 +2768,95 @@
         ];
 
         // --- ФУНКЦИИ СИНХРОНИЗАЦИИ ---
-        // --- ФУНКЦИИ СИНХРОНИЗАЦИИ ---
+        function deduplicateApps(appsList) {
+            if (!Array.isArray(appsList)) return appsList;
+            const seenFolders = new Map();
+            const seenTopApps = new Set();
+            const result = [];
+            const extractedSubApps = [];
+
+            appsList.forEach(item => {
+                if (!item) return;
+                if (item.type === 'folder') {
+                    const folderName = item.name || 'Папка';
+                    let folderObj;
+                    if (seenFolders.has(folderName)) {
+                        folderObj = seenFolders.get(folderName);
+                    } else {
+                        folderObj = { ...item, items: [] };
+                        seenFolders.set(folderName, folderObj);
+                        result.push(folderObj);
+                    }
+
+                    const seenSubItems = new Set();
+                    (item.items || []).forEach(subItem => {
+                        if (!subItem) return;
+
+                        // Если элемента нет на Главной — полностью извлекаем из папки!
+                        const isOnMain = isAppOnMain(subItem);
+                        if (!isOnMain) {
+                            extractedSubApps.push(subItem);
+                            return;
+                        }
+
+                        const key = (subItem.name || '') + '|' + (subItem.url || '');
+                        if (!seenSubItems.has(key)) {
+                            seenSubItems.add(key);
+                            if (!folderObj.items.some(i => (i.name || '') + '|' + (i.url || '') === key)) {
+                                folderObj.items.push(subItem);
+                            }
+                        }
+                    });
+                } else {
+                    const key = (item.name || '') + '|' + (item.url || '');
+                    if (!seenTopApps.has(key)) {
+                        seenTopApps.add(key);
+                        result.push(item);
+                    }
+                }
+            });
+
+            // Очищаем пустые папки
+            for (let i = result.length - 1; i >= 0; i--) {
+                if (result[i].type === 'folder' && (!result[i].items || result[i].items.length === 0)) {
+                    result.splice(i, 1);
+                }
+            }
+
+            // Добавляем извлеченные приложения на верхний уровень
+            extractedSubApps.forEach(ext => {
+                const key = (ext.name || '') + '|' + (ext.url || '');
+                if (!seenTopApps.has(key)) {
+                    seenTopApps.add(key);
+                    result.push(ext);
+                }
+            });
+
+            return result;
+        }
+
         function getAppsFromStorage() {
             const stored = localStorage.getItem(STORAGE_KEY);
-            return stored ? JSON.parse(stored) : [];
+            const parsed = stored ? JSON.parse(stored) : [];
+            const clean = deduplicateApps(parsed);
+            if (JSON.stringify(clean) !== JSON.stringify(parsed)) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
+                if (window.dbApi && window.auth && window.auth.currentUser) {
+                    window.dbApi.saveApps(clean);
+                }
+            }
+            return clean;
         }
 
         let sortables = [];
+
+        function isAppOnMain(app) {
+            if (!app) return false;
+            if (app._explicitNoMain) return false;
+            if (!app.category || app.category.length === 0) return true;
+            return Array.isArray(app.category) ? app.category.includes('Главная') : app.category === 'Главная';
+        }
+        window.isAppOnMain = isAppOnMain;
 
         function renderAppsToDOM(appsArray, silent = false) {
             currentApps = appsArray; // Обновляем глобальное состояние
@@ -2773,9 +2871,8 @@
             pagesContainer.innerHTML = '';
             dotsContainer.innerHTML = '';
 
-            let appsToRender = appsArray;
-            if (currentCategoryFilter) {
-                appsToRender = [];
+            let appsToRender = [];
+            if (currentCategoryFilter && currentCategoryFilter !== 'Главная') {
                 appsArray.forEach(app => {
                     if (app.type === 'folder') {
                         // Extract apps from folder that match category
@@ -2786,6 +2883,20 @@
                     } else {
                         const hasCat = Array.isArray(app.category) ? app.category.includes(currentCategoryFilter) : app.category === currentCategoryFilter;
                         if (hasCat) appsToRender.push(app);
+                    }
+                });
+            } else {
+                // Главная страница (показываем элементы и папки, у которых есть хотя бы один элемент на Главной)
+                appsArray.forEach(app => {
+                    if (app.type === 'folder') {
+                        const mainItemsInFolder = (app.items || []).filter(item => isAppOnMain(item));
+                        if (mainItemsInFolder.length > 0) {
+                            appsToRender.push(app);
+                        }
+                    } else {
+                        if (isAppOnMain(app)) {
+                            appsToRender.push(app);
+                        }
                     }
                 });
             }
@@ -2801,12 +2912,18 @@
                 const pageApps = appsToRender.slice(i * APPS_PER_PAGE, (i + 1) * APPS_PER_PAGE);
 
                 pageApps.forEach((app, innerIndex) => {
-                    const absIndex = currentCategoryFilter ? -1 : (i * APPS_PER_PAGE + innerIndex); // Disable drag in filter mode
+                    const absIndex = i * APPS_PER_PAGE + innerIndex;
                     let newItemHTML;
                     const tempDiv = document.createElement('div');
 
                     if (app.type === 'folder') {
-                        const previewItems = app.items ? app.items.slice(0, 9) : [];
+                        let folderItemsToPreview = app.items || [];
+                        if (!currentCategoryFilter || currentCategoryFilter === 'Главная') {
+                            folderItemsToPreview = folderItemsToPreview.filter(item => isAppOnMain(item));
+                        } else {
+                            folderItemsToPreview = folderItemsToPreview.filter(item => Array.isArray(item.category) ? item.category.includes(currentCategoryFilter) : item.category === currentCategoryFilter);
+                        }
+                        const previewItems = folderItemsToPreview.slice(0, 9);
                         let miniGridHTML = '';
                         previewItems.forEach(item => {
                             miniGridHTML += `<img src="${item.icon}" class="mini-icon" onerror="this.style.opacity='0'">`;
@@ -2828,11 +2945,12 @@
 
                         tempDiv.innerHTML = newItemHTML;
                         const el = tempDiv.firstElementChild;
+                        el._appData = app;
                         const trigger = el.querySelector('.folder-trigger');
                         trigger.onclick = (e) => {
                             if (document.body.classList.contains('edit-mode')) return;
                             if (folderManager) {
-                                folderManager.open(app, absIndex);
+                                folderManager.open(app, app);
                             }
                         };
                         pageDiv.appendChild(el);
@@ -2854,7 +2972,9 @@
                             <span class="app-name">${app.name}</span>
                         </div>`;
                         tempDiv.innerHTML = newItemHTML;
-                        pageDiv.appendChild(tempDiv.firstElementChild);
+                        const el = tempDiv.firstElementChild;
+                        el._appData = app;
+                        pageDiv.appendChild(el);
                     }
                 });
 
@@ -2931,54 +3051,42 @@
                         if (hoveredTargetEl) {
                             hoveredTargetEl.classList.remove('drop-target', 'drop-target-icon');
 
-                            const draggedName = evt.item.querySelector('.app-name')?.innerText;
-                            const folderName = hoveredTargetEl.querySelector('.app-name')?.innerText;
-                            const isDraggedFolder = evt.item.querySelector('.folder-trigger') !== null;
+                            const draggedApp = evt.item._appData;
+                            const targetApp = hoveredTargetEl._appData;
 
-                            if (draggedName && folderName && !isDraggedFolder) {
+                            if (draggedApp && targetApp && draggedApp !== targetApp) {
                                 const currentApps = getAppsFromStorage();
-                                const draggedIdx = currentApps.findIndex(a => a.name === draggedName && a.type !== 'folder');
-                                const folderIdx = currentApps.findIndex(a => a.name === folderName && a.type === 'folder');
+                                const draggedReal = findAppInTree(currentApps, draggedApp);
+                                const targetReal = findAppInTree(currentApps, targetApp);
 
-                                if (draggedIdx !== -1 && folderIdx !== -1 && draggedIdx !== folderIdx) {
-                                    const draggedApp = currentApps[draggedIdx];
-                                    const folder = currentApps[folderIdx];
-                                    if (!folder.items) folder.items = [];
-                                    folder.items.push(draggedApp);
-                                    currentApps.splice(draggedIdx, 1);
-                                    saveCurrentState(currentApps);
-                                    renderAppsToDOM(currentApps);
-                                    hoveredTargetEl = null;
-                                    return;
-                                }
-                            }
-
-                            const draggedName2 = evt.item.querySelector('.app-name')?.innerText;
-                            const targetName = hoveredTargetEl.querySelector('.app-name')?.innerText;
-                            const isTargetFolder = hoveredTargetEl.querySelector('.folder-trigger') !== null;
-
-                            if (draggedName2 && targetName && !isTargetFolder) {
-                                const currentApps = getAppsFromStorage();
-                                const draggedIdx = currentApps.findIndex(a => a.name === draggedName2 && a.type !== 'folder');
-                                const targetIdx = currentApps.findIndex(a => a.name === targetName && a.type !== 'folder');
-
-                                if (draggedIdx !== -1 && targetIdx !== -1 && draggedIdx !== targetIdx) {
-                                    const newFolder = {
-                                        type: "folder",
-                                        name: "Новая папка",
-                                        items: [currentApps[targetIdx], currentApps[draggedIdx]]
-                                    };
-                                    if (draggedIdx < targetIdx) {
-                                        currentApps.splice(targetIdx, 1, newFolder);
-                                        currentApps.splice(draggedIdx, 1);
-                                    } else {
-                                        currentApps.splice(draggedIdx, 1);
-                                        currentApps.splice(targetIdx, 1, newFolder);
+                                if (draggedReal && targetReal) {
+                                    if (targetReal.type === 'folder' && draggedReal.type !== 'folder') {
+                                        deleteAppFromState(draggedReal);
+                                        if (!targetReal.items) targetReal.items = [];
+                                        targetReal.items.push(draggedReal);
+                                        saveCurrentState(currentApps);
+                                        renderAppsToDOM(currentApps);
+                                        hoveredTargetEl = null;
+                                        return;
                                     }
-                                    saveCurrentState(currentApps);
-                                    renderAppsToDOM(currentApps);
-                                    hoveredTargetEl = null;
-                                    return;
+                                    if (targetReal.type !== 'folder' && draggedReal.type !== 'folder') {
+                                        const targetParent = findParentContainer(currentApps, targetReal);
+                                        if (targetParent) {
+                                            const targetIdx = targetParent.indexOf(targetReal);
+                                            deleteAppFromState(draggedReal);
+                                            deleteAppFromState(targetReal);
+                                            const newFolder = {
+                                                type: "folder",
+                                                name: "Новая папка",
+                                                items: [targetReal, draggedReal]
+                                            };
+                                            targetParent.splice(targetIdx, 0, newFolder);
+                                            saveCurrentState(currentApps);
+                                            renderAppsToDOM(currentApps);
+                                            hoveredTargetEl = null;
+                                            return;
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2992,22 +3100,130 @@
         }
 
 
+        function findAppInTree(appsList, targetApp) {
+            if (!targetApp || !appsList) return null;
+            for (let app of appsList) {
+                if (app === targetApp || (app.name === targetApp.name && app.url === targetApp.url && app.icon === targetApp.icon)) {
+                    return app;
+                }
+                if (app.type === 'folder' && app.items) {
+                    const found = findAppInTree(app.items, targetApp);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        function isSameApp(a, b) {
+            if (!a || !b) return false;
+            if (a === b) return true;
+            if (a.name && b.name && a.name === b.name && (a.url || '') === (b.url || '')) return true;
+            return false;
+        }
+
+        function findParentContainer(appsList, targetItem) {
+            if (!appsList || !targetItem) return null;
+            for (let app of appsList) {
+                if (isSameApp(app, targetItem)) {
+                    return appsList;
+                }
+            }
+            for (let app of appsList) {
+                if (app && app.type === 'folder' && Array.isArray(app.items)) {
+                    const container = findParentContainer(app.items, targetItem);
+                    if (container) return container;
+                }
+            }
+            return null;
+        }
+
+        function findIndexInArray(parentArray, targetItem) {
+            if (!parentArray || !targetItem) return -1;
+            const refIdx = parentArray.indexOf(targetItem);
+            if (refIdx !== -1) return refIdx;
+            return parentArray.findIndex(a => isSameApp(a, targetItem));
+        }
+
+        function deleteAppFromState(targetApp) {
+            const activeApps = (currentApps && currentApps.length > 0) ? currentApps : getAppsFromStorage();
+            const removeRecursive = (list) => {
+                for (let i = 0; i < list.length; i++) {
+                    const app = list[i];
+                    const isMatch = typeof targetApp === 'string' ? app.name === targetApp : isSameApp(app, targetApp);
+                    if (isMatch) {
+                        list.splice(i, 1);
+                        return true;
+                    }
+                    if (app.type === 'folder' && app.items) {
+                        if (removeRecursive(app.items)) return true;
+                    }
+                }
+                return false;
+            };
+            removeRecursive(activeApps);
+            saveCurrentState(activeApps);
+            renderAppsToDOM(activeApps);
+        }
+
         function saveCurrentState(updatedApps = null) {
             let appsToSave;
             if (updatedApps) {
                 appsToSave = updatedApps;
+                currentApps = updatedApps;
             } else {
+                const activeApps = (currentApps && currentApps.length > 0) ? currentApps : getAppsFromStorage();
                 const items = document.querySelectorAll('.pages-container .app-item');
-                appsToSave = [];
+                
+                const renderedInOrder = [];
                 items.forEach(item => {
-                    const absIdx = parseInt(item.dataset.absIndex);
-                    if (!isNaN(absIdx) && currentApps[absIdx]) {
-                        appsToSave.push(currentApps[absIdx]);
+                    if (item._appData) {
+                        renderedInOrder.push(item._appData);
                     }
                 });
-                if (appsToSave.length === 0 && items.length > 0) return;
+
+                if (renderedInOrder.length > 0) {
+                    const containerMap = new Map();
+
+                    renderedInOrder.forEach(appObj => {
+                        const parentArray = findParentContainer(activeApps, appObj);
+                        if (parentArray) {
+                            if (!containerMap.has(parentArray)) {
+                                containerMap.set(parentArray, []);
+                            }
+                            containerMap.get(parentArray).push(appObj);
+                        }
+                    });
+
+                    containerMap.forEach((subRenderedList, parentArray) => {
+                        const originalIndices = [];
+                        subRenderedList.forEach(appObj => {
+                            const idx = findIndexInArray(parentArray, appObj);
+                            if (idx !== -1) {
+                                originalIndices.push(idx);
+                            }
+                        });
+
+                        const sortedIndices = [...originalIndices].sort((a, b) => a - b);
+
+                        const realObjects = subRenderedList.map(appObj => {
+                            const idx = findIndexInArray(parentArray, appObj);
+                            return idx !== -1 ? parentArray[idx] : appObj;
+                        });
+
+                        let count = 0;
+                        realObjects.forEach(realObj => {
+                            if (count < sortedIndices.length) {
+                                parentArray[sortedIndices[count++]] = realObj;
+                            }
+                        });
+                    });
+                }
+                appsToSave = activeApps;
             }
+
             if (appsToSave) {
+                appsToSave = deduplicateApps(appsToSave);
+                currentApps = appsToSave;
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(appsToSave));
                 if (window.dbApi && window.auth && window.auth.currentUser) {
                     window.dbApi.saveApps(appsToSave);
@@ -3190,11 +3406,6 @@
                 const existingBtn = iconContainer.querySelector('.delete-btn');
                 if (existingBtn) existingBtn.remove();
 
-                // Создание кнопки удаления (old structure, removed)
-                // const deleteBtn = document.createElement('div');
-                // deleteBtn.className = 'delete-btn';
-                // iconContainer.appendChild(deleteBtn);
-
                 // --- ЛОГИКА УДАЛЕНИЯ ---
                 const isFolder = item.querySelector('.folder-trigger') !== null;
                 const btnDel = iconContainer.querySelector('.btn-del');
@@ -3205,16 +3416,16 @@
 
                         const nameEl = item.querySelector('.app-name');
                         const name = nameEl ? nameEl.innerText : (isFolder ? 'Папка' : 'Приложение');
+                        const appData = item._appData;
 
                         if (isFolder) {
                             confirmModal.show(name, 'folder', {
                                 onConfirm: () => {
-                                    item.remove();
-                                    saveCurrentState();
+                                    deleteAppFromState(appData || name);
                                 },
                                 onUngroup: () => {
                                     const currentApps = getAppsFromStorage();
-                                    const folderIdx = currentApps.findIndex(a => a.name === name && a.type === 'folder');
+                                    const folderIdx = currentApps.findIndex(a => (appData ? a === appData : a.name === name) && a.type === 'folder');
 
                                     if (folderIdx !== -1) {
                                         const folder = currentApps[folderIdx];
@@ -3228,8 +3439,7 @@
                             });
                         } else {
                             confirmModal.show(name, 'site', () => {
-                                item.remove();
-                                saveCurrentState();
+                                deleteAppFromState(appData || name);
                             });
                         }
                     };
@@ -3244,16 +3454,15 @@
 
                         const currentApps = getAppsFromStorage();
                         const absIndex = parseInt(item.dataset.absIndex);
-                        const appData = currentApps[absIndex];
+                        const appData = item._appData || currentApps[absIndex];
 
                         if (appData) {
                             iconEditor.open((newData) => {
                                 const freshApps = getAppsFromStorage();
-                                if (freshApps[absIndex]) {
-                                    freshApps[absIndex] = { ...freshApps[absIndex], ...newData };
-                                    saveCurrentState(freshApps);
-                                    renderAppsToDOM(freshApps);
-                                }
+                                const targetApp = findAppInTree(freshApps, appData) || appData;
+                                Object.assign(targetApp, newData);
+                                saveCurrentState(freshApps);
+                                renderAppsToDOM(freshApps);
                             }, appData, window.userCategories);
                         }
                     };

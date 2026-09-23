@@ -376,7 +376,6 @@ export function initSidebarManager(context) {
         const isGlassEnabled = localStorage.getItem('glassEffect') === 'true';
         const openInNewTab = localStorage.getItem('openInNewTab') === 'true';
         const expandedFolders = localStorage.getItem('expandedFolders') === 'true';
-        const showTodo = localStorage.getItem('showTodo') === 'true';
         const showFactsWidget = localStorage.getItem('showFactsWidget') !== 'false';
 
         const glassSettingsHTML = `
@@ -400,13 +399,6 @@ export function initSidebarManager(context) {
                     <span style="font-size: 14px; flex: 1; padding-right: 10px;">Расширенные папки</span>
                     <label class="switch" style="transform: scale(0.85); transform-origin: right;">
                         <input type="checkbox" id="expandedFoldersToggle" ${expandedFolders ? 'checked' : ''}>
-                        <span class="slider-toggle"></span>
-                    </label>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
-                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Использовать ToDo</span>
-                    <label class="switch" style="transform: scale(0.85); transform-origin: right;">
-                        <input type="checkbox" id="showTodoToggle" ${showTodo ? 'checked' : ''}>
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
@@ -550,17 +542,6 @@ export function initSidebarManager(context) {
 
 
 
-        // Использовать ToDo
-        const showTodoToggle = document.getElementById('showTodoToggle');
-        if (showTodoToggle) {
-            showTodoToggle.onchange = (e) => {
-                const isEnabled = e.target.checked;
-                localStorage.setItem('showTodo', isEnabled.toString());
-                if (auth.currentUser) window.dbApi.saveSettings({ showTodo: isEnabled });
-                if (window.renderCategoryBar) window.renderCategoryBar();
-            };
-        }
-
         // Вкладки в несколько рядов
         const wrapCategoriesToggle = document.getElementById('wrapCategoriesToggle');
         if (wrapCategoriesToggle) {
@@ -634,7 +615,6 @@ export function initSidebarManager(context) {
                     glassEffect: localStorage.getItem('glassEffect') === 'true',
                     openInNewTab: localStorage.getItem('openInNewTab') === 'true',
                     expandedFolders: localStorage.getItem('expandedFolders') === 'true',
-                    showTodo: localStorage.getItem('showTodo') === 'true',
                     wallpaper: JSON.parse(localStorage.getItem('user_wallpaper_settings_v1') || '{}')
                 };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -738,11 +718,6 @@ export function initSidebarManager(context) {
 
 
 
-                            // Импорт настройки использования ToDo
-                            if (typeof data.showTodo !== 'undefined') {
-                                localStorage.setItem('showTodo', data.showTodo.toString());
-                                if (window.renderCategoryBar) window.renderCategoryBar();
-                            }
 
                             // Импорт обоев
                             if (data.wallpaper) {

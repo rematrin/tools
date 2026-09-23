@@ -2616,12 +2616,6 @@
             </div>
             <div id="pagesContainer" class="pages-container"></div>
             <div id="paginationDots" class="pagination-dots"></div>
-
-            <!-- Embedded Todo Panel (IFrame) -->
-            <div id="homeTodoPanel" class="home-bookmarks-panel" style="display: none;">
-                <iframe id="todoIframe" src=""
-                    style="width: 100%; height: 100%; border: none; background: transparent; border-radius: 24px;"></iframe>
-            </div>
         </div>
         <div id="pageNavLeft" class="page-nav-zone left">
             <svg viewBox="0 0 24 24">
@@ -2783,49 +2777,7 @@
             configurable: true
         });
 
-        window.todoActive = false;
 
-        window.toggleTodoView = function (active) {
-            window.todoActive = active;
-            const panel = document.getElementById('homeTodoPanel');
-            const pagesContainer = document.getElementById('pagesContainer');
-            const paginationDots = document.getElementById('paginationDots');
-            const categoryBar = document.getElementById('categoryBar');
-            const iframe = document.getElementById('todoIframe');
-
-            if (active) {
-                document.body.classList.add('bookmarks-view-active');
-                pagesContainer.style.display = 'none';
-                if (paginationDots) paginationDots.style.display = 'none';
-                panel.style.display = 'flex';
-                if (categoryBar) {
-                    categoryBar.style.display = 'flex';
-                    categoryBar.classList.add('category-bar-fixed');
-                }
-
-                const navLeft = document.getElementById('pageNavLeft');
-                const navRight = document.getElementById('pageNavRight');
-                if (navLeft) navLeft.style.display = 'none';
-                if (navRight) navRight.style.display = 'none';
-
-                if (iframe && iframe.getAttribute('src') !== 'todo.html?embedded=true') {
-                    iframe.src = 'todo.html?embedded=true';
-                }
-            } else {
-                panel.style.display = 'none';
-                document.body.classList.remove('bookmarks-view-active');
-                pagesContainer.style.display = '';
-                if (paginationDots) paginationDots.style.display = 'flex';
-                if (categoryBar) categoryBar.classList.remove('category-bar-fixed');
-
-                const navLeft = document.getElementById('pageNavLeft');
-                const navRight = document.getElementById('pageNavRight');
-                if (navLeft) navLeft.style.display = '';
-                if (navRight) navRight.style.display = '';
-
-                if (window.renderCategoryBar) window.renderCategoryBar();
-            }
-        };
 
         window.applyCategoryBarWrapMode = function () {
             const isWrap = localStorage.getItem('wrapCategories') === 'true';
@@ -2919,14 +2871,11 @@
 
             // 1. Встроенная капсула "Главная"
             const mainCapsule = document.createElement('div');
-            const isMainActive = (currentCategoryFilter === null || currentCategoryFilter === 'Главная') && !window.todoActive;
+            const isMainActive = (currentCategoryFilter === null || currentCategoryFilter === 'Главная');
             mainCapsule.className = 'category-capsule' + (isMainActive ? ' active' : '');
             mainCapsule.dataset.categoryName = 'Главная';
             mainCapsule.innerHTML = '<span>Главная</span>';
             mainCapsule.onclick = () => {
-                if (window.todoActive) {
-                    window.toggleTodoView(false);
-                }
                 currentCategoryFilter = null;
                 renderCategoryBar();
                 renderAppsToDOM(currentApps);
@@ -2936,13 +2885,10 @@
             // 2. Пользовательские капсулы вкладок
             (window.userCategories || []).filter(cat => cat !== 'Главная').forEach(cat => {
                 const capsule = document.createElement('div');
-                capsule.className = 'category-capsule' + (currentCategoryFilter === cat && !window.todoActive ? ' active' : '');
+                capsule.className = 'category-capsule' + (currentCategoryFilter === cat ? ' active' : '');
                 capsule.dataset.categoryName = cat;
                 capsule.innerHTML = `<span>${cat}</span>`;
                 capsule.onclick = () => {
-                    if (window.todoActive) {
-                        window.toggleTodoView(false);
-                    }
                     if (currentCategoryFilter === cat) {
                         currentCategoryFilter = null;
                     } else {
@@ -2953,30 +2899,6 @@
                 };
                 bar.appendChild(capsule);
             });
-
-            // Dedicated static Todo category capsule always remains
-            const showTodo = localStorage.getItem('showTodo') === 'true';
-            if (showTodo) {
-                const todoCapsule = document.createElement('div');
-                todoCapsule.className = 'category-capsule' + (window.todoActive ? ' active' : '');
-                todoCapsule.dataset.categoryName = 'ToDo';
-                todoCapsule.innerHTML = '<span>ToDo</span>';
-                todoCapsule.onclick = () => {
-                    if (window.todoActive) {
-                        window.toggleTodoView(false);
-                    } else {
-                        currentCategoryFilter = null;
-                        window.toggleTodoView(true);
-                    }
-                    renderCategoryBar();
-                    renderAppsToDOM(currentApps);
-                };
-                bar.appendChild(todoCapsule);
-            } else {
-                if (window.todoActive) {
-                    window.toggleTodoView(false);
-                }
-            }
 
             requestAnimationFrame(() => {
                 if (window.applyCategoryBarWrapMode) window.applyCategoryBarWrapMode();
@@ -4016,16 +3938,7 @@
 
 
 
-                                // Загрузка Использовать Список дел
-                                if (typeof cloudSettings.showTodo !== 'undefined') {
-                                    const isTodo = cloudSettings.showTodo;
-                                    localStorage.setItem('showTodo', isTodo.toString());
 
-                                    // Обновляем UI чекбокса, если он сейчас отрендерен
-                                    const toggle = document.getElementById('showTodoToggle');
-                                    if (toggle) toggle.checked = isTodo;
-                                    if (window.renderCategoryBar) window.renderCategoryBar();
-                                }
 
                                 // Загрузка Расширенных папок
                                 if (typeof cloudSettings.expandedFolders !== 'undefined') {

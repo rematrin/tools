@@ -411,6 +411,13 @@ export function initSidebarManager(context) {
                     </label>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
+                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Вкладки в несколько рядов</span>
+                    <label class="switch" style="transform: scale(0.85); transform-origin: right;">
+                        <input type="checkbox" id="wrapCategoriesToggle" ${localStorage.getItem('wrapCategories') === 'true' ? 'checked' : ''}>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
                     <span style="font-size: 14px; flex: 1; padding-right: 10px;">Интересные факты и цитаты</span>
                     <label class="switch" style="transform: scale(0.85); transform-origin: right;">
                         <input type="checkbox" id="showFactsWidgetToggle" ${showFactsWidget ? 'checked' : ''}>
@@ -551,6 +558,17 @@ export function initSidebarManager(context) {
                 localStorage.setItem('showTodo', isEnabled.toString());
                 if (auth.currentUser) window.dbApi.saveSettings({ showTodo: isEnabled });
                 if (window.renderCategoryBar) window.renderCategoryBar();
+            };
+        }
+
+        // Вкладки в несколько рядов
+        const wrapCategoriesToggle = document.getElementById('wrapCategoriesToggle');
+        if (wrapCategoriesToggle) {
+            wrapCategoriesToggle.onchange = (e) => {
+                const isEnabled = e.target.checked;
+                localStorage.setItem('wrapCategories', isEnabled.toString());
+                if (auth.currentUser) window.dbApi.saveSettings({ wrapCategories: isEnabled });
+                if (window.applyCategoryBarWrapMode) window.applyCategoryBarWrapMode();
             };
         }
 

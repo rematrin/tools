@@ -302,6 +302,29 @@
             transition: mask-image 0.25s ease, -webkit-mask-image 0.25s ease;
         }
 
+        .category-bar-wrapper.wrap-mode {
+            position: relative;
+            top: 0;
+            left: 0;
+            transform: none;
+            margin: -45px auto 14px auto;
+            max-width: max(450px, calc(var(--grid-cols, 4) * 110px));
+        }
+
+        .category-bar.wrap-mode {
+            flex-wrap: wrap;
+            justify-content: center;
+            overflow-x: visible;
+            mask-image: none !important;
+            -webkit-mask-image: none !important;
+            padding: 4px 0;
+            gap: 8px;
+        }
+
+        .category-bar-wrapper.wrap-mode .cat-scroll-btn {
+            display: none !important;
+        }
+
         .home-bookmarks-panel {
             position: fixed;
             top: 55%;
@@ -2804,11 +2827,35 @@
             }
         };
 
+        window.applyCategoryBarWrapMode = function () {
+            const isWrap = localStorage.getItem('wrapCategories') === 'true';
+            const wrapper = document.getElementById('categoryBarWrapper');
+            const bar = document.getElementById('categoryBar');
+            if (wrapper) {
+                if (isWrap) wrapper.classList.add('wrap-mode');
+                else wrapper.classList.remove('wrap-mode');
+            }
+            if (bar) {
+                if (isWrap) bar.classList.add('wrap-mode');
+                else bar.classList.remove('wrap-mode');
+            }
+            if (window.updateCategoryBarScrollUI) window.updateCategoryBarScrollUI();
+        };
+
         window.updateCategoryBarScrollUI = function () {
             const bar = document.getElementById('categoryBar');
             const btnLeft = document.getElementById('catScrollBtnLeft');
             const btnRight = document.getElementById('catScrollBtnRight');
             if (!bar) return;
+
+            const isWrap = localStorage.getItem('wrapCategories') === 'true';
+            if (isWrap) {
+                bar.style.maskImage = 'none';
+                bar.style.webkitMaskImage = 'none';
+                if (btnLeft) btnLeft.classList.remove('visible');
+                if (btnRight) btnRight.classList.remove('visible');
+                return;
+            }
 
             const maxScrollLeft = bar.scrollWidth - bar.clientWidth;
             const canScrollLeft = bar.scrollLeft > 4;
@@ -2840,6 +2887,8 @@
             const bar = document.getElementById('categoryBar');
             const btnLeft = document.getElementById('catScrollBtnLeft');
             const btnRight = document.getElementById('catScrollBtnRight');
+
+            if (window.applyCategoryBarWrapMode) window.applyCategoryBarWrapMode();
 
             if (bar) {
                 bar.addEventListener('scroll', window.updateCategoryBarScrollUI);
@@ -2930,7 +2979,7 @@
             }
 
             requestAnimationFrame(() => {
-                if (window.updateCategoryBarScrollUI) window.updateCategoryBarScrollUI();
+                if (window.applyCategoryBarWrapMode) window.applyCategoryBarWrapMode();
             });
         };
 

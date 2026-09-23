@@ -92,6 +92,9 @@ export class IconEditor {
                 e.stopPropagation();
                 if (isMainSelected) {
                     this.selectedCategories = this.selectedCategories.filter(c => c !== 'Главная');
+                    if (this.selectedCategories.length === 0) {
+                        this.selectedCategories = ['Главная'];
+                    }
                 } else {
                     this.selectedCategories.unshift('Главная');
                 }
@@ -235,8 +238,14 @@ export class IconEditor {
                 
                 item.querySelector('.cat-check-zone').onclick = (e) => {
                     e.stopPropagation();
-                    if (isSelected) this.selectedCategories = this.selectedCategories.filter(c => c !== cat);
-                    else this.selectedCategories.push(cat);
+                    if (isSelected) {
+                        this.selectedCategories = this.selectedCategories.filter(c => c !== cat);
+                        if (this.selectedCategories.length === 0) {
+                            this.selectedCategories = ['Главная'];
+                        }
+                    } else {
+                        this.selectedCategories.push(cat);
+                    }
                     updateHeaderText();
                     renderCats();
                 };
@@ -1294,7 +1303,12 @@ export class IconEditor {
 
                 const name = document.getElementById('editorAppName').value.trim();
                 const url = document.getElementById('editorAppUrl').value.trim();
-                const category = this.selectedCategories && this.selectedCategories.length > 0 ? this.selectedCategories : null;
+                
+                if (!this.selectedCategories || this.selectedCategories.length === 0) {
+                    this.selectedCategories = ['Главная'];
+                }
+
+                const category = this.selectedCategories;
                 const explicitNoMain = !this.selectedCategories.includes('Главная');
 
                 this.onSaveCallback({ icon: hostedUrl, name: name, url: url, category: category, _explicitNoMain: explicitNoMain });

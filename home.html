@@ -2773,7 +2773,6 @@
             const seenFolders = new Map();
             const seenTopApps = new Set();
             const result = [];
-            const extractedSubApps = [];
 
             appsList.forEach(item => {
                 if (!item) return;
@@ -2792,10 +2791,13 @@
                     (item.items || []).forEach(subItem => {
                         if (!subItem) return;
 
-                        // Если элемента нет на Главной — полностью извлекаем из папки!
-                        const isOnMain = isAppOnMain(subItem);
-                        if (!isOnMain) {
-                            extractedSubApps.push(subItem);
+                        // Извлекаем из папки только если пользователь ЯВНО отключил "Главная"
+                        if (subItem._explicitNoMain === true) {
+                            const key = (subItem.name || '') + '|' + (subItem.url || '');
+                            if (!seenTopApps.has(key)) {
+                                seenTopApps.add(key);
+                                result.push(subItem);
+                            }
                             return;
                         }
 
@@ -2816,29 +2818,55 @@
                 }
             });
 
-            // Очищаем пустые папки
+            // Очищаем только реально пустые папки
             for (let i = result.length - 1; i >= 0; i--) {
                 if (result[i].type === 'folder' && (!result[i].items || result[i].items.length === 0)) {
                     result.splice(i, 1);
                 }
             }
 
-            // Добавляем извлеченные приложения на верхний уровень
-            extractedSubApps.forEach(ext => {
-                const key = (ext.name || '') + '|' + (ext.url || '');
-                if (!seenTopApps.has(key)) {
-                    seenTopApps.add(key);
-                    result.push(ext);
-                }
-            });
-
             return result;
+        }
+
+        function repairSocialFolder(appsList) {
+            if (!Array.isArray(appsList)) return appsList;
+            let socialFolder = appsList.find(a => a && a.type === 'folder' && (a.name === 'Соцсети' || a.name === 'Социальные сети'));
+            const socialApps = [];
+            for (let i = appsList.length - 1; i >= 0; i--) {
+                const item = appsList[i];
+                if (item && item.type !== 'folder') {
+                    const cats = Array.isArray(item.category) ? item.category : (item.category ? [item.category] : []);
+                    if (cats.includes('Соцсети') || cats.includes('Социальные сети')) {
+                        socialApps.push(item);
+                        appsList.splice(i, 1);
+                    }
+                }
+            }
+
+            if (socialApps.length > 0) {
+                if (!socialFolder) {
+                    socialFolder = {
+                        type: 'folder',
+                        name: 'Соцсети',
+                        items: []
+                    };
+                    appsList.push(socialFolder);
+                }
+                if (!socialFolder.items) socialFolder.items = [];
+                socialApps.reverse().forEach(app => {
+                    if (!socialFolder.items.some(i => i.name === app.name && i.url === app.url)) {
+                        socialFolder.items.push(app);
+                    }
+                });
+            }
+            return appsList;
         }
 
         function getAppsFromStorage() {
             const stored = localStorage.getItem(STORAGE_KEY);
             const parsed = stored ? JSON.parse(stored) : [];
-            const clean = deduplicateApps(parsed);
+            let clean = deduplicateApps(parsed);
+            clean = repairSocialFolder(clean);
             if (JSON.stringify(clean) !== JSON.stringify(parsed)) {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
                 if (window.dbApi && window.auth && window.auth.currentUser) {

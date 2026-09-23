@@ -31,8 +31,33 @@ export class FolderManager {
             }
         });
 
-        // --- ЛОГИКА ПЕРЕИМЕНОВАНИЯ ПАПКИ ---
+        // --- ЛОГИКА ПЕРЕИМЕНОВАНИЯ И КОНВЕРТАЦИИ ПАПКИ ---
         this.titleSaveBtn = document.getElementById('titleSaveBtn');
+        this.titleConvertBtn = document.getElementById('titleConvertBtn');
+
+        if (this.titleConvertBtn) {
+            this.titleConvertBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            this.titleConvertBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.convertCurrentFolderToTab();
+            });
+        }
+
+        if (this.titleSaveBtn) {
+            this.titleSaveBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            this.titleSaveBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.titleEl.blur();
+            });
+        }
 
         this.titleEl.addEventListener('click', () => {
             if (this.titleEl.contentEditable === "true") return;
@@ -47,11 +72,6 @@ export class FolderManager {
             const sel = window.getSelection();
             sel.removeAllRanges();
             sel.addRange(range);
-        });
-
-        this.titleSaveBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.titleEl.blur();
         });
 
         this.titleEl.addEventListener('keydown', (e) => {
@@ -71,6 +91,73 @@ export class FolderManager {
                 this.syncToGlobalState();
             }
         });
+    }
+
+    convertCurrentFolderToTab() {
+        if (!this.currentFolderData) return;
+        const folderName = (this.titleEl.innerText.trim() || this.currentFolderData.name || 'Папка');
+
+        const doConvert = () => {
+            const allApps = this.ctx.getApps();
+            const folderIndex = this.getRealFolderIndex(allApps);
+            if (folderIndex === -1) return;
+
+            const folderObj = allApps[folderIndex];
+            const folderItems = Array.isArray(folderObj.items) && folderObj.items.length > 0
+                ? folderObj.items
+                : (Array.isArray(this.currentFolderData.items) ? this.currentFolderData.items : []);
+
+            // 1. Добавляем имя категории в глобальные категории userCategories
+            if (!Array.isArray(window.userCategories)) {
+                window.userCategories = ['Главная'];
+            }
+            if (!window.userCategories.includes(folderName)) {
+                window.userCategories.push(folderName);
+                localStorage.setItem('userCategories', JSON.stringify(window.userCategories));
+            }
+
+            // 2. Перемещаем все сайты из папки на главный уровень и привязываем их к новой вкладке (свойство category!)
+            folderItems.forEach(item => {
+                const newItem = JSON.parse(JSON.stringify(item));
+                newItem.category = [folderName];
+                delete newItem._explicitNoMain;
+                allApps.push(newItem);
+            });
+
+            // 3. Удаляем саму папку из главного массива
+            allApps.splice(folderIndex, 1);
+
+            // 4. Сохраняем состояние и закрываем папку
+            this.ctx.saveApps(allApps);
+            this.close();
+
+            // 5. Переключаемся на новосозданную вкладку и обновляем отображение
+            if (typeof window.currentCategoryFilter !== 'undefined') {
+                window.currentCategoryFilter = folderName;
+            }
+
+            if (window.renderCategoryBar) {
+                window.renderCategoryBar();
+            }
+            if (this.ctx.renderMain) {
+                this.ctx.renderMain(allApps);
+            }
+            if (typeof window.showToast === 'function') {
+                window.showToast(`Папка «${folderName}» конвертирована во вкладку`);
+            }
+        };
+
+        if (this.confirmModal && typeof this.confirmModal.showPrompt === 'function') {
+            this.confirmModal.showPrompt({
+                title: `Конвертировать во вкладку?`,
+                desc: `Папка «${folderName}» будет удалена, а сайты из неё переместятся в новую вкладку «${folderName}».`,
+                confirmText: 'Конвертировать',
+                cancelText: 'Отмена',
+                onConfirm: doConvert
+            });
+        } else if (confirm(`Конвертировать папку «${folderName}» во вкладку «${folderName}»?`)) {
+            doConvert();
+        }
     }
 
     open(folderData, indexOrRef) {

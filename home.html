@@ -3004,13 +3004,28 @@
 
         function deduplicateApps(appsList) {
             if (!Array.isArray(appsList)) return appsList;
+
+            // 1. Предварительно собираем ключи всех элементов, находящихся внутри папок
+            const subItemsKeys = new Set();
+            appsList.forEach(item => {
+                if (item && item.type === 'folder' && Array.isArray(item.items)) {
+                    item.items.forEach(subItem => {
+                        if (subItem && subItem._explicitNoMain !== true) {
+                            const key = (subItem.name || '') + '|' + (subItem.url || '');
+                            subItemsKeys.add(key);
+                        }
+                    });
+                }
+            });
+
+            // 2. Проходим по исходному массиву С СОХРАНЕНИЕМ ИСХОДНОГО ПОРЯДКА
             const seenFolders = new Map();
-            const seenTopApps = new Set();
+            const seenTopKeys = new Set();
             const result = [];
 
-            // 1. Сначала обрабатываем все папки и регистрируем вложенные элементы
             appsList.forEach(item => {
                 if (!item) return;
+
                 if (item.type === 'folder') {
                     const folderName = item.name || 'Папка';
                     let folderObj;
@@ -3025,13 +3040,11 @@
                     const seenSubItems = new Set();
                     (item.items || []).forEach(subItem => {
                         if (!subItem) return;
-
                         const key = (subItem.name || '') + '|' + (subItem.url || '');
 
-                        // Если пользователь явно убрал "Главная" для элемента в папке, извлекаем его на верхний уровень
                         if (subItem._explicitNoMain === true) {
-                            if (!seenTopApps.has(key)) {
-                                seenTopApps.add(key);
+                            if (!seenTopKeys.has(key)) {
+                                seenTopKeys.add(key);
                                 result.push(subItem);
                             }
                             return;
@@ -3039,26 +3052,21 @@
 
                         if (!seenSubItems.has(key)) {
                             seenSubItems.add(key);
-                            seenTopApps.add(key); // Регистрируем, что данный сайт находится в папке
                             if (!folderObj.items.some(i => (i.name || '') + '|' + (i.url || '') === key)) {
                                 folderObj.items.push(subItem);
                             }
                         }
                     });
+                } else {
+                    const key = (item.name || '') + '|' + (item.url || '');
+                    if (!subItemsKeys.has(key) && !seenTopKeys.has(key)) {
+                        seenTopKeys.add(key);
+                        result.push(item);
+                    }
                 }
             });
 
-            // 2. Добавляем только те сайты верхнего уровня, которых НЕТ ни в одной папке
-            appsList.forEach(item => {
-                if (!item || item.type === 'folder') return;
-                const key = (item.name || '') + '|' + (item.url || '');
-                if (!seenTopApps.has(key)) {
-                    seenTopApps.add(key);
-                    result.push(item);
-                }
-            });
-
-            // 3. Очищаем пустые папки
+            // 3. Очищаем только реально пустые папки
             for (let i = result.length - 1; i >= 0; i--) {
                 if (result[i].type === 'folder' && (!result[i].items || result[i].items.length === 0)) {
                     result.splice(i, 1);
@@ -3423,6 +3431,9 @@
         function isSameApp(a, b) {
             if (!a || !b) return false;
             if (a === b) return true;
+            if (a.type === 'folder' || b.type === 'folder') {
+                return a.type === b.type && a.name === b.name;
+            }
             if (a.name && b.name && a.name === b.name && (a.url || '') === (b.url || '')) return true;
             return false;
         }

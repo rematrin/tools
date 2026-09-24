@@ -491,7 +491,32 @@
             .app-page {
                 grid-template-columns: repeat(min(var(--grid-cols, 4), 4), 1fr) !important;
             }
+            .category-bar-wrapper {
+                width: calc(100% - 24px) !important;
+                max-width: calc(100% - 24px) !important;
+                top: -44px !important;
+            }
+            .category-bar-wrapper.wrap-mode {
+                margin: -36px auto 12px auto !important;
+                width: calc(100% - 24px) !important;
+                max-width: calc(100% - 24px) !important;
+            }
             .category-bar {
+                gap: 6px;
+                padding: 4px 2px;
+                -webkit-overflow-scrolling: touch;
+            }
+            .category-bar.wrap-mode {
+                gap: 6px;
+                padding: 2px 0;
+            }
+            .category-capsule {
+                height: 30px;
+                padding: 0 11px;
+                font-size: 13px;
+                border-radius: 9px;
+            }
+            .cat-scroll-btn {
                 display: none !important;
             }
         }
@@ -2721,6 +2746,7 @@
         import { initSidebarManager } from './sidebar.js';
         import { FolderManager } from './folder-manager.js';
         import { ConfirmModal } from './confirm-modal.js';
+        import { VersionManager } from './version-manager.js';
 
         // --- ИНИЦИАЛИЗАЦИЯ НАСТРОЕК (СТЕКЛО, КОЛОНКИ, РЯДЫ) ---
         const savedGlass = localStorage.getItem('glassEffect') === 'true';
@@ -3405,6 +3431,9 @@
         }
 
         function saveCurrentState(updatedApps = null) {
+            if (window._isApplyingCloudSync) {
+                return;
+            }
             let appsToSave;
             if (updatedApps) {
                 appsToSave = updatedApps;
@@ -3464,6 +3493,9 @@
                 appsToSave = deduplicateApps(appsToSave);
                 currentApps = appsToSave;
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(appsToSave));
+                if (window.VersionManager) {
+                    window.VersionManager.autoSnapshot(appsToSave);
+                }
                 if (window.dbApi && window.auth && window.auth.currentUser) {
                     window.dbApi.saveApps(appsToSave);
                 }
@@ -3991,34 +4023,68 @@
                         }
 
                         if (window.dbApi) {
-                            // Миграция старых данных (массив → подколлекция)
                             if (window.dbApi.migrateApps) {
                                 await window.dbApi.migrateApps();
                             }
 
-                            const cloudApps = await window.dbApi.loadApps();
-                            if (cloudApps && cloudApps.length > 0) {
-                                const currentLocal = localStorage.getItem(STORAGE_KEY);
-                                if (JSON.stringify(cloudApps) !== currentLocal) {
-                                    renderAppsToDOM(cloudApps, true);
-                                    localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudApps));
-                                }
-                            } else {
-                                // Если в облаке пусто, сохраняем локальное состояние туда
-                                saveCurrentState(getAppsFromStorage());
+                            if (window.VersionManager && window.VersionManager.loadFromCloud) {
+                                await window.VersionManager.loadFromCloud();
                             }
 
-                            if (window.dbApi.loadCategories) {
-                                const cloudCategories = await window.dbApi.loadCategories();
-                                if (cloudCategories && cloudCategories.length > 0) {
-                                    window.userCategories = cloudCategories;
-                                }
-                                if (window.renderCategoryBar) window.renderCategoryBar();
+                            // Реальная синхронизация подколлекции apps в реальном времени!
+                            if (window.dbApi.subscribeToApps) {
+                                if (window._unsubscribeAppsSync) window._unsubscribeAppsSync();
+                                window._unsubscribeAppsSync = window.dbApi.subscribeToApps((cloudApps) => {
+                                    if (cloudApps && Array.isArray(cloudApps)) {
+                                        const currentLocal = localStorage.getItem(STORAGE_KEY);
+                                        const cloudSerialized = JSON.stringify(cloudApps);
+
+                                        if (cloudSerialized !== currentLocal) {
+                                            console.log("[RealtimeSync] Получены изменения из облака:", cloudApps.length, "элементов.");
+                                            window._isApplyingCloudSync = true;
+
+                                            renderAppsToDOM(cloudApps, true);
+                                            localStorage.setItem(STORAGE_KEY, cloudSerialized);
+
+                                            if (window.VersionManager) {
+                                                window.VersionManager.autoSnapshot(cloudApps);
+                                            }
+
+                                            setTimeout(() => {
+                                                window._isApplyingCloudSync = false;
+                                            }, 500);
+                                        }
+                                    }
+                                });
                             }
 
+                            // Реальная синхронизация категорий и настроек версий в реальном времени!
+                            if (window.dbApi.subscribeToUserDoc) {
+                                if (window._unsubscribeUserDocSync) window._unsubscribeUserDocSync();
+                                window._unsubscribeUserDocSync = window.dbApi.subscribeToUserDoc((userData) => {
+                                    if (userData) {
+                                        if (userData.categories && Array.isArray(userData.categories)) {
+                                            window.userCategories = userData.categories;
+                                            localStorage.setItem('userCategories', JSON.stringify(userData.categories));
+                                            if (window.renderCategoryBar) window.renderCategoryBar();
+                                        }
+                                        if (userData.versionHistory && window.VersionManager) {
+                                            const local = window.VersionManager.getLocalVersions();
+                                            if (JSON.stringify(userData.versionHistory) !== JSON.stringify(local)) {
+                                                window.VersionManager.saveLocalVersions(userData.versionHistory);
+                                                if (window.renderVersionHistoryUI) {
+                                                    window.renderVersionHistoryUI();
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
+                            }
                         }
                     } else {
                         console.log("User logged out");
+                        if (window._unsubscribeAppsSync) { window._unsubscribeAppsSync(); window._unsubscribeAppsSync = null; }
+                        if (window._unsubscribeUserDocSync) { window._unsubscribeUserDocSync(); window._unsubscribeUserDocSync = null; }
                         renderAppsToDOM(DEFAULT_APPS);
                         localStorage.removeItem(STORAGE_KEY);
 

@@ -18,7 +18,8 @@ import {
     getDocs,
     deleteDoc,
     writeBatch,
-    updateDoc
+    updateDoc,
+    onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- КОНФИГ FIREBASE ---
@@ -230,6 +231,51 @@ window.dbApi = {
             const docSnap = await getDoc(docRef);
             return docSnap.exists() ? docSnap.data().categories || [] : [];
         } catch (e) { return []; }
+    },
+    subscribeToApps: (callback) => {
+        const user = auth.currentUser;
+        if (!user) return () => {};
+        const appsCollRef = collection(db, "users", user.uid, "apps");
+        return onSnapshot(appsCollRef, (snapshot) => {
+            if (snapshot.empty) {
+                callback([]);
+                return;
+            }
+            const apps = [];
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                const { order, ...appData } = data;
+                apps.push({ ...appData, _order: order ?? 9999 });
+            });
+            apps.sort((a, b) => a._order - b._order);
+
+            const seen = new Set();
+            const unique = [];
+            for (const app of apps) {
+                const itemsKey = app.type === 'folder' ? `-${(app.items || []).length}items` : '';
+                const key = `${app.name || ''}-${app.url || ''}-${app.type || ''}${itemsKey}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    unique.push(app);
+                }
+            }
+            const cleanApps = unique.map(({ _order, ...rest }) => rest);
+            callback(cleanApps);
+        }, (err) => {
+            console.error("[RealtimeSync] Apps snapshot error:", err);
+        });
+    },
+    subscribeToUserDoc: (callback) => {
+        const user = auth.currentUser;
+        if (!user) return () => {};
+        const userDocRef = doc(db, "users", user.uid);
+        return onSnapshot(userDocRef, (snap) => {
+            if (snap.exists()) {
+                callback(snap.data());
+            }
+        }, (err) => {
+            console.error("[RealtimeSync] UserDoc snapshot error:", err);
+        });
     }
 };
 
@@ -436,7 +482,7 @@ export function initSidebarManager(context) {
         // УПРАВЛЕНИЕ ДАННЫМИ
         const dataManagementHTML = `
             <div class="profile-card" style="padding: 12px 16px; margin-bottom: 12px;">
-                <h2 class="profile-title-in-card" style="font-size: 16px;">Резервное копирование</h2>
+                <h2 class="profile-title-in-card" style="font-size: 16px;">Файлы бэкапов</h2>
                 <div style="display: flex; gap: 8px; margin-top: 8px;">
                     <button class="primary-btn" id="btnExportData" style="background: #34C759; margin-top: 0; flex: 1; height: 34px; padding: 0; font-size: 12px; ${!currentUser ? 'opacity: 0.5; filter: grayscale(1); cursor: default;' : ''}" ${!currentUser ? 'disabled' : ''}>Экспорт данных</button>
                     <button class="primary-btn" id="btnImportData" style="background: #007AFF; margin-top: 0; flex: 1; height: 34px; padding: 0; font-size: 12px; ${!currentUser ? 'opacity: 0.5; filter: grayscale(1); cursor: default;' : ''}" ${!currentUser ? 'disabled' : ''}>Импорт данных</button>
@@ -450,8 +496,21 @@ export function initSidebarManager(context) {
             </div>
         `;
 
+        // ИСТОРИЯ ВЕРСИЙ (БЭКАПЫ)
+        const versionHistoryHTML = `
+            <div class="profile-card" style="padding: 12px 16px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <h2 class="profile-title-in-card" style="font-size: 16px; margin: 0;">История версий</h2>
+                    <button class="primary-btn" id="btnCreateBackup" style="background: #007AFF; margin: 0; padding: 0 10px; height: 28px; font-size: 12px; width: auto; font-weight: 500;">+ Бэкап</button>
+                </div>
+                <p class="section-desc" style="margin-top: 0; margin-bottom: 10px; font-size: 12px;">Авто-снимки и сохраненные точки восстановления.</p>
+                <div id="versionHistoryList" style="display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; padding-right: 2px;">
+                </div>
+            </div>
+        `;
+
         // СБОРКА КОНТЕНТА
-        content.innerHTML = addSiteHTML + accountHTML + glassSettingsHTML + context.wallpaperManager.getSettingsHTML(!currentUser) + dataManagementHTML;
+        content.innerHTML = addSiteHTML + accountHTML + glassSettingsHTML + context.wallpaperManager.getSettingsHTML(!currentUser) + versionHistoryHTML + dataManagementHTML;
 
         // ПРИВЯЗКА СОБЫТИЙ
         attachSidebarEvents();
@@ -604,6 +663,92 @@ export function initSidebarManager(context) {
         // Обои
         context.wallpaperManager.attachListeners();
 
+        // Отрисовка и обработчики истории версий
+        function renderVersionHistoryUI() {
+            const listContainer = document.getElementById('versionHistoryList');
+            if (!listContainer) return;
+
+            const VersionManager = window.VersionManager;
+            if (!VersionManager) {
+                listContainer.innerHTML = '<div style="font-size: 12px; color: rgba(255,255,255,0.5);">Загрузка...</div>';
+                return;
+            }
+
+            const versions = VersionManager.getLocalVersions();
+            if (!versions || versions.length === 0) {
+                listContainer.innerHTML = '<div style="font-size: 12px; color: rgba(255,255,255,0.5); text-align: center; padding: 10px 0;">Нет сохраненных версий</div>';
+                return;
+            }
+
+            listContainer.innerHTML = versions.map(v => `
+                <div class="version-item-card" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.04); border: 1px solid rgba(0, 0, 0, 0.08); padding: 8px 10px; border-radius: 10px; gap: 8px; margin-bottom: 2px;">
+                    <div style="display: flex; flex-direction: column; gap: 2px; overflow: hidden; flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                            <span style="font-size: 13px; font-weight: 600; color: #1c1c1e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${v.label || 'Снимок'}</span>
+                            <span style="font-size: 10px; background: ${v.isManual ? 'rgba(0, 122, 255, 0.12)' : 'rgba(0, 0, 0, 0.07)'}; border: 1px solid ${v.isManual ? 'rgba(0, 122, 255, 0.25)' : 'transparent'}; padding: 1px 5px; border-radius: 4px; color: ${v.isManual ? '#007AFF' : '#555555'}; font-weight: 600; flex-shrink: 0;">${v.isManual ? '📌 Ручной' : '⚡ Авто'}</span>
+                        </div>
+                        <div style="font-size: 11px; color: #666666; font-weight: 400;">
+                            ${v.dateStr} • ${v.device || 'Устройство'} • ${v.appsCount} сайтов${v.foldersCount ? `, ${v.foldersCount} папок` : ''}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 5px; flex-shrink: 0;">
+                        <button class="version-restore-btn" data-id="${v.id}" title="Восстановить это состояние" style="background: rgba(52, 199, 89, 0.18); border: 1px solid rgba(52, 199, 89, 0.4); color: #28a745; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">Откатить</button>
+                        <button class="version-delete-btn" data-id="${v.id}" title="Удалить версию" style="background: rgba(255, 59, 48, 0.12); border: 1px solid rgba(255, 59, 48, 0.3); color: #dc3545; border-radius: 6px; padding: 4px 7px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">✕</button>
+                    </div>
+                </div>
+            `).join('');
+
+            listContainer.querySelectorAll('.version-restore-btn').forEach(btn => {
+                btn.onclick = async () => {
+                    const id = btn.getAttribute('data-id');
+                    const targetVer = versions.find(item => item.id === id);
+                    const dateText = targetVer ? targetVer.dateStr : '';
+                    
+                    const performRestore = async () => {
+                        await VersionManager.restoreVersion(id);
+                        renderVersionHistoryUI();
+                    };
+
+                    if (context.confirmModal && context.confirmModal.showPrompt) {
+                        context.confirmModal.showPrompt({
+                            title: "Откат версии",
+                            desc: `Восстановить состояние от ${dateText}? Текущие изменения будут сохранены в контрольный снимок перед откатом.`,
+                            confirmText: "Восстановить",
+                            cancelText: "Отмена",
+                            onConfirm: performRestore
+                        });
+                    } else if (confirm(`Восстановить состояние от ${dateText}?`)) {
+                        await performRestore();
+                    }
+                };
+            });
+
+            listContainer.querySelectorAll('.version-delete-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-id');
+                    VersionManager.deleteVersion(id);
+                    renderVersionHistoryUI();
+                };
+            });
+        }
+
+        window.renderVersionHistoryUI = renderVersionHistoryUI;
+        renderVersionHistoryUI();
+
+        const btnCreateBackup = document.getElementById('btnCreateBackup');
+        if (btnCreateBackup) {
+            btnCreateBackup.onclick = () => {
+                const label = prompt('Введите название для бэкапа (необязательно):', 'Ручной бэкап');
+                if (label !== null) {
+                    const snap = window.VersionManager ? window.VersionManager.createSnapshot(label.trim() || 'Ручной бэкап', null, true) : null;
+                    if (snap) {
+                        if (window.showToast) window.showToast(`Создан бэкап: ${snap.label}`);
+                        renderVersionHistoryUI();
+                    }
+                }
+            };
+        }
+
         // Экспорт и Импорт
         const btnExport = document.getElementById('btnExportData');
         if (btnExport) {
@@ -643,6 +788,9 @@ export function initSidebarManager(context) {
                         // Импорт сайтов
                         if (data.apps && Array.isArray(data.apps)) {
                             const processImport = (replace) => {
+                                if (window.VersionManager) {
+                                    window.VersionManager.createSnapshot('Перед импортом');
+                                }
                                 let finalApps;
                                 if (replace) {
                                     finalApps = data.apps;

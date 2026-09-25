@@ -2795,7 +2795,12 @@
         let folderManager;
         let currentApps = []; // Глобальное состояние текущих приложений
 
-        window.userCategories = [];
+        try {
+            const savedCats = localStorage.getItem('userCategories');
+            window.userCategories = savedCats ? JSON.parse(savedCats) : [];
+        } catch (e) {
+            window.userCategories = [];
+        }
         let currentCategoryFilter = null;
         Object.defineProperty(window, 'currentCategoryFilter', {
             get: () => currentCategoryFilter,
@@ -2866,6 +2871,7 @@
             const btnLeft = document.getElementById('catScrollBtnLeft');
             const btnRight = document.getElementById('catScrollBtnRight');
 
+            if (window.renderCategoryBar) window.renderCategoryBar();
             if (window.applyCategoryBarWrapMode) window.applyCategoryBarWrapMode();
 
             if (bar) {
@@ -2930,6 +2936,7 @@
                 if (window.applyCategoryBarWrapMode) window.applyCategoryBarWrapMode();
             });
         };
+        window.renderCategoryBar();
 
         // --- КОНФИГУРАЦИЯ ---
         const STORAGE_KEY = 'my_apps_cache_v1';
@@ -3513,6 +3520,7 @@
                 renderAppsToDOM(parsed);
             } catch (e) { renderAppsToDOM(DEFAULT_APPS); }
         } else { renderAppsToDOM(DEFAULT_APPS); }
+        if (window.renderCategoryBar) window.renderCategoryBar();
 
         // --- UI & EVENTS ---
         window.addEventListener('scroll', () => {

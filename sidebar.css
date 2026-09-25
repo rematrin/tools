@@ -1,0 +1,183 @@
+/* sidebar.css - Левое боковое меню в стиле ВКонтакте */
+
+.app-layout {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 45px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+    box-sizing: border-box;
+}
+
+.app-layout .main-content {
+    flex: 1;
+    max-width: 520px;
+    min-width: 0;
+    transition: max-width 0.3s ease;
+}
+
+/* В режиме сетки макет расширяется */
+.app-layout .main-content:has(.wrap.grid-mode),
+.app-layout:has(.wrap.grid-mode) .main-content {
+    max-width: 820px;
+}
+
+.vk-sidebar-container {
+    position: sticky;
+    top: 65px;
+    width: 180px;
+    flex-shrink: 0;
+    user-select: none;
+    padding-top: 4px;
+    padding-bottom: 20px;
+    max-height: calc(100vh - 75px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    z-index: 10;
+}
+
+/* Элегантный тонкий скроллбар при наведении */
+.vk-sidebar-container::-webkit-scrollbar {
+    width: 4px;
+}
+.vk-sidebar-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+.vk-sidebar-container::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 4px;
+}
+.vk-sidebar-container:hover::-webkit-scrollbar-thumb {
+    background: var(--border);
+}
+
+.vk-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.vk-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    min-height: 34px;
+    border-radius: 8px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 400;
+    line-height: 1.2;
+    box-sizing: border-box;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Эффект выделения пункта при наведении как в ВК */
+.vk-sidebar-item:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
+body.dark .vk-sidebar-item:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.vk-sidebar-item.active {
+    background-color: rgba(68, 123, 186, 0.12);
+    color: #447bba;
+    font-weight: 500;
+}
+
+body.dark .vk-sidebar-item.active {
+    background-color: rgba(122, 162, 255, 0.15);
+    color: #7aa2ff;
+}
+
+/* Синие иконки меню (#447bba) */
+.vk-sidebar-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: #447bba;
+    opacity: 0.95;
+    transition: opacity 0.15s ease;
+}
+
+body.dark .vk-sidebar-icon {
+    color: #447bba;
+}
+
+body.dark .vk-sidebar-item.active .vk-sidebar-icon {
+    color: #7aa2ff;
+}
+
+.vk-sidebar-item:hover .vk-sidebar-icon {
+    opacity: 1;
+}
+
+.vk-sidebar-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+/* Подвал внутри боковой панели (в стиле ВК) */
+.vk-sidebar-footer {
+    margin-top: 14px;
+    padding-top: 10px;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-top: 1px solid var(--border);
+    font-size: 0.73rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.vk-footer-line {
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.vk-footer-subline {
+    opacity: 0.75;
+}
+
+.vk-footer-link {
+    color: var(--text-secondary);
+    text-decoration: underline;
+    transition: color 0.15s ease;
+    opacity: 0.85;
+}
+
+.vk-footer-link:hover {
+    color: #447bba;
+    opacity: 1;
+}
+
+/* Скрытие нижнего подвала страницы на ПК, если есть левое меню */
+@media (min-width: 861px) {
+    #footer {
+        display: none !important;
+    }
+}
+
+/* Адаптивность для узких экранов (<860px) */
+@media (max-width: 860px) {
+    .vk-sidebar-container {
+        display: none;
+    }
+    .app-layout {
+        display: block;
+        padding: 0;
+    }
+    .app-layout .main-content {
+        max-width: 100%;
+    }
+}

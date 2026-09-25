@@ -1,0 +1,134 @@
+// left-sidebar.js - Единое левое боковое меню (ВКонтакте стиль)
+
+const sidebarHTML = `
+<aside class="vk-sidebar">
+  <nav class="vk-sidebar-nav">
+    <a href="index.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span class="vk-sidebar-text">Главная</span>
+    </a>
+    <a href="calc.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/>
+      </svg>
+      <span class="vk-sidebar-text">Умные калькуляторы</span>
+    </a>
+    <a href="fx_converter.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+      <span class="vk-sidebar-text">Конвертер валют</span>
+    </a>
+    <a href="clock.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+      <span class="vk-sidebar-text">Мировые часы</span>
+    </a>
+    <a href="thumbnail.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+      </svg>
+      <span class="vk-sidebar-text">YouTube превью</span>
+    </a>
+    <a href="case_converter.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>
+      </svg>
+      <span class="vk-sidebar-text">Конвертер регистров</span>
+    </a>
+    <a href="income_dis.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+      </svg>
+      <span class="vk-sidebar-text">Распределитель дохода</span>
+    </a>
+    <a href="mp3_cover.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle>
+      </svg>
+      <span class="vk-sidebar-text">Обложка из MP3</span>
+    </a>
+    <a href="home.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <path d="M10.875 3.375H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969V4.969h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375V3.75c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688V4.969h4.688v4.688zM10.875 12.75H3.75c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281H4.969v-4.688h4.688v4.688zm10.594-6.281h-7.125c-.206 0-.375.169-.375.375v7.125c0 .206.169.375.375.375h7.125c.206 0 .375-.169.375-.375v-7.125c0-.206-.169-.375-.375-.375zm-1.219 6.281h-4.688v-4.688h4.688v4.688z"/>
+      </svg>
+      <span class="vk-sidebar-text">Home (beta)</span>
+    </a>
+    <a href="playlists.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+      </svg>
+      <span class="vk-sidebar-text">YouTube Плейлисты</span>
+    </a>
+    <a href="music.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle>
+      </svg>
+      <span class="vk-sidebar-text">YouTube Музыка</span>
+    </a>
+    <a href="folderico.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+      </svg>
+      <span class="vk-sidebar-text">Folder Icon Maker</span>
+    </a>
+    <a href="eleven_reader.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line>
+      </svg>
+      <span class="vk-sidebar-text">Eleven Reader</span>
+    </a>
+    <a href="creatorhub.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+      </svg>
+      <span class="vk-sidebar-text">CreatorHub</span>
+    </a>
+    <a href="todo.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+      <span class="vk-sidebar-text">Туду лист</span>
+    </a>
+    <a href="whiteboard.html" class="vk-sidebar-item">
+      <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line>
+      </svg>
+      <span class="vk-sidebar-text">Интерактивная доска</span>
+    </a>
+  </nav>
+
+  <div class="vk-sidebar-footer">
+    <div class="vk-footer-line">&copy; 2026 Все сервисы</div>
+    <div class="vk-footer-subline">Сделано с &hearts; для вашего удобства</div>
+    <a href="https://t.me/tribute/app?startapp=dAvG" target="_blank" class="vk-footer-link">Угостить автора кофе ☕</a>
+  </div>
+</aside>
+`;
+
+function renderSidebar() {
+    const container = document.getElementById('sidebar-container');
+    if (!container) return;
+
+    container.innerHTML = sidebarHTML;
+
+    // Подсветка текущей активной страницы
+    const currentPath = window.location.pathname.split('/').pop() || 'index.html';
+    const links = container.querySelectorAll('.vk-sidebar-item');
+
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href === currentPath || (currentPath === '' && href === 'index.html')) {
+            link.classList.add('active');
+        }
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderSidebar);
+} else {
+    renderSidebar();
+}

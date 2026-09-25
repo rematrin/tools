@@ -185,6 +185,7 @@ function focusAtEndOfBlock(block) {
 // DOM Элементы
 const videosListContainer = document.getElementById("videosListContainer");
 const videoSearch = document.getElementById("videoSearch");
+const videoSearchClear = document.getElementById("videoSearchClear");
 const filterButtons = document.querySelectorAll(".tab-btn");
 
 // DOM Элементы детального вида
@@ -854,11 +855,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+    // Функция переключения видимости кнопки очистки поиска
+    function updateSearchClearVisibility() {
+        if (videoSearchClear && videoSearch) {
+            videoSearchClear.style.display = videoSearch.value.trim().length > 0 ? "flex" : "none";
+        }
+    }
+
     // Слушатели поиска и фильтров
-    videoSearch.addEventListener("input", (e) => {
-        searchQuery = e.target.value.toLowerCase();
-        renderVideosList();
-    });
+    if (videoSearch) {
+        videoSearch.addEventListener("input", (e) => {
+            searchQuery = e.target.value.toLowerCase();
+            updateSearchClearVisibility();
+            renderVideosList();
+        });
+        updateSearchClearVisibility();
+    }
+
+    if (videoSearchClear) {
+        videoSearchClear.addEventListener("click", () => {
+            if (videoSearch) {
+                videoSearch.value = "";
+                searchQuery = "";
+                updateSearchClearVisibility();
+                renderVideosList();
+                videoSearch.focus();
+            }
+        });
+    }
 
     filterButtons.forEach(btn => {
         btn.addEventListener("click", () => {

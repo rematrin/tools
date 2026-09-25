@@ -402,6 +402,13 @@ body.dark .published .change {
     gap: 20px;
 }
 
+.section-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
 .section-title-wrapper h2 {
     font-size: 1.25rem;
     font-weight: 700;
@@ -532,7 +539,7 @@ body.dark .published .change {
 
 .search-input {
     width: 100%;
-    padding: 8px 12px 8px 36px;
+    padding: 8px 32px 8px 36px;
     font-size: 0.875rem;
     font-family: inherit;
     border: 1px solid var(--ch-border);
@@ -546,6 +553,35 @@ body.dark .published .change {
 .search-input:focus {
     border-color: var(--ch-purple);
     box-shadow: 0 0 0 2px var(--ch-purple-light);
+}
+
+.search-clear-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 4px;
+    margin: 0;
+    cursor: pointer;
+    color: var(--ch-text-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.15s ease;
+}
+
+.search-clear-btn:hover {
+    color: var(--ch-text-dark);
+    background: var(--ch-purple-light);
+}
+
+.search-clear-btn svg {
+    width: 14px;
+    height: 14px;
+    display: block;
 }
 
 /* Список видео карточек */

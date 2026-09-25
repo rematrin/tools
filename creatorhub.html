@@ -274,6 +274,24 @@
                                 <button class="sort-dropdown-item" data-sort="tagAlphabeticalZA">По первому тегу (Я-А)</button>
                             </div>
                         </div>
+                        <!-- Группировка -->
+                        <div class="group-wrapper">
+                            <button class="btn-group" id="btnGroupList" type="button" data-tip="Группировка">
+                                <svg class="group-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M4 6h16M4 12h16M4 18h16M9 6v12M15 6v12" />
+                                </svg>
+                            </button>
+                            <div class="group-dropdown" id="groupDropdown">
+                                <button class="group-dropdown-item selected" data-group="none">Без группировки</button>
+                                <div class="group-dropdown-divider"></div>
+                                <button class="group-dropdown-item" data-group="tag">По тегам</button>
+                                <div class="group-dropdown-divider"></div>
+                                <button class="group-dropdown-item" data-group="createdMonth">По дате создания (месяцы)</button>
+                                <button class="group-dropdown-item" data-group="pubMonth">По дате публикации (месяцы)</button>
+                                <div class="group-dropdown-divider"></div>
+                                <button class="group-dropdown-item" data-group="format">По формату (Shorts / Видео)</button>
+                            </div>
+                        </div>
                         <!-- Переключатель вида (сетка/список) -->
                         <div class="view-toggles" id="viewToggles">
                             <button class="view-btn active" id="btnListView" type="button" data-tip="Список">

@@ -3263,6 +3263,94 @@ body.dark .video-drag-placeholder {
     margin: 4px 6px;
 }
 
+/* === СТИЛИ ГРУППИРОВКИ СПИСКА ВИДЕО === */
+.group-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-group {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ch-text-gray);
+    transition: all 0.2s ease;
+    box-shadow: none;
+    width: auto;
+    height: auto;
+}
+
+.btn-group:hover {
+    color: var(--ch-text-dark);
+}
+
+.btn-group.active {
+    color: var(--ch-purple);
+}
+
+.group-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background-color: var(--ch-card-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: 12px;
+    width: 270px;
+    box-shadow: var(--ch-shadow);
+    padding: 6px;
+    z-index: 1001;
+    box-sizing: border-box;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.group-dropdown-item {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ch-text-dark);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background-color 0.15s, color 0.15s;
+    font-family: inherit;
+}
+
+.group-dropdown-item:hover {
+    background-color: var(--ch-border);
+}
+
+.group-dropdown-item.selected {
+    background-color: rgba(99, 102, 241, 0.1);
+    color: var(--ch-purple);
+    font-weight: 600;
+}
+
+.group-dropdown-item.selected::after {
+    content: "✓";
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--ch-purple);
+}
+
+.group-dropdown-divider {
+    height: 1px;
+    background-color: var(--ch-border);
+    margin: 4px 6px;
+}
+
 /* === СТИЛИ ФИЛЬТРАЦИИ СПИСКА ВИДЕО === */
 .filter-wrapper {
     position: relative;
@@ -4135,15 +4223,70 @@ body.dark .tag-color-gray {
     }
 }
 
-/* --- Группировка видео по статусам --- */
+/* --- Группировка видео --- */
+.video-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 18px 0 8px 4px;
+    grid-column: 1 / -1;
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.15s ease;
+}
+
+.video-group-header:hover {
+    opacity: 0.8;
+}
+
+.video-group-chevron {
+    width: 16px;
+    height: 16px;
+    color: var(--ch-text-gray);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.video-group-header.collapsed .video-group-chevron {
+    transform: rotate(-90deg);
+}
+
 .video-group-title {
     font-size: 0.95rem;
     font-weight: 700;
-    color: var(--ch-text-gray);
-    margin: 20px 0 8px 4px;
-    grid-column: 1 / -1;
+    color: var(--ch-text-dark);
     text-transform: none;
     letter-spacing: normal;
+}
+
+.video-group-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ch-purple);
+    background: var(--ch-purple-light);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.video-group-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+.video-group-body.collapsed {
+    display: none !important;
+}
+
+.videos-list.grid-view .video-group-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 220px));
+    justify-content: flex-start;
+    gap: 16px;
+    width: 100%;
+    grid-column: 1 / -1;
 }
 
 /* --- Редактирование заголовка в сайдбаре --- */

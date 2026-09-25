@@ -24,6 +24,7 @@ let searchQuery = "";
 let currentMenuRoute = "videos"; // "videos" | "trash"
 let isDeletePermanentMode = false;
 let currentViewMode = localStorage.getItem("creatorhub_view_mode") || "list";
+let currentGroupMode = localStorage.getItem("creatorhub_group_mode") || "none";
 
 // Переменные каналов
 let channels = [];
@@ -186,6 +187,8 @@ function focusAtEndOfBlock(block) {
 const videosListContainer = document.getElementById("videosListContainer");
 const videoSearch = document.getElementById("videoSearch");
 const videoSearchClear = document.getElementById("videoSearchClear");
+const btnGroupList = document.getElementById("btnGroupList");
+const groupDropdown = document.getElementById("groupDropdown");
 const filterButtons = document.querySelectorAll(".tab-btn");
 
 // DOM Элементы детального вида
@@ -281,6 +284,38 @@ function loadSortForCurrentFilter() {
     }
 }
 
+function getGroupKey() {
+    return `creatorhub_group_${currentFilter}`;
+}
+
+function loadGroupForCurrentFilter() {
+    currentGroupMode = localStorage.getItem(getGroupKey()) || "none";
+    
+    if (btnGroupList) {
+        if (currentGroupMode !== "none") {
+            btnGroupList.classList.add("active");
+        } else {
+            btnGroupList.classList.remove("active");
+        }
+    }
+    
+    if (groupDropdown) {
+        const items = groupDropdown.querySelectorAll(".group-dropdown-item");
+        items.forEach(item => {
+            if (item.dataset.group === currentGroupMode) {
+                item.classList.add("selected");
+            } else {
+                item.classList.remove("selected");
+            }
+        });
+    }
+}
+
+function saveGroupForCurrentFilter(mode) {
+    currentGroupMode = mode;
+    localStorage.setItem(getGroupKey(), mode);
+}
+
 let currentFiltersList = []; // Array of { id: string, prop: string, op: string, val: string }
 
 function loadFiltersForCurrentFilter() {
@@ -316,7 +351,7 @@ function getFilteredVideos() {
         if (currentMenuRoute === "trash") {
             matchesTab = v.deleted === true;
         } else {
-            const matchesFilter = currentFilter === "all" || v.status === currentFilter;
+            const matchesFilter = currentFilter === "all" || (v.status || "idea") === currentFilter;
             matchesTab = matchesFilter && !v.deleted;
         }
 
@@ -744,7 +779,43 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Закрытие дропдауна сортировки и фильтрации при клике вне их
+    // Группировка списка
+    if (btnGroupList) {
+        btnGroupList.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (groupDropdown.style.display === "none" || !groupDropdown.style.display) {
+                const btnRect = btnGroupList.getBoundingClientRect();
+                if (btnRect.left < window.innerWidth / 2) {
+                    groupDropdown.style.left = "0";
+                    groupDropdown.style.right = "auto";
+                } else {
+                    groupDropdown.style.left = "auto";
+                    groupDropdown.style.right = "0";
+                }
+                groupDropdown.style.display = "flex";
+                if (filterDropdown) filterDropdown.style.display = "none";
+                if (sortDropdown) sortDropdown.style.display = "none";
+            } else {
+                groupDropdown.style.display = "none";
+            }
+        });
+    }
+
+    if (groupDropdown) {
+        loadGroupForCurrentFilter();
+        const groupItems = groupDropdown.querySelectorAll(".group-dropdown-item");
+        groupItems.forEach(item => {
+            item.addEventListener("click", (e) => {
+                e.stopPropagation();
+                saveGroupForCurrentFilter(item.dataset.group);
+                loadGroupForCurrentFilter();
+                groupDropdown.style.display = "none";
+                renderVideosList();
+            });
+        });
+    }
+
+    // Закрытие дропдауна сортировки, фильтрации и группировки при клике вне их
     document.addEventListener("click", (e) => {
         if (sortDropdown && btnSortList && !btnSortList.contains(e.target) && !sortDropdown.contains(e.target)) {
             if (document.body.contains(e.target)) {
@@ -754,6 +825,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (filterDropdown && btnFilterList && !btnFilterList.contains(e.target) && !filterDropdown.contains(e.target)) {
             if (document.body.contains(e.target)) {
                 filterDropdown.style.display = "none";
+            }
+        }
+        if (groupDropdown && btnGroupList && !btnGroupList.contains(e.target) && !groupDropdown.contains(e.target)) {
+            if (document.body.contains(e.target)) {
+                groupDropdown.style.display = "none";
             }
         }
     });
@@ -816,6 +892,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     loadSortForCurrentFilter();
+    loadGroupForCurrentFilter();
 
     if (sortDropdown) {
         const items = sortDropdown.querySelectorAll(".sort-dropdown-item");
@@ -1771,6 +1848,7 @@ function handleHashRoute() {
     
     loadSortForCurrentFilter();
     loadFiltersForCurrentFilter();
+    loadGroupForCurrentFilter();
     updateViewForRoute();
 
     // Синхронизируем хэш браузера до канонического вида, если в ссылке не хватало ID канала
@@ -2153,7 +2231,7 @@ function renderVideosList() {
                     <div class="video-info-block">
                         <h4 class="video-title">${formatVideoTitle(v.title)}</h4>
                         <div class="video-meta-tags">
-                            ${v.tags.map(tag => `<span class="meta-tag ${typeof getTagColorClass === 'function' ? getTagColorClass(tag) : ''}">${tag}</span>`).join('')}
+                            ${(Array.isArray(v.tags) ? v.tags : []).map(tag => `<span class="meta-tag ${typeof getTagColorClass === 'function' ? getTagColorClass(tag) : ''}">${tag}</span>`).join('')}
                         </div>
                     </div>
                 </div>
@@ -2193,7 +2271,7 @@ function renderVideosList() {
                     <div class="video-info-block">
                         <h4 class="video-title">${formatVideoTitle(v.title)}</h4>
                         <div class="video-meta-tags">
-                            ${v.tags.map(tag => `<span class="meta-tag ${typeof getTagColorClass === 'function' ? getTagColorClass(tag) : ''}">${tag}</span>`).join('')}
+                            ${(Array.isArray(v.tags) ? v.tags : []).map(tag => `<span class="meta-tag ${typeof getTagColorClass === 'function' ? getTagColorClass(tag) : ''}">${tag}</span>`).join('')}
                         </div>
                     </div>
                 </div>
@@ -2278,31 +2356,163 @@ function renderVideosList() {
         return card;
     }
 
-    if (currentFilter === "all" && currentMenuRoute !== "trash") {
-        const statuses = [
-            { id: "idea", label: "Идеи" },
-            { id: "in_progress", label: "Черновик" },
-            { id: "editing", label: "В процессе" },
-            { id: "published", label: "Опубликовано" }
-        ];
+    const collapsedGroupIds = new Set(JSON.parse(localStorage.getItem("creatorhub_collapsed_groups") || "[]"));
 
-        statuses.forEach(statusObj => {
-            const statusFiltered = filtered.filter(v => (v.status || "idea") === statusObj.id);
-            if (statusFiltered.length > 0) {
+    function checkIsShortsVideo(v) {
+        if (!v) return false;
+        return !!(
+            v.isShorts ||
+            v.type === "shorts" ||
+            v.format === "shorts" ||
+            (v.title && typeof v.title === "string" && v.title.trim().startsWith("*")) ||
+            (v.duration && typeof v.duration === "number" && v.duration <= 60)
+        );
+    }
+
+    function renderGroupedList(groups) {
+        groups.forEach((group, groupIdx) => {
+            if (group.videos && group.videos.length > 0) {
+                const groupId = `grp_${currentGroupMode}_${groupIdx}_${group.label.replace(/[^a-zA-Z0-9а-яА-Я]/g, '_')}`;
+                const isCollapsed = collapsedGroupIds.has(groupId);
+
                 const header = document.createElement("div");
-                header.className = "video-group-title";
-                header.textContent = statusObj.label;
-                videosListContainer.appendChild(header);
+                header.className = `video-group-header${isCollapsed ? " collapsed" : ""}`;
+                header.dataset.groupId = groupId;
 
-                statusFiltered.forEach(v => {
-                    videosListContainer.appendChild(createVideoCard(v));
+                const svgNS = "http://www.w3.org/2000/svg";
+                const chevron = document.createElementNS(svgNS, "svg");
+                chevron.setAttribute("class", "video-group-chevron");
+                chevron.setAttribute("viewBox", "0 0 24 24");
+                chevron.setAttribute("fill", "none");
+                chevron.setAttribute("stroke", "currentColor");
+                chevron.setAttribute("stroke-width", "2.5");
+                chevron.setAttribute("stroke-linecap", "round");
+                chevron.setAttribute("stroke-linejoin", "round");
+                const polyline = document.createElementNS(svgNS, "polyline");
+                polyline.setAttribute("points", "6 9 12 15 18 9");
+                chevron.appendChild(polyline);
+                header.appendChild(chevron);
+
+                const titleSpan = document.createElement("span");
+                titleSpan.className = "video-group-title";
+                titleSpan.textContent = group.label;
+                header.appendChild(titleSpan);
+
+                const badgeSpan = document.createElement("span");
+                badgeSpan.className = "video-group-badge";
+                badgeSpan.textContent = group.videos.length;
+                header.appendChild(badgeSpan);
+
+                const bodyContainer = document.createElement("div");
+                bodyContainer.className = `video-group-body${isCollapsed ? " collapsed" : ""}`;
+
+                group.videos.forEach(v => {
+                    bodyContainer.appendChild(createVideoCard(v));
                 });
+
+                header.addEventListener("click", () => {
+                    const nowCollapsed = header.classList.toggle("collapsed");
+                    bodyContainer.classList.toggle("collapsed", nowCollapsed);
+                    if (nowCollapsed) {
+                        collapsedGroupIds.add(groupId);
+                    } else {
+                        collapsedGroupIds.delete(groupId);
+                    }
+                    localStorage.setItem("creatorhub_collapsed_groups", JSON.stringify(Array.from(collapsedGroupIds)));
+                });
+
+                videosListContainer.appendChild(header);
+                videosListContainer.appendChild(bodyContainer);
             }
         });
-    } else {
+    }
+
+    if (currentGroupMode === "tag") {
+        const tagMap = new Map();
         filtered.forEach(v => {
-            videosListContainer.appendChild(createVideoCard(v));
+            const tags = Array.isArray(v.tags) && v.tags.length > 0 ? v.tags : ["Без тегов"];
+            const primaryTag = tags[0];
+            if (!tagMap.has(primaryTag)) {
+                tagMap.set(primaryTag, []);
+            }
+            tagMap.get(primaryTag).push(v);
         });
+
+        const tagEntries = Array.from(tagMap.entries());
+        const namedTags = tagEntries
+            .filter(([t]) => t !== "Без тегов")
+            .sort(([a], [b]) => a.localeCompare(b, "ru-RU"));
+        const noTagEntry = tagEntries.filter(([t]) => t === "Без тегов");
+
+        const sortedEntries = [...namedTags, ...noTagEntry];
+
+        const groups = sortedEntries.map(([tag, vids]) => ({
+            label: tag === "Без тегов" ? tag : `#${tag}`,
+            videos: vids
+        }));
+        renderGroupedList(groups);
+    } else if (currentGroupMode === "createdMonth") {
+        const monthMap = new Map();
+        filtered.forEach(v => {
+            let label = "Дата создания не указана";
+            if (v.createdAt) {
+                const d = typeof v.createdAt.toDate === "function" ? v.createdAt.toDate() : new Date(v.createdAt);
+                if (!isNaN(d.getTime())) {
+                    label = d.toLocaleString("ru-RU", { month: "long", year: "numeric" });
+                    label = label.charAt(0).toUpperCase() + label.slice(1);
+                }
+            }
+            if (!monthMap.has(label)) {
+                monthMap.set(label, []);
+            }
+            monthMap.get(label).push(v);
+        });
+        const groups = Array.from(monthMap.entries()).map(([label, vids]) => ({ label, videos: vids }));
+        renderGroupedList(groups);
+    } else if (currentGroupMode === "pubMonth") {
+        const monthMap = new Map();
+        filtered.forEach(v => {
+            let label = "Без даты публикации";
+            if (v.publishDate) {
+                const d = typeof v.publishDate.toDate === "function" ? v.publishDate.toDate() : new Date(v.publishDate);
+                if (!isNaN(d.getTime())) {
+                    label = d.toLocaleString("ru-RU", { month: "long", year: "numeric" });
+                    label = label.charAt(0).toUpperCase() + label.slice(1);
+                }
+            }
+            if (!monthMap.has(label)) {
+                monthMap.set(label, []);
+            }
+            monthMap.get(label).push(v);
+        });
+        const groups = Array.from(monthMap.entries()).map(([label, vids]) => ({ label, videos: vids }));
+        renderGroupedList(groups);
+    } else if (currentGroupMode === "format") {
+        const shorts = filtered.filter(v => checkIsShortsVideo(v));
+        const longs = filtered.filter(v => !checkIsShortsVideo(v));
+        const groups = [
+            { label: "⚡️ Shorts (вертикальные)", videos: shorts },
+            { label: "🎬 Видео (длинный формат)", videos: longs }
+        ];
+        renderGroupedList(groups);
+    } else {
+        if (currentFilter === "all" && currentMenuRoute !== "trash") {
+            const statuses = [
+                { id: "idea", label: "Идеи" },
+                { id: "in_progress", label: "Черновик" },
+                { id: "editing", label: "В процессе" },
+                { id: "published", label: "Опубликовано" }
+            ];
+            const groups = statuses.map(s => ({
+                label: s.label,
+                videos: filtered.filter(v => (v.status || "idea") === s.id)
+            }));
+            renderGroupedList(groups);
+        } else {
+            filtered.forEach(v => {
+                videosListContainer.appendChild(createVideoCard(v));
+            });
+        }
     }
 
     if (typeof setViewMode === "function") {

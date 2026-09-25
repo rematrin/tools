@@ -17,6 +17,9 @@
     <link rel="stylesheet" href="auth-widget.css">
     <link rel="stylesheet" href="whiteboard.css?v=1.0.1">
     <style>
+        body {
+            padding-top: 0 !important;
+        }
         :root {
             --bg: #fefefe;
         }
@@ -74,14 +77,13 @@
                         <option value="alphabeticalDesc">По алфавиту (Я-А)</option>
                     </select>
                 </div>
-                <button id="btnCreateBoard" class="btn-primary-action" style="margin-right: 16px;">
+                <button id="btnCreateBoard" class="btn-primary-action">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
                     Создать доску
                 </button>
-                <div id="header-container"></div>
             </div>
         </header>
         <div class="dashboard-content">
@@ -106,6 +108,12 @@
         <!-- Шапка приложения -->
         <header class="board-header">
         <div class="header-left">
+            <a href="index.html" class="btn-back" title="Все сервисы" style="display: inline-flex; align-items: center; margin-right: 10px; color: var(--text-color); text-decoration: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </a>
             <div id="boardBreadcrumbs" class="board-breadcrumbs"></div>
             <input type="text" id="boardTitleInput" value="Моя доска идей" class="board-title-input" title="Название доски">
             <span id="saveStatus" class="save-status">Сохранено</span>
@@ -526,7 +534,6 @@
         </div>
     </div>    <!-- Скрипты -->
     <script type="module" src="nav-widget.js"></script>
-    <script type="module" src="header.js"></script>
     <script type="module" src="auth-widget.js"></script>
     <script type="module" src="whiteboard.js?v=1.0.3"></script>
 </body>

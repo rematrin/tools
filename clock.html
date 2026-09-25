@@ -24,6 +24,7 @@
   </script>
 
   <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="sidebar.css">
 
   <style>
     /* === ЛОКАЛЬНЫЕ ПЕРЕОПРЕДЕЛЕНИЯ ЦВЕТОВ === */
@@ -630,7 +631,10 @@
 
   <div id="header-container"></div>
 
-  <div class="wrap">
+  <div class="app-layout">
+    <div id="sidebar-container" class="vk-sidebar-container"></div>
+    <main class="main-content">
+      <div class="wrap">
     <div class="topbar">
       <h1>Мировые часы</h1>
       <div class="topbar-controls">
@@ -680,7 +684,8 @@
         <button id="copyLinkBtn">Копировать</button>
       </div>
     </div>
-  </div>
+  </main>
+</div>
 
   <script>
     const toId = tz => 't-' + tz.replace(/\//g, '-');
@@ -1191,14 +1196,17 @@
     function initLayout() {
       const currentMode = localStorage.getItem('clock_layout_mode') || 'list';
       const wrap = document.querySelector('.wrap');
+      const sidebar = document.getElementById('sidebar-container');
       if (currentMode === 'grid') {
         wrap.classList.add('grid-mode');
         box.classList.add('grid-mode');
+        if (sidebar) sidebar.classList.add('grid-mode');
         layoutBtn.innerHTML = listIcon;
         layoutBtn.setAttribute('data-tip', 'Режим списка');
       } else {
         wrap.classList.remove('grid-mode');
         box.classList.remove('grid-mode');
+        if (sidebar) sidebar.classList.remove('grid-mode');
         layoutBtn.innerHTML = gridIcon;
         layoutBtn.setAttribute('data-tip', 'Режим сетки');
       }
@@ -1230,6 +1238,7 @@
   <script type="module" src="nav-widget.js"></script>
   <script type="module" src="auth-widget.js"></script>
   <script type="module" src="header.js"></script>
+  <script src="left-sidebar.js"></script>
 </body>
 
 </html>

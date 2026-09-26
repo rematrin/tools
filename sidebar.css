@@ -2,26 +2,19 @@
 
 .app-layout {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: flex-start;
-    gap: 45px;
-    max-width: 1200px;
+    gap: 32px;
+    max-width: 1080px;
+    width: 100%;
     margin: 0 auto;
-    padding: 0 16px;
+    padding: 0 20px;
     box-sizing: border-box;
 }
 
 .app-layout .main-content {
     flex: 1;
-    max-width: 520px;
     min-width: 0;
-    transition: max-width 0.3s ease;
-}
-
-/* В режиме сетки макет расширяется */
-.app-layout .main-content:has(.wrap.grid-mode),
-.app-layout:has(.wrap.grid-mode) .main-content {
-    max-width: 820px;
 }
 
 .vk-sidebar-container {
@@ -162,22 +155,26 @@ body.dark .vk-sidebar-item.active .vk-sidebar-icon {
 }
 
 /* Скрытие нижнего подвала страницы на ПК, если есть левое меню */
-@media (min-width: 861px) {
+@media (min-width: 961px) {
     #footer {
         display: none !important;
     }
 }
 
-/* Адаптивность для узких экранов (<860px) */
-@media (max-width: 860px) {
+/* Адаптивность для средних и узких экранов */
+@media (max-width: 1100px) {
+    .app-layout {
+        gap: 20px;
+    }
+}
+
+@media (max-width: 960px) {
     .vk-sidebar-container {
         display: none;
     }
     .app-layout {
         display: block;
         padding: 0;
-    }
-    .app-layout .main-content {
-        max-width: 100%;
+        width: 100%;
     }
 }

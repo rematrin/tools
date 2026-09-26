@@ -8,6 +8,7 @@
 <link rel="apple-touch-icon" href="img/exchange2.png">
 
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="sidebar.css">
 
 <style>
 /* === ЛОКАЛЬНЫЕ СТИЛИ И ЦВЕТА === */
@@ -30,7 +31,7 @@ body.dark {
 /* Инверсия иконок в темной теме */
 body.dark img.icon { filter: invert(1) brightness(1.3); }
 
-.wrap { max-width: 800px; margin: 0 auto; padding: 22px 14px 28px; }
+.wrap { width: 800px; max-width: 100%; margin: 0 auto; padding: 22px 14px 28px; }
 
 /* Шапка */
 .topbar {
@@ -168,7 +169,10 @@ body.dark .btn-action.active { color: #fff !important; }
 
 <div id="customTooltip"></div>
 
-<div class="wrap">
+<div class="app-layout">
+  <div id="sidebar-container" class="vk-sidebar-container"></div>
+  <main class="main-content">
+    <div class="wrap">
     <div class="topbar">
         <h1>Конвертер регистров</h1>
         <div class="topbar-controls">
@@ -208,6 +212,7 @@ body.dark .btn-action.active { color: #fff !important; }
             <button class="btn-action" data-mode="random" onclick="setMode('random')">СлУчАйНыЙ</button>
         </div>
     </div>
+  </main>
 </div>
 
 <script>
@@ -379,6 +384,6 @@ fetch('footer.html')
 <script type="module" src="nav-widget.js"></script> 
 <script type="module" src="auth-widget.js"></script>
 <script type="module" src="header.js"></script>
-
+<script src="left-sidebar.js"></script>
 </body>
 </html>

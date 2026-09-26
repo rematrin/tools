@@ -40,18 +40,7 @@ fetch('header.html')
             });
         }
 
-        // === 2. Клик на Главную (МЕНЯЕМ НА NavModal) ===
-        const homeBtn = document.getElementById('home-menu-btn');
-        if (homeBtn) {
-            homeBtn.addEventListener('click', function () {
-                // Теперь вызываем функцию из nav-widget.js
-                if (typeof window.openNavModal === 'function') {
-                    window.openNavModal(this);
-                } else {
-                    console.warn("Nav widget еще не загрузился");
-                }
-            });
-        }
+
 
         if (window.currentUser !== undefined) {
             updateHeaderData(window.currentUser);

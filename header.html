@@ -14,50 +14,49 @@
     }
 
     .vk-header-content {
-        max-width: 800px;
+        max-width: 1080px;
         margin: 0 auto;
         height: 100%;
         display: flex;
         justify-content: space-between;
-        /* Левая часть - влево, правая - вправо */
         align-items: center;
         padding: 0 20px;
     }
 
-    /* ЛЕВАЯ ЧАСТЬ */
+    /* ЛЕВАЯ ЧАСТЬ - ЛОГОТИП */
     .header-left {
         display: flex;
         align-items: center;
         gap: 10px;
+        height: 100%;
     }
 
-    /* ПРАВАЯ ЧАСТЬ (Исправлено) */
+    .vk-header-logo {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        height: 100%;
+        margin-left: 8px;
+        transition: opacity 0.2s ease;
+    }
+
+    .vk-header-logo:hover {
+        opacity: 0.85;
+    }
+
+    .logo-img {
+        height: 30px;
+        width: auto;
+        display: block;
+        object-fit: contain;
+    }
+
+    /* ПРАВАЯ ЧАСТЬ */
     .header-right {
         display: flex;
         align-items: center;
         gap: 12px;
-        /* Отступ между луной и профилем */
         height: 100%;
-    }
-
-    /* Кнопки навигации */
-    .home-btn {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--text);
-        font-weight: 600;
-        font-size: 15px;
-        padding: 6px 12px;
-        border-radius: 10px;
-        transition: background 0.2s ease, color 0.2s ease;
-        cursor: pointer;
-        text-decoration: none;
-    }
-
-    .home-btn:hover {
-        background-color: var(--hover-bg);
-        color: var(--accent);
     }
 
     /* Кнопка темы */
@@ -67,13 +66,11 @@
         justify-content: center;
         width: 32px;
         height: 32px;
-        /* Чуть меньше, чтобы точно влезла */
         border-radius: 50%;
         color: var(--text);
         cursor: pointer;
         transition: background 0.2s ease, color 0.2s ease;
         background: transparent;
-        /* На всякий случай прозрачный фон */
         border: none;
         padding: 0;
     }
@@ -93,7 +90,6 @@
         border-radius: 10px;
         transition: background 0.2s ease;
         height: 36px;
-        /* Фиксируем высоту профиля */
     }
 
     .vk-profile:hover {
@@ -127,12 +123,9 @@
     <div class="vk-header-content">
 
         <div class="header-left">
-            <div id="home-menu-btn" class="home-btn">
-                <span>Все сервисы</span>
-                <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style="opacity: 0.5; stroke: currentColor;">
-                    <path d="M1 1.5L6 6.5L11 1.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-            </div>
+            <a href="index.html" class="vk-header-logo" title="Главная">
+                <img src="img/Retools_logo.png" alt="Retools" class="logo-img">
+            </a>
         </div>
 
         <div class="header-right">
@@ -143,7 +136,6 @@
                     <path d="M1 1.5L6 6.5L11 1.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
             </div>
-
         </div>
 
     </div>

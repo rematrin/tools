@@ -69,7 +69,7 @@ function renderSidebar() {
     const container = document.getElementById('sidebar-container');
     if (!container) return;
 
-    if (!container.firstElementChild) {
+    if (!container.querySelector('.vk-sidebar')) {
         container.innerHTML = sidebarHTML;
     }
 

@@ -4,7 +4,7 @@
     display: flex;
     justify-content: flex-start;
     align-items: flex-start;
-    gap: 32px;
+    gap: 24px;
     max-width: 1080px;
     width: 100%;
     margin: 0 auto;
@@ -20,7 +20,7 @@
 .vk-sidebar-container {
     position: sticky;
     top: 65px;
-    width: 180px;
+    width: 200px;
     flex-shrink: 0;
     user-select: none;
     padding-top: 4px;
@@ -56,13 +56,13 @@
 .vk-sidebar-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 6px 10px;
+    gap: 7px;
+    padding: 6px 6px;
     min-height: 34px;
     border-radius: 8px;
     color: var(--text);
     text-decoration: none;
-    font-size: 0.82rem;
+    font-size: 0.80rem;
     font-weight: 400;
     line-height: 1.2;
     box-sizing: border-box;

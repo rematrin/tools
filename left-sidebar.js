@@ -61,11 +61,17 @@ const sidebarHTML = `
 </aside>
 `;
 
+try {
+    localStorage.setItem('cached_sidebar_html', sidebarHTML);
+} catch (e) {}
+
 function renderSidebar() {
     const container = document.getElementById('sidebar-container');
     if (!container) return;
 
-    container.innerHTML = sidebarHTML;
+    if (!container.firstElementChild) {
+        container.innerHTML = sidebarHTML;
+    }
 
     // Подсветка текущей активной страницы
     const currentPath = window.location.pathname.split('/').pop() || 'index.html';
@@ -75,11 +81,15 @@ function renderSidebar() {
         const href = link.getAttribute('href');
         if (href === currentPath || (currentPath === '' && href === 'index.html')) {
             link.classList.add('active');
+        } else {
+            link.classList.remove('active');
         }
     });
 }
 
-if (document.readyState === 'loading') {
+if (document.getElementById('sidebar-container')) {
+    renderSidebar();
+} else if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', renderSidebar);
 } else {
     renderSidebar();

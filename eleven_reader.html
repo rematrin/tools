@@ -236,10 +236,10 @@
 
 <body>
     <!-- Универсальная шапка сайта -->
-    <div id="header-container"></div>
+    <div id="header-container"><script>(function(){var h=localStorage.getItem('cached_header_html');if(h)document.getElementById('header-container').innerHTML=h;})();</script></div>
 
     <div class="app-layout">
-        <div id="sidebar-container" class="vk-sidebar-container"></div>
+        <div id="sidebar-container" class="vk-sidebar-container"><script>(function(){var s=localStorage.getItem('cached_sidebar_html');if(s){var c=document.getElementById('sidebar-container');c.innerHTML=s;var p=location.pathname.split('/').pop()||'index.html';c.querySelectorAll('.vk-sidebar-item').forEach(function(l){if(l.getAttribute('href')===p)l.classList.add('active');});}})();</script></div>
         <main class="main-content">
             <div class="container">
         <header class="reader-header">

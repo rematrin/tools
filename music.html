@@ -6769,8 +6769,8 @@
                         row.className = 'playlist-track-row';
 
                         row.onclick = () => {
-                            const currentTrack = playlist[trackIndex];
-                            const isCurrent = (currentTrack && currentTrack.id === track.id && !window.currentRadioStation);
+                            const currentTrack = (playlist.length > 0 && trackIndex >= 0) ? playlist[trackIndex] : null;
+                            const isCurrent = Boolean(currentTrack && currentTrack.id && track && track.id && currentTrack.id === track.id && !window.currentRadioStation);
                             if (isCurrent) {
                                 togglePlay();
                             } else {
@@ -6782,8 +6782,8 @@
                         const displayChannel = (track.channel || "YouTube Video").replace(/\s*-\s*Topic$/, '');
 
                         // Check if active playing track is this one
-                        const currentTrack = playlist[trackIndex];
-                        const isCurrent = (currentTrack && currentTrack.id === track.id && !window.currentRadioStation);
+                        const currentTrack = (playlist.length > 0 && trackIndex >= 0) ? playlist[trackIndex] : null;
+                        const isCurrent = Boolean(currentTrack && currentTrack.id && track && track.id && currentTrack.id === track.id && !window.currentRadioStation);
 
                         const playing = isCurrent && isPlaying;
                         row.classList.toggle('playing', playing);

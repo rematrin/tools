@@ -2858,12 +2858,16 @@
         }
 
         /* Artist Master-Detail Layout (Apple Music Style) */
+        body.artists-active-page .main-content {
+            overflow-y: hidden !important;
+        }
+
         .artists-split-container {
             display: flex;
             gap: 24px;
             width: 100%;
-            height: calc(100vh - 210px);
-            min-height: 480px;
+            height: calc(100vh - 220px);
+            min-height: 460px;
         }
 
         .artists-sidebar-pane {
@@ -4061,9 +4065,12 @@
                 window.previousMusicHash = hash;
             }
 
+            const isArtistsPage = (hash === '#artists' || hash.startsWith('#artist-details'));
+            document.body.classList.toggle('artists-active-page', isArtistsPage);
+
             const mainContent = document.querySelector('.main-content');
             if (mainContent) {
-                mainContent.style.overflowY = 'auto';
+                mainContent.style.overflowY = isArtistsPage ? 'hidden' : 'auto';
                 mainContent.style.paddingBottom = '96px';
             }
 

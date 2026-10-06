@@ -9403,14 +9403,38 @@
                 });
                 window.musicAlbums.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
+                // Fetch User Doc for Favorite Artists
+                let userFavArtistIds = [];
+                try {
+                    const userDocRef = window.doc(window.db, "users", uid);
+                    const userSnap = await window.getDoc(userDocRef);
+                    if (userSnap.exists() && userSnap.data() && Array.isArray(userSnap.data().favorite_artist_ids)) {
+                        userFavArtistIds = userSnap.data().favorite_artist_ids;
+                    }
+                } catch (err) {
+                    console.error("Error fetching user favorite_artist_ids:", err);
+                }
+
                 // Fetch Artists
                 const artistsRef = window.collection(window.db, "users", uid, "music_artists");
                 const artistsSnap = await window.getDocs(artistsRef);
                 window.musicArtists = [];
                 artistsSnap.forEach(doc => {
-                    window.musicArtists.push(doc.data());
+                    const artData = doc.data();
+                    window.musicArtists.push(artData);
+                    if (artData.isFavorite) {
+                        const artId = artData.id || doc.id;
+                        if (!userFavArtistIds.includes(artId)) {
+                            userFavArtistIds.push(artId);
+                        }
+                    }
                 });
                 window.musicArtists.sort((a, b) => a.name.localeCompare(b.name));
+
+                // Save favorite artist IDs to localStorage cache
+                try {
+                    localStorage.setItem('favorite_artist_ids', JSON.stringify(userFavArtistIds));
+                } catch (e) {}
 
                 // Clean empty artists
                 let activeArtistIds = new Set(window.musicSongs.map(s => s.artistId));
@@ -9825,41 +9849,70 @@
             
             const artist = (window.musicArtists || []).find(a => a.id === artistIdOrName || a.name === artistIdOrName);
             if (artist) {
-                return favorites.includes(artist.id) || favorites.includes(artist.name.toLowerCase().trim());
+                if (artist.isFavorite) return true;
+                return favorites.includes(artist.id) || (artist.name && favorites.includes(artist.name.toLowerCase().trim()));
             }
             return false;
         }
 
-        function toggleArtistFavorite(artistId) {
+        async function toggleArtistFavorite(artistId) {
             if (!artistId) return;
             const favorites = getFavoriteArtistIds();
-            const artist = (window.musicArtists || []).find(a => a.id === artistId);
+            const artist = (window.musicArtists || []).find(a => a.id === artistId || a.name === artistId);
             const key = artist ? artist.id : artistId;
-            const nameKey = artist ? artist.name.toLowerCase().trim() : null;
+            const nameKey = (artist && artist.name) ? artist.name.toLowerCase().trim() : null;
+
+            const isCurrentlyFav = isArtistFavorite(key);
+            const isNowFav = !isCurrentlyFav;
+
+            if (artist) {
+                artist.isFavorite = isNowFav;
+            }
 
             let index = favorites.indexOf(key);
             if (index === -1 && nameKey) {
                 index = favorites.indexOf(nameKey);
             }
+            if (index === -1) {
+                index = favorites.indexOf(artistId);
+            }
 
-            if (index > -1) {
-                favorites.splice(index, 1);
+            if (isNowFav) {
+                if (index === -1) favorites.push(key);
+            } else {
+                if (index > -1) favorites.splice(index, 1);
                 if (nameKey) {
                     const nameIdx = favorites.indexOf(nameKey);
                     if (nameIdx > -1) favorites.splice(nameIdx, 1);
                 }
-            } else {
-                favorites.push(key);
+                const rawIdx = favorites.indexOf(artistId);
+                if (rawIdx > -1) favorites.splice(rawIdx, 1);
             }
 
             try {
                 localStorage.setItem('favorite_artist_ids', JSON.stringify(favorites));
             } catch (e) {}
 
-            if (window.selectedArtistId === artistId) {
-                renderSelectedArtistDetail(artistId);
+            const activeId = window.selectedArtistId || artistId;
+            if (activeId === artistId || (artist && activeId === artist.id)) {
+                renderSelectedArtistDetail(activeId);
             }
             updateArtistSidebarFavoriteBadges();
+
+            // Firestore sync for logged-in user
+            const uid = window.currentUser ? window.currentUser.uid : null;
+            if (uid && window.db) {
+                try {
+                    if (key) {
+                        const artistRef = window.doc(window.db, "users", uid, "music_artists", key);
+                        window.setDoc(artistRef, { isFavorite: isNowFav }, { merge: true }).catch(err => console.error("Error setting artist isFavorite:", err));
+                    }
+                    const userRef = window.doc(window.db, "users", uid);
+                    window.setDoc(userRef, { favorite_artist_ids: favorites }, { merge: true }).catch(err => console.error("Error updating user favorite_artist_ids:", err));
+                } catch (err) {
+                    console.error("Firestore sync error for favorite artist:", err);
+                }
+            }
         }
 
         function updateArtistSidebarFavoriteBadges() {

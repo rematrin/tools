@@ -2889,6 +2889,14 @@
             position: relative;
         }
 
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinning {
+            animation: spin 1s linear infinite;
+        }
+
         .header-search-btn {
             width: 32px;
             height: 32px;
@@ -4435,10 +4443,24 @@
                                     </div>
                                 </div>
                             </div>
-                            <button class="btn-modal btn-modal-submit" onclick="playAllSongs()" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                                Воспроизвести все
-                            </button>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button id="btn-sync-media-library" class="btn-modal btn-modal-cancel" onclick="syncYouTubeMediaLibrary({ silent: false })" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px;" title="Синхронизировать медиатеку с YouTube">
+                                    <svg id="sync-icon-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                    </svg>
+                                    <span id="sync-btn-text">Синхронизировать</span>
+                                </button>
+                                <button class="btn-modal btn-modal-cancel" onclick="openSyncMediaLibraryModal()" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px;" title="Настроить главный плейлист медиатеки">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                    </svg>
+                                </button>
+                                <button class="btn-modal btn-modal-submit" onclick="playAllSongs()" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                    Воспроизвести все
+                                </button>
+                            </div>
                         </div>
                         <div class="album-details-tracks">
                             <table class="tracks-table">
@@ -8814,9 +8836,313 @@
             return hours * 3600 + minutes * 60 + seconds;
         }
 
+        window.youtubeLibraryUrl = localStorage.getItem('youtube_library_url') || null;
+        window.isSyncingLibrary = false;
+
+        async function fetchUserYoutubeLibraryUrl(uid) {
+            if (uid && window.db && window.doc && window.getDoc) {
+                try {
+                    const userRef = window.doc(window.db, "users", uid);
+                    const userSnap = await window.getDoc(userRef);
+                    if (userSnap.exists() && userSnap.data().youtube_library_url) {
+                        window.youtubeLibraryUrl = userSnap.data().youtube_library_url;
+                        localStorage.setItem('youtube_library_url', window.youtubeLibraryUrl);
+                        return window.youtubeLibraryUrl;
+                    }
+                } catch (e) {
+                    console.warn("Error fetching youtube_library_url:", e);
+                }
+            }
+            window.youtubeLibraryUrl = localStorage.getItem('youtube_library_url') || null;
+            return window.youtubeLibraryUrl;
+        }
+
+        function openSyncMediaLibraryModal() {
+            const modal = document.getElementById('syncMediaLibraryModal');
+            const input = document.getElementById('modalSyncLibraryUrl');
+            const statusInfo = document.getElementById('sync-library-status-info');
+            if (input) {
+                input.value = window.youtubeLibraryUrl || localStorage.getItem('youtube_library_url') || '';
+            }
+            if (statusInfo) {
+                const curUrl = window.youtubeLibraryUrl || localStorage.getItem('youtube_library_url');
+                if (curUrl) {
+                    statusInfo.style.display = 'block';
+                    statusInfo.innerText = 'Текущий плейлист: ' + curUrl;
+                } else {
+                    statusInfo.style.display = 'none';
+                }
+            }
+            if (modal) {
+                modal.style.display = 'flex';
+                setTimeout(() => modal.classList.add('active'), 10);
+                if (input) input.focus();
+            }
+        }
+
+        function closeSyncMediaLibraryModal() {
+            const modal = document.getElementById('syncMediaLibraryModal');
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => { modal.style.display = 'none'; }, 250);
+            }
+        }
+
+        async function saveAndSyncMediaLibrary() {
+            const input = document.getElementById('modalSyncLibraryUrl');
+            if (!input) return;
+            const urlVal = input.value.trim();
+            if (!urlVal) {
+                alert("Пожалуйста, введите ссылку на плейлист YouTube.");
+                return;
+            }
+
+            let listId = extractListId(urlVal);
+            if (!listId) {
+                alert("Не удалось извлечь ID плейлиста. Убедитесь, что ссылка содержит ?list=...");
+                return;
+            }
+
+            window.youtubeLibraryUrl = urlVal;
+            localStorage.setItem('youtube_library_url', urlVal);
+
+            const uid = window.currentUser ? window.currentUser.uid : null;
+            if (uid && window.db) {
+                try {
+                    const userRef = window.doc(window.db, "users", uid);
+                    await window.setDoc(userRef, { youtube_library_url: urlVal }, { merge: true });
+                } catch (e) {
+                    console.error("Ошибка сохранения ссылки на медиатеку в Firestore:", e);
+                }
+            }
+
+            closeSyncMediaLibraryModal();
+            await syncYouTubeMediaLibrary({ silent: false, force: true });
+        }
+
+        async function syncYouTubeMediaLibrary(options = {}) {
+            const silent = !!options.silent;
+            const force = !!options.force;
+
+            if (window.isSyncingLibrary) {
+                if (!silent) showAlertModal("Синхронизация", "Синхронизация медиатеки уже выполняется...");
+                return;
+            }
+
+            const uid = window.currentUser ? window.currentUser.uid : null;
+            if (!window.youtubeLibraryUrl && uid) {
+                await fetchUserYoutubeLibraryUrl(uid);
+            }
+
+            const libraryUrl = window.youtubeLibraryUrl || localStorage.getItem('youtube_library_url');
+
+            if (!libraryUrl) {
+                if (!silent) {
+                    openSyncMediaLibraryModal();
+                }
+                return;
+            }
+
+            const listId = extractListId(libraryUrl);
+            if (!listId) {
+                if (!silent) {
+                    alert("Ссылка на плейлист медиатеки недействительна. Настройте заново.");
+                    openSyncMediaLibraryModal();
+                }
+                return;
+            }
+
+            window.isSyncingLibrary = true;
+
+            // UI sync animation
+            const syncBtn = document.getElementById('btn-sync-media-library');
+            const syncIcon = document.getElementById('sync-icon-svg');
+            const syncText = document.getElementById('sync-btn-text');
+
+            if (syncIcon) syncIcon.classList.add('spinning');
+            if (syncBtn) syncBtn.disabled = true;
+            if (syncText) syncText.innerText = 'Синхронизация...';
+
+            try {
+                const apiKey = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
+                let rawTracks = [];
+                let nextPageToken = "";
+                let hasMore = true;
+
+                while (hasMore) {
+                    const tracksUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${listId}&key=${apiKey}${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
+                    const res = await fetch(tracksUrl);
+                    const data = await res.json();
+
+                    if (data && data.items && data.items.length > 0) {
+                        data.items.forEach(item => {
+                            if (item.snippet && item.snippet.resourceId && item.snippet.resourceId.videoId) {
+                                rawTracks.push({
+                                    videoId: item.snippet.resourceId.videoId,
+                                    title: item.snippet.title,
+                                    index: item.snippet.position || 0,
+                                    channelTitle: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle || '',
+                                    thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url || `https://img.youtube.com/vi/${item.snippet.resourceId.videoId}/mqdefault.jpg`
+                                });
+                            }
+                        });
+                        nextPageToken = data.nextPageToken;
+                        if (!nextPageToken) hasMore = false;
+                    } else {
+                        hasMore = false;
+                    }
+                }
+
+                if (rawTracks.length === 0) {
+                    if (!silent) showAlertModal("Медиатека YouTube", "Плейлист пуст или не доступен.");
+                    return;
+                }
+
+                // Filter new tracks
+                const existingSongIds = new Set((window.musicSongs || []).map(s => s.id));
+                const newTracks = rawTracks.filter(t => !existingSongIds.has(t.videoId));
+
+                if (newTracks.length === 0) {
+                    if (!silent) showAlertModal("Медиатека актуальна", "Все песни из вашего плейлиста YouTube уже в медиатеке!");
+                    return;
+                }
+
+                // Fetch video durations in batches of 50
+                let videoIdsBatch = newTracks.map(t => t.videoId);
+                let durationMap = {};
+                for (let i = 0; i < videoIdsBatch.length; i += 50) {
+                    let batchStr = videoIdsBatch.slice(i, i + 50).join(',');
+                    let vUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${batchStr}&key=${apiKey}`;
+                    let vRes = await fetch(vUrl);
+                    let vData = await vRes.json();
+                    if (vData && vData.items) {
+                        vData.items.forEach(v => {
+                            durationMap[v.id] = parseISODuration(v.contentDetails.duration);
+                        });
+                    }
+                }
+
+                let addedCount = 0;
+                let newArtistsCount = 0;
+                if (!window.musicSongs) window.musicSongs = [];
+                if (!window.musicArtists) window.musicArtists = [];
+                if (!window.musicAlbums) window.musicAlbums = [];
+
+                for (let track of newTracks) {
+                    let duration = durationMap[track.videoId] || 180;
+                    let rawArtist = track.channelTitle || "";
+                    let cleanArtist = rawArtist.replace(/\s*-\s*Topic$/i, "").replace(/vevo$/i, "").trim();
+
+                    if (!cleanArtist || cleanArtist.toLowerCase() === "youtube" || cleanArtist.toLowerCase() === "youtube music") {
+                        if (track.title && track.title.includes(" - ")) {
+                            let parts = track.title.split(" - ");
+                            cleanArtist = parts[0].trim();
+                        } else {
+                            cleanArtist = "Различные исполнители";
+                        }
+                    }
+
+                    const artistId = "artist_" + hashCode(cleanArtist);
+                    let artistCover = track.thumbnail || `https://img.youtube.com/vi/${track.videoId}/mqdefault.jpg`;
+
+                    let existingArtist = window.musicArtists.find(a => a.id === artistId);
+                    if (!existingArtist) {
+                        existingArtist = {
+                            id: artistId,
+                            name: cleanArtist,
+                            coverUrl: artistCover,
+                            createdAt: new Date().toISOString()
+                        };
+                        window.musicArtists.push(existingArtist);
+                        newArtistsCount++;
+                        if (uid && window.db) {
+                            const artistRef = window.doc(window.db, "users", uid, "music_artists", artistId);
+                            await window.setDoc(artistRef, existingArtist);
+                        }
+                    } else if ((!existingArtist.coverUrl || existingArtist.coverUrl.includes("placeholder")) && artistCover) {
+                        existingArtist.coverUrl = artistCover;
+                        if (uid && window.db) {
+                            const artistRef = window.doc(window.db, "users", uid, "music_artists", artistId);
+                            await window.setDoc(artistRef, { coverUrl: artistCover }, { merge: true });
+                        }
+                    }
+
+                    const songData = {
+                        id: track.videoId,
+                        title: track.title,
+                        duration: duration,
+                        artistId: artistId,
+                        artistName: cleanArtist,
+                        albumId: "album_library",
+                        albumName: "Медиатека",
+                        index: track.index,
+                        createdAt: new Date().toISOString()
+                    };
+
+                    window.musicSongs.push(songData);
+                    addedCount++;
+
+                    if (uid && window.db) {
+                        const songRef = window.doc(window.db, "users", uid, "music_songs", track.videoId);
+                        await window.setDoc(songRef, songData);
+                    }
+                }
+
+                // Ensure "Медиатека" album exists if any songs are in it
+                let libraryAlbum = window.musicAlbums.find(a => a.id === "album_library");
+                let librarySongIds = window.musicSongs.filter(s => s.albumId === "album_library").map(s => s.id);
+                if (!libraryAlbum && librarySongIds.length > 0) {
+                    libraryAlbum = {
+                        id: "album_library",
+                        title: "Медиатека",
+                        artistId: "artist_library",
+                        artistName: "Различные исполнители",
+                        coverUrl: newTracks[0]?.thumbnail || `https://img.youtube.com/vi/${newTracks[0]?.videoId}/mqdefault.jpg`,
+                        genre: "Плейлист",
+                        year: new Date().getFullYear().toString(),
+                        songIds: librarySongIds,
+                        createdAt: new Date().toISOString()
+                    };
+                    window.musicAlbums.push(libraryAlbum);
+                    if (uid && window.db) {
+                        const albumRef = window.doc(window.db, "users", uid, "music_albums", "album_library");
+                        await window.setDoc(albumRef, libraryAlbum);
+                    }
+                } else if (libraryAlbum) {
+                    libraryAlbum.songIds = librarySongIds;
+                    if (uid && window.db) {
+                        const albumRef = window.doc(window.db, "users", uid, "music_albums", "album_library");
+                        await window.setDoc(albumRef, { songIds: librarySongIds }, { merge: true });
+                    }
+                }
+
+                window.musicArtists.sort((a, b) => a.name.localeCompare(b.name));
+                window.musicAlbums.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                renderCurrentView();
+
+                if (!silent || addedCount > 0) {
+                    const songsTxt = `${addedCount} ${getPlural(addedCount, 'песня', 'песни', 'песен')}`;
+                    const artistsTxt = newArtistsCount > 0 ? ` и ${newArtistsCount} ${getPlural(newArtistsCount, 'новый артист', 'новых артиста', 'новых артистов')}` : '';
+                    showAlertModal("Синхронизация завершена", `Успешно добавлено ${songsTxt}${artistsTxt}!`);
+                }
+            } catch (e) {
+                console.error("Ошибка синхронизации медиатеки YouTube:", e);
+                if (!silent) showAlertModal("Ошибка синхронизации", "Не удалось загрузить плейлист: " + e.message);
+            } finally {
+                window.isSyncingLibrary = false;
+                if (syncIcon) syncIcon.classList.remove('spinning');
+                if (syncBtn) syncBtn.disabled = false;
+                if (syncText) syncText.innerText = 'Синхронизировать';
+            }
+        }
+
         async function loadMediaLibrary(uid) {
             if (!window.db || !window.collection || !window.getDocs) return;
             try {
+                // Fetch user settings / youtube_library_url
+                await fetchUserYoutubeLibraryUrl(uid);
+
                 // Fetch Songs
                 const songsRef = window.collection(window.db, "users", uid, "music_songs");
                 const songsSnap = await window.getDocs(songsRef);
@@ -8854,11 +9180,28 @@
                     }
                 }
 
+                // Backfill artist covers if missing
+                window.musicArtists.forEach(artist => {
+                    const resolvedCover = getArtistCoverUrl(artist);
+                    if (resolvedCover && (!artist.coverUrl || artist.coverUrl.includes('placeholder'))) {
+                        artist.coverUrl = resolvedCover;
+                        if (uid && window.db) {
+                            const artistRef = window.doc(window.db, "users", uid, "music_artists", artist.id);
+                            window.setDoc(artistRef, { coverUrl: resolvedCover }, { merge: true }).catch(err => console.error("Error updating artist cover:", err));
+                        }
+                    }
+                });
+
                 if (['#albums', '#artists', '#songs', '#album-details', '#artist-details'].some(p => window.location.hash.startsWith(p))) {
                     renderCurrentView();
                 }
                 if (!window.location.hash || window.location.hash === '#home') {
                     renderHomePlaylists();
+                }
+
+                // Auto-sync YouTube Media Library if configured
+                if (window.youtubeLibraryUrl || localStorage.getItem('youtube_library_url')) {
+                    syncYouTubeMediaLibrary({ silent: true }).catch(err => console.error("Auto-sync library error:", err));
                 }
             } catch (e) {
                 console.error("Ошибка загрузки медиатеки из Firestore:", e);
@@ -9094,19 +9437,39 @@
             renderSelectedArtistDetail(currentArtistId);
         }
 
+        function getArtistCoverUrl(artist) {
+            if (!artist) return '';
+            if (artist.coverUrl && !artist.coverUrl.includes('placeholder') && !artist.coverUrl.includes('via.placeholder')) {
+                return artist.coverUrl;
+            }
+            const artistAlbum = (window.musicAlbums || []).find(a => a.artistId === artist.id && a.coverUrl && !a.coverUrl.includes('placeholder'));
+            if (artistAlbum) {
+                return artistAlbum.coverUrl;
+            }
+            const artistSong = (window.musicSongs || []).find(s => s.artistId === artist.id && (s.id || s.thumbnail));
+            if (artistSong) {
+                if (artistSong.thumbnail && !artistSong.thumbnail.includes('placeholder')) {
+                    return artistSong.thumbnail;
+                }
+                if (artistSong.id) {
+                    return `https://img.youtube.com/vi/${artistSong.id}/mqdefault.jpg`;
+                }
+            }
+            return '';
+        }
+
         function renderArtistListItemsHTML(artistsList, activeArtistId) {
             if (!artistsList || artistsList.length === 0) {
                 return `<div style="padding: 16px 8px; color: var(--text-secondary); font-size: 0.88rem;">Артисты не найдены</div>`;
             }
             return artistsList.map(artist => {
                 const isActive = (artist.id === activeArtistId);
-                const artistAlbum = window.musicAlbums.find(a => a.artistId === artist.id && a.coverUrl);
-                const avatarSrc = artistAlbum ? artistAlbum.coverUrl : '';
+                const avatarSrc = getArtistCoverUrl(artist);
                 
                 return `
                     <div class="artist-list-item ${isActive ? 'active' : ''}" id="artist-item-${artist.id}" onclick="selectArtist('${artist.id}')">
                         <div class="artist-avatar">
-                            ${avatarSrc ? `<img src="${avatarSrc}" alt="${artist.name}" loading="lazy">` : `<span>🎤</span>`}
+                            ${avatarSrc ? `<img src="${avatarSrc}" alt="${artist.name}" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline';"><span style="display:none;">🎤</span>` : `<span>🎤</span>`}
                         </div>
                         <span class="artist-name-text">${artist.name}</span>
                     </div>
@@ -10854,6 +11217,32 @@
                     onclick="closeAddAlbumModal()">Отмена</button>
                 <button class="btn-modal btn-modal-submit" id="btn-import-submit"
                     onclick="submitImportAlbum()">Импортировать</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно синхронизации медиатеки YouTube -->
+    <div id="syncMediaLibraryModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Плейлист медиатеки YouTube</h3>
+                <button class="modal-close" onclick="closeSyncMediaLibraryModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+                <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">
+                    Укажите ссылку на ваш главный плейлист на YouTube (например, «Медиатека» или «Понравившиеся»). Сайт будет автоматически при входе синхронизировать новые песни и распределять их по исполнителям.
+                </p>
+                <div class="modal-field">
+                    <label for="modalSyncLibraryUrl">Ссылка на YouTube плейлист</label>
+                    <input type="text" id="modalSyncLibraryUrl" class="modal-input"
+                        placeholder="https://music.youtube.com/playlist?list=..." autocomplete="off"
+                        onkeydown="if(event.key==='Enter') saveAndSyncMediaLibrary()">
+                </div>
+                <div id="sync-library-status-info" style="font-size: 0.82rem; color: var(--text-secondary); display: none; word-break: break-all;"></div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <button class="btn-modal btn-modal-cancel" onclick="closeSyncMediaLibraryModal()">Отмена</button>
+                <button class="btn-modal btn-modal-submit" id="btn-sync-library-submit" onclick="saveAndSyncMediaLibrary()">Сохранить и синхронизировать</button>
             </div>
         </div>
     </div>

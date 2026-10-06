@@ -7951,6 +7951,7 @@
 
                 const playlists = (window.currentSavedPlaylists || []).filter(p => p && p.name && p.url);
                 const albums = (window.musicAlbums || []).filter(a => a && (a.title || a.name));
+                const songs = (window.musicSongs || []).filter(s => s && s.id && s.title);
 
                 const unifiedItems = [
                     ...playlists.map(p => ({
@@ -7970,28 +7971,37 @@
                         coverUrl: a.coverUrl || a.cover_url,
                         createdAt: (a.createdAt || a.created_at) ? new Date(a.createdAt || a.created_at) : new Date(parseInt(a.id) || 0),
                         lastPlayedAt: (a.last_played_at || a.lastPlayedAt) ? new Date(a.last_played_at || a.lastPlayedAt) : null
+                    })),
+                    ...songs.map(s => ({
+                        type: 'song',
+                        id: s.id,
+                        name: s.title,
+                        artistName: s.artistName,
+                        coverUrl: s.thumbnail || `https://img.youtube.com/vi/${s.id}/mqdefault.jpg`,
+                        createdAt: (s.createdAt || s.created_at) ? new Date(s.createdAt || s.created_at) : new Date(0),
+                        lastPlayedAt: (s.last_played_at || s.lastPlayedAt) ? new Date(s.last_played_at || s.lastPlayedAt) : null
                     }))
                 ];
 
                 if (unifiedItems.length === 0) {
-                    const emptyHtml = `<div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">У вас пока нет плейлистов и альбомов</div>`;
+                    const emptyHtml = `<div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">У вас пока нет треков, плейлистов и альбомов</div>`;
                     if (addedContainer) addedContainer.innerHTML = emptyHtml;
                     if (playedContainer) playedContainer.innerHTML = emptyHtml;
                     return;
                 }
 
-                // 1. Recently Added (10 last added)
+                // 1. Recently Added (15 last added items)
                 if (addedContainer) {
                     const sortedAdded = [...unifiedItems].sort((a, b) => {
                         const timeA = isNaN(a.createdAt.getTime()) ? 0 : a.createdAt.getTime();
                         const timeB = isNaN(b.createdAt.getTime()) ? 0 : b.createdAt.getTime();
                         return timeB - timeA;
-                    }).slice(0, 10);
+                    }).slice(0, 15);
 
                     addedContainer.innerHTML = sortedAdded.map(item => generateHomeCardHtml(item)).filter(Boolean).join('');
                 }
 
-                // 2. Recently Played (up to 10)
+                // 2. Recently Played (up to 15)
                 if (playedContainer) {
                     const playedList = unifiedItems.filter(item => item.lastPlayedAt);
                     if (playedList.length === 0) {
@@ -8001,7 +8011,7 @@
                             const timeA = isNaN(a.lastPlayedAt.getTime()) ? 0 : a.lastPlayedAt.getTime();
                             const timeB = isNaN(b.lastPlayedAt.getTime()) ? 0 : b.lastPlayedAt.getTime();
                             return timeB - timeA;
-                        }).slice(0, 10);
+                        }).slice(0, 15);
                         playedContainer.innerHTML = sortedPlayed.map(item => generateHomeCardHtml(item)).filter(Boolean).join('');
                     }
                 }
@@ -8023,7 +8033,6 @@
                 }
 
                 const safeName = escapeHtml(item.name);
-                const subtitle = item.type === 'album' ? 'Альбом' : 'Плейлист';
 
                 if (item.type === 'playlist') {
                     const safeUrl = escapeHtml(item.url);
@@ -8038,7 +8047,24 @@
                                 </div>
                             </div>
                             <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${safeName}">${safeName}</div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">${subtitle}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Плейлист</div>
+                        </div>
+                    `;
+                } else if (item.type === 'song') {
+                    const safeSongId = escapeHtml(item.id);
+                    const subtitle = item.artistName ? escapeHtml(item.artistName) : 'Трек';
+                    return `
+                        <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="playSongFromFlatList('${safeSongId}')">
+                            <div class="album-card-wrapper">
+                                ${coverImgHtml}
+                                <div class="album-card-overlay">
+                                    <button class="album-card-play" onclick="event.stopPropagation(); playSongFromFlatList('${safeSongId}')">
+                                        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${safeName}">${safeName}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${subtitle}">${subtitle}</div>
                         </div>
                     `;
                 } else {
@@ -8054,7 +8080,7 @@
                                 </div>
                             </div>
                             <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${safeName}">${safeName}</div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">${subtitle}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Альбом</div>
                         </div>
                     `;
                 }
@@ -10697,7 +10723,21 @@
             updateUrlState();
         }
 
+        function updateSongLastPlayed(songId) {
+            const targetSong = (window.musicSongs || []).find(s => s.id === songId);
+            if (targetSong) {
+                const now = new Date().toISOString();
+                targetSong.lastPlayedAt = now;
+                const uid = window.currentUser ? window.currentUser.uid : null;
+                if (uid && window.db) {
+                    const songRef = window.doc(window.db, "users", uid, "music_songs", songId);
+                    window.setDoc(songRef, { lastPlayedAt: now }, { merge: true }).catch(err => console.error(err));
+                }
+            }
+        }
+
         function playSongFromFlatList(songId) {
+            updateSongLastPlayed(songId);
             if (window.currentRadioStation) stopRadioPlayback();
             const currentSong = playlist[trackIndex];
             if (currentSong && currentSong.id === songId) {

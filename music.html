@@ -166,8 +166,8 @@
 
             position: fixed !important;
             top: 24px;
-            left: 24px;
-            right: 24px;
+            left: 16px;
+            right: 16px;
             bottom: 104px;
             background: var(--card-bg);
             z-index: 900;
@@ -294,17 +294,18 @@
         }
 
         .saved-playlists-title {
-            font-size: 1.4rem;
+            font-size: 2rem;
+            font-weight: 800;
             margin: 0;
             color: var(--text);
-            font-weight: 700;
+            letter-spacing: -0.03em;
         }
 
         .saved-playlists-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 24px;
         }
 
         .saved-playlists-header .icon-action-btn {
@@ -319,7 +320,7 @@
 
         .saved-playlists-list {
             display: grid;
-            grid-template-columns: repeat(auto-fill, 180px);
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
             gap: 24px;
             margin-top: 15px;
         }
@@ -510,61 +511,43 @@
 
 
         .saved-playlist-card {
-            position: relative;
+            cursor: pointer;
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
-            background: transparent;
-            border: none;
-            padding: 0;
-            border-radius: 0;
-            cursor: pointer;
-            transition: 0.2s;
-            gap: 10px;
-            min-width: 0;
+            gap: 8px;
+            position: relative;
+            transition: transform 0.2s ease;
             width: 100%;
+            min-width: 0;
         }
 
-        .saved-playlist-card:hover .playlist-card-cover {
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        .saved-playlist-card:hover {
+            transform: translateY(-2px);
         }
 
         .playlist-card-cover {
             position: relative;
             width: 100%;
             aspect-ratio: 1 / 1;
-            height: auto;
-            border-radius: 10px;
+            border-radius: 12px;
             overflow: hidden;
-            flex-shrink: 0;
-            background: #171717;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            background: var(--border);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #fff;
-            font-size: 2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transition: box-shadow 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            color: var(--text-secondary);
+            font-size: 2.5rem;
         }
 
         .playlist-card-cover img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
-        .saved-playlist-card:hover .playlist-card-cover img {
-            transform: scale(1.04);
-        }
-
-        .saved-playlist-card:hover .album-card-overlay {
+        .saved-playlist-card:hover .album-hover-play {
             opacity: 1;
-        }
-
-        .saved-playlist-card:hover .album-card-play {
-            opacity: 1;
-            transform: scale(1);
         }
 
         .playlist-card-content {
@@ -573,21 +556,25 @@
             display: flex;
             flex-direction: column;
             gap: 2px;
-            padding-right: 0;
         }
 
         .playlist-card-title {
+            font-size: 0.92rem;
             font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--text);
+            margin: 0;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            color: var(--text);
         }
 
         .playlist-card-meta {
-            font-size: 0.75rem;
+            font-size: 0.84rem;
             color: var(--text-secondary);
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .playlist-card-actions {
@@ -1162,6 +1149,10 @@
             .main-content {
                 padding-left: 292px !important;
                 padding-right: 32px !important;
+            }
+            #main-player-card {
+                left: 292px !important;
+                right: 32px !important;
             }
         }
 
@@ -3850,7 +3841,7 @@
                 <div class="saved-playlists-section" id="saved-playlists-section">
                     <div class="saved-playlists-header">
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <div class="saved-playlists-title">Мои плейлисты</div>
+                            <h2 class="saved-playlists-title">Плейлисты</h2>
                             <div class="header-search-wrapper" id="playlists-search-wrapper">
                                 <button class="header-search-btn" id="playlists-search-btn" onclick="toggleHeaderSearch('playlists')" title="Поиск плейлистов">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;">
@@ -4494,12 +4485,22 @@
                                     </div>
                                 </div>
                             </div>
-                            <button class="icon-action-btn" onclick="openAddAlbumModal()" style="width: 32px; height: 32px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'" title="Импортировать альбом">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                            </button>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <select id="albums-sort-select" onchange="changeAlbumsSort(this.value)"
+                                    style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 0.85rem; font-weight: 500; outline: none; cursor: pointer; height: 32px; box-sizing: border-box;">
+                                    <option value="alphabet-asc">По алфавиту (А-Я)</option>
+                                    <option value="alphabet-desc">По алфавиту (Я-А)</option>
+                                    <option value="artist-asc">По артисту (А-Я)</option>
+                                    <option value="added-desc">Дате добавления (новые)</option>
+                                    <option value="added-asc">Дате добавления (старые)</option>
+                                </select>
+                                <button class="icon-action-btn" onclick="openAddAlbumModal()" style="width: 32px; height: 32px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'" title="Импортировать альбом">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="albums-grid" id="albums-grid">
                             <!-- Заполняется динамически -->
@@ -7924,10 +7925,12 @@
                 div.innerHTML = `
                     <div class="playlist-card-cover">
                         ${coverHtml}
-                        <div class="album-card-overlay">
-                            <button class="album-card-play" onclick="event.stopPropagation(); playPlaylistDirectlyByUrl('${escapeHtml(p.url)}', '${escapeHtml(p.name)}')">
-                                <svg viewBox="0 0 24 24" fill="currentColor" style="width: 18px; height: 18px;"><path d="M8 5v14l11-7z"></path></svg>
-                            </button>
+                        <div class="album-hover-play">
+                            <div class="play-btn-circle" onclick="event.stopPropagation(); playPlaylistDirectlyByUrl('${escapeHtml(p.url)}', '${escapeHtml(p.name)}')">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                                    <polygon points="6 4 20 12 6 20 6 4"></polygon>
+                                </svg>
+                            </div>
                         </div>
                     </div>
                     <div class="playlist-card-content">
@@ -9488,17 +9491,50 @@
             renderAlbumsGrid();
         }
 
+        let albumsSortOrder = localStorage.getItem('albums-sort-order') || 'alphabet-asc';
+
+        function changeAlbumsSort(val) {
+            albumsSortOrder = val;
+            localStorage.setItem('albums-sort-order', val);
+            renderAlbumsGrid();
+        }
+
         function renderAlbumsGrid() {
             const grid = document.getElementById('albums-grid');
             if (!grid) return;
             grid.innerHTML = '';
+
+            const sortSelect = document.getElementById('albums-sort-select');
+            if (sortSelect) {
+                sortSelect.value = albumsSortOrder;
+            }
 
             if (window.musicAlbums.length === 0) {
                 grid.innerHTML = `<div class="playlists-empty-state" style="grid-column: 1 / -1;"><p>Альбомов пока нет.</p></div>`;
                 return;
             }
 
-            let sorted = [...window.musicAlbums].sort((a, b) => a.title.localeCompare(b.title));
+            let sorted = [...window.musicAlbums];
+            if (albumsSortOrder === 'alphabet-asc') {
+                sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+            } else if (albumsSortOrder === 'alphabet-desc') {
+                sorted.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+            } else if (albumsSortOrder === 'artist-asc') {
+                sorted.sort((a, b) => (a.artistName || '').localeCompare(b.artistName || ''));
+            } else if (albumsSortOrder === 'added-desc') {
+                sorted.sort((a, b) => {
+                    const dateA = a.created_at ? new Date(a.created_at) : new Date(parseInt(a.id) || 0);
+                    const dateB = b.created_at ? new Date(b.created_at) : new Date(parseInt(b.id) || 0);
+                    return dateB.getTime() - dateA.getTime();
+                });
+            } else if (albumsSortOrder === 'added-asc') {
+                sorted.sort((a, b) => {
+                    const dateA = a.created_at ? new Date(a.created_at) : new Date(parseInt(a.id) || 0);
+                    const dateB = b.created_at ? new Date(b.created_at) : new Date(parseInt(b.id) || 0);
+                    return dateA.getTime() - dateB.getTime();
+                });
+            }
+
             if (albumsSearchQuery) {
                 const q = albumsSearchQuery.toLowerCase();
                 sorted = sorted.filter(a =>

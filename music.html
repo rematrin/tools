@@ -842,15 +842,15 @@
         .queue-cover-control svg { width: 22px; height: 22px; fill: currentColor; }
         .queue-cover-control .queue-pause-icon,
         .queue-cover-control .eq-container { display: none; }
-        :is(.playlist-item, .playlist-track-row):hover .queue-cover-control,
-        :is(.playlist-item, .playlist-track-row):focus-within .queue-cover-control,
-        :is(.playlist-item, .playlist-track-row).playing .queue-cover-control { opacity: 1; }
-        :is(.playlist-item, .playlist-track-row).playing .queue-play-icon { display: none; }
-        :is(.playlist-item, .playlist-track-row).playing .eq-container { display: flex; }
-        :is(.playlist-item, .playlist-track-row).playing:hover .eq-container,
-        :is(.playlist-item, .playlist-track-row).playing:focus-within .eq-container { display: none; }
-        :is(.playlist-item, .playlist-track-row).playing:hover .queue-pause-icon,
-        :is(.playlist-item, .playlist-track-row).playing:focus-within .queue-pause-icon { display: block; }
+        :is(.playlist-item, .playlist-track-row, tr):hover .queue-cover-control,
+        :is(.playlist-item, .playlist-track-row, tr):focus-within .queue-cover-control,
+        :is(.playlist-item, .playlist-track-row, tr).playing .queue-cover-control { opacity: 1; }
+        :is(.playlist-item, .playlist-track-row, tr).playing .queue-play-icon { display: none; }
+        :is(.playlist-item, .playlist-track-row, tr).playing .eq-container { display: flex; }
+        :is(.playlist-item, .playlist-track-row, tr).playing:hover .eq-container,
+        :is(.playlist-item, .playlist-track-row, tr).playing:focus-within .eq-container { display: none; }
+        :is(.playlist-item, .playlist-track-row, tr).playing:hover .queue-pause-icon,
+        :is(.playlist-item, .playlist-track-row, tr).playing:focus-within .queue-pause-icon { display: block; }
         .queue-cover-control .eq-bar { background: #fff; }
         .queue-cover-control:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
         @media (hover: none) {
@@ -2768,6 +2768,7 @@
             width: 100%;
             border-collapse: collapse;
             text-align: left;
+            table-layout: fixed;
         }
 
         .tracks-table th {
@@ -2784,6 +2785,9 @@
             border-bottom: 1px solid var(--border);
             font-size: 0.9rem;
             vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .tracks-table tr:hover {
@@ -4559,11 +4563,11 @@
                             <table class="tracks-table">
                                 <thead>
                                     <tr>
-                                        <th class="track-num">#</th>
-                                        <th>Песня</th>
-                                        <th>Исполнитель</th>
-                                        <th>Альбом</th>
-                                        <th class="track-duration">Длительность</th>
+                                        <th class="track-num" style="width: 44px;">#</th>
+                                        <th style="width: 38%;">Песня</th>
+                                        <th style="width: 27%;">Исполнитель</th>
+                                        <th style="width: 27%;">Альбом</th>
+                                        <th class="track-duration" style="width: 80px;">Длительность</th>
                                     </tr>
                                 </thead>
                                 <tbody id="songs-list-table">
@@ -4644,9 +4648,9 @@
                                 <table class="tracks-table" style="width: 100%;">
                                     <thead>
                                         <tr>
-                                            <th class="track-num">#</th>
+                                            <th class="track-num" style="width: 44px;">#</th>
                                             <th>Название</th>
-                                            <th class="track-duration">Длительность</th>
+                                            <th class="track-duration" style="width: 80px;">Длительность</th>
                                         </tr>
                                     </thead>
                                     <tbody id="album-tracks-table">
@@ -9615,6 +9619,17 @@
             return '';
         }
 
+        function getSongCoverUrl(song) {
+            if (!song) return '';
+            if (song.thumbnail && !song.thumbnail.includes('placeholder')) {
+                return song.thumbnail;
+            }
+            if (song.id) {
+                return `https://img.youtube.com/vi/${song.id}/mqdefault.jpg`;
+            }
+            return '';
+        }
+
         function renderArtistListItemsHTML(artistsList, activeArtistId) {
             if (!artistsList || artistsList.length === 0) {
                 return `<div style="padding: 16px 8px; color: var(--text-secondary); font-size: 0.88rem;">Артисты не найдены</div>`;
@@ -9756,18 +9771,24 @@
                     if (isCurrent) {
                         stateClass = isPlaying ? 'active playing' : 'active paused';
                     }
+                    const playing = isCurrent && isPlaying;
+                    const coverUrl = getSongCoverUrl(song);
                     songsTableRowsHTML += `
                         <tr id="artist-view-song-row-${song.id}" class="${stateClass}" style="cursor: pointer;" onclick="playSongFromArtist('${artistId}', '${song.id}')" oncontextmenu="openSongContextMenu(event, '${song.id}')">
-                            <td class="track-num">
-                                <span class="track-num-txt">${idx + 1}</span>
-                                <div class="eq-container track-eq-anim">
-                                    <div class="eq-bar eq-bar-1"></div>
-                                    <div class="eq-bar eq-bar-2"></div>
-                                    <div class="eq-bar eq-bar-3"></div>
+                            <td class="track-num">${idx + 1}</td>
+                            <td style="font-weight:600;">
+                                <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                                    <div class="playlist-thumb">
+                                        <img src="${coverUrl}" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 40 40\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23555\\'/></svg>'">
+                                        <button type="button" class="queue-cover-control" aria-label="${playing ? 'Пауза' : 'Воспроизвести'}" onclick="event.stopPropagation(); playSongFromArtist('${artistId}', '${song.id}')">
+                                            <svg class="queue-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                            <svg class="queue-pause-icon" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+                                            <span class="eq-container" aria-hidden="true"><span class="eq-bar eq-bar-1"></span><span class="eq-bar eq-bar-2"></span><span class="eq-bar eq-bar-3"></span></span>
+                                        </button>
+                                    </div>
+                                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${isCurrent ? '#fa243c' : 'var(--text)'};">${song.title}</span>
                                 </div>
-                                <button class="play-row-btn" onclick="event.stopPropagation(); playSongFromArtist('${artistId}', '${song.id}')">▶</button>
                             </td>
-                            <td style="font-weight:600;">${song.title}</td>
                             <td style="color:var(--text-secondary); cursor:pointer;" onclick="event.stopPropagation(); window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</td>
                             <td class="track-duration">${formatTime(song.duration)}</td>
                         </tr>
@@ -9782,10 +9803,10 @@
                             <table class="tracks-table">
                                 <thead>
                                     <tr>
-                                        <th class="track-num">#</th>
-                                        <th>Песня</th>
-                                        <th>Альбом</th>
-                                        <th class="track-duration">Длительность</th>
+                                        <th class="track-num" style="width: 44px;">#</th>
+                                        <th style="width: 50%;">Песня</th>
+                                        <th style="width: 42%;">Альбом</th>
+                                        <th class="track-duration" style="width: 80px;">Длительность</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -9810,18 +9831,24 @@
                             if (isCurrent) {
                                 stateClass = isPlaying ? 'active playing' : 'active paused';
                             }
+                            const playing = isCurrent && isPlaying;
+                            const coverUrl = getSongCoverUrl(song);
                             return `
                                 <tr id="artist-view-song-row-${song.id}" class="${stateClass}" style="cursor: pointer;" onclick="playSongFromAlbum('${album.id}', '${song.id}')">
-                                    <td class="track-num">
-                                        <span class="track-num-txt">${idx + 1}</span>
-                                        <div class="eq-container track-eq-anim">
-                                            <div class="eq-bar eq-bar-1"></div>
-                                            <div class="eq-bar eq-bar-2"></div>
-                                            <div class="eq-bar eq-bar-3"></div>
+                                    <td class="track-num">${idx + 1}</td>
+                                    <td style="font-weight:600;">
+                                        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                                            <div class="playlist-thumb">
+                                                <img src="${coverUrl}" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 40 40\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23555\\'/></svg>'">
+                                                <button type="button" class="queue-cover-control" aria-label="${playing ? 'Пауза' : 'Воспроизвести'}" onclick="event.stopPropagation(); playSongFromAlbum('${album.id}', '${song.id}')">
+                                                    <svg class="queue-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                                    <svg class="queue-pause-icon" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+                                                    <span class="eq-container" aria-hidden="true"><span class="eq-bar eq-bar-1"></span><span class="eq-bar eq-bar-2"></span><span class="eq-bar eq-bar-3"></span></span>
+                                                </button>
+                                            </div>
+                                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${isCurrent ? '#fa243c' : 'var(--text)'};">${song.title}</span>
                                         </div>
-                                        <button class="play-row-btn" onclick="event.stopPropagation(); playSongFromAlbum('${album.id}', '${song.id}')">▶</button>
                                     </td>
-                                    <td style="font-weight:600;">${song.title}</td>
                                     <td class="track-duration">${formatTime(song.duration)}</td>
                                 </tr>
                             `;
@@ -9864,18 +9891,24 @@
                         if (isCurrent) {
                             stateClass = isPlaying ? 'active playing' : 'active paused';
                         }
+                        const playing = isCurrent && isPlaying;
+                        const coverUrl = getSongCoverUrl(song);
                         songsTableRowsHTML += `
                             <tr id="artist-view-song-row-${song.id}" class="${stateClass}" style="cursor: pointer;" onclick="playSongFromArtist('${artistId}', '${song.id}')">
-                                <td class="track-num">
-                                    <span class="track-num-txt">${idx + 1}</span>
-                                    <div class="eq-container track-eq-anim">
-                                        <div class="eq-bar eq-bar-1"></div>
-                                        <div class="eq-bar eq-bar-2"></div>
-                                        <div class="eq-bar eq-bar-3"></div>
+                                <td class="track-num">${idx + 1}</td>
+                                <td style="font-weight:600;">
+                                    <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                                        <div class="playlist-thumb">
+                                            <img src="${coverUrl}" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 40 40\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23555\\'/></svg>'">
+                                            <button type="button" class="queue-cover-control" aria-label="${playing ? 'Пауза' : 'Воспроизвести'}" onclick="event.stopPropagation(); playSongFromArtist('${artistId}', '${song.id}')">
+                                                <svg class="queue-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                                <svg class="queue-pause-icon" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+                                                <span class="eq-container" aria-hidden="true"><span class="eq-bar eq-bar-1"></span><span class="eq-bar eq-bar-2"></span><span class="eq-bar eq-bar-3"></span></span>
+                                            </button>
+                                        </div>
+                                        <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${isCurrent ? '#fa243c' : 'var(--text)'};">${song.title}</span>
                                     </div>
-                                    <button class="play-row-btn" onclick="event.stopPropagation(); playSongFromArtist('${artistId}', '${song.id}')">▶</button>
                                 </td>
-                                <td style="font-weight:600;">${song.title}</td>
                                 <td style="color:var(--text-secondary); cursor:pointer;" onclick="event.stopPropagation(); window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</td>
                                 <td class="track-duration">${formatTime(song.duration)}</td>
                             </tr>
@@ -9889,10 +9922,10 @@
                                 <table class="tracks-table">
                                     <thead>
                                         <tr>
-                                            <th class="track-num">#</th>
-                                            <th>Песня</th>
-                                            <th>Альбом</th>
-                                            <th class="track-duration">Длительность</th>
+                                            <th class="track-num" style="width: 44px;">#</th>
+                                            <th style="width: 50%;">Песня</th>
+                                            <th style="width: 42%;">Альбом</th>
+                                            <th class="track-duration" style="width: 80px;">Длительность</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -10535,17 +10568,23 @@
                     playSongFromFlatList(song.id);
                 };
                 tr.oncontextmenu = (e) => openSongContextMenu(e, song.id);
+                const playing = isCurrent && isPlaying;
+                const coverUrl = getSongCoverUrl(song);
                 tr.innerHTML = `
-                    <td class="track-num">
-                        <span class="track-num-txt">${index + 1}</span>
-                        <div class="eq-container track-eq-anim">
-                            <div class="eq-bar eq-bar-1"></div>
-                            <div class="eq-bar eq-bar-2"></div>
-                            <div class="eq-bar eq-bar-3"></div>
+                    <td class="track-num">${index + 1}</td>
+                    <td style="font-weight:600;">
+                        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                            <div class="playlist-thumb">
+                                <img src="${coverUrl}" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 40 40\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23555\\'/></svg>'">
+                                <button type="button" class="queue-cover-control" aria-label="${playing ? 'Пауза' : 'Воспроизвести'}" onclick="event.stopPropagation(); playSongFromFlatList('${song.id}')">
+                                    <svg class="queue-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    <svg class="queue-pause-icon" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+                                    <span class="eq-container" aria-hidden="true"><span class="eq-bar eq-bar-1"></span><span class="eq-bar eq-bar-2"></span><span class="eq-bar eq-bar-3"></span></span>
+                                </button>
+                            </div>
+                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${isCurrent ? '#fa243c' : 'var(--text)'};">${song.title}</span>
                         </div>
-                        <button class="play-row-btn" onclick="event.stopPropagation(); playSongFromFlatList('${song.id}')">▶</button>
                     </td>
-                    <td style="font-weight:600;">${song.title}</td>
                     <td style="color:#fa243c; cursor:pointer;" onclick="event.stopPropagation(); window.location.hash='#artist-details?id=${song.artistId}'">${song.artistName}</td>
                     <td style="color:var(--text-secondary); cursor:pointer;" onclick="event.stopPropagation(); window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</td>
                     <td class="track-duration">${formatTime(song.duration)}</td>
@@ -10641,17 +10680,23 @@
                 tr.onclick = (e) => {
                     playSongFromAlbum(albumId, song.id);
                 };
+                const playing = isCurrent && isPlaying;
+                const coverUrl = getSongCoverUrl(song);
                 tr.innerHTML = `
-                    <td class="track-num">
-                        <span class="track-num-txt">${idx + 1}</span>
-                        <div class="eq-container track-eq-anim">
-                            <div class="eq-bar eq-bar-1"></div>
-                            <div class="eq-bar eq-bar-2"></div>
-                            <div class="eq-bar eq-bar-3"></div>
+                    <td class="track-num">${idx + 1}</td>
+                    <td style="font-weight:600;">
+                        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                            <div class="playlist-thumb">
+                                <img src="${coverUrl}" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 40 40\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23555\\'/></svg>'">
+                                <button type="button" class="queue-cover-control" aria-label="${playing ? 'Пауза' : 'Воспроизвести'}" onclick="event.stopPropagation(); playSongFromAlbum('${albumId}', '${song.id}')">
+                                    <svg class="queue-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    <svg class="queue-pause-icon" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+                                    <span class="eq-container" aria-hidden="true"><span class="eq-bar eq-bar-1"></span><span class="eq-bar eq-bar-2"></span><span class="eq-bar eq-bar-3"></span></span>
+                                </button>
+                            </div>
+                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${isCurrent ? '#fa243c' : 'var(--text)'};">${song.title}</span>
                         </div>
-                        <button class="play-row-btn" onclick="event.stopPropagation(); playSongFromAlbum('${albumId}', '${song.id}')">▶</button>
                     </td>
-                    <td style="font-weight:600;">${song.title}</td>
                     <td class="track-duration">${formatTime(song.duration)}</td>
                 `;
                 tracksBody.appendChild(tr);

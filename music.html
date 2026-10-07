@@ -1009,7 +1009,8 @@
         /* --- Apple Music Style Sidebar Layout --- */
         .app-layout {
             display: flex;
-            min-height: 100vh;
+            min-height: calc(100vh - 50px);
+            margin-top: 50px;
             background: var(--bg);
         }
 
@@ -1024,7 +1025,7 @@
             box-sizing: border-box;
             height: fit-content;
             position: fixed;
-            top: 16px;
+            top: 66px;
             left: 16px;
             user-select: none;
             flex-shrink: 0;
@@ -1136,7 +1137,7 @@
 
         .main-content {
             flex-grow: 1;
-            height: 100vh;
+            height: calc(100vh - 50px);
             overflow-y: auto;
             position: relative;
             padding-bottom: 96px !important;
@@ -3511,7 +3512,7 @@
 
 <body class="dark">
 
-
+    <div id="header-container"><script>(function(){var h=localStorage.getItem('cached_music_header_html');if(h)document.getElementById('header-container').innerHTML=h;})();</script></div>
 
     <div class="app-layout">
         <aside class="sidebar">
@@ -12584,6 +12585,7 @@
     <link rel="stylesheet" href="auth-widget.css">
     <script type="module" src="nav-widget.js"></script>
     <script type="module" src="auth-widget.js"></script>
+    <script type="module" src="music-header.js"></script>
 
 
     <!-- YouTube Music Style Bottom Playbar -->

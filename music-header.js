@@ -23,7 +23,7 @@ const DEFAULT_MUSIC_HEADER_HTML = `<style>
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0 12px;
+        padding: 0 20px;
     }
 
     /* ЛЕВАЯ ЧАСТЬ - ЛОГОТИП */
@@ -39,7 +39,7 @@ const DEFAULT_MUSIC_HEADER_HTML = `<style>
         align-items: center;
         text-decoration: none;
         height: 100%;
-        margin-left: 0;
+        margin-left: 6px;
         transition: opacity 0.2s ease;
     }
 
@@ -92,7 +92,7 @@ const DEFAULT_MUSIC_HEADER_HTML = `<style>
 
         <div class="header-left">
             <a href="music.html#home" class="vk-header-logo" title="Главная музыки">
-                <img src="img/Retools_logo.png" alt="Retools" class="logo-img">
+                <img src="img/music_logo.png" alt="Music" class="logo-img">
             </a>
         </div>
 

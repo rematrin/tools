@@ -9,14 +9,16 @@
     // Определяем автономный ключ для todo.html и music.html, для остальных оставляем общий ключ themeMode
     const pagePath = window.location.pathname.toLowerCase();
     let themeStorageKey = 'themeMode';
+    let defaultMode = 'system';
     if (pagePath.endsWith('/todo.html') || pagePath.endsWith('/todo') || pagePath.includes('todo.html')) {
         themeStorageKey = 'themeMode_todo';
     } else if (pagePath.endsWith('/music.html') || pagePath.endsWith('/music') || pagePath.includes('music.html')) {
         themeStorageKey = 'themeMode_music';
+        defaultMode = 'light';
     }
 
-    // Читаем сохраненную настройку или ставим 'system' по умолчанию
-    let currentThemeMode = localStorage.getItem(themeStorageKey) || 'system';
+    // Читаем сохраненную настройку или ставим дефолт по умолчанию
+    let currentThemeMode = localStorage.getItem(themeStorageKey) || defaultMode;
 
     // Функция применения темы к body
     function applyTheme(mode) {
@@ -26,27 +28,19 @@
         localStorage.setItem(themeStorageKey, mode);
         currentThemeMode = mode;
 
+        const isDark = (mode === 'dark') || (mode === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+        if (document.documentElement) {
+            document.documentElement.classList.toggle('dark', isDark);
+        }
+
         if (!document.body) {
             console.log('[ThemeLoader] Body not ready, waiting for DOMContentLoaded');
             return; // Ждем события DOMContentLoaded
         }
 
-        // 1. Сброс: удаляем класс dark, чтобы вернуться к дефолтному (светлому) состоянию
-        document.body.classList.remove('dark');
-
-        // 2. Применение:
-        if (mode === 'dark') {
-            document.body.classList.add('dark');
-        }
-        else if (mode === 'light') {
-            // Ничего не делаем, класс dark уже удален
-        }
-        else {
-            // Режим 'system' (или любой другой неизвестный) -> проверяем системные настройки
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.body.classList.add('dark');
-            }
-        }
+        // 1. Сброс / Применение класса dark
+        document.body.classList.toggle('dark', isDark);
     }
 
     // === ГЛОБАЛЬНЫЕ ФУНКЦИИ (API) ===

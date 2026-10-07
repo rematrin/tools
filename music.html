@@ -49,6 +49,7 @@
         }
 
         /* ТЕМНАЯ ТЕМА (Apple Music Dark Theme) */
+        html.dark,
         body.dark {
             --bg: #191919;
             /* Main content background */
@@ -106,6 +107,14 @@
             justify-content: center;
             min-height: calc(100vh - 32px);
             box-sizing: border-box;
+        }
+
+        .main-content .wrap {
+            padding: 0 !important;
+            margin: 0 !important;
+            min-height: 0 !important;
+            max-width: 100% !important;
+            justify-content: flex-start !important;
         }
 
         .wrap.wrap-native-video {
@@ -1153,6 +1162,7 @@
             flex: 1;
             min-width: 0;
             position: relative;
+            margin-top: 0;
             padding: 12px 0 96px 0;
             box-sizing: border-box;
         }
@@ -2878,7 +2888,7 @@
             display: flex;
             gap: 24px;
             width: 100%;
-            height: calc(100vh - 220px);
+            height: calc(100vh - 140px);
             min-height: 460px;
         }
 
@@ -3949,7 +3959,7 @@
                     </div>
                     <div class="saved-playlists-list" id="saved-playlists-list"></div>
                 </div>
-                <div id="stub-view" style="display: none; padding: 10px 0; color: var(--text);"></div>
+                <div id="stub-view" style="display: none; padding: 0; color: var(--text);"></div>
             </div>
         </main>
     </div>

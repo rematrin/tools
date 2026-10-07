@@ -23,7 +23,7 @@ const DEFAULT_MUSIC_HEADER_HTML = `<style>
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0 20px;
+        padding: 0 8px 0 0;
     }
 
     /* ЛЕВАЯ ЧАСТЬ - ЛОГОТИП */
@@ -39,7 +39,7 @@ const DEFAULT_MUSIC_HEADER_HTML = `<style>
         align-items: center;
         text-decoration: none;
         height: 100%;
-        margin-left: 6px;
+        margin-left: 0;
         transition: opacity 0.2s ease;
     }
 

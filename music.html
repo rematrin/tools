@@ -1058,22 +1058,22 @@
             gap: 16px;
             max-width: 1080px;
             width: 100%;
-            margin: 50px auto 0 auto;
+            margin: 56px auto 0 auto;
             padding: 0 8px 0 0;
             box-sizing: border-box;
-            min-height: calc(100vh - 50px);
+            min-height: calc(100vh - 56px);
             background: var(--bg);
         }
 
         .vk-sidebar-container {
             position: sticky;
-            top: 50px;
+            top: 56px;
             width: 158px;
             flex-shrink: 0;
             user-select: none;
             padding-top: 12px;
             padding-bottom: 20px;
-            max-height: calc(100vh - 60px);
+            max-height: calc(100vh - 66px);
             overflow-y: auto;
             overflow-x: hidden;
             box-sizing: border-box;
@@ -3537,29 +3537,127 @@
             margin: 0;
         }
 
-        /* --- VK TOP PLAYER BAR STYLES (Точная копия ВКонтакте) --- */
-        .vk-top-player {
+        /* --- VK HEADER & TOP PLAYER BAR STYLES --- */
+        .vk-header {
             background-color: var(--card-bg, #ffffff);
-            border: 1px solid var(--border, #e1e3e6);
-            border-radius: 12px;
+            border-bottom: 1px solid var(--border, #e1e3e6);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 56px;
+            z-index: 1000;
+            box-sizing: border-box;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark .vk-header {
+            background-color: var(--card-bg, #222222);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .vk-header-content {
+            max-width: 1080px;
+            margin: 0 auto;
+            height: 100%;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 0 8px 0 0;
+            gap: 16px;
+            box-sizing: border-box;
+        }
+
+        .header-left {
+            width: 158px;
+            min-width: 158px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            height: 100%;
+            flex-shrink: 0;
+        }
+
+        .vk-header-logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            height: 100%;
+            margin-left: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .vk-header-logo:hover {
+            opacity: 0.85;
+        }
+
+        .logo-img {
+            height: 30px;
+            width: auto;
+            display: block;
+            object-fit: contain;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            height: 100%;
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+
+        .vk-profile {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            gap: 6px;
+            padding: 4px 6px;
+            border-radius: 10px;
+            transition: background 0.2s ease;
+            height: 36px;
+        }
+
+        .vk-profile:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--border);
+            object-fit: cover;
+        }
+
+        .vk-top-player {
+            background: transparent;
+            border: none;
+            border-radius: 0;
             height: 56px;
             min-height: 56px;
             box-sizing: border-box;
-            padding: 0 16px;
-            margin: 0 0 14px 0;
+            padding: 0;
+            margin: 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
             user-select: none;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            box-shadow: none;
             position: relative;
+            flex: 1;
+            min-width: 0;
             z-index: 40;
-            transition: background 0.3s ease, border-color 0.3s ease;
+            transition: none;
+        }
+            z-index: 40;
+            transition: none;
         }
 
         body.dark .vk-top-player {
-            border-color: rgba(255, 255, 255, 0.08);
+            border: none;
+            background: transparent;
         }
 
         /* Левые кнопки управления */
@@ -3913,19 +4011,19 @@
         .vk-tp-progress-bar-container {
             position: relative;
             width: 100%;
-            height: 6px;
+            height: 8px;
             display: flex;
             align-items: center;
             cursor: pointer;
-            padding: 1px 0;
+            padding: 2px 0;
             box-sizing: border-box;
-            margin-top: 2px;
+            margin-top: 3px;
         }
 
         .vk-tp-progress-track {
             position: relative;
             width: 100%;
-            height: 2.5px;
+            height: 3px;
             background: #dce1e6;
             border-radius: 2px;
             overflow: hidden;
@@ -3937,7 +4035,7 @@
         }
 
         .vk-tp-progress-bar-container:hover .vk-tp-progress-track {
-            height: 3.5px;
+            height: 4.5px;
         }
 
         .vk-tp-progress-crossfade {
@@ -4002,7 +4100,7 @@
         .vk-top-player.is-radio #vk-player-progress-container,
         .vk-top-player.is-radio .vk-tp-mid-row,
         .vk-top-player.is-radio #vk-player-btn-add,
-        .vk-top-player.is-radio #vk-player-btn-dislike,
+        .vk-top-player.is-radio #vk-player-btn-crossfade,
         .vk-top-player.is-radio #vk-player-btn-similar,
         .vk-top-player.is-radio #vk-player-btn-lyrics,
         .vk-top-player.is-radio #vk-player-time,
@@ -4098,13 +4196,13 @@
             border-color: #2a2a2a transparent transparent transparent;
         }
 
-        /* Правый блок: Громкость, Трансляция, Поделиться */
+        /* Правый блок: Громкость */
         .vk-tp-right {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             flex-shrink: 0;
-            margin-left: 18px;
+            margin-left: 10px;
         }
 
         .vk-tp-volume-block {
@@ -4271,7 +4369,169 @@
 
 <body>
 
-    <div id="header-container"><script>(function(){var h=localStorage.getItem('cached_music_header_html');if(h)document.getElementById('header-container').innerHTML=h;})();</script></div>
+    <div id="header-container">
+        <header class="vk-header">
+            <div class="vk-header-content">
+                <div class="header-left">
+                    <a href="music.html#home" class="vk-header-logo" title="Главная музыки">
+                        <img src="img/music_logo.png" alt="Music" class="logo-img">
+                    </a>
+                </div>
+
+                <!-- VK Top Player Bar (ВКонтакте дизайн в шапке) -->
+                <div id="vk-top-player" class="vk-top-player">
+                    <!-- Левые кнопки управления -->
+                    <div class="vk-tp-left">
+                        <button type="button" class="vk-tp-btn vk-tp-btn-nav" id="vk-player-prev" onclick="prevTrack()" aria-label="Предыдущий трек">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6l-8.5 6z" />
+                            </svg>
+                        </button>
+
+                        <button type="button" class="vk-tp-play-pause" id="vk-player-play-pause" onclick="toggleVkPlayerPlay()" aria-label="Воспроизведение">
+                            <svg id="vk-icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M8 5v14l11-7z" />
+                            </svg>
+                            <svg id="vk-icon-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                            </svg>
+                        </button>
+
+                        <button type="button" class="vk-tp-btn vk-tp-btn-nav" id="vk-player-next" onclick="nextTrack()" aria-label="Следующий трек">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+                            </svg>
+                        </button>
+
+                        <button type="button" class="vk-tp-btn vk-tp-btn-shuffle" id="vk-player-shuffle" onclick="toggleVkPlayerShuffle()" data-vk-tooltip="Перемешать" aria-label="Перемешать">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3" />
+                            </svg>
+                        </button>
+
+                        <button type="button" class="vk-tp-btn" id="vk-player-repeat" onclick="toggleVkPlayerRepeat()" data-vk-tooltip="Повторять все треки" aria-label="Повторять">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="17 1 21 5 17 9"></polyline>
+                                <path d="M3 11V9a4 4 0 0 1 4-4h14M7 23 3 19 7 15"></path>
+                                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Центральный блок: Обложка + Инфо + Экшены + Полоса прогресса -->
+                    <div class="vk-tp-center">
+                        <div class="vk-tp-cover" id="vk-player-cover" onclick="toggleFullPlayerCard()">
+                            <img id="vk-player-cover-img" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23222'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='16' fill='%23666'>🎵</text></svg>" alt="Cover">
+                            <div class="vk-tp-cover-overlay">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="21" y1="3" x2="14" y2="10"></line>
+                                    <polyline points="9 21 3 21 3 15"></polyline>
+                                    <line x1="3" y1="21" x2="10" y2="14"></line>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="vk-tp-body">
+                            <!-- Верхний ряд: Название трека слева, кнопки и время справа -->
+                            <div class="vk-tp-top-row">
+                                <div class="vk-tp-title-group">
+                                    <span id="vk-player-title" class="vk-tp-title" onclick="toggleFullPlayerCard()">Выберите трек для воспроизведения</span>
+                                    <span id="vk-player-extra" class="vk-tp-extra"></span>
+                                </div>
+                                <div class="vk-tp-inline-actions">
+                                    <!-- Radio Favorite Star Button (Only shown during Radio) -->
+                                    <button type="button" class="vk-tp-action-btn radio-favorite-btn" id="vk-player-btn-radio-fav" onclick="toggleVkPlayerRadioFav()" data-vk-tooltip="Добавить в избранное" aria-label="Избранное" style="display:none;">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+                                            <path d="m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.6l6.2-.9Z" />
+                                        </svg>
+                                    </button>
+
+                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-add" onclick="toggleVkPlayerAdd()" data-vk-tooltip="Добавить в Мою музыку" aria-label="Добавить">
+                                        <svg id="vk-icon-add-plus" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        </svg>
+                                        <svg id="vk-icon-add-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#476faf" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    </button>
+
+                                    <button type="button" class="vk-tp-action-btn active" id="vk-player-btn-crossfade" onclick="toggleVkPlayerCrossfade()" data-vk-tooltip="Кроссфейд вкл." aria-label="Кроссфейд">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                                        </svg>
+                                    </button>
+
+                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-similar" onclick="toggleVkPlayerSimilar()" data-vk-tooltip="Турбо-микс выкл." aria-label="Турбо-микс">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                                            <path d="M16 10a4 4 0 0 1 0 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path d="M19 7.5a7.5 7.5 0 0 1 0 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                        </svg>
+                                    </button>
+
+                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-lyrics" onclick="toggleVkPlayerLyrics()" data-vk-tooltip="Текст песни" aria-label="Текст песни">
+                                        <span class="vk-tp-lyrics-text">Tт</span>
+                                    </button>
+
+                                    <div class="vk-tp-time" id="vk-player-time" onclick="toggleVkPlayerTimeMode()">0:00</div>
+                                </div>
+                            </div>
+
+                            <!-- Средний ряд: Имя исполнителя -->
+                            <div class="vk-tp-mid-row">
+                                <span id="vk-player-artist" class="vk-tp-artist"></span>
+                            </div>
+
+                            <!-- Нижний ряд: Полоса прогресса от начала текста до конца под цифрами -->
+                            <div class="vk-tp-progress-bar-container" id="vk-player-progress-container">
+                                <div class="vk-tp-progress-track">
+                                    <div id="vk-player-progress-crossfade" class="vk-tp-progress-crossfade"></div>
+                                    <div id="vk-player-progress-fill" class="vk-tp-progress-fill"></div>
+                                </div>
+                                <div id="vk-player-progress-tooltip" class="vk-tp-tooltip">0:00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Правый блок: Громкость -->
+                    <div class="vk-tp-right">
+                        <div class="vk-tp-volume-block">
+                            <button type="button" class="vk-tp-volume-btn" id="vk-player-vol-icon" onclick="toggleMute()" aria-label="Звук">
+                                <svg id="vk-vol-high" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                                </svg>
+                                <svg id="vk-vol-mute" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="currentColor"></polygon>
+                                    <line x1="23" y1="9" x2="17" y2="15"></line>
+                                    <line x1="17" y1="9" x2="23" y2="15"></line>
+                                </svg>
+                            </button>
+
+                            <div class="vk-tp-volume-slider-container" id="vk-player-volume-container">
+                                <div class="vk-tp-volume-track">
+                                    <div id="vk-player-volume-fill" class="vk-tp-volume-fill" style="width: 100%;"></div>
+                                </div>
+                                <div id="vk-player-volume-tooltip" class="vk-tp-tooltip">100%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <div class="vk-profile" id="profile-container">
+                        <img src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" alt="Profile" class="user-avatar" id="user-avatar">
+                        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style="opacity: 0.5; stroke: var(--text);">
+                            <path d="M1 1.5L6 6.5L11 1.5" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </div>
 
     <div class="app-layout">
         <aside id="sidebar-container" class="vk-sidebar-container">
@@ -4362,161 +4622,6 @@
         <main class="main-content">
             <div class="wrap">
 
-                <!-- VK Top Player Bar (ВКонтакте дизайн) -->
-                <div id="vk-top-player" class="vk-top-player">
-                    <!-- Левые кнопки управления -->
-                    <div class="vk-tp-left">
-                        <button type="button" class="vk-tp-btn vk-tp-btn-nav" id="vk-player-prev" onclick="prevTrack()" aria-label="Предыдущий трек">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6l-8.5 6z" />
-                            </svg>
-                        </button>
-
-                        <button type="button" class="vk-tp-play-pause" id="vk-player-play-pause" onclick="toggleVkPlayerPlay()" aria-label="Воспроизведение">
-                            <svg id="vk-icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M8 5v14l11-7z" />
-                            </svg>
-                            <svg id="vk-icon-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
-                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                            </svg>
-                        </button>
-
-                        <button type="button" class="vk-tp-btn vk-tp-btn-nav" id="vk-player-next" onclick="nextTrack()" aria-label="Следующий трек">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
-                            </svg>
-                        </button>
-
-                        <button type="button" class="vk-tp-btn vk-tp-btn-shuffle" id="vk-player-shuffle" onclick="toggleVkPlayerShuffle()" data-vk-tooltip="Перемешать" aria-label="Перемешать">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3" />
-                            </svg>
-                        </button>
-
-                        <button type="button" class="vk-tp-btn" id="vk-player-repeat" onclick="toggleVkPlayerRepeat()" data-vk-tooltip="Повторять все треки" aria-label="Повторять">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="17 1 21 5 17 9"></polyline>
-                                <path d="M3 11V9a4 4 0 0 1 4-4h14M7 23 3 19 7 15"></path>
-                                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <!-- Центральный блок: Обложка + Инфо + Экшены + Полоса прогресса под цифрами -->
-                    <div class="vk-tp-center">
-                        <div class="vk-tp-cover" id="vk-player-cover" onclick="toggleFullPlayerCard()">
-                            <img id="vk-player-cover-img" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23222'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='16' fill='%23666'>🎵</text></svg>" alt="Cover">
-                            <div class="vk-tp-cover-overlay">
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="21" y1="3" x2="14" y2="10"></line>
-                                    <polyline points="9 21 3 21 3 15"></polyline>
-                                    <line x1="3" y1="21" x2="10" y2="14"></line>
-                                </svg>
-                            </div>
-                        </div>
-
-                        <div class="vk-tp-body">
-                            <!-- Верхний ряд: Название трека слева, кнопки и время справа -->
-                            <div class="vk-tp-top-row">
-                                <div class="vk-tp-title-group">
-                                    <span id="vk-player-title" class="vk-tp-title" onclick="toggleFullPlayerCard()">Выберите трек для воспроизведения</span>
-                                    <span id="vk-player-extra" class="vk-tp-extra"></span>
-                                </div>
-                                <div class="vk-tp-inline-actions">
-                                    <!-- Radio Favorite Star Button (Only shown during Radio) -->
-                                    <button type="button" class="vk-tp-action-btn radio-favorite-btn" id="vk-player-btn-radio-fav" onclick="toggleVkPlayerRadioFav()" data-vk-tooltip="Добавить в избранное" aria-label="Избранное" style="display:none;">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
-                                            <path d="m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.6l6.2-.9Z" />
-                                        </svg>
-                                    </button>
-
-                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-add" onclick="toggleVkPlayerAdd()" data-vk-tooltip="Добавить в Мою музыку" aria-label="Добавить">
-                                        <svg id="vk-icon-add-plus" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                                        </svg>
-                                        <svg id="vk-icon-add-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#476faf" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-                                            <polyline points="20 6 9 17 4 12"></polyline>
-                                        </svg>
-                                    </button>
-
-                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-dislike" onclick="toggleVkPlayerDislike()" data-vk-tooltip="Не нравится" aria-label="Не нравится">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path>
-                                        </svg>
-                                    </button>
-
-                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-similar" onclick="toggleVkPlayerSimilar()" data-vk-tooltip="Турбо-микс выкл." aria-label="Турбо-микс">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                                            <path d="M16 10a4 4 0 0 1 0 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                            <path d="M19 7.5a7.5 7.5 0 0 1 0 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                        </svg>
-                                    </button>
-
-                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-lyrics" onclick="toggleVkPlayerLyrics()" data-vk-tooltip="Текст песни" aria-label="Текст песни">
-                                        <span class="vk-tp-lyrics-text">Tт</span>
-                                    </button>
-
-                                    <div class="vk-tp-time" id="vk-player-time" onclick="toggleVkPlayerTimeMode()">0:00</div>
-                                </div>
-                            </div>
-
-                            <!-- Средний ряд: Имя исполнителя -->
-                            <div class="vk-tp-mid-row">
-                                <span id="vk-player-artist" class="vk-tp-artist"></span>
-                            </div>
-
-                            <!-- Нижний ряд: Полоса прогресса от начала текста до конца под цифрами -->
-                            <div class="vk-tp-progress-bar-container" id="vk-player-progress-container">
-                                <div class="vk-tp-progress-track">
-                                    <div id="vk-player-progress-crossfade" class="vk-tp-progress-crossfade"></div>
-                                    <div id="vk-player-progress-fill" class="vk-tp-progress-fill"></div>
-                                </div>
-                                <div id="vk-player-progress-tooltip" class="vk-tp-tooltip">0:00</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Правый блок: Громкость, Трансляция, Поделиться -->
-                    <div class="vk-tp-right">
-                        <div class="vk-tp-volume-block">
-                            <button type="button" class="vk-tp-volume-btn" id="vk-player-vol-icon" onclick="toggleMute()" aria-label="Звук">
-                                <svg id="vk-vol-high" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                                </svg>
-                                <svg id="vk-vol-mute" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="currentColor"></polygon>
-                                    <line x1="23" y1="9" x2="17" y2="15"></line>
-                                    <line x1="17" y1="9" x2="23" y2="15"></line>
-                                </svg>
-                            </button>
-
-                            <div class="vk-tp-volume-slider-container" id="vk-player-volume-container">
-                                <div class="vk-tp-volume-track">
-                                    <div id="vk-player-volume-fill" class="vk-tp-volume-fill" style="width: 100%;"></div>
-                                </div>
-                                <div id="vk-player-volume-tooltip" class="vk-tp-tooltip">100%</div>
-                            </div>
-                        </div>
-
-                        <button type="button" class="vk-tp-action-btn" id="vk-player-btn-broadcast" onclick="toggleVkPlayerBroadcast()" data-vk-tooltip="Транслировать на страницу" aria-label="Транслировать">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none" />
-                                <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14" />
-                            </svg>
-                        </button>
-
-                        <button type="button" class="vk-tp-action-btn" id="vk-player-btn-share" onclick="shareVkPlayerTrack()" data-vk-tooltip="Поделиться" aria-label="Поделиться">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M14 9V5l7 7-7 7v-4.1c-5 0-8.5 1.6-11 5.1 1-5 4-10 11-11z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
 
                 <!-- Playlist Details View -->
                 <div id="playlist-details-view" style="display: none; padding: 10px 0;">
@@ -4880,6 +4985,7 @@
 
 
         let crossfadeDuration = parseInt(localStorage.getItem('music-crossfade-duration')) || 8;
+        let isCrossfadeEnabled = localStorage.getItem('music-crossfade-enabled') !== 'false';
         let crossfadeType = localStorage.getItem('music-crossfade-type') || 'standard';
         let turboMixDuration = parseInt(localStorage.getItem('music-turbo-mix-duration')) || 45;
         let isTurboMixEnabled = (localStorage.getItem('music-player-view-mode') || 'music') === 'turbo-mix';
@@ -4944,6 +5050,7 @@
             document.getElementById('crossfadeSlider').value = crossfadeDuration;
             document.getElementById('crossfadeValue').innerText = crossfadeDuration;
             document.getElementById('crossfadeTypeSelect').value = crossfadeType;
+            updateCrossfadeUI();
 
             document.getElementById('turboMixSlider').value = turboMixDuration;
             document.getElementById('turboMixDurationValue').innerText = turboMixDuration;
@@ -6372,7 +6479,7 @@
                 const pct = Math.max(0, Math.min(100, (displayCurrent / duration) * 100));
                 if (fill) fill.style.width = pct + '%';
                 if (crossfadeBar) {
-                    const xfSec = (typeof crossfadeDuration === 'number' && crossfadeDuration > 0) ? crossfadeDuration : 0;
+                    const xfSec = (isCrossfadeEnabled && typeof crossfadeDuration === 'number' && crossfadeDuration > 0) ? crossfadeDuration : 0;
                     if (xfSec > 0 && duration > xfSec) {
                         const xfPct = Math.min(100, (xfSec / duration) * 100);
                         crossfadeBar.style.width = xfPct + '%';
@@ -6459,15 +6566,36 @@
             showVkToast(isVkAdded ? 'Аудиозапись добавлена в Мою музыку' : 'Аудиозапись удалена из Моей музыки', isVkAdded ? '✓' : '🗑');
         }
 
-        function toggleVkPlayerDislike() {
-            isVkDisliked = !isVkDisliked;
-            const btn = document.getElementById('vk-player-btn-dislike');
+        function toggleVkPlayerCrossfade() {
+            isCrossfadeEnabled = !isCrossfadeEnabled;
+            localStorage.setItem('music-crossfade-enabled', isCrossfadeEnabled);
+            updateCrossfadeUI();
+            showVkToast(isCrossfadeEnabled ? 'Кроссфейд включен' : 'Кроссфейд выключен', '⚡');
+        }
+
+        function updateCrossfadeUI() {
+            const btn = document.getElementById('vk-player-btn-crossfade');
             if (btn) {
-                btn.classList.toggle('active', isVkDisliked);
-                btn.setAttribute('data-vk-tooltip', isVkDisliked ? 'Отметка "Не нравится" поставлена' : 'Не нравится');
-                btn.setAttribute('aria-label', isVkDisliked ? 'Отметка "Не нравится" поставлена' : 'Не нравится');
+                btn.classList.toggle('active', isCrossfadeEnabled);
+                const tooltip = isCrossfadeEnabled ? 'Кроссфейд вкл.' : 'Кроссфейд выкл.';
+                btn.setAttribute('data-vk-tooltip', tooltip);
+                btn.setAttribute('aria-label', tooltip);
             }
-            showVkToast(isVkDisliked ? 'Будем реже рекомендовать похожее' : 'Отметка "Не нравится" снята', '👎');
+            const crossfadeBar = document.getElementById('vk-player-progress-crossfade');
+            if (crossfadeBar) {
+                if (!isCrossfadeEnabled) {
+                    crossfadeBar.style.display = 'none';
+                } else {
+                    let activeP = (currentDeck === 1) ? p1 : p2;
+                    if (activeP && typeof activeP.getDuration === 'function') {
+                        try {
+                            const dur = activeP.getDuration();
+                            const cur = activeP.getCurrentTime();
+                            if (dur && dur > 0) updateVkTopPlayerProgress(cur, dur, true);
+                        } catch(e) {}
+                    }
+                }
+            }
         }
 
         function toggleVkPlayerSimilar() {
@@ -7410,7 +7538,7 @@
             // Sync VK Top Player timeline
             updateVkTopPlayerProgress(current, duration);
 
-            if (!isCrossfading && playlist.length > 1) {
+            if (!isCrossfading && playlist.length > 1 && isCrossfadeEnabled) {
                 let triggerCrossfade = false;
                 if (isTurboMixEnabled && activeP.randomMixTargetEnd) {
                     if (current >= activeP.randomMixTargetEnd - crossfadeDuration || (duration - current) < crossfadeDuration) {

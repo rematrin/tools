@@ -10,7 +10,7 @@ const DEFAULT_MUSIC_HEADER_HTML = `<style>
         top: 0;
         left: 0;
         width: 100%;
-        height: 50px;
+        height: 56px;
         z-index: 1000;
         box-sizing: border-box;
         transition: background 0.3s ease, border-color 0.3s ease;
@@ -157,27 +157,22 @@ function setupHeaderEvents() {
 
 function mountHeader(data) {
     const container = document.getElementById('header-container');
-    if (!container) return;
-
-    if (!container.innerHTML.trim() || container.getAttribute('data-header-html') !== data) {
-        container.innerHTML = data;
-        container.setAttribute('data-header-html', data);
+    if (container && !document.getElementById('vk-top-player')) {
+        if (!container.innerHTML.trim() || container.getAttribute('data-header-html') !== data) {
+            container.innerHTML = data;
+            container.setAttribute('data-header-html', data);
+        }
     }
     setupHeaderEvents();
 }
 
-// 1. Мгновенная отрисовка из кэша localStorage или шаблона по умолчанию
-const initialHTML = localStorage.getItem('cached_music_header_html') || DEFAULT_MUSIC_HEADER_HTML;
-mountHeader(initialHTML);
+// 1. Инициализация событий шапки
+setupHeaderEvents();
 
-// 2. Фоновое обновление кэша при наличии изменений в music-header.html
-fetch('music-header.html')
-    .then(response => response.text())
-    .then(data => {
-        localStorage.setItem('cached_music_header_html', data);
-        mountHeader(data);
-    })
-    .catch(error => console.error("Ошибка загрузки music-header.html:", error));
+// 2. Фоновое обновление профиля и событий
+try {
+    setupHeaderEvents();
+} catch (e) {}
 
 // 3. Подписка на изменение авторизации
 window.addEventListener('authChanged', (e) => {

@@ -7102,12 +7102,55 @@
             }
         }
 
+        function startNewQueuePlayback(targetIndex = 0) {
+            if (window.currentRadioStation) {
+                stopRadioPlayback();
+            }
+            if (isCrossfading) {
+                clearInterval(activeCrossfadeInterval);
+                isCrossfading = false;
+                setMixStatus(false);
+            }
+            if (p2 && typeof p2.stopVideo === 'function') {
+                try { p2.stopVideo(); p2.setVolume(0); } catch (e) {}
+            }
+            if (p1 && typeof p1.setPlaybackRate === 'function') {
+                try { p1.setPlaybackRate(1.0); } catch (e) {}
+            }
+            if (p2 && typeof p2.setPlaybackRate === 'function') {
+                try { p2.setPlaybackRate(1.0); } catch (e) {}
+            }
+            currentDeck = 1;
+            trackIndex = (targetIndex >= 0 && targetIndex < playlist.length) ? targetIndex : 0;
+            loadDeck(p1, trackIndex, true);
+            if (p1 && typeof p1.playVideo === 'function') {
+                try { p1.playVideo(); } catch (e) {}
+            }
+            isPlaying = true;
+            startVideoLoadingTimeout(trackIndex);
+            prepareNext();
+            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
+            renderPlaylist();
+            updateUI();
+            updateUrlState();
+        }
+
         function startMix() {
             if (window.currentRadioStation) {
                 stopRadioPlayback();
             }
             if (playlist.length === 0) return;
+            if (isCrossfading) {
+                clearInterval(activeCrossfadeInterval);
+                isCrossfading = false;
+                setMixStatus(false);
+            }
             let activeP = (currentDeck === 1) ? p1 : p2;
+            let otherP = (currentDeck === 1) ? p2 : p1;
+
+            if (otherP && typeof otherP.stopVideo === 'function') {
+                try { otherP.stopVideo(); otherP.setVolume(0); } catch (e) {}
+            }
 
             activeP.setVolume(playerVolume);
             activeP.hasRandomized = false;
@@ -7121,8 +7164,10 @@
             loadDeck(activeP, trackIndex);
 
             activeP.playVideo();
+            isPlaying = true;
             startVideoLoadingTimeout(trackIndex);
             prepareNext();
+            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
             renderPlaylist();
             updateUI();
             updateUrlState();
@@ -7274,7 +7319,11 @@
         }
 
         function jumpToTrack(index) {
-            if (isCrossfading) return;
+            if (isCrossfading) {
+                clearInterval(activeCrossfadeInterval);
+                isCrossfading = false;
+                setMixStatus(false);
+            }
             trackIndex = index;
             startMix();
             updateUI();
@@ -7282,7 +7331,12 @@
         }
 
         function nextTrack() {
-            if (isCrossfading || playlist.length < 2) return;
+            if (playlist.length === 0) return;
+            if (isCrossfading) {
+                clearInterval(activeCrossfadeInterval);
+                isCrossfading = false;
+                setMixStatus(false);
+            }
             let startIndex = trackIndex;
             let nextIndex = (trackIndex + 1) % playlist.length;
             while (playlist[nextIndex] && playlist[nextIndex].isError && nextIndex !== startIndex) {
@@ -7295,7 +7349,12 @@
         }
 
         function prevTrack() {
-            if (isCrossfading || playlist.length < 2) return;
+            if (playlist.length === 0) return;
+            if (isCrossfading) {
+                clearInterval(activeCrossfadeInterval);
+                isCrossfading = false;
+                setMixStatus(false);
+            }
             let startIndex = trackIndex;
             let prevIndex = (trackIndex - 1 + playlist.length) % playlist.length;
             while (playlist[prevIndex] && playlist[prevIndex].isError && prevIndex !== startIndex) {
@@ -8772,12 +8831,15 @@
             } else {
                 window.currentListId = null;
             }
+            window.currentAlbumId = null;
+            window.currentArtistId = null;
 
             window.loadedPlaylistName = name;
             window.loadedPlaylistUrl = urlStr;
             updatePlaylistLastPlayed(urlStr);
 
             loadDeck(p1, 0, false);
+            prepareNext();
             isPlaying = false;
             updatePlayPauseIcon();
 
@@ -8787,14 +8849,11 @@
         }
 
         function playTrackFromDetails(urlStr, name, tracklist, index) {
-            if (isPlaying && isCrossfading) { alert("Подождите конца перехода"); return; }
             if (window.currentRadioStation) {
                 stopRadioPlayback();
             }
 
             playlist = [...tracklist];
-            trackIndex = index;
-            currentDeck = 1;
 
             const url = new URL(urlStr, window.location.origin);
             const listId = url.searchParams.get('list');
@@ -8803,18 +8862,14 @@
             } else {
                 window.currentListId = null;
             }
+            window.currentAlbumId = null;
+            window.currentArtistId = null;
 
             window.loadedPlaylistName = name;
             window.loadedPlaylistUrl = urlStr;
             updatePlaylistLastPlayed(urlStr);
 
-            loadDeck(p1, trackIndex, true);
-            isPlaying = true;
-            updatePlayPauseIcon();
-
-            renderPlaylist();
-            updateUI();
-            updateUrlState();
+            startNewQueuePlayback(index || 0);
         }
 
         async function restorePlaylistPlayback(urlStr, name) {
@@ -12638,9 +12693,14 @@
         }
 
         function playAllArtistTracks(artistId) {
-            const songs = window.musicSongs
+            if (window.currentRadioStation) stopRadioPlayback();
+            window.currentArtistId = artistId;
+            window.currentAlbumId = null;
+            window.currentListId = null;
+
+            const songs = (window.musicSongs || [])
                 .filter(s => s.artistId === artistId)
-                .sort((a, b) => a.index - b.index);
+                .sort((a, b) => (a.index || 0) - (b.index || 0));
             if (songs.length === 0) return;
 
             playlist = songs.map(s => ({
@@ -12652,19 +12712,17 @@
                 albumName: s.albumName,
                 duration: s.duration
             }));
-            trackIndex = 0;
 
-            currentDeck = 1;
-            loadDeck(p1, trackIndex, true);
-            isPlaying = true;
-            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
-            renderPlaylist();
-            updateUI();
-            updateUrlState();
+            startNewQueuePlayback(0);
         }
 
         function shuffleAllArtistTracks(artistId) {
-            const songs = window.musicSongs.filter(s => s.artistId === artistId);
+            if (window.currentRadioStation) stopRadioPlayback();
+            window.currentArtistId = artistId;
+            window.currentAlbumId = null;
+            window.currentListId = null;
+
+            const songs = (window.musicSongs || []).filter(s => s.artistId === artistId);
             if (songs.length === 0) return;
 
             playlist = songs.map(s => ({
@@ -12678,15 +12736,7 @@
             }));
 
             playlist.sort(() => Math.random() - 0.5);
-            trackIndex = 0;
-
-            currentDeck = 1;
-            loadDeck(p1, trackIndex, true);
-            isPlaying = true;
-            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
-            renderPlaylist();
-            updateUI();
-            updateUrlState();
+            startNewQueuePlayback(0);
         }
 
         function renderArtistDetails(artistId) {
@@ -12896,9 +12946,10 @@
             window.currentListId = null;
 
             updateAlbumLastPlayed(albumId);
-            const albumSongs = window.musicSongs
+            updateSongLastPlayed(songId);
+            const albumSongs = (window.musicSongs || [])
                 .filter(s => s.albumId === albumId)
-                .sort((a, b) => a.index - b.index);
+                .sort((a, b) => (a.index || 0) - (b.index || 0));
 
             playlist = albumSongs.map(s => ({
                 id: s.id,
@@ -12910,16 +12961,8 @@
                 duration: s.duration
             }));
 
-            trackIndex = playlist.findIndex(s => s.id === songId);
-            if (trackIndex === -1) trackIndex = 0;
-
-            currentDeck = 1;
-            loadDeck(p1, trackIndex, true);
-            isPlaying = true;
-            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
-            renderPlaylist();
-            updateUI();
-            updateUrlState();
+            let foundIdx = playlist.findIndex(s => s.id === songId);
+            startNewQueuePlayback(foundIdx !== -1 ? foundIdx : 0);
         }
 
         function playSongFromArtist(artistId, songId) {
@@ -12934,9 +12977,10 @@
             window.currentAlbumId = null;
             window.currentListId = null;
 
-            const artistSongs = window.musicSongs
+            updateSongLastPlayed(songId);
+            const artistSongs = (window.musicSongs || [])
                 .filter(s => s.artistId === artistId)
-                .sort((a, b) => a.index - b.index);
+                .sort((a, b) => (a.index || 0) - (b.index || 0));
 
             playlist = artistSongs.map(s => ({
                 id: s.id,
@@ -12947,16 +12991,9 @@
                 albumName: s.albumName,
                 duration: s.duration
             }));
-            trackIndex = playlist.findIndex(s => s.id === songId);
-            if (trackIndex === -1) trackIndex = 0;
 
-            currentDeck = 1;
-            loadDeck(p1, trackIndex, true);
-            isPlaying = true;
-            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
-            renderPlaylist();
-            updateUI();
-            updateUrlState();
+            let foundIdx = playlist.findIndex(s => s.id === songId);
+            startNewQueuePlayback(foundIdx !== -1 ? foundIdx : 0);
         }
 
         function updateSongLastPlayed(songId) {
@@ -12981,7 +13018,17 @@
                 return;
             }
 
-            playlist = window.musicSongs.map(s => ({
+            const targetSong = (window.musicSongs || []).find(s => s.id === songId);
+            if (targetSong && targetSong.albumId) {
+                playSongFromAlbum(targetSong.albumId, songId);
+                return;
+            }
+
+            window.currentAlbumId = null;
+            window.currentArtistId = (targetSong && targetSong.artistId) ? targetSong.artistId : null;
+            window.currentListId = null;
+
+            playlist = (window.musicSongs || []).map(s => ({
                 id: s.id,
                 title: s.title,
                 artist: s.artistName || s.artist || '',
@@ -12990,16 +13037,9 @@
                 albumName: s.albumName,
                 duration: s.duration
             }));
-            trackIndex = playlist.findIndex(s => s.id === songId);
-            if (trackIndex === -1) trackIndex = 0;
 
-            currentDeck = 1;
-            loadDeck(p1, trackIndex, true);
-            isPlaying = true;
-            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
-            renderPlaylist();
-            updateUI();
-            updateUrlState();
+            let foundIdx = playlist.findIndex(s => s.id === songId);
+            startNewQueuePlayback(foundIdx !== -1 ? foundIdx : 0);
         }
 
         function playAlbumDirect(event, albumId) {
@@ -13009,9 +13049,9 @@
             window.currentArtistId = null;
             window.currentListId = null;
             updateAlbumLastPlayed(albumId);
-            const albumSongs = window.musicSongs
+            const albumSongs = (window.musicSongs || [])
                 .filter(s => s.albumId === albumId)
-                .sort((a, b) => a.index - b.index);
+                .sort((a, b) => (a.index || 0) - (b.index || 0));
             if (albumSongs.length === 0) return;
 
             playlist = albumSongs.map(s => ({
@@ -13023,15 +13063,8 @@
                 albumName: s.albumName,
                 duration: s.duration
             }));
-            trackIndex = 0;
 
-            currentDeck = 1;
-            loadDeck(p1, trackIndex, true);
-            isPlaying = true;
-            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
-            renderPlaylist();
-            updateUI();
-            updateUrlState();
+            startNewQueuePlayback(0);
         }
 
         function playCurrentAlbum() {
@@ -13050,7 +13083,7 @@
             window.currentListId = null;
             updateAlbumLastPlayed(albumId);
 
-            const albumSongs = window.musicSongs
+            const albumSongs = (window.musicSongs || [])
                 .filter(s => s.albumId === albumId);
             if (albumSongs.length === 0) return;
 
@@ -13065,20 +13098,15 @@
             }));
 
             playlist.sort(() => Math.random() - 0.5);
-            trackIndex = 0;
-
-            currentDeck = 1;
-            loadDeck(p1, trackIndex, true);
-            isPlaying = true;
-            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
-            renderPlaylist();
-            updateUI();
-            updateUrlState();
+            startNewQueuePlayback(0);
         }
 
         function playAllSongs() {
             if (window.currentRadioStation) stopRadioPlayback();
-            if (window.musicSongs.length === 0) return;
+            if (!window.musicSongs || window.musicSongs.length === 0) return;
+            window.currentAlbumId = null;
+            window.currentArtistId = null;
+            window.currentListId = null;
             playlist = window.musicSongs.map(s => ({
                 id: s.id,
                 title: s.title,
@@ -13088,15 +13116,8 @@
                 albumName: s.albumName,
                 duration: s.duration
             }));
-            trackIndex = 0;
 
-            currentDeck = 1;
-            loadDeck(p1, trackIndex, true);
-            isPlaying = true;
-            if (typeof updatePlayPauseIcon === 'function') updatePlayPauseIcon();
-            renderPlaylist();
-            updateUI();
-            updateUrlState();
+            startNewQueuePlayback(0);
         }
 
         function toggleHeaderSearch(type) {

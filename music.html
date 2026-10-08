@@ -132,9 +132,9 @@
         .card {
             background: var(--card-bg);
             border: 1px solid var(--border);
-            border-radius: 16px;
+            border-radius: 12px;
             padding: 16px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
             min-height: 550px;
         }
 
@@ -291,16 +291,23 @@
 
         .vk-block-card {
             background: var(--card-bg, #ffffff);
+            border: 1px solid var(--border, #e1e3e6);
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 16px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
             box-sizing: border-box;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark .vk-block-card {
+            border-color: rgba(255, 255, 255, 0.08);
         }
 
         /* Saved Playlists Section */
         .saved-playlists-section {
             background: var(--card-bg, #ffffff);
+            border: 1px solid var(--border, #e1e3e6);
             border-radius: 12px;
             padding: 20px;
             margin-top: 0;
@@ -311,6 +318,11 @@
             flex-direction: column;
             min-height: 0;
             flex-shrink: 0;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark .saved-playlists-section {
+            border-color: rgba(255, 255, 255, 0.08);
         }
 
         .saved-playlists-title {
@@ -1181,6 +1193,7 @@
         /* Player controls inside card are enabled */
 
         .bottom-playbar {
+            display: none !important;
             position: fixed;
             bottom: 16px;
             left: 50%;
@@ -3520,6 +3533,707 @@
             z-index: 2;
             margin: 0;
         }
+
+        /* --- VK TOP PLAYER BAR STYLES (Точная копия ВКонтакте) --- */
+        .vk-top-player {
+            background-color: var(--card-bg, #ffffff);
+            border: 1px solid var(--border, #e1e3e6);
+            border-radius: 12px;
+            height: 56px;
+            min-height: 56px;
+            box-sizing: border-box;
+            padding: 0 16px;
+            margin: 0 0 14px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            user-select: none;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            position: relative;
+            z-index: 40;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark .vk-top-player {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Левые кнопки управления */
+        .vk-tp-left {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .vk-tp-btn {
+            background: none;
+            border: none;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #828a99;
+            cursor: pointer;
+            transition: color 0.15s ease, opacity 0.15s ease, transform 0.1s ease;
+            outline: none;
+            box-shadow: none;
+        }
+
+        .vk-tp-btn:hover {
+            color: #adb4bf;
+            background: transparent !important;
+        }
+
+        body.dark .vk-tp-btn:hover {
+            color: #c4cbd6;
+            background: transparent !important;
+        }
+
+        .vk-tp-btn.vk-tp-btn-nav {
+            color: #476faf;
+        }
+
+        .vk-tp-btn.vk-tp-btn-nav svg {
+            width: 23px;
+            height: 23px;
+        }
+
+        .vk-tp-btn.vk-tp-btn-nav:hover {
+            color: #6a91cc !important;
+            background: transparent !important;
+        }
+
+        body.dark .vk-tp-btn.vk-tp-btn-nav:hover {
+            color: #7da5e0 !important;
+            background: transparent !important;
+        }
+
+        .vk-tp-btn.active {
+            color: #476faf !important;
+        }
+
+        .vk-tp-btn.active:hover {
+            color: #6a91cc !important;
+            background: transparent !important;
+        }
+
+        body.dark .vk-tp-btn.active:hover {
+            color: #7da5e0 !important;
+            background: transparent !important;
+        }
+
+        .vk-tp-btn:active {
+            transform: scale(0.93);
+        }
+
+        .vk-tp-btn-shuffle {
+            margin-left: 4px;
+        }
+
+        .vk-tp-play-pause {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background-color: #476faf;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+            box-shadow: none;
+            margin: 0 4px;
+            outline: none;
+            flex-shrink: 0;
+        }
+
+        .vk-tp-play-pause:hover {
+            background-color: #557ebc;
+        }
+
+        .vk-tp-play-pause:active {
+            transform: scale(0.94);
+        }
+
+        .vk-tp-play-pause svg {
+            fill: #ffffff;
+        }
+
+        /* Центральный блок: Обложка + (Текст + Кнопки + Полоса под цифрами) */
+        .vk-tp-center {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+            margin-left: 6px;
+        }
+
+        .vk-tp-cover {
+            width: 38px;
+            height: 38px;
+            border-radius: 4px;
+            background-color: var(--border, #e1e3e6);
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+            box-shadow: none;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.15s ease;
+        }
+
+        body.dark .vk-tp-cover {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .vk-tp-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .vk-tp-cover:hover {
+            opacity: 0.88;
+        }
+
+        /* Контейнер информации и прогресса */
+        .vk-tp-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 1;
+            min-width: 0;
+            gap: 0;
+            position: relative;
+        }
+
+        .vk-tp-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            width: 100%;
+            line-height: 1.15;
+            height: 16px;
+        }
+
+        .vk-tp-title-group {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .vk-tp-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text, #000000);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: opacity 0.15s ease;
+            font-family: -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
+            text-decoration: none;
+        }
+
+        .vk-tp-title:hover {
+            color: var(--text, #000000);
+            text-decoration: underline;
+        }
+
+        body.dark .vk-tp-title:hover {
+            color: #ffffff;
+            text-decoration: underline;
+        }
+
+        .vk-tp-extra {
+            font-size: 12px;
+            color: #828a99;
+            font-weight: 400;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .vk-tp-inline-actions {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-shrink: 0;
+            margin-left: auto;
+            transform: translateY(6px);
+        }
+
+        .vk-tp-action-btn {
+            background: none;
+            border: none;
+            padding: 3px;
+            border-radius: 4px;
+            color: #828a99;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: color 0.15s ease, opacity 0.15s ease;
+            position: relative;
+            outline: none;
+            box-shadow: none;
+        }
+
+        .vk-tp-action-btn:hover {
+            color: #adb4bf;
+            background: transparent !important;
+        }
+
+        body.dark .vk-tp-action-btn:hover {
+            color: #c4cbd6;
+            background: transparent !important;
+        }
+
+        .vk-tp-action-btn.active {
+            color: #476faf !important;
+        }
+
+        .vk-tp-action-btn.active:hover {
+            color: #6a91cc !important;
+            background: transparent !important;
+        }
+
+        .vk-tp-lyrics-text {
+            font-family: -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
+            font-weight: 600;
+            font-size: 15px;
+            line-height: 1;
+            letter-spacing: -0.5px;
+            padding: 0 1px;
+        }
+
+        .vk-tp-time {
+            font-size: 13px;
+            font-weight: 500;
+            color: #828a99;
+            font-variant-numeric: tabular-nums;
+            cursor: pointer;
+            padding: 1px 2px 1px 4px;
+            border-radius: 3px;
+            transition: color 0.15s ease;
+            white-space: nowrap;
+            margin-left: 2px;
+            font-family: -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .vk-tp-time:hover {
+            color: #adb4bf;
+        }
+
+        body.dark .vk-tp-time:hover {
+            color: #c4cbd6;
+        }
+
+        .vk-tp-mid-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            line-height: 1.15;
+            height: 14px;
+            margin-top: 1px;
+        }
+
+        .vk-tp-artist {
+            font-size: 12px;
+            color: #828a99;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: color 0.15s ease;
+            font-family: -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
+            text-decoration: none;
+        }
+
+        .vk-tp-artist:hover {
+            color: #828a99;
+            text-decoration: underline;
+        }
+
+        body.dark .vk-tp-artist:hover {
+            color: #828a99;
+            text-decoration: underline;
+        }
+
+        body.dark .vk-tp-artist:hover {
+            color: #ffffff;
+        }
+
+        /* Полоса воспроизведения строго под всей строкой включая цифры */
+        .vk-tp-progress-bar-container {
+            position: relative;
+            width: 100%;
+            height: 6px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 1px 0;
+            box-sizing: border-box;
+            margin-top: 2px;
+        }
+
+        .vk-tp-progress-track {
+            position: relative;
+            width: 100%;
+            height: 2.5px;
+            background: #dce1e6;
+            border-radius: 2px;
+            overflow: hidden;
+            transition: height 0.1s ease;
+        }
+
+        body.dark .vk-tp-progress-track {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .vk-tp-progress-bar-container:hover .vk-tp-progress-track {
+            height: 3.5px;
+        }
+
+        .vk-tp-progress-crossfade {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            background-color: #b0b8c2;
+            pointer-events: none;
+            display: none;
+            z-index: 1;
+        }
+
+        body.dark .vk-tp-progress-crossfade {
+            background-color: rgba(255, 255, 255, 0.32);
+        }
+
+        .vk-tp-progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background-color: #476faf;
+            border-radius: 2px;
+            width: 0%;
+            pointer-events: none;
+            box-shadow: none;
+            z-index: 2;
+        }
+
+        /* Dynamic Crossfade / Mixing in Progress Visuals */
+        .vk-top-player.is-mixing .vk-tp-cover {
+            box-shadow: 0 0 0 2px rgba(255, 60, 120, 0.7), 0 0 16px rgba(255, 60, 120, 0.8), 0 0 28px rgba(113, 89, 237, 0.6);
+            animation: vkCoverMixPulse 1.1s ease-in-out infinite alternate;
+            transform: none !important;
+        }
+
+        @keyframes vkCoverMixPulse {
+            0% {
+                box-shadow: 0 0 0 2px rgba(255, 60, 120, 0.5), 0 0 10px rgba(255, 60, 120, 0.5), 0 0 18px rgba(113, 89, 237, 0.35);
+                transform: none;
+            }
+            100% {
+                box-shadow: 0 0 0 2px rgba(142, 68, 243, 0.8), 0 0 22px rgba(255, 60, 120, 0.85), 0 0 34px rgba(113, 89, 237, 0.7);
+                transform: none;
+            }
+        }
+
+        .vk-top-player.is-mixing .vk-tp-progress-fill {
+            background: linear-gradient(90deg, #ff3b6b, #9d4edd, #00b4d8, #ff3b6b) !important;
+            background-size: 300% 100% !important;
+            animation: vkGradientMove 2s linear infinite !important;
+            box-shadow: 0 0 10px rgba(255, 59, 107, 0.7) !important;
+        }
+
+        @keyframes vkGradientMove {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        /* Radio mode styles for top player */
+        .vk-top-player.is-radio #vk-player-progress-container,
+        .vk-top-player.is-radio .vk-tp-mid-row,
+        .vk-top-player.is-radio #vk-player-btn-add,
+        .vk-top-player.is-radio #vk-player-btn-dislike,
+        .vk-top-player.is-radio #vk-player-btn-similar,
+        .vk-top-player.is-radio #vk-player-btn-lyrics,
+        .vk-top-player.is-radio #vk-player-time,
+        .vk-top-player.is-radio #vk-player-shuffle,
+        .vk-top-player.is-radio #vk-player-repeat {
+            display: none !important;
+        }
+
+        .vk-top-player.is-radio .vk-tp-cover {
+            cursor: default !important;
+        }
+
+        .vk-top-player.is-radio .vk-tp-cover:hover {
+            opacity: 1 !important;
+        }
+
+        .vk-top-player.is-radio .vk-tp-title {
+            cursor: default !important;
+            text-decoration: none !important;
+        }
+
+        .vk-top-player.is-radio .vk-tp-title:hover {
+            text-decoration: none !important;
+            color: var(--text, #000000) !important;
+        }
+
+        body.dark .vk-top-player.is-radio .vk-tp-title:hover {
+            text-decoration: none !important;
+            color: #ffffff !important;
+        }
+
+        .vk-top-player.is-radio .vk-tp-inline-actions {
+            transform: translateY(0px) !important;
+        }
+
+        .vk-top-player.is-radio #vk-player-btn-radio-fav {
+            display: flex !important;
+            transform: translateY(-1px);
+        }
+
+        .vk-top-player:not(.is-radio) #vk-player-btn-radio-fav {
+            display: none !important;
+        }
+
+        .radio-live-badge {
+            color: #fc3c44 !important;
+            font-weight: 800;
+            font-size: 11px;
+            letter-spacing: 0.04em;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .vk-tp-tooltip {
+            position: absolute;
+            bottom: 15px;
+            transform: translateX(-50%);
+            background: #ffffff;
+            color: #000000;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 6px;
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+            border: 1px solid #dce1e6;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.12s ease;
+            white-space: nowrap;
+            z-index: 100;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .vk-tp-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -4px;
+            border-width: 4px;
+            border-style: solid;
+            border-color: #ffffff transparent transparent transparent;
+        }
+
+        body.dark .vk-tp-tooltip {
+            background: #2a2a2a;
+            color: #ffffff;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark .vk-tp-tooltip::after {
+            border-color: #2a2a2a transparent transparent transparent;
+        }
+
+        /* Правый блок: Громкость, Трансляция, Поделиться */
+        .vk-tp-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            margin-left: 18px;
+        }
+
+        .vk-tp-volume-block {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .vk-tp-volume-btn {
+            background: none;
+            border: none;
+            padding: 3px;
+            color: #828a99;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            outline: none;
+            transition: color 0.15s ease;
+            box-shadow: none;
+        }
+
+        .vk-tp-volume-btn:hover {
+            color: #adb4bf;
+            background: transparent !important;
+        }
+
+        body.dark .vk-tp-volume-btn:hover {
+            color: #c4cbd6;
+            background: transparent !important;
+        }
+
+        .vk-tp-volume-slider-container {
+            position: relative;
+            width: 62px;
+            height: 8px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 2px 0;
+            box-sizing: border-box;
+        }
+
+        .vk-tp-volume-track {
+            position: relative;
+            width: 100%;
+            height: 3px;
+            background: #dce1e6;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        body.dark .vk-tp-volume-track {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .vk-tp-volume-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background-color: #717d8d;
+            border-radius: 2px;
+            width: 100%;
+            pointer-events: none;
+            box-shadow: none;
+            transition: background-color 0.12s ease;
+        }
+
+        .vk-tp-volume-slider-container:hover .vk-tp-volume-fill,
+        .vk-tp-volume-slider-container.dragging .vk-tp-volume-fill {
+            background-color: #476faf;
+        }
+
+        /* VK Desktop Popover Tooltip with Arrow (ВКонтакте стиль) */
+        .vk-popover-tooltip {
+            position: fixed;
+            z-index: 100000;
+            pointer-events: none;
+            background: #ffffff;
+            color: #000000;
+            font-family: -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.35;
+            font-weight: 400;
+            padding: 6px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.16);
+            opacity: 0;
+            transform: translateY(3px);
+            transition: opacity 0.12s cubic-bezier(0.2, 0, 0.2, 1), transform 0.12s cubic-bezier(0.2, 0, 0.2, 1);
+            white-space: nowrap;
+            display: none;
+        }
+
+        .vk-popover-tooltip.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .vk-popover-tooltip::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 5px solid #ffffff;
+        }
+
+        body.dark .vk-popover-tooltip {
+            background: #2a2b2c;
+            color: #e1e3e6;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+        }
+
+        body.dark .vk-popover-tooltip::before {
+            border-bottom-color: #2a2b2c;
+        }
+
+        /* VK Toast Notifications */
+        .vk-player-toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(34, 34, 34, 0.92);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 9px 18px;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            z-index: 99999;
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .vk-player-toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
     </style>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
     <script>
@@ -3623,6 +4337,154 @@
 
         <main class="main-content">
             <div class="wrap">
+
+                <!-- VK Top Player Bar (ВКонтакте дизайн) -->
+                <div id="vk-top-player" class="vk-top-player">
+                    <!-- Левые кнопки управления -->
+                    <div class="vk-tp-left">
+                        <button type="button" class="vk-tp-btn vk-tp-btn-nav" id="vk-player-prev" onclick="prevTrack()" data-vk-tooltip="Предыдущий трек" aria-label="Предыдущий трек">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6l-8.5 6z" />
+                            </svg>
+                        </button>
+
+                        <button type="button" class="vk-tp-play-pause" id="vk-player-play-pause" onclick="toggleVkPlayerPlay()" data-vk-tooltip="Воспроизвести" aria-label="Воспроизведение">
+                            <svg id="vk-icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M8 5v14l11-7z" />
+                            </svg>
+                            <svg id="vk-icon-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                            </svg>
+                        </button>
+
+                        <button type="button" class="vk-tp-btn vk-tp-btn-nav" id="vk-player-next" onclick="nextTrack()" data-vk-tooltip="Следующий трек" aria-label="Следующий трек">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+                            </svg>
+                        </button>
+
+                        <button type="button" class="vk-tp-btn vk-tp-btn-shuffle" id="vk-player-shuffle" onclick="toggleVkPlayerShuffle()" data-vk-tooltip="Перемешать" aria-label="Перемешать">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3" />
+                            </svg>
+                        </button>
+
+                        <button type="button" class="vk-tp-btn" id="vk-player-repeat" onclick="toggleVkPlayerRepeat()" data-vk-tooltip="Повторять все треки" aria-label="Повторять">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="17 1 21 5 17 9"></polyline>
+                                <path d="M3 11V9a4 4 0 0 1 4-4h14M7 23 3 19 7 15"></path>
+                                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Центральный блок: Обложка + Инфо + Экшены + Полоса прогресса под цифрами -->
+                    <div class="vk-tp-center">
+                        <div class="vk-tp-cover" id="vk-player-cover" onclick="toggleFullPlayerCard()" data-vk-tooltip="Развернуть плеер">
+                            <img id="vk-player-cover-img" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23222'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='16' fill='%23666'>🎵</text></svg>" alt="Cover">
+                        </div>
+
+                        <div class="vk-tp-body">
+                            <!-- Верхний ряд: Название трека слева, кнопки и время справа -->
+                            <div class="vk-tp-top-row">
+                                <div class="vk-tp-title-group">
+                                    <span id="vk-player-title" class="vk-tp-title" onclick="toggleFullPlayerCard()">Выберите трек для воспроизведения</span>
+                                    <span id="vk-player-extra" class="vk-tp-extra"></span>
+                                </div>
+                                <div class="vk-tp-inline-actions">
+                                    <!-- Radio Favorite Star Button (Only shown during Radio) -->
+                                    <button type="button" class="vk-tp-action-btn radio-favorite-btn" id="vk-player-btn-radio-fav" onclick="toggleVkPlayerRadioFav()" data-vk-tooltip="Добавить в избранное" aria-label="Избранное" style="display:none;">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+                                            <path d="m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.6l6.2-.9Z" />
+                                        </svg>
+                                    </button>
+
+                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-add" onclick="toggleVkPlayerAdd()" data-vk-tooltip="Добавить в Мою музыку" aria-label="Добавить">
+                                        <svg id="vk-icon-add-plus" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        </svg>
+                                        <svg id="vk-icon-add-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#476faf" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    </button>
+
+                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-dislike" onclick="toggleVkPlayerDislike()" data-vk-tooltip="Не нравится" aria-label="Не нравится">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path>
+                                        </svg>
+                                    </button>
+
+                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-similar" onclick="toggleVkPlayerSimilar()" data-vk-tooltip="Турбо-микс выкл." aria-label="Турбо-микс">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                                            <path d="M16 10a4 4 0 0 1 0 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path d="M19 7.5a7.5 7.5 0 0 1 0 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                        </svg>
+                                    </button>
+
+                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-lyrics" onclick="toggleVkPlayerLyrics()" data-vk-tooltip="Текст песни" aria-label="Текст песни">
+                                        <span class="vk-tp-lyrics-text">Tт</span>
+                                    </button>
+
+                                    <div class="vk-tp-time" id="vk-player-time" onclick="toggleVkPlayerTimeMode()" data-vk-tooltip="Переключить формат времени">0:00</div>
+                                </div>
+                            </div>
+
+                            <!-- Средний ряд: Имя исполнителя -->
+                            <div class="vk-tp-mid-row">
+                                <span id="vk-player-artist" class="vk-tp-artist"></span>
+                            </div>
+
+                            <!-- Нижний ряд: Полоса прогресса от начала текста до конца под цифрами -->
+                            <div class="vk-tp-progress-bar-container" id="vk-player-progress-container">
+                                <div class="vk-tp-progress-track">
+                                    <div id="vk-player-progress-crossfade" class="vk-tp-progress-crossfade"></div>
+                                    <div id="vk-player-progress-fill" class="vk-tp-progress-fill"></div>
+                                </div>
+                                <div id="vk-player-progress-tooltip" class="vk-tp-tooltip">0:00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Правый блок: Громкость, Трансляция, Поделиться -->
+                    <div class="vk-tp-right">
+                        <div class="vk-tp-volume-block">
+                            <button type="button" class="vk-tp-volume-btn" id="vk-player-vol-icon" onclick="toggleMute()" data-vk-tooltip="Выключить звук">
+                                <svg id="vk-vol-high" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                                </svg>
+                                <svg id="vk-vol-mute" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="currentColor"></polygon>
+                                    <line x1="23" y1="9" x2="17" y2="15"></line>
+                                    <line x1="17" y1="9" x2="23" y2="15"></line>
+                                </svg>
+                            </button>
+
+                            <div class="vk-tp-volume-slider-container" id="vk-player-volume-container">
+                                <div class="vk-tp-volume-track">
+                                    <div id="vk-player-volume-fill" class="vk-tp-volume-fill" style="width: 100%;"></div>
+                                </div>
+                                <div id="vk-player-volume-tooltip" class="vk-tp-tooltip">100%</div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="vk-tp-action-btn" id="vk-player-btn-broadcast" onclick="toggleVkPlayerBroadcast()" data-vk-tooltip="Транслировать на страницу" aria-label="Транслировать">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none" />
+                                <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14" />
+                            </svg>
+                        </button>
+
+                        <button type="button" class="vk-tp-action-btn" id="vk-player-btn-share" onclick="shareVkPlayerTrack()" data-vk-tooltip="Поделиться" aria-label="Поделиться">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 9V5l7 7-7 7v-4.1c-5 0-8.5 1.6-11 5.1 1-5 4-10 11-11z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
 
                 <!-- Playlist Details View -->
                 <div id="playlist-details-view" style="display: none; padding: 10px 0;">
@@ -4879,6 +5741,14 @@
                 playbarToggleInput.checked = enabled;
             }
 
+            const vkSimilarBtn = document.getElementById('vk-player-btn-similar') || document.getElementById('vk-player-btn-turbomix');
+            if (vkSimilarBtn) {
+                const tooltipText = enabled ? 'Турбо-микс вкл.' : 'Турбо-микс выкл.';
+                vkSimilarBtn.classList.toggle('active', enabled);
+                vkSimilarBtn.setAttribute('data-vk-tooltip', tooltipText);
+                vkSimilarBtn.setAttribute('aria-label', tooltipText);
+            }
+
             const turboMixContainer = document.querySelector('.turbo-mix-container');
             if (enabled) {
                 if (turboMixContainer) turboMixContainer.style.display = 'flex';
@@ -4911,24 +5781,52 @@
         }
 
         function updateRepeatUI() {
-            const btn = document.getElementById('playbar-repeatBtn');
-            if (!btn) return;
+            const playbarBtn = document.getElementById('playbar-repeatBtn');
+            const vkBtn = document.getElementById('vk-player-repeat');
+
+            const standardRepeatSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23 3 19 7 15"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>`;
+
+            const oneRepeatSvg = `<div style="position: relative; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block; width: 100%; height: 100%;"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23 3 19 7 15"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8px; font-weight: 800; color: #ffffff; background: #476faf; border-radius: 50%; width: 10px; height: 10px; display: flex; align-items: center; justify-content: center; line-height: 1; pointer-events: none;">1</span>
+            </div>`;
 
             if (window.repeatMode === 'all') {
-                btn.style.color = 'var(--accent)';
-                btn.setAttribute('data-tooltip', 'Повторять все треки');
-                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23 3 19 7 15"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>`;
+                if (playbarBtn) {
+                    playbarBtn.style.color = 'var(--accent)';
+                    playbarBtn.setAttribute('data-tooltip', 'Повторять все треки');
+                    playbarBtn.innerHTML = standardRepeatSvg;
+                }
+                if (vkBtn) {
+                    vkBtn.classList.add('active');
+                    vkBtn.setAttribute('data-vk-tooltip', 'Повторять все треки');
+                    vkBtn.setAttribute('aria-label', 'Повторять все треки');
+                    vkBtn.innerHTML = standardRepeatSvg;
+                }
             } else if (window.repeatMode === 'one') {
-                btn.style.color = 'var(--accent)';
-                btn.setAttribute('data-tooltip', 'Повторять этот трек');
-                btn.innerHTML = `<div style="position: relative; display: inline-block; width: 24px; height: 24px;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block; width: 100%; height: 100%;"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23 3 19 7 15"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
-                    <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8px; font-weight: 800; color: var(--bg); background: var(--accent); border-radius: 50%; width: 10px; height: 10px; display: flex; align-items: center; justify-content: center; line-height: 1;">1</span>
-                </div>`;
+                if (playbarBtn) {
+                    playbarBtn.style.color = 'var(--accent)';
+                    playbarBtn.setAttribute('data-tooltip', 'Повторять этот трек');
+                    playbarBtn.innerHTML = oneRepeatSvg;
+                }
+                if (vkBtn) {
+                    vkBtn.classList.add('active');
+                    vkBtn.setAttribute('data-vk-tooltip', 'Повторять этот трек');
+                    vkBtn.setAttribute('aria-label', 'Повторять этот трек');
+                    vkBtn.innerHTML = oneRepeatSvg;
+                }
             } else {
-                btn.style.color = 'var(--text-secondary)';
-                btn.setAttribute('data-tooltip', 'Повтор выключен');
-                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23 3 19 7 15"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>`;
+                if (playbarBtn) {
+                    playbarBtn.style.color = 'var(--text-secondary)';
+                    playbarBtn.setAttribute('data-tooltip', 'Повтор выключен');
+                    playbarBtn.innerHTML = standardRepeatSvg;
+                }
+                if (vkBtn) {
+                    vkBtn.classList.remove('active');
+                    vkBtn.setAttribute('data-vk-tooltip', 'Повтор выключен');
+                    vkBtn.setAttribute('aria-label', 'Повтор выключен');
+                    vkBtn.innerHTML = standardRepeatSvg;
+                }
             }
         }
 
@@ -4985,6 +5883,7 @@
             initThemeToggle();
             toggleTurboMix(isTurboMixEnabled);
             updateRepeatUI();
+            setupVkTopPlayerInteractions();
 
             setupHoverCrossfade('playbar-prevBtn', 'prev');
             setupHoverCrossfade('playbar-nextBtn', 'next');
@@ -5007,11 +5906,7 @@
                     if (progress) progress.style.width = (pct * 100) + '%';
                     if (handle) handle.style.left = (pct * 100) + '%';
 
-                    let activeP = (currentDeck === 1) ? p1 : p2;
-                    if (activeP && typeof activeP.getDuration === 'function') {
-                        const duration = activeP.getDuration();
-                        activeP.seekTo(duration * pct, true);
-                    }
+                    seekTo(pct * 100);
                 }
 
                 timeline.addEventListener('mousedown', (e) => {
@@ -5206,6 +6101,623 @@
             document.documentElement.classList.toggle('page-hidden', document.hidden);
         });
 
+        // ==========================================
+        // VK TOP PLAYER CONTROLLER (ВКонтакте дизайн и поведение)
+        // ==========================================
+        let isVkTimeRemaining = false;
+        let isVkPlayerDragging = false;
+        let isVkVolumeDragging = false;
+        let isVkAdded = false;
+        let isVkDisliked = false;
+        let isVkBroadcastActive = false;
+
+        function showVkToast(text, icon = '') {
+            let toast = document.getElementById('vk-player-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'vk-player-toast';
+                toast.className = 'vk-player-toast';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = (icon ? `<span>${icon}</span>` : '') + `<span>${text}</span>`;
+            toast.classList.add('show');
+            if (window.vkToastTimer) clearTimeout(window.vkToastTimer);
+            window.vkToastTimer = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2300);
+        }
+
+        function parseVkTrackInfo(title, artist, trackObj) {
+            let rawArtist = artist || (trackObj ? (trackObj.artist || trackObj.artistName || trackObj.channel || trackObj.channelTitle || trackObj.videoOwnerChannelTitle || trackObj.author) : '') || '';
+            let rawTitle = title || (trackObj ? trackObj.title : '') || '';
+            let cleanExtra = '';
+
+            let cleanArtist = '';
+            let cleanTitle = rawTitle;
+
+            const isGeneric = (str) => {
+                if (!str || typeof str !== 'string') return true;
+                const s = str.trim().toLowerCase();
+                return s === '' || s === 'youtube video' || s === 'youtube' || s === 'вконтакте музыка' || 
+                       s === 'исполнитель' || s === 'различные исполнители' || s === 'трек' || 
+                       s === 'youtube music player' || s === 'ожидание трека...' || s === 'плейлист' ||
+                       s === 'неизвестный исполнитель' || s === 'unknown artist';
+            };
+
+            if (typeof rawArtist === 'string' && rawArtist.trim()) {
+                let a = rawArtist.replace(/\s*-\s*Topic$/i, '').trim();
+                if (!isGeneric(a)) {
+                    cleanArtist = a;
+                }
+            }
+
+            // Check if title has "Artist - Track" or "Artist — Track" or "Artist – Track" format
+            if (rawTitle) {
+                const dashMatch = rawTitle.match(/^(.+?)\s*(?:—|–|-)\s*(.+)$/);
+                if (dashMatch) {
+                    if (!cleanArtist) {
+                        const parsedA = dashMatch[1].trim();
+                        if (!isGeneric(parsedA)) {
+                            cleanArtist = parsedA;
+                        }
+                    }
+                    cleanTitle = dashMatch[2].trim();
+                }
+            }
+
+            // Extract remix/hardstyle or bracketed text if present
+            const remixMatch = cleanTitle.match(/^(.+?)\s*(\([^\)]+\)|\[[^\]]+\])$/);
+            if (remixMatch) {
+                cleanTitle = remixMatch[1].trim();
+                cleanExtra = remixMatch[2].trim();
+            }
+
+            if (!cleanArtist && trackObj) {
+                const fallbackCandidate = trackObj.channel || trackObj.channelTitle || trackObj.videoOwnerChannelTitle || trackObj.author || trackObj.artistName;
+                if (fallbackCandidate) {
+                    let a = String(fallbackCandidate).replace(/\s*-\s*Topic$/i, '').trim();
+                    if (!isGeneric(a)) {
+                        cleanArtist = a;
+                    }
+                }
+            }
+
+            if (!cleanArtist) {
+                if (window.loadedPlaylistName && !isGeneric(window.loadedPlaylistName)) {
+                    cleanArtist = window.loadedPlaylistName;
+                }
+            }
+
+            if (isGeneric(cleanArtist)) {
+                cleanArtist = '';
+            }
+
+            if (!cleanTitle || cleanTitle === 'Загрузка...') {
+                cleanTitle = rawTitle || 'Ожидание трека...';
+            }
+
+            return { title: cleanTitle, artist: cleanArtist, extra: cleanExtra };
+        }
+
+        function toggleVkPlayerRadioFav() {
+            if (window.currentRadioStation && typeof toggleRadioFavorite === 'function') {
+                toggleRadioFavorite(window.currentRadioStation);
+                setTimeout(() => {
+                    if (window.currentRadioStation) {
+                        updateVkTopPlayerUI(null, true);
+                    }
+                }, 60);
+            }
+        }
+
+        function updateVkTopPlayerUI(track, isRadio = false) {
+            const topPlayer = document.getElementById('vk-top-player');
+            const titleEl = document.getElementById('vk-player-title');
+            const extraEl = document.getElementById('vk-player-extra');
+            const artistEl = document.getElementById('vk-player-artist');
+            const coverImg = document.getElementById('vk-player-cover-img');
+            const favBtn = document.getElementById('vk-player-btn-radio-fav');
+
+            if (topPlayer) {
+                topPlayer.classList.toggle('is-radio', !!isRadio);
+            }
+
+            const coverEl = document.getElementById('vk-player-cover');
+            if (coverEl) {
+                if (isRadio) {
+                    coverEl.removeAttribute('data-vk-tooltip');
+                } else {
+                    coverEl.setAttribute('data-vk-tooltip', 'Развернуть плеер');
+                }
+            }
+
+            if (isRadio && window.currentRadioStation) {
+                const stationName = typeof formatRadioStationName === 'function' 
+                    ? formatRadioStationName(window.currentRadioStation.name)
+                    : (window.currentRadioStation.name || 'Радио');
+                if (titleEl) titleEl.innerText = window.currentRadioSongTitle || stationName;
+                if (extraEl) extraEl.innerHTML = '<span class="radio-live-badge">● LIVE</span>';
+                if (artistEl) artistEl.innerText = '';
+                if (coverImg) {
+                    coverImg.src = window.currentRadioStation.logo || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80';
+                }
+                if (favBtn) {
+                    favBtn.dataset.radioStation = encodeURIComponent(JSON.stringify(window.currentRadioStation)).replace(/'/g, '%27');
+                    const saved = (typeof visibleRadioFavorites === 'function' && typeof visibleRadioFavorites().has === 'function')
+                        ? visibleRadioFavorites().has(window.currentRadioStation.streamUrl)
+                        : false;
+                    const label = saved ? 'Убрать из избранного' : 'Добавить в избранное';
+                    favBtn.setAttribute('data-vk-tooltip', label);
+                    favBtn.setAttribute('aria-label', label);
+                    favBtn.setAttribute('aria-pressed', String(saved));
+                    const starSvg = favBtn.querySelector('svg');
+                    if (starSvg) {
+                        starSvg.setAttribute('fill', saved ? '#ffcc00' : 'none');
+                        if (saved) {
+                            starSvg.style.color = '#ffcc00';
+                            starSvg.style.stroke = '#ffcc00';
+                        } else {
+                            starSvg.style.color = '';
+                            starSvg.style.stroke = 'currentColor';
+                        }
+                    }
+                }
+                return;
+            }
+
+            if (track) {
+                let activeP = (currentDeck === 1) ? p1 : p2;
+                if (activeP && typeof activeP.getVideoData === 'function') {
+                    try {
+                        const vData = activeP.getVideoData();
+                        if (vData) {
+                            if (vData.author && (!track.artist || track.artist === 'Исполнитель' || track.artist === 'YouTube Video' || track.artist === 'YouTube')) {
+                                track.artist = vData.author;
+                                track.channel = vData.author;
+                            }
+                            if (vData.title && (!track.title || track.title === 'Загрузка...' || track.title === 'Video ID: ' + track.id)) {
+                                track.title = vData.title;
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                const info = parseVkTrackInfo(track.title, track.artist, track);
+                if (titleEl) titleEl.innerText = info.title;
+                if (extraEl) extraEl.innerText = info.extra;
+                if (artistEl) artistEl.innerText = info.artist;
+
+                if (coverImg) {
+                    const coverUrl = track.cover || (track.id ? `https://i.ytimg.com/vi/${track.id}/mqdefault.jpg` : '');
+                    if (coverUrl) {
+                        coverImg.src = coverUrl;
+                    } else {
+                        coverImg.src = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23222'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='16' fill='%23666'>🎵</text></svg>";
+                    }
+                }
+            } else {
+                if (titleEl) titleEl.innerText = 'Выберите трек для воспроизведения';
+                if (extraEl) extraEl.innerText = '';
+                if (artistEl) artistEl.innerText = '';
+                if (coverImg) {
+                    coverImg.src = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23222'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='16' fill='%23666'>🎵</text></svg>";
+                }
+            }
+
+            updateRepeatUI();
+        }
+
+        function updateVkTopPlayerPlayPause(isPlayingState) {
+            const playIcon = document.getElementById('vk-icon-play');
+            const pauseIcon = document.getElementById('vk-icon-pause');
+            const btn = document.getElementById('vk-player-play-pause');
+
+            if (playIcon) playIcon.style.display = isPlayingState ? 'none' : 'block';
+            if (pauseIcon) pauseIcon.style.display = isPlayingState ? 'block' : 'none';
+            if (btn) {
+                btn.setAttribute('data-vk-tooltip', isPlayingState ? 'Пауза' : 'Воспроизвести');
+                btn.setAttribute('aria-label', isPlayingState ? 'Пауза' : 'Воспроизведение');
+            }
+        }
+
+        let isVkPlayerSeeking = false;
+        let vkPlayerSeekTargetTime = 0;
+        let vkPlayerSeekLockUntil = 0;
+
+        function updateVkTopPlayerProgress(current, duration, force = false) {
+            if (isVkPlayerDragging && !force) return;
+            
+            let displayCurrent = current;
+            if (!force && isVkPlayerSeeking) {
+                if (Date.now() < vkPlayerSeekLockUntil && Math.abs(current - vkPlayerSeekTargetTime) > 1.5) {
+                    displayCurrent = vkPlayerSeekTargetTime;
+                } else {
+                    isVkPlayerSeeking = false;
+                }
+            }
+
+            const fill = document.getElementById('vk-player-progress-fill');
+            const crossfadeBar = document.getElementById('vk-player-progress-crossfade');
+            const timeEl = document.getElementById('vk-player-time');
+
+            if (duration && duration > 0) {
+                const pct = Math.max(0, Math.min(100, (displayCurrent / duration) * 100));
+                if (fill) fill.style.width = pct + '%';
+                if (crossfadeBar) {
+                    const xfSec = (typeof crossfadeDuration === 'number' && crossfadeDuration > 0) ? crossfadeDuration : 0;
+                    if (xfSec > 0 && duration > xfSec) {
+                        const xfPct = Math.min(100, (xfSec / duration) * 100);
+                        crossfadeBar.style.width = xfPct + '%';
+                        crossfadeBar.style.display = 'block';
+                    } else {
+                        crossfadeBar.style.display = 'none';
+                    }
+                }
+                if (timeEl) {
+                    if (isVkTimeRemaining) {
+                        const remaining = Math.max(0, duration - displayCurrent);
+                        timeEl.innerText = '-' + formatTime(remaining);
+                    } else {
+                        timeEl.innerText = formatTime(displayCurrent);
+                    }
+                }
+            } else {
+                if (fill) fill.style.width = '0%';
+                if (crossfadeBar) crossfadeBar.style.display = 'none';
+                if (timeEl) timeEl.innerText = '0:00';
+            }
+        }
+
+        function updateVkTopPlayerVolume(vol) {
+            const fill = document.getElementById('vk-player-volume-fill');
+            const high = document.getElementById('vk-vol-high');
+            const mute = document.getElementById('vk-vol-mute');
+            const volBtn = document.getElementById('vk-player-vol-icon');
+
+            if (fill) fill.style.width = vol + '%';
+            if (high && mute) {
+                if (vol === 0) {
+                    high.style.display = 'none';
+                    mute.style.display = 'block';
+                } else {
+                    high.style.display = 'block';
+                    mute.style.display = 'none';
+                }
+            }
+            if (volBtn) {
+                volBtn.setAttribute('data-vk-tooltip', vol === 0 ? 'Включить звук' : 'Выключить звук');
+            }
+        }
+
+        function toggleVkPlayerPlay() {
+            if (window.currentRadioStation) {
+                if (typeof toggleRadioPlay === 'function') toggleRadioPlay();
+            } else {
+                togglePlay();
+            }
+        }
+
+        function toggleVkPlayerShuffle() {
+            shufflePlaylist();
+            showVkToast('Плейлист перемешан', '🔀');
+        }
+
+        function toggleVkPlayerRepeat() {
+            toggleRepeat();
+            if (window.repeatMode === 'all') {
+                showVkToast('Повторять все треки', '🔁');
+            } else if (window.repeatMode === 'one') {
+                showVkToast('Повторять этот трек', '🔂');
+            } else {
+                showVkToast('Повтор выключен', '➡️');
+            }
+        }
+
+        function toggleVkPlayerAdd() {
+            isVkAdded = !isVkAdded;
+            const plus = document.getElementById('vk-icon-add-plus');
+            const check = document.getElementById('vk-icon-add-check');
+            const btn = document.getElementById('vk-player-btn-add');
+            if (plus && check) {
+                plus.style.display = isVkAdded ? 'none' : 'block';
+                check.style.display = isVkAdded ? 'block' : 'none';
+            }
+            if (btn) {
+                btn.classList.toggle('active', isVkAdded);
+                btn.setAttribute('data-vk-tooltip', isVkAdded ? 'Удалить из Моей музыки' : 'Добавить в Мою музыку');
+                btn.setAttribute('aria-label', isVkAdded ? 'Удалить из Моей музыки' : 'Добавить в Мою музыку');
+            }
+            showVkToast(isVkAdded ? 'Аудиозапись добавлена в Мою музыку' : 'Аудиозапись удалена из Моей музыки', isVkAdded ? '✓' : '🗑');
+        }
+
+        function toggleVkPlayerDislike() {
+            isVkDisliked = !isVkDisliked;
+            const btn = document.getElementById('vk-player-btn-dislike');
+            if (btn) {
+                btn.classList.toggle('active', isVkDisliked);
+                btn.setAttribute('data-vk-tooltip', isVkDisliked ? 'Отметка "Не нравится" поставлена' : 'Не нравится');
+                btn.setAttribute('aria-label', isVkDisliked ? 'Отметка "Не нравится" поставлена' : 'Не нравится');
+            }
+            showVkToast(isVkDisliked ? 'Будем реже рекомендовать похожее' : 'Отметка "Не нравится" снята', '👎');
+        }
+
+        function toggleVkPlayerSimilar() {
+            const newState = !isTurboMixEnabled;
+            toggleTurboMix(newState);
+            showVkToast(newState ? 'Турбо-микс включен' : 'Турбо-микс выключен', '⚡');
+        }
+        function toggleVkPlayerTurboMix() {
+            toggleVkPlayerSimilar();
+        }
+
+        function toggleVkPlayerLyrics() {
+            showVkToast('Текст песни пока недоступен', '📝');
+        }
+
+        function toggleVkPlayerBroadcast() {
+            isVkBroadcastActive = !isVkBroadcastActive;
+            const btn = document.getElementById('vk-player-btn-broadcast');
+            if (btn) {
+                btn.classList.toggle('active', isVkBroadcastActive);
+            }
+            showVkToast(isVkBroadcastActive ? 'Трансляция трека в статус включена' : 'Трансляция в статус выключена', '📡');
+        }
+
+        function shareVkPlayerTrack() {
+            let shareUrl = window.location.href;
+            if (playlist.length > 0 && playlist[trackIndex]) {
+                const t = playlist[trackIndex];
+                shareUrl = `https://youtu.be/${t.id}`;
+            }
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    showVkToast('Ссылка на трек скопирована в буфер', '🔗');
+                }).catch(() => {
+                    showVkToast('Ссылка скопирована', '🔗');
+                });
+            } else {
+                showVkToast('Ссылка скопирована', '🔗');
+            }
+        }
+
+        function toggleVkPlayerTimeMode() {
+            isVkTimeRemaining = !isVkTimeRemaining;
+            let activeP = (currentDeck === 1) ? p1 : p2;
+            if (activeP && typeof activeP.getCurrentTime === 'function' && typeof activeP.getDuration === 'function') {
+                updateVkTopPlayerProgress(activeP.getCurrentTime(), activeP.getDuration());
+            }
+        }
+
+        let vkTooltipEl = null;
+        let vkTooltipTimer = null;
+        let vkActiveTooltipTarget = null;
+
+        function showVkPopoverTooltip(target, text) {
+            if (!vkTooltipEl) {
+                vkTooltipEl = document.createElement('div');
+                vkTooltipEl.className = 'vk-popover-tooltip';
+                vkTooltipEl.id = 'vk-popover-tooltip';
+                document.body.appendChild(vkTooltipEl);
+            }
+            if (!text) return;
+            vkActiveTooltipTarget = target;
+            vkTooltipEl.innerText = text;
+            vkTooltipEl.style.display = 'block';
+
+            const rect = target.getBoundingClientRect();
+            const tooltipRect = vkTooltipEl.getBoundingClientRect();
+
+            const top = rect.bottom + 6;
+            const left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+
+            vkTooltipEl.style.top = `${Math.max(4, top)}px`;
+            vkTooltipEl.style.left = `${Math.max(8, Math.min(window.innerWidth - tooltipRect.width - 8, left))}px`;
+
+            requestAnimationFrame(() => {
+                if (vkActiveTooltipTarget === target) {
+                    vkTooltipEl.classList.add('active');
+                }
+            });
+        }
+
+        function hideVkPopoverTooltip() {
+            vkActiveTooltipTarget = null;
+            if (!vkTooltipEl) return;
+            vkTooltipEl.classList.remove('active');
+            setTimeout(() => {
+                if (vkTooltipEl && !vkTooltipEl.classList.contains('active')) {
+                    vkTooltipEl.style.display = 'none';
+                }
+            }, 120);
+        }
+
+        function initVkTopPlayerTooltips() {
+            const topPlayer = document.getElementById('vk-top-player');
+            if (!topPlayer || topPlayer.dataset.tooltipsInitialized) return;
+            topPlayer.dataset.tooltipsInitialized = 'true';
+
+            topPlayer.addEventListener('mouseover', (e) => {
+                const target = e.target.closest('[data-vk-tooltip], .vk-tp-btn, .vk-tp-action-btn, #vk-player-vol-icon, #vk-player-play-pause, #vk-player-cover');
+                if (!target || !topPlayer.contains(target)) return;
+
+                // Ignore moves between children of the same target
+                if (e.relatedTarget && target.contains(e.relatedTarget)) return;
+                if (vkActiveTooltipTarget === target && vkTooltipEl && vkTooltipEl.classList.contains('active')) return;
+
+                let text = target.getAttribute('data-vk-tooltip');
+                if (!text && target.hasAttribute('title')) {
+                    text = target.getAttribute('title');
+                    target.setAttribute('data-vk-tooltip', text);
+                    target.removeAttribute('title');
+                }
+                if (!text) return;
+
+                clearTimeout(vkTooltipTimer);
+                const delay = (vkActiveTooltipTarget && vkTooltipEl && vkTooltipEl.classList.contains('active')) ? 60 : 250;
+                vkTooltipTimer = setTimeout(() => {
+                    const currentText = target.getAttribute('data-vk-tooltip') || text;
+                    showVkPopoverTooltip(target, currentText);
+                }, delay);
+            });
+
+            topPlayer.addEventListener('mouseout', (e) => {
+                const target = e.target.closest('[data-vk-tooltip], .vk-tp-btn, .vk-tp-action-btn, #vk-player-vol-icon, #vk-player-play-pause, #vk-player-cover');
+                if (!target) return;
+
+                // Ignore if mouse moved to a child element inside this target
+                if (e.relatedTarget && target.contains(e.relatedTarget)) return;
+
+                clearTimeout(vkTooltipTimer);
+                if (vkActiveTooltipTarget === target) {
+                    hideVkPopoverTooltip();
+                }
+            });
+
+            topPlayer.addEventListener('click', () => {
+                clearTimeout(vkTooltipTimer);
+                hideVkPopoverTooltip();
+            });
+        }
+
+        function setupVkTopPlayerInteractions() {
+            // Timeline progress bar events (Seek and Tooltip)
+            const progressContainer = document.getElementById('vk-player-progress-container');
+            const progressFill = document.getElementById('vk-player-progress-fill');
+            const progressTooltip = document.getElementById('vk-player-progress-tooltip');
+
+            if (progressContainer && !progressContainer.dataset.initialized) {
+                progressContainer.dataset.initialized = 'true';
+
+                const getDuration = () => {
+                    let activeP = (currentDeck === 1) ? p1 : p2;
+                    return (activeP && typeof activeP.getDuration === 'function') ? activeP.getDuration() : 0;
+                };
+
+                const handleProgressMove = (e) => {
+                    const rect = progressContainer.getBoundingClientRect();
+                    const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+                    const pct = rect.width > 0 ? (x / rect.width) : 0;
+                    const duration = getDuration();
+
+                    if (progressTooltip) {
+                        progressTooltip.style.left = `${x}px`;
+                        progressTooltip.innerText = formatTime(duration * pct);
+                        progressTooltip.style.opacity = '1';
+                    }
+
+                    if (isVkPlayerDragging) {
+                        if (progressFill) progressFill.style.width = `${pct * 100}%`;
+                        const timeEl = document.getElementById('vk-player-time');
+                        if (timeEl && duration > 0) {
+                            const cur = duration * pct;
+                            timeEl.innerText = isVkTimeRemaining ? ('-' + formatTime(Math.max(0, duration - cur))) : formatTime(cur);
+                        }
+                    }
+                };
+
+                progressContainer.addEventListener('mousemove', handleProgressMove);
+                progressContainer.addEventListener('mouseleave', () => {
+                    if (!isVkPlayerDragging && progressTooltip) {
+                        progressTooltip.style.opacity = '0';
+                    }
+                });
+
+                progressContainer.addEventListener('mousedown', (e) => {
+                    isVkPlayerDragging = true;
+                    handleProgressMove(e);
+
+                    const onMouseUp = (upEvent) => {
+                        if (isVkPlayerDragging) {
+                            isVkPlayerDragging = false;
+                            const rect = progressContainer.getBoundingClientRect();
+                            const x = Math.max(0, Math.min(rect.width, upEvent.clientX - rect.left));
+                            const pct = rect.width > 0 ? ((x / rect.width) * 100) : 0;
+                            seekTo(pct);
+                            if (progressTooltip) progressTooltip.style.opacity = '0';
+                        }
+                        window.removeEventListener('mousemove', onMouseMove);
+                        window.removeEventListener('mouseup', onMouseUp);
+                    };
+
+                    const onMouseMove = (moveEvent) => {
+                        if (isVkPlayerDragging) {
+                            handleProgressMove(moveEvent);
+                        }
+                    };
+
+                    window.addEventListener('mousemove', onMouseMove);
+                    window.addEventListener('mouseup', onMouseUp);
+                });
+            }
+
+            // Volume slider events (Volume Drag and Tooltip)
+            const volumeContainer = document.getElementById('vk-player-volume-container');
+            const volumeFill = document.getElementById('vk-player-volume-fill');
+            const volumeTooltip = document.getElementById('vk-player-volume-tooltip');
+
+            if (volumeContainer && !volumeContainer.dataset.initialized) {
+                volumeContainer.dataset.initialized = 'true';
+
+                const handleVolumeMove = (e) => {
+                    const rect = volumeContainer.getBoundingClientRect();
+                    const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+                    const pct = rect.width > 0 ? Math.round((x / rect.width) * 100) : 0;
+
+                    if (volumeTooltip) {
+                        volumeTooltip.style.left = `${x}px`;
+                        volumeTooltip.innerText = `${pct}%`;
+                        volumeTooltip.style.opacity = '1';
+                    }
+
+                    if (isVkVolumeDragging) {
+                        changeVolume(pct);
+                    }
+                };
+
+                volumeContainer.addEventListener('mousemove', handleVolumeMove);
+                volumeContainer.addEventListener('mouseleave', () => {
+                    if (!isVkVolumeDragging && volumeTooltip) {
+                        volumeTooltip.style.opacity = '0';
+                    }
+                });
+
+                volumeContainer.addEventListener('mousedown', (e) => {
+                    isVkVolumeDragging = true;
+                    volumeContainer.classList.add('dragging');
+                    handleVolumeMove(e);
+
+                    const onMouseUp = (upEvent) => {
+                        if (isVkVolumeDragging) {
+                            isVkVolumeDragging = false;
+                            volumeContainer.classList.remove('dragging');
+                            const rect = volumeContainer.getBoundingClientRect();
+                            const x = Math.max(0, Math.min(rect.width, upEvent.clientX - rect.left));
+                            const pct = rect.width > 0 ? Math.round((x / rect.width) * 100) : 0;
+                            changeVolume(pct);
+                            if (volumeTooltip) volumeTooltip.style.opacity = '0';
+                        }
+                        window.removeEventListener('mousemove', onMouseMove);
+                        window.removeEventListener('mouseup', onMouseUp);
+                    };
+
+                    const onMouseMove = (moveEvent) => {
+                        if (isVkVolumeDragging) {
+                            handleVolumeMove(moveEvent);
+                        }
+                    };
+
+                    window.addEventListener('mousemove', onMouseMove);
+                    window.addEventListener('mouseup', onMouseUp);
+                });
+            }
+
+            // Initial volume sync
+            updateVkTopPlayerVolume(playerVolume);
+
+            // Initialize VK popover tooltips with arrow
+            initVkTopPlayerTooltips();
+        }
+
         function updatePlayPauseIcon() {
             updateQueuePlaybackState();
             document.getElementById('main-player-card')?.classList.toggle('is-playing', isPlaying);
@@ -5213,6 +6725,10 @@
             const pauseIcon = document.getElementById('playbar-icon-pause');
             if (playIcon) playIcon.style.display = isPlaying ? 'none' : 'block';
             if (pauseIcon) pauseIcon.style.display = isPlaying ? 'block' : 'none';
+
+            // VK Top Player sync
+            updateVkTopPlayerPlayPause(isPlaying);
+
             refreshPlaylistDetailsIfVisible();
         }
 
@@ -5239,6 +6755,11 @@
                 if (pSub) pSub.innerText = window.loadedPlaylistName || 'YouTube Music Player';
                 if (pCover) pCover.style.backgroundImage = `url('https://img.youtube.com/vi/${t.id}/mqdefault.jpg')`;
 
+                // Sync VK Top Player
+                if (!window.isRadioPlaying) {
+                    updateVkTopPlayerUI(t);
+                }
+
                 // Update dynamic background
                 updateDynamicBackground(t.id, t.title);
             } else {
@@ -5249,10 +6770,14 @@
                 document.getElementById('cover-overlay').src = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23111'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='30' opacity='0.2'>🎧</text></svg>";
                 document.title = "YouTube Playlists";
 
+                // Sync VK Top Player
+                if (!window.isRadioPlaying) {
+                    updateVkTopPlayerUI(null);
+                }
+
                 // Reset dynamic background
                 updateDynamicBackground(null, null);
             }
-
 
             if (playlist.length > 0) {
                 document.getElementById('playlist-count-text').innerText =
@@ -5418,6 +6943,11 @@
                 } else {
                     playbarMixBadge.classList.remove('show');
                 }
+            }
+
+            const vkTopPlayer = document.getElementById('vk-top-player');
+            if (vkTopPlayer) {
+                vkTopPlayer.classList.toggle('is-mixing', isMixing);
             }
         }
 
@@ -5789,6 +7319,41 @@
 
             if (!duration || duration <= 0) return;
 
+            // Live sync artist and title from YouTube videoData in real-time
+            if (typeof activeP.getVideoData === 'function' && playlist && playlist[trackIndex]) {
+                try {
+                    const vData = activeP.getVideoData();
+                    if (vData && (vData.author || vData.title)) {
+                        const curTrack = playlist[trackIndex];
+                        let updated = false;
+                        if (vData.author && (!curTrack.artist || curTrack.artist === 'Исполнитель' || curTrack.artist === 'YouTube Video' || curTrack.artist === 'YouTube')) {
+                            curTrack.artist = vData.author;
+                            curTrack.channel = vData.author;
+                            updated = true;
+                        }
+                        if (vData.title && (!curTrack.title || curTrack.title === 'Загрузка...' || curTrack.title === 'Video ID: ' + curTrack.id)) {
+                            curTrack.title = vData.title;
+                            updated = true;
+                        }
+                        const artistEl = document.getElementById('vk-player-artist');
+                        const titleEl = document.getElementById('vk-player-title');
+                        const extraEl = document.getElementById('vk-player-extra');
+                        if (artistEl && (!artistEl.innerText.trim() || artistEl.innerText.trim() === 'Исполнитель' || updated)) {
+                            const info = parseVkTrackInfo(curTrack.title, curTrack.artist || vData.author, curTrack);
+                            if (info.artist && artistEl.innerText !== info.artist) {
+                                artistEl.innerText = info.artist;
+                            }
+                            if (titleEl && info.title && (titleEl.innerText === 'Загрузка...' || titleEl.innerText === 'Ожидание трека...')) {
+                                titleEl.innerText = info.title;
+                            }
+                            if (extraEl && info.extra && !extraEl.innerText) {
+                                extraEl.innerText = info.extra;
+                            }
+                        }
+                    }
+                } catch (e) {}
+            }
+
             const curText = document.getElementById('playbar-currentTime');
             const durText = document.getElementById('playbar-totalTime');
             if (curText) curText.innerText = formatTime(current);
@@ -5812,6 +7377,9 @@
             const mainDur = document.getElementById('totalTime');
             if (mainCur) mainCur.innerText = formatTime(current);
             if (mainDur) mainDur.innerText = formatTime(duration);
+
+            // Sync VK Top Player timeline
+            updateVkTopPlayerProgress(current, duration);
 
             if (!isCrossfading && playlist.length > 1) {
                 let triggerCrossfade = false;
@@ -5973,6 +7541,14 @@
             crossfadeDuration = parseInt(val);
             localStorage.setItem('music-crossfade-duration', crossfadeDuration);
             document.getElementById('crossfadeValue').innerText = val;
+            let activeP = (currentDeck === 1) ? p1 : p2;
+            if (activeP && typeof activeP.getDuration === 'function') {
+                try {
+                    const dur = activeP.getDuration();
+                    const cur = activeP.getCurrentTime();
+                    if (dur && dur > 0) updateVkTopPlayerProgress(cur, dur, true);
+                } catch(e) {}
+            }
         }
 
         function changeCrossfadeType(val) {
@@ -6018,6 +7594,7 @@
                 if (activeP && activeP.setVolume) activeP.setVolume(playerVolume);
             }
             updateVolumeIcon();
+            updateVkTopPlayerVolume(playerVolume);
         }
 
         function updateVolumeIcon() {
@@ -6035,6 +7612,7 @@
                     if (muteBtn) muteBtn.setAttribute('data-tooltip', 'Выключить звук');
                 }
             }
+            updateVkTopPlayerVolume(playerVolume);
         }
 
         function toggleMute() {
@@ -6509,9 +8087,27 @@
 
         function seekTo(val) {
             let activeP = (currentDeck === 1) ? p1 : p2;
+            if (!activeP || typeof activeP.getDuration !== 'function') return;
             let dur = activeP.getDuration();
             if (dur > 0) {
-                activeP.seekTo(dur * (val / 100), true);
+                const targetTime = dur * (val / 100);
+                isVkPlayerSeeking = true;
+                vkPlayerSeekTargetTime = targetTime;
+                vkPlayerSeekLockUntil = Date.now() + 1500;
+
+                updateVkTopPlayerProgress(targetTime, dur, true);
+
+                const mainProgress = document.getElementById('progressBar');
+                if (mainProgress) mainProgress.value = targetTime;
+                const mainCur = document.getElementById('currentTime');
+                if (mainCur) mainCur.innerText = formatTime(targetTime);
+
+                const playbarProg = document.getElementById('playbar-timeline-progress');
+                const playbarHandle = document.getElementById('playbar-timeline-handle');
+                if (playbarProg) playbarProg.style.width = val + '%';
+                if (playbarHandle) playbarHandle.style.left = val + '%';
+
+                activeP.seekTo(targetTime, true);
             }
         }
 
@@ -8588,6 +10184,7 @@
         });
 
         function toggleFullPlayerCard() {
+            if (window.isRadioPlaying || (window.currentRadioStation && document.getElementById('vk-top-player')?.classList.contains('is-radio'))) return;
             const cardEl = document.getElementById('main-player-card');
             const chevronBtn = document.getElementById('bottom-chevron-btn');
             if (!cardEl) return;
@@ -9993,7 +11590,7 @@
             }
 
             const artist = window.musicArtists.find(a => a.id === artistId);
-            const artistName = artist?.name || window.musicSongs.find(s => s.artistId === artistId)?.artistName || "Исполнитель";
+            const artistName = artist?.name || window.musicSongs.find(s => s.artistId === artistId)?.artistName || "";
             
             const artistAlbums = window.musicAlbums
                 .filter(a => a.artistId === artistId)
@@ -10773,7 +12370,9 @@
             playlist = songs.map(s => ({
                 id: s.id,
                 title: s.title,
-                artistName: s.artistName,
+                artist: s.artistName || s.artist || '',
+                artistName: s.artistName || s.artist || '',
+                channel: s.artistName || s.artist || '',
                 albumName: s.albumName,
                 duration: s.duration
             }));
@@ -10795,7 +12394,9 @@
             playlist = songs.map(s => ({
                 id: s.id,
                 title: s.title,
-                artistName: s.artistName,
+                artist: s.artistName || s.artist || '',
+                artistName: s.artistName || s.artist || '',
+                channel: s.artistName || s.artist || '',
                 albumName: s.albumName,
                 duration: s.duration
             }));
@@ -11022,7 +12623,9 @@
             playlist = albumSongs.map(s => ({
                 id: s.id,
                 title: s.title,
-                artistName: s.artistName,
+                artist: s.artistName || s.artist || '',
+                artistName: s.artistName || s.artist || '',
+                channel: s.artistName || s.artist || '',
                 albumName: s.albumName,
                 duration: s.duration
             }));
@@ -11054,7 +12657,9 @@
             playlist = artistSongs.map(s => ({
                 id: s.id,
                 title: s.title,
-                artistName: s.artistName,
+                artist: s.artistName || s.artist || '',
+                artistName: s.artistName || s.artist || '',
+                channel: s.artistName || s.artist || '',
                 albumName: s.albumName,
                 duration: s.duration
             }));
@@ -11095,7 +12700,9 @@
             playlist = window.musicSongs.map(s => ({
                 id: s.id,
                 title: s.title,
-                artistName: s.artistName,
+                artist: s.artistName || s.artist || '',
+                artistName: s.artistName || s.artist || '',
+                channel: s.artistName || s.artist || '',
                 albumName: s.albumName,
                 duration: s.duration
             }));
@@ -11123,7 +12730,9 @@
             playlist = albumSongs.map(s => ({
                 id: s.id,
                 title: s.title,
-                artistName: s.artistName,
+                artist: s.artistName || s.artist || '',
+                artistName: s.artistName || s.artist || '',
+                channel: s.artistName || s.artist || '',
                 albumName: s.albumName,
                 duration: s.duration
             }));
@@ -11158,7 +12767,9 @@
             playlist = albumSongs.map(s => ({
                 id: s.id,
                 title: s.title,
-                artistName: s.artistName,
+                artist: s.artistName || s.artist || '',
+                artistName: s.artistName || s.artist || '',
+                channel: s.artistName || s.artist || '',
                 albumName: s.albumName,
                 duration: s.duration
             }));
@@ -11181,7 +12792,9 @@
             playlist = window.musicSongs.map(s => ({
                 id: s.id,
                 title: s.title,
-                artistName: s.artistName,
+                artist: s.artistName || s.artist || '',
+                artistName: s.artistName || s.artist || '',
+                channel: s.artistName || s.artist || '',
                 albumName: s.albumName,
                 duration: s.duration
             }));
@@ -11782,6 +13395,10 @@
                 if (playIcon) playIcon.style.display = window.isRadioPlaying ? 'none' : 'block';
                 if (pauseIcon) pauseIcon.style.display = window.isRadioPlaying ? 'block' : 'none';
 
+                // Sync VK Top Player with Radio
+                updateVkTopPlayerUI(null, true);
+                updateVkTopPlayerPlayPause(window.isRadioPlaying);
+
                 document.title = window.currentRadioSongTitle 
                     ? `${window.currentRadioSongTitle} – ${cleanStationName}` 
                     : `${cleanStationName} – Радио (Прямой эфир)`;
@@ -11801,6 +13418,10 @@
                 if (playbarTimeWrapper && !playbarTimeWrapper.querySelector('#playbar-currentTime')) {
                     playbarTimeWrapper.innerHTML = '<span id="playbar-currentTime">0:00</span> / <span id="playbar-totalTime">0:00</span>';
                 }
+
+                // Restore VK Top Player with current track
+                updateVkTopPlayerUI(playlist[trackIndex] || null, false);
+                updateVkTopPlayerPlayPause(isPlaying);
             }
 
             // Обновляем визуальное состояние карточек на странице
@@ -11950,14 +13571,29 @@
                 status.hidden = !status.textContent;
             }
             document.querySelectorAll('.radio-favorite-btn').forEach(button => {
-                const station = JSON.parse(decodeURIComponent(button.dataset.radioStation));
-                const saved = visibleRadioFavorites().has(station.streamUrl);
-                const label = saved ? 'Убрать из избранного' : 'Добавить в избранное';
-                button.setAttribute('aria-pressed', String(saved));
-                button.setAttribute('aria-label', label);
-                button.title = label;
-                button.disabled = radioFavoritePending.has(station.streamUrl);
-                button.querySelector('svg').setAttribute('fill', saved ? 'currentColor' : 'none');
+                if (!button.dataset.radioStation) return;
+                try {
+                    const station = JSON.parse(decodeURIComponent(button.dataset.radioStation));
+                    if (!station || !station.streamUrl) return;
+                    const saved = visibleRadioFavorites().has(station.streamUrl);
+                    const label = saved ? 'Убрать из избранного' : 'Добавить в избранное';
+                    button.setAttribute('aria-pressed', String(saved));
+                    button.setAttribute('aria-label', label);
+                    button.setAttribute('data-vk-tooltip', label);
+                    button.title = label;
+                    button.disabled = radioFavoritePending.has(station.streamUrl);
+                    const starSvg = button.querySelector('svg');
+                    if (starSvg) {
+                        starSvg.setAttribute('fill', saved ? '#ffcc00' : 'none');
+                        if (saved) {
+                            starSvg.style.color = '#ffcc00';
+                            starSvg.style.stroke = '#ffcc00';
+                        } else {
+                            starSvg.style.color = '';
+                            starSvg.style.stroke = 'currentColor';
+                        }
+                    }
+                } catch (e) {}
             });
         }
 

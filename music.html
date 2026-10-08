@@ -174,24 +174,32 @@
             --tooltip-text: #0f1115;
 
             position: fixed !important;
-            top: 24px;
+            top: 60px;
             left: 16px;
             right: 16px;
-            bottom: 104px;
+            bottom: 110px;
+            max-height: 480px;
             background: var(--card-bg);
             z-index: 900;
             border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-            transition: background 0.8s ease-in-out, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
-            transform: translateY(100vh);
-            opacity: 0;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
+            transform: translateY(calc(-100% - 90px));
+            opacity: 1;
             pointer-events: none;
+            visibility: hidden;
             display: block !important;
             min-height: 0 !important;
             height: auto !important;
             margin: 0 auto !important;
             max-width: 1200px;
             box-sizing: border-box;
+            padding: 14px 18px;
+            will-change: transform;
+            transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1),
+                visibility 0s linear 0.38s,
+                --dynamic-bg-start 1.8s ease,
+                --dynamic-bg-end 1.8s ease,
+                background 0.8s ease-in-out;
         }
 
         @property --dynamic-bg-start {
@@ -204,11 +212,6 @@
             syntax: '<color>';
             inherits: true;
             initial-value: #202028;
-        }
-
-        #main-player-card {
-            transition: --dynamic-bg-start 1.8s ease, --dynamic-bg-end 1.8s ease,
-                transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
         }
 
         /* Clip only the ambient layers so player controls can keep their overflow. */
@@ -237,7 +240,6 @@
             filter: blur(45px) saturate(1.6);
             opacity: 0.75;
             animation: ambient-orbit 24s ease-in-out infinite;
-            animation-play-state: paused;
         }
 
         .player-ambient::after {
@@ -248,11 +250,6 @@
             animation-name: ambient-drift;
             animation-duration: 19s;
             animation-delay: -9s;
-        }
-
-        #main-player-card.active.has-dynamic-bg.is-playing .player-ambient::before,
-        #main-player-card.active.has-dynamic-bg.is-playing .player-ambient::after {
-            animation-play-state: running;
         }
 
         @keyframes ambient-orbit {
@@ -280,6 +277,12 @@
             transform: translateY(0);
             opacity: 1;
             pointer-events: auto;
+            visibility: visible;
+            transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                visibility 0s linear 0s,
+                --dynamic-bg-start 1.8s ease,
+                --dynamic-bg-end 1.8s ease,
+                background 0.8s ease-in-out;
         }
 
         /* Swap player on left and list on right */
@@ -1000,8 +1003,8 @@
             border-radius: 12px;
             gap: 4px;
             width: 100%;
-            max-width: 300px;
-            margin-bottom: 20px;
+            max-width: 270px;
+            margin-bottom: 12px;
         }
 
         .mode-btn {
@@ -1657,20 +1660,20 @@
 
         #main-player-area.mode-audio #visual-container {
             aspect-ratio: 1 / 1;
-            max-width: 270px;
-            /* Heights match exactly: 480 * 9/16 = 270px */
-            margin: 0 auto 15px auto;
+            max-width: 230px;
+            max-height: 230px;
+            margin: 0 auto 10px auto;
         }
 
 
 
         /* 3. Инфо о треке */
         #current-track-info {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 700;
             color: var(--text);
-            min-height: 24px;
-            margin-bottom: 12px;
+            min-height: 22px;
+            margin-bottom: 8px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -4639,14 +4642,11 @@
                                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                         </svg>
                                     </button>
-                                    <button class="icon-action-btn" id="btn-delete-current-playlist"
-                                        onclick="deleteCurrentPlaylist(event)" data-tooltip="Удалить плейлист">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    <button class="icon-action-btn" id="btn-close-player-card"
+                                        onclick="toggleFullPlayerCard()" data-tooltip="Свернуть плеер" aria-label="Свернуть плеер">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                                             stroke-linecap="round" stroke-linejoin="round">
-                                            <polyline points="3 6 5 6 21 6"></polyline>
-                                            <path
-                                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
-                                            </path>
+                                            <polyline points="18 15 12 9 6 15"></polyline>
                                         </svg>
                                     </button>
                                 </div>
@@ -4857,9 +4857,17 @@
 
     <script>
         // --- ДАННЫЕ И НАСТРОЙКИ ---
-        window.musicSongs = [];
-        window.musicAlbums = [];
-        window.musicArtists = [];
+        try {
+            window.musicSongs = JSON.parse(localStorage.getItem('cached_music_songs') || '[]');
+            window.musicAlbums = JSON.parse(localStorage.getItem('cached_music_albums') || '[]');
+            window.musicArtists = JSON.parse(localStorage.getItem('cached_music_artists') || '[]');
+            window.currentSavedPlaylists = JSON.parse(localStorage.getItem('cached_music_playlists') || '[]');
+        } catch(e) {
+            window.musicSongs = [];
+            window.musicAlbums = [];
+            window.musicArtists = [];
+            window.currentSavedPlaylists = [];
+        }
         let bgFetchTimeout = null;
         let navigationHistory = [];
         let activeView = 'home';
@@ -9912,6 +9920,12 @@
         }
 
         async function loadSavedPlaylistsFromFirebase(uid) {
+            if (!uid) return;
+            let attempts = 0;
+            while ((!window.db || !window.collection || !window.getDocs) && attempts < 30) {
+                await new Promise(r => setTimeout(r, 100));
+                attempts++;
+            }
             if (!window.db || !window.collection || !window.getDocs) return;
             try {
                 const colRef = window.collection(window.db, "users", uid, "music");
@@ -9923,7 +9937,12 @@
                     }
                 });
                 savedPlaylists.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                window.currentSavedPlaylists = savedPlaylists;
+                try {
+                    localStorage.setItem('cached_music_playlists', JSON.stringify(savedPlaylists));
+                } catch (e) {}
                 renderSavedPlaylists(savedPlaylists);
+                renderHomePlaylists();
             } catch (e) {
                 console.error("Ошибка загрузки сохраненных плейлистов:", e);
             }
@@ -10197,10 +10216,13 @@
                     sidebarAvatar.innerText = "?";
                     sidebarAvatar.innerHTML = "?";
                 }
-                renderSavedPlaylists([]);
-                window.musicSongs = [];
-                window.musicAlbums = [];
-                window.musicArtists = [];
+                // Only clear if explicitly logged out and no local cached data
+                if (!localStorage.getItem('cached_music_playlists')) {
+                    renderSavedPlaylists([]);
+                    window.musicSongs = [];
+                    window.musicAlbums = [];
+                    window.musicArtists = [];
+                }
             }
         });
 
@@ -10983,6 +11005,12 @@
         }
 
         async function loadMediaLibrary(uid) {
+            if (!uid) return;
+            let attempts = 0;
+            while ((!window.db || !window.collection || !window.getDocs) && attempts < 30) {
+                await new Promise(r => setTimeout(r, 100));
+                attempts++;
+            }
             if (!window.db || !window.collection || !window.getDocs) return;
             try {
                 // Fetch user settings / youtube_library_url
@@ -10991,19 +11019,21 @@
                 // Fetch Songs
                 const songsRef = window.collection(window.db, "users", uid, "music_songs");
                 const songsSnap = await window.getDocs(songsRef);
-                window.musicSongs = [];
+                const loadedSongs = [];
                 songsSnap.forEach(doc => {
-                    window.musicSongs.push(doc.data());
+                    loadedSongs.push(doc.data());
                 });
+                window.musicSongs = loadedSongs;
 
                 // Fetch Albums
                 const albumsRef = window.collection(window.db, "users", uid, "music_albums");
                 const albumsSnap = await window.getDocs(albumsRef);
-                window.musicAlbums = [];
+                const loadedAlbums = [];
                 albumsSnap.forEach(doc => {
-                    window.musicAlbums.push(doc.data());
+                    loadedAlbums.push(doc.data());
                 });
-                window.musicAlbums.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                loadedAlbums.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                window.musicAlbums = loadedAlbums;
 
                 // Fetch User Doc for Favorite Artists
                 let userFavArtistIds = [];
@@ -11020,10 +11050,10 @@
                 // Fetch Artists
                 const artistsRef = window.collection(window.db, "users", uid, "music_artists");
                 const artistsSnap = await window.getDocs(artistsRef);
-                window.musicArtists = [];
+                const loadedArtists = [];
                 artistsSnap.forEach(doc => {
                     const artData = doc.data();
-                    window.musicArtists.push(artData);
+                    loadedArtists.push(artData);
                     if (artData.isFavorite) {
                         const artId = artData.id || doc.id;
                         if (!userFavArtistIds.includes(artId)) {
@@ -11031,10 +11061,14 @@
                         }
                     }
                 });
-                window.musicArtists.sort((a, b) => a.name.localeCompare(b.name));
+                loadedArtists.sort((a, b) => a.name.localeCompare(b.name));
+                window.musicArtists = loadedArtists;
 
-                // Save favorite artist IDs to localStorage cache
+                // Save to localStorage caches
                 try {
+                    localStorage.setItem('cached_music_songs', JSON.stringify(window.musicSongs));
+                    localStorage.setItem('cached_music_albums', JSON.stringify(window.musicAlbums));
+                    localStorage.setItem('cached_music_artists', JSON.stringify(window.musicArtists));
                     localStorage.setItem('favorite_artist_ids', JSON.stringify(userFavArtistIds));
                 } catch (e) {}
 
@@ -11088,6 +11122,9 @@
                 }
                 if (!window.location.hash || window.location.hash === '#home') {
                     renderHomePlaylists();
+                }
+                if (window.location.hash === '#playlists' && window.currentSavedPlaylists) {
+                    renderSavedPlaylists(window.currentSavedPlaylists);
                 }
 
                 // Auto-sync YouTube Media Library if configured

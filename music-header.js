@@ -48,7 +48,7 @@ const DEFAULT_MUSIC_HEADER_HTML = `<style>
     }
 
     .logo-img {
-        height: 30px;
+        height: 33px;
         width: auto;
         display: block;
         object-fit: contain;

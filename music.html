@@ -3592,7 +3592,7 @@
         }
 
         .logo-img {
-            height: 30px;
+            height: 33px;
             width: auto;
             display: block;
             object-fit: contain;
@@ -4027,15 +4027,10 @@
             background: #dce1e6;
             border-radius: 2px;
             overflow: hidden;
-            transition: height 0.1s ease;
         }
 
         body.dark .vk-tp-progress-track {
             background: rgba(255, 255, 255, 0.15);
-        }
-
-        .vk-tp-progress-bar-container:hover .vk-tp-progress-track {
-            height: 4.5px;
         }
 
         .vk-tp-progress-crossfade {
@@ -4326,35 +4321,6 @@
 
         body.dark .vk-popover-tooltip::before {
             border-bottom-color: #2a2b2c;
-        }
-
-        /* VK Toast Notifications */
-        .vk-player-toast {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: rgba(34, 34, 34, 0.92);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            color: #ffffff;
-            font-size: 13px;
-            font-weight: 500;
-            padding: 9px 18px;
-            border-radius: 10px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-            z-index: 99999;
-            opacity: 0;
-            pointer-events: none;
-            transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .vk-player-toast.show {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
         }
     </style>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-384FKZ1NQP"></script>
@@ -4980,6 +4946,8 @@
 
         let playlist = [];
         window.currentListId = null;
+        window.currentAlbumId = null;
+        window.currentArtistId = null;
         window.loadedPlaylistName = null;
         window.loadedPlaylistUrl = null;
 
@@ -5089,10 +5057,11 @@
             if (playlist.length === 0) {
                 const ib = document.getElementById('importBox');
                 if (ib) ib.classList.add('show');
+            } else {
+                trackIndex = getRequestedTrackIndex(playlist);
+                updateUI();
             }
         }
-
-
 
         const initialPlaylistAutoplay = window.location.hash === '#playlist';
         function shouldAutoplayInitialPlaylist() {
@@ -5107,23 +5076,37 @@
                 let listId = urlParams.get('list');
                 let vIds = urlParams.get('v');
 
-
                 if (listId) {
                     importPlaylist(listId, true, shouldAutoplayInitialPlaylist);
                 } else if (vIds) {
                     let ids = vIds.split(',');
                     playlist = [];
                     ids.forEach(id => playlist.push({ id: id, title: "Загрузка..." }));
-                    trackIndex = 0;
                     window.currentListId = null;
+                    trackIndex = getRequestedTrackIndex(playlist);
                     renderPlaylist();
                     fetchTitlesForPlaylist();
-                    loadDeck(p1, 0, shouldAutoplayInitialPlaylist());
+                    loadDeck(p1, trackIndex, shouldAutoplayInitialPlaylist());
                     prepareNext();
                     updateUI();
+                    updateUrlState();
                 } else {
+                    if (playlist.length === 0 && window.musicSongs && window.musicSongs.length > 0) {
+                        playlist = window.musicSongs.map(s => ({
+                            id: s.id,
+                            title: s.title,
+                            artist: s.artistName || s.artist || '',
+                            artistName: s.artistName || s.artist || '',
+                            channel: s.artistName || s.artist || '',
+                            albumName: s.albumName,
+                            duration: s.duration
+                        }));
+                    }
+                    trackIndex = getRequestedTrackIndex(playlist);
                     updateUI();
                     loadDeck(p1, trackIndex, false);
+                    prepareNext();
+                    updateUrlState();
                 }
                 // Принудительно применяем сохраненный режим плеера
                 toggleTurboMix(isTurboMixEnabled);
@@ -6255,21 +6238,7 @@
         let isVkDisliked = false;
         let isVkBroadcastActive = false;
 
-        function showVkToast(text, icon = '') {
-            let toast = document.getElementById('vk-player-toast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'vk-player-toast';
-                toast.className = 'vk-player-toast';
-                document.body.appendChild(toast);
-            }
-            toast.innerHTML = (icon ? `<span>${icon}</span>` : '') + `<span>${text}</span>`;
-            toast.classList.add('show');
-            if (window.vkToastTimer) clearTimeout(window.vkToastTimer);
-            window.vkToastTimer = setTimeout(() => {
-                toast.classList.remove('show');
-            }, 2300);
-        }
+        function showVkToast(text, icon = '') {}
 
         function parseVkTrackInfo(title, artist, trackObj) {
             let rawArtist = artist || (trackObj ? (trackObj.artist || trackObj.artistName || trackObj.channel || trackObj.channelTitle || trackObj.videoOwnerChannelTitle || trackObj.author) : '') || '';
@@ -6570,7 +6539,6 @@
             isCrossfadeEnabled = !isCrossfadeEnabled;
             localStorage.setItem('music-crossfade-enabled', isCrossfadeEnabled);
             updateCrossfadeUI();
-            showVkToast(isCrossfadeEnabled ? 'Кроссфейд включен' : 'Кроссфейд выключен', '⚡');
         }
 
         function updateCrossfadeUI() {
@@ -7157,6 +7125,7 @@
             prepareNext();
             renderPlaylist();
             updateUI();
+            updateUrlState();
         }
 
         function loadDeck(player, idx, play = true) {
@@ -7309,6 +7278,7 @@
             trackIndex = index;
             startMix();
             updateUI();
+            updateUrlState();
         }
 
         function nextTrack() {
@@ -7321,6 +7291,7 @@
             trackIndex = nextIndex;
             startMix();
             updateUI();
+            updateUrlState();
         }
 
         function prevTrack() {
@@ -7333,6 +7304,7 @@
             trackIndex = prevIndex;
             startMix();
             updateUI();
+            updateUrlState();
         }
 
         function createSparkleEffect(element) {
@@ -7688,6 +7660,7 @@
             updateUI();
             renderPlaylist();
             prepareNext();
+            updateUrlState();
         }
 
 
@@ -7979,11 +7952,11 @@
                     updateSavedPlaylistInfo(listId, videoIds[0], videoIds.length, videoIds);
                 }
 
-                window.scanningListId = null;
+                trackIndex = getRequestedTrackIndex(playlist);
                 updateUrlState();
 
                 if (!isPlaying) {
-                    loadDeck(p1, 0, shouldAutoplay());
+                    loadDeck(p1, trackIndex, shouldAutoplay());
                     prepareNext();
                     updateUI();
                 }
@@ -8036,19 +8009,124 @@
         }
 
 
+        function initActivePlaylistFromContext() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const albumId = urlParams.get('album') || localStorage.getItem('music-last-album-id');
+            const artistId = urlParams.get('artist') || localStorage.getItem('music-last-artist-id');
+
+            if (albumId && window.musicSongs && window.musicSongs.length > 0) {
+                const albumSongs = window.musicSongs
+                    .filter(s => s.albumId === albumId)
+                    .sort((a, b) => a.index - b.index);
+                if (albumSongs.length > 0) {
+                    window.currentAlbumId = albumId;
+                    window.currentArtistId = null;
+                    window.currentListId = null;
+                    playlist = albumSongs.map(s => ({
+                        id: s.id,
+                        title: s.title,
+                        artist: s.artistName || s.artist || '',
+                        artistName: s.artistName || s.artist || '',
+                        channel: s.artistName || s.artist || '',
+                        albumName: s.albumName,
+                        duration: s.duration
+                    }));
+                    trackIndex = getRequestedTrackIndex(playlist);
+                    return true;
+                }
+            }
+
+            if (artistId && window.musicSongs && window.musicSongs.length > 0) {
+                const artistSongs = window.musicSongs
+                    .filter(s => s.artistId === artistId)
+                    .sort((a, b) => a.index - b.index);
+                if (artistSongs.length > 0) {
+                    window.currentArtistId = artistId;
+                    window.currentAlbumId = null;
+                    window.currentListId = null;
+                    playlist = artistSongs.map(s => ({
+                        id: s.id,
+                        title: s.title,
+                        artist: s.artistName || s.artist || '',
+                        artistName: s.artistName || s.artist || '',
+                        channel: s.artistName || s.artist || '',
+                        albumName: s.albumName,
+                        duration: s.duration
+                    }));
+                    trackIndex = getRequestedTrackIndex(playlist);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function getRequestedTrackIndex(targetList = playlist) {
+            if (!targetList || targetList.length === 0) return 0;
+            const urlParams = new URLSearchParams(window.location.search);
+            const trackId = urlParams.get('track') || localStorage.getItem('music-last-track-id');
+            if (trackId) {
+                const found = targetList.findIndex(t => t.id === trackId);
+                if (found !== -1) return found;
+            }
+            const idxParam = urlParams.get('index') || localStorage.getItem('music-last-track-index');
+            if (idxParam !== null && idxParam !== undefined) {
+                const idx = parseInt(idxParam, 10);
+                if (!isNaN(idx) && idx >= 0 && idx < targetList.length) {
+                    return idx;
+                }
+            }
+            return 0;
+        }
+
         function updateUrlState() {
             let url = new URL(window.location.href);
-            if (window.currentListId) {
-                url.searchParams.set('list', window.currentListId);
-                url.searchParams.delete('v');
+            const currentTrack = (playlist.length > 0 && playlist[trackIndex]) ? playlist[trackIndex] : null;
+
+            if (currentTrack && currentTrack.id) {
+                url.searchParams.set('track', currentTrack.id);
+                localStorage.setItem('music-last-track-id', currentTrack.id);
+                localStorage.setItem('music-last-track-index', trackIndex);
             } else {
-                let vIds = playlist.map(item => item.id).join(',');
-                if (vIds && vIds.length < 1500) {
-                    url.searchParams.set('v', vIds);
-                } else {
-                    url.searchParams.delete('v');
-                }
+                url.searchParams.delete('track');
+            }
+
+            if (window.currentAlbumId) {
+                url.searchParams.set('album', window.currentAlbumId);
+                url.searchParams.delete('artist');
                 url.searchParams.delete('list');
+                url.searchParams.delete('v');
+                localStorage.setItem('music-last-album-id', window.currentAlbumId);
+                localStorage.removeItem('music-last-artist-id');
+                localStorage.removeItem('music-last-list-id');
+            } else if (window.currentArtistId) {
+                url.searchParams.set('artist', window.currentArtistId);
+                url.searchParams.delete('album');
+                url.searchParams.delete('list');
+                url.searchParams.delete('v');
+                localStorage.setItem('music-last-artist-id', window.currentArtistId);
+                localStorage.removeItem('music-last-album-id');
+                localStorage.removeItem('music-last-list-id');
+            } else if (window.currentListId) {
+                url.searchParams.set('list', window.currentListId);
+                url.searchParams.delete('album');
+                url.searchParams.delete('artist');
+                url.searchParams.delete('v');
+                localStorage.setItem('music-last-list-id', window.currentListId);
+                localStorage.removeItem('music-last-album-id');
+                localStorage.removeItem('music-last-artist-id');
+            } else {
+                url.searchParams.delete('album');
+                url.searchParams.delete('artist');
+                url.searchParams.delete('list');
+                if (playlist.length > 0) {
+                    let vIds = playlist.map(item => item.id).join(',');
+                    if (vIds && vIds.length < 1500) {
+                        url.searchParams.set('v', vIds);
+                    } else {
+                        url.searchParams.delete('v');
+                    }
+                }
             }
             window.history.replaceState({}, '', url);
         }
@@ -8174,13 +8252,14 @@
                         updateSavedPlaylistInfo(window.scanningListId, ids[0], ids.length, ids);
                     }
 
+                    trackIndex = getRequestedTrackIndex(playlist);
                     window.scanningListId = null;
                     updateUrlState();
                     fetchTitlesForPlaylist();
 
                     if (!isPlaying) {
                         if (shouldReplace) {
-                            loadDeck(p1, 0, autoplayImportedPlaylist);
+                            loadDeck(p1, trackIndex, autoplayImportedPlaylist);
                             prepareNext();
                         }
                         updateUI();
@@ -11259,6 +11338,17 @@
                 if (window.youtubeLibraryUrl || localStorage.getItem('youtube_library_url')) {
                     syncYouTubeMediaLibrary({ silent: true }).catch(err => console.error("Auto-sync library error:", err));
                 }
+
+                if (!isPlaying && playlist.length === 0) {
+                    if (initActivePlaylistFromContext()) {
+                        renderPlaylist();
+                        updateUI();
+                        if (p1 && typeof p1.cueVideoById === 'function') {
+                            loadDeck(p1, trackIndex, false);
+                            prepareNext();
+                        }
+                    }
+                }
             } catch (e) {
                 console.error("Ошибка загрузки медиатеки из Firestore:", e);
             }
@@ -12796,10 +12886,14 @@
         function playSongFromAlbum(albumId, songId) {
             if (window.currentRadioStation) stopRadioPlayback();
             const currentSong = playlist[trackIndex];
-            if (currentSong && currentSong.id === songId) {
+            if (currentSong && currentSong.id === songId && window.currentAlbumId === albumId) {
                 togglePlay();
                 return;
             }
+
+            window.currentAlbumId = albumId;
+            window.currentArtistId = null;
+            window.currentListId = null;
 
             updateAlbumLastPlayed(albumId);
             const albumSongs = window.musicSongs
@@ -12831,10 +12925,14 @@
         function playSongFromArtist(artistId, songId) {
             if (window.currentRadioStation) stopRadioPlayback();
             const currentSong = playlist[trackIndex];
-            if (currentSong && currentSong.id === songId) {
+            if (currentSong && currentSong.id === songId && window.currentArtistId === artistId) {
                 togglePlay();
                 return;
             }
+
+            window.currentArtistId = artistId;
+            window.currentAlbumId = null;
+            window.currentListId = null;
 
             const artistSongs = window.musicSongs
                 .filter(s => s.artistId === artistId)
@@ -12907,6 +13005,9 @@
         function playAlbumDirect(event, albumId) {
             if (event) event.stopPropagation();
             if (window.currentRadioStation) stopRadioPlayback();
+            window.currentAlbumId = albumId;
+            window.currentArtistId = null;
+            window.currentListId = null;
             updateAlbumLastPlayed(albumId);
             const albumSongs = window.musicSongs
                 .filter(s => s.albumId === albumId)
@@ -12944,6 +13045,9 @@
             const hash = window.location.hash;
             const albumId = hash.split('?id=')[1] || '';
             if (!albumId) return;
+            window.currentAlbumId = albumId;
+            window.currentArtistId = null;
+            window.currentListId = null;
             updateAlbumLastPlayed(albumId);
 
             const albumSongs = window.musicSongs

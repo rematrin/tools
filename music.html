@@ -15,9 +15,9 @@
         /* СВЕТЛАЯ ТЕМА (По умолчанию - Apple Music / playlists.html Light Theme) */
         :root {
             /* Apple Music Light Theme Palette (Matching playlists.html) */
-            --bg: #eaebee;
+            --bg: #edeef0;
             /* Main content background */
-            --sidebar-bg: #eaebee;
+            --sidebar-bg: #edeef0;
             /* Sidebar background matching playlists.html */
             --text: #1d1d1f;
             /* Primary text */
@@ -5341,10 +5341,10 @@
                             </div>
                         </div>
 
-                        <!-- Станции для вас -->
+                        <!-- Избранные радиостанции -->
                         <div class="vk-block-card">
                             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Станции для вас</h3>
+                                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Избранные радиостанции</h3>
                                 <div style="display: flex; gap: 8px;">
                                     <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -5354,55 +5354,8 @@
                                     </button>
                                 </div>
                             </div>
-                            <div style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
-                                <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: center;" onclick="alert('Радио: Моя станция')">
-                                    <div class="album-card-wrapper" style="border-radius: 50%;">
-                                        <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
-                                        <div class="album-card-overlay">
-                                            <button class="album-card-play" style="width: 40px; height: 40px;">
-                                                <span style="font-size: 8px; font-weight: 800; color: #fc3c44; letter-spacing: 0.05em;">LIVE</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Моя станция</div>
-                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Персональное радио</div>
-                                </div>
-                                <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: center;" onclick="alert('Радио: Хиты')">
-                                    <div class="album-card-wrapper" style="border-radius: 50%;">
-                                        <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
-                                        <div class="album-card-overlay">
-                                            <button class="album-card-play" style="width: 40px; height: 40px;">
-                                                <span style="font-size: 8px; font-weight: 800; color: #fc3c44; letter-spacing: 0.05em;">LIVE</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Хиты</div>
-                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Apple Music 1</div>
-                                </div>
-                                <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: center;" onclick="alert('Радио: Chill Station')">
-                                    <div class="album-card-wrapper" style="border-radius: 50%;">
-                                        <img src="https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
-                                        <div class="album-card-overlay">
-                                            <button class="album-card-play" style="width: 40px; height: 40px;">
-                                                <span style="font-size: 8px; font-weight: 800; color: #fc3c44; letter-spacing: 0.05em;">LIVE</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Chill Station</div>
-                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Спокойная музыка</div>
-                                </div>
-                                <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: center;" onclick="alert('Радио: Alternative Live')">
-                                    <div class="album-card-wrapper" style="border-radius: 50%;">
-                                        <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=500&q=80" style="width: 100%; height: 100%; object-fit: cover;">
-                                        <div class="album-card-overlay">
-                                            <button class="album-card-play" style="width: 40px; height: 40px;">
-                                                <span style="font-size: 8px; font-weight: 800; color: #fc3c44; letter-spacing: 0.05em;">LIVE</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Alternative Live</div>
-                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Инди и Рок</div>
-                                </div>
+                            <div id="home-favorite-radio-container" style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 0; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
+                                <div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">Загрузка...</div>
                             </div>
                         </div>
                     </div>
@@ -5825,8 +5778,9 @@
             }
 
             stubView.innerHTML = content;
-            if (hash === '#home') {
+            if (hash === '#home' || hash === '' || hash === '#') {
                 renderHomePlaylists();
+                refreshRadioFavorites();
             } else if (hash === '#radio') {
                 renderRadioStationsGrid(window.activeRadioTab || 'featured');
                 renderRecentRadioStations();
@@ -9918,6 +9872,7 @@
 
         function renderHomePlaylists() {
             try {
+                refreshRadioFavorites();
                 const addedContainer = document.getElementById('home-recently-added-container');
                 const playedContainer = document.getElementById('home-recently-played-container');
 
@@ -13872,6 +13827,7 @@
         function refreshRadioFavorites() {
             const grid = document.getElementById('radio-favorites-grid');
             const status = document.getElementById('radio-favorites-status');
+            const homeFavContainer = document.getElementById('home-favorite-radio-container');
             const favorites = [...visibleRadioFavorites().values()].sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
             if (grid) grid.innerHTML = favorites.map(renderRadioStationCard).join('');
             if (status) {
@@ -13880,6 +13836,23 @@
                     : !radioFavoritesReady ? 'Загрузка избранного…'
                     : favorites.length ? '' : 'Нажмите звёздочку на станции или рядом с LIVE — она появится здесь.';
                 status.hidden = !status.textContent;
+            }
+            if (homeFavContainer) {
+                if (!window.currentUser) {
+                    homeFavContainer.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">Войдите в аккаунт, чтобы увидеть сохраненные радиостанции</div>';
+                } else if (radioFavoritesError) {
+                    homeFavContainer.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">Не удалось загрузить сохраненные радиостанции</div>';
+                } else if (!radioFavoritesReady) {
+                    homeFavContainer.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">Загрузка избранного…</div>';
+                } else if (favorites.length === 0) {
+                    homeFavContainer.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">У вас пока нет сохраненных радиостанций. Добавьте радиостанции в избранное в разделе <a href="#radio" style="color: var(--accent); text-decoration: none; font-weight: 500;">«Радио»</a>.</div>';
+                } else {
+                    homeFavContainer.innerHTML = favorites.map(station => `
+                        <div style="width: 160px; flex-shrink: 0;">
+                            ${renderRadioStationCard(station)}
+                        </div>
+                    `).join('');
+                }
             }
             document.querySelectorAll('.radio-favorite-btn').forEach(button => {
                 if (!button.dataset.radioStation) return;

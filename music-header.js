@@ -54,6 +54,20 @@ const DEFAULT_MUSIC_HEADER_HTML = `<style>
         object-fit: contain;
     }
 
+    .logo-img.logo-dark {
+        display: none;
+    }
+
+    body.dark .logo-img.logo-light,
+    html.dark .logo-img.logo-light {
+        display: none;
+    }
+
+    body.dark .logo-img.logo-dark,
+    html.dark .logo-img.logo-dark {
+        display: block;
+    }
+
     /* ПРАВАЯ ЧАСТЬ */
     .header-right {
         display: flex;
@@ -92,7 +106,8 @@ const DEFAULT_MUSIC_HEADER_HTML = `<style>
 
         <div class="header-left">
             <a href="music.html#home" class="vk-header-logo" title="Главная музыки">
-                <img src="img/music_logo.png" alt="Music" class="logo-img">
+                <img src="img/music_logo.png" alt="Music" class="logo-img logo-light">
+                <img src="img/music_logo_dark.png" alt="Music" class="logo-img logo-dark">
             </a>
         </div>
 

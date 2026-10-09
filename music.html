@@ -2780,6 +2780,12 @@
             font-weight: 600;
             margin: 0 0 12px 0;
             cursor: pointer;
+            display: inline-block;
+            width: fit-content;
+        }
+
+        .album-details-artist:hover {
+            text-decoration: underline;
         }
 
         .album-details-meta {
@@ -2817,6 +2823,36 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        .song-artist-link {
+            color: #fa243c;
+            cursor: pointer;
+            display: inline-block;
+            max-width: 100%;
+            vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .song-artist-link:hover {
+            text-decoration: underline;
+        }
+
+        .song-album-link {
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: inline-block;
+            max-width: 100%;
+            vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .song-album-link:hover {
+            text-decoration: underline;
         }
 
         .tracks-table tr:hover {
@@ -5640,7 +5676,7 @@
                                 <img class="album-details-cover" id="album-details-cover" src="" alt="Cover" style="width: 220px; height: 220px; border-radius: 16px; object-fit: cover; box-shadow: 0 8px 24px rgba(0,0,0,0.12); flex-shrink: 0;">
                                 <div style="display: flex; flex-direction: column; justify-content: center; flex: 1; min-width: 250px;">
                                     <h2 class="album-details-title" id="album-details-title" style="font-size: 2.2rem; font-weight: 800; margin: 0 0 8px 0; color: var(--text);">Загрузка...</h2>
-                                    <p class="album-details-artist" id="album-details-artist" style="color:#fa243c; font-weight:700; font-size: 1.2rem; cursor:pointer; margin: 0 0 8px 0;">...</p>
+                                    <p class="album-details-artist" id="album-details-artist" style="color:#fa243c; font-weight:700; font-size: 1.2rem; cursor:pointer; margin: 0 0 8px 0; width: fit-content;">...</p>
                                     <div id="album-details-meta" style="margin-bottom: 24px;">...</div>
                                     <div style="display:flex; gap:12px; justify-content: flex-start; align-items: center;">
                                         <button class="btn-playlist-action" onclick="playCurrentAlbum()"
@@ -11974,7 +12010,7 @@
                                     <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${isCurrent ? '#fa243c' : 'var(--text)'};">${song.title}</span>
                                 </div>
                             </td>
-                            <td style="color:var(--text-secondary); cursor:pointer;" onclick="event.stopPropagation(); window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</td>
+                            <td><span class="song-album-link" onclick="event.stopPropagation(); window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</span></td>
                             <td class="track-duration">${formatTime(song.duration)}</td>
                         </tr>
                     `;
@@ -12784,8 +12820,8 @@
                             <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${isCurrent ? '#fa243c' : 'var(--text)'};">${song.title}</span>
                         </div>
                     </td>
-                    <td style="color:#fa243c; cursor:pointer;" onclick="event.stopPropagation(); window.location.hash='#artist-details?id=${song.artistId}'">${song.artistName}</td>
-                    <td style="color:var(--text-secondary); cursor:pointer;" onclick="event.stopPropagation(); window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</td>
+                    <td><span class="song-artist-link" onclick="event.stopPropagation(); window.location.hash='#artist-details?id=${song.artistId}'">${song.artistName}</span></td>
+                    <td><span class="song-album-link" onclick="event.stopPropagation(); window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</span></td>
                     <td class="track-duration">${formatTime(song.duration)}</td>
                 `;
                 table.appendChild(tr);

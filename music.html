@@ -2180,6 +2180,55 @@
             margin-left: 2px;
         }
 
+        /* Centered Big Play for Song Cards on Home Page */
+        .song-card-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+        }
+
+        .album-card-wrapper:hover .song-card-overlay {
+            opacity: 1;
+        }
+
+        .song-card-play {
+            background: none;
+            border: none;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #ffffff;
+            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.2s ease;
+            pointer-events: auto;
+            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
+        }
+
+        .song-card-play:hover {
+            transform: scale(1.15);
+            color: #ffffff;
+            filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.75));
+        }
+
+        .song-card-play:active {
+            transform: scale(0.95);
+        }
+
+        .song-card-play svg {
+            width: 44px;
+            height: 44px;
+            fill: currentColor;
+            display: block;
+        }
+
         /* Radio Banners & Enhanced Section Styles */
         .radio-hero-banner {
             position: relative;
@@ -10048,8 +10097,8 @@
                         <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="playSongFromFlatList('${safeSongId}')">
                             <div class="album-card-wrapper">
                                 ${coverImgHtml}
-                                <div class="album-card-overlay">
-                                    <button class="album-card-play" onclick="event.stopPropagation(); playSongFromFlatList('${safeSongId}')">
+                                <div class="song-card-overlay">
+                                    <button class="song-card-play" onclick="event.stopPropagation(); playSongFromFlatList('${safeSongId}')" aria-label="Воспроизвести трек">
                                         <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                                     </button>
                                 </div>

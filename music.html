@@ -7237,6 +7237,7 @@
             if (playersReadyCount < 2) return;
 
             let activeP = (currentDeck === 1) ? p1 : p2;
+            let nextP = (currentDeck === 1) ? p2 : p1;
 
             if (!isPlaying) {
                 const pState = activeP.getPlayerState();
@@ -7244,10 +7245,16 @@
                     startMix();
                 } else {
                     activeP.playVideo();
+                    if (isCrossfading && nextP && typeof nextP.playVideo === 'function') {
+                        try { nextP.playVideo(); } catch (e) {}
+                    }
                     startVideoLoadingTimeout(trackIndex);
                 }
             } else {
                 activeP.pauseVideo();
+                if (isCrossfading && nextP && typeof nextP.pauseVideo === 'function') {
+                    try { nextP.pauseVideo(); } catch (e) {}
+                }
                 clearVideoLoadingTimeout();
             }
         }
@@ -7366,10 +7373,13 @@
             // Cancel active crossfade if this error is handling the fading-in song
             if (isCrossfading) {
                 clearInterval(activeCrossfadeInterval);
+                activeCrossfadeInterval = null;
                 isCrossfading = false;
                 setMixStatus(false);
                 let nextP = (currentDeck === 1) ? p2 : p1;
-                if (nextP && typeof nextP.stopVideo === 'function') nextP.stopVideo();
+                if (nextP && typeof nextP.stopVideo === 'function') {
+                    try { nextP.stopVideo(); nextP.setVolume(0); } catch (e) {}
+                }
             }
 
             // Сбрасываем скорость плееров на нормальную (1.0x) при ошибке
@@ -7721,12 +7731,13 @@
 
             if (!isCrossfading && playlist.length > 1 && isCrossfadeEnabled) {
                 let triggerCrossfade = false;
+                const effectiveCrossfadeDuration = Math.min(crossfadeDuration, Math.max(2, duration / 2));
                 if (isTurboMixEnabled && activeP.randomMixTargetEnd) {
-                    if (current >= activeP.randomMixTargetEnd - crossfadeDuration || (duration - current) < crossfadeDuration) {
+                    if (current >= activeP.randomMixTargetEnd - effectiveCrossfadeDuration || (duration - current) < effectiveCrossfadeDuration) {
                         triggerCrossfade = true;
                     }
                 } else {
-                    if ((duration - current) < crossfadeDuration && (duration - current) > 0.5) {
+                    if (duration > effectiveCrossfadeDuration && (duration - current) <= effectiveCrossfadeDuration && (duration - current) > 0.4 && current > 1) {
                         triggerCrossfade = true;
                     }
                 }
@@ -7743,7 +7754,12 @@
             let activeP = (currentDeck === 1) ? p1 : p2;
             let nextP = (currentDeck === 1) ? p2 : p1;
 
-            nextP.playVideo();
+            if (nextP && typeof nextP.setVolume === 'function') {
+                try { nextP.setVolume(0); } catch (e) {}
+            }
+            if (nextP && typeof nextP.playVideo === 'function') {
+                try { nextP.playVideo(); } catch (e) {}
+            }
 
             // Start the loading timeout for the next track being faded in!
             if (window.nextTrackIndex !== null && window.nextTrackIndex !== undefined) {
@@ -7761,8 +7777,14 @@
             let stepTime = (crossfadeDuration * 1000) / steps;
             let vol = 0;
 
+            if (activeP && typeof activeP.setVolume === 'function') {
+                try { activeP.setVolume(playerVolume); } catch (e) {}
+            }
+
             clearInterval(activeCrossfadeInterval);
             activeCrossfadeInterval = setInterval(() => {
+                if (!isPlaying) return;
+
                 vol += (100 / steps);
                 if (vol > 100) vol = 100;
 
@@ -7819,11 +7841,16 @@
                 let realNextVol = nextVolFactor * playerVolume;
                 let realActiveVol = activeVolFactor * playerVolume;
 
-                nextP.setVolume(realNextVol);
-                activeP.setVolume(realActiveVol);
+                if (nextP && typeof nextP.setVolume === 'function') {
+                    try { nextP.setVolume(realNextVol); } catch (e) {}
+                }
+                if (activeP && typeof activeP.setVolume === 'function') {
+                    try { activeP.setVolume(realActiveVol); } catch (e) {}
+                }
 
                 if (vol >= 100) {
                     clearInterval(activeCrossfadeInterval);
+                    activeCrossfadeInterval = null;
                     finishMix(activeP);
                 }
             }, stepTime);
@@ -7842,7 +7869,11 @@
         }
 
         function finishMix(oldP) {
-            oldP.stopVideo();
+            clearInterval(activeCrossfadeInterval);
+            activeCrossfadeInterval = null;
+            if (oldP && typeof oldP.stopVideo === 'function') {
+                try { oldP.stopVideo(); oldP.setVolume(0); } catch (e) {}
+            }
             isCrossfading = false;
             setMixStatus(false);
 
@@ -8365,7 +8396,7 @@
                 if (event.data === YT.PlayerState.PLAYING) {
                     clearVideoLoadingTimeout();
 
-                    if (activePlayer && typeof activePlayer.setVolume === 'function') {
+                    if (!isCrossfading && activePlayer && typeof activePlayer.setVolume === 'function') {
                         activePlayer.setVolume(playerVolume);
                     }
 
@@ -8532,7 +8563,29 @@
 
         function seekTo(val) {
             let activeP = (currentDeck === 1) ? p1 : p2;
+            let otherP = (currentDeck === 1) ? p2 : p1;
             if (!activeP || typeof activeP.getDuration !== 'function') return;
+
+            if (isCrossfading) {
+                clearInterval(activeCrossfadeInterval);
+                activeCrossfadeInterval = null;
+                isCrossfading = false;
+                setMixStatus(false);
+                if (otherP && typeof otherP.stopVideo === 'function') {
+                    try { otherP.stopVideo(); otherP.setVolume(0); } catch (e) {}
+                }
+                if (p1 && typeof p1.setPlaybackRate === 'function') {
+                    try { p1.setPlaybackRate(1.0); } catch (e) {}
+                }
+                if (p2 && typeof p2.setPlaybackRate === 'function') {
+                    try { p2.setPlaybackRate(1.0); } catch (e) {}
+                }
+                if (activeP && typeof activeP.setVolume === 'function') {
+                    try { activeP.setVolume(playerVolume); } catch (e) {}
+                }
+                prepareNext();
+            }
+
             let dur = activeP.getDuration();
             if (dur > 0) {
                 const targetTime = dur * (val / 100);

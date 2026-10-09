@@ -2173,11 +2173,38 @@
             transform: scale(0.95);
         }
 
-        .album-card-play svg {
+        .album-card-play svg,
+        .play-btn-circle svg {
             width: 16px;
             height: 16px;
             fill: currentColor;
+            display: block;
+        }
+
+        .album-card-play .album-play-icon,
+        .play-btn-circle .album-play-icon {
             margin-left: 2px;
+            display: block;
+        }
+
+        .album-card-play .album-pause-icon,
+        .play-btn-circle .album-pause-icon {
+            display: none;
+            margin-left: 0;
+        }
+
+        .home-album-card.playing .album-card-play .album-play-icon,
+        .home-playlist-card.playing .album-card-play .album-play-icon,
+        .album-card.playing .play-btn-circle .album-play-icon,
+        .saved-playlist-card.playing .play-btn-circle .album-play-icon {
+            display: none !important;
+        }
+
+        .home-album-card.playing .album-card-play .album-pause-icon,
+        .home-playlist-card.playing .album-card-play .album-pause-icon,
+        .album-card.playing .play-btn-circle .album-pause-icon,
+        .saved-playlist-card.playing .play-btn-circle .album-pause-icon {
+            display: block !important;
         }
 
         /* Centered Big Play for Song Cards on Home Page */
@@ -2207,25 +2234,38 @@
             justify-content: center;
             cursor: pointer;
             color: #ffffff;
-            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.2s ease;
             pointer-events: auto;
             filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55));
         }
 
         .song-card-play:hover {
-            transform: scale(1.15);
             color: #ffffff;
-            filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.75));
         }
 
         .song-card-play:active {
-            transform: scale(0.95);
+            opacity: 0.85;
         }
 
         .song-card-play svg {
             width: 44px;
             height: 44px;
             fill: currentColor;
+            display: block;
+        }
+
+        .song-card-play .song-pause-icon {
+            display: none;
+        }
+
+        .song-card-play .song-play-icon {
+            display: block;
+        }
+
+        .home-song-card.playing .song-card-play .song-play-icon {
+            display: none;
+        }
+
+        .home-song-card.playing .song-card-play .song-pause-icon {
             display: block;
         }
 
@@ -6280,6 +6320,57 @@
                     }
                 });
             }
+
+            // 4. Home song cards (Недавно прослушанные / добавленные)
+            const homeSongCards = document.querySelectorAll('.home-song-card');
+            homeSongCards.forEach(card => {
+                const cardSongId = card.getAttribute('data-song-id');
+                const isCurrent = (currentSongId && cardSongId === currentSongId);
+                const isPlayingCurrent = isCurrent && isPlaying && !window.currentRadioStation;
+                card.classList.toggle('active', !!isCurrent);
+                card.classList.toggle('playing', !!isPlayingCurrent);
+                const btn = card.querySelector('.song-card-play');
+                if (btn) {
+                    btn.setAttribute('aria-label', isPlayingCurrent ? 'Пауза' : 'Воспроизвести трек');
+                }
+            });
+
+            // 5. Album cards (Home page, Albums tab, Artist page)
+            const allAlbumCards = document.querySelectorAll('.home-album-card, .album-card');
+            const currentPlayingSong = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex] : null;
+            const currentSongObj = currentPlayingSong ? (window.musicSongs || []).find(s => s.id === currentPlayingSong.id) : null;
+            const activeAlbumId = window.currentAlbumId || (currentSongObj ? currentSongObj.albumId : null);
+
+            allAlbumCards.forEach(card => {
+                const cardAlbumId = card.getAttribute('data-album-id');
+                const isCurrent = !!(activeAlbumId && cardAlbumId === activeAlbumId);
+                const isPlayingCurrent = isCurrent && isPlaying && !window.currentRadioStation;
+                card.classList.toggle('active', isCurrent);
+                card.classList.toggle('playing', isPlayingCurrent);
+                const btn = card.querySelector('.album-card-play, .play-btn-circle');
+                if (btn) {
+                    btn.setAttribute('aria-label', isPlayingCurrent ? 'Пауза' : 'Воспроизвести альбом');
+                }
+            });
+
+            // 6. Playlist cards (Home page & Playlists tab)
+            const allPlaylistCards = document.querySelectorAll('.home-playlist-card, .saved-playlist-card');
+            const activePlaylistUrl = window.loadedPlaylistUrl || null;
+            const activeListId = window.currentListId || null;
+
+            allPlaylistCards.forEach(card => {
+                const cardUrl = card.getAttribute('data-playlist-url');
+                const cardListId = card.getAttribute('data-playlist-id');
+                const isCurrent = !!((activePlaylistUrl && cardUrl && (cardUrl === activePlaylistUrl || cardUrl.includes(activePlaylistUrl) || activePlaylistUrl.includes(cardUrl))) ||
+                                  (activeListId && cardListId && activeListId === cardListId));
+                const isPlayingCurrent = isCurrent && isPlaying && !window.currentRadioStation;
+                card.classList.toggle('active', isCurrent);
+                card.classList.toggle('playing', isPlayingCurrent);
+                const btn = card.querySelector('.album-card-play, .play-btn-circle');
+                if (btn) {
+                    btn.setAttribute('aria-label', isPlayingCurrent ? 'Пауза' : 'Воспроизвести плейлист');
+                }
+            });
         }
 
         document.addEventListener('visibilitychange', () => {
@@ -6480,6 +6571,7 @@
                 btn.removeAttribute('data-vk-tooltip');
                 btn.setAttribute('aria-label', isPlayingState ? 'Пауза' : 'Воспроизведение');
             }
+            updateActiveMediaRowHighlight();
         }
 
         let isVkPlayerSeeking = false;
@@ -9950,17 +10042,25 @@
                     metaText = new Date(p.created_at).toLocaleDateString();
                 }
 
+                const isCurrent = !!((window.loadedPlaylistUrl && (p.url === window.loadedPlaylistUrl || p.url.includes(window.loadedPlaylistUrl) || window.loadedPlaylistUrl.includes(p.url))) || (listId && window.currentListId === listId));
+                const isPlayingCurrent = isCurrent && isPlaying && !window.currentRadioStation;
+
                 const div = document.createElement('div');
-                div.className = 'saved-playlist-card';
+                div.className = `saved-playlist-card ${isPlayingCurrent ? 'playing' : ''} ${isCurrent ? 'active' : ''}`;
+                div.setAttribute('data-playlist-url', p.url);
+                if (listId) div.setAttribute('data-playlist-id', listId);
                 div.onclick = () => loadSavedPlaylist(p.url, p.name);
 
                 div.innerHTML = `
                     <div class="playlist-card-cover">
                         ${coverHtml}
                         <div class="album-hover-play">
-                            <div class="play-btn-circle" onclick="event.stopPropagation(); playPlaylistDirectlyByUrl('${escapeHtml(p.url)}', '${escapeHtml(p.name)}')">
-                                <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                            <div class="play-btn-circle" onclick="event.stopPropagation(); playPlaylistDirectlyByUrl('${escapeHtml(p.url)}', '${escapeHtml(p.name)}')" aria-label="${isPlayingCurrent ? 'Пауза' : 'Воспроизвести плейлист'}">
+                                <svg class="album-play-icon" viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
                                     <polygon points="6 4 20 12 6 20 6 4"></polygon>
+                                </svg>
+                                <svg class="album-pause-icon" viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
                                 </svg>
                             </div>
                         </div>
@@ -10076,13 +10176,21 @@
 
                 if (item.type === 'playlist') {
                     const safeUrl = escapeHtml(item.url);
+                    let listId = '';
+                    try {
+                        const parsedUrl = new URL(item.url, window.location.origin);
+                        listId = parsedUrl.searchParams.get('list') || '';
+                    } catch(e) {}
+                    const isCurrent = !!((window.loadedPlaylistUrl && (item.url === window.loadedPlaylistUrl || item.url.includes(window.loadedPlaylistUrl) || window.loadedPlaylistUrl.includes(item.url))) || (listId && window.currentListId === listId));
+                    const isPlayingCurrent = isCurrent && isPlaying && !window.currentRadioStation;
                     return `
-                        <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="loadSavedPlaylist('${safeUrl}', '${safeName}')">
+                        <div class="home-playlist-card ${isPlayingCurrent ? 'playing' : ''} ${isCurrent ? 'active' : ''}" data-playlist-url="${safeUrl}" data-playlist-id="${escapeHtml(listId)}" style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="loadSavedPlaylist('${safeUrl}', '${safeName}')">
                             <div class="album-card-wrapper">
                                 ${coverImgHtml}
                                 <div class="album-card-overlay">
-                                    <button class="album-card-play" onclick="event.stopPropagation(); playPlaylistDirectlyByUrl('${safeUrl}', '${safeName}')">
-                                        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                    <button class="album-card-play" onclick="event.stopPropagation(); playPlaylistDirectlyByUrl('${safeUrl}', '${safeName}')" aria-label="${isPlayingCurrent ? 'Пауза' : 'Воспроизвести плейлист'}">
+                                        <svg class="album-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        <svg class="album-pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
                                     </button>
                                 </div>
                             </div>
@@ -10093,13 +10201,17 @@
                 } else if (item.type === 'song') {
                     const safeSongId = escapeHtml(item.id);
                     const subtitle = item.artistName ? escapeHtml(item.artistName) : 'Трек';
+                    const currentSongId = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex].id : null;
+                    const isCurrent = (currentSongId === item.id);
+                    const isPlayingCurrent = isCurrent && isPlaying && !window.currentRadioStation;
                     return `
-                        <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="playSongFromFlatList('${safeSongId}')">
+                        <div class="home-song-card ${isPlayingCurrent ? 'playing' : ''} ${isCurrent ? 'active' : ''}" data-song-id="${safeSongId}" style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="playSongFromFlatList('${safeSongId}')">
                             <div class="album-card-wrapper">
                                 ${coverImgHtml}
                                 <div class="song-card-overlay">
-                                    <button class="song-card-play" onclick="event.stopPropagation(); playSongFromFlatList('${safeSongId}')" aria-label="Воспроизвести трек">
-                                        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                    <button class="song-card-play" onclick="event.stopPropagation(); playSongFromFlatList('${safeSongId}')" aria-label="${isPlayingCurrent ? 'Пауза' : 'Воспроизвести трек'}">
+                                        <svg class="song-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        <svg class="song-pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
                                     </button>
                                 </div>
                             </div>
@@ -10109,13 +10221,19 @@
                     `;
                 } else {
                     const safeAlbumId = escapeHtml(item.id);
+                    const currentSong = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex] : null;
+                    const playingSongObj = currentSong ? (window.musicSongs || []).find(s => s.id === currentSong.id) : null;
+                    const activeAlbumId = window.currentAlbumId || (playingSongObj ? playingSongObj.albumId : null);
+                    const isCurrent = (activeAlbumId === item.id);
+                    const isPlayingCurrent = isCurrent && isPlaying && !window.currentRadioStation;
                     return `
-                        <div style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash = '#album-details?id=${safeAlbumId}'">
+                        <div class="home-album-card ${isPlayingCurrent ? 'playing' : ''} ${isCurrent ? 'active' : ''}" data-album-id="${safeAlbumId}" style="width: 160px; flex-shrink: 0; cursor: pointer; text-align: left;" onclick="window.location.hash = '#album-details?id=${safeAlbumId}'">
                             <div class="album-card-wrapper">
                                 ${coverImgHtml}
                                 <div class="album-card-overlay">
-                                    <button class="album-card-play" onclick="event.stopPropagation(); playAlbumDirect(event, '${safeAlbumId}')">
-                                        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                    <button class="album-card-play" onclick="event.stopPropagation(); playAlbumDirect(event, '${safeAlbumId}')" aria-label="${isPlayingCurrent ? 'Пауза' : 'Воспроизвести альбом'}">
+                                        <svg class="album-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                        <svg class="album-pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
                                     </button>
                                 </div>
                             </div>
@@ -10168,6 +10286,12 @@
 
         async function playPlaylistDirectlyByUrl(urlStr, name) {
             if (isPlaying && isCrossfading) { alert("Подождите конца перехода"); return; }
+
+            const isCurrent = !!(window.loadedPlaylistUrl && (urlStr === window.loadedPlaylistUrl || urlStr.includes(window.loadedPlaylistUrl) || window.loadedPlaylistUrl.includes(urlStr)));
+            if (isCurrent && playlist.length > 0) {
+                togglePlay();
+                return;
+            }
 
             updatePlaylistLastPlayed(urlStr);
 
@@ -11653,16 +11777,26 @@
 
         function createAlbumCard(album) {
             const card = document.createElement('div');
-            card.className = 'album-card';
+            const currentSong = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex] : null;
+            const playingSongObj = currentSong ? (window.musicSongs || []).find(s => s.id === currentSong.id) : null;
+            const activeAlbumId = window.currentAlbumId || (playingSongObj ? playingSongObj.albumId : null);
+            const isCurrent = (activeAlbumId === album.id);
+            const isPlayingCurrent = isCurrent && isPlaying && !window.currentRadioStation;
+
+            card.className = `album-card ${isPlayingCurrent ? 'playing' : ''} ${isCurrent ? 'active' : ''}`;
+            card.setAttribute('data-album-id', album.id);
             card.onclick = () => window.location.hash = '#album-details?id=' + album.id;
 
             card.innerHTML = `
                 <div class="album-cover-wrapper">
                     <img class="album-cover" src="${album.coverUrl || 'https://via.placeholder.com/200'}" loading="lazy">
                     <div class="album-hover-play">
-                        <div class="play-btn-circle" onclick="playAlbumDirect(event, '${album.id}')">
-                            <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                        <div class="play-btn-circle" onclick="playAlbumDirect(event, '${album.id}')" aria-label="${isPlayingCurrent ? 'Пауза' : 'Воспроизвести альбом'}">
+                            <svg class="album-play-icon" viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
                                 <polygon points="6 4 20 12 6 20 6 4"></polygon>
+                            </svg>
+                            <svg class="album-pause-icon" viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
                             </svg>
                         </div>
                     </div>
@@ -12010,15 +12144,24 @@
                 let albumsSectionHTML = '';
                 if (artistAlbums.length > 0) {
                     let albumsCardsHTML = '';
+                    const currentSong = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex] : null;
+                    const playingSongObj = currentSong ? (window.musicSongs || []).find(s => s.id === currentSong.id) : null;
+                    const activeAlbumId = window.currentAlbumId || (playingSongObj ? playingSongObj.albumId : null);
+
                     artistAlbums.forEach(album => {
+                        const isAlbumCurrent = (activeAlbumId === album.id);
+                        const isAlbumPlaying = isAlbumCurrent && isPlaying && !window.currentRadioStation;
                         albumsCardsHTML += `
-                            <div class="album-card" onclick="window.location.hash='#album-details?id=${album.id}'">
+                            <div class="album-card ${isAlbumPlaying ? 'playing' : ''} ${isAlbumCurrent ? 'active' : ''}" data-album-id="${album.id}" onclick="window.location.hash='#album-details?id=${album.id}'">
                                 <div class="album-cover-wrapper">
                                     <img class="album-cover" src="${album.coverUrl || 'https://via.placeholder.com/200'}" loading="lazy">
                                     <div class="album-hover-play">
-                                        <div class="play-btn-circle" style="width: 40px; height: 40px;" onclick="playAlbumDirect(event, '${album.id}')">
-                                            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                                        <div class="play-btn-circle" style="width: 40px; height: 40px;" onclick="playAlbumDirect(event, '${album.id}')" aria-label="${isAlbumPlaying ? 'Пауза' : 'Воспроизвести альбом'}">
+                                            <svg class="album-play-icon" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
                                                 <polygon points="6 4 20 12 6 20 6 4"></polygon>
+                                            </svg>
+                                            <svg class="album-pause-icon" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
                                             </svg>
                                         </div>
                                     </div>
@@ -13095,6 +13238,15 @@
         function playAlbumDirect(event, albumId) {
             if (event) event.stopPropagation();
             if (window.currentRadioStation) stopRadioPlayback();
+
+            const currentPlayingSong = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex] : null;
+            const currentSongObj = currentPlayingSong ? (window.musicSongs || []).find(s => s.id === currentPlayingSong.id) : null;
+            const activeAlbumId = window.currentAlbumId || (currentSongObj ? currentSongObj.albumId : null);
+
+            if (activeAlbumId === albumId && playlist.length > 0) {
+                togglePlay();
+                return;
+            }
             window.currentAlbumId = albumId;
             window.currentArtistId = null;
             window.currentListId = null;

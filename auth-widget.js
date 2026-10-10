@@ -78,6 +78,10 @@ const modalHTML = `
                 <div class="vk-user-sub" id="profileEmail">...</div>
             </div>
             <div class="vk-menu-list">
+                <button class="vk-menu-item" id="btnConnectGoogleServices" style="color: var(--text);">
+                    <svg class="vk-menu-icon" width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill-rule="evenodd" fill-opacity="1" fill="#4285f4" stroke="none"></path><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.715H.957v2.332A8.997 8.997 0 0 0 9 18z" fill-rule="evenodd" fill-opacity="1" fill="#34a853" stroke="none"></path><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill-rule="evenodd" fill-opacity="1" fill="#fbbc05" stroke="none"></path><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill-rule="evenodd" fill-opacity="1" fill="#ea4335" stroke="none"></path></svg>
+                    <span class="vk-menu-text">Подключить Google аккаунт</span>
+                </button>
                 <button class="vk-menu-item item-logout" id="btnLogout">
                     <svg class="vk-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                     <span class="vk-menu-text">Выйти</span>
@@ -227,7 +231,25 @@ function initAuthWidget() {
 
         // Синхронизируем UI при открытии
         updateThemeUI(detectCurrentTheme());
+        updateGoogleConnectedUI();
     };
+
+    const updateGoogleConnectedUI = () => {
+        const btnConnect = document.getElementById('btnConnectGoogleServices');
+        if (!btnConnect) return;
+        const isConnected = !!(
+            localStorage.getItem('google_youtube_access_token') ||
+            localStorage.getItem('google_calendar_access_token') ||
+            localStorage.getItem('google_access_token') ||
+            localStorage.getItem('google_youtube_refresh_token') ||
+            localStorage.getItem('google_calendar_refresh_token') ||
+            localStorage.getItem('google_refresh_token')
+        );
+        btnConnect.style.display = isConnected ? 'none' : 'flex';
+    };
+    window.addEventListener('googleYouTubeTokenChanged', updateGoogleConnectedUI);
+    window.addEventListener('googleCalendarTokenChanged', updateGoogleConnectedUI);
+    window.addEventListener('googleTokenChanged', updateGoogleConnectedUI);
 
     // === ОБРАБОТЧИК КЛИКА ПО ТЕМЕ ===
     themeBtns.forEach(btn => {
@@ -320,52 +342,56 @@ function initAuthWidget() {
         await refreshGoogleToken();
         closeModal();
     });
+    const connectServicesBtn = document.getElementById('btnConnectGoogleServices');
+    if (connectServicesBtn) {
+        connectServicesBtn.addEventListener('click', async () => {
+            await connectGoogleYouTube();
+        });
+    }
 
     const connectGoogleCalendar = async (forceConsent = true) => {
         try {
-            console.log("Запускаем авторизацию Google Calendar через Cloud Functions...");
+            console.log("Запускаем авторизацию Google (Calendar & YouTube)...");
             const user = auth.currentUser;
             if (!user) {
-                throw new Error("Пользователь не авторизован.");
+                if (typeof openAuthModal === 'function') {
+                    openAuthModal(document.querySelector('.vk-profile') || document.body, 'login');
+                } else {
+                    alert("Пожалуйста, сначала войдите в аккаунт.");
+                }
+                return;
             }
-            const idToken = await user.getIdToken(true);
-            const response = await fetch('https://us-central1-tools-c98fd.cloudfunctions.net/getCalendarAuthUrl', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
-                },
-                body: JSON.stringify({ data: {} })
-            });
+            const clientId = "595986762798-1pm4iaiom54d4bflvnp1hrf4iugqfvhu.apps.googleusercontent.com";
+            const redirectUri = "https://us-central1-tools-c98fd.cloudfunctions.net/googleCalendarCallback";
+            const scopes = [
+                "https://www.googleapis.com/auth/calendar",
+                "https://www.googleapis.com/auth/youtube",
+                "https://www.googleapis.com/auth/youtube.force-ssl"
+            ].join(" ");
+            const returnUrl = window.location.href;
+            try {
+                sessionStorage.setItem('oauth_return_url', returnUrl);
+            } catch (e) {}
 
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.error?.message || `HTTP Error ${response.status}`);
-            }
+            const statePayload = user.uid;
 
-            const resData = await response.json();
-            const authUrl = resData.result?.url;
+            const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent&state=${encodeURIComponent(statePayload)}`;
 
-            if (authUrl) {
-                window.location.href = authUrl;
-            } else {
-                throw new Error("Не удалось получить ссылку для авторизации.");
-            }
+            window.location.href = authUrl;
         } catch (e) {
-            console.error("Ошибка при подключении Google Calendar:", e);
-            let errMsg = e.message;
-            if (e.code === 'auth/popup-blocked') {
-                errMsg = "Окно входа заблокировано браузером. Пожалуйста, разрешите всплывающие окна.";
-            }
-            if (typeof showToast === 'function') {
-                showToast("Ошибка: " + errMsg, 'error');
-            } else {
-                alert("Ошибка авторизации: " + errMsg);
-            }
-            throw e;
+            console.error("Ошибка при подключении Google:", e);
+            alert("Ошибка авторизации Google: " + e.message);
         }
     };
     window.connectGoogleCalendar = connectGoogleCalendar;
+
+    const connectGoogleYouTube = async () => {
+        if (window.GYoutubeService && typeof window.GYoutubeService.connectYouTube === 'function') {
+            return await window.GYoutubeService.connectYouTube();
+        }
+        return await connectGoogleCalendar();
+    };
+    window.connectGoogleYouTube = connectGoogleYouTube;
 
     // Функция для получения токена с проверкой на протухание
 
@@ -407,6 +433,10 @@ function initAuthWidget() {
         localStorage.removeItem('google_calendar_access_token');
         localStorage.removeItem('google_calendar_refresh_token');
         localStorage.removeItem('google_calendar_token_expiry');
+        localStorage.removeItem('google_youtube_access_token');
+        localStorage.removeItem('google_youtube_refresh_token');
+        localStorage.removeItem('google_youtube_token_expiry');
+        updateGoogleConnectedUI();
         closeModal();
     });
 
@@ -443,8 +473,26 @@ function initAuthWidget() {
                             localStorage.setItem('google_calendar_refresh_token', data.google_calendar_refresh_token);
                         }
                     }
+                    if (data.google_youtube_access_token) {
+                        localStorage.setItem('google_youtube_access_token', data.google_youtube_access_token);
+                        localStorage.setItem('google_youtube_token_expiry', data.google_youtube_token_expiry || 0);
+                        if (data.google_youtube_refresh_token) {
+                            localStorage.setItem('google_youtube_refresh_token', data.google_youtube_refresh_token);
+                        }
+                    }
                 }
             } catch (e) { console.error("Ошибка синхронизации токенов:", e); }
+
+            updateGoogleConnectedUI();
+
+            const returnUrl = sessionStorage.getItem('oauth_return_url');
+            if (returnUrl) {
+                sessionStorage.removeItem('oauth_return_url');
+                if (window.location.href.split('#')[0] !== returnUrl.split('#')[0]) {
+                    window.location.href = returnUrl;
+                    return;
+                }
+            }
 
             // Генерируем событие об изменении состояния авторизации
             window.dispatchEvent(new CustomEvent('authChanged', { detail: { user } }));
@@ -455,6 +503,7 @@ function initAuthWidget() {
             const avatar = document.getElementById('profileAvatar');
             if (avatar) avatar.src = 'https://i.ibb.co/Z6vRKK9x/0000000.jpg';
 
+            updateGoogleConnectedUI();
             window.dispatchEvent(new CustomEvent('authChanged', { detail: { user: null } }));
         }
     });

@@ -2475,6 +2475,8 @@
                             if (item.snippet && item.snippet.resourceId && item.snippet.resourceId.videoId) {
                                 videoItems.push({
                                     id: item.snippet.resourceId.videoId,
+                                    playlistItemId: item.id,
+                                    playlistId: listId,
                                     title: item.snippet.title || "Без названия"
                                 });
                             }
@@ -3467,6 +3469,7 @@
         </div>
     </div>
 
+    <script src="gyoutube-service.js"></script>
     <link rel="stylesheet" href="auth-widget.css">
     <script type="module" src="nav-widget.js"></script>
     <script type="module" src="auth-widget.js"></script>

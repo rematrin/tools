@@ -4827,7 +4827,7 @@
                                         <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
                                             <h2 id="playlist-title-text"
                                                 style="font-size: 1.1rem; margin: 0; color: var(--text); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">
-                                                Мой Плейлист</h2>
+                                                Очередь</h2>
                                         </div>
                                         <div id="playlist-count-text">0 видео из 0</div>
                                     </div>
@@ -5337,6 +5337,8 @@
                 if (window.currentSavedPlaylists) {
                     renderSavedPlaylists(window.currentSavedPlaylists);
                 }
+                setTimeout(() => scrollToActiveQueueTrack(false), 40);
+                setTimeout(() => scrollToActiveQueueTrack(true), 180);
             } else if (hash.startsWith('#playlist-details')) {
                 if (window.currentSavedPlaylists) {
                     renderSavedPlaylists(window.currentSavedPlaylists);
@@ -6180,7 +6182,7 @@
             const list = document.getElementById('playlist-list');
             list.innerHTML = '';
 
-            document.getElementById('playlist-title-text').innerText = window.loadedPlaylistName || "Мой Плейлист";
+            document.getElementById('playlist-title-text').innerText = window.loadedPlaylistName || "Очередь";
 
             if (playlist.length === 0) {
                 list.innerHTML = `
@@ -6240,6 +6242,26 @@
             updateButtons();
         }
 
+        function scrollToActiveQueueTrack(smooth = true) {
+            const scrollContainer = document.querySelector('.playlist-scroll-area');
+            if (!scrollContainer) return;
+            const activeItem = document.querySelector('#playlist-list .playlist-item.active');
+            if (!activeItem) return;
+
+            const containerRect = scrollContainer.getBoundingClientRect();
+            const itemRect = activeItem.getBoundingClientRect();
+            const targetTop = scrollContainer.scrollTop + (itemRect.top - containerRect.top);
+
+            if (smooth) {
+                scrollContainer.scrollTo({
+                    top: Math.max(0, targetTop),
+                    behavior: 'smooth'
+                });
+            } else {
+                scrollContainer.scrollTop = Math.max(0, targetTop);
+            }
+        }
+
         function updateQueuePlaybackState() {
             document.querySelectorAll('#playlist-list .playlist-item').forEach((row, index) => {
                 const playing = index === trackIndex && isPlaying && !window.currentRadioStation;
@@ -6249,6 +6271,9 @@
                 button.disabled = !!playlist[index]?.isError;
                 button.setAttribute('aria-label', playing ? 'Пауза' : 'Воспроизвести');
             });
+            if (document.getElementById('main-player-card')?.classList.contains('active')) {
+                scrollToActiveQueueTrack(true);
+            }
         }
 
         function refreshPlaylistDetailsIfVisible() {
@@ -8069,6 +8094,8 @@
                             if (item.snippet && item.snippet.resourceId && item.snippet.resourceId.videoId) {
                                 videoItems.push({
                                     id: item.snippet.resourceId.videoId,
+                                    playlistItemId: item.id,
+                                    playlistId: listId,
                                     title: item.snippet.title || "Без названия"
                                 });
                             }
@@ -10741,6 +10768,12 @@
                     chevronBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
                     chevronBtn.setAttribute('data-tooltip', 'Свернуть проигрыватель');
                 }
+                setTimeout(() => {
+                    scrollToActiveQueueTrack(false);
+                }, 40);
+                setTimeout(() => {
+                    scrollToActiveQueueTrack(true);
+                }, 180);
             } else {
                 window.location.hash = window.previousMusicHash || '#home';
                 cardEl.classList.remove('active');
@@ -11331,6 +11364,7 @@
                             if (item.snippet && item.snippet.resourceId && item.snippet.resourceId.videoId) {
                                 rawTracks.push({
                                     videoId: item.snippet.resourceId.videoId,
+                                    playlistItemId: item.id,
                                     title: item.snippet.title,
                                     index: item.snippet.position || 0,
                                     channelTitle: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle || '',
@@ -11416,6 +11450,7 @@
 
                         const songData = {
                             id: track.videoId,
+                            playlistItemId: track.playlistItemId || null,
                             title: track.title,
                             duration: duration,
                             artistId: artistId,
@@ -11435,18 +11470,23 @@
                             await window.setDoc(songRef, songData);
                         }
                     } else {
-                        // Ensure existing song has correct album details if missing/outdated
+                        // Ensure existing song has correct album details and playlistItemId
                         let needsUpdate = false;
                         if (existingSong.albumId !== "album_library" || existingSong.albumName !== "Медиатека YT Music") {
                             existingSong.albumId = "album_library";
                             existingSong.albumName = "Медиатека YT Music";
                             needsUpdate = true;
                         }
+                        if (track.playlistItemId && existingSong.playlistItemId !== track.playlistItemId) {
+                            existingSong.playlistItemId = track.playlistItemId;
+                            needsUpdate = true;
+                        }
                         if (needsUpdate && uid && window.db) {
                             const songRef = window.doc(window.db, "users", uid, "music_songs", existingSong.id);
                             await window.setDoc(songRef, {
                                 albumId: "album_library",
-                                albumName: "Медиатека YT Music"
+                                albumName: "Медиатека YT Music",
+                                playlistItemId: existingSong.playlistItemId || null
                             }, { merge: true });
                         }
                     }
@@ -12703,7 +12743,7 @@
                     <span>Скопировать название</span>
                 </div>
                 <div class="dropdown-divider"></div>
-                <div class="dropdown-item danger" onclick="deleteSongFromLibrary('${songId}'); hideSongContextMenu();">
+                <div class="dropdown-item danger" onclick="deleteSongFromLibrary('${songId}', true); hideSongContextMenu();">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                     <span>Удалить песню</span>
                 </div>
@@ -12731,12 +12771,55 @@
             }).catch(() => {});
         }
 
-        async function deleteSongFromLibrary(songId) {
+        async function deleteSongFromLibrary(songId, deleteOnYouTube = true) {
             const song = (window.musicSongs || []).find(s => s.id === songId);
             if (!song) return;
-            if (!confirm(`Удалить песню «${song.title}» из медиатеки?`)) return;
 
             const uid = window.currentUser ? window.currentUser.uid : null;
+            let ytDeleted = false;
+            let ytError = null;
+
+            // Попытка удалить из YouTube плейлиста если подключен Google / YouTube сервис
+            if (deleteOnYouTube && window.GYoutubeService) {
+                const hasToken = window.GYoutubeService.getStoredAccessToken();
+                if (!hasToken) {
+                    if (confirm(`Для удаления песни «${song.title}» напрямую из плейлиста YouTube необходимо подключить Google-аккаунт.\n\nПодключить Google аккаунт сейчас?`)) {
+                        await window.GYoutubeService.connectYouTube();
+                        return;
+                    }
+                } else {
+                    try {
+                        let pItemId = song.playlistItemId;
+                        if (!pItemId && window.youtubeLibraryUrl) {
+                            const listId = extractListId(window.youtubeLibraryUrl);
+                            if (listId) {
+                                const items = await window.GYoutubeService.fetchPlaylistItems(listId, 4);
+                                const matched = items.find(it => it.snippet?.resourceId?.videoId === song.id);
+                                if (matched) pItemId = matched.id;
+                            }
+                        }
+
+                        if (pItemId) {
+                            await window.GYoutubeService.deletePlaylistItem(pItemId);
+                            ytDeleted = true;
+                            console.log("Успешно удалено из YouTube плейлиста:", pItemId);
+                        } else {
+                            ytError = "Не найден ID элемента в плейлисте YouTube.";
+                        }
+                    } catch (ytErr) {
+                        console.error("Ошибка при удалении из YouTube плейлиста:", ytErr);
+                        ytError = ytErr.message || "Ошибка YouTube API";
+                    }
+                }
+            }
+
+            if (ytError && !ytDeleted) {
+                const proceed = confirm(`Предупреждение: Не удалось удалить трек из плейлиста YouTube (${ytError}).\n\nВозможные причины:\n1. Google-аккаунт не является владельцем этого плейлиста на YouTube.\n2. Нужно переподключить Google-аккаунт через меню профиля (для выдачи разрешений на YouTube).\n\nУдалить трек только из медиатеки на сайте?`);
+                if (!proceed) return;
+            } else if (!ytDeleted) {
+                if (!confirm(`Удалить песню «${song.title}» из медиатеки?`)) return;
+            }
+
             try {
                 if (uid && window.db) {
                     const songRef = window.doc(window.db, "users", uid, "music_songs", songId);
@@ -12745,6 +12828,23 @@
                 window.musicSongs = (window.musicSongs || []).filter(s => s.id !== songId);
                 cleanEmptyArtists(uid);
                 renderCurrentView();
+
+                // Удаляем из текущей очереди если трек воспроизводился
+                if (typeof playlist !== 'undefined' && Array.isArray(playlist)) {
+                    const qIdx = playlist.findIndex(t => t.id === songId);
+                    if (qIdx !== -1) {
+                        playlist.splice(qIdx, 1);
+                        if (trackIndex >= playlist.length) trackIndex = Math.max(0, playlist.length - 1);
+                        renderPlaylist();
+                    }
+                }
+
+                const msg = ytDeleted 
+                    ? `«${song.title}» успешно удалена из YouTube плейлиста и медиатеки!` 
+                    : `«${song.title}» удалена из медиатеки сайта.`;
+                if (typeof showAlertModal === 'function') {
+                    showAlertModal("Удалено", msg);
+                }
             } catch (e) {
                 console.error("Ошибка удаления песни:", e);
                 alert("Не удалось удалить песню: " + e.message);
@@ -13156,6 +13256,7 @@
                     stateClass = isPlaying ? 'active playing' : 'active paused';
                 }
                 tr.className = stateClass;
+                tr.oncontextmenu = (e) => openSongContextMenu(e, song.id);
                 const playing = isCurrent && isPlaying;
                 const coverUrl = getSongCoverUrl(song);
                 tr.innerHTML = `
@@ -14786,6 +14887,7 @@
         </div>
     </div>
 
+    <script src="gyoutube-service.js"></script>
     <link rel="stylesheet" href="auth-widget.css">
     <script type="module" src="nav-widget.js"></script>
     <script type="module" src="auth-widget.js"></script>

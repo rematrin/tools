@@ -2901,6 +2901,7 @@
             padding: 8px 12px;
             border-bottom: 1px solid var(--border);
             font-weight: 600;
+            white-space: nowrap;
         }
 
         .tracks-table td {
@@ -3018,8 +3019,15 @@
 
         .track-duration {
             text-align: right;
-            width: 60px;
+            width: 120px;
             color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+            padding-right: 16px;
+        }
+
+        .tracks-table th.track-duration {
+            text-align: right;
+            padding-right: 16px;
         }
 
         .track-actions-cell {
@@ -5431,6 +5439,60 @@
                 title = 'Главная';
                 content = `
                     <div style="text-align: left; padding-top: 0;">
+                        <!-- Недавно прослушанные -->
+                        <div class="vk-block-card">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Недавно прослушанные</h3>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                    </button>
+                                    <button onclick="scrollSection(this, 'right')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="home-recently-played-container" style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 0; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
+                                <div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">Загрузка...</div>
+                            </div>
+                        </div>
+
+                        <!-- Недавно добавленные -->
+                        <div class="vk-block-card">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Недавно добавленные</h3>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                    </button>
+                                    <button onclick="scrollSection(this, 'right')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="home-recently-added-container" style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 0; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
+                                <div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">Загрузка...</div>
+                            </div>
+                        </div>
+
+                        <!-- Избранные радиостанции -->
+                        <div class="vk-block-card">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Избранные радиостанции</h3>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                    </button>
+                                    <button onclick="scrollSection(this, 'right')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="home-favorite-radio-container" style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 0; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
+                                <div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">Загрузка...</div>
+                            </div>
+                        </div>
+
                         <!-- Для вас -->
                         <div class="vk-block-card">
                             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
@@ -5496,60 +5558,6 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Недавно прослушанные -->
-                        <div class="vk-block-card">
-                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Недавно прослушанные</h3>
-                                <div style="display: flex; gap: 8px;">
-                                    <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                                    </button>
-                                    <button onclick="scrollSection(this, 'right')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="home-recently-played-container" style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 0; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
-                                <div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">Загрузка...</div>
-                            </div>
-                        </div>
-
-                        <!-- Недавно добавленные -->
-                        <div class="vk-block-card">
-                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Недавно добавленные</h3>
-                                <div style="display: flex; gap: 8px;">
-                                    <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                                    </button>
-                                    <button onclick="scrollSection(this, 'right')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="home-recently-added-container" style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 0; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
-                                <div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">Загрузка...</div>
-                            </div>
-                        </div>
-
-                        <!-- Избранные радиостанции -->
-                        <div class="vk-block-card">
-                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -0.02em;">Избранные радиостанции</h3>
-                                <div style="display: flex; gap: 8px;">
-                                    <button onclick="scrollSection(this, 'left')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                                    </button>
-                                    <button onclick="scrollSection(this, 'right')" style="width: 28px; height: 28px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="home-favorite-radio-container" style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 0; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
-                                <div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">Загрузка...</div>
                             </div>
                         </div>
                     </div>
@@ -5797,7 +5805,7 @@
                                         <th style="width: 42%;">Песня</th>
                                         <th style="width: 28%;">Исполнитель</th>
                                         <th style="width: 90px; text-align: center;">Действия</th>
-                                        <th class="track-duration" style="width: 80px;">Длительность</th>
+                                        <th class="track-duration" style="width: 120px;">Длительность</th>
                                     </tr>
                                 </thead>
                                 <tbody id="new-songs-list-table">
@@ -5856,10 +5864,9 @@
                                 <thead>
                                     <tr>
                                         <th class="track-num" style="width: 44px;">#</th>
-                                        <th style="width: 38%;">Песня</th>
-                                        <th style="width: 27%;">Исполнитель</th>
-                                        <th style="width: 27%;">Альбом</th>
-                                        <th class="track-duration" style="width: 80px;">Длительность</th>
+                                        <th style="width: 55%;">Песня</th>
+                                        <th style="width: 45%;">Исполнитель</th>
+                                        <th class="track-duration" style="width: 120px;">Длительность</th>
                                     </tr>
                                 </thead>
                                 <tbody id="songs-list-table">
@@ -5942,7 +5949,7 @@
                                         <tr>
                                             <th class="track-num" style="width: 44px;">#</th>
                                             <th>Название</th>
-                                            <th class="track-duration" style="width: 80px;">Длительность</th>
+                                            <th class="track-duration" style="width: 120px;">Длительность</th>
                                         </tr>
                                     </thead>
                                     <tbody id="album-tracks-table">
@@ -13172,7 +13179,6 @@
                                     <span class="song-title-link" onclick="event.stopPropagation(); playSongFromArtist('${artistId}', '${song.id}')" style="color: ${isCurrent ? '#fa243c' : 'var(--text)'};">${song.title}</span>
                                 </div>
                             </td>
-                            <td><span class="song-album-link" onclick="event.stopPropagation(); window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</span></td>
                             <td class="track-duration">${formatTime(song.duration)}</td>
                         </tr>
                     `;
@@ -13187,13 +13193,12 @@
                                 <thead>
                                     <tr>
                                         <th class="track-num" style="width: 44px;">#</th>
-                                        <th style="width: 50%;">Песня</th>
-                                        <th style="width: 42%;">Альбом</th>
-                                        <th class="track-duration" style="width: 80px;">Длительность</th>
+                                        <th>Песня</th>
+                                        <th class="track-duration" style="width: 120px;">Длительность</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${songsTableRowsHTML || '<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-secondary);">Песен нет</td></tr>'}
+                                    ${songsTableRowsHTML || '<tr><td colspan="3" style="text-align:center; padding:15px; color:var(--text-secondary);">Песен нет</td></tr>'}
                                 </tbody>
                             </table>
                         </div>
@@ -13292,7 +13297,6 @@
                                         <span class="song-title-link" onclick="event.stopPropagation(); playSongFromArtist('${artistId}', '${song.id}')" style="color: ${isCurrent ? '#fa243c' : 'var(--text)'};">${song.title}</span>
                                     </div>
                                 </td>
-                                <td><span class="song-album-link" onclick="event.stopPropagation(); window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</span></td>
                                 <td class="track-duration">${formatTime(song.duration)}</td>
                             </tr>
                         `;
@@ -13306,13 +13310,12 @@
                                     <thead>
                                         <tr>
                                             <th class="track-num" style="width: 44px;">#</th>
-                                            <th style="width: 50%;">Песня</th>
-                                            <th style="width: 42%;">Альбом</th>
-                                            <th class="track-duration" style="width: 80px;">Длительность</th>
+                                            <th>Песня</th>
+                                            <th class="track-duration" style="width: 120px;">Длительность</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${songsTableRowsHTML || '<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--text-secondary);">Песен нет</td></tr>'}
+                                        ${songsTableRowsHTML || '<tr><td colspan="3" style="text-align:center; padding:15px; color:var(--text-secondary);">Песен нет</td></tr>'}
                                     </tbody>
                                 </table>
                             </div>
@@ -13988,7 +13991,7 @@
             table.innerHTML = '';
 
             if (window.musicSongs.length === 0) {
-                table.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-secondary);">У вас пока нет импортированных песен.</td></tr>`;
+                table.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:40px; color:var(--text-secondary);">У вас пока нет импортированных песен.</td></tr>`;
                 return;
             }
 
@@ -14003,7 +14006,7 @@
             }
 
             if (displaySongs.length === 0) {
-                table.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-secondary);">Песни не найдены.</td></tr>`;
+                table.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:40px; color:var(--text-secondary);">Песни не найдены.</td></tr>`;
                 return;
             }
 
@@ -14037,7 +14040,6 @@
                         </div>
                     </td>
                     <td><span class="song-artist-link" onclick="event.stopPropagation(); window.location.hash='#artist-details?id=${song.artistId}'">${song.artistName}</span></td>
-                    <td><span class="song-album-link" onclick="event.stopPropagation(); window.location.hash='#album-details?id=${song.albumId}'">${song.albumName}</span></td>
                     <td class="track-duration">${formatTime(song.duration)}</td>
                 `;
                 table.appendChild(tr);

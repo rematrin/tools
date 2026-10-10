@@ -6959,7 +6959,8 @@
                 albumName: "Медиатека YT Music",
                 index: (window.musicSongs || []).length,
                 coverUrl: artistCover,
-                addedAt: new Date().toISOString()
+                addedAt: new Date().toISOString(),
+                lastPlayedAt: song.lastPlayedAt || song.last_played_at || null
             };
 
             if (!window.musicSongs) window.musicSongs = [];
@@ -7719,6 +7720,9 @@
             }
 
             loadDeck(activeP, trackIndex);
+            if (playlist[trackIndex] && playlist[trackIndex].id && typeof updateSongLastPlayed === 'function') {
+                updateSongLastPlayed(playlist[trackIndex].id);
+            }
 
             activeP.playVideo();
             isPlaying = true;
@@ -10547,6 +10551,8 @@
                 const playlists = (window.currentSavedPlaylists || []).filter(p => p && p.name && p.url);
                 const albums = (window.musicAlbums || []).filter(a => a && (a.title || a.name));
                 const songs = (window.musicSongs || []).filter(s => s && s.id && s.title);
+                const existingSongIds = new Set(songs.map(s => s.id));
+                const newSongs = (window.musicNewSongs || []).filter(s => s && s.id && s.title && !existingSongIds.has(s.id));
 
                 const unifiedItems = [
                     ...playlists.map(p => ({
@@ -10572,8 +10578,17 @@
                         id: s.id,
                         name: s.title,
                         artistName: s.artistName,
-                        coverUrl: s.thumbnail || `https://img.youtube.com/vi/${s.id}/mqdefault.jpg`,
-                        createdAt: (s.createdAt || s.created_at) ? new Date(s.createdAt || s.created_at) : new Date(0),
+                        coverUrl: s.coverUrl || s.thumbnail || `https://img.youtube.com/vi/${s.id}/mqdefault.jpg`,
+                        createdAt: (s.createdAt || s.created_at || s.addedAt) ? new Date(s.createdAt || s.created_at || s.addedAt) : new Date(0),
+                        lastPlayedAt: (s.last_played_at || s.lastPlayedAt) ? new Date(s.last_played_at || s.lastPlayedAt) : null
+                    })),
+                    ...newSongs.map(s => ({
+                        type: 'song',
+                        id: s.id,
+                        name: s.title,
+                        artistName: s.artistName,
+                        coverUrl: s.coverUrl || s.thumbnail || `https://img.youtube.com/vi/${s.id}/mqdefault.jpg`,
+                        createdAt: null,
                         lastPlayedAt: (s.last_played_at || s.lastPlayedAt) ? new Date(s.last_played_at || s.lastPlayedAt) : null
                     }))
                 ];
@@ -10585,26 +10600,34 @@
                     return;
                 }
 
-                // 1. Recently Added (15 last added items)
+                // 1. Recently Added (15 last added items - media library only)
                 if (addedContainer) {
-                    const sortedAdded = [...unifiedItems].sort((a, b) => {
-                        const timeA = isNaN(a.createdAt.getTime()) ? 0 : a.createdAt.getTime();
-                        const timeB = isNaN(b.createdAt.getTime()) ? 0 : b.createdAt.getTime();
+                    const sortedAdded = [...unifiedItems].filter(item => {
+                        if (!item.createdAt) return false;
+                        const time = item.createdAt.getTime();
+                        return !isNaN(time) && time > 0;
+                    }).sort((a, b) => {
+                        const timeA = a.createdAt.getTime();
+                        const timeB = b.createdAt.getTime();
                         return timeB - timeA;
                     }).slice(0, 15);
 
-                    addedContainer.innerHTML = sortedAdded.map(item => generateHomeCardHtml(item)).filter(Boolean).join('');
+                    if (sortedAdded.length === 0) {
+                        addedContainer.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">У вас пока нет добавленных треков, плейлистов и альбомов</div>`;
+                    } else {
+                        addedContainer.innerHTML = sortedAdded.map(item => generateHomeCardHtml(item)).filter(Boolean).join('');
+                    }
                 }
 
-                // 2. Recently Played (up to 15)
+                // 2. Recently Played (up to 15, including tracks played from "Новое")
                 if (playedContainer) {
-                    const playedList = unifiedItems.filter(item => item.lastPlayedAt);
+                    const playedList = unifiedItems.filter(item => item.lastPlayedAt && !isNaN(item.lastPlayedAt.getTime()));
                     if (playedList.length === 0) {
                         playedContainer.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.9rem; padding: 10px 0;">Вы еще ничего не слушали</div>`;
                     } else {
                         const sortedPlayed = playedList.sort((a, b) => {
-                            const timeA = isNaN(a.lastPlayedAt.getTime()) ? 0 : a.lastPlayedAt.getTime();
-                            const timeB = isNaN(b.lastPlayedAt.getTime()) ? 0 : b.lastPlayedAt.getTime();
+                            const timeA = a.lastPlayedAt.getTime();
+                            const timeB = b.lastPlayedAt.getTime();
                             return timeB - timeA;
                         }).slice(0, 15);
                         playedContainer.innerHTML = sortedPlayed.map(item => generateHomeCardHtml(item)).filter(Boolean).join('');
@@ -12258,12 +12281,17 @@
         }
 
         function playAllNewSongs() {
+            if (window.currentRadioStation) stopRadioPlayback();
             const existingLibraryIds = new Set((window.musicSongs || []).map(s => s.id));
             const available = (window.musicNewSongs || []).filter(s => !existingLibraryIds.has(s.id));
             if (!available || available.length === 0) {
                 showAlertModal("Новое", "В разделе «Новое» нет доступных треков для воспроизведения.");
                 return;
             }
+
+            window.currentAlbumId = null;
+            window.currentArtistId = null;
+            window.currentListId = null;
 
             playlist = available.map(s => ({
                 id: s.id,
@@ -12277,15 +12305,33 @@
                 playlistItemId: s.playlistItemId || null
             }));
 
+            if (playlist.length > 0 && typeof updateSongLastPlayed === 'function') {
+                updateSongLastPlayed(playlist[0].id);
+            }
             startNewQueuePlayback(0);
         }
 
         function playSongFromNewList(songId) {
+            if (window.currentRadioStation) stopRadioPlayback();
+            const currentSong = playlist[trackIndex];
+            if (currentSong && currentSong.id === songId) {
+                togglePlay();
+                return;
+            }
+
             const existingLibraryIds = new Set((window.musicSongs || []).map(s => s.id));
             const available = (window.musicNewSongs || []).filter(s => !existingLibraryIds.has(s.id));
             if (!available || available.length === 0) return;
             const idx = available.findIndex(s => s.id === songId);
             if (idx === -1) return;
+
+            window.currentAlbumId = null;
+            window.currentArtistId = null;
+            window.currentListId = null;
+
+            if (typeof updateSongLastPlayed === 'function') {
+                updateSongLastPlayed(songId);
+            }
 
             playlist = available.map(s => ({
                 id: s.id,
@@ -12303,6 +12349,7 @@
         }
 
         function playRandomNewSong() {
+            if (window.currentRadioStation) stopRadioPlayback();
             const existingLibraryIds = new Set((window.musicSongs || []).map(s => s.id));
             const available = (window.musicNewSongs || []).filter(s => !existingLibraryIds.has(s.id));
             if (!available || available.length === 0) {
@@ -12317,6 +12364,10 @@
                 [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
             }
 
+            window.currentAlbumId = null;
+            window.currentArtistId = null;
+            window.currentListId = null;
+
             playlist = shuffled.map(s => ({
                 id: s.id,
                 title: s.title,
@@ -12329,6 +12380,9 @@
                 playlistItemId: s.playlistItemId || null
             }));
 
+            if (playlist.length > 0 && typeof updateSongLastPlayed === 'function') {
+                updateSongLastPlayed(playlist[0].id);
+            }
             startNewQueuePlayback(0);
         }
 
@@ -14155,15 +14209,34 @@
         }
 
         function updateSongLastPlayed(songId) {
+            if (!songId) return;
+            const now = new Date().toISOString();
             const targetSong = (window.musicSongs || []).find(s => s.id === songId);
+            const uid = window.currentUser ? window.currentUser.uid : null;
             if (targetSong) {
-                const now = new Date().toISOString();
                 targetSong.lastPlayedAt = now;
-                const uid = window.currentUser ? window.currentUser.uid : null;
+                try {
+                    localStorage.setItem('cached_music_songs', JSON.stringify(window.musicSongs));
+                } catch(e) {}
                 if (uid && window.db) {
                     const songRef = window.doc(window.db, "users", uid, "music_songs", songId);
                     window.setDoc(songRef, { lastPlayedAt: now }, { merge: true }).catch(err => console.error(err));
                 }
+            } else {
+                const targetNew = (window.musicNewSongs || []).find(s => s.id === songId);
+                if (targetNew) {
+                    targetNew.lastPlayedAt = now;
+                    try {
+                        localStorage.setItem('cached_music_new_songs', JSON.stringify(window.musicNewSongs));
+                    } catch(e) {}
+                    if (uid && window.db) {
+                        const songRef = window.doc(window.db, "users", uid, "music_new_songs", songId);
+                        window.setDoc(songRef, { lastPlayedAt: now }, { merge: true }).catch(err => console.error(err));
+                    }
+                }
+            }
+            if (typeof renderHomePlaylists === 'function') {
+                renderHomePlaylists();
             }
         }
 
@@ -14180,6 +14253,14 @@
             if (targetSong && targetSong.albumId) {
                 playSongFromAlbum(targetSong.albumId, songId);
                 return;
+            }
+
+            if (!targetSong) {
+                const targetNew = (window.musicNewSongs || []).find(s => s.id === songId);
+                if (targetNew) {
+                    playSongFromNewList(songId);
+                    return;
+                }
             }
 
             window.currentAlbumId = null;

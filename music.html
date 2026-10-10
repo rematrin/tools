@@ -5777,6 +5777,12 @@
                                         <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                                     </svg>
                                 </button>
+                                <button class="btn-modal btn-modal-cancel" onclick="playRandomNewSong()" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px;" title="Случайный трек в перемешанном порядке">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3" />
+                                    </svg>
+                                    Перемешать
+                                </button>
                                 <button class="btn-modal btn-modal-submit" onclick="playAllNewSongs()" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                                     Воспроизвести все
@@ -12294,6 +12300,36 @@
             }));
 
             startNewQueuePlayback(idx);
+        }
+
+        function playRandomNewSong() {
+            const existingLibraryIds = new Set((window.musicSongs || []).map(s => s.id));
+            const available = (window.musicNewSongs || []).filter(s => !existingLibraryIds.has(s.id));
+            if (!available || available.length === 0) {
+                showAlertModal("Новое", "В разделе «Новое» нет доступных треков для воспроизведения.");
+                return;
+            }
+
+            // Shuffle array randomly
+            const shuffled = [...available];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+
+            playlist = shuffled.map(s => ({
+                id: s.id,
+                title: s.title,
+                artist: s.artistName,
+                channel: s.artistName,
+                cover: s.coverUrl || `https://img.youtube.com/vi/${s.id}/mqdefault.jpg`,
+                duration: s.duration,
+                album: 'Новое',
+                isNewTrack: true,
+                playlistItemId: s.playlistItemId || null
+            }));
+
+            startNewQueuePlayback(0);
         }
 
         async function loadMediaLibrary(uid) {

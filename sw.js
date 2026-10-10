@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tools-pwa-v25';
+const CACHE_NAME = 'tools-pwa-v26';
 const DYNAMIC_CACHE = 'tools-dynamic-image-cache-v1';
 const ASSETS = [
     './fx_converter.html',
@@ -38,6 +38,7 @@ const ASSETS = [
     './img/hub128.png',
     './img/hub256.png',
     './img/hub256t.png',
+    './img/music256.png',
     './img/house-favicon.svg',
     './img/glass.jpg'
 ];

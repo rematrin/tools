@@ -6989,7 +6989,7 @@
                             try {
                                 let pItemId = newSongItem?.playlistItemId;
                                 if (!pItemId) {
-                                    const items = await window.GYoutubeService.fetchPlaylistItems(newListId, 4);
+                                    const items = await window.GYoutubeService.fetchPlaylistItems(newListId, 20);
                                     const matched = items.find(it => it.snippet?.resourceId?.videoId === song.id);
                                     if (matched) pItemId = matched.id;
                                 }
@@ -7035,6 +7035,7 @@
 
             const uid = window.currentUser ? window.currentUser.uid : null;
             let ytDeleted = false;
+            let ytError = null;
 
             // Попытка удалить из YouTube плейлиста "Новое"
             if (window.GYoutubeService && (window.youtubeNewUrl || localStorage.getItem('youtube_new_playlist_url'))) {
@@ -7046,7 +7047,7 @@
                     try {
                         let pItemId = newSong?.playlistItemId;
                         if (!pItemId) {
-                            const items = await window.GYoutubeService.fetchPlaylistItems(newListId, 4);
+                            const items = await window.GYoutubeService.fetchPlaylistItems(newListId, 20);
                             const matched = items.find(it => it.snippet?.resourceId?.videoId === songId);
                             if (matched) pItemId = matched.id;
                         }
@@ -7054,9 +7055,12 @@
                             await window.GYoutubeService.deletePlaylistItem(pItemId);
                             ytDeleted = true;
                             console.log("Успешно удален трек из YouTube плейлиста Новое:", pItemId);
+                        } else {
+                            ytError = "Трек не найден в плейлисте YouTube.";
                         }
                     } catch (ytErr) {
                         console.error("Ошибка удаления из плейлиста Новое YouTube:", ytErr);
+                        ytError = ytErr.message || "Ошибка YouTube API";
                     }
                 }
             }
@@ -7083,6 +7087,7 @@
             if (window.location.hash === '#new') {
                 renderNewSongsTable();
             }
+            updateVkTopPlayerAddState();
             showVkToast(`«${title}» удален из Нового (не рекомендовать)`, '👎');
         }
 
@@ -13648,22 +13653,21 @@
 
             // Попытка удалить из YouTube плейлиста если подключен Google / YouTube сервис
             if (deleteOnYouTube && window.GYoutubeService) {
+                const libUrl = window.youtubeLibraryUrl || localStorage.getItem('youtube_library_url');
+                const listId = libUrl ? extractListId(libUrl) : null;
                 const hasToken = window.GYoutubeService.getStoredAccessToken();
                 if (!hasToken) {
                     if (confirm(`Для удаления песни «${song.title}» напрямую из плейлиста YouTube необходимо подключить Google-аккаунт.\n\nПодключить Google аккаунт сейчас?`)) {
                         await window.GYoutubeService.connectYouTube();
                         return;
                     }
-                } else {
+                } else if (listId) {
                     try {
                         let pItemId = song.playlistItemId;
-                        if (!pItemId && window.youtubeLibraryUrl) {
-                            const listId = extractListId(window.youtubeLibraryUrl);
-                            if (listId) {
-                                const items = await window.GYoutubeService.fetchPlaylistItems(listId, 4);
-                                const matched = items.find(it => it.snippet?.resourceId?.videoId === song.id);
-                                if (matched) pItemId = matched.id;
-                            }
+                        if (!pItemId) {
+                            const items = await window.GYoutubeService.fetchPlaylistItems(listId, 20);
+                            const matched = items.find(it => it.snippet?.resourceId?.videoId === song.id);
+                            if (matched) pItemId = matched.id;
                         }
 
                         if (pItemId) {

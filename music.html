@@ -3025,6 +3025,40 @@
             color: var(--text-secondary);
         }
 
+        .track-actions-cell {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .track-action-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: color 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+        }
+
+        .track-action-btn:hover {
+            color: var(--text);
+            background: var(--hover-bg);
+            transform: scale(1.08);
+        }
+
+        .track-action-btn.added {
+            color: #476faf;
+        }
+
+        .track-action-btn.dislike:hover {
+            color: #fa243c;
+        }
+
         /* Artist Master-Detail Layout (Apple Music Style) */
         body.artists-active-page .main-content {
             overflow-y: hidden !important;
@@ -4568,6 +4602,12 @@
                                         </svg>
                                     </button>
 
+                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-dislike" onclick="toggleVkPlayerDislike()" data-vk-tooltip="Не рекомендовать" aria-label="Не рекомендовать">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
+                                        </svg>
+                                    </button>
+
                                     <button type="button" class="vk-tp-action-btn active" id="vk-player-btn-crossfade" onclick="toggleVkPlayerCrossfade()" data-vk-tooltip="Кроссфейд вкл." aria-label="Кроссфейд">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
@@ -4654,6 +4694,16 @@
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
                     <span class="vk-sidebar-text">Главная</span>
+                </a>
+                <a href="#new" class="vk-sidebar-item sidebar-item" id="menu-new">
+                    <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                        <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                        <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                        <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+                    </svg>
+                    <span class="vk-sidebar-text">Новое</span>
                 </a>
                 <a href="#radio" class="vk-sidebar-item sidebar-item" id="menu-radio">
                     <svg class="vk-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -5692,6 +5742,68 @@
                         </div>
                     </div>
                 `;
+            } else if (hash === '#new') {
+                title = 'Новое';
+                content = `
+                    <div class="vk-block-card" style="text-align: left;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <h2 style="font-size: 2rem; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -0.03em;">Новое</h2>
+                                <div class="header-search-wrapper" id="new-songs-search-wrapper">
+                                    <button class="header-search-btn" id="new-songs-search-btn" onclick="toggleHeaderSearch('new-songs')" title="Поиск треков">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                        </svg>
+                                    </button>
+                                    <div class="header-search-box" id="new-songs-search-box">
+                                        <input type="text" id="new-songs-search-input" class="header-search-input" placeholder="Поиск треков..." oninput="handleNewSongsSearch(this.value)" autocomplete="off">
+                                        <button id="new-songs-search-clear" class="header-search-clear-btn" onclick="clearHeaderSearch('new-songs')" title="Очистить">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 11px; height: 11px;">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button id="btn-sync-new-library" class="btn-modal btn-modal-cancel" onclick="syncYouTubeNewLibrary({ silent: false })" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px;" title="Синхронизировать плейлист Новое с YouTube">
+                                    <svg id="sync-new-icon-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                    </svg>
+                                    <span id="sync-new-btn-text">Синхронизировать</span>
+                                </button>
+                                <button class="btn-modal btn-modal-cancel" onclick="openSyncNewLibraryModal()" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px;" title="Настроить плейлист Новое">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                    </svg>
+                                </button>
+                                <button class="btn-modal btn-modal-submit" onclick="playAllNewSongs()" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                    Воспроизвести все
+                                </button>
+                            </div>
+                        </div>
+                        <div class="album-details-tracks">
+                            <table class="tracks-table">
+                                <thead>
+                                    <tr>
+                                        <th class="track-num" style="width: 44px;">#</th>
+                                        <th style="width: 42%;">Песня</th>
+                                        <th style="width: 28%;">Исполнитель</th>
+                                        <th style="width: 90px; text-align: center;">Действия</th>
+                                        <th class="track-duration" style="width: 80px;">Длительность</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="new-songs-list-table">
+                                    <!-- Загружается динамически -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
             } else if (hash === '#songs') {
                 title = 'Песни';
                 content = `
@@ -6347,6 +6459,26 @@
                 });
             }
 
+            // 4. New Songs table rows
+            const newSongsTable = document.getElementById('new-songs-list-table');
+            if (newSongsTable) {
+                const rows = newSongsTable.querySelectorAll('tr');
+                rows.forEach(row => {
+                    if (currentSongId && row.id === `new-song-row-${currentSongId}`) {
+                        row.classList.add('active');
+                        if (isPlaying) {
+                            row.classList.add('playing');
+                            row.classList.remove('paused');
+                        } else {
+                            row.classList.add('paused');
+                            row.classList.remove('playing');
+                        }
+                    } else {
+                        row.classList.remove('active', 'playing', 'paused');
+                    }
+                });
+            }
+
             // 4. Home song cards (Недавно прослушанные / добавленные)
             const homeSongCards = document.querySelectorAll('.home-song-card');
             homeSongCards.forEach(card => {
@@ -6584,6 +6716,7 @@
             }
 
             updateRepeatUI();
+            updateVkTopPlayerAddState();
         }
 
         function updateVkTopPlayerPlayPause(isPlayingState) {
@@ -6694,21 +6827,259 @@
             }
         }
 
-        function toggleVkPlayerAdd() {
-            isVkAdded = !isVkAdded;
+        function updateVkTopPlayerAddState() {
+            const curTrack = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex] : null;
             const plus = document.getElementById('vk-icon-add-plus');
             const check = document.getElementById('vk-icon-add-check');
             const btn = document.getElementById('vk-player-btn-add');
+            const dislikeBtn = document.getElementById('vk-player-btn-dislike');
+
+            if (!curTrack || window.currentRadioStation) {
+                if (btn) btn.style.display = 'none';
+                if (dislikeBtn) dislikeBtn.style.display = 'none';
+                return;
+            }
+
+            if (btn) btn.style.display = 'inline-flex';
+
+            const isAdded = (window.musicSongs || []).some(s => s.id === curTrack.id);
+            if (dislikeBtn) {
+                dislikeBtn.style.display = isAdded ? 'none' : 'inline-flex';
+            }
+
             if (plus && check) {
-                plus.style.display = isVkAdded ? 'none' : 'block';
-                check.style.display = isVkAdded ? 'block' : 'none';
+                plus.style.display = isAdded ? 'none' : 'block';
+                check.style.display = isAdded ? 'block' : 'none';
             }
             if (btn) {
-                btn.classList.toggle('active', isVkAdded);
-                btn.setAttribute('data-vk-tooltip', isVkAdded ? 'Удалить из Моей музыки' : 'Добавить в Мою музыку');
-                btn.setAttribute('aria-label', isVkAdded ? 'Удалить из Моей музыки' : 'Добавить в Мою музыку');
+                btn.classList.toggle('active', isAdded);
+                btn.setAttribute('data-vk-tooltip', isAdded ? 'Удалить из моей музыки' : 'Добавить в мою музыку');
+                btn.setAttribute('aria-label', isAdded ? 'Удалить из моей музыки' : 'Добавить в мою музыку');
             }
-            showVkToast(isVkAdded ? 'Аудиозапись добавлена в Мою музыку' : 'Аудиозапись удалена из Моей музыки', isVkAdded ? '✓' : '🗑');
+        }
+
+        async function toggleVkPlayerAdd() {
+            const curTrack = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex] : null;
+            if (!curTrack) return;
+            await toggleSongLibrary(curTrack.id, curTrack);
+        }
+
+        async function toggleVkPlayerDislike() {
+            const curTrack = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex] : null;
+            if (!curTrack) return;
+            await dislikeNewSong(curTrack.id);
+        }
+
+        async function toggleSongLibrary(songId, songObj = null) {
+            if (!songId) return;
+            const isAdded = (window.musicSongs || []).some(s => s.id === songId);
+            if (isAdded) {
+                await deleteSongFromLibrary(songId, true);
+            } else {
+                let targetSong = songObj || (window.musicNewSongs || []).find(s => s.id === songId) || (playlist || []).find(s => s.id === songId);
+                if (targetSong) {
+                    await addSongToLibrary(targetSong);
+                }
+            }
+            updateVkTopPlayerAddState();
+            if (window.location.hash === '#new') {
+                renderNewSongsTable();
+            } else if (window.location.hash === '#songs') {
+                renderSongsTable();
+            }
+        }
+
+        async function addSongToLibrary(songData) {
+            if (!songData) return;
+            let song = (typeof songData === 'string')
+                ? ((window.musicNewSongs || []).find(s => s.id === songData) || (playlist || []).find(s => s.id === songData))
+                : songData;
+            if (!song) return;
+
+            const uid = window.currentUser ? window.currentUser.uid : null;
+            let cleanArtist = song.artistName || song.artist || song.channel || "Различные исполнители";
+            cleanArtist = cleanArtist.replace(/\s*-\s*Topic$/i, "").replace(/vevo$/i, "").trim();
+            if (!cleanArtist || cleanArtist.toLowerCase() === "youtube" || cleanArtist.toLowerCase() === "youtube music") {
+                if (song.title && song.title.includes(" - ")) {
+                    cleanArtist = song.title.split(" - ")[0].trim();
+                } else {
+                    cleanArtist = "Различные исполнители";
+                }
+            }
+
+            const artistId = "artist_" + hashCode(cleanArtist);
+            let artistCover = song.coverUrl || song.cover || `https://img.youtube.com/vi/${song.id}/mqdefault.jpg`;
+
+            if (!window.musicArtists) window.musicArtists = [];
+            let existingArtist = window.musicArtists.find(a => a.id === artistId);
+            if (!existingArtist) {
+                existingArtist = {
+                    id: artistId,
+                    name: cleanArtist,
+                    coverUrl: artistCover,
+                    createdAt: new Date().toISOString()
+                };
+                window.musicArtists.push(existingArtist);
+                if (uid && window.db) {
+                    const artistRef = window.doc(window.db, "users", uid, "music_artists", artistId);
+                    await window.setDoc(artistRef, existingArtist).catch(e => console.error("Error saving artist:", e));
+                }
+            }
+
+            let addedPlaylistItemId = null;
+            // Попытка добавить в плейлист YouTube Медиатеки
+            if (window.GYoutubeService && (window.youtubeLibraryUrl || localStorage.getItem('youtube_library_url'))) {
+                const libUrl = window.youtubeLibraryUrl || localStorage.getItem('youtube_library_url');
+                const libId = extractListId(libUrl);
+                const hasToken = window.GYoutubeService.getStoredAccessToken();
+                if (libId && hasToken) {
+                    try {
+                        const res = await window.GYoutubeService.addPlaylistItem(libId, song.id);
+                        if (res && res.id) {
+                            addedPlaylistItemId = res.id;
+                            console.log("Успешно добавлен в плейлист YouTube:", addedPlaylistItemId);
+                        }
+                    } catch (ytErr) {
+                        console.error("Ошибка при добавлении трека в YouTube плейлист:", ytErr);
+                    }
+                }
+            }
+
+            const librarySong = {
+                id: song.id,
+                playlistItemId: addedPlaylistItemId || song.playlistItemId || null,
+                title: song.title,
+                duration: song.duration || 180,
+                artistId: artistId,
+                artistName: cleanArtist,
+                albumId: "album_library",
+                albumName: "Медиатека YT Music",
+                index: (window.musicSongs || []).length,
+                coverUrl: artistCover,
+                addedAt: new Date().toISOString()
+            };
+
+            if (!window.musicSongs) window.musicSongs = [];
+            window.musicSongs.unshift(librarySong);
+
+            if (uid && window.db) {
+                const songRef = window.doc(window.db, "users", uid, "music_songs", song.id);
+                await window.setDoc(songRef, librarySong).catch(e => console.error("Error saving song to Firestore:", e));
+            }
+
+            try {
+                localStorage.setItem('cached_music_songs', JSON.stringify(window.musicSongs));
+                localStorage.setItem('cached_music_artists', JSON.stringify(window.musicArtists));
+            } catch(e) {}
+
+            // Если трек был в разделе «Новое» — автоматически удаляем его из Нового на YouTube и в приложении
+            const newSongIdx = (window.musicNewSongs || []).findIndex(s => s.id === song.id);
+            if (newSongIdx !== -1) {
+                const newSongItem = window.musicNewSongs[newSongIdx];
+                if (window.GYoutubeService && (window.youtubeNewUrl || localStorage.getItem('youtube_new_playlist_url'))) {
+                    const newUrl = window.youtubeNewUrl || localStorage.getItem('youtube_new_playlist_url');
+                    const newListId = extractListId(newUrl);
+                    const hasToken = window.GYoutubeService.getStoredAccessToken();
+                    if (hasToken && newListId) {
+                        (async () => {
+                            try {
+                                let pItemId = newSongItem?.playlistItemId;
+                                if (!pItemId) {
+                                    const items = await window.GYoutubeService.fetchPlaylistItems(newListId, 4);
+                                    const matched = items.find(it => it.snippet?.resourceId?.videoId === song.id);
+                                    if (matched) pItemId = matched.id;
+                                }
+                                if (pItemId) {
+                                    await window.GYoutubeService.deletePlaylistItem(pItemId);
+                                    console.log("Удален из плейлиста Новое при добавлении в медиатеку:", pItemId);
+                                }
+                            } catch(e) {
+                                console.log("Не удалось удалить из Нового на YouTube:", e);
+                            }
+                        })();
+                    }
+                }
+                window.musicNewSongs.splice(newSongIdx, 1);
+                try {
+                    localStorage.setItem('cached_music_new_songs', JSON.stringify(window.musicNewSongs));
+                } catch(e) {}
+                if (uid && window.db) {
+                    const newDocRef = window.doc(window.db, "users", uid, "music_new_songs", song.id);
+                    window.deleteDoc(newDocRef).catch(() => {});
+                }
+            }
+
+            updateVkTopPlayerAddState();
+            if (window.location.hash === '#new') {
+                renderNewSongsTable();
+            } else if (window.location.hash === '#songs') {
+                renderSongsTable();
+            }
+            showVkToast('Аудиозапись добавлена в Мою музыку', '✓');
+        }
+
+        async function dislikeNewSong(songId) {
+            if (!songId) {
+                if (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) {
+                    songId = playlist[trackIndex].id;
+                }
+            }
+            if (!songId) return;
+
+            const newSong = (window.musicNewSongs || []).find(s => s.id === songId);
+            const title = newSong ? newSong.title : (playlist[trackIndex]?.title || 'трек');
+
+            const uid = window.currentUser ? window.currentUser.uid : null;
+            let ytDeleted = false;
+
+            // Попытка удалить из YouTube плейлиста "Новое"
+            if (window.GYoutubeService && (window.youtubeNewUrl || localStorage.getItem('youtube_new_playlist_url'))) {
+                const newUrl = window.youtubeNewUrl || localStorage.getItem('youtube_new_playlist_url');
+                const newListId = extractListId(newUrl);
+                const hasToken = window.GYoutubeService.getStoredAccessToken();
+
+                if (hasToken && newListId) {
+                    try {
+                        let pItemId = newSong?.playlistItemId;
+                        if (!pItemId) {
+                            const items = await window.GYoutubeService.fetchPlaylistItems(newListId, 4);
+                            const matched = items.find(it => it.snippet?.resourceId?.videoId === songId);
+                            if (matched) pItemId = matched.id;
+                        }
+                        if (pItemId) {
+                            await window.GYoutubeService.deletePlaylistItem(pItemId);
+                            ytDeleted = true;
+                            console.log("Успешно удален трек из YouTube плейлиста Новое:", pItemId);
+                        }
+                    } catch (ytErr) {
+                        console.error("Ошибка удаления из плейлиста Новое YouTube:", ytErr);
+                    }
+                }
+            }
+
+            // Удаляем локально и из Firestore
+            window.musicNewSongs = (window.musicNewSongs || []).filter(s => s.id !== songId);
+            try {
+                localStorage.setItem('cached_music_new_songs', JSON.stringify(window.musicNewSongs));
+            } catch(e) {}
+
+            if (uid && window.db) {
+                const songRef = window.doc(window.db, "users", uid, "music_new_songs", songId);
+                await window.deleteDoc(songRef).catch(e => console.error("Error deleting new song doc:", e));
+            }
+
+            // Если этот трек сейчас играет — переключаем на следующий
+            const currentPlayingId = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex].id : null;
+            if (currentPlayingId === songId) {
+                if (playlist.length > 1) {
+                    nextTrack();
+                }
+            }
+
+            if (window.location.hash === '#new') {
+                renderNewSongsTable();
+            }
+            showVkToast(`«${title}» удален из Нового (не рекомендовать)`, '👎');
         }
 
         function toggleVkPlayerCrossfade() {
@@ -11543,6 +11914,391 @@
             }
         }
 
+        window.youtubeNewUrl = localStorage.getItem('youtube_new_playlist_url') || null;
+        window.musicNewSongs = JSON.parse(localStorage.getItem('cached_music_new_songs') || '[]');
+        window.isSyncingNewLibrary = false;
+
+        async function fetchUserYoutubeNewUrl(uid) {
+            if (uid && window.db && window.doc && window.getDoc) {
+                try {
+                    const userRef = window.doc(window.db, "users", uid);
+                    const userSnap = await window.getDoc(userRef);
+                    if (userSnap.exists() && userSnap.data().youtube_new_playlist_url) {
+                        window.youtubeNewUrl = userSnap.data().youtube_new_playlist_url;
+                        localStorage.setItem('youtube_new_playlist_url', window.youtubeNewUrl);
+                        return window.youtubeNewUrl;
+                    }
+                } catch (e) {
+                    console.warn("Error fetching youtube_new_playlist_url:", e);
+                }
+            }
+            window.youtubeNewUrl = localStorage.getItem('youtube_new_playlist_url') || null;
+            return window.youtubeNewUrl;
+        }
+
+        function openSyncNewLibraryModal() {
+            const modal = document.getElementById('syncNewLibraryModal');
+            const input = document.getElementById('modalSyncNewUrl');
+            const statusInfo = document.getElementById('sync-new-status-info');
+            if (input) {
+                input.value = window.youtubeNewUrl || localStorage.getItem('youtube_new_playlist_url') || '';
+            }
+            if (statusInfo) {
+                const curUrl = window.youtubeNewUrl || localStorage.getItem('youtube_new_playlist_url');
+                if (curUrl) {
+                    statusInfo.style.display = 'block';
+                    statusInfo.innerText = 'Текущий плейлист: ' + curUrl;
+                } else {
+                    statusInfo.style.display = 'none';
+                }
+            }
+            if (modal) {
+                modal.style.display = 'flex';
+                setTimeout(() => modal.classList.add('active'), 10);
+                if (input) input.focus();
+            }
+        }
+
+        function closeSyncNewLibraryModal() {
+            const modal = document.getElementById('syncNewLibraryModal');
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => { modal.style.display = 'none'; }, 250);
+            }
+        }
+
+        async function saveAndSyncNewLibrary() {
+            const input = document.getElementById('modalSyncNewUrl');
+            if (!input) return;
+            const urlVal = input.value.trim();
+            if (!urlVal) {
+                alert("Пожалуйста, введите ссылку на плейлист YouTube для раздела «Новое».");
+                return;
+            }
+
+            let listId = extractListId(urlVal);
+            if (!listId) {
+                alert("Не удалось извлечь ID плейлиста. Убедитесь, что ссылка содержит ?list=...");
+                return;
+            }
+
+            window.youtubeNewUrl = urlVal;
+            localStorage.setItem('youtube_new_playlist_url', urlVal);
+
+            const uid = window.currentUser ? window.currentUser.uid : null;
+            if (uid && window.db) {
+                try {
+                    const userRef = window.doc(window.db, "users", uid);
+                    await window.setDoc(userRef, { youtube_new_playlist_url: urlVal }, { merge: true });
+                } catch (e) {
+                    console.error("Ошибка сохранения ссылки Новое в Firestore:", e);
+                }
+            }
+
+            closeSyncNewLibraryModal();
+            await syncYouTubeNewLibrary({ silent: false, force: true });
+        }
+
+        async function syncYouTubeNewLibrary(options = {}) {
+            const silent = !!options.silent;
+
+            if (window.isSyncingNewLibrary) {
+                if (!silent) showAlertModal("Синхронизация", "Синхронизация раздела «Новое» уже выполняется...");
+                return;
+            }
+
+            const uid = window.currentUser ? window.currentUser.uid : null;
+            if (!window.youtubeNewUrl && uid) {
+                await fetchUserYoutubeNewUrl(uid);
+            }
+
+            const newUrl = window.youtubeNewUrl || localStorage.getItem('youtube_new_playlist_url');
+
+            if (!newUrl) {
+                if (!silent) {
+                    openSyncNewLibraryModal();
+                }
+                return;
+            }
+
+            const listId = extractListId(newUrl);
+            if (!listId) {
+                if (!silent) {
+                    alert("Ссылка на плейлист «Новое» недействительна. Настройте заново.");
+                    openSyncNewLibraryModal();
+                }
+                return;
+            }
+
+            window.isSyncingNewLibrary = true;
+
+            const syncBtn = document.getElementById('btn-sync-new-library');
+            const syncIcon = document.getElementById('sync-new-icon-svg');
+            const syncText = document.getElementById('sync-new-btn-text');
+
+            if (syncIcon) syncIcon.classList.add('spinning');
+            if (syncBtn) syncBtn.disabled = true;
+            if (syncText) syncText.innerText = 'Синхронизация...';
+
+            try {
+                const apiKey = "AIzaSyCeQA2-I2pGKQwStB1TN8NQOQcKdgqc7_0";
+                let rawTracks = [];
+                let nextPageToken = "";
+                let hasMore = true;
+
+                while (hasMore) {
+                    const tracksUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${listId}&key=${apiKey}${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
+                    const res = await fetch(tracksUrl);
+                    const data = await res.json();
+
+                    if (data && data.items && data.items.length > 0) {
+                        data.items.forEach(item => {
+                            if (item.snippet && item.snippet.resourceId && item.snippet.resourceId.videoId) {
+                                rawTracks.push({
+                                    videoId: item.snippet.resourceId.videoId,
+                                    playlistItemId: item.id,
+                                    title: item.snippet.title,
+                                    index: item.snippet.position || 0,
+                                    channelTitle: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle || '',
+                                    thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url || `https://img.youtube.com/vi/${item.snippet.resourceId.videoId}/mqdefault.jpg`
+                                });
+                            }
+                        });
+                        nextPageToken = data.nextPageToken;
+                        if (!nextPageToken) hasMore = false;
+                    } else {
+                        hasMore = false;
+                    }
+                }
+
+                if (rawTracks.length === 0) {
+                    if (!silent) showAlertModal("Плейлист Новое", "Плейлист пуст или недоступен.");
+                    return;
+                }
+
+                // Fetch video durations
+                let durationMap = {};
+                let videoIdsBatch = rawTracks.map(t => t.videoId);
+                for (let i = 0; i < videoIdsBatch.length; i += 50) {
+                    let batchStr = videoIdsBatch.slice(i, i + 50).join(',');
+                    let vUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${batchStr}&key=${apiKey}`;
+                    let vRes = await fetch(vUrl);
+                    let vData = await vRes.json();
+                    if (vData && vData.items) {
+                        vData.items.forEach(v => {
+                            durationMap[v.id] = parseISODuration(v.contentDetails.duration);
+                        });
+                    }
+                }
+
+                const existingLibraryIds = new Set((window.musicSongs || []).map(s => s.id));
+                const newSongsList = [];
+                for (let track of rawTracks) {
+                    // Если трек уже есть в медиатеке — удаляем его из плейлиста «Новое» на YouTube и не добавляем в раздел
+                    if (existingLibraryIds.has(track.videoId)) {
+                        if (window.GYoutubeService && window.GYoutubeService.getStoredAccessToken() && track.playlistItemId) {
+                            window.GYoutubeService.deletePlaylistItem(track.playlistItemId).catch(() => {});
+                        }
+                        continue;
+                    }
+
+                    let duration = durationMap[track.videoId] || 180;
+                    let rawArtist = track.channelTitle || "";
+                    let cleanArtist = rawArtist.replace(/\s*-\s*Topic$/i, "").replace(/vevo$/i, "").trim();
+
+                    if (!cleanArtist || cleanArtist.toLowerCase() === "youtube" || cleanArtist.toLowerCase() === "youtube music") {
+                        if (track.title && track.title.includes(" - ")) {
+                            cleanArtist = track.title.split(" - ")[0].trim();
+                        } else {
+                            cleanArtist = "Различные исполнители";
+                        }
+                    }
+
+                    const songObj = {
+                        id: track.videoId,
+                        playlistItemId: track.playlistItemId || null,
+                        title: track.title,
+                        artistName: cleanArtist,
+                        duration: duration,
+                        coverUrl: track.thumbnail || `https://img.youtube.com/vi/${track.videoId}/mqdefault.jpg`,
+                        index: track.index,
+                        addedAt: new Date().toISOString()
+                    };
+
+                    newSongsList.push(songObj);
+
+                    if (uid && window.db) {
+                        const songRef = window.doc(window.db, "users", uid, "music_new_songs", track.videoId);
+                        await window.setDoc(songRef, songObj).catch(e => console.error("Error saving new song doc:", e));
+                    }
+                }
+
+                window.musicNewSongs = newSongsList;
+                try {
+                    localStorage.setItem('cached_music_new_songs', JSON.stringify(window.musicNewSongs));
+                } catch(e) {}
+
+                if (window.location.hash === '#new') {
+                    renderNewSongsTable();
+                }
+
+                if (!silent) {
+                    showAlertModal("Синхронизация завершена", `Раздел «Новое» обновлен: доступно ${newSongsList.length} ${getPlural(newSongsList.length, 'трек', 'трека', 'треков')}!`);
+                }
+            } catch (e) {
+                console.error("Ошибка синхронизации плейлиста Новое:", e);
+                if (!silent) showAlertModal("Ошибка синхронизации", "Не удалось загрузить плейлист: " + e.message);
+            } finally {
+                window.isSyncingNewLibrary = false;
+                if (syncIcon) syncIcon.classList.remove('spinning');
+                if (syncBtn) syncBtn.disabled = false;
+                if (syncText) syncText.innerText = 'Синхронизировать';
+            }
+        }
+
+        let newSongsSearchQuery = '';
+
+        function handleNewSongsSearch(query) {
+            newSongsSearchQuery = (query || '').trim();
+            const clearBtn = document.getElementById('new-songs-search-clear');
+            if (clearBtn) {
+                clearBtn.style.display = newSongsSearchQuery.length > 0 ? 'inline-flex' : 'none';
+            }
+            renderNewSongsTable();
+        }
+
+        function renderNewSongsTable() {
+            const table = document.getElementById('new-songs-list-table');
+            if (!table) return;
+            table.innerHTML = '';
+
+            const existingLibraryIds = new Set((window.musicSongs || []).map(s => s.id));
+            let availableSongs = (window.musicNewSongs || []).filter(s => !existingLibraryIds.has(s.id));
+
+            if (!availableSongs || availableSongs.length === 0) {
+                table.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-secondary);">В разделе «Новое» пока нет свежих треков.<br><button class="btn-modal btn-modal-submit" onclick="openSyncNewLibraryModal()" style="margin-top:12px; display:inline-flex;">Настроить плейлист «Новое»</button></td></tr>`;
+                return;
+            }
+
+            let displaySongs = availableSongs;
+            if (newSongsSearchQuery) {
+                const q = newSongsSearchQuery.toLowerCase();
+                displaySongs = availableSongs.filter(s =>
+                    (s.title || '').toLowerCase().includes(q) ||
+                    (s.artistName || '').toLowerCase().includes(q)
+                );
+            }
+
+            if (displaySongs.length === 0) {
+                table.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-secondary);">Треки не найдены.</td></tr>`;
+                return;
+            }
+
+            const currentSongId = (playlist.length > 0 && trackIndex >= 0 && playlist[trackIndex]) ? playlist[trackIndex].id : null;
+
+            displaySongs.forEach((song, index) => {
+                const tr = document.createElement('tr');
+                tr.id = `new-song-row-${song.id}`;
+                const isCurrent = (currentSongId === song.id);
+                let stateClass = '';
+                if (isCurrent) {
+                    stateClass = isPlaying ? 'active playing' : 'active paused';
+                }
+                tr.className = stateClass;
+                const playing = isCurrent && isPlaying;
+                const coverUrl = song.coverUrl || `https://img.youtube.com/vi/${song.id}/mqdefault.jpg`;
+                const isInLibrary = (window.musicSongs || []).some(s => s.id === song.id);
+
+                tr.innerHTML = `
+                    <td class="track-num">${index + 1}</td>
+                    <td style="font-weight:600;">
+                        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                            <div class="playlist-thumb" onclick="event.stopPropagation(); playSongFromNewList('${song.id}')">
+                                <img src="${coverUrl}" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 40 40\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23555\\'/></svg>'">
+                                <button type="button" class="queue-cover-control" aria-label="${playing ? 'Пауза' : 'Воспроизвести'}" onclick="event.stopPropagation(); playSongFromNewList('${song.id}')">
+                                    <svg class="queue-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    <svg class="queue-pause-icon" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+                                    <span class="eq-container" aria-hidden="true"><span class="eq-bar eq-bar-1"></span><span class="eq-bar eq-bar-2"></span><span class="eq-bar eq-bar-3"></span></span>
+                                </button>
+                            </div>
+                            <span class="song-title-link" onclick="event.stopPropagation(); playSongFromNewList('${song.id}')" style="color: ${isCurrent ? '#fa243c' : 'var(--text)'};">${escapeHtml(song.title)}</span>
+                        </div>
+                    </td>
+                    <td><span class="song-artist-link" style="color:var(--text); cursor:default;">${escapeHtml(song.artistName || '—')}</span></td>
+                    <td style="text-align: center;">
+                        <div class="track-actions-cell">
+                            <button type="button" class="track-action-btn ${isInLibrary ? 'added' : ''}" onclick="event.stopPropagation(); toggleSongLibrary('${song.id}')" title="${isInLibrary ? 'Удалить из моей музыки' : 'Добавить в мою музыку'}" aria-label="${isInLibrary ? 'Удалить из моей музыки' : 'Добавить в мою музыку'}">
+                                ${isInLibrary ? `
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#476faf" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                ` : `
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                `}
+                            </button>
+                            ${!isInLibrary ? `
+                            <button type="button" class="track-action-btn dislike" onclick="event.stopPropagation(); dislikeNewSong('${song.id}')" title="Не рекомендовать (удалить из Нового)" aria-label="Не рекомендовать">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
+                                </svg>
+                            </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                    <td class="track-duration">${formatTime(song.duration)}</td>
+                `;
+                table.appendChild(tr);
+            });
+        }
+
+        function playAllNewSongs() {
+            const existingLibraryIds = new Set((window.musicSongs || []).map(s => s.id));
+            const available = (window.musicNewSongs || []).filter(s => !existingLibraryIds.has(s.id));
+            if (!available || available.length === 0) {
+                showAlertModal("Новое", "В разделе «Новое» нет доступных треков для воспроизведения.");
+                return;
+            }
+
+            playlist = available.map(s => ({
+                id: s.id,
+                title: s.title,
+                artist: s.artistName,
+                channel: s.artistName,
+                cover: s.coverUrl || `https://img.youtube.com/vi/${s.id}/mqdefault.jpg`,
+                duration: s.duration,
+                album: 'Новое',
+                isNewTrack: true,
+                playlistItemId: s.playlistItemId || null
+            }));
+
+            startNewQueuePlayback(0);
+        }
+
+        function playSongFromNewList(songId) {
+            const existingLibraryIds = new Set((window.musicSongs || []).map(s => s.id));
+            const available = (window.musicNewSongs || []).filter(s => !existingLibraryIds.has(s.id));
+            if (!available || available.length === 0) return;
+            const idx = available.findIndex(s => s.id === songId);
+            if (idx === -1) return;
+
+            playlist = available.map(s => ({
+                id: s.id,
+                title: s.title,
+                artist: s.artistName,
+                channel: s.artistName,
+                cover: s.coverUrl || `https://img.youtube.com/vi/${s.id}/mqdefault.jpg`,
+                duration: s.duration,
+                album: 'Новое',
+                isNewTrack: true,
+                playlistItemId: s.playlistItemId || null
+            }));
+
+            startNewQueuePlayback(idx);
+        }
+
         async function loadMediaLibrary(uid) {
             if (!uid) return;
             let attempts = 0;
@@ -11552,8 +12308,9 @@
             }
             if (!window.db || !window.collection || !window.getDocs) return;
             try {
-                // Fetch user settings / youtube_library_url
+                // Fetch user settings / youtube_library_url & youtube_new_playlist_url
                 await fetchUserYoutubeLibraryUrl(uid);
+                await fetchUserYoutubeNewUrl(uid);
 
                 // Fetch Songs
                 const songsRef = window.collection(window.db, "users", uid, "music_songs");
@@ -11563,6 +12320,19 @@
                     loadedSongs.push(doc.data());
                 });
                 window.musicSongs = loadedSongs;
+
+                // Fetch New Songs
+                const newSongsRef = window.collection(window.db, "users", uid, "music_new_songs");
+                const newSongsSnap = await window.getDocs(newSongsRef);
+                const loadedNewSongs = [];
+                newSongsSnap.forEach(doc => {
+                    loadedNewSongs.push(doc.data());
+                });
+                loadedNewSongs.sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+                window.musicNewSongs = loadedNewSongs;
+                try {
+                    localStorage.setItem('cached_music_new_songs', JSON.stringify(window.musicNewSongs));
+                } catch(e) {}
 
                 // Fetch Albums
                 const albumsRef = window.collection(window.db, "users", uid, "music_albums");
@@ -11656,7 +12426,7 @@
                     }
                 }
 
-                if (['#albums', '#artists', '#songs', '#album-details', '#artist-details'].some(p => window.location.hash.startsWith(p))) {
+                if (['#albums', '#artists', '#songs', '#new', '#album-details', '#artist-details'].some(p => window.location.hash.startsWith(p))) {
                     renderCurrentView();
                 }
                 if (!window.location.hash || window.location.hash === '#home') {
@@ -11669,6 +12439,11 @@
                 // Auto-sync YouTube Media Library if configured
                 if (window.youtubeLibraryUrl || localStorage.getItem('youtube_library_url')) {
                     syncYouTubeMediaLibrary({ silent: true }).catch(err => console.error("Auto-sync library error:", err));
+                }
+
+                // Auto-sync YouTube New playlist if configured
+                if (window.youtubeNewUrl || localStorage.getItem('youtube_new_playlist_url')) {
+                    syncYouTubeNewLibrary({ silent: true }).catch(err => console.error("Auto-sync new library error:", err));
                 }
 
                 if (!isPlaying && playlist.length === 0) {
@@ -11776,7 +12551,7 @@
 
             const histItem = { view: hash.split('?')[0], params: hash.includes('?id=') ? hash.split('?id=')[1] : null };
             if (navigationHistory.length === 0 || JSON.stringify(navigationHistory[navigationHistory.length - 1]) !== JSON.stringify(histItem)) {
-                if (['#albums', '#artists', '#songs', '#album-details', '#artist-details'].some(p => hash.startsWith(p))) {
+                if (['#albums', '#artists', '#songs', '#new', '#album-details', '#artist-details'].some(p => hash.startsWith(p))) {
                     navigationHistory.push(histItem);
                 }
             }
@@ -11787,6 +12562,8 @@
                 renderArtistsLayout();
             } else if (hash === '#songs') {
                 renderSongsTable();
+            } else if (hash === '#new') {
+                renderNewSongsTable();
             } else if (hash.startsWith('#album-details')) {
                 const albumId = hash.split('?id=')[1] || '';
                 renderAlbumDetails(albumId);
@@ -13508,6 +14285,8 @@
                 handleAlbumsSearch('');
             } else if (type === 'songs') {
                 handleSongsSearch('');
+            } else if (type === 'new-songs') {
+                handleNewSongsSearch('');
             }
         }
 
@@ -14665,6 +15444,32 @@
             <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <button class="btn-modal btn-modal-cancel" onclick="closeSyncMediaLibraryModal()">Отмена</button>
                 <button class="btn-modal btn-modal-submit" id="btn-sync-library-submit" onclick="saveAndSyncMediaLibrary()">Сохранить и синхронизировать</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно синхронизации плейлиста Новое -->
+    <div id="syncNewLibraryModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Плейлист «Новое»</h3>
+                <button class="modal-close" onclick="closeSyncNewLibraryModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+                <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">
+                    Укажите ссылку на плейлист для раздела «Новое». Песни из этого раздела не добавляются в вашу медиатеку и альбомы автоматически. Вы можете добавить трек в медиатеку кнопкой «+» или удалить из Нового кнопкой дизлайка.
+                </p>
+                <div class="modal-field">
+                    <label for="modalSyncNewUrl">Ссылка на YouTube плейлист «Новое»</label>
+                    <input type="text" id="modalSyncNewUrl" class="modal-input"
+                        placeholder="https://music.youtube.com/playlist?list=..." autocomplete="off"
+                        onkeydown="if(event.key==='Enter') saveAndSyncNewLibrary()">
+                </div>
+                <div id="sync-new-status-info" style="font-size: 0.82rem; color: var(--text-secondary); display: none; word-break: break-all;"></div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <button class="btn-modal btn-modal-cancel" onclick="closeSyncNewLibraryModal()">Отмена</button>
+                <button class="btn-modal btn-modal-submit" id="btn-sync-new-submit" onclick="saveAndSyncNewLibrary()">Сохранить и синхронизировать</button>
             </div>
         </div>
     </div>

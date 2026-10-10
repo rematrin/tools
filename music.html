@@ -11132,6 +11132,9 @@
                 }
                 await loadSavedPlaylistsFromFirebase(user.uid);
                 await loadMediaLibrary(user.uid);
+                if (window.GYoutubeService && typeof window.GYoutubeService.ensureValidToken === 'function') {
+                    window.GYoutubeService.ensureValidToken().catch(e => console.log("Фоновая проверка токена YouTube:", e));
+                }
 
             } else {
                 if (sidebarName) sidebarName.innerText = "Войти";

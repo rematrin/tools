@@ -46,11 +46,10 @@ const GYoutubeService = {
         }
 
         try {
-            console.log('Запрос нового access token для YouTube через Cloud Function...');
+            console.log('Запрос нового access token для YouTube/Google через Cloud Function...');
             const idToken = await user.getIdToken(true);
 
-            // Пробуем вызвать refreshYouTubeToken (или fallback на refreshCalendarToken / refreshGoogleToken)
-            let response = await fetch('https://us-central1-tools-c98fd.cloudfunctions.net/refreshYouTubeToken', {
+            const response = await fetch('https://us-central1-tools-c98fd.cloudfunctions.net/refreshCalendarToken', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -60,20 +59,11 @@ const GYoutubeService = {
             });
 
             if (!response.ok) {
-                // Фолбэк на refreshCalendarToken / refreshGoogleToken
-                response = await fetch('https://us-central1-tools-c98fd.cloudfunctions.net/refreshCalendarToken', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${idToken}`
-                    },
-                    body: JSON.stringify({ data: {} })
-                });
-            }
-
-            if (!response.ok) {
-                const errData = await response.json();
-                const errMsg = errData.error?.message || `HTTP Error ${response.status}`;
+                let errMsg = `HTTP Error ${response.status}`;
+                try {
+                    const errData = await response.json();
+                    errMsg = errData.error?.message || errMsg;
+                } catch (e) {}
                 throw new Error(errMsg);
             }
 
@@ -82,14 +72,17 @@ const GYoutubeService = {
 
             if (result && result.access_token) {
                 const token = result.access_token;
-                const expiry = result.token_expiry;
+                const expiry = result.token_expiry || (Date.now() + 3600 * 1000);
 
                 localStorage.setItem('google_youtube_access_token', token);
                 localStorage.setItem('google_youtube_token_expiry', expiry);
+                localStorage.setItem('google_calendar_access_token', token);
+                localStorage.setItem('google_calendar_token_expiry', expiry);
                 localStorage.setItem('google_access_token', token);
                 localStorage.setItem('google_token_expiry', expiry);
 
                 window.dispatchEvent(new CustomEvent('googleYouTubeTokenChanged', { detail: { token } }));
+                window.dispatchEvent(new CustomEvent('googleCalendarTokenChanged', { detail: { token } }));
                 return token;
             } else {
                 throw new Error('Некорректный ответ от сервера авторизации.');

@@ -866,14 +866,11 @@
         .queue-cover-control .queue-pause-icon,
         .queue-cover-control .eq-container { display: none; }
         :is(.playlist-item, .playlist-track-row, tr):hover .queue-cover-control,
-        :is(.playlist-item, .playlist-track-row, tr):focus-within .queue-cover-control,
         :is(.playlist-item, .playlist-track-row, tr).playing .queue-cover-control { opacity: 1; }
         :is(.playlist-item, .playlist-track-row, tr).playing .queue-play-icon { display: none; }
         :is(.playlist-item, .playlist-track-row, tr).playing .eq-container { display: flex; }
-        :is(.playlist-item, .playlist-track-row, tr).playing:hover .eq-container,
-        :is(.playlist-item, .playlist-track-row, tr).playing:focus-within .eq-container { display: none; }
-        :is(.playlist-item, .playlist-track-row, tr).playing:hover .queue-pause-icon,
-        :is(.playlist-item, .playlist-track-row, tr).playing:focus-within .queue-pause-icon { display: block; }
+        :is(.playlist-item, .playlist-track-row, tr).playing:hover .eq-container { display: none; }
+        :is(.playlist-item, .playlist-track-row, tr).playing:hover .queue-pause-icon { display: block; }
         .queue-cover-control .eq-bar { background: #fff; }
         .queue-cover-control:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
         @media (hover: none) {

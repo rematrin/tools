@@ -6102,8 +6102,22 @@ function createTaskRowElement(task, isStandalone = false) {
             <div class="task-content" style="min-width: 0; flex: 1;">
                 <span class="task-title-text" style="color: var(--text-secondary); pointer-events: none; text-decoration: ${task.completed ? 'line-through' : 'none'};">${formatTaskTitle(task.title)}</span>
             </div>
-            ${task.dueDate ? `
-                <span class="task-due-badge" style="opacity: 0.6; margin-left: auto;">
+            ${(() => {
+                const attachmentCount = Array.isArray(task.attachments) ? task.attachments.filter(Boolean).length : 0;
+                if (attachmentCount === 0) return '';
+                const tooltip = attachmentCount === 1 ? 'Вложение' : `Вложений: ${attachmentCount}`;
+                return `
+                <span class="task-attachment-icon" title="${tooltip}" style="margin-left: auto; opacity: 0.5;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                    </svg>
+                </span>
+                `;
+            })()}
+            ${task.dueDate ? (() => {
+                const hasAttachments = Array.isArray(task.attachments) && task.attachments.filter(Boolean).length > 0;
+                return `
+                <span class="task-due-badge" style="opacity: 0.6; ${hasAttachments ? 'margin-left: 6px;' : 'margin-left: auto;'}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                         <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -6117,7 +6131,8 @@ function createTaskRowElement(task, isStandalone = false) {
                         </svg>
                     ` : ''}
                 </span>
-            ` : ''}
+                `;
+            })() : ''}
             <div class="task-actions" style="opacity: 1; display: flex; gap: 4px;">
                 <button class="action-btn btn-restore" title="Восстановить">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
@@ -6260,6 +6275,18 @@ function createTaskRowElement(task, isStandalone = false) {
             <span class="task-title-text">${formatTaskTitle(task.title)}</span>
             ${mobileMetaHtml}
         </div>
+        ${(() => {
+            const attachmentCount = Array.isArray(task.attachments) ? task.attachments.filter(Boolean).length : 0;
+            if (attachmentCount === 0) return '';
+            const tooltip = attachmentCount === 1 ? 'Вложение' : `Вложений: ${attachmentCount}`;
+            return `
+            <span class="task-attachment-icon" title="${tooltip}" style="margin-left: auto;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                </svg>
+            </span>
+            `;
+        })()}
         ${task.dueDate ? (() => {
             const today = new Date();
             const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -6270,8 +6297,9 @@ function createTaskRowElement(task, isStandalone = false) {
             const isTodayTomorrowRoute = (currentRoute === 'today' || currentRoute === 'tomorrow');
             const isTodayOrTomorrowDate = (task.dueDate === todayStr || task.dueDate === tomorrowStr);
 
+            const hasAttachments = Array.isArray(task.attachments) && task.attachments.filter(Boolean).length > 0;
             let badgesHtml = '';
-            let hasFirstBadge = false;
+            let hasFirstBadge = hasAttachments;
 
             if (isTodayTomorrowRoute) {
                 if (isTodayOrTomorrowDate) {
@@ -6282,7 +6310,7 @@ function createTaskRowElement(task, isStandalone = false) {
                         }
                         const badgeClass = isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '');
                         badgesHtml += `
-                        <span class="task-time-col" style="margin-left: auto;">
+                        <span class="task-time-col" style="${!hasFirstBadge ? 'margin-left: auto;' : 'margin-left: 6px;'}">
                             <span class="task-due-badge ${badgeClass}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
                                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -6307,7 +6335,7 @@ function createTaskRowElement(task, isStandalone = false) {
                     }
 
                     badgesHtml += `
-                    <span class="task-proj-col" style="${!hasFirstBadge ? 'margin-left: auto;' : ''}">
+                    <span class="task-proj-col" style="${!hasFirstBadge ? 'margin-left: auto;' : (hasAttachments && !task.dueTime ? 'margin-left: 6px;' : '')}">
                         <span class="task-due-badge task-project-badge" ${projStyle}>
                             <span style="vertical-align: middle;">${projName}</span>
                         </span>
@@ -6318,7 +6346,7 @@ function createTaskRowElement(task, isStandalone = false) {
                     const rawDueLabel = dateOnlyLabel || dueLabel;
                     const badgeClass = isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '');
                     badgesHtml += `
-                    <span class="task-time-col" style="margin-left: auto;">
+                    <span class="task-time-col" style="${!hasFirstBadge ? 'margin-left: auto;' : 'margin-left: 6px;'}">
                         <span class="task-due-badge ${badgeClass}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -6352,7 +6380,7 @@ function createTaskRowElement(task, isStandalone = false) {
                 const rawDueLabel = dateOnlyLabel || dueLabel;
                 const badgeClass = isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '');
                 badgesHtml += `
-                <span class="task-due-badge ${badgeClass}" style="margin-left: auto;">
+                <span class="task-due-badge ${badgeClass}" style="${!hasFirstBadge ? 'margin-left: auto;' : 'margin-left: 6px;'}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                         <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -11198,6 +11226,11 @@ function renderModalAttachments(task) {
                 'Удалить',
                 async () => {
                     const newAttachments = attachments.filter(item => item !== url);
+                    task.attachments = newAttachments;
+                    const taskInAll = allTasks.find(t => t.id === task.id);
+                    if (taskInAll) taskInAll.attachments = newAttachments;
+                    renderModalAttachments(task);
+                    if (typeof renderTasks === 'function') renderTasks();
                     try {
                         await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                             attachments: newAttachments
@@ -11227,6 +11260,11 @@ function renderModalAttachments(task) {
         openImageUploadModal(async (url) => {
             if (!url) return;
             const newAttachments = [...attachments, url];
+            task.attachments = newAttachments;
+            const taskInAll = allTasks.find(t => t.id === task.id);
+            if (taskInAll) taskInAll.attachments = newAttachments;
+            renderModalAttachments(task);
+            if (typeof renderTasks === 'function') renderTasks();
             try {
                 await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                     attachments: newAttachments

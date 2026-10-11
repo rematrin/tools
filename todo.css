@@ -980,6 +980,8 @@ body.dark .task-title-link {
 .task-item.editing .task-content,
 .task-item.editing .task-actions,
 .task-item.editing .task-due-badge,
+.task-item.editing .task-repeat-badge,
+.task-item.editing .task-attachment-icon,
 .task-item.editing .task-collapse-btn {
     display: none !important;
 }
@@ -4808,6 +4810,46 @@ body.dark .task-repeat-badge {
     border-color: rgba(99, 102, 241, 0.25);
 }
 
+/* Иконка наличия вложений у задачи (скрепка) */
+.task-attachment-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #b0b8c4;
+    background: transparent;
+    border-radius: 6px;
+    padding: 3px 4px;
+    flex-shrink: 0;
+    line-height: 1;
+    user-select: none;
+    cursor: pointer;
+    transition: color 0.15s ease, opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.task-attachment-icon svg {
+    display: block;
+    width: 14px;
+    height: 14px;
+}
+
+.task-attachment-icon:hover {
+    color: var(--text, #334155);
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+body.dark .task-attachment-icon {
+    color: #64748b;
+}
+
+body.dark .task-attachment-icon:hover {
+    color: #f1f5f9;
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.task-item.completed .task-attachment-icon {
+    opacity: 0.45;
+}
+
 .section-drag-placeholder {
     height: 36px;
     margin: 8px 0;
@@ -5622,7 +5664,8 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
     .task-due-badge,
     .task-repeat-badge,
     .task-time-col,
-    .task-proj-col {
+    .task-proj-col,
+    .task-attachment-icon {
         display: none !important;
     }
 

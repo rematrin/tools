@@ -1097,12 +1097,23 @@ body.dark .task-title-link {
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     padding: 6px;
-    z-index: 100;
+    z-index: 1000;
     width: 230px;
     box-sizing: border-box;
     display: none;
     flex-direction: column;
     gap: 2px;
+}
+
+@media (min-width: 769px) {
+    .task-actions-dropdown.opens-left .dropdown-submenu {
+        left: auto;
+        right: calc(100% + 4px);
+    }
+    .task-actions-dropdown.opens-up .dropdown-submenu {
+        top: auto;
+        bottom: -4px;
+    }
 }
 
 body.dark .task-actions-dropdown {

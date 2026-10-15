@@ -1610,7 +1610,6 @@ const userProfileMenu = document.getElementById('userProfileMenu');
 const btnUserMenuSettings = document.getElementById('btnUserMenuSettings');
 const btnUserMenuHabit = document.getElementById('btnUserMenuHabit');
 const btnUserMenuPomodoro = document.getElementById('btnUserMenuPomodoro');
-const btnUserMenuCountdown = document.getElementById('btnUserMenuCountdown');
 const btnUserMenuTrash = document.getElementById('btnUserMenuTrash');
 const btnUserMenuLogout = document.getElementById('btnUserMenuLogout');
 
@@ -1653,14 +1652,6 @@ if (sidebarUser && userProfileMenu) {
             e.stopPropagation();
             userProfileMenu.style.display = 'none';
             window.location.hash = '#pomodoro';
-        });
-    }
-
-    if (btnUserMenuCountdown) {
-        btnUserMenuCountdown.addEventListener('click', (e) => {
-            e.stopPropagation();
-            userProfileMenu.style.display = 'none';
-            window.location.hash = '#countdown';
         });
     }
 
@@ -2291,8 +2282,6 @@ function updateBrowserTitle() {
         title = 'Корзина';
     } else if (currentRoute === 'pomodoro') {
         title = 'Помодоро';
-    } else if (currentRoute === 'countdown') {
-        title = 'Обратный отсчет';
     } else if (currentRoute === 'habit') {
         title = 'Отслеживаемое';
     } else if (currentRoute.startsWith('project/')) {
@@ -2319,7 +2308,8 @@ function handleRoute() {
     } else if (hash === 'pomodoro') {
         currentRoute = 'pomodoro';
     } else if (hash === 'countdown') {
-        currentRoute = 'countdown';
+        currentRoute = 'inbox';
+        history.replaceState(null, null, '#inbox');
     } else if (hash === 'habit') {
         currentRoute = 'habit';
     } else if (hash.startsWith('project/')) {
@@ -2370,7 +2360,6 @@ function handleRoute() {
     // Обновляем подсветку кнопок нижнего меню
     const bottomNavHabit = document.getElementById('bottomNavHabit');
     const bottomNavPomodoro = document.getElementById('bottomNavPomodoro');
-    const bottomNavCountdown = document.getElementById('bottomNavCountdown');
 
     if (bottomNavHabit) {
         if (currentRoute === 'habit') bottomNavHabit.classList.add('active');
@@ -2379,10 +2368,6 @@ function handleRoute() {
     if (bottomNavPomodoro) {
         if (currentRoute === 'pomodoro') bottomNavPomodoro.classList.add('active');
         else bottomNavPomodoro.classList.remove('active');
-    }
-    if (bottomNavCountdown) {
-        if (currentRoute === 'countdown') bottomNavCountdown.classList.add('active');
-        else bottomNavCountdown.classList.remove('active');
     }
 
     // Обновляем подсветку для проектов
@@ -2400,8 +2385,6 @@ function handleRoute() {
         if (titleEl) titleEl.textContent = 'Корзина';
     } else if (currentRoute === 'pomodoro') {
         if (titleEl) titleEl.textContent = 'Помодоро';
-    } else if (currentRoute === 'countdown') {
-        if (titleEl) titleEl.textContent = 'Обратный отсчет';
     } else if (currentRoute === 'habit') {
         if (titleEl) titleEl.textContent = 'Отслеживаемое';
     } else if (currentRoute.startsWith('project/')) {
@@ -2444,7 +2427,6 @@ function updateBackButtonVisibility() {
     const isSubPage = currentRoute === 'trash' || 
                       currentRoute === 'habit' || 
                       currentRoute === 'pomodoro' || 
-                      currentRoute === 'countdown' || 
                       currentRoute.startsWith('project/');
     if (window.innerWidth <= 768 && isSubPage) {
         contentBackBtn.style.display = 'inline-flex';
@@ -4652,7 +4634,7 @@ window.renderTasks = renderTasks;
 
 function doRenderTasks() {
     // Устанавливаем класс роута на body
-    document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash', 'route-pomodoro', 'route-countdown', 'route-habit', 'route-calendar');
+    document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash', 'route-pomodoro', 'route-habit', 'route-calendar');
     document.documentElement.classList.toggle('route-calendar', currentRoute === 'calendar');
     if (currentRoute === 'today') {
         document.body.classList.add('route-today');
@@ -4666,8 +4648,6 @@ function doRenderTasks() {
         document.body.classList.add('route-inbox');
     } else if (currentRoute === 'pomodoro') {
         document.body.classList.add('route-pomodoro');
-    } else if (currentRoute === 'countdown') {
-        document.body.classList.add('route-countdown');
     } else if (currentRoute === 'habit') {
         document.body.classList.add('route-habit');
     }
@@ -4680,18 +4660,6 @@ function doRenderTasks() {
                 updatePomoActiveTaskUI();
             }
         }
-    }
-
-    const countdownContainer = document.getElementById('countdownContainer');
-    const countdownHeaderActions = document.getElementById('countdownHeaderActions');
-    if (countdownContainer) {
-        countdownContainer.style.display = currentRoute === 'countdown' ? 'flex' : 'none';
-        if (currentRoute === 'countdown') {
-            renderCountdowns();
-        }
-    }
-    if (countdownHeaderActions) {
-        countdownHeaderActions.style.display = currentRoute === 'countdown' ? 'flex' : 'none';
     }
 
     const habitContainer = document.getElementById('habitContainer');
@@ -4715,10 +4683,10 @@ function doRenderTasks() {
     }
 
     if (activeTasksContainer) {
-        activeTasksContainer.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit' || currentRoute === 'calendar') ? 'none' : 'block';
+        activeTasksContainer.style.display = (currentRoute === 'pomodoro' || currentRoute === 'habit' || currentRoute === 'calendar') ? 'none' : 'block';
     }
     const gcalBannerLocal = document.getElementById('gcalEventsBanner');
-    if (gcalBannerLocal && (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit' || currentRoute === 'calendar')) {
+    if (gcalBannerLocal && (currentRoute === 'pomodoro' || currentRoute === 'habit' || currentRoute === 'calendar')) {
         gcalBannerLocal.style.display = 'none';
     }
 
@@ -4789,17 +4757,17 @@ function doRenderTasks() {
     }
     if (addTaskFormEl) {
         updateMobileFabVisibility();
-        addTaskFormEl.style.display = (currentRoute === 'trash' || currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit' || currentRoute === 'calendar') ? 'none' : 'flex';
+        addTaskFormEl.style.display = (currentRoute === 'trash' || currentRoute === 'pomodoro' || currentRoute === 'habit' || currentRoute === 'calendar') ? 'none' : 'flex';
     }
 
     const projectHeaderActions = document.getElementById('projectHeaderActions');
     if (projectHeaderActions) {
-        projectHeaderActions.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit' || currentRoute === 'calendar') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') ? 'block' : 'none');
+        projectHeaderActions.style.display = (currentRoute === 'pomodoro' || currentRoute === 'habit' || currentRoute === 'calendar') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') ? 'block' : 'none');
     }
 
     const viewDisplayContainer = document.getElementById('viewDisplayContainer');
     if (viewDisplayContainer) {
-        viewDisplayContainer.style.display = (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit' || currentRoute === 'calendar') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') ? 'block' : 'none');
+        viewDisplayContainer.style.display = (currentRoute === 'pomodoro' || currentRoute === 'habit' || currentRoute === 'calendar') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') ? 'block' : 'none');
     }
 
     // Фильтруем задачи для отображения в зависимости от текущей вкладки (роута)
@@ -4821,7 +4789,7 @@ function doRenderTasks() {
     } else if (currentRoute === 'trash') {
         displayActiveTasks = trashTasks;
         displayCompletedTasks = [];
-    } else if (currentRoute === 'pomodoro' || currentRoute === 'countdown' || currentRoute === 'habit' || currentRoute === 'calendar') {
+    } else if (currentRoute === 'pomodoro' || currentRoute === 'habit' || currentRoute === 'calendar') {
         displayActiveTasks = [];
         displayCompletedTasks = [];
     } else { // inbox
@@ -5795,26 +5763,54 @@ function doRenderTasks() {
                             dropdown.style.display = 'flex';
                             headerEl?.classList.add('menu-open');
 
+                            const menuWidth = dropdown.offsetWidth || 170;
+                            const menuHeight = dropdown.offsetHeight || 120;
+
                             if (clickEvent) {
                                 dropdown.style.position = 'fixed';
+                                dropdown.style.zIndex = '10000';
                                 let x = clickEvent.clientX;
                                 let y = clickEvent.clientY;
 
-                                const menuWidth = 170;
-                                const menuHeight = 120;
-                                if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
-                                if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+                                if (x + menuWidth > window.innerWidth - 10) {
+                                    x = clickEvent.clientX - menuWidth;
+                                    if (x < 10) x = Math.max(10, window.innerWidth - menuWidth - 10);
+                                }
+
+                                const spaceBelow = window.innerHeight - clickEvent.clientY;
+                                if (spaceBelow < menuHeight + 10) {
+                                    y = clickEvent.clientY - menuHeight;
+                                    if (y < 10) y = Math.max(10, window.innerHeight - menuHeight - 10);
+                                } else {
+                                    y = clickEvent.clientY;
+                                }
 
                                 dropdown.style.left = `${x}px`;
                                 dropdown.style.top = `${y}px`;
+                                dropdown.style.right = 'auto';
+                                dropdown.style.bottom = 'auto';
                             } else {
                                 dropdown.style.position = 'absolute';
-                                dropdown.style.left = '';
-                                dropdown.style.top = 'calc(100% + 4px)';
+                                dropdown.style.left = 'auto';
+                                dropdown.style.right = '0';
+                                const rect = actionsBtn.getBoundingClientRect();
+                                const spaceBelow = window.innerHeight - rect.bottom;
+                                if (spaceBelow < menuHeight + 10 && rect.top > spaceBelow) {
+                                    dropdown.style.top = 'auto';
+                                    dropdown.style.bottom = 'calc(100% + 4px)';
+                                } else {
+                                    dropdown.style.top = 'calc(100% + 4px)';
+                                    dropdown.style.bottom = 'auto';
+                                }
                             }
                         } else {
                             dropdown.style.display = 'none';
                             headerEl?.classList.remove('menu-open');
+                            dropdown.style.position = '';
+                            dropdown.style.left = '';
+                            dropdown.style.right = '';
+                            dropdown.style.top = '';
+                            dropdown.style.bottom = '';
                         }
                     };
 
@@ -6849,9 +6845,12 @@ function createTaskRowElement(task, isStandalone = false) {
                 const dropdown = taskItem.querySelector('.task-actions-dropdown');
                 if (dropdown) {
                     dropdown.style.display = 'none';
+                    dropdown.classList.remove('opens-up', 'opens-left');
                     dropdown.style.position = '';
                     dropdown.style.left = '';
+                    dropdown.style.right = '';
                     dropdown.style.top = '';
+                    dropdown.style.bottom = '';
                 }
             }
         });
@@ -6859,34 +6858,75 @@ function createTaskRowElement(task, isStandalone = false) {
         const isHidden = actionsDropdown.style.display === 'none';
         if (isHidden) {
             actionsDropdown.style.display = 'flex';
+            actionsDropdown.style.overflow = 'visible';
+            actionsDropdown.scrollLeft = 0;
+            actionsDropdown.scrollTop = 0;
             item.classList.add('menu-open');
+            actionsDropdown.classList.remove('opens-up', 'opens-left');
+
+            // Измеряем реальные габариты меню после отображения
+            const menuWidth = actionsDropdown.offsetWidth || 230;
+            const menuHeight = actionsDropdown.offsetHeight || (task.completed ? 100 : 440);
 
             // Если передан клик ПКМ, позиционируем меню на месте курсора
             if (clickEvent) {
                 actionsDropdown.style.position = 'fixed';
-                let x = clickEvent.clientX;
-                let y = clickEvent.clientY;
+                actionsDropdown.style.zIndex = '10000';
 
-                // Проверяем, чтобы меню не вылезало за пределы экрана
-                const menuWidth = 230;
-                const menuHeight = task.completed ? 90 : 340;
-                if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
-                if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+                let x = clickEvent.clientX;
+                const spaceRight = window.innerWidth - clickEvent.clientX;
+                if (spaceRight < menuWidth + 10) {
+                    x = clickEvent.clientX - menuWidth;
+                    actionsDropdown.classList.add('opens-left');
+                    if (x < 10) x = Math.max(10, window.innerWidth - menuWidth - 10);
+                }
+
+                let y = clickEvent.clientY;
+                const spaceBelow = window.innerHeight - clickEvent.clientY;
+                // Если снизу места не хватает, открываем меню вверх от курсора
+                if (spaceBelow < menuHeight + 10) {
+                    actionsDropdown.classList.add('opens-up');
+                    y = clickEvent.clientY - menuHeight;
+                    // Если и сверху не хватает (например, на маленьком экране), ограничиваем в видимой зоне экрана
+                    if (y < 10) {
+                        y = Math.max(10, window.innerHeight - menuHeight - 10);
+                    }
+                } else {
+                    y = clickEvent.clientY;
+                }
 
                 actionsDropdown.style.left = `${x}px`;
                 actionsDropdown.style.top = `${y}px`;
+                actionsDropdown.style.right = 'auto';
+                actionsDropdown.style.bottom = 'auto';
             } else {
-                // Возвращаем дефолтное позиционирование от кнопки
+                // Позиционирование относительно кнопки трех точек
                 actionsDropdown.style.position = 'absolute';
-                actionsDropdown.style.left = '';
-                actionsDropdown.style.top = 'calc(100% + 4px)';
+                actionsDropdown.style.left = 'auto';
+                actionsDropdown.style.right = '0';
+
+                const rect = btnMore.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                // Если под кнопкой недостаточно места, открываем меню вверх
+                if (spaceBelow < menuHeight + 10 && rect.top > spaceBelow) {
+                    actionsDropdown.classList.add('opens-up');
+                    actionsDropdown.style.top = 'auto';
+                    actionsDropdown.style.bottom = 'calc(100% + 4px)';
+                } else {
+                    actionsDropdown.style.top = 'calc(100% + 4px)';
+                    actionsDropdown.style.bottom = 'auto';
+                }
             }
         } else {
             actionsDropdown.style.display = 'none';
             item.classList.remove('menu-open');
+            actionsDropdown.classList.remove('opens-up', 'opens-left');
             actionsDropdown.style.position = '';
             actionsDropdown.style.left = '';
+            actionsDropdown.style.right = '';
             actionsDropdown.style.top = '';
+            actionsDropdown.style.bottom = '';
+            actionsDropdown.style.overflow = '';
         }
     };
 
@@ -7425,9 +7465,11 @@ function startCountdownsForUser(uid) {
     unsubscribeCountdowns = onSnapshot(qCountdowns, (snapshot) => {
         const newCountdownsList = [];
         snapshot.forEach((docSnap) => {
+            const cdData = docSnap.data();
             newCountdownsList.push({
                 id: docSnap.id,
-                ...docSnap.data()
+                ...cdData,
+                projectId: cdData.projectId || 'inbox'
             });
         });
 
@@ -7453,11 +7495,7 @@ function startCountdownsForUser(uid) {
             handleCountdownSync(cd);
         });
 
-        if (currentRoute === 'countdown') {
-            renderCountdowns();
-        } else {
-            renderTasks();
-        }
+        renderTasks();
         if (typeof renderCountdownEventsBanner === 'function') {
             renderCountdownEventsBanner();
         }
@@ -9176,7 +9214,14 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
 
     if (e.clientX && e.clientY && e.type === 'contextmenu') {
         x = e.clientX;
-        y = e.clientY + window.scrollY;
+        const menuHeight = menu.offsetHeight || 160;
+        const spaceBelow = window.innerHeight - e.clientY;
+        if (spaceBelow < menuHeight + 10) {
+            y = (e.clientY - menuHeight) + window.scrollY;
+            if (y < window.scrollY + 10) y = window.scrollY + 10;
+        } else {
+            y = e.clientY + window.scrollY;
+        }
 
         // Предотвращение выхода за границы окна
         if (x + 150 > window.innerWidth) {
@@ -11956,29 +12001,49 @@ function createSubtaskElement(subtask) {
         const isHidden = actionsDropdown.style.display === 'none';
         if (isHidden || clickEvent) {
             actionsDropdown.style.display = 'flex';
+            actionsDropdown.style.overflow = 'visible';
+            actionsDropdown.scrollLeft = 0;
+            actionsDropdown.scrollTop = 0;
             itemEl.classList.add('menu-open');
 
             if (clickEvent) {
                 actionsDropdown.style.position = 'fixed';
-                let x = clickEvent.clientX;
-                let y = clickEvent.clientY;
+                actionsDropdown.style.zIndex = '10000';
+                const menuWidth = actionsDropdown.offsetWidth || 230;
+                const menuHeight = actionsDropdown.offsetHeight || (subtask.completed ? 80 : 260);
 
-                const menuWidth = 230;
-                const menuHeight = subtask.completed ? 80 : 260;
-                if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
-                if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+                let x = clickEvent.clientX;
+                const spaceRight = window.innerWidth - clickEvent.clientX;
+                if (spaceRight < menuWidth + 10) {
+                    x = clickEvent.clientX - menuWidth;
+                    actionsDropdown.classList.add('opens-left');
+                    if (x < 10) x = Math.max(10, window.innerWidth - menuWidth - 10);
+                }
+
+                let y = clickEvent.clientY;
+                const spaceBelow = window.innerHeight - clickEvent.clientY;
+                if (spaceBelow < menuHeight + 10) {
+                    actionsDropdown.classList.add('opens-up');
+                    y = clickEvent.clientY - menuHeight;
+                    if (y < 10) y = Math.max(10, window.innerHeight - menuHeight - 10);
+                } else {
+                    y = clickEvent.clientY;
+                }
 
                 actionsDropdown.style.left = `${x}px`;
                 actionsDropdown.style.top = `${y}px`;
+                actionsDropdown.style.right = 'auto';
                 actionsDropdown.style.bottom = 'auto';
             } else {
                 actionsDropdown.style.position = 'absolute';
-                actionsDropdown.style.left = '';
+                actionsDropdown.style.left = 'auto';
+                actionsDropdown.style.right = '0';
 
                 const rect = btnMore.getBoundingClientRect();
                 const spaceBelow = window.innerHeight - rect.bottom;
-                const dropdownHeight = subtask.completed ? 80 : 260;
-                if (spaceBelow < dropdownHeight) {
+                const dropdownHeight = actionsDropdown.offsetHeight || (subtask.completed ? 80 : 260);
+                if (spaceBelow < dropdownHeight + 10 && rect.top > spaceBelow) {
+                    actionsDropdown.classList.add('opens-up');
                     actionsDropdown.style.top = 'auto';
                     actionsDropdown.style.bottom = 'calc(100% + 4px)';
                 } else {
@@ -11989,10 +12054,13 @@ function createSubtaskElement(subtask) {
         } else {
             actionsDropdown.style.display = 'none';
             itemEl.classList.remove('menu-open');
+            actionsDropdown.classList.remove('opens-up', 'opens-left');
             actionsDropdown.style.position = '';
             actionsDropdown.style.left = '';
+            actionsDropdown.style.right = '';
             actionsDropdown.style.top = '';
             actionsDropdown.style.bottom = '';
+            actionsDropdown.style.overflow = '';
         }
         updateModalOverflow();
     };
@@ -15198,7 +15266,14 @@ function openCountdownModal(countdown = null, targetProjectId = null) {
     let textColor = '#4b6bfb';
     let customBgUrl = '';
     let selectedDate = countdown ? countdown.targetDate : new Date().toISOString().split('T')[0];
-    let selectedProjectId = countdown ? (countdown.projectId || '') : (targetProjectId || '');
+    let selectedProjectId = 'inbox';
+    if (countdown && countdown.projectId) {
+        selectedProjectId = countdown.projectId;
+    } else if (targetProjectId) {
+        selectedProjectId = targetProjectId;
+    } else if (currentRoute.startsWith('project/')) {
+        selectedProjectId = currentRoute.split('/')[1];
+    }
 
     const defaultImage = 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=600&q=80';
 
@@ -15275,10 +15350,7 @@ function openCountdownModal(countdown = null, targetProjectId = null) {
             <div class="countdown-modal-row">
                 <span class="countdown-label">Раздел</span>
                 <select class="countdown-project-select" id="selectCountdownProject">
-                    <option value="">Без раздела (Общий)</option>
                     <option value="inbox" ${selectedProjectId === 'inbox' ? 'selected' : ''}>Входящие</option>
-                    <option value="today" ${selectedProjectId === 'today' ? 'selected' : ''}>Сегодня</option>
-                    <option value="tomorrow" ${selectedProjectId === 'tomorrow' ? 'selected' : ''}>Завтра</option>
                     ${projectsList.map(p => `
                         <option value="${p.id}" ${selectedProjectId === p.id ? 'selected' : ''}>${escapeHtml(p.name)}</option>
                     `).join('')}
@@ -15545,7 +15617,7 @@ function openCountdownModal(countdown = null, targetProjectId = null) {
         const m = String(selectMonth.value).padStart(2, '0');
         const y = selectYear.value;
         const targetDateStr = `${y}-${m}-${d}`;
-        const chosenProjectId = selectProject ? (selectProject.value || null) : (selectedProjectId || null);
+        const chosenProjectId = selectProject ? (selectProject.value || 'inbox') : (selectedProjectId || 'inbox');
 
         const data = {
             title,
@@ -16079,7 +16151,12 @@ function renderCountdownEventsBanner() {
         `;
 
         row.addEventListener('click', () => {
-            window.location.hash = '#countdown';
+            const targetPid = cd.projectId || 'inbox';
+            if (targetPid === 'inbox') {
+                window.location.hash = '#inbox';
+            } else {
+                window.location.hash = `#project/${targetPid}`;
+            }
         });
 
         listEl.appendChild(row);
@@ -17676,7 +17753,14 @@ function showSystemRouteContextMenu(e, routeId, routeName, itemContainer) {
 
     if (e.clientX && e.clientY && e.type === 'contextmenu') {
         x = e.clientX;
-        y = e.clientY + window.scrollY;
+        const menuHeight = menu.offsetHeight || 140;
+        const spaceBelow = window.innerHeight - e.clientY;
+        if (spaceBelow < menuHeight + 10) {
+            y = (e.clientY - menuHeight) + window.scrollY;
+            if (y < window.scrollY + 10) y = window.scrollY + 10;
+        } else {
+            y = e.clientY + window.scrollY;
+        }
 
         if (x + 180 > window.innerWidth) {
             x = window.innerWidth - 190;

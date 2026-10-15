@@ -7412,7 +7412,8 @@ input.pill-btn::-webkit-inner-spin-button {
     display: none !important;
 }
 
-.countdown-project-select {
+.countdown-project-select,
+.countdown-position-select {
     flex: 1;
     padding: 10px;
     border: 1.5px solid var(--border);
@@ -7425,7 +7426,8 @@ input.pill-btn::-webkit-inner-spin-button {
     cursor: pointer;
 }
 
-.countdown-project-select:focus {
+.countdown-project-select:focus,
+.countdown-position-select:focus {
     border-color: #4c6ef5;
 }
 

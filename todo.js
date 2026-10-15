@@ -14974,7 +14974,6 @@ function createCountdownCardElement(cd, gridEl, isGlobalView = false) {
     `;
 
     card.setAttribute('data-id', cd.id);
-    card.setAttribute('draggable', 'true');
 
     // Attach listeners
     card.querySelector('.btn-edit').addEventListener('click', (e) => {
@@ -14997,108 +14996,6 @@ function createCountdownCardElement(cd, gridEl, isGlobalView = false) {
             }
         );
     });
-
-    // HTML5 Drag & Drop for Desktop
-    card.addEventListener('dragstart', (e) => {
-        window.draggedCountdownCard = card;
-        card.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-    });
-
-    card.addEventListener('dragend', () => {
-        card.classList.remove('dragging');
-        window.draggedCountdownCard = null;
-    });
-
-    card.addEventListener('dragover', (e) => {
-        e.preventDefault();
-    });
-
-    card.addEventListener('dragenter', (e) => {
-        e.preventDefault();
-        if (window.draggedCountdownCard && window.draggedCountdownCard !== card) {
-            card.classList.add('drag-over');
-        }
-    });
-
-    card.addEventListener('dragleave', () => {
-        card.classList.remove('drag-over');
-    });
-
-    card.addEventListener('drop', async (e) => {
-        e.preventDefault();
-        card.classList.remove('drag-over');
-        if (window.draggedCountdownCard && window.draggedCountdownCard !== card) {
-            const grid = gridEl || card.closest('.countdown-grid') || document.getElementById('countdownGrid');
-            if (!grid) return;
-            const children = [...grid.children];
-            const draggedIdx = children.indexOf(window.draggedCountdownCard);
-            const targetIdx = children.indexOf(card);
-            if (draggedIdx < targetIdx) {
-                grid.insertBefore(window.draggedCountdownCard, card.nextSibling);
-            } else {
-                grid.insertBefore(window.draggedCountdownCard, card);
-            }
-            await saveCountdownsOrder(grid);
-        }
-    });
-
-    // Touch Long Press Drag & Drop for Mobile
-    let touchStartTimer = null;
-    card.addEventListener('touchstart', (e) => {
-        if (e.touches.length > 1) return;
-        const grid = gridEl || card.closest('.countdown-grid') || document.getElementById('countdownGrid');
-        if (!grid) return;
-        const touch = e.touches[0];
-        const startX = touch.clientX;
-        const startY = touch.clientY;
-
-        let isDraggingActive = false;
-
-        touchStartTimer = setTimeout(() => {
-            isDraggingActive = true;
-            card.classList.add('dragging');
-            if (navigator.vibrate) navigator.vibrate(50);
-        }, 400); // 400ms long press
-
-        const touchMoveHandler = (ev) => {
-            if (!isDraggingActive) {
-                const moveTouch = ev.touches[0];
-                if (Math.abs(moveTouch.clientX - startX) > 10 || Math.abs(moveTouch.clientY - startY) > 10) {
-                    clearTimeout(touchStartTimer);
-                }
-            } else {
-                if (ev.cancelable) ev.preventDefault();
-
-                const moveTouch = ev.touches[0];
-                const elementUnder = document.elementFromPoint(moveTouch.clientX, moveTouch.clientY);
-                const targetCard = elementUnder ? elementUnder.closest('.countdown-card') : null;
-                if (targetCard && targetCard !== card && grid.contains(targetCard)) {
-                    const children = [...grid.children];
-                    const activeIdx = children.indexOf(card);
-                    const targetIdx = children.indexOf(targetCard);
-                    if (activeIdx < targetIdx) {
-                        grid.insertBefore(card, targetCard.nextSibling);
-                    } else {
-                        grid.insertBefore(card, targetCard);
-                    }
-                }
-            }
-        };
-
-        const touchEndHandler = async () => {
-            clearTimeout(touchStartTimer);
-            if (isDraggingActive) {
-                card.classList.remove('dragging');
-                await saveCountdownsOrder(grid);
-            }
-            window.removeEventListener('touchmove', touchMoveHandler);
-            window.removeEventListener('touchend', touchEndHandler);
-        };
-
-        window.addEventListener('touchmove', touchMoveHandler, { passive: false });
-        window.addEventListener('touchend', touchEndHandler);
-    }, { passive: true });
 
     return card;
 }
@@ -15345,6 +15242,50 @@ function openCountdownModal(countdown = null, targetProjectId = null) {
         yearOptions += `<option value="${y}" ${y === curY ? 'selected' : ''}>${y}</option>`;
     });
 
+    // Helper to get sorted countdowns for a project
+    function getCountdownsForProject(projId) {
+        const list = Array.isArray(countdownsList)
+            ? countdownsList.filter(c => (c.projectId || 'inbox') === projId)
+            : [];
+        return [...list].sort((a, b) => {
+            if (a.projectOrder !== undefined && b.projectOrder !== undefined) {
+                return a.projectOrder - b.projectOrder;
+            }
+            if (a.order !== undefined && b.order !== undefined) {
+                return a.order - b.order;
+            }
+            return new Date(a.targetDate) - new Date(b.targetDate);
+        });
+    }
+
+    // Build position dropdown options
+    function buildPositionOptions(projId) {
+        const projCds = getCountdownsForProject(projId);
+        let total = projCds.length;
+        let currentPos = 1;
+
+        if (isEdit) {
+            const curIdx = projCds.findIndex(c => c.id === countdown.id);
+            if (curIdx !== -1) {
+                currentPos = curIdx + 1;
+            } else {
+                total += 1;
+                currentPos = total;
+            }
+        } else {
+            total += 1;
+            currentPos = total;
+        }
+
+        if (total < 1) total = 1;
+
+        let optionsHtml = '';
+        for (let i = 1; i <= total; i++) {
+            optionsHtml += `<option value="${i}" ${i === currentPos ? 'selected' : ''}>${i}</option>`;
+        }
+        return optionsHtml;
+    }
+
     overlay.innerHTML = `
         <div class="countdown-modal-card">
             <div class="countdown-modal-header">
@@ -15374,6 +15315,13 @@ function openCountdownModal(countdown = null, targetProjectId = null) {
                     ${projectsList.map(p => `
                         <option value="${p.id}" ${selectedProjectId === p.id ? 'selected' : ''}>${escapeHtml(p.name)}</option>
                     `).join('')}
+                </select>
+            </div>
+
+            <div class="countdown-modal-row">
+                <span class="countdown-label">Позиция</span>
+                <select class="countdown-position-select" id="selectCountdownPosition">
+                    ${buildPositionOptions(selectedProjectId)}
                 </select>
             </div>
 
@@ -15442,6 +15390,7 @@ function openCountdownModal(countdown = null, targetProjectId = null) {
 
     const inputTitle = overlay.querySelector('#inputCountdownTitle');
     const selectProject = overlay.querySelector('#selectCountdownProject');
+    const selectPosition = overlay.querySelector('#selectCountdownPosition');
     const selectDay = overlay.querySelector('#selectCountdownDay');
     const selectMonth = overlay.querySelector('#selectCountdownMonth');
     const selectYear = overlay.querySelector('#selectCountdownYear');
@@ -15459,6 +15408,12 @@ function openCountdownModal(countdown = null, targetProjectId = null) {
     const inputTextColor = overlay.querySelector('#inputTextColor');
     const btnBgColorPicker = overlay.querySelector('#btnBgColorPicker');
     const btnTextColorPicker = overlay.querySelector('#btnTextColorPicker');
+
+    if (selectProject && selectPosition) {
+        selectProject.addEventListener('change', () => {
+            selectPosition.innerHTML = buildPositionOptions(selectProject.value);
+        });
+    }
 
     function updatePreview() {
         const title = inputTitle.value.trim() || 'Название';
@@ -15638,6 +15593,8 @@ function openCountdownModal(countdown = null, targetProjectId = null) {
         const y = selectYear.value;
         const targetDateStr = `${y}-${m}-${d}`;
         const chosenProjectId = selectProject ? (selectProject.value || 'inbox') : (selectedProjectId || 'inbox');
+        const chosenPos = selectPosition ? Math.max(1, parseInt(selectPosition.value, 10) || 1) : 1;
+        const targetIdx = chosenPos - 1;
 
         const data = {
             title,
@@ -15651,14 +15608,35 @@ function openCountdownModal(countdown = null, targetProjectId = null) {
         };
 
         try {
+            let savedId = isEdit ? countdown.id : null;
             if (isEdit) {
                 await updateDoc(doc(db, 'users', currentUid, 'countdowns', countdown.id), data);
             } else {
-                await addDoc(collection(db, 'users', currentUid, 'countdowns'), {
+                const docRef = await addDoc(collection(db, 'users', currentUid, 'countdowns'), {
                     ...data,
                     createdAt: serverTimestamp()
                 });
+                savedId = docRef.id;
             }
+
+            // Reorder countdowns in the target project according to chosen position
+            const projCds = getCountdownsForProject(chosenProjectId);
+            const otherCds = projCds.filter(c => c.id !== savedId);
+            const reordered = [...otherCds];
+            const insertIdx = Math.min(Math.max(0, targetIdx), reordered.length);
+            reordered.splice(insertIdx, 0, { id: savedId });
+
+            const reorderPromises = reordered.map((item, idx) => {
+                if (item.id) {
+                    return updateDoc(doc(db, 'users', currentUid, 'countdowns', item.id), {
+                        projectOrder: idx,
+                        order: idx
+                    });
+                }
+                return Promise.resolve();
+            });
+
+            await Promise.all(reorderPromises);
             closeModal();
         } catch (err) {
             console.error("Ошибка при сохранении обратного отсчета:", err);

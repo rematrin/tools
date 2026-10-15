@@ -817,7 +817,7 @@ body.dark .task-item:hover {
     width: 20px;
     height: 20px;
     border: 1.5px solid #b8bac2;
-    border-radius: 50%;
+    border-radius: 25%;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -839,7 +839,7 @@ body.dark .task-item:hover {
     bottom: -6px;
     left: -6px;
     right: -6px;
-    border-radius: 50%;
+    border-radius: 25%;
 }
 
 body.dark .custom-checkbox {

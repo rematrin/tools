@@ -9,6 +9,7 @@
 <meta name="description" content="Бесплатный инструмент для скачивания превью (обложек) из YouTube видео в высоком качестве.">
 
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="sidebar.css">
 
 <style>
   /* === ЛОКАЛЬНЫЕ СТИЛИ === */
@@ -275,7 +276,10 @@
 
 <div id="customTooltip"></div>
 
-<div class="wrap">
+<div class="app-layout">
+  <div id="sidebar-container" class="vk-sidebar-container"><script>(function(){var s=localStorage.getItem('cached_sidebar_html');if(s){var c=document.getElementById('sidebar-container');c.innerHTML=s;var p=location.pathname.split('/').pop()||'index.html';c.querySelectorAll('.vk-sidebar-item').forEach(function(l){if(l.getAttribute('href')===p)l.classList.add('active');});}})();</script></div>
+  <main class="main-content">
+    <div class="wrap">
   <h1>Скачать YouTube превью</h1>
 
   <div class="tabs-container">
@@ -679,8 +683,10 @@
           editBatchLinks();
       }
   }
-
 </script>
+
+</main>
+</div>
 
 <link rel="stylesheet" href="footer.css">
 <div id="footer"></div>
@@ -695,6 +701,7 @@ fetch('footer.html')
 <script type="module" src="nav-widget.js"></script> 
 <script type="module" src="auth-widget.js"></script>
 <script type="module" src="header.js"></script>
+<script src="left-sidebar.js"></script>
   
 </body>
 </html>

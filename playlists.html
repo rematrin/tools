@@ -10,6 +10,7 @@
     <link rel="apple-touch-icon" href="img/music256.png">
 
     <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="sidebar.css">
 
     <style>
         /* === ЛОКАЛЬНЫЕ СТИЛИ (Специфика DJ Station) === */
@@ -22,7 +23,14 @@
             --active-item-bg: var(--active-bg);
         }
 
+        .app-layout {
+            max-width: 1140px;
+            transition: max-width 0.35s ease;
+        }
 
+        .app-layout:has(.wrap-native-video) {
+            max-width: 1480px;
+        }
 
         body {
             display: flex;
@@ -1330,7 +1338,10 @@
 
     <div id="header-container"><script>(function(){var h=localStorage.getItem('cached_header_html');if(h)document.getElementById('header-container').innerHTML=h;})();</script></div>
 
-    <div class="wrap">
+    <div class="app-layout">
+        <div id="sidebar-container" class="vk-sidebar-container"><script>(function(){var s=localStorage.getItem('cached_sidebar_html');if(s){var c=document.getElementById('sidebar-container');c.innerHTML=s;var p=location.pathname.split('/').pop()||'index.html';c.querySelectorAll('.vk-sidebar-item').forEach(function(l){if(l.getAttribute('href')===p)l.classList.add('active');});}})();</script></div>
+        <main class="main-content">
+            <div class="wrap">
 
         <div class="card" id="main-player-card" style="display: none;">
             <div id="player-container">
@@ -1582,6 +1593,8 @@
             </div>
             <div class="saved-playlists-list" id="saved-playlists-list"></div>
         </div>
+            </div>
+        </main>
     </div>
 
     <script>
@@ -3474,6 +3487,7 @@
     <script type="module" src="nav-widget.js"></script>
     <script type="module" src="auth-widget.js"></script>
     <script type="module" src="header.js"></script>
+    <script src="left-sidebar.js"></script>
 
 </body>
 

@@ -1702,7 +1702,8 @@ body.dark .completed-tasks-container {
 
     #inboxSidebarContainer,
     #todaySidebarContainer,
-    #tomorrowSidebarContainer {
+    #tomorrowSidebarContainer,
+    .desktop-only-menu-item {
         display: none !important;
     }
 
@@ -1815,7 +1816,7 @@ body.dark .completed-tasks-container {
     /* Белый закругленный блок вместо "Добавить команду": Отслеж, Помодоро, Отчёт */
     .todo-sidebar .sidebar-footer-menu {
         padding-bottom: 0 !important;
-        margin-top: 0 !important;
+        margin-top: 14px !important;
         flex: none !important;
     }
 
@@ -8690,6 +8691,22 @@ body.dark .offline-banner-close:hover {
     text-decoration: underline;
 }
 
+/* На десктопе скрываем плавающее нижнее меню (Отслеживаемое и Помодоро теперь в обычном списке) */
+@media (min-width: 769px) {
+    .sidebar-footer-menu {
+        display: none !important;
+    }
+}
+
+#inboxSidebarContainer .menu-icon,
+#todaySidebarContainer .menu-icon,
+#tomorrowSidebarContainer .menu-icon,
+#calendarSidebarContainer .menu-icon,
+#habitSidebarContainer .menu-icon,
+#pomodoroSidebarContainer .menu-icon {
+    cursor: pointer !important;
+}
+
 /* Нижнее меню кнопок в боковой панели */
 .sidebar-bottom-bar {
     display: flex;
@@ -9409,6 +9426,38 @@ input:checked+.view-slider:before {
         color: var(--text-secondary) !important;
         opacity: 0.5 !important;
         margin-left: auto !important;
+    }
+
+    .todo-sidebar .sidebar-bottom-bar .bottom-bar-right {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        margin-left: auto !important;
+    }
+
+    .todo-sidebar .sidebar-bottom-bar .bottom-bar-right .bottom-bar-chevron {
+        margin-left: 0 !important;
+    }
+
+    .todo-sidebar .sidebar-bottom-bar .bottom-bar-item.active {
+        background: rgba(0, 122, 255, 0.08) !important;
+    }
+
+    body.dark .todo-sidebar .sidebar-bottom-bar .bottom-bar-item.active {
+        background: rgba(10, 132, 255, 0.15) !important;
+    }
+
+    .todo-sidebar .sidebar-bottom-bar .bottom-bar-item.active .bottom-bar-label {
+        color: var(--accent) !important;
+    }
+
+    .todo-sidebar .sidebar-bottom-bar .bottom-bar-item.active .bottom-bar-icon {
+        color: var(--accent) !important;
+    }
+
+    .todo-sidebar .sidebar-bottom-bar .bottom-bar-item.active .bottom-bar-chevron {
+        color: var(--accent) !important;
+        opacity: 0.8 !important;
     }
 }
 

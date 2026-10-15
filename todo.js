@@ -2334,6 +2334,8 @@ function handleRoute() {
     const menuToday = document.getElementById('menuToday');
     const menuTomorrow = document.getElementById('menuTomorrow');
     const menuCalendar = document.getElementById('menuCalendar');
+    const menuHabit = document.getElementById('menuHabit');
+    const menuPomodoro = document.getElementById('menuPomodoro');
     const menuTrash = document.getElementById('menuTrash');
 
     if (menuInbox) {
@@ -2352,15 +2354,28 @@ function handleRoute() {
         if (currentRoute === 'calendar') menuCalendar.classList.add('active');
         else menuCalendar.classList.remove('active');
     }
+    if (menuHabit) {
+        if (currentRoute === 'habit') menuHabit.classList.add('active');
+        else menuHabit.classList.remove('active');
+    }
+    if (menuPomodoro) {
+        if (currentRoute === 'pomodoro') menuPomodoro.classList.add('active');
+        else menuPomodoro.classList.remove('active');
+    }
     if (menuTrash) {
         if (currentRoute === 'trash') menuTrash.classList.add('active');
         else menuTrash.classList.remove('active');
     }
 
     // Обновляем подсветку кнопок нижнего меню
+    const bottomNavCalendar = document.getElementById('bottomNavCalendar');
     const bottomNavHabit = document.getElementById('bottomNavHabit');
     const bottomNavPomodoro = document.getElementById('bottomNavPomodoro');
 
+    if (bottomNavCalendar) {
+        if (currentRoute === 'calendar') bottomNavCalendar.classList.add('active');
+        else bottomNavCalendar.classList.remove('active');
+    }
     if (bottomNavHabit) {
         if (currentRoute === 'habit') bottomNavHabit.classList.add('active');
         else bottomNavHabit.classList.remove('active');
@@ -4732,9 +4747,14 @@ function doRenderTasks() {
         tomorrowCounter.style.display = (showCounters && !hideTomorrowCount && tomorrowActiveCount > 0) ? 'inline-block' : 'none';
     }
     const calendarCounter = document.getElementById('calendarCounter');
+    const bottomCalendarCounter = document.getElementById('bottomCalendarCounter');
     if (calendarCounter) {
         calendarCounter.textContent = calendarActiveCount;
         calendarCounter.style.display = (showCounters && calendarActiveCount > 0) ? 'inline-block' : 'none';
+    }
+    if (bottomCalendarCounter) {
+        bottomCalendarCounter.textContent = calendarActiveCount;
+        bottomCalendarCounter.style.display = (showCounters && calendarActiveCount > 0) ? 'inline-block' : 'none';
     }
 
     const trashCounter = document.getElementById('trashCounter');

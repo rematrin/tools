@@ -165,7 +165,7 @@
                         </svg>
                     </button>
                 </div>
-                <div class="project-item-container" id="calendarSidebarContainer">
+                <div class="project-item-container desktop-only-menu-item" id="calendarSidebarContainer">
                     <a href="#calendar" class="menu-item" id="menuCalendar">
                         <span class="menu-item-left">
                             <span class="menu-icon">
@@ -180,6 +180,34 @@
                             <span>Календарь</span>
                         </span>
                         <span class="menu-counter" id="calendarCounter" style="display:none">0</span>
+                    </a>
+                </div>
+                <div class="project-item-container desktop-only-menu-item" id="habitSidebarContainer">
+                    <a href="#habit" class="menu-item" id="menuHabit">
+                        <span class="menu-item-left">
+                            <span class="menu-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                            </span>
+                            <span>Отслеживаемое</span>
+                        </span>
+                    </a>
+                </div>
+                <div class="project-item-container desktop-only-menu-item" id="pomodoroSidebarContainer">
+                    <a href="#pomodoro" class="menu-item" id="menuPomodoro">
+                        <span class="menu-item-left">
+                            <span class="menu-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="8"></circle>
+                                    <circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle>
+                                </svg>
+                            </span>
+                            <span>Помодоро</span>
+                        </span>
                     </a>
                 </div>
 
@@ -203,6 +231,29 @@
 
                 <div class="sidebar-footer-menu">
                     <div class="sidebar-bottom-bar">
+                        <a href="#calendar" class="bottom-bar-item" id="bottomNavCalendar">
+                            <span class="bottom-bar-item-left">
+                                <span class="bottom-bar-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                </span>
+                                <span class="bottom-bar-label">Календарь</span>
+                            </span>
+                            <span class="bottom-bar-right">
+                                <span class="menu-counter" id="bottomCalendarCounter" style="display:none">0</span>
+                                <span class="bottom-bar-chevron">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                        stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                    </svg>
+                                </span>
+                            </span>
+                        </a>
                         <a href="#habit" class="bottom-bar-item" id="bottomNavHabit">
                             <span class="bottom-bar-item-left">
                                 <span class="bottom-bar-icon">
@@ -212,7 +263,7 @@
                                         <polyline points="22 4 12 14.01 9 11.01"></polyline>
                                     </svg>
                                 </span>
-                                <span class="bottom-bar-label">Отслеж.</span>
+                                <span class="bottom-bar-label">Отслеживаемое</span>
                             </span>
                             <span class="bottom-bar-chevron">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
@@ -224,10 +275,10 @@
                         <a href="#pomodoro" class="bottom-bar-item" id="bottomNavPomodoro">
                             <span class="bottom-bar-item-left">
                                 <span class="bottom-bar-icon">
-                                    <svg viewBox="0 0 24 24" fill="currentColor">
-                                        <path
-                                            d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12 14.5 13.3807 13.3807 14.5 12 14.5 10.6193 14.5 9.5 13.3807 9.5 12 9.5 10.6193 10.6193 9.5 12 9.5ZM12 2C17.5228 2 22 6.47715 22 12 22 17.5228 17.5228 22 12 22 6.47715 22 2 17.5228 2 12 2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12 4 16.4183 7.58172 20 12 20 16.4183 20 20 16.4183 20 12 20 7.58172 16.4183 4 12 4Z">
-                                        </path>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="8"></circle>
+                                        <circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle>
                                     </svg>
                                 </span>
                                 <span class="bottom-bar-label">Помодоро</span>

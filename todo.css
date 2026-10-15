@@ -4337,6 +4337,25 @@ body.dark .priority-opt-btn:hover {
     background-color: var(--hover-bg) !important;
 }
 
+/* Google Calendar Color Dropdown */
+.gcal-color-dropdown {
+    padding: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.gcal-color-opt-btn {
+    transition: background-color 0.15s ease;
+    border-radius: 6px;
+}
+
+.gcal-color-opt-btn:hover {
+    background-color: var(--hover-bg) !important;
+}
+
+body.dark .gcal-color-opt-btn:hover {
+    background-color: var(--hover-bg) !important;
+}
+
 .preview-icon svg {
     width: 14px;
     height: 14px;

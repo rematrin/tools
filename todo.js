@@ -2694,6 +2694,34 @@ window.addEventListener('authChanged', (e) => {
     }
 });
 
+const GCAL_EVENT_COLORS = [
+    { id: '1', name: 'Лаванда', hex: '#7986cb' },
+    { id: '2', name: 'Шалфей', hex: '#33b679' },
+    { id: '3', name: 'Виноград', hex: '#8e24aa' },
+    { id: '4', name: 'Фламинго', hex: '#e67c73' },
+    { id: '5', name: 'Банан', hex: '#f6bf26' },
+    { id: '6', name: 'Мандарин', hex: '#f4511e' },
+    { id: '7', name: 'Павлин', hex: '#039be5' },
+    { id: '8', name: 'Графит', hex: '#616161' },
+    { id: '9', name: 'Черника', hex: '#3f51b5' },
+    { id: '10', name: 'Базилик', hex: '#0b8043' },
+    { id: '11', name: 'Томат', hex: '#d50000' }
+];
+
+const GCAL_EVENT_COLOR_MAP = Object.fromEntries(GCAL_EVENT_COLORS.map(c => [c.id, c]));
+
+function getEffectiveTaskGCalColorId(task) {
+    if (!task) return null;
+    if (task.gcal_color_id) return String(task.gcal_color_id);
+    if (task.projectId && typeof projectsList !== 'undefined' && Array.isArray(projectsList)) {
+        const proj = projectsList.find(p => p.id === task.projectId);
+        if (proj && proj.gcal_color_id) {
+            return String(proj.gcal_color_id);
+        }
+    }
+    return null;
+}
+
 function getTaskSyncHash(task) {
     if (!task) return '';
     let title = (task.title || '').trim();
@@ -2707,8 +2735,9 @@ function getTaskSyncHash(task) {
     const dueEndTime = task.dueEndTime || '';
     const completed = task.completed ? 'true' : 'false';
     const deleted = task.deleted ? 'true' : 'false';
+    const colorId = getEffectiveTaskGCalColorId(task) || '';
     const description = (task.description || '').trim();
-    return `${title}|${dueDate}|${dueTime}|${dueRepeat}|${dueEndDate}|${dueEndTime}|${completed}|${deleted}|${description}`;
+    return `${title}|${dueDate}|${dueTime}|${dueRepeat}|${dueEndDate}|${dueEndTime}|${completed}|${deleted}|${colorId}|${description}`;
 }
 
 function isTaskSyncHashEqual(savedHash, task) {
@@ -2716,7 +2745,7 @@ function isTaskSyncHashEqual(savedHash, task) {
     const currentHash = getTaskSyncHash(task);
     if (savedHash === currentHash) return true;
 
-    // Поддержка обратной совместимости со старыми хешами (без поля deleted)
+    // Поддержка обратной совместимости со старыми хешами (без поля colorId и/или без поля deleted)
     if (!task.deleted) {
         let title = (task.title || '').trim();
         if (title.startsWith('* ')) {
@@ -2729,8 +2758,16 @@ function isTaskSyncHashEqual(savedHash, task) {
         const dueEndTime = task.dueEndTime || '';
         const completed = task.completed ? 'true' : 'false';
         const description = (task.description || '').trim();
-        const legacyHash = `${title}|${dueDate}|${dueTime}|${dueRepeat}|${dueEndDate}|${dueEndTime}|${completed}|${description}`;
-        if (savedHash === legacyHash) return true;
+
+        if (!getEffectiveTaskGCalColorId(task)) {
+            // Старый 9-польный хеш (с deleted, но без colorId)
+            const legacyHash9 = `${title}|${dueDate}|${dueTime}|${dueRepeat}|${dueEndDate}|${dueEndTime}|${completed}|false|${description}`;
+            if (savedHash === legacyHash9) return true;
+
+            // Самый старый 8-польный хеш (без deleted и без colorId)
+            const legacyHash8 = `${title}|${dueDate}|${dueTime}|${dueRepeat}|${dueEndDate}|${dueEndTime}|${completed}|${description}`;
+            if (savedHash === legacyHash8) return true;
+        }
     }
 
     return false;
@@ -7167,8 +7204,11 @@ window.addEventListener('resize', () => {
 
 // === ЛОГИКА ПРОЕКТОВ ===
 
+let previousProjectGCalColors = {};
+
 function startProjectsForUser(uid) {
     if (unsubscribeProjects) unsubscribeProjects();
+    previousProjectGCalColors = {};
 
     const qProjects = query(collection(db, 'users', uid, 'projects'));
 
@@ -7190,6 +7230,20 @@ function startProjectsForUser(uid) {
             const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
             const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
             return timeA - timeB; // Старые вверху (по возрастанию)
+        });
+
+        snapshot.docChanges().forEach((change) => {
+            const projData = change.doc.data();
+            const projId = change.doc.id;
+            const oldColor = previousProjectGCalColors[projId];
+            const newColor = projData.gcal_color_id ? String(projData.gcal_color_id) : null;
+            if (change.type === 'modified' && oldColor !== undefined && oldColor !== newColor) {
+                if (typeof allTasks !== 'undefined' && Array.isArray(allTasks) && typeof handleTaskSync === 'function') {
+                    const affected = allTasks.filter(t => t.projectId === projId && !t.gcal_color_id);
+                    affected.forEach(t => handleTaskSync(t));
+                }
+            }
+            previousProjectGCalColors[projId] = newColor;
         });
 
         // Проверяем существование проекта на текущем роуте
@@ -7227,6 +7281,7 @@ function stopProjectsForUser() {
         unsubscribeProjects = null;
     }
     projectsList = [];
+    previousProjectGCalColors = {};
     if (projectsListContainer) projectsListContainer.innerHTML = '';
 }
 
@@ -9385,6 +9440,7 @@ function showProjectColorModal(projectId) {
     if (!project) return;
 
     let selectedColor = project.color || null;
+    let selectedGCalColor = project.gcal_color_id ? String(project.gcal_color_id) : null;
     const presets = [
         '#dc2626',
         '#f97316',
@@ -9399,16 +9455,36 @@ function showProjectColorModal(projectId) {
     overlay.className = 'custom-confirm-overlay';
     overlay.style.zIndex = '1050';
 
-    overlay.innerHTML = '<div class="confirm-box" style="width: 380px; padding: 24px; border-radius: 16px; position: relative;">' +
+    const selectedGCalColorName = selectedGCalColor && GCAL_EVENT_COLOR_MAP[selectedGCalColor]
+        ? GCAL_EVENT_COLOR_MAP[selectedGCalColor].name
+        : 'По умолчанию';
+
+    overlay.innerHTML = '<div class="confirm-box" style="width: 400px; padding: 24px; border-radius: 16px; position: relative;">' +
         '<div class="confirm-title" style="font-size: 18px; margin-bottom: 20px; font-weight: 600; text-align: center;">Изменить цвет</div>' +
-        '<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">' +
+
+        // Секция 1: Цвет списка
+        '<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">' +
         '<span style="font-size: 14px; font-weight: 500; color: var(--text-secondary);">Цвет списка</span>' +
-        '<div class="color-presets-container" style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">' +
-        '<div class="color-circle no-color ' + (!selectedColor ? 'active' : '') + '" data-color="" style="--active-color: #d1d5db;"></div>' +
-        presets.map(color => '<div class="color-circle ' + (selectedColor === color ? 'active' : '') + '" data-color="' + color + '" style="background-color: ' + color + '; --active-color: ' + color + ';"></div>').join('') +
-        '<div class="color-circle custom-color-btn ' + (selectedColor && !presets.includes(selectedColor) ? 'active' : '') + '" id="custom-color-trigger" style="--active-color: ' + (selectedColor && !presets.includes(selectedColor) ? selectedColor : '#3b82f6') + ';"></div>' +
+        '<div class="color-presets-container list-color-presets" style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">' +
+        '<div class="color-circle list-color-circle no-color ' + (!selectedColor ? 'active' : '') + '" data-color="" style="--active-color: #d1d5db;" title="Без цвета"></div>' +
+        presets.map(color => '<div class="color-circle list-color-circle ' + (selectedColor === color ? 'active' : '') + '" data-color="' + color + '" style="background-color: ' + color + '; --active-color: ' + color + ';"></div>').join('') +
+        '<div class="color-circle list-color-circle custom-color-btn ' + (selectedColor && !presets.includes(selectedColor) ? 'active' : '') + '" id="custom-color-trigger" style="--active-color: ' + (selectedColor && !presets.includes(selectedColor) ? selectedColor : '#3b82f6') + ';" title="Пользовательский цвет"></div>' +
         '</div>' +
         '</div>' +
+
+        // Секция 2: Цвет в календаре
+        '<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">' +
+        '<div style="display: flex; align-items: center; justify-content: space-between;">' +
+        '<span style="font-size: 14px; font-weight: 500; color: var(--text-secondary);">Цвет в календаре</span>' +
+        '<span id="gcal-color-selected-name" style="font-size: 13px; font-weight: 500; color: var(--text-secondary);">' + selectedGCalColorName + '</span>' +
+        '</div>' +
+        '<div class="color-presets-container gcal-color-presets" style="display: flex; align-items: center; gap: 7.5px; flex-wrap: wrap;">' +
+        '<div class="color-circle gcal-color-circle no-color ' + (!selectedGCalColor ? 'active' : '') + '" data-gcal-color="" title="По умолчанию" style="--active-color: #d1d5db;"></div>' +
+        GCAL_EVENT_COLORS.map(c => '<div class="color-circle gcal-color-circle ' + (selectedGCalColor === c.id ? 'active' : '') + '" data-gcal-color="' + c.id + '" title="' + c.name + '" style="background-color: ' + c.hex + '; --active-color: ' + c.hex + ';"></div>').join('') +
+        '</div>' +
+        '</div>' +
+
+        // Кнопки
         '<div style="display: flex; justify-content: flex-end; gap: 12px;">' +
         '<button class="confirm-btn-secondary" id="btn-cancel-color" style="margin: 0; padding: 10px 20px; border-radius: 10px; background: var(--card-bg); border: 1px solid var(--border); color: var(--text);">Отмена</button>' +
         '<button class="confirm-btn-primary" id="btn-save-color" style="margin: 0; padding: 10px 20px; border-radius: 10px; background: #3b82f6; border: none; color: #fff;">Сохранить</button>' +
@@ -9417,8 +9493,10 @@ function showProjectColorModal(projectId) {
 
     document.body.appendChild(overlay);
 
-    const presetCircles = overlay.querySelectorAll('.color-circle:not(.custom-color-btn)');
+    const listPresetCircles = overlay.querySelectorAll('.list-color-circle:not(.custom-color-btn)');
     const customColorTrigger = overlay.querySelector('#custom-color-trigger');
+    const gcalCircles = overlay.querySelectorAll('.gcal-color-circle');
+    const gcalColorNameEl = overlay.querySelector('#gcal-color-selected-name');
     const saveBtn = overlay.querySelector('#btn-save-color');
     const cancelBtn = overlay.querySelector('#btn-cancel-color');
     const modalBox = overlay.querySelector('.confirm-box');
@@ -9426,8 +9504,8 @@ function showProjectColorModal(projectId) {
     let customColorPopover = null;
     let tempCustomColor = selectedColor && !presets.includes(selectedColor) ? selectedColor : '#ff0000';
 
-    function updateActiveState(activeCircle) {
-        overlay.querySelectorAll('.color-circle').forEach(c => c.classList.remove('active'));
+    function updateListActiveState(activeCircle) {
+        overlay.querySelectorAll('.list-color-circle').forEach(c => c.classList.remove('active'));
         activeCircle.classList.add('active');
         if (activeCircle === customColorTrigger) {
             customColorTrigger.style.setProperty('--active-color', tempCustomColor);
@@ -9437,13 +9515,25 @@ function showProjectColorModal(projectId) {
         }
     }
 
-    presetCircles.forEach(circle => {
+    listPresetCircles.forEach(circle => {
         circle.addEventListener('click', () => {
             if (customColorPopover) {
                 customColorPopover.remove();
                 customColorPopover = null;
             }
-            updateActiveState(circle);
+            updateListActiveState(circle);
+        });
+    });
+
+    gcalCircles.forEach(circle => {
+        circle.addEventListener('click', () => {
+            gcalCircles.forEach(c => c.classList.remove('active'));
+            circle.classList.add('active');
+            selectedGCalColor = circle.getAttribute('data-gcal-color') || null;
+            const colorObj = selectedGCalColor ? GCAL_EVENT_COLOR_MAP[selectedGCalColor] : null;
+            if (gcalColorNameEl) {
+                gcalColorNameEl.textContent = colorObj ? colorObj.name : 'По умолчанию';
+            }
         });
     });
 
@@ -9577,7 +9667,7 @@ function showProjectColorModal(projectId) {
             evt.stopPropagation();
             const rgb = hsvToRgb(curHue, curSat, curVal);
             tempCustomColor = rgbToHex(rgb.r, rgb.g, rgb.b);
-            updateActiveState(customColorTrigger);
+            updateListActiveState(customColorTrigger);
             customColorPopover.remove();
             customColorPopover = null;
         });
@@ -9599,10 +9689,33 @@ function showProjectColorModal(projectId) {
         if (customColorPopover) customColorPopover.remove();
         overlay.remove();
 
+        const previousGCalColor = project.gcal_color_id ? String(project.gcal_color_id) : null;
+        const newGCalColor = selectedGCalColor ? String(selectedGCalColor) : null;
+        const gcalColorChanged = newGCalColor !== previousGCalColor;
+
         try {
             await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
-                color: selectedColor
+                color: selectedColor,
+                gcal_color_id: newGCalColor
             });
+
+            project.color = selectedColor;
+            project.gcal_color_id = newGCalColor;
+
+            // Если открыта модалка задачи из этого проекта, обновляем её свойства
+            if (typeof taskDetailsModal !== 'undefined' && taskDetailsModal && taskDetailsModal.style.display === 'flex' && typeof currentModalTaskId !== 'undefined') {
+                const curTask = allTasks.find(t => t.id === currentModalTaskId);
+                if (curTask && curTask.projectId === projectId && typeof updateModalUI === 'function') {
+                    updateModalUI(curTask);
+                }
+            }
+
+            if (gcalColorChanged && typeof handleTaskSync === 'function') {
+                const affectedTasks = allTasks.filter(t => t.projectId === projectId && !t.gcal_color_id);
+                for (const t of affectedTasks) {
+                    await handleTaskSync(t);
+                }
+            }
         } catch (err) {
             console.error("Ошибка при сохранении цвета проекта:", err);
             alert("Не удалось изменить цвет проекта.");
@@ -10613,6 +10726,10 @@ const modalPriorityBtn = document.getElementById('modalPriorityBtn');
 const modalPriorityText = document.getElementById('modalPriorityText');
 const modalPriorityIcon = document.getElementById('modalPriorityIcon');
 const modalPriorityDropdown = document.getElementById('modalPriorityDropdown');
+const modalGCalColorBtn = document.getElementById('modalGCalColorBtn');
+const modalGCalColorText = document.getElementById('modalGCalColorText');
+const modalGCalColorPreview = document.getElementById('modalGCalColorPreview');
+const modalGCalColorDropdown = document.getElementById('modalGCalColorDropdown');
 
 initSubtasksDragAndDrop();
 
@@ -10658,6 +10775,7 @@ function openTaskDetailsModal(taskId) {
     if (modalProjectDropdown) modalProjectDropdown.style.display = 'none';
     closeModalDueDropdown();
     if (modalPriorityDropdown) modalPriorityDropdown.style.display = 'none';
+    if (modalGCalColorDropdown) modalGCalColorDropdown.style.display = 'none';
 
     updateModalUI(task);
 }
@@ -10851,6 +10969,33 @@ function updateModalUI(task) {
 
         modalPriorityIcon.style.color = flagColor;
         modalPriorityIcon.setAttribute('fill', fill);
+    }
+
+    if (modalGCalColorText && modalGCalColorPreview) {
+        const colorId = task.gcal_color_id ? String(task.gcal_color_id) : null;
+        const colorObj = colorId ? GCAL_EVENT_COLORS.find(c => c.id === colorId) : null;
+        if (colorObj) {
+            modalGCalColorText.textContent = colorObj.name;
+            modalGCalColorPreview.style.background = colorObj.hex;
+            modalGCalColorPreview.style.border = 'none';
+        } else {
+            let projectColorObj = null;
+            if (task.projectId && typeof projectsList !== 'undefined' && Array.isArray(projectsList)) {
+                const proj = projectsList.find(p => p.id === task.projectId);
+                if (proj && proj.gcal_color_id) {
+                    projectColorObj = GCAL_EVENT_COLORS.find(c => c.id === String(proj.gcal_color_id));
+                }
+            }
+            if (projectColorObj) {
+                modalGCalColorText.textContent = `По умолчанию (${projectColorObj.name})`;
+                modalGCalColorPreview.style.background = projectColorObj.hex;
+                modalGCalColorPreview.style.border = 'none';
+            } else {
+                modalGCalColorText.textContent = 'По умолчанию';
+                modalGCalColorPreview.style.background = 'transparent';
+                modalGCalColorPreview.style.border = '1.5px dashed var(--text-secondary)';
+            }
+        }
     }
 
     renderModalSubtasks(task);
@@ -12299,6 +12444,7 @@ if (modalProjectBtn) {
         e.stopPropagation();
         closeModalDueDropdown();
         if (modalPriorityDropdown) modalPriorityDropdown.style.display = 'none';
+        if (modalGCalColorDropdown) modalGCalColorDropdown.style.display = 'none';
 
         if (modalProjectDropdown) {
             const isHidden = modalProjectDropdown.style.display === 'none';
@@ -12343,6 +12489,15 @@ if (modalProjectBtn) {
                                 order: 0
                             });
 
+                            const updatedTask = allTasks.find(t => t.id === currentModalTaskId);
+                            if (updatedTask) {
+                                updatedTask.projectId = targetProjId;
+                                updateModalUI(updatedTask);
+                                if (typeof handleTaskSync === 'function') {
+                                    handleTaskSync(updatedTask);
+                                }
+                            }
+
                             const subtasks = allTasks.filter(t => t.parentId === currentModalTaskId);
                             for (const sub of subtasks) {
                                 await updateDoc(doc(db, 'users', currentUid, 'tasks', sub.id), {
@@ -12366,6 +12521,7 @@ if (modalPriorityBtn) {
         e.stopPropagation();
         if (modalProjectDropdown) modalProjectDropdown.style.display = 'none';
         closeModalDueDropdown();
+        if (modalGCalColorDropdown) modalGCalColorDropdown.style.display = 'none';
 
         if (modalPriorityDropdown) {
             const isHidden = modalPriorityDropdown.style.display === 'none';
@@ -12426,6 +12582,83 @@ if (modalPriorityBtn) {
     });
 }
 
+if (modalGCalColorBtn) {
+    modalGCalColorBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (modalProjectDropdown) modalProjectDropdown.style.display = 'none';
+        closeModalDueDropdown();
+        if (modalPriorityDropdown) modalPriorityDropdown.style.display = 'none';
+
+        if (modalGCalColorDropdown) {
+            const isHidden = modalGCalColorDropdown.style.display === 'none';
+            if (isHidden) {
+                modalGCalColorDropdown.style.display = 'flex';
+                modalGCalColorDropdown.style.flexDirection = 'column';
+
+                const task = allTasks.find(t => t.id === currentModalTaskId);
+                const currentColorId = task && task.gcal_color_id ? String(task.gcal_color_id) : null;
+                let projectColorObj = null;
+                if (task && task.projectId && typeof projectsList !== 'undefined' && Array.isArray(projectsList)) {
+                    const proj = projectsList.find(p => p.id === task.projectId);
+                    if (proj && proj.gcal_color_id) {
+                        projectColorObj = GCAL_EVENT_COLORS.find(c => c.id === String(proj.gcal_color_id));
+                    }
+                }
+                const defaultLabel = projectColorObj ? `По умолчанию (${projectColorObj.name})` : 'По умолчанию';
+                const defaultDot = projectColorObj
+                    ? `<span style="width: 12px; height: 12px; border-radius: 50%; background-color: ${projectColorObj.hex}; flex-shrink: 0;"></span>`
+                    : `<span style="width: 12px; height: 12px; border-radius: 50%; border: 1.5px dashed var(--text-secondary); background: transparent; flex-shrink: 0;"></span>`;
+
+                let html = `
+                    <button class="gcal-color-opt-btn dropdown-item" data-color-id="" type="button" style="display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 7px 10px; cursor: pointer; text-align: left; color: var(--text); border-radius: 6px;">
+                        ${defaultDot}
+                        <span style="flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${defaultLabel}</span>
+                        <span class="color-check" style="${!currentColorId ? '' : 'display: none;'} color: var(--accent, #3b82f6); font-weight: bold; margin-left: auto;">✓</span>
+                    </button>
+                `;
+
+                GCAL_EVENT_COLORS.forEach(c => {
+                    const isSelected = currentColorId === c.id;
+                    html += `
+                        <button class="gcal-color-opt-btn dropdown-item" data-color-id="${c.id}" type="button" style="display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 7px 10px; cursor: pointer; text-align: left; color: var(--text); border-radius: 6px;">
+                            <span style="width: 12px; height: 12px; border-radius: 50%; background-color: ${c.hex}; flex-shrink: 0;"></span>
+                            <span style="flex-grow: 1;">${c.name}</span>
+                            <span class="color-check" style="${isSelected ? '' : 'display: none;'} color: var(--accent, #3b82f6); font-weight: bold; margin-left: auto;">✓</span>
+                        </button>
+                    `;
+                });
+
+                modalGCalColorDropdown.innerHTML = html;
+
+                modalGCalColorDropdown.querySelectorAll('.gcal-color-opt-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        modalGCalColorDropdown.style.display = 'none';
+                        const colId = btn.getAttribute('data-color-id') || null;
+                        try {
+                            await updateDoc(doc(db, 'users', currentUid, 'tasks', currentModalTaskId), {
+                                gcal_color_id: colId
+                            });
+                            const updatedTask = allTasks.find(t => t.id === currentModalTaskId);
+                            if (updatedTask) {
+                                updatedTask.gcal_color_id = colId;
+                                updateModalUI(updatedTask);
+                                if (typeof handleTaskSync === 'function') {
+                                    handleTaskSync(updatedTask);
+                                }
+                            }
+                        } catch (err) {
+                            console.error("Ошибка сохранения цвета календаря:", err);
+                        }
+                    });
+                });
+            } else {
+                modalGCalColorDropdown.style.display = 'none';
+            }
+        }
+    });
+}
+
 document.addEventListener('click', (e) => {
     if (taskDetailsModal && taskDetailsModal.style.display === 'flex') {
         if (modalProjectDropdown && !e.target.closest('.sidebar-project-selector')) {
@@ -12436,6 +12669,9 @@ document.addEventListener('click', (e) => {
         }
         if (modalPriorityDropdown && !e.target.closest('.sidebar-priority-selector')) {
             modalPriorityDropdown.style.display = 'none';
+        }
+        if (modalGCalColorDropdown && !e.target.closest('.sidebar-color-selector')) {
+            modalGCalColorDropdown.style.display = 'none';
         }
 
         // Скрытие выпадающих меню для добавления подзадачи при клике вовне
@@ -13033,7 +13269,12 @@ async function syncAllTasksForProject(projectId) {
 
         try {
             const currentTaskHash = getTaskSyncHash(task);
-            const eventId = await window.GCalendarService.syncTaskToGoogle(task, calendarId);
+            const effectiveColorId = getEffectiveTaskGCalColorId(task);
+            const taskToSync = {
+                ...task,
+                gcal_color_id: effectiveColorId
+            };
+            const eventId = await window.GCalendarService.syncTaskToGoogle(taskToSync, calendarId);
             if (eventId) {
                 await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                     gcal_event_id: eventId,
@@ -13094,7 +13335,13 @@ async function handleTaskSync(task) {
                 task.gcal_event_id = null;
             }
 
-            const eventId = await window.GCalendarService.syncTaskToGoogle(task, mappedCalendarId);
+            const effectiveColorId = getEffectiveTaskGCalColorId(task);
+            const taskToSync = {
+                ...task,
+                gcal_color_id: effectiveColorId
+            };
+
+            const eventId = await window.GCalendarService.syncTaskToGoogle(taskToSync, mappedCalendarId);
             if (eventId) {
                 await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                     gcal_event_id: eventId,
@@ -13104,6 +13351,20 @@ async function handleTaskSync(task) {
                 task.gcal_event_id = eventId;
                 task.gcal_calendar_id = mappedCalendarId;
                 task.gcal_last_sync_hash = currentTaskHash;
+
+                if (typeof gcalCachedEvents !== 'undefined' && Array.isArray(gcalCachedEvents)) {
+                    const cached = gcalCachedEvents.find(e => e.id === eventId);
+                    if (cached) {
+                        if (effectiveColorId && GCAL_EVENT_COLOR_MAP[effectiveColorId]) {
+                            cached.calendarColor = GCAL_EVENT_COLOR_MAP[effectiveColorId].hex;
+                        } else if (cached.calendarDefaultColor) {
+                            cached.calendarColor = cached.calendarDefaultColor;
+                        }
+                        if (typeof renderGCalEventsBanner === 'function') {
+                            renderGCalEventsBanner(gcalCachedEvents);
+                        }
+                    }
+                }
             }
         } catch (err) {
             console.error("Ошибка при синхронизации задачи с Google:", err);
@@ -13227,11 +13488,15 @@ async function fetchAndRenderGCalEvents(force = false, allowInteractive = false)
         const fetchPromises = visibleCalendars.map(async (cal) => {
             try {
                 const events = await window.GCalendarService.fetchEventsForRange(cal.id, timeMin, timeMax, allowInteractive);
-                return events.map(e => ({
-                    ...e,
-                    calendarColor: cal.backgroundColor || '#4285F4',
-                    calendarName: cal.summary
-                }));
+                return events.map(e => {
+                    const customColor = e.colorId && GCAL_EVENT_COLOR_MAP[e.colorId] ? GCAL_EVENT_COLOR_MAP[e.colorId].hex : null;
+                    return {
+                        ...e,
+                        calendarDefaultColor: cal.backgroundColor || '#4285F4',
+                        calendarColor: customColor || cal.backgroundColor || '#4285F4',
+                        calendarName: cal.summary
+                    };
+                });
             } catch (err) {
                 console.error(`Error fetching events for calendar ${cal.summary}:`, err);
                 return [];
@@ -13418,8 +13683,11 @@ async function syncTasksFromGCal(allowInteractive = false, force = false) {
                         const dueTimeChanged = parsed.dueTime !== (existingTask.dueTime || null);
                         const dueEndDateChanged = parsed.dueEndDate !== (existingTask.dueEndDate || null);
                         const dueEndTimeChanged = parsed.dueEndTime !== (existingTask.dueEndTime || null);
+                        const effectiveCurrentColor = getEffectiveTaskGCalColorId(existingTask);
+                        const incomingColor = parsed.colorId || null;
+                        const colorChanged = incomingColor !== effectiveCurrentColor;
 
-                        if (titleChanged || descChanged || dueDateChanged || dueTimeChanged || dueEndDateChanged || dueEndTimeChanged) {
+                        if (titleChanged || descChanged || dueDateChanged || dueTimeChanged || dueEndDateChanged || dueEndTimeChanged || colorChanged) {
                             console.log(`[GCal->Todo] Обновление задачи "${existingTask.title}" (${existingTask.id}):`, parsed);
 
                             const updatedFields = {
@@ -13432,6 +13700,14 @@ async function syncTasksFromGCal(allowInteractive = false, force = false) {
                                 updatedFields.title = hasAsteriskPrefix ? `* ${parsed.title.trim()}` : parsed.title;
                             }
                             if (parsed.description !== undefined) updatedFields.description = parsed.description;
+                            if (colorChanged) {
+                                const projectGCalColor = (existingTask.projectId && projectsList.find(p => p.id === existingTask.projectId)?.gcal_color_id) || null;
+                                if (incomingColor === projectGCalColor) {
+                                    updatedFields.gcal_color_id = null;
+                                } else {
+                                    updatedFields.gcal_color_id = incomingColor;
+                                }
+                            }
 
                             const newHash = getTaskSyncHash({
                                 ...existingTask,
@@ -13465,6 +13741,8 @@ async function syncTasksFromGCal(allowInteractive = false, force = false) {
 
                         const taskTitle = parsed.title || event.summary || 'Новое событие из Google Календаря';
                         const taskDesc = parsed.description || '';
+                        const projColor = (targetProjectId && projectsList.find(p => p.id === targetProjectId)?.gcal_color_id) || null;
+                        const initialColorId = (parsed.colorId && parsed.colorId !== projColor) ? parsed.colorId : null;
 
                         const newHash = getTaskSyncHash({
                             title: taskTitle,
@@ -13475,6 +13753,8 @@ async function syncTasksFromGCal(allowInteractive = false, force = false) {
                             dueEndTime: parsed.dueEndTime,
                             completed: false,
                             deleted: false,
+                            projectId: targetProjectId || null,
+                            gcal_color_id: initialColorId,
                             description: taskDesc
                         });
 
@@ -13492,6 +13772,7 @@ async function syncTasksFromGCal(allowInteractive = false, force = false) {
                             order: 0,
                             gcal_event_id: event.id,
                             gcal_calendar_id: calId,
+                            gcal_color_id: initialColorId,
                             gcal_last_sync_hash: newHash,
                             createdAt: serverTimestamp()
                         };

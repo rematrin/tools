@@ -286,6 +286,10 @@ const GCalendarService = {
             }
         };
 
+        if (task.gcal_color_id) {
+            event.colorId = String(task.gcal_color_id);
+        }
+
         // Локальный часовой пояс пользователя
         const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -457,13 +461,16 @@ const GCalendarService = {
             }
         }
 
+        const colorId = event.colorId || null;
+
         return {
             title,
             description,
             dueDate,
             dueTime,
             dueEndDate,
-            dueEndTime
+            dueEndTime,
+            colorId
         };
     }
 };

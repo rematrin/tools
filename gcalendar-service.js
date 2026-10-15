@@ -155,6 +155,11 @@ const GCalendarService = {
                 method: 'DELETE'
             }, allowInteractive);
         } catch (e) {
+            const msg = e && e.message ? e.message : '';
+            if (msg.includes('Not Found') || msg.includes('404') || msg.includes('410') || msg.includes('Resource has been deleted')) {
+                console.log(`[GCal] Событие ${eventId} уже отсутствует в Google Календаре (404/410).`);
+                return;
+            }
             console.error('Не удалось удалить событие из Google Calendar:', e);
             throw e;
         }
@@ -267,7 +272,10 @@ const GCalendarService = {
 
     // Конструктор данных события для Google Calendar API
     buildEventData(task) {
-        const title = task.title || 'Без названия';
+        let title = (task.title || 'Без названия').trim();
+        if (title.startsWith('* ')) {
+            title = title.slice(2).trim() || 'Без названия';
+        }
         const description = task.description || '';
 
         const event = {

@@ -2696,15 +2696,44 @@ window.addEventListener('authChanged', (e) => {
 
 function getTaskSyncHash(task) {
     if (!task) return '';
-    const title = (task.title || '').trim();
+    let title = (task.title || '').trim();
+    if (title.startsWith('* ')) {
+        title = title.slice(2).trim();
+    }
     const dueDate = task.dueDate || '';
     const dueTime = task.dueTime || '';
     const dueRepeat = task.dueRepeat || '';
     const dueEndDate = task.dueEndDate || '';
     const dueEndTime = task.dueEndTime || '';
     const completed = task.completed ? 'true' : 'false';
+    const deleted = task.deleted ? 'true' : 'false';
     const description = (task.description || '').trim();
-    return `${title}|${dueDate}|${dueTime}|${dueRepeat}|${dueEndDate}|${dueEndTime}|${completed}|${description}`;
+    return `${title}|${dueDate}|${dueTime}|${dueRepeat}|${dueEndDate}|${dueEndTime}|${completed}|${deleted}|${description}`;
+}
+
+function isTaskSyncHashEqual(savedHash, task) {
+    if (!savedHash) return false;
+    const currentHash = getTaskSyncHash(task);
+    if (savedHash === currentHash) return true;
+
+    // Поддержка обратной совместимости со старыми хешами (без поля deleted)
+    if (!task.deleted) {
+        let title = (task.title || '').trim();
+        if (title.startsWith('* ')) {
+            title = title.slice(2).trim();
+        }
+        const dueDate = task.dueDate || '';
+        const dueTime = task.dueTime || '';
+        const dueRepeat = task.dueRepeat || '';
+        const dueEndDate = task.dueEndDate || '';
+        const dueEndTime = task.dueEndTime || '';
+        const completed = task.completed ? 'true' : 'false';
+        const description = (task.description || '').trim();
+        const legacyHash = `${title}|${dueDate}|${dueTime}|${dueRepeat}|${dueEndDate}|${dueEndTime}|${completed}|${description}`;
+        if (savedHash === legacyHash) return true;
+    }
+
+    return false;
 }
 
 function getTaskVisualHash(task) {
@@ -2754,8 +2783,7 @@ function startTodoForUser(uid) {
             const task = { id: change.doc.id, ...docData };
 
             if (change.type === "added" || change.type === "modified") {
-                const currentSyncHash = getTaskSyncHash(task);
-                if (!docData.gcal_last_sync_hash || docData.gcal_last_sync_hash !== currentSyncHash) {
+                if (!isTaskSyncHashEqual(docData.gcal_last_sync_hash, task)) {
                     if (typeof handleTaskSync === 'function') {
                         handleTaskSync(task);
                     }
@@ -3163,6 +3191,12 @@ async function deleteTask(taskId) {
             deletedAt: serverTimestamp()
         }));
 
+        // Немедленная синхронизация удаления из Google Календаря для родительской задачи
+        const targetTask = allTasks.find(t => t.id === taskId);
+        if (targetTask && targetTask.gcal_event_id && typeof handleTaskSync === 'function') {
+            handleTaskSync({ ...targetTask, deleted: true });
+        }
+
         // Каскадное перемещение подзадач в Корзину
         const subtasks = allTasks.filter(t => t.parentId === taskId && !t.deleted);
         subtasks.forEach(sub => {
@@ -3170,6 +3204,9 @@ async function deleteTask(taskId) {
                 deleted: true,
                 deletedAt: serverTimestamp()
             }));
+            if (sub.gcal_event_id && typeof handleTaskSync === 'function') {
+                handleTaskSync({ ...sub, deleted: true });
+            }
         });
 
         await Promise.all(promises);
@@ -3235,6 +3272,11 @@ async function restoreTask(taskId) {
             deletedAt: null
         }));
 
+        const targetTask = allTasks.find(t => t.id === taskId);
+        if (targetTask && targetTask.dueDate && typeof handleTaskSync === 'function') {
+            handleTaskSync({ ...targetTask, deleted: false });
+        }
+
         // Каскадное восстановление подзадач
         const subtasks = allTasks.filter(t => t.parentId === taskId && t.deleted);
         subtasks.forEach(sub => {
@@ -3242,6 +3284,9 @@ async function restoreTask(taskId) {
                 deleted: false,
                 deletedAt: null
             }));
+            if (sub.dueDate && typeof handleTaskSync === 'function') {
+                handleTaskSync({ ...sub, deleted: false });
+            }
         });
 
         await Promise.all(promises);
@@ -13020,8 +13065,6 @@ async function handleTaskSync(task) {
     const token = localStorage.getItem('google_calendar_access_token');
     if (!token) return;
 
-    if (!gcalSyncTasks) return;
-
     // Сохраняем привязку к исходному календарю, если он уже есть и валиден
     const isExistingCalValid = task.gcal_calendar_id && Object.values(gcalMappings).includes(task.gcal_calendar_id);
     const mappedCalendarId = isExistingCalValid
@@ -13029,12 +13072,12 @@ async function handleTaskSync(task) {
         : (gcalMappings['all'] || gcalMappings[task.projectId || 'inbox']);
 
     const isAllDay = !task.dueTime;
-    const shouldHaveEvent = !task.completed && !task.deleted && task.dueDate && mappedCalendarId && (!isAllDay || gcalSyncAllDay);
+    const shouldHaveEvent = gcalSyncTasks && !task.completed && !task.deleted && task.dueDate && mappedCalendarId && (!isAllDay || gcalSyncAllDay);
     const currentTaskHash = getTaskSyncHash(task);
 
     if (shouldHaveEvent) {
         // Если уже есть корректная привязка и данные не изменились — ничего не делаем
-        if (task.gcal_event_id && task.gcal_calendar_id === mappedCalendarId && task.gcal_last_sync_hash === currentTaskHash) {
+        if (task.gcal_event_id && task.gcal_calendar_id === mappedCalendarId && isTaskSyncHashEqual(task.gcal_last_sync_hash, task)) {
             return;
         }
 
@@ -13058,6 +13101,9 @@ async function handleTaskSync(task) {
                     gcal_calendar_id: mappedCalendarId,
                     gcal_last_sync_hash: currentTaskHash
                 });
+                task.gcal_event_id = eventId;
+                task.gcal_calendar_id = mappedCalendarId;
+                task.gcal_last_sync_hash = currentTaskHash;
             }
         } catch (err) {
             console.error("Ошибка при синхронизации задачи с Google:", err);
@@ -13070,12 +13116,22 @@ async function handleTaskSync(task) {
             syncingTasks.add(task.id);
             localStorage.setItem(lockKey, Date.now().toString());
             try {
-                await window.GCalendarService.deleteTaskFromGoogle(task.gcal_event_id, task.gcal_calendar_id);
+                const deletedEventId = task.gcal_event_id;
+                await window.GCalendarService.deleteTaskFromGoogle(deletedEventId, task.gcal_calendar_id);
                 await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                     gcal_event_id: null,
-                    gcal_calendar_id: null,
-                    gcal_last_sync_hash: null
+                    gcal_calendar_id: task.gcal_calendar_id || mappedCalendarId || null,
+                    gcal_last_sync_hash: currentTaskHash
                 });
+                task.gcal_event_id = null;
+                task.gcal_last_sync_hash = currentTaskHash;
+
+                if (typeof gcalCachedEvents !== 'undefined' && Array.isArray(gcalCachedEvents)) {
+                    gcalCachedEvents = gcalCachedEvents.filter(e => e.id !== deletedEventId);
+                    if (typeof renderGCalEventsBanner === 'function') {
+                        renderGCalEventsBanner(gcalCachedEvents);
+                    }
+                }
             } catch (err) {
                 console.error("Ошибка при удалении события из Google:", err);
             } finally {
@@ -13089,7 +13145,14 @@ async function handleTaskSync(task) {
 async function handleTaskDelete(task) {
     if (task.gcal_event_id && task.gcal_calendar_id) {
         try {
-            await window.GCalendarService.deleteTaskFromGoogle(task.gcal_event_id, task.gcal_calendar_id);
+            const deletedEventId = task.gcal_event_id;
+            await window.GCalendarService.deleteTaskFromGoogle(deletedEventId, task.gcal_calendar_id);
+            if (typeof gcalCachedEvents !== 'undefined' && Array.isArray(gcalCachedEvents)) {
+                gcalCachedEvents = gcalCachedEvents.filter(e => e.id !== deletedEventId);
+                if (typeof renderGCalEventsBanner === 'function') {
+                    renderGCalEventsBanner(gcalCachedEvents);
+                }
+            }
         } catch (err) {
             console.error("Ошибка при удалении события при удалении задачи:", err);
         }
@@ -13347,7 +13410,9 @@ async function syncTasksFromGCal(allowInteractive = false, force = false) {
                         if (existingTask.deleted || existingTask.completed) continue;
 
                         // Обновляем существующую задачу при изменениях в Google Календаре
-                        const titleChanged = parsed.title && parsed.title !== existingTask.title;
+                        const hasAsteriskPrefix = Boolean(existingTask.title && existingTask.title.startsWith('* '));
+                        const cleanExistingTitle = hasAsteriskPrefix ? existingTask.title.slice(2).trim() : (existingTask.title || '');
+                        const titleChanged = parsed.title && (parsed.title.trim() !== cleanExistingTitle);
                         const descChanged = parsed.description !== undefined && parsed.description !== (existingTask.description || '');
                         const dueDateChanged = parsed.dueDate !== existingTask.dueDate;
                         const dueTimeChanged = parsed.dueTime !== (existingTask.dueTime || null);
@@ -13363,7 +13428,9 @@ async function syncTasksFromGCal(allowInteractive = false, force = false) {
                                 dueEndDate: parsed.dueEndDate || null,
                                 dueEndTime: parsed.dueEndTime || null
                             };
-                            if (parsed.title) updatedFields.title = parsed.title;
+                            if (parsed.title && titleChanged) {
+                                updatedFields.title = hasAsteriskPrefix ? `* ${parsed.title.trim()}` : parsed.title;
+                            }
                             if (parsed.description !== undefined) updatedFields.description = parsed.description;
 
                             const newHash = getTaskSyncHash({
@@ -13407,6 +13474,7 @@ async function syncTasksFromGCal(allowInteractive = false, force = false) {
                             dueEndDate: parsed.dueEndDate,
                             dueEndTime: parsed.dueEndTime,
                             completed: false,
+                            deleted: false,
                             description: taskDesc
                         });
 

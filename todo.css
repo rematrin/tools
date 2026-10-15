@@ -7123,7 +7123,8 @@ input.pill-btn::-webkit-inner-spin-button {
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-primary);
-    width: 50px;
+    width: 65px;
+    flex-shrink: 0;
 }
 
 .countdown-date-picker {
@@ -7381,6 +7382,59 @@ input.pill-btn::-webkit-inner-spin-button {
 
 .emoji-popover-item:hover {
     background: var(--bg-hover);
+}
+
+/* Countdown section inside project / list views */
+.project-section.countdown-project-section {
+    padding: 14px 16px 16px 16px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+.countdown-project-section .countdown-section-grid {
+    margin-top: 12px;
+    margin-bottom: 0;
+}
+
+.countdown-project-section.collapsed .countdown-section-grid {
+    display: none !important;
+}
+
+.countdown-project-select {
+    flex: 1;
+    padding: 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    outline: none;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.countdown-project-select:focus {
+    border-color: #4c6ef5;
+}
+
+.countdown-project-tag {
+    font-size: 0.72rem;
+    font-weight: 500;
+    opacity: 0.85;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(4px);
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.countdown-card.contrast-light .countdown-project-tag {
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--text-primary);
 }
 
 /* --- СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА ОБЛОЖКИ (КАК В CREATORHUB) --- */

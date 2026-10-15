@@ -5055,6 +5055,29 @@ function doRenderTasks() {
     // 1. РЕНДЕРИМ АКТИВНЫЕ ЗАДАЧИ
     activeTasksContainer.innerHTML = '';
 
+    let currentViewProjectId = null;
+    if (currentRoute.startsWith('project/')) {
+        currentViewProjectId = currentRoute.split('/')[1];
+    } else if (currentRoute === 'inbox' || currentRoute === 'today' || currentRoute === 'tomorrow') {
+        currentViewProjectId = currentRoute;
+    }
+
+    const currentProjectCountdowns = (currentViewProjectId && Array.isArray(countdownsList))
+        ? countdownsList.filter(cd => cd.projectId === currentViewProjectId)
+        : [];
+
+    currentProjectCountdowns.sort((a, b) => {
+        if (a.projectOrder !== undefined && b.projectOrder !== undefined) {
+            return a.projectOrder - b.projectOrder;
+        }
+        if (a.order !== undefined && b.order !== undefined) {
+            return a.order - b.order;
+        }
+        return new Date(a.targetDate) - new Date(b.targetDate);
+    });
+
+    const countdownOrder = getCountdownSectionOrder(currentViewProjectId);
+
     const systemGroupKey = `todo_group_${currentRoute}`;
     let systemGroupBy = 'none';
     if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
@@ -5073,8 +5096,26 @@ function doRenderTasks() {
         const tasksToGroup = currentRoute === 'today' ? [...overdueActiveTasks, ...displayActiveTasks] : displayActiveTasks;
 
         if (tasksToGroup.length === 0) {
-            activeTasksContainer.innerHTML = getEmptyStateHtml();
-        } else if (systemGroupBy === 'date') {
+            if (currentProjectCountdowns.length > 0) {
+                if (countdownOrder !== null && countdownOrder < 0) {
+                    renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.innerHTML = getEmptyStateHtml();
+                    activeTasksContainer.appendChild(emptyDiv);
+                } else {
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.innerHTML = getEmptyStateHtml();
+                    activeTasksContainer.appendChild(emptyDiv);
+                    renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+                }
+            } else {
+                activeTasksContainer.innerHTML = getEmptyStateHtml();
+            }
+        } else {
+            if (currentProjectCountdowns.length > 0 && countdownOrder !== null && countdownOrder < 0) {
+                renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+            }
+            if (systemGroupBy === 'date') {
             const dateGroups = {};
             const dateOrder = [];
 
@@ -5291,7 +5332,12 @@ function doRenderTasks() {
                 });
             });
         }
-    } else if (displayActiveTasks.length === 0 && !currentRoute.startsWith('project/')) {
+
+        if (tasksToGroup.length > 0 && currentProjectCountdowns.length > 0 && (countdownOrder === null || countdownOrder >= 0)) {
+            renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+        }
+    }
+} else if (displayActiveTasks.length === 0 && !currentRoute.startsWith('project/')) {
         if (currentRoute === 'trash') {
             activeTasksContainer.innerHTML = `
                 <div class="empty-state">
@@ -5341,10 +5387,38 @@ function doRenderTasks() {
                 emptyStateEl.innerHTML = getEmptyStateHtml();
                 activeTasksContainer.appendChild(emptyStateEl);
             } else {
-                activeTasksContainer.innerHTML = getEmptyStateHtml();
+                if (currentProjectCountdowns.length > 0) {
+                    if (countdownOrder !== null && countdownOrder < 0) {
+                        renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+                        const emptyDiv = document.createElement('div');
+                        emptyDiv.innerHTML = getEmptyStateHtml();
+                        activeTasksContainer.appendChild(emptyDiv);
+                    } else {
+                        const emptyDiv = document.createElement('div');
+                        emptyDiv.innerHTML = getEmptyStateHtml();
+                        activeTasksContainer.appendChild(emptyDiv);
+                        renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+                    }
+                } else {
+                    activeTasksContainer.innerHTML = getEmptyStateHtml();
+                }
             }
         } else {
-            activeTasksContainer.innerHTML = getEmptyStateHtml();
+            if (currentProjectCountdowns.length > 0) {
+                if (countdownOrder !== null && countdownOrder < 0) {
+                    renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.innerHTML = getEmptyStateHtml();
+                    activeTasksContainer.appendChild(emptyDiv);
+                } else {
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.innerHTML = getEmptyStateHtml();
+                    activeTasksContainer.appendChild(emptyDiv);
+                    renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+                }
+            } else {
+                activeTasksContainer.innerHTML = getEmptyStateHtml();
+            }
         }
     } else {
         if (currentRoute === 'trash') {
@@ -5497,6 +5571,10 @@ function doRenderTasks() {
 
                         const visibleDateGroups = dateGroups;
 
+                        if (currentProjectCountdowns.length > 0 && countdownOrder !== null && countdownOrder < 0) {
+                            renderCountdownSection(currentProjectCountdowns, activeTasksContainer, projectId);
+                        }
+
                         visibleDateGroups.forEach(group => {
                             const isCollapsed = isSectionCollapsed(`date-group-${projectId}-${group.id}`);
                             const sectionEl = document.createElement('div');
@@ -5525,9 +5603,19 @@ function doRenderTasks() {
                                 renderTasks();
                             });
                         });
+
+                        if (currentProjectCountdowns.length > 0 && (countdownOrder === null || countdownOrder >= 0)) {
+                            renderCountdownSection(currentProjectCountdowns, activeTasksContainer, projectId);
+                        }
                     }
                 } else {
                     const projectSections = sectionsList.filter(s => s.projectId === projectId);
+                    const hasCountdowns = currentProjectCountdowns.length > 0;
+
+                    // If user dragged countdown above unsectioned tasks (order < 0)
+                    if (hasCountdowns && countdownOrder !== null && countdownOrder < 0) {
+                        renderCountdownSection(currentProjectCountdowns, activeTasksContainer, projectId);
+                    }
 
                     if (displayActiveTasks.length === 0) {
                         const emptyStateEl = document.createElement('div');
@@ -5543,6 +5631,7 @@ function doRenderTasks() {
                     if (unsectionedTasks.length > 0) {
                         const unsectionedOuter = document.createElement('div');
                         unsectionedOuter.className = 'project-section unsectioned-card';
+                        unsectionedOuter.setAttribute('data-section-id', 'unsectioned');
                         unsectionedOuter.style.marginTop = '0px';
                         unsectionedOuter.innerHTML = `<div class="section-tasks-container unsectioned-tasks-container"></div>`;
                         activeTasksContainer.appendChild(unsectionedOuter);
@@ -5550,14 +5639,46 @@ function doRenderTasks() {
                         renderTasksGroup(unsectionedTasks, innerContainer);
                     }
 
-                // Render each section
-                projectSections.forEach(section => {
-                    const sectionTasks = displayActiveTasks.filter(t => t.sectionId === section.id);
-                    const isCollapsed = isSectionCollapsed(section.id);
+                    // Build list of sections to render
+                    const sectionsToRender = [
+                        ...projectSections.map(s => ({
+                            type: 'custom',
+                            id: s.id,
+                            order: s.order !== undefined ? s.order : 0,
+                            section: s
+                        }))
+                    ];
 
-                    const sectionEl = document.createElement('div');
-                    sectionEl.className = `project-section ${isCollapsed ? 'collapsed' : ''}`;
-                    sectionEl.setAttribute('data-section-id', section.id);
+                    if (hasCountdowns && (countdownOrder === null || countdownOrder >= 0)) {
+                        const maxCustomOrder = projectSections.length > 0
+                            ? Math.max(...projectSections.map(s => s.order !== undefined ? s.order : 0))
+                            : 0;
+                        const defaultOrder = maxCustomOrder + 1000;
+                        const finalOrder = (countdownOrder !== null) ? countdownOrder : defaultOrder;
+
+                        sectionsToRender.push({
+                            type: 'countdown',
+                            id: 'countdown',
+                            order: finalOrder,
+                            countdowns: currentProjectCountdowns
+                        });
+                    }
+
+                    sectionsToRender.sort((a, b) => a.order - b.order);
+
+                    // Render each section
+                    sectionsToRender.forEach(item => {
+                        if (item.type === 'countdown') {
+                            renderCountdownSection(item.countdowns, activeTasksContainer, projectId);
+                            return;
+                        }
+                        const section = item.section;
+                        const sectionTasks = displayActiveTasks.filter(t => t.sectionId === section.id);
+                        const isCollapsed = isSectionCollapsed(section.id);
+
+                        const sectionEl = document.createElement('div');
+                        sectionEl.className = `project-section ${isCollapsed ? 'collapsed' : ''}`;
+                        sectionEl.setAttribute('data-section-id', section.id);
 
                     sectionEl.innerHTML = `
                         <div class="project-section-header">
@@ -5752,89 +5873,73 @@ function doRenderTasks() {
                 });
             }
         } else {
-                if (currentRoute === 'today') {
-                    const overdueActiveTasks = activeTasks.filter(t => t.dueDate && t.dueDate < todayStr);
-                    sortTasksByOrder(overdueActiveTasks);
+            if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
+                if (currentProjectCountdowns.length > 0 && countdownOrder !== null && countdownOrder < 0) {
+                    renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+                }
+            }
+            if (currentRoute === 'today') {
+                const overdueActiveTasks = activeTasks.filter(t => t.dueDate && t.dueDate < todayStr);
+                sortTasksByOrder(overdueActiveTasks);
 
-                    if (overdueActiveTasks.length > 0) {
-                        // Render overdue section
-                        const isOverdueCollapsed = localStorage.getItem('todo_today_overdue_collapsed') === 'true';
-                        const overdueSectionEl = document.createElement('div');
-                        overdueSectionEl.className = `project-section today-overdue-section ${isOverdueCollapsed ? 'collapsed' : ''}`;
-                        overdueSectionEl.style.marginTop = '20px';
-                        overdueSectionEl.innerHTML = `
-                            <div class="project-section-header" style="cursor: pointer;">
-                                <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
-                                    <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
-                                        <polyline points="6 9 12 15 18 9"></polyline>
-                                    </svg>
-                                </button>
-                                <span class="section-title-text" style="font-weight: 600;">Просрочено</span>
-                                <span style="color: var(--text-secondary); font-size: 0.9rem; font-weight: normal; margin-left: 2px;">${overdueActiveTasks.length}</span>
-                            </div>
-                            <div class="section-tasks-container" style="${isOverdueCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
-                        `;
-                        activeTasksContainer.appendChild(overdueSectionEl);
+                if (overdueActiveTasks.length > 0) {
+                    // Render overdue section
+                    const isOverdueCollapsed = localStorage.getItem('todo_today_overdue_collapsed') === 'true';
+                    const overdueSectionEl = document.createElement('div');
+                    overdueSectionEl.className = `project-section today-overdue-section ${isOverdueCollapsed ? 'collapsed' : ''}`;
+                    overdueSectionEl.style.marginTop = '20px';
+                    overdueSectionEl.innerHTML = `
+                        <div class="project-section-header" style="cursor: pointer;">
+                            <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
+                                <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                            <span class="section-title-text" style="font-weight: 600;">Просрочено</span>
+                            <span style="color: var(--text-secondary); font-size: 0.9rem; font-weight: normal; margin-left: 2px;">${overdueActiveTasks.length}</span>
+                        </div>
+                        <div class="section-tasks-container" style="${isOverdueCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
+                    `;
+                    activeTasksContainer.appendChild(overdueSectionEl);
 
-                        const overdueContainer = overdueSectionEl.querySelector('.section-tasks-container');
-                        renderTasksGroup(overdueActiveTasks, overdueContainer);
+                    const overdueContainer = overdueSectionEl.querySelector('.section-tasks-container');
+                    renderTasksGroup(overdueActiveTasks, overdueContainer);
 
-                        overdueSectionEl.querySelector('.project-section-header').addEventListener('click', () => {
-                            const collapsed = localStorage.getItem('todo_today_overdue_collapsed') === 'true';
-                            localStorage.setItem('todo_today_overdue_collapsed', !collapsed);
-                            renderTasks();
-                        });
+                    overdueSectionEl.querySelector('.project-section-header').addEventListener('click', () => {
+                        const collapsed = localStorage.getItem('todo_today_overdue_collapsed') === 'true';
+                        localStorage.setItem('todo_today_overdue_collapsed', !collapsed);
+                        renderTasks();
+                    });
 
-                        // Render today section
-                        const isTodayCollapsed = localStorage.getItem('todo_today_current_collapsed') === 'true';
-                        const todaySectionEl = document.createElement('div');
-                        todaySectionEl.className = `project-section today-current-section ${isTodayCollapsed ? 'collapsed' : ''}`;
-                        todaySectionEl.style.marginTop = '20px';
-                        todaySectionEl.innerHTML = `
-                            <div class="project-section-header" style="cursor: pointer;">
-                                <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
-                                    <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
-                                        <polyline points="6 9 12 15 18 9"></polyline>
-                                    </svg>
-                                </button>
-                                <span class="section-title-text" style="font-weight: 600;">Сегодня</span>
-                                <span style="color: var(--text-secondary); font-size: 0.9rem; font-weight: normal; margin-left: 2px;">${displayActiveTasks.length}</span>
-                            </div>
-                            <div class="section-tasks-container" style="${isTodayCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
-                        `;
-                        activeTasksContainer.appendChild(todaySectionEl);
+                    // Render today section
+                    const isTodayCollapsed = localStorage.getItem('todo_today_current_collapsed') === 'true';
+                    const todaySectionEl = document.createElement('div');
+                    todaySectionEl.className = `project-section today-current-section ${isTodayCollapsed ? 'collapsed' : ''}`;
+                    todaySectionEl.style.marginTop = '20px';
+                    todaySectionEl.innerHTML = `
+                        <div class="project-section-header" style="cursor: pointer;">
+                            <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
+                                <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                            <span class="section-title-text" style="font-weight: 600;">Сегодня</span>
+                            <span style="color: var(--text-secondary); font-size: 0.9rem; font-weight: normal; margin-left: 2px;">${displayActiveTasks.length}</span>
+                        </div>
+                        <div class="section-tasks-container" style="${isTodayCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
+                    `;
+                    activeTasksContainer.appendChild(todaySectionEl);
 
-                        const todayContainer = todaySectionEl.querySelector('.section-tasks-container');
-                        renderTasksGroup(displayActiveTasks, todayContainer);
+                    const todayContainer = todaySectionEl.querySelector('.section-tasks-container');
+                    renderTasksGroup(displayActiveTasks, todayContainer);
 
-                        todaySectionEl.querySelector('.project-section-header').addEventListener('click', () => {
-                            const collapsed = localStorage.getItem('todo_today_current_collapsed') === 'true';
-                            localStorage.setItem('todo_today_current_collapsed', !collapsed);
-                            renderTasks();
-                        });
-                    } else {
-                        // Render standard list without headers wrapped in double-background card
-                        if (displayActiveTasks.length > 0) {
-                            const unsectionedOuter = document.createElement('div');
-                            unsectionedOuter.className = 'project-section unsectioned-card';
-                            unsectionedOuter.style.marginTop = '0px';
-                            unsectionedOuter.innerHTML = `<div class="section-tasks-container unsectioned-tasks-container"></div>`;
-                            activeTasksContainer.appendChild(unsectionedOuter);
-                            const innerContainer = unsectionedOuter.querySelector('.section-tasks-container');
-                            renderTasksGroup(displayActiveTasks, innerContainer);
-                        }
-                    }
-                } else if (currentRoute === 'tomorrow') {
-                    if (displayActiveTasks.length > 0) {
-                        const unsectionedOuter = document.createElement('div');
-                        unsectionedOuter.className = 'project-section unsectioned-card';
-                        unsectionedOuter.style.marginTop = '0px';
-                        unsectionedOuter.innerHTML = `<div class="section-tasks-container unsectioned-tasks-container"></div>`;
-                        activeTasksContainer.appendChild(unsectionedOuter);
-                        const innerContainer = unsectionedOuter.querySelector('.section-tasks-container');
-                        renderTasksGroup(displayActiveTasks, innerContainer);
-                    }
+                    todaySectionEl.querySelector('.project-section-header').addEventListener('click', () => {
+                        const collapsed = localStorage.getItem('todo_today_current_collapsed') === 'true';
+                        localStorage.setItem('todo_today_current_collapsed', !collapsed);
+                        renderTasks();
+                    });
                 } else {
+                    // Render standard list without headers wrapped in double-background card
                     if (displayActiveTasks.length > 0) {
                         const unsectionedOuter = document.createElement('div');
                         unsectionedOuter.className = 'project-section unsectioned-card';
@@ -5845,7 +5950,34 @@ function doRenderTasks() {
                         renderTasksGroup(displayActiveTasks, innerContainer);
                     }
                 }
+            } else if (currentRoute === 'tomorrow') {
+                if (displayActiveTasks.length > 0) {
+                    const unsectionedOuter = document.createElement('div');
+                    unsectionedOuter.className = 'project-section unsectioned-card';
+                    unsectionedOuter.style.marginTop = '0px';
+                    unsectionedOuter.innerHTML = `<div class="section-tasks-container unsectioned-tasks-container"></div>`;
+                    activeTasksContainer.appendChild(unsectionedOuter);
+                    const innerContainer = unsectionedOuter.querySelector('.section-tasks-container');
+                    renderTasksGroup(displayActiveTasks, innerContainer);
+                }
+            } else {
+                if (displayActiveTasks.length > 0) {
+                    const unsectionedOuter = document.createElement('div');
+                    unsectionedOuter.className = 'project-section unsectioned-card';
+                    unsectionedOuter.style.marginTop = '0px';
+                    unsectionedOuter.innerHTML = `<div class="section-tasks-container unsectioned-tasks-container"></div>`;
+                    activeTasksContainer.appendChild(unsectionedOuter);
+                    const innerContainer = unsectionedOuter.querySelector('.section-tasks-container');
+                    renderTasksGroup(displayActiveTasks, innerContainer);
+                }
             }
+
+            if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
+                if (currentProjectCountdowns.length > 0 && (countdownOrder === null || countdownOrder >= 0)) {
+                    renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+                }
+            }
+        }
         }
     }
 
@@ -7323,6 +7455,8 @@ function startCountdownsForUser(uid) {
 
         if (currentRoute === 'countdown') {
             renderCountdowns();
+        } else {
+            renderTasks();
         }
         if (typeof renderCountdownEventsBanner === 'function') {
             renderCountdownEventsBanner();
@@ -7481,6 +7615,13 @@ async function deleteProject(projectId) {
         if (currentRoute === `project/${projectId}`) {
             window.location.hash = '#inbox';
         }
+
+        // Удаляем обратные отсчеты, привязанные к удаляемому проекту
+        const cdsToDelete = countdownsList.filter(cd => cd.projectId === projectId);
+        for (const cd of cdsToDelete) {
+            await deleteDoc(doc(db, 'users', currentUid, 'countdowns', cd.id));
+        }
+        localStorage.removeItem(`todo_countdown_section_order_${projectId}`);
     } catch (err) {
         console.error("Ошибка при удалении проекта:", err);
     }
@@ -8060,6 +8201,13 @@ function renderProjectHeaderDropdown() {
         const isCountHidden = localStorage.getItem(keyCount) === 'true';
 
         projectHeaderDropdown.innerHTML = `
+            <button class="dropdown-item" id="btnProjectAddCountdown">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>Добавить отсчет</span>
+            </button>
             <button class="dropdown-item" id="btnProjectToggleCount">
                 ${isCountHidden ? `
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
@@ -8076,6 +8224,12 @@ function renderProjectHeaderDropdown() {
                 `}
             </button>
         `;
+
+        document.getElementById('btnProjectAddCountdown')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            projectHeaderDropdown.style.display = 'none';
+            openCountdownModal(null, currentRoute);
+        });
 
         document.getElementById('btnProjectToggleCount')?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -8102,6 +8256,13 @@ function renderProjectHeaderDropdown() {
                 <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
             <span>Добавить раздел</span>
+        </button>
+        <button class="dropdown-item" id="btnProjectAddCountdown">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>Добавить отсчет</span>
         </button>
         <button class="dropdown-item" id="btnProjectRename">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
@@ -8143,6 +8304,12 @@ function renderProjectHeaderDropdown() {
     document.getElementById('btnProjectAddSection')?.addEventListener('click', (e) => {
         e.stopPropagation();
         addSectionForCurrentProject();
+    });
+
+    document.getElementById('btnProjectAddCountdown')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        projectHeaderDropdown.style.display = 'none';
+        openCountdownModal(null, projectId);
     });
 
     document.getElementById('btnProjectRename')?.addEventListener('click', (e) => {
@@ -8613,26 +8780,28 @@ function initDragAndDrop() {
                 }
 
                 const sectionId = draggingSection.getAttribute('data-section-id');
-                const prevSectId = prevSect ? prevSect.getAttribute('data-section-id') : null;
-                const nextSectId = nextSect ? nextSect.getAttribute('data-section-id') : null;
+                const currentViewProjectId = currentRoute.startsWith('project/')
+                    ? currentRoute.split('/')[1]
+                    : (['inbox', 'today', 'tomorrow'].includes(currentRoute) ? currentRoute : null);
 
-                const prevSectionData = sectionsList.find(s => s.id === prevSectId);
-                const nextSectionData = sectionsList.find(s => s.id === nextSectId);
+                const prevOrder = getSectionOrderForDrop(prevSect, currentViewProjectId);
+                const nextOrder = getSectionOrderForDrop(nextSect, currentViewProjectId);
 
                 let newOrder = 0;
-                if (!prevSectionData && !nextSectionData) {
+                if (prevOrder === null && nextOrder === null) {
                     newOrder = 0;
-                } else if (!prevSectionData) {
-                    newOrder = (nextSectionData.order !== undefined ? nextSectionData.order : 0) - 1000;
-                } else if (!nextSectionData) {
-                    newOrder = (prevSectionData.order !== undefined ? prevSectionData.order : 0) + 1000;
+                } else if (prevOrder === null) {
+                    newOrder = (nextOrder !== null ? nextOrder : 0) - 1000;
+                } else if (nextOrder === null) {
+                    newOrder = (prevOrder !== null ? prevOrder : 0) + 1000;
                 } else {
-                    const prevOrder = prevSectionData.order !== undefined ? prevSectionData.order : 0;
-                    const nextOrder = nextSectionData.order !== undefined ? nextSectionData.order : 0;
                     newOrder = (prevOrder + nextOrder) / 2;
                 }
 
-                if (currentUid && sectionId) {
+                if (sectionId === 'countdown') {
+                    await saveCountdownSectionOrder(currentViewProjectId, newOrder);
+                    renderTasks();
+                } else if (currentUid && sectionId && sectionId !== 'unsectioned') {
                     try {
                         await updateDoc(doc(db, 'users', currentUid, 'sections', sectionId), {
                             order: newOrder
@@ -14647,6 +14816,330 @@ function calculateCountdownDiff(targetDateStr) {
     }
 }
 
+function createCountdownCardElement(cd, gridEl, isGlobalView = false) {
+    const { display, desc } = calculateCountdownDiff(cd.targetDate);
+    const card = document.createElement('div');
+
+    let inlineStyle = '';
+    let themeClass = 'contrast-dark';
+
+    if (cd.style === 'image') {
+        const bgUrl = cd.bgUrl || 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=600&q=80';
+        inlineStyle = `background-image: url('${bgUrl}');`;
+        card.setAttribute('style', inlineStyle);
+        card.className = `countdown-card theme-image ${themeClass}`;
+    } else {
+        const bgColor = cd.bgColor || '#ffffff';
+        const isDark = isColorDark(bgColor);
+        themeClass = isDark ? 'contrast-dark' : 'contrast-light';
+        inlineStyle = `background-color: ${bgColor};`;
+        card.setAttribute('style', inlineStyle);
+        card.className = `countdown-card theme-color ${themeClass}`;
+    }
+
+    let overlayHtml = '';
+    if (cd.style === 'image') {
+        overlayHtml = `<div class="countdown-card-overlay"></div>`;
+    }
+
+    const digitColorStyle = (cd.style !== 'image' && cd.textColor) ? `style="color: ${cd.textColor};"` : '';
+
+    let projectBadgeHtml = '';
+    if (isGlobalView && cd.projectId) {
+        let projName = '';
+        if (cd.projectId === 'inbox') projName = 'Входящие';
+        else if (cd.projectId === 'today') projName = 'Сегодня';
+        else if (cd.projectId === 'tomorrow') projName = 'Завтра';
+        else {
+            const p = projectsList.find(proj => proj.id === cd.projectId);
+            if (p) projName = p.name;
+        }
+        if (projName) {
+            projectBadgeHtml = `<span class="countdown-project-tag"># ${escapeHtml(projName)}</span>`;
+        }
+    }
+
+    card.innerHTML = `
+        ${overlayHtml}
+        <div class="countdown-actions">
+            <button class="countdown-action-btn btn-edit" title="Редактировать">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </button>
+            <button class="countdown-action-btn btn-delete" title="Удалить">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="countdown-card-content">
+            <div class="countdown-title">
+                <span>${cd.icon || '⏳'}</span>
+                <span>${escapeHtml(cd.title)}</span>
+            </div>
+            <div class="countdown-days" ${digitColorStyle}>${display}</div>
+            <div class="countdown-desc">${desc} ${projectBadgeHtml}</div>
+        </div>
+    `;
+
+    card.setAttribute('data-id', cd.id);
+    card.setAttribute('draggable', 'true');
+
+    // Attach listeners
+    card.querySelector('.btn-edit').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openCountdownModal(cd, cd.projectId || null);
+    });
+
+    card.querySelector('.btn-delete').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        showCustomConfirm(
+            'Удалить событие?',
+            `Вы действительно хотите удалить обратный отсчет <strong>${escapeHtml(cd.title)}</strong>?`,
+            'Удалить',
+            async () => {
+                try {
+                    await deleteDoc(doc(db, 'users', currentUid, 'countdowns', cd.id));
+                } catch (err) {
+                    console.error("Ошибка при удалении обратного отсчета:", err);
+                }
+            }
+        );
+    });
+
+    // HTML5 Drag & Drop for Desktop
+    card.addEventListener('dragstart', (e) => {
+        window.draggedCountdownCard = card;
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    });
+
+    card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        window.draggedCountdownCard = null;
+    });
+
+    card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+    });
+
+    card.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        if (window.draggedCountdownCard && window.draggedCountdownCard !== card) {
+            card.classList.add('drag-over');
+        }
+    });
+
+    card.addEventListener('dragleave', () => {
+        card.classList.remove('drag-over');
+    });
+
+    card.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        card.classList.remove('drag-over');
+        if (window.draggedCountdownCard && window.draggedCountdownCard !== card) {
+            const grid = gridEl || card.closest('.countdown-grid') || document.getElementById('countdownGrid');
+            if (!grid) return;
+            const children = [...grid.children];
+            const draggedIdx = children.indexOf(window.draggedCountdownCard);
+            const targetIdx = children.indexOf(card);
+            if (draggedIdx < targetIdx) {
+                grid.insertBefore(window.draggedCountdownCard, card.nextSibling);
+            } else {
+                grid.insertBefore(window.draggedCountdownCard, card);
+            }
+            await saveCountdownsOrder(grid);
+        }
+    });
+
+    // Touch Long Press Drag & Drop for Mobile
+    let touchStartTimer = null;
+    card.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 1) return;
+        const grid = gridEl || card.closest('.countdown-grid') || document.getElementById('countdownGrid');
+        if (!grid) return;
+        const touch = e.touches[0];
+        const startX = touch.clientX;
+        const startY = touch.clientY;
+
+        let isDraggingActive = false;
+
+        touchStartTimer = setTimeout(() => {
+            isDraggingActive = true;
+            card.classList.add('dragging');
+            if (navigator.vibrate) navigator.vibrate(50);
+        }, 400); // 400ms long press
+
+        const touchMoveHandler = (ev) => {
+            if (!isDraggingActive) {
+                const moveTouch = ev.touches[0];
+                if (Math.abs(moveTouch.clientX - startX) > 10 || Math.abs(moveTouch.clientY - startY) > 10) {
+                    clearTimeout(touchStartTimer);
+                }
+            } else {
+                if (ev.cancelable) ev.preventDefault();
+
+                const moveTouch = ev.touches[0];
+                const elementUnder = document.elementFromPoint(moveTouch.clientX, moveTouch.clientY);
+                const targetCard = elementUnder ? elementUnder.closest('.countdown-card') : null;
+                if (targetCard && targetCard !== card && grid.contains(targetCard)) {
+                    const children = [...grid.children];
+                    const activeIdx = children.indexOf(card);
+                    const targetIdx = children.indexOf(targetCard);
+                    if (activeIdx < targetIdx) {
+                        grid.insertBefore(card, targetCard.nextSibling);
+                    } else {
+                        grid.insertBefore(card, targetCard);
+                    }
+                }
+            }
+        };
+
+        const touchEndHandler = async () => {
+            clearTimeout(touchStartTimer);
+            if (isDraggingActive) {
+                card.classList.remove('dragging');
+                await saveCountdownsOrder(grid);
+            }
+            window.removeEventListener('touchmove', touchMoveHandler);
+            window.removeEventListener('touchend', touchEndHandler);
+        };
+
+        window.addEventListener('touchmove', touchMoveHandler, { passive: false });
+        window.addEventListener('touchend', touchEndHandler);
+    }, { passive: true });
+
+    return card;
+}
+
+function getCountdownSectionOrder(projectId) {
+    if (!projectId) return null;
+    const local = localStorage.getItem(`todo_countdown_section_order_${projectId}`);
+    if (local !== null && !isNaN(Number(local))) {
+        return Number(local);
+    }
+    const project = projectsList.find(p => p.id === projectId);
+    if (project && project.countdownSectionOrder !== undefined) {
+        return project.countdownSectionOrder;
+    }
+    return null;
+}
+
+async function saveCountdownSectionOrder(projectId, newOrder) {
+    if (!projectId) return;
+    localStorage.setItem(`todo_countdown_section_order_${projectId}`, String(newOrder));
+    if (currentUid && !['inbox', 'today', 'tomorrow'].includes(projectId)) {
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                countdownSectionOrder: newOrder
+            });
+            const proj = projectsList.find(p => p.id === projectId);
+            if (proj) proj.countdownSectionOrder = newOrder;
+        } catch (err) {
+            console.error("Ошибка сохранения порядка раздела обратного отсчета:", err);
+        }
+    }
+}
+
+function getSectionOrderForDrop(sectEl, currentProjId) {
+    if (!sectEl) return null;
+    const sId = sectEl.getAttribute('data-section-id');
+    if (sId === 'countdown' || sectEl.classList.contains('countdown-project-section')) {
+        const cdOrder = getCountdownSectionOrder(currentProjId);
+        if (cdOrder !== null) return cdOrder;
+        const projSecs = sectionsList.filter(s => s.projectId === currentProjId);
+        if (projSecs.length === 0) return 1000;
+        const maxOrder = Math.max(...projSecs.map(s => s.order !== undefined ? s.order : 0));
+        return maxOrder + 1000;
+    }
+    if (sId === 'unsectioned' || sectEl.classList.contains('unsectioned-card')) {
+        const projSecs = sectionsList.filter(s => s.projectId === currentProjId);
+        if (projSecs.length === 0) return 0;
+        const minOrder = Math.min(...projSecs.map(s => s.order !== undefined ? s.order : 0));
+        return minOrder - 1000;
+    }
+    if (sectEl.classList.contains('today-overdue-section')) {
+        return -2000;
+    }
+    if (sectEl.classList.contains('today-current-section')) {
+        return 0;
+    }
+    const sec = sectionsList.find(s => s.id === sId);
+    return sec ? (sec.order !== undefined ? sec.order : 0) : null;
+}
+
+function renderCountdownSection(countdowns, container, projectId) {
+    if (!countdowns || countdowns.length === 0) return null;
+    const collapseKey = `countdown-${projectId}`;
+    const isCollapsed = isSectionCollapsed(collapseKey);
+
+    const sectionEl = document.createElement('div');
+    sectionEl.className = `project-section countdown-project-section ${isCollapsed ? 'collapsed' : ''}`;
+    sectionEl.setAttribute('data-section-id', 'countdown');
+    sectionEl.setAttribute('data-section-type', 'countdown');
+
+    sectionEl.innerHTML = `
+        <div class="project-section-header" style="cursor: pointer;">
+            <button class="section-drag-handle-btn" title="Перетащить раздел" type="button">
+                <svg viewBox="0 0 640 640" width="14" height="14" fill="currentColor">
+                    <path d="M288 104C288 81.9 270.1 64 248 64L200 64C177.9 64 160 81.9 160 104L160 152C160 174.1 177.9 192 200 192L248 192C270.1 192 288 174.1 288 152L288 104zM288 296C288 273.9 270.1 256 248 256L200 256C177.9 256 160 273.9 160 296L160 344C160 366.1 177.9 384 200 384L248 384C270.1 384 288 366.1 288 344L288 296zM160 488L160 536C160 558.1 177.9 576 200 576L248 576C270.1 576 288 558.1 288 536L288 488C288 465.9 270.1 448 248 448L200 448C177.9 448 160 465.9 160 488zM480 104C480 81.9 462.1 64 440 64L392 64C369.9 64 352 81.9 352 104L352 152C352 174.1 369.9 192 392 192L440 192C462.1 192 480 174.1 480 152L480 104zM352 296L352 344C352 366.1 369.9 384 392 384L440 384C462.1 384 480 366.1 480 344L480 296C480 273.9 462.1 256 440 256L392 256C369.9 256 352 273.9 352 296zM480 488C480 465.9 462.1 448 440 448L392 448C369.9 448 352 465.9 352 488L352 536C352 558.1 369.9 576 392 576L440 576C462.1 576 480 558.1 480 536L480 488z"/>
+                </svg>
+            </button>
+            <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
+                <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16">
+                    <polyline points="18 15 12 9 6 15"></polyline>
+                </svg>
+            </button>
+            <span class="section-title-text">Обратный отсчет</span>
+            <span class="section-count-badge">${countdowns.length}</span>
+            <div class="section-actions-wrapper" style="position: relative; margin-left: auto; display: flex; align-items: center; gap: 4px;">
+                <button class="section-actions-btn btn-add-countdown-in-section" title="Добавить отсчет" type="button" aria-label="Добавить отсчет">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="countdown-section-grid countdown-grid" style="${isCollapsed ? 'display: none;' : ''}"></div>
+    `;
+
+    const grid = sectionEl.querySelector('.countdown-section-grid');
+    countdowns.forEach(cd => {
+        const card = createCountdownCardElement(cd, grid, false);
+        grid.appendChild(card);
+    });
+
+    const dragHandle = sectionEl.querySelector('.section-drag-handle-btn');
+    if (dragHandle) {
+        dragHandle.addEventListener('mousedown', () => {
+            sectionEl.setAttribute('draggable', 'true');
+        });
+        dragHandle.addEventListener('mouseup', () => {
+            sectionEl.removeAttribute('draggable');
+        });
+    }
+
+    // Collapse toggle on header click
+    sectionEl.querySelector('.project-section-header').addEventListener('click', (e) => {
+        if (e.target.closest('.section-actions-btn') || e.target.closest('.btn-add-countdown-in-section') || e.target.closest('.section-drag-handle-btn')) return;
+        toggleSectionCollapsed(collapseKey);
+        renderTasks();
+    });
+
+    // Add button in section header
+    sectionEl.querySelector('.btn-add-countdown-in-section')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openCountdownModal(null, projectId);
+    });
+
+    container.appendChild(sectionEl);
+    return sectionEl;
+}
+
 function renderCountdowns() {
     const grid = document.getElementById('countdownGrid');
     if (!grid) return;
@@ -14667,198 +15160,25 @@ function renderCountdowns() {
     }
 
     countdownsList.forEach(cd => {
-        const { display, desc } = calculateCountdownDiff(cd.targetDate);
-        const card = document.createElement('div');
-
-        let inlineStyle = '';
-        let themeClass = 'contrast-dark';
-
-        if (cd.style === 'image') {
-            const bgUrl = cd.bgUrl || 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=600&q=80';
-            inlineStyle = `background-image: url('${bgUrl}');`;
-            card.setAttribute('style', inlineStyle);
-            card.className = `countdown-card theme-image ${themeClass}`;
-        } else {
-            const bgColor = cd.bgColor || '#ffffff';
-            const isDark = isColorDark(bgColor);
-            themeClass = isDark ? 'contrast-dark' : 'contrast-light';
-            inlineStyle = `background-color: ${bgColor};`;
-            card.setAttribute('style', inlineStyle);
-            card.className = `countdown-card theme-color ${themeClass}`;
-        }
-
-        let overlayHtml = '';
-        if (cd.style === 'image') {
-            overlayHtml = `<div class="countdown-card-overlay"></div>`;
-        }
-
-        const digitColorStyle = (cd.style !== 'image' && cd.textColor) ? `style="color: ${cd.textColor};"` : '';
-
-        card.innerHTML = `
-            ${overlayHtml}
-            <div class="countdown-actions">
-                <button class="countdown-action-btn btn-edit" title="Редактировать">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                </button>
-                <button class="countdown-action-btn btn-delete" title="Удалить">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                </button>
-            </div>
-            <div class="countdown-card-content">
-                <div class="countdown-title">
-                    <span>${cd.icon || '⏳'}</span>
-                    <span>${cd.title}</span>
-                </div>
-                <div class="countdown-days" ${digitColorStyle}>${display}</div>
-                <div class="countdown-desc">${desc}</div>
-            </div>
-        `;
-
-        card.setAttribute('data-id', cd.id);
-        card.setAttribute('draggable', 'true');
-
-        // Attach listeners
-        card.querySelector('.btn-edit').addEventListener('click', (e) => {
-            e.stopPropagation();
-            openCountdownModal(cd);
-        });
-
-        card.querySelector('.btn-delete').addEventListener('click', async (e) => {
-            e.stopPropagation();
-            showCustomConfirm(
-                'Удалить событие?',
-                `Вы действительно хотите удалить обратный отсчет <strong>${escapeHtml(cd.title)}</strong>?`,
-                'Удалить',
-                async () => {
-                    try {
-                        await deleteDoc(doc(db, 'users', currentUid, 'countdowns', cd.id));
-                    } catch (err) {
-                        console.error("Ошибка при удалении обратного отсчета:", err);
-                    }
-                }
-            );
-        });
-
-        // HTML5 Drag & Drop for Desktop
-        card.addEventListener('dragstart', (e) => {
-            window.draggedCountdownCard = card;
-            card.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-        });
-
-        card.addEventListener('dragend', () => {
-            card.classList.remove('dragging');
-            window.draggedCountdownCard = null;
-        });
-
-        card.addEventListener('dragover', (e) => {
-            e.preventDefault();
-        });
-
-        card.addEventListener('dragenter', (e) => {
-            e.preventDefault();
-            if (window.draggedCountdownCard && window.draggedCountdownCard !== card) {
-                card.classList.add('drag-over');
-            }
-        });
-
-        card.addEventListener('dragleave', () => {
-            card.classList.remove('drag-over');
-        });
-
-        card.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            card.classList.remove('drag-over');
-            if (window.draggedCountdownCard && window.draggedCountdownCard !== card) {
-                const children = [...grid.children];
-                const draggedIdx = children.indexOf(window.draggedCountdownCard);
-                const targetIdx = children.indexOf(card);
-                if (draggedIdx < targetIdx) {
-                    grid.insertBefore(window.draggedCountdownCard, card.nextSibling);
-                } else {
-                    grid.insertBefore(window.draggedCountdownCard, card);
-                }
-                await saveCountdownsOrder();
-            }
-        });
-
-        // Touch Long Press Drag & Drop for Mobile
-        let touchStartTimer = null;
-        card.addEventListener('touchstart', (e) => {
-            if (e.touches.length > 1) return;
-            const touch = e.touches[0];
-            const startX = touch.clientX;
-            const startY = touch.clientY;
-
-            let isDraggingActive = false;
-
-            touchStartTimer = setTimeout(() => {
-                isDraggingActive = true;
-                card.classList.add('dragging');
-                if (navigator.vibrate) navigator.vibrate(50);
-            }, 400); // 400ms long press
-
-            const touchMoveHandler = (ev) => {
-                if (!isDraggingActive) {
-                    const moveTouch = ev.touches[0];
-                    if (Math.abs(moveTouch.clientX - startX) > 10 || Math.abs(moveTouch.clientY - startY) > 10) {
-                        clearTimeout(touchStartTimer);
-                    }
-                } else {
-                    // Prevent page scroll during drag
-                    if (ev.cancelable) ev.preventDefault();
-
-                    const moveTouch = ev.touches[0];
-                    const elementUnder = document.elementFromPoint(moveTouch.clientX, moveTouch.clientY);
-                    const targetCard = elementUnder ? elementUnder.closest('.countdown-card') : null;
-                    if (targetCard && targetCard !== card) {
-                        const children = [...grid.children];
-                        const activeIdx = children.indexOf(card);
-                        const targetIdx = children.indexOf(targetCard);
-                        if (activeIdx < targetIdx) {
-                            grid.insertBefore(card, targetCard.nextSibling);
-                        } else {
-                            grid.insertBefore(card, targetCard);
-                        }
-                    }
-                }
-            };
-
-            const touchEndHandler = async () => {
-                clearTimeout(touchStartTimer);
-                if (isDraggingActive) {
-                    card.classList.remove('dragging');
-                    await saveCountdownsOrder();
-                }
-                window.removeEventListener('touchmove', touchMoveHandler);
-                window.removeEventListener('touchend', touchEndHandler);
-            };
-
-            window.addEventListener('touchmove', touchMoveHandler, { passive: false });
-            window.addEventListener('touchend', touchEndHandler);
-        }, { passive: true });
-
+        const card = createCountdownCardElement(cd, grid, true);
         grid.appendChild(card);
     });
 }
 
-async function saveCountdownsOrder() {
-    const grid = document.getElementById('countdownGrid');
+async function saveCountdownsOrder(gridEl) {
+    const isGlobal = !gridEl || gridEl.id === 'countdownGrid';
+    const grid = gridEl || document.getElementById('countdownGrid');
     if (!grid) return;
     const cardEls = [...grid.querySelectorAll('.countdown-card')];
+    const updateField = isGlobal ? 'order' : 'projectOrder';
     const batchPromises = cardEls.map((cardEl, idx) => {
         const id = cardEl.getAttribute('data-id');
         if (id) {
             return updateDoc(doc(db, 'users', currentUid, 'countdowns', id), {
-                order: idx
+                [updateField]: idx
             });
         }
+        return Promise.resolve();
     });
     try {
         await Promise.all(batchPromises);
@@ -14867,7 +15187,7 @@ async function saveCountdownsOrder() {
     }
 }
 
-function openCountdownModal(countdown = null) {
+function openCountdownModal(countdown = null, targetProjectId = null) {
     const existing = document.querySelector('.countdown-modal-overlay');
     if (existing) existing.remove();
 
@@ -14878,6 +15198,7 @@ function openCountdownModal(countdown = null) {
     let textColor = '#4b6bfb';
     let customBgUrl = '';
     let selectedDate = countdown ? countdown.targetDate : new Date().toISOString().split('T')[0];
+    let selectedProjectId = countdown ? (countdown.projectId || '') : (targetProjectId || '');
 
     const defaultImage = 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=600&q=80';
 
@@ -14952,6 +15273,19 @@ function openCountdownModal(countdown = null) {
             </div>
 
             <div class="countdown-modal-row">
+                <span class="countdown-label">Раздел</span>
+                <select class="countdown-project-select" id="selectCountdownProject">
+                    <option value="">Без раздела (Общий)</option>
+                    <option value="inbox" ${selectedProjectId === 'inbox' ? 'selected' : ''}>Входящие</option>
+                    <option value="today" ${selectedProjectId === 'today' ? 'selected' : ''}>Сегодня</option>
+                    <option value="tomorrow" ${selectedProjectId === 'tomorrow' ? 'selected' : ''}>Завтра</option>
+                    ${projectsList.map(p => `
+                        <option value="${p.id}" ${selectedProjectId === p.id ? 'selected' : ''}>${escapeHtml(p.name)}</option>
+                    `).join('')}
+                </select>
+            </div>
+
+            <div class="countdown-modal-row">
                 <span class="countdown-label">Дата</span>
                 <div class="countdown-date-picker">
                     <select id="selectCountdownDay">${dayOptions}</select>
@@ -15015,6 +15349,7 @@ function openCountdownModal(countdown = null) {
     document.body.appendChild(overlay);
 
     const inputTitle = overlay.querySelector('#inputCountdownTitle');
+    const selectProject = overlay.querySelector('#selectCountdownProject');
     const selectDay = overlay.querySelector('#selectCountdownDay');
     const selectMonth = overlay.querySelector('#selectCountdownMonth');
     const selectYear = overlay.querySelector('#selectCountdownYear');
@@ -15067,7 +15402,7 @@ function openCountdownModal(countdown = null) {
             <div class="countdown-card-content">
                 <div class="countdown-title">
                     <span>${selectedIcon}</span>
-                    <span>${title}</span>
+                    <span>${escapeHtml(title)}</span>
                 </div>
                 <div class="countdown-days" ${digitColorStyle}>${display}</div>
                 <div class="countdown-desc">${desc}</div>
@@ -15210,6 +15545,7 @@ function openCountdownModal(countdown = null) {
         const m = String(selectMonth.value).padStart(2, '0');
         const y = selectYear.value;
         const targetDateStr = `${y}-${m}-${d}`;
+        const chosenProjectId = selectProject ? (selectProject.value || null) : (selectedProjectId || null);
 
         const data = {
             title,
@@ -15218,7 +15554,8 @@ function openCountdownModal(countdown = null) {
             style: selectedStyle,
             bgUrl: selectedStyle === 'image' ? (customBgUrl || defaultImage) : '',
             bgColor: selectedStyle === 'color' ? bgColor : '',
-            textColor: selectedStyle === 'color' ? textColor : ''
+            textColor: selectedStyle === 'color' ? textColor : '',
+            projectId: chosenProjectId
         };
 
         try {

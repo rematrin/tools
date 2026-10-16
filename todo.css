@@ -679,7 +679,7 @@ body.dark .date-highlight-chip {
     background-color: transparent;
     border: none;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    border-radius: 11px;
+    border-radius: 0;
     padding: 5px 13px;
     gap: 10px;
     transition: background-color 0.15s ease, border-color 0.15s ease, margin 0.15s ease;
@@ -1448,14 +1448,14 @@ body.dark .completed-clear-btn:hover {
     background-color: #fefefe;
     border-radius: 14px;
     border: 1px solid #ebf0f5;
-    padding: 3px 3px;
+    padding: 0;
     margin-bottom: 0px !important;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
     display: flex;
     flex-direction: column;
     gap: 0px;
     transition: max-height 0.3s ease-out, opacity 0.2s, background-color 0.2s, border-color 0.2s;
-    overflow: visible;
+    overflow: hidden;
 }
 
 body.dark .completed-tasks-container {
@@ -4786,7 +4786,8 @@ body.dark .section-actions-btn:hover {
     background-color: #fefefe;
     border-radius: 14px;
     border: 1px solid #ebf0f5;
-    padding: 3px 3px;
+    padding: 0;
+    overflow: hidden;
     margin-bottom: 0px !important;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
     min-height: 20px;

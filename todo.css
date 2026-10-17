@@ -9990,6 +9990,184 @@ input:checked+.view-slider:before {
     cursor: pointer;
     z-index: 2;
     transition: transform 0.1s ease, box-shadow 0.1s ease;
+    box-sizing: border-box;
+}
+
+.cal-todo-timed-item {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    min-height: 12px;
+    padding: 2px 8px;
+}
+
+.cal-todo-timed-item.calendar-task-moving,
+.cal-todo-timed-item.calendar-task-resizing {
+    cursor: grabbing;
+    z-index: 8;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    opacity: 0.92;
+    transition: none;
+}
+
+.cal-timed-item-content {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.cal-timed-item-time {
+    flex-shrink: 0;
+    font-size: 10.5px;
+    font-weight: 700;
+    opacity: 0.82;
+}
+
+.cal-timed-item-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.cal-timed-item-project {
+    flex-shrink: 0;
+    max-width: 25%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 10.5px;
+    opacity: 0.7;
+}
+
+.cal-resize-handle {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    height: 5px;
+    z-index: 2;
+    cursor: ns-resize;
+    touch-action: none;
+}
+
+.cal-resize-handle::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    width: 28px;
+    height: 3px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0;
+    transform: translateX(-50%);
+    transition: opacity 0.15s ease;
+}
+
+.cal-resize-handle-top {
+    top: 0;
+}
+
+.cal-resize-handle-top::after {
+    top: 1px;
+}
+
+.cal-resize-handle-bottom {
+    bottom: 0;
+}
+
+.cal-resize-handle-bottom::after {
+    bottom: 1px;
+}
+
+.cal-todo-timed-item:hover .cal-resize-handle::after,
+.cal-todo-timed-item.calendar-task-resizing .cal-resize-handle::after {
+    opacity: 0.35;
+}
+
+.cal-all-day-cell .cal-item[draggable="true"] {
+    cursor: grab;
+}
+
+.calendar-task-dragging {
+    opacity: 0.45 !important;
+}
+
+.cal-all-day-cell.calendar-all-day-drop-target {
+    background-color: color-mix(in srgb, var(--accent) 10%, transparent);
+    outline: 2px dashed color-mix(in srgb, var(--accent) 50%, transparent);
+    outline-offset: -3px;
+}
+
+.cal-todo-timed-item.calendar-task-to-all-day {
+    opacity: 0.45;
+}
+
+.cal-day-column-view.calendar-drop-target {
+    background-color: color-mix(in srgb, var(--accent) 7%, transparent);
+    outline: 2px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+    outline-offset: -3px;
+}
+
+.cal-quick-create-draft {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    min-height: 4px;
+    border-radius: 4px;
+    background: var(--accent);
+    opacity: 0.75;
+    z-index: 7;
+    pointer-events: none;
+}
+
+.cal-quick-create-draft.saving {
+    opacity: 0.4;
+}
+
+.cal-quick-create-popover {
+    position: absolute;
+    left: 16px;
+    width: min(360px, calc(100% - 32px));
+    z-index: 30;
+    padding: 12px;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+    border-radius: 12px;
+    background: var(--card-bg, #fff);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+    box-sizing: border-box;
+}
+
+.cal-quick-create-time {
+    margin-bottom: 8px;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.cal-quick-create-input {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
+    border-radius: 8px;
+    outline: none;
+    background: var(--bg-card, #fff);
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.cal-quick-create-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .cal-timed-item.completed {
@@ -10016,6 +10194,140 @@ input:checked+.view-slider:before {
     height: 8px;
     border-radius: 50%;
     background: #e53935;
+}
+
+.cal-now-time-label {
+    position: absolute;
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 2px 5px;
+    border-radius: 5px;
+    background: color-mix(in srgb, #e53935 10%, var(--card-bg, #fff));
+    color: #e53935;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+/* Более просторная шкала для однодневного почасового вида. */
+.cal-spacious-day-view .cal-hours-column,
+.cal-spacious-day-view .cal-day-column-view {
+    height: 1920px;
+    min-height: 1920px;
+}
+
+.cal-spacious-day-view .cal-hour-label,
+.cal-spacious-day-view .cal-hour-slot {
+    height: 80px;
+}
+
+.cal-compact-hour-label {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    transform: none;
+    line-height: 1.2;
+    font-size: 10px;
+    background: color-mix(in srgb, var(--text-secondary) 5%, transparent);
+}
+
+.cal-compact-hour-slot {
+    border-top: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+    border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+    background:
+        repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 7px,
+            color-mix(in srgb, var(--text-secondary) 4%, transparent) 7px,
+            color-mix(in srgb, var(--text-secondary) 4%, transparent) 8px
+        );
+}
+
+.calendar-context-menu-host {
+    position: fixed !important;
+    left: -10000px !important;
+    top: 0 !important;
+    width: 1px !important;
+    height: 1px !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    overflow: visible !important;
+    z-index: 10000 !important;
+}
+
+.calendar-hours-settings {
+    margin-bottom: 24px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--hover-bg);
+}
+
+.calendar-hours-settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.calendar-hours-settings-title {
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.calendar-hours-settings-desc {
+    margin-top: 3px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.calendar-hours-range {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+    transition: opacity 0.2s ease;
+}
+
+.calendar-hours-range.disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.calendar-hours-range label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.calendar-hours-range select {
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    outline: none;
+    background: var(--card-bg);
+    color: var(--text);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+@media (max-width: 560px) {
+    .calendar-hours-range {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Left Calendar Sidebar Panel */
@@ -10306,4 +10618,80 @@ body.route-calendar .list-header,
 body.route-calendar #mainAddTaskForm,
 body.route-calendar .add-task-form {
     display: none !important;
+}
+
+/* Быстрое переключение страницы «Сегодня» между списком и почасовым видом */
+.today-view-toggle-btn {
+    display: none !important;
+    min-width: 38px;
+    justify-content: center;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+}
+
+body.route-today .today-view-toggle-btn {
+    display: flex !important;
+}
+
+.today-view-toggle-btn.active {
+    color: var(--accent) !important;
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent) !important;
+    background-color: color-mix(in srgb, var(--accent) 9%, var(--card-bg)) !important;
+}
+
+.today-calendar-view-container {
+    width: 100%;
+    height: calc(100vh - 145px);
+    height: calc(100dvh - 145px);
+    min-height: 520px;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-sizing: border-box;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.025);
+}
+
+body.today-calendar-mode .today-view-calendar-icon {
+    display: none !important;
+}
+
+body.today-calendar-mode .today-view-list-icon {
+    display: block !important;
+}
+
+body.today-calendar-mode #gcalEventsBanner,
+body.today-calendar-mode #countdownEventsBanner,
+body.today-calendar-mode #activeTasksContainer,
+body.today-calendar-mode #completedSection {
+    display: none !important;
+}
+
+body.today-calendar-mode #todayCalendarViewContainer {
+    display: flex !important;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+}
+
+body.today-calendar-mode #todayCalendarViewContainer .cal-day-view {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+}
+
+body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
+    flex: none;
+    min-height: 0;
+    overflow-y: visible;
+}
+
+@media (max-width: 768px) {
+    .today-calendar-view-container {
+        height: calc(100vh - 125px);
+        height: calc(100dvh - 125px);
+        min-height: 380px;
+        border-radius: 14px;
+    }
 }

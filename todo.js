@@ -1788,6 +1788,23 @@ function openSettingsModal() {
         addTaskPositionSelect.value = addTaskPositionPref;
     }
 
+    // Подставляем настройку раздела «Сегодня» внутри проектов
+    const projectTodaySectionPref = localStorage.getItem('todo_pref_project_today_section') === 'true';
+    const projectTodaySectionCheckbox = document.getElementById('prefProjectTodaySection');
+    if (projectTodaySectionCheckbox) {
+        projectTodaySectionCheckbox.checked = projectTodaySectionPref;
+    }
+
+    const compactHoursCheckbox = document.getElementById('prefCalendarCompactHours');
+    const calendarDayStartSelect = document.getElementById('prefCalendarDayStart');
+    const calendarDayEndSelect = document.getElementById('prefCalendarDayEnd');
+    const calendarHoursRangeSettings = document.getElementById('calendarHoursRangeSettings');
+    const compactHoursEnabled = localStorage.getItem('todo_pref_calendar_compact_hours') === 'true';
+    if (compactHoursCheckbox) compactHoursCheckbox.checked = compactHoursEnabled;
+    if (calendarDayStartSelect) calendarDayStartSelect.value = localStorage.getItem('todo_pref_calendar_day_start') || '6';
+    if (calendarDayEndSelect) calendarDayEndSelect.value = localStorage.getItem('todo_pref_calendar_day_end') || '23';
+    if (calendarHoursRangeSettings) calendarHoursRangeSettings.classList.toggle('disabled', !compactHoursEnabled);
+
     // Подставляем значение настройки темы оформления
     const themeKey = (typeof window.getThemeStorageKey === 'function') ? window.getThemeStorageKey() : 'themeMode_todo';
     const currentTheme = localStorage.getItem(themeKey) || 'system';
@@ -1918,6 +1935,38 @@ if (prefAddTaskPosition) {
         localStorage.setItem('todo_pref_add_task_position', e.target.value);
     });
 }
+
+const prefProjectTodaySection = document.getElementById('prefProjectTodaySection');
+if (prefProjectTodaySection) {
+    prefProjectTodaySection.addEventListener('change', (e) => {
+        localStorage.setItem('todo_pref_project_today_section', e.target.checked ? 'true' : 'false');
+        renderTasks(true);
+    });
+}
+
+const prefCalendarCompactHours = document.getElementById('prefCalendarCompactHours');
+const prefCalendarDayStart = document.getElementById('prefCalendarDayStart');
+const prefCalendarDayEnd = document.getElementById('prefCalendarDayEnd');
+const calendarHoursRangeSettings = document.getElementById('calendarHoursRangeSettings');
+
+function saveCalendarHoursPreferences() {
+    const enabled = !!prefCalendarCompactHours?.checked;
+    let startHour = Number(prefCalendarDayStart?.value || 6);
+    let endHour = Number(prefCalendarDayEnd?.value || 23);
+    if (startHour >= endHour) {
+        endHour = Math.min(23, startHour + 1);
+        if (prefCalendarDayEnd) prefCalendarDayEnd.value = String(endHour);
+    }
+    localStorage.setItem('todo_pref_calendar_compact_hours', enabled ? 'true' : 'false');
+    localStorage.setItem('todo_pref_calendar_day_start', String(startHour));
+    localStorage.setItem('todo_pref_calendar_day_end', String(endHour));
+    calendarHoursRangeSettings?.classList.toggle('disabled', !enabled);
+    renderTasks(true);
+}
+
+prefCalendarCompactHours?.addEventListener('change', saveCalendarHoursPreferences);
+prefCalendarDayStart?.addEventListener('change', saveCalendarHoursPreferences);
+prefCalendarDayEnd?.addEventListener('change', saveCalendarHoursPreferences);
 
 const prefThemeMode = document.getElementById('prefThemeMode');
 if (prefThemeMode) {
@@ -4417,6 +4466,13 @@ function toggleSectionCollapsed(sectionId) {
 }
 
 function renderTasksGroup(tasksGroup, containerEl) {
+    const splitProjectTodayTasks = currentRoute.startsWith('project/') &&
+        localStorage.getItem('todo_pref_project_today_section') === 'true';
+    const isProjectTodaySection = splitProjectTodayTasks &&
+        Boolean(containerEl.closest('.project-today-section'));
+    const todayDate = new Date();
+    const todayDateStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
+
     const parentTasksToRender = [];
     const standaloneSubtasks = [];
 
@@ -4530,6 +4586,14 @@ function renderTasksGroup(tasksGroup, containerEl) {
             }
         } else {
             subtasks = allTasks.filter(t => t.parentId === task.id && !t.deleted && !t.completed);
+
+            // Не смешиваем подзадачи нового раздела «Сегодня» с остальными
+            // разделами проекта, чтобы каждая задача отображалась один раз.
+            if (splitProjectTodayTasks) {
+                subtasks = subtasks.filter(t => isProjectTodaySection
+                    ? t.dueDate === todayDateStr
+                    : t.dueDate !== todayDateStr);
+            }
         }
 
         sortGroupTasks(subtasks);
@@ -4552,6 +4616,37 @@ function renderTasksGroup(tasksGroup, containerEl) {
             containerEl.appendChild(subEl);
         });
     }
+}
+
+function renderProjectTodaySection(tasks, containerEl, projectId) {
+    if (!tasks.length || !containerEl || !projectId) return;
+
+    const collapseKey = `project-today-${projectId}`;
+    const isCollapsed = isSectionCollapsed(collapseKey);
+    const sectionEl = document.createElement('div');
+    sectionEl.className = `project-section today-current-section project-today-section ${isCollapsed ? 'collapsed' : ''}`;
+    sectionEl.setAttribute('data-section-id', 'project-today');
+    sectionEl.style.marginTop = '0px';
+    sectionEl.innerHTML = `
+        <div class="project-section-header" style="cursor: pointer;">
+            <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
+                <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+            <span class="section-title-text" style="font-weight: 600;">Сегодня</span>
+            <span class="section-count-badge" style="margin-left: 6px;">${tasks.length}</span>
+        </div>
+        <div class="section-tasks-container" style="${isCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
+    `;
+
+    containerEl.appendChild(sectionEl);
+    renderTasksGroup(tasks, sectionEl.querySelector('.section-tasks-container'));
+
+    sectionEl.querySelector('.project-section-header').addEventListener('click', () => {
+        toggleSectionCollapsed(collapseKey);
+        renderTasks();
+    });
 }
 
 function getEmptyStateHtml() {
@@ -4651,6 +4746,9 @@ function doRenderTasks() {
     // Устанавливаем класс роута на body
     document.body.classList.remove('route-today', 'route-tomorrow', 'route-inbox', 'route-trash', 'route-pomodoro', 'route-habit', 'route-calendar');
     document.documentElement.classList.toggle('route-calendar', currentRoute === 'calendar');
+    const isTodayDayView = currentRoute === 'today' && getTodayViewMode() === 'day';
+    document.body.classList.toggle('today-calendar-mode', isTodayDayView);
+    syncTodayViewToggleButton();
     if (currentRoute === 'today') {
         document.body.classList.add('route-today');
     } else if (currentRoute === 'tomorrow') {
@@ -4695,6 +4793,16 @@ function doRenderTasks() {
         if (currentRoute === 'calendar') {
             renderCalendarView();
         }
+    }
+
+    const todayCalendarViewContainer = document.getElementById('todayCalendarViewContainer');
+    if (isTodayDayView) {
+        renderTodayCalendarView();
+    } else if (todayCalendarViewContainer) {
+        todayCalendarViewContainer.style.display = 'none';
+        todayCalendarViewContainer.innerHTML = '';
+        delete todayCalendarViewContainer.dataset.autoScrolledToNow;
+        delete todayCalendarViewContainer.dataset.autoScrollLayout;
     }
 
     if (activeTasksContainer) {
@@ -5050,6 +5158,17 @@ function doRenderTasks() {
         currentViewProjectId = currentRoute;
     }
 
+    // Опциональный первый раздел с задачами проекта на сегодня.
+    // Убираем их из остальных списков проекта, чтобы не было дубликатов.
+    let projectTodayTasks = [];
+    const showProjectTodaySection = currentRoute.startsWith('project/') &&
+        localStorage.getItem('todo_pref_project_today_section') === 'true';
+    if (showProjectTodaySection) {
+        projectTodayTasks = displayActiveTasks.filter(isTodayTask);
+        displayActiveTasks = displayActiveTasks.filter(t => !isTodayTask(t));
+        renderProjectTodaySection(projectTodayTasks, activeTasksContainer, currentViewProjectId);
+    }
+
     const currentProjectCountdowns = (currentViewProjectId && Array.isArray(countdownsList))
         ? countdownsList.filter(cd => cd.projectId === currentViewProjectId)
         : [];
@@ -5084,7 +5203,11 @@ function doRenderTasks() {
         const tasksToGroup = currentRoute === 'today' ? [...overdueActiveTasks, ...displayActiveTasks] : displayActiveTasks;
 
         if (tasksToGroup.length === 0) {
-            if (currentProjectCountdowns.length > 0) {
+            if (projectTodayTasks.length > 0) {
+                if (currentProjectCountdowns.length > 0) {
+                    renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+                }
+            } else if (currentProjectCountdowns.length > 0) {
                 if (countdownOrder !== null && countdownOrder < 0) {
                     renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
                     const emptyDiv = document.createElement('div');
@@ -5431,7 +5554,7 @@ function doRenderTasks() {
                 const isGroupByDate = project && project.groupByDate === true;
 
                 if (isGroupByDate) {
-                    if (displayActiveTasks.length === 0) {
+                    if (displayActiveTasks.length === 0 && projectTodayTasks.length === 0) {
                         const emptyStateEl = document.createElement('div');
                         emptyStateEl.style.marginTop = '20px';
                         emptyStateEl.style.marginBottom = '20px';
@@ -5605,7 +5728,7 @@ function doRenderTasks() {
                         renderCountdownSection(currentProjectCountdowns, activeTasksContainer, projectId);
                     }
 
-                    if (displayActiveTasks.length === 0) {
+                    if (displayActiveTasks.length === 0 && projectTodayTasks.length === 0) {
                         const emptyStateEl = document.createElement('div');
                         emptyStateEl.style.marginTop = '20px';
                         emptyStateEl.style.marginBottom = '20px';
@@ -7775,6 +7898,31 @@ if (btnAddProject) {
 // === ЛОГИКА ОТОБРАЖЕНИЯ (VIEW DISPLAY MODAL) ===
 const viewDisplayBtn = document.getElementById('viewDisplayBtn');
 const viewDisplayDropdown = document.getElementById('viewDisplayDropdown');
+const todayViewToggleBtn = document.getElementById('todayViewToggleBtn');
+
+function getTodayViewMode() {
+    return localStorage.getItem('todo_today_view_mode') === 'day' ? 'day' : 'list';
+}
+
+function syncTodayViewToggleButton() {
+    if (!todayViewToggleBtn) return;
+
+    const isTodayRoute = currentRoute === 'today';
+    const isDayView = isTodayRoute && getTodayViewMode() === 'day';
+    todayViewToggleBtn.style.display = isTodayRoute ? 'flex' : 'none';
+    todayViewToggleBtn.classList.toggle('active', isDayView);
+    todayViewToggleBtn.setAttribute('aria-pressed', isDayView ? 'true' : 'false');
+    todayViewToggleBtn.setAttribute('aria-label', isDayView ? 'Показать списком' : 'Показать по часам');
+    todayViewToggleBtn.title = isDayView ? 'Показать списком' : 'Показать по часам';
+}
+
+if (todayViewToggleBtn) {
+    todayViewToggleBtn.addEventListener('click', () => {
+        const nextMode = getTodayViewMode() === 'day' ? 'list' : 'day';
+        localStorage.setItem('todo_today_view_mode', nextMode);
+        renderTasks(true);
+    });
+}
 
 if (viewDisplayBtn && viewDisplayDropdown) {
     viewDisplayBtn.addEventListener('click', (e) => {
@@ -8904,7 +9052,9 @@ function initDragAndDrop() {
             if (parentContainer && parentContainer.classList.contains('section-tasks-container')) {
                 const sectEl = parentContainer.closest('.project-section');
                 if (sectEl) {
-                    targetSectionId = sectEl.getAttribute('data-section-id') || null;
+                    targetSectionId = sectEl.classList.contains('project-today-section')
+                        ? (task.sectionId || null)
+                        : (sectEl.getAttribute('data-section-id') || null);
                 }
             }
 
@@ -9052,7 +9202,9 @@ function initDragAndDrop() {
                 }
             }
 
-            if (currentRoute === 'today' && parentContainer) {
+            const usesTodayDropSection = currentRoute === 'today' ||
+                (currentRoute.startsWith('project/') && localStorage.getItem('todo_pref_project_today_section') === 'true');
+            if (usesTodayDropSection && parentContainer) {
                 const sectEl = parentContainer.closest('.project-section');
                 if (sectEl && sectEl.classList.contains('today-current-section')) {
                     const today = new Date();
@@ -10259,6 +10411,7 @@ function initTouchDragAndDrop() {
         }
 
         if (!targetEl || targetEl.classList.contains('editing') || currentRoute === 'trash') return;
+        if (type === 'section' && targetEl.classList.contains('project-today-section')) return;
 
         // Отключаем выделение текста при длительном тапе
         const preventSelection = (evt) => {
@@ -10408,7 +10561,9 @@ function initTouchDragAndDrop() {
             if (parentContainer && parentContainer.classList.contains('section-tasks-container')) {
                 const sectEl = parentContainer.closest('.project-section');
                 if (sectEl) {
-                    targetSectionId = sectEl.getAttribute('data-section-id') || null;
+                    targetSectionId = sectEl.classList.contains('project-today-section')
+                        ? (task.sectionId || null)
+                        : (sectEl.getAttribute('data-section-id') || null);
                 }
             }
 
@@ -10484,7 +10639,9 @@ function initTouchDragAndDrop() {
                 sectionId: targetSectionId
             };
 
-            if (currentRoute === 'today' && parentContainer) {
+            const usesTodayDropSection = currentRoute === 'today' ||
+                (currentRoute.startsWith('project/') && localStorage.getItem('todo_pref_project_today_section') === 'true');
+            if (usesTodayDropSection && parentContainer) {
                 const sectEl = parentContainer.closest('.project-section');
                 if (sectEl && sectEl.classList.contains('today-current-section')) {
                     const today = new Date();
@@ -18029,6 +18186,7 @@ let calendarGCalEvents = [];
 let calendarGCalLastRangeKey = '';
 let calendarGCalIsFetching = false;
 let calendarRenderCounter = 0;
+let todayCalendarRenderCounter = 0;
 
 function formatIsoDate(dateObj) {
     const y = dateObj.getFullYear();
@@ -18426,6 +18584,54 @@ async function renderCalendarView() {
     }
 }
 
+async function renderTodayCalendarView() {
+    const container = document.getElementById('todayCalendarViewContainer');
+    if (!container || currentRoute !== 'today' || getTodayViewMode() !== 'day') return;
+
+    const renderId = ++todayCalendarRenderCounter;
+    const today = new Date();
+    const todayStr = formatIsoDate(today);
+    const hideCompleted = localStorage.getItem('todo_hide_completed_today') === 'true';
+    const priorityFilter = localStorage.getItem('todo_filter_prio_today') || 'all';
+    const dueDateFilter = localStorage.getItem('todo_filter_date_today') || 'all';
+
+    let tasks = allTasks.filter(t =>
+        !t.deleted &&
+        t.dueDate === todayStr &&
+        (!hideCompleted || !t.completed)
+    );
+
+    if (priorityFilter !== 'all') {
+        tasks = tasks.filter(t => String(t.priority ?? 0) === priorityFilter);
+    }
+    if (dueDateFilter === 'tomorrow' || dueDateFilter === 'no_date') {
+        tasks = [];
+    }
+
+    const renderSurface = (gcalEvents = []) => {
+        container.innerHTML = '';
+        renderDayView(container, tasks, gcalEvents, today, {
+            onTaskToggled: () => renderTasks(true),
+            onTaskScheduleChanged: () => renderTasks(true),
+            scrollWithPage: true
+        });
+    };
+
+    // Задачи показываем сразу, не дожидаясь загрузки Google Calendar.
+    renderSurface();
+
+    if (!gcalShowEvents) return;
+
+    const range = getRangeForCalendarView('day', today);
+    const gcalEvents = await fetchCalendarGCalEvents(range.start, range.end);
+
+    if (renderId !== todayCalendarRenderCounter || currentRoute !== 'today' || getTodayViewMode() !== 'day') {
+        return;
+    }
+
+    renderSurface(gcalEvents);
+}
+
 function renderMonthView(container, tasks, gcalEvents, range) {
     const wrapper = document.createElement('div');
     wrapper.className = 'cal-month-view';
@@ -18809,11 +19015,191 @@ function renderWeekView(container, tasks, gcalEvents, range) {
     }, 0);
 }
 
-function renderDayView(container, tasks, gcalEvents, dateObj) {
+const CALENDAR_HOUR_HEIGHT = 80;
+const CALENDAR_SNAP_MINUTES = 15;
+const CALENDAR_DEFAULT_TASK_MINUTES = 60;
+const CALENDAR_COMPACT_RANGE_HEIGHT = 44;
+let calendarNowLineTimer = null;
+
+function calendarMinutesToY(minutes, layout) {
+    const safeMinutes = Math.max(0, Math.min(1440, minutes));
+    const startMinutes = layout.startHour * 60;
+    const endMinutes = layout.endHour * 60;
+    let y = 0;
+
+    if (safeMinutes <= startMinutes) {
+        return layout.collapseMorning
+            ? (safeMinutes / Math.max(1, startMinutes)) * CALENDAR_COMPACT_RANGE_HEIGHT
+            : (safeMinutes / 60) * CALENDAR_HOUR_HEIGHT;
+    }
+    y += layout.collapseMorning ? CALENDAR_COMPACT_RANGE_HEIGHT : (startMinutes / 60) * CALENDAR_HOUR_HEIGHT;
+
+    if (safeMinutes <= endMinutes) {
+        return y + ((safeMinutes - startMinutes) / 60) * CALENDAR_HOUR_HEIGHT;
+    }
+    y += ((endMinutes - startMinutes) / 60) * CALENDAR_HOUR_HEIGHT;
+
+    return y + (layout.collapseEvening
+        ? ((safeMinutes - endMinutes) / Math.max(1, 1440 - endMinutes)) * CALENDAR_COMPACT_RANGE_HEIGHT
+        : ((safeMinutes - endMinutes) / 60) * CALENDAR_HOUR_HEIGHT);
+}
+
+function calendarYToMinutes(y, layout) {
+    const safeY = Math.max(0, Math.min(layout.totalHeight, y));
+    const startMinutes = layout.startHour * 60;
+    const endMinutes = layout.endHour * 60;
+    const morningHeight = layout.collapseMorning ? CALENDAR_COMPACT_RANGE_HEIGHT : layout.startHour * CALENDAR_HOUR_HEIGHT;
+    const activeHeight = (layout.endHour - layout.startHour) * CALENDAR_HOUR_HEIGHT;
+
+    if (safeY <= morningHeight) {
+        return layout.collapseMorning
+            ? (safeY / CALENDAR_COMPACT_RANGE_HEIGHT) * startMinutes
+            : (safeY / CALENDAR_HOUR_HEIGHT) * 60;
+    }
+    if (safeY <= morningHeight + activeHeight) {
+        return startMinutes + ((safeY - morningHeight) / CALENDAR_HOUR_HEIGHT) * 60;
+    }
+
+    const eveningMinutes = 1440 - endMinutes;
+    return endMinutes + (layout.collapseEvening
+        ? ((safeY - morningHeight - activeHeight) / CALENDAR_COMPACT_RANGE_HEIGHT) * eveningMinutes
+        : ((safeY - morningHeight - activeHeight) / CALENDAR_HOUR_HEIGHT) * 60);
+}
+
+function startCalendarNowLineTicker() {
+    if (calendarNowLineTimer) clearInterval(calendarNowLineTimer);
+    calendarNowLineTimer = setInterval(() => {
+        const nowLines = document.querySelectorAll('.cal-spacious-day-view .cal-now-line');
+        if (!nowLines.length) {
+            clearInterval(calendarNowLineTimer);
+            calendarNowLineTimer = null;
+            return;
+        }
+
+        const now = new Date();
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        const timeText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        nowLines.forEach(line => {
+            const dayColumn = line.closest('.cal-day-column-view');
+            let layout = null;
+            try {
+                layout = JSON.parse(dayColumn?.dataset.calendarLayout || 'null');
+            } catch (_) {
+                layout = null;
+            }
+            const nowPx = layout ? calendarMinutesToY(nowMinutes, layout) : (nowMinutes / 60) * CALENDAR_HOUR_HEIGHT;
+            line.style.top = `${nowPx}px`;
+            const label = line.querySelector('.cal-now-time-label');
+            if (label) label.textContent = timeText;
+        });
+    }, 30000);
+}
+
+function calendarTimeToMinutes(timeStr) {
+    if (!timeStr || typeof timeStr !== 'string') return 0;
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return Math.max(0, Math.min(1439, (Number.isFinite(hours) ? hours : 0) * 60 + (Number.isFinite(minutes) ? minutes : 0)));
+}
+
+function calendarMinutesToTime(totalMinutes) {
+    const safeMinutes = Math.max(0, Math.min(1439, Math.round(totalMinutes)));
+    const hours = Math.floor(safeMinutes / 60);
+    const minutes = safeMinutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+function snapCalendarMinutes(minutes) {
+    return Math.round(minutes / CALENDAR_SNAP_MINUTES) * CALENDAR_SNAP_MINUTES;
+}
+
+function getCalendarTaskDuration(task, dayIso) {
+    const startMinutes = calendarTimeToMinutes(task.dueTime);
+    if (task.dueEndTime && (!task.dueEndDate || task.dueEndDate === dayIso)) {
+        const endMinutes = calendarTimeToMinutes(task.dueEndTime);
+        if (endMinutes > startMinutes) {
+            return Math.max(CALENDAR_SNAP_MINUTES, endMinutes - startMinutes);
+        }
+    }
+    return CALENDAR_DEFAULT_TASK_MINUTES;
+}
+
+let calendarContextMenuHost = null;
+
+function openCalendarTaskContextMenu(task, sourceEvent) {
+    calendarContextMenuHost?.remove();
+    calendarContextMenuHost = createTaskRowElement(task, true);
+    calendarContextMenuHost.classList.add('calendar-context-menu-host');
+    document.body.appendChild(calendarContextMenuHost);
+
+    const dropdown = calendarContextMenuHost.querySelector('.task-actions-dropdown');
+    const openTaskModalFromMenu = (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (dropdown) dropdown.style.display = 'none';
+        openTaskDetailsModal(task.id);
+    };
+    calendarContextMenuHost.querySelector('.btn-edit')?.addEventListener('click', openTaskModalFromMenu, true);
+    calendarContextMenuHost.querySelector('.btn-add-subtask')?.addEventListener('click', openTaskModalFromMenu, true);
+    if (dropdown) {
+        const observer = new MutationObserver(() => {
+            if (dropdown.style.display === 'none') {
+                observer.disconnect();
+                calendarContextMenuHost?.remove();
+                calendarContextMenuHost = null;
+            }
+        });
+        observer.observe(dropdown, { attributes: true, attributeFilter: ['style'] });
+    }
+
+    calendarContextMenuHost.dispatchEvent(new MouseEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+        clientX: sourceEvent.clientX,
+        clientY: sourceEvent.clientY,
+        button: 2
+    }));
+}
+
+function renderDayView(container, tasks, gcalEvents, dateObj, options = {}) {
     const wrapper = document.createElement('div');
-    wrapper.className = 'cal-day-view';
+    wrapper.className = 'cal-day-view cal-spacious-day-view';
 
     const dayIso = formatIsoDate(dateObj);
+    const compactHoursEnabled = localStorage.getItem('todo_pref_calendar_compact_hours') === 'true';
+    const configuredStartHour = Math.max(1, Math.min(22, Number(localStorage.getItem('todo_pref_calendar_day_start') || 6)));
+    const configuredEndHour = Math.max(configuredStartHour + 1, Math.min(23, Number(localStorage.getItem('todo_pref_calendar_day_end') || 23)));
+    const startBoundary = configuredStartHour * 60;
+    const endBoundary = configuredEndHour * 60;
+    const timedDayTasks = tasks.filter(task => task.dueDate === dayIso && !!task.dueTime);
+    const timedDayGCalEvents = gcalEvents.filter(event => {
+        const startDateStr = event.start.date || (event.start.dateTime ? event.start.dateTime.split('T')[0] : null);
+        return startDateStr === dayIso && !!event.start.dateTime;
+    });
+    const hasTaskInRange = (rangeStart, rangeEnd) => {
+        const todoInRange = timedDayTasks.some(task => {
+            const taskStart = calendarTimeToMinutes(task.dueTime);
+            const taskEnd = Math.min(1440, taskStart + getCalendarTaskDuration(task, dayIso));
+            return taskStart < rangeEnd && taskEnd > rangeStart;
+        });
+        const gcalInRange = timedDayGCalEvents.some(event => {
+            const startTime = event.start.dateTime.split('T')[1]?.substring(0, 5);
+            const eventStart = calendarTimeToMinutes(startTime);
+            const endTime = event.end?.dateTime?.split('T')[1]?.substring(0, 5);
+            const eventEnd = endTime ? calendarTimeToMinutes(endTime) : eventStart + CALENDAR_DEFAULT_TASK_MINUTES;
+            return eventStart < rangeEnd && Math.max(eventStart + 1, eventEnd) > rangeStart;
+        });
+        return todoInRange || gcalInRange;
+    };
+    const calendarLayout = {
+        startHour: configuredStartHour,
+        endHour: configuredEndHour,
+        collapseMorning: compactHoursEnabled && !hasTaskInRange(0, startBoundary),
+        collapseEvening: compactHoursEnabled && !hasTaskInRange(endBoundary, 1440)
+    };
+    calendarLayout.totalHeight =
+        (calendarLayout.collapseMorning ? CALENDAR_COMPACT_RANGE_HEIGHT : configuredStartHour * CALENDAR_HOUR_HEIGHT) +
+        ((configuredEndHour - configuredStartHour) * CALENDAR_HOUR_HEIGHT) +
+        (calendarLayout.collapseEvening ? CALENDAR_COMPACT_RANGE_HEIGHT : (24 - configuredEndHour) * CALENDAR_HOUR_HEIGHT);
 
     // Sticky Top Header Wrapper
     const stickyHeader = document.createElement('div');
@@ -18852,6 +19238,69 @@ function renderDayView(container, tasks, gcalEvents, dateObj) {
     const cell = document.createElement('div');
     cell.className = 'cal-all-day-cell';
 
+    const refreshAfterScheduleChange = () => {
+        if (typeof options.onTaskScheduleChanged === 'function') {
+            options.onTaskScheduleChanged();
+        } else {
+            renderCalendarView();
+        }
+    };
+
+    const saveTaskSchedule = async (task, fields) => {
+        const previous = {
+            dueDate: task.dueDate || null,
+            dueTime: task.dueTime || null,
+            dueEndDate: task.dueEndDate || null,
+            dueEndTime: task.dueEndTime || null
+        };
+
+        Object.assign(task, fields);
+        refreshAfterScheduleChange();
+
+        if (!currentUid || !task.id) return;
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), fields);
+        } catch (err) {
+            console.error('Ошибка изменения времени задачи в календаре:', err);
+            Object.assign(task, previous);
+            refreshAfterScheduleChange();
+        }
+    };
+
+    const createQuickCalendarTask = async (title, startMinutes) => {
+        if (!currentUid || !title.trim()) return false;
+
+        const tasksForDay = allTasks.filter(task => !task.deleted && task.dueDate === dayIso);
+        const addAtBottom = (localStorage.getItem('todo_pref_add_task_position') || 'top') === 'bottom';
+        const existingOrders = tasksForDay.map(task => Number(task.order)).filter(Number.isFinite);
+        let order = 0;
+        if (existingOrders.length) {
+            order = addAtBottom ? Math.max(...existingOrders) + 1 : Math.min(...existingOrders) - 1;
+        }
+
+        const endMinutes = Math.min(1439, startMinutes + CALENDAR_SNAP_MINUTES);
+        try {
+            await addDoc(collection(db, 'users', currentUid, 'tasks'), {
+                title: title.trim(),
+                completed: false,
+                dueDate: dayIso,
+                dueTime: calendarMinutesToTime(startMinutes),
+                dueRepeat: null,
+                dueEndDate: dayIso,
+                dueEndTime: calendarMinutesToTime(endMinutes),
+                projectId: null,
+                priority: 0,
+                order,
+                createdAt: serverTimestamp()
+            });
+            refreshAfterScheduleChange();
+            return true;
+        } catch (err) {
+            console.error('Не удалось создать задачу из календаря:', err);
+            return false;
+        }
+    };
+
     // Filter timeless tasks (no dueTime)
     const timelessTasks = tasks.filter(t => t.dueDate === dayIso && !t.dueTime);
     timelessTasks.forEach(task => {
@@ -18861,13 +19310,38 @@ function renderDayView(container, tasks, gcalEvents, dateObj) {
         const item = document.createElement('div');
         item.className = `cal-item${task.completed ? ' completed' : ''}`;
         item.style.borderLeftColor = projColor;
+        item.draggable = true;
+        item.dataset.calendarTaskId = task.id;
+        item.title = 'Перетащите на нужное время';
+        let allDayTaskWasDragged = false;
+
+        item.addEventListener('dragstart', (e) => {
+            allDayTaskWasDragged = true;
+            item.classList.add('calendar-task-dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('application/x-todo-calendar-task', task.id);
+            e.dataTransfer.setData('text/plain', task.id);
+        });
+        item.addEventListener('dragend', () => {
+            item.classList.remove('calendar-task-dragging');
+        });
+        item.addEventListener('contextmenu', (e) => {
+            if (!window.matchMedia('(hover: hover)').matches) return;
+            e.preventDefault();
+            e.stopPropagation();
+            openCalendarTaskContextMenu(task, e);
+        });
 
         const chk = document.createElement('div');
         chk.className = 'cal-item-checkbox';
-        chk.onclick = (e) => {
+        chk.onclick = async (e) => {
             e.stopPropagation();
-            toggleTaskCompleted(task.id, task.completed);
-            renderCalendarView();
+            await toggleTaskCompleted(task.id, task.completed);
+            if (typeof options.onTaskToggled === 'function') {
+                options.onTaskToggled();
+            } else {
+                renderCalendarView();
+            }
         };
 
         const title = document.createElement('span');
@@ -18878,9 +19352,12 @@ function renderDayView(container, tasks, gcalEvents, dateObj) {
         item.appendChild(title);
         item.onclick = (e) => {
             e.stopPropagation();
+            if (allDayTaskWasDragged) {
+                allDayTaskWasDragged = false;
+                return;
+            }
             openTaskDetailsModal(task.id);
         };
-
         cell.appendChild(item);
     });
 
@@ -18918,10 +19395,24 @@ function renderDayView(container, tasks, gcalEvents, dateObj) {
 
     const hoursCol = document.createElement('div');
     hoursCol.className = 'cal-hours-column';
+    hoursCol.style.height = `${calendarLayout.totalHeight}px`;
+    hoursCol.style.minHeight = `${calendarLayout.totalHeight}px`;
     for (let h = 0; h < 24; h++) {
         const hourLabel = document.createElement('div');
         hourLabel.className = 'cal-hour-label';
-        hourLabel.textContent = `${String(h).padStart(2, '0')}:00`;
+        if (calendarLayout.collapseMorning && h < configuredStartHour) {
+            if (h > 0) continue;
+            hourLabel.classList.add('cal-compact-hour-label');
+            hourLabel.style.height = `${CALENDAR_COMPACT_RANGE_HEIGHT}px`;
+            hourLabel.textContent = `00:00–${String(configuredStartHour).padStart(2, '0')}:00`;
+        } else if (calendarLayout.collapseEvening && h >= configuredEndHour) {
+            if (h > configuredEndHour) continue;
+            hourLabel.classList.add('cal-compact-hour-label');
+            hourLabel.style.height = `${CALENDAR_COMPACT_RANGE_HEIGHT}px`;
+            hourLabel.textContent = `${String(configuredEndHour).padStart(2, '0')}:00–00:00`;
+        } else {
+            hourLabel.textContent = `${String(h).padStart(2, '0')}:00`;
+        }
         hoursCol.appendChild(hourLabel);
     }
     timelineBody.appendChild(hoursCol);
@@ -18929,12 +19420,134 @@ function renderDayView(container, tasks, gcalEvents, dateObj) {
     const dayCol = document.createElement('div');
     dayCol.className = 'cal-day-column-view';
     dayCol.style.flex = '1';
+    dayCol.style.height = `${calendarLayout.totalHeight}px`;
+    dayCol.style.minHeight = `${calendarLayout.totalHeight}px`;
+    dayCol.dataset.calendarLayout = JSON.stringify(calendarLayout);
+
+    dayCol.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+        dayCol.classList.add('calendar-drop-target');
+    });
+    dayCol.addEventListener('dragleave', (e) => {
+        if (!dayCol.contains(e.relatedTarget)) {
+            dayCol.classList.remove('calendar-drop-target');
+        }
+    });
+    dayCol.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dayCol.classList.remove('calendar-drop-target');
+        const taskId = e.dataTransfer?.getData('application/x-todo-calendar-task') || e.dataTransfer?.getData('text/plain');
+        const task = allTasks.find(candidate => candidate.id === taskId);
+        if (!task) return;
+
+        const rect = dayCol.getBoundingClientRect();
+        const rawMinutes = calendarYToMinutes(e.clientY - rect.top, calendarLayout);
+        const duration = task.dueTime ? getCalendarTaskDuration(task, dayIso) : CALENDAR_DEFAULT_TASK_MINUTES;
+        const startMinutes = Math.max(0, Math.min(1440 - duration, snapCalendarMinutes(rawMinutes)));
+        const fields = {
+            dueDate: dayIso,
+            dueTime: calendarMinutesToTime(startMinutes)
+        };
+
+        if (task.dueEndTime) {
+            fields.dueEndDate = dayIso;
+            fields.dueEndTime = calendarMinutesToTime(Math.min(1439, startMinutes + duration));
+        }
+        saveTaskSchedule(task, fields);
+    });
 
     for (let h = 0; h < 24; h++) {
         const slot = document.createElement('div');
         slot.className = 'cal-hour-slot';
+        if (calendarLayout.collapseMorning && h < configuredStartHour) {
+            if (h > 0) continue;
+            slot.classList.add('cal-compact-hour-slot');
+            slot.style.height = `${CALENDAR_COMPACT_RANGE_HEIGHT}px`;
+        } else if (calendarLayout.collapseEvening && h >= configuredEndHour) {
+            if (h > configuredEndHour) continue;
+            slot.classList.add('cal-compact-hour-slot');
+            slot.style.height = `${CALENDAR_COMPACT_RANGE_HEIGHT}px`;
+        }
         dayCol.appendChild(slot);
     }
+
+    const openQuickCreate = (startMinutes) => {
+        const existingInput = dayCol.querySelector('.cal-quick-create-input');
+        if (existingInput) {
+            existingInput.focus();
+            return;
+        }
+
+        const safeStart = Math.max(0, Math.min(1440 - CALENDAR_SNAP_MINUTES, startMinutes));
+        const endMinutes = Math.min(1439, safeStart + CALENDAR_SNAP_MINUTES);
+        const topPx = calendarMinutesToY(safeStart, calendarLayout);
+
+        const draft = document.createElement('div');
+        draft.className = 'cal-quick-create-draft';
+        draft.style.top = `${topPx}px`;
+        draft.style.height = `${Math.max(6, calendarMinutesToY(endMinutes, calendarLayout) - topPx)}px`;
+
+        const popover = document.createElement('div');
+        popover.className = 'cal-quick-create-popover';
+        popover.style.top = `${Math.min(calendarLayout.totalHeight - 110, topPx + 24)}px`;
+        popover.innerHTML = `
+            <div class="cal-quick-create-time">${calendarMinutesToTime(safeStart)}–${calendarMinutesToTime(endMinutes)}</div>
+            <input class="cal-quick-create-input" type="text" maxlength="500" placeholder="Название задачи" autocomplete="off">
+        `;
+
+        dayCol.appendChild(draft);
+        dayCol.appendChild(popover);
+
+        const input = popover.querySelector('.cal-quick-create-input');
+        let isSettled = false;
+        const finishDraft = async (shouldSave) => {
+            if (isSettled) return;
+            const title = input.value.trim();
+            if (!shouldSave || !title) {
+                isSettled = true;
+                draft.remove();
+                popover.remove();
+                return;
+            }
+
+            isSettled = true;
+            input.disabled = true;
+            draft.classList.add('saving');
+            const wasSaved = await createQuickCalendarTask(title, safeStart);
+            if (!wasSaved) {
+                isSettled = false;
+                input.disabled = false;
+                draft.classList.remove('saving');
+                input.focus();
+                return;
+            }
+            draft.remove();
+            popover.remove();
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.isComposing) {
+                e.preventDefault();
+                finishDraft(true);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                finishDraft(false);
+            }
+        });
+        input.addEventListener('blur', () => {
+            setTimeout(() => finishDraft(true), 0);
+        });
+        setTimeout(() => input.focus(), 0);
+    };
+
+    dayCol.addEventListener('click', (e) => {
+        if (e.target.closest('.cal-timed-item, .cal-now-line, .cal-quick-create-draft, .cal-quick-create-popover')) return;
+        const rect = dayCol.getBoundingClientRect();
+        const rawMinutes = calendarYToMinutes(e.clientY - rect.top, calendarLayout);
+        const startMinutes = Math.max(0, Math.min(1440 - CALENDAR_SNAP_MINUTES, snapCalendarMinutes(rawMinutes)));
+        openQuickCreate(startMinutes);
+    });
 
     // Render Timed Tasks for this day (tasks with dueTime)
     const timedTasks = tasks.filter(t => t.dueDate === dayIso && !!t.dueTime);
@@ -18946,24 +19559,146 @@ function renderDayView(container, tasks, gcalEvents, dateObj) {
         const hour = parseInt(parts[0], 10) || 0;
         const min = parseInt(parts[1], 10) || 0;
 
-        const topPx = hour * 50 + (min / 60) * 50;
+        const startMinutes = hour * 60 + min;
+        const durationMinutes = getCalendarTaskDuration(task, dayIso);
+        const endMinutes = Math.min(1440, startMinutes + durationMinutes);
+        const topPx = calendarMinutesToY(startMinutes, calendarLayout);
+        const heightPx = Math.max(12, calendarMinutesToY(endMinutes, calendarLayout) - topPx);
         const item = document.createElement('div');
-        item.className = `cal-timed-item${task.completed ? ' completed' : ''}`;
+        item.className = `cal-timed-item cal-todo-timed-item${task.completed ? ' completed' : ''}`;
         item.style.top = `${topPx}px`;
-        item.style.height = '48px';
+        item.style.height = `${heightPx}px`;
         item.style.borderLeftColor = projColor;
+        item.dataset.calendarTaskId = task.id;
+        item.title = 'Перетащите задачу или потяните за верхний/нижний край';
 
         item.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-weight: 700; font-size: 11px;">${task.dueTime}</span>
-                <span style="font-size: 11px; opacity: 0.8;">${project ? project.name : ''}</span>
+            <div class="cal-resize-handle cal-resize-handle-top" aria-label="Изменить время начала"></div>
+            <div class="cal-timed-item-content">
+                <span class="cal-timed-item-time">${task.dueTime}${task.dueEndTime ? `–${task.dueEndTime}` : ''}</span>
+                <span class="cal-timed-item-title" style="${task.completed ? 'text-decoration: line-through;' : ''}">${escapeHtml(task.title)}</span>
+                ${project ? `<span class="cal-timed-item-project">${escapeHtml(project.name)}</span>` : ''}
             </div>
-            <div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${task.completed ? 'text-decoration: line-through;' : ''}">${task.title}</div>
+            <div class="cal-resize-handle cal-resize-handle-bottom" aria-label="Изменить время окончания"></div>
         `;
+        let calendarGestureMoved = false;
+
         item.onclick = (e) => {
             e.stopPropagation();
+            if (calendarGestureMoved) {
+                calendarGestureMoved = false;
+                return;
+            }
             openTaskDetailsModal(task.id);
         };
+        item.addEventListener('contextmenu', (e) => {
+            if (!window.matchMedia('(hover: hover)').matches) return;
+            e.preventDefault();
+            e.stopPropagation();
+            openCalendarTaskContextMenu(task, e);
+        });
+
+        const timeLabel = item.querySelector('.cal-timed-item-time');
+        const updateItemPreview = (previewStart, previewEnd) => {
+            const previewTop = calendarMinutesToY(previewStart, calendarLayout);
+            item.style.top = `${previewTop}px`;
+            item.style.height = `${Math.max(12, calendarMinutesToY(previewEnd, calendarLayout) - previewTop)}px`;
+            if (timeLabel) {
+                timeLabel.textContent = `${calendarMinutesToTime(previewStart)}–${calendarMinutesToTime(Math.min(1439, previewEnd))}`;
+            }
+        };
+
+        const startPointerGesture = (e, mode) => {
+            if (e.button !== undefined && e.button !== 0) return;
+            e.preventDefault();
+            e.stopPropagation();
+
+            const pointerStartPageY = e.clientY + window.scrollY;
+            const originalStart = startMinutes;
+            const originalEnd = Math.min(1440, originalStart + durationMinutes);
+            let previewStart = originalStart;
+            let previewEnd = originalEnd;
+            let dropWithoutTime = false;
+            calendarGestureMoved = false;
+            item.classList.add(mode === 'move' ? 'calendar-task-moving' : 'calendar-task-resizing');
+            item.setPointerCapture?.(e.pointerId);
+
+            const onPointerMove = (moveEvent) => {
+                if (document.body.classList.contains('today-calendar-mode')) {
+                    if (moveEvent.clientY < 72) window.scrollBy(0, -18);
+                    if (moveEvent.clientY > window.innerHeight - 72) window.scrollBy(0, 18);
+                }
+                const currentPageY = moveEvent.clientY + window.scrollY;
+                const deltaPx = currentPageY - pointerStartPageY;
+                const originalStartY = calendarMinutesToY(originalStart, calendarLayout);
+                const originalEndY = calendarMinutesToY(originalEnd, calendarLayout);
+                if (Math.abs(currentPageY - pointerStartPageY) >= 3) calendarGestureMoved = true;
+
+                if (mode === 'move') {
+                    const elementUnderPointer = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
+                    dropWithoutTime = !!elementUnderPointer && cell.contains(elementUnderPointer);
+                    cell.classList.toggle('calendar-all-day-drop-target', dropWithoutTime);
+                    item.classList.toggle('calendar-task-to-all-day', dropWithoutTime);
+                }
+
+                if (mode === 'move' && !dropWithoutTime) {
+                    previewStart = Math.max(0, Math.min(1440 - durationMinutes, snapCalendarMinutes(calendarYToMinutes(originalStartY + deltaPx, calendarLayout))));
+                    previewEnd = previewStart + durationMinutes;
+                } else if (mode === 'resize-top') {
+                    previewStart = Math.max(0, Math.min(originalEnd - CALENDAR_SNAP_MINUTES, snapCalendarMinutes(calendarYToMinutes(originalStartY + deltaPx, calendarLayout))));
+                    previewEnd = originalEnd;
+                } else {
+                    previewStart = originalStart;
+                    previewEnd = Math.max(originalStart + CALENDAR_SNAP_MINUTES, Math.min(1440, snapCalendarMinutes(calendarYToMinutes(originalEndY + deltaPx, calendarLayout))));
+                }
+                updateItemPreview(previewStart, previewEnd);
+            };
+
+            const onPointerEnd = () => {
+                item.classList.remove('calendar-task-moving', 'calendar-task-resizing');
+                item.classList.remove('calendar-task-to-all-day');
+                cell.classList.remove('calendar-all-day-drop-target');
+                item.removeEventListener('pointermove', onPointerMove);
+                item.removeEventListener('pointerup', onPointerEnd);
+                item.removeEventListener('pointercancel', onPointerEnd);
+
+                if (!calendarGestureMoved) {
+                    updateItemPreview(originalStart, originalEnd);
+                    return;
+                }
+
+                if (mode === 'move' && dropWithoutTime) {
+                    saveTaskSchedule(task, {
+                        dueDate: dayIso,
+                        dueTime: null,
+                        dueEndDate: null,
+                        dueEndTime: null
+                    });
+                    return;
+                }
+
+                const fields = {
+                    dueDate: dayIso,
+                    dueTime: calendarMinutesToTime(previewStart)
+                };
+                if (mode !== 'move' || task.dueEndTime) {
+                    fields.dueEndDate = dayIso;
+                    fields.dueEndTime = calendarMinutesToTime(Math.min(1439, previewEnd));
+                }
+                saveTaskSchedule(task, fields);
+            };
+
+            item.addEventListener('pointermove', onPointerMove);
+            item.addEventListener('pointerup', onPointerEnd);
+            item.addEventListener('pointercancel', onPointerEnd);
+        };
+
+        item.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.cal-resize-handle')) return;
+            startPointerGesture(e, 'move');
+        });
+        item.querySelector('.cal-resize-handle-top')?.addEventListener('pointerdown', (e) => startPointerGesture(e, 'resize-top'));
+        item.querySelector('.cal-resize-handle-bottom')?.addEventListener('pointerdown', (e) => startPointerGesture(e, 'resize-bottom'));
 
         dayCol.appendChild(item);
     });
@@ -18980,7 +19715,7 @@ function renderDayView(container, tasks, gcalEvents, dateObj) {
         const hour = parseInt(parts[0], 10) || 0;
         const min = parseInt(parts[1], 10) || 0;
 
-        const topPx = hour * 50 + (min / 60) * 50;
+        const topPx = calendarMinutesToY(hour * 60 + min, calendarLayout);
         const item = document.createElement('div');
         item.className = 'cal-timed-item';
         item.style.top = `${topPx}px`;
@@ -19004,11 +19739,16 @@ function renderDayView(container, tasks, gcalEvents, dateObj) {
 
     if (isToday) {
         const now = new Date();
-        const nowPx = now.getHours() * 50 + (now.getMinutes() / 60) * 50;
+        const nowPx = calendarMinutesToY(now.getHours() * 60 + now.getMinutes(), calendarLayout);
         const nowLine = document.createElement('div');
         nowLine.className = 'cal-now-line';
         nowLine.style.top = `${nowPx}px`;
+        const nowTimeLabel = document.createElement('span');
+        nowTimeLabel.className = 'cal-now-time-label';
+        nowTimeLabel.textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        nowLine.appendChild(nowTimeLabel);
         dayCol.appendChild(nowLine);
+        startCalendarNowLineTicker();
     }
 
     timelineBody.appendChild(dayCol);
@@ -19019,8 +19759,21 @@ function renderDayView(container, tasks, gcalEvents, dateObj) {
     setTimeout(() => {
         if (isToday) {
             const now = new Date();
-            const nowPx = now.getHours() * 50 + (now.getMinutes() / 60) * 50;
-            timelineContainer.scrollTop = Math.max(0, nowPx - 150);
+            const nowPx = calendarMinutesToY(now.getHours() * 60 + now.getMinutes(), calendarLayout);
+            if (options.scrollWithPage) {
+                const layoutSignature = `${calendarLayout.collapseMorning}-${calendarLayout.collapseEvening}-${calendarLayout.startHour}-${calendarLayout.endHour}`;
+                if (container.dataset.autoScrolledToNow !== 'true' || container.dataset.autoScrollLayout !== layoutSignature) {
+                    const nowLine = dayCol.querySelector('.cal-now-line');
+                    if (nowLine) {
+                        const targetTop = window.scrollY + nowLine.getBoundingClientRect().top - window.innerHeight * 0.42;
+                        window.scrollTo({ top: Math.max(0, targetTop), behavior: 'auto' });
+                        container.dataset.autoScrolledToNow = 'true';
+                        container.dataset.autoScrollLayout = layoutSignature;
+                    }
+                }
+            } else {
+                timelineContainer.scrollTop = Math.max(0, nowPx - timelineContainer.clientHeight * 0.42);
+            }
         } else {
             timelineContainer.scrollTop = 380;
         }
@@ -19029,4 +19782,3 @@ function renderDayView(container, tasks, gcalEvents, dateObj) {
 
 // Initialize Calendar Listeners
 initCalendarEventListeners();
-

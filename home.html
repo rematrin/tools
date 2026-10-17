@@ -4529,8 +4529,8 @@
         // --- СВАЙП МЫШЬЮ МЕЖДУ СТРАНИЦАМИ (DRAG / SWIPE КУРСОРОМ КАК НА ТЕЛЕФОНЕ) ---
         (function initPageMouseSwipe() {
             let isDragging = false;
-            let startX = 0;
-            let startY = 0;
+            let startScreenX = 0;
+            let startScreenY = 0;
             let startScrollLeft = 0;
             let dragStartTime = 0;
             let hasMoved = false;
@@ -4540,26 +4540,12 @@
             const pagesContainer = document.getElementById('pagesContainer');
             if (!pagesContainer) return;
 
-            function onMouseDown(e) {
-                // Только левая кнопка мыши
-                if (e.button !== 0) return;
-                // Не свайпать при режиме редактирования (перемещение иконок)
+            function startDrag(screenX, screenY, fromWidget = false) {
                 if (document.body.classList.contains('edit-mode')) return;
 
-                // Игнорируем клики по иконкам, кнопкам, инпутам и открытым папкам
-                if (e.target.closest('.icon-container') ||
-                    e.target.closest('.action-btn') ||
-                    e.target.closest('button') ||
-                    e.target.closest('input') ||
-                    e.target.closest('textarea') ||
-                    e.target.closest('.folder-overlay.active') ||
-                    e.target.closest('.sidebar-overlay.active')) {
-                    return;
-                }
-
                 isDragging = true;
-                startX = e.clientX;
-                startY = e.clientY;
+                startScreenX = screenX;
+                startScreenY = screenY;
                 startScrollLeft = pagesContainer.scrollLeft;
                 dragStartTime = performance.now();
                 hasMoved = false;
@@ -4569,16 +4555,16 @@
                 window.addEventListener('mouseup', onMouseUp, { once: true });
             }
 
-            function onMouseMove(e) {
+            function moveDrag(screenX, screenY) {
                 if (!isDragging) return;
 
-                const dx = e.clientX - startX;
-                const dy = e.clientY - startY;
+                const dx = screenX - startScreenX;
+                const dy = screenY - startScreenY;
 
                 if (!hasMoved) {
                     // Если пользователь скроллит вертикально внутри библиотеки приложений
-                    const inLib = e.target.closest('.app-library-page');
-                    if (inLib && Math.abs(dy) > Math.abs(dx) * 1.3 && Math.abs(dy) > 6) {
+                    const inLib = document.querySelector('.app-library-page');
+                    if (inLib && inLib.matches(':hover') && Math.abs(dy) > Math.abs(dx) * 1.3 && Math.abs(dy) > 6) {
                         isDragging = false;
                         cleanup();
                         return;
@@ -4595,18 +4581,17 @@
                 }
 
                 if (hasMoved) {
-                    e.preventDefault();
                     pagesContainer.scrollLeft = startScrollLeft - dx;
                 }
             }
 
-            function onMouseUp(e) {
+            function endDrag(screenX, screenY) {
                 if (!isDragging) return;
                 isDragging = false;
                 cleanup();
 
                 if (hasMoved) {
-                    const dx = e.clientX - startX;
+                    const dx = screenX - startScreenX;
                     const dt = performance.now() - dragStartTime;
                     const velocity = dx / Math.max(dt, 1);
                     const pageWidth = pagesContainer.clientWidth || 1;
@@ -4646,12 +4631,51 @@
                 }
             }
 
+            function onMouseDown(e) {
+                if (e.button !== 0) return;
+                if (document.body.classList.contains('edit-mode')) return;
+
+                if (e.target.closest('.icon-container') ||
+                    e.target.closest('.action-btn') ||
+                    e.target.closest('button') ||
+                    e.target.closest('input') ||
+                    e.target.closest('textarea') ||
+                    e.target.closest('.folder-overlay.active') ||
+                    e.target.closest('.sidebar-overlay.active')) {
+                    return;
+                }
+
+                startDrag(e.screenX, e.screenY, false);
+            }
+
+            function onMouseMove(e) {
+                if (!isDragging) return;
+                if (hasMoved) e.preventDefault();
+                moveDrag(e.screenX, e.screenY);
+            }
+
+            function onMouseUp(e) {
+                endDrag(e.screenX, e.screenY);
+            }
+
             function cleanup() {
                 window.removeEventListener('mousemove', onMouseMove);
                 document.body.style.cursor = '';
                 document.body.style.userSelect = '';
                 if (widgetFrame) widgetFrame.style.pointerEvents = '';
             }
+
+            // Прием событий перетаскивания из iframe виджетов (dashboard.html и вложенных виджетов)
+            window.addEventListener('message', (e) => {
+                if (!e.data || typeof e.data.type !== 'string') return;
+                if (e.data.type === 'iphone_widget_drag_start') {
+                    startDrag(e.data.screenX, e.data.screenY, true);
+                } else if (e.data.type === 'iphone_widget_drag_move') {
+                    moveDrag(e.data.screenX, e.data.screenY);
+                } else if (e.data.type === 'iphone_widget_drag_end') {
+                    endDrag(e.data.screenX, e.data.screenY);
+                }
+            });
 
             pagesContainer.addEventListener('mousedown', onMouseDown);
             if (pagesWrapper) pagesWrapper.addEventListener('mousedown', onMouseDown);

@@ -716,6 +716,34 @@
                 } catch (err) {}
             }
         }, { passive: true });
+
+        // Свайп курсором по виджету стримов
+        (function initWidgetDrag() {
+            let startX = 0, startY = 0, isDragging = false;
+            window.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
+                if (e.target.closest('input, textarea, select, button, a, .stream-item, .header-btn, .modal-content')) return;
+                startX = e.screenX;
+                startY = e.screenY;
+                isDragging = true;
+                try {
+                    window.top.postMessage({ type: 'iphone_widget_drag_start', screenX: startX, screenY: startY }, '*');
+                } catch (err) {}
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                try {
+                    window.top.postMessage({ type: 'iphone_widget_drag_move', screenX: e.screenX, screenY: e.screenY }, '*');
+                } catch (err) {}
+            });
+            window.addEventListener('mouseup', (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                try {
+                    window.top.postMessage({ type: 'iphone_widget_drag_end', screenX: e.screenX, screenY: e.screenY }, '*');
+                } catch (err) {}
+            });
+        })();
     </script>
 </body>
 

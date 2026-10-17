@@ -115,6 +115,45 @@
                 } catch (err) {}
             }
         }, { passive: true });
+
+        // Пересылка событий свайпа от внутренних виджетов в home.html
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type && e.data.type.startsWith('iphone_widget_drag_')) {
+                try {
+                    window.parent.postMessage(e.data, '*');
+                } catch (err) {}
+            }
+        });
+
+        // Свайп курсором мыши по свободному фону дашборда
+        (function initDashboardDrag() {
+            let startX = 0, startY = 0, isDragging = false;
+
+            window.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
+                startX = e.screenX;
+                startY = e.screenY;
+                isDragging = true;
+                try {
+                    window.parent.postMessage({ type: 'iphone_widget_drag_start', screenX: startX, screenY: startY }, '*');
+                } catch (err) {}
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                try {
+                    window.parent.postMessage({ type: 'iphone_widget_drag_move', screenX: e.screenX, screenY: e.screenY }, '*');
+                } catch (err) {}
+            });
+
+            window.addEventListener('mouseup', (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                try {
+                    window.parent.postMessage({ type: 'iphone_widget_drag_end', screenX: e.screenX, screenY: e.screenY }, '*');
+                } catch (err) {}
+            });
+        })();
     </script>
 </body>
 

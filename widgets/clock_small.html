@@ -457,6 +457,40 @@
         function updateClockData(tz) {
             currentTimeZone = tz;
         }
+
+        window.addEventListener('wheel', (e) => {
+            if (e.deltaY > 5 || e.deltaX > 5) {
+                try {
+                    window.top.postMessage({ type: 'iphone_navigate_page', direction: 1 }, '*');
+                } catch (err) {}
+            }
+        }, { passive: true });
+
+        (function initWidgetDrag() {
+            let startX = 0, startY = 0, isDragging = false;
+            window.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
+                startX = e.screenX;
+                startY = e.screenY;
+                isDragging = true;
+                try {
+                    window.top.postMessage({ type: 'iphone_widget_drag_start', screenX: startX, screenY: startY }, '*');
+                } catch (err) {}
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                try {
+                    window.top.postMessage({ type: 'iphone_widget_drag_move', screenX: e.screenX, screenY: e.screenY }, '*');
+                } catch (err) {}
+            });
+            window.addEventListener('mouseup', (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                try {
+                    window.top.postMessage({ type: 'iphone_widget_drag_end', screenX: e.screenX, screenY: e.screenY }, '*');
+                } catch (err) {}
+            });
+        })();
     </script>
 </body>
 

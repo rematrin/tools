@@ -10,11 +10,13 @@
             --gap: 10px;
         }
 
-        /* --- LOCK SCROLL (NO VERTICAL SCROLL) --- */
+        /* Вертикальная прокрутка нужна внутри страницы виджетов телефона. */
         html, body {
-            overflow: hidden !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
             height: 100% !important;
             max-height: 100% !important;
+            overscroll-behavior-y: contain;
         }
 
         body {
@@ -106,10 +108,9 @@
     </div>
 
     <script>
-        // Передача событий колесика мыши родительскому окну (home.html)
-        // Любой скролл вниз или вправо возвращает обратно на экран приложений
+        // Вертикальное колесо прокручивает виджеты; горизонтальное листает страницы телефона.
         window.addEventListener('wheel', (e) => {
-            if (e.deltaY > 5 || e.deltaX > 5) {
+            if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && e.deltaX > 5) {
                 try {
                     window.parent.postMessage({ type: 'iphone_navigate_page', direction: 1 }, '*');
                 } catch (err) {}

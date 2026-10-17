@@ -97,17 +97,28 @@
                 // --- CRITICAL GRID LOADER ---
                 let savedCols = localStorage.getItem('gridColumns') || '4';
                 let savedRows = localStorage.getItem('gridRows') || '6';
-                if (window.innerWidth <= 600) {
+                if (window.innerWidth < 900) {
                     savedCols = Math.min(parseInt(savedCols), 4).toString();
                     const h = window.innerHeight;
-                    if (h < 740) {
-                        savedRows = Math.min(parseInt(savedRows), 4).toString();
+                    if (h < 620) {
+                        savedRows = Math.max(3, Math.min(parseInt(savedRows), 3)).toString();
+                    } else if (h < 740) {
+                        savedRows = Math.max(3, Math.min(parseInt(savedRows), 4)).toString();
                     } else if (h < 850) {
-                        savedRows = Math.min(parseInt(savedRows), 5).toString();
+                        savedRows = Math.max(3, Math.min(parseInt(savedRows), 5)).toString();
+                    } else {
+                        savedRows = Math.max(3, Math.min(parseInt(savedRows), 6)).toString();
                     }
                 }
                 document.documentElement.style.setProperty('--grid-cols', savedCols);
                 document.documentElement.style.setProperty('--grid-rows', savedRows);
+
+                // Базовый макет телефона всегда 395x760. На невысоком desktop-экране
+                // уменьшаем весь корпус целиком, чтобы сетка и расстояния не деформировались.
+                const desktopPhoneScale = window.innerWidth >= 900
+                    ? Math.min(1, Math.max(0.5, (window.innerHeight - 80) / 760))
+                    : 1;
+                document.documentElement.style.setProperty('--iphone-desktop-scale', desktopPhoneScale.toFixed(4));
             } catch (e) {
                 console.error('Critical loader error:', e);
             }
@@ -2891,12 +2902,17 @@
             body.iphone-mockup-enabled .iphone-device-frame {
                 display: block;
                 position: fixed;
-                right: 60px;
+                right: 68px;
                 top: 50%;
-                transform: translateY(-50%);
+                transform: translateY(-50%) scale(var(--iphone-desktop-scale, 1));
+                transform-origin: right center;
                 width: 395px;
-                height: 830px;
-                max-height: 94vh;
+                height: 760px;
+                min-width: 395px;
+                min-height: 760px;
+                max-width: 395px;
+                max-height: 760px;
+                aspect-ratio: 395 / 760;
                 background: #000;
                 border-radius: 54px;
                 padding: 11px;
@@ -2914,7 +2930,7 @@
 
             /* Когда открывается правое боковое меню — телефон плавно отъезжает влево */
             body.iphone-mockup-enabled.sidebar-open .iphone-device-frame {
-                transform: translateY(-50%) translateX(-340px);
+                transform: translateY(-50%) translateX(-340px) scale(var(--iphone-desktop-scale, 1));
             }
 
             /* Когда открывается левое меню виджетов — телефон плавно отъезжает правее / остается на месте */
@@ -3116,7 +3132,7 @@
 
             body.iphone-mockup-enabled .app-page .app-item {
                 height: auto !important;
-                max-height: 80px !important;
+                max-height: 88px !important;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -3124,8 +3140,8 @@
             }
 
             body.iphone-mockup-enabled .app-page .icon-container {
-                width: 56px !important;
-                height: 56px !important;
+                width: 62px !important;
+                height: 62px !important;
                 margin-bottom: 3px !important;
             }
 
@@ -3190,56 +3206,40 @@
 
             /* Иконка виджетов (крайняя левая иконка дашборда/виджетов в пагинации) */
             .dot.widgets-dot {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 13px;
-                height: 13px;
-                border-radius: 4px;
-                background: transparent !important;
-                opacity: 0.55;
-                transition: opacity 0.25s ease, transform 0.25s ease;
+                display: block;
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.45) !important;
+                opacity: 1;
             }
 
             .dot.widgets-dot svg {
-                width: 11px;
-                height: 11px;
-                fill: none;
-                stroke: #ffffff;
-                stroke-width: 2.2;
-                display: block;
+                display: none;
             }
 
             .dot.widgets-dot.active {
-                opacity: 1;
-                transform: scale(1.15);
+                background: #ffffff !important;
+                transform: scale(1.3) !important;
             }
 
             /* Иконка Библиотеки приложений в пагинации (крайняя справа) */
             .dot.library-dot {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 13px;
-                height: 13px;
-                border-radius: 4px;
-                background: transparent !important;
-                opacity: 0.55;
-                transition: opacity 0.25s ease, transform 0.25s ease;
+                display: block;
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.45) !important;
+                opacity: 1;
             }
 
             .dot.library-dot svg {
-                width: 12px;
-                height: 12px;
-                fill: none;
-                stroke: #ffffff;
-                stroke-width: 2.2;
-                display: block;
+                display: none;
             }
 
             .dot.library-dot.active {
-                opacity: 1;
-                transform: scale(1.15);
+                background: #ffffff !important;
+                transform: scale(1.3) !important;
             }
 
             /* В режиме телефона на ПК вкладки (категории) скрываются сверху, так как они представлены в Библиотеке приложений */
@@ -3457,8 +3457,8 @@
             }
 
             body.iphone-mockup-enabled .folder-overlay .folder-grid .icon-container {
-                width: 58px !important;
-                height: 58px !important;
+                width: 62px !important;
+                height: 62px !important;
                 border-radius: 14px !important;
             }
 
@@ -3492,7 +3492,11 @@
                 inset: 0;
                 width: 100%;
                 height: 100dvh;
+                min-width: 0;
+                min-height: 0;
+                max-width: none;
                 max-height: none;
+                aspect-ratio: auto;
                 padding: 0;
                 border-radius: 0;
                 background: #000;
@@ -3545,6 +3549,15 @@
 
             body.iphone-mockup-enabled .pages-wrapper {
                 padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
+            }
+
+            body.iphone-mockup-enabled .app-page {
+                grid-template-columns: repeat(4, 1fr) !important;
+                grid-template-rows: repeat(var(--grid-rows, 6), 96px) !important;
+                row-gap: 10px !important;
+                column-gap: 4px !important;
+                padding: 2px max(10px, calc((100% - 390px) / 2)) 0 !important;
+                align-content: start !important;
             }
 
             body.iphone-mockup-enabled .app-library-page {
@@ -3819,6 +3832,15 @@
             document.body.classList.add('iphone-mockup-enabled');
         }
 
+        function updateDesktopIphoneScale() {
+            const scale = window.innerWidth >= 900
+                ? Math.min(1, Math.max(0.5, (window.innerHeight - 80) / 760))
+                : 1;
+            document.documentElement.style.setProperty('--iphone-desktop-scale', scale.toFixed(4));
+        }
+        updateDesktopIphoneScale();
+        window.addEventListener('resize', updateDesktopIphoneScale, { passive: true });
+
         // Обновление часов в статус-баре iPhone
         function updateIphoneTime() {
             const timeEl = document.getElementById('iphoneStatusTime');
@@ -3841,20 +3863,23 @@
             let rows = parseInt(localStorage.getItem('gridRows') || '6');
             const isMockup = document.body.classList.contains('iphone-mockup-enabled');
 
-            if (isMockup) {
+            if (isMockup && window.innerWidth >= 900) {
                 cols = 4;
                 rows = 6;
-            } else if (window.innerWidth <= 600) {
+            } else if (window.innerWidth < 900) {
                 cols = Math.min(cols, 4);
-                // Динамически подбираем строки в зависимости от высоты экрана
+                // На настоящем телефоне число рядов зависит от доступной высоты.
                 const h = window.innerHeight;
-                if (h < 740) {
-                    rows = Math.min(rows, 4);
+                if (h < 620) {
+                    rows = 3;
+                } else if (h < 740) {
+                    rows = 4;
                 } else if (h < 850) {
-                    rows = Math.min(rows, 5);
+                    rows = 5;
                 } else {
-                    rows = Math.min(rows, 6);
+                    rows = 6;
                 }
+                rows = Math.max(3, Math.min(rows, parseInt(localStorage.getItem('gridRows') || '6')));
             }
             // Синхронизируем CSS переменные с реально вычисленными для корректного отображения
             document.documentElement.style.setProperty('--grid-cols', cols.toString());
@@ -4894,7 +4919,16 @@
 
         // Прием сообщений от iframe виджетов при свайпе/прокрутке вправо
         window.addEventListener('message', (e) => {
-            if (e.data && e.data.type === 'iphone_navigate_page') {
+            if (e.data && e.data.type === 'iphone_widget_scroll') {
+                const widgetFrame = document.querySelector('.iphone-widgets-frame');
+                if (widgetFrame && widgetFrame.contentWindow) {
+                    widgetFrame.contentWindow.scrollBy({
+                        top: Number(e.data.deltaY) || 0,
+                        left: 0,
+                        behavior: 'auto'
+                    });
+                }
+            } else if (e.data && e.data.type === 'iphone_navigate_page') {
                 const pageWidth = pagesContainer.clientWidth || 1;
                 const totalPages = pagesContainer.children.length;
                 const currentIndex = Math.round(pagesContainer.scrollLeft / pageWidth);
@@ -5603,14 +5637,14 @@
             }
         }, 100);
 
-        // Пересчет сетки при изменении размера экрана (для адаптивности)
+        // Пересчет сетки при изменении размера экрана (для адаптивного числа рядов на телефоне)
         let lastWidth = window.innerWidth;
         let lastHeight = window.innerHeight;
         window.addEventListener('resize', () => {
             if (
-                (lastWidth > 600 && window.innerWidth <= 600) ||
-                (lastWidth <= 600 && window.innerWidth > 600) ||
-                (window.innerWidth <= 600 && Math.abs(window.innerHeight - lastHeight) > 30)
+                (lastWidth >= 900 && window.innerWidth < 900) ||
+                (lastWidth < 900 && window.innerWidth >= 900) ||
+                (window.innerWidth < 900 && Math.abs(window.innerHeight - lastHeight) > 30)
             ) {
                 renderAppsToDOM(getAppsFromStorage());
             }

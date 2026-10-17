@@ -710,7 +710,11 @@
         renderWidget();
 
         window.addEventListener('wheel', (e) => {
-            if (e.deltaY > 5 || e.deltaX > 5) {
+            if (Math.abs(e.deltaY) >= Math.abs(e.deltaX) && Math.abs(e.deltaY) > 1) {
+                try {
+                    window.top.postMessage({ type: 'iphone_widget_scroll', deltaY: e.deltaY }, '*');
+                } catch (err) {}
+            } else if (e.deltaX > 5) {
                 try {
                     window.top.postMessage({ type: 'iphone_navigate_page', direction: 1 }, '*');
                 } catch (err) {}

@@ -486,12 +486,19 @@
                 51: "Морось", 53: "Морось", 55: "Морось",
                 61: "Дождь", 63: "Дождь", 65: "Ливень",
                 71: "Снег", 73: "Снег", 75: "Снегопад",
-                77: "Град",
                 80: "Ливень", 81: "Ливень", 82: "Ливень",
                 95: "Гроза", 96: "Гроза", 99: "Гроза"
             };
             return map[code] || "Неизвестно";
         }
+
+        window.addEventListener('wheel', (e) => {
+            if (e.deltaY > 5 || e.deltaX > 5) {
+                try {
+                    window.top.postMessage({ type: 'iphone_navigate_page', direction: 1 }, '*');
+                } catch (err) {}
+            }
+        }, { passive: true });
     </script>
 </body>
 

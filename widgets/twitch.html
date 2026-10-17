@@ -708,6 +708,14 @@
 
         checkAuth();
         renderWidget();
+
+        window.addEventListener('wheel', (e) => {
+            if (e.deltaY > 5 || e.deltaX > 5) {
+                try {
+                    window.top.postMessage({ type: 'iphone_navigate_page', direction: 1 }, '*');
+                } catch (err) {}
+            }
+        }, { passive: true });
     </script>
 </body>
 

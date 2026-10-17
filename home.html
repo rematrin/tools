@@ -65,6 +65,32 @@
                         background: rgba(20, 20, 20, ${dimOpacity}) !important;
                     }
                 `;
+
+                // Загружаем обои и эффекты для экрана телефона
+                const savedPhoneSettingsStr = localStorage.getItem('user_iphone_wallpaper_settings_v1');
+                let phoneWpUrl = localStorage.getItem('user_iphone_wallpaper_v1') || 'https://images.unsplash.com/photo-1511497584788-87676104235f?q=80&w=1200&auto=format&fit=crop';
+                let phoneBlur = 0;
+                let phoneDim = 15;
+                if (savedPhoneSettingsStr) {
+                    try {
+                        const parsedPhone = JSON.parse(savedPhoneSettingsStr);
+                        if (parsedPhone.url) phoneWpUrl = parsedPhone.url;
+                        if (parsedPhone.blur !== undefined) phoneBlur = parsedPhone.blur;
+                        if (parsedPhone.dim !== undefined) phoneDim = parsedPhone.dim;
+                    } catch (e) {}
+                }
+                const phoneBlurPx = (phoneBlur / 100) * 30;
+                const phoneScale = 1.02 + (phoneBlurPx * 0.003);
+                const phoneDimVal = phoneDim / 100;
+
+                style.innerHTML += `
+                    :root {
+                        --iphone-wallpaper: url('${phoneWpUrl}');
+                        --iphone-wallpaper-blur: ${phoneBlurPx}px;
+                        --iphone-wallpaper-scale: ${phoneScale};
+                        --iphone-wallpaper-dim: ${phoneDimVal};
+                    }
+                `;
                 document.head.appendChild(style);
 
                 // --- CRITICAL GRID LOADER ---
@@ -2579,6 +2605,571 @@
                 display: block;
             }
         }
+
+        /* --- IPHONE MOCKUP FRAME & LAYOUT --- */
+        .iphone-device-frame {
+            display: contents; /* По умолчанию без рамки на мобильных */
+        }
+
+        .iphone-wallpaper-bg {
+            display: none;
+        }
+
+        @media (min-width: 900px) {
+            body.iphone-mockup-enabled {
+                overflow: hidden;
+            }
+
+            body.iphone-mockup-enabled .desktop-fact-widget {
+                left: 60px;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+
+            /* Телефон зафиксирован в правой части экрана */
+            body.iphone-mockup-enabled .iphone-device-frame {
+                display: block;
+                position: fixed;
+                right: 60px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 395px;
+                height: 830px;
+                max-height: 94vh;
+                background: #000;
+                border-radius: 54px;
+                padding: 11px;
+                box-sizing: border-box;
+                /* Реалистичный титановый обод и глубокая тень */
+                box-shadow:
+                    0 0 0 3px #3d3d40,
+                    0 0 0 7px #1c1c1e,
+                    0 0 0 8px #09090a,
+                    0 30px 70px -15px rgba(0, 0, 0, 0.8),
+                    0 15px 35px -10px rgba(0, 0, 0, 0.6);
+                z-index: 50;
+                transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+
+            /* Когда открывается правое боковое меню — телефон плавно отъезжает влево */
+            body.iphone-mockup-enabled.sidebar-open .iphone-device-frame {
+                transform: translateY(-50%) translateX(-340px);
+            }
+
+            /* Когда открывается левое меню виджетов — телефон плавно отъезжает правее / остается на месте */
+            body.iphone-mockup-enabled.widget-sidebar-open .iphone-device-frame {
+                right: 30px;
+            }
+
+            /* Внутренний экран */
+            body.iphone-mockup-enabled .iphone-screen {
+                width: 100%;
+                max-width: 100%;
+                height: 100%;
+                border-radius: 44px;
+                overflow: hidden;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                margin: 0;
+                background-color: transparent;
+                box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+            }
+
+            /* Обои экрана телефона */
+            body.iphone-mockup-enabled .iphone-wallpaper-bg {
+                display: block;
+                position: absolute;
+                inset: 0;
+                background-image: var(--iphone-wallpaper, url('https://images.unsplash.com/photo-1511497584788-87676104235f?q=80&w=1200&auto=format&fit=crop'));
+                background-size: cover;
+                background-position: center center;
+                z-index: 0;
+                filter: blur(var(--iphone-wallpaper-blur, 0px));
+                transform: scale(var(--iphone-wallpaper-scale, 1.02));
+                transition: filter 0.2s ease, transform 0.2s ease;
+            }
+
+            body.iphone-mockup-enabled .iphone-wallpaper-dim {
+                display: block;
+                position: absolute;
+                inset: 0;
+                background: rgba(20, 20, 20, var(--iphone-wallpaper-dim, 0.15));
+                z-index: 1;
+                pointer-events: none;
+                transition: background 0.2s ease;
+            }
+
+            /* Dynamic Island - строго по центру верхнего края экрана */
+            body.iphone-mockup-enabled .iphone-dynamic-island {
+                display: block;
+                position: absolute;
+                top: 11px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 120px;
+                height: 33px;
+                background: #000000;
+                border-radius: 20px;
+                z-index: 210;
+                box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+                pointer-events: auto;
+                cursor: default;
+            }
+
+            body.iphone-mockup-enabled .iphone-dynamic-island::after {
+                content: '';
+                position: absolute;
+                right: 14px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 10px;
+                height: 10px;
+                background: radial-gradient(circle, #0e1e38 35%, #050b14 100%);
+                border-radius: 50%;
+                box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.3);
+            }
+
+            /* Статус-бар iPhone */
+            body.iphone-mockup-enabled .iphone-status-bar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 52px;
+                padding: 10px 26px 0 26px;
+                z-index: 200;
+                color: #ffffff;
+                font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", sans-serif;
+                pointer-events: none;
+                box-sizing: border-box;
+            }
+
+            body.iphone-mockup-enabled .iphone-status-time {
+                font-size: 15px;
+                font-weight: 600;
+                letter-spacing: -0.3px;
+                line-height: 1;
+                display: inline-flex;
+                align-items: center;
+            }
+
+            body.iphone-mockup-enabled .iphone-status-icons {
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                line-height: 1;
+            }
+
+            .ios-status-svg {
+                display: block;
+                flex-shrink: 0;
+            }
+
+            /* Точный iOS индикатор батареи */
+            .ios-battery-pill {
+                display: flex;
+                align-items: center;
+                gap: 1.5px;
+            }
+
+            .ios-battery-body {
+                width: 23px;
+                height: 11.5px;
+                border: 1.5px solid rgba(255, 255, 255, 0.9);
+                border-radius: 3.5px;
+                padding: 1px;
+                box-sizing: border-box;
+                display: flex;
+                align-items: center;
+            }
+
+            .ios-battery-fill {
+                width: 75%;
+                height: 100%;
+                background: #ffffff;
+                border-radius: 1.5px;
+            }
+
+            .ios-battery-cap {
+                width: 1.5px;
+                height: 4.5px;
+                background: rgba(255, 255, 255, 0.9);
+                border-radius: 0 1px 1px 0;
+            }
+
+            body.iphone-mockup-enabled header {
+                position: relative;
+                z-index: 2;
+                padding-top: 52px;
+                padding-bottom: 0;
+            }
+
+            /* Категории внутри телефона */
+            body.iphone-mockup-enabled .category-bar-wrapper {
+                position: relative;
+                top: 0;
+                left: 0;
+                transform: none;
+                width: 100%;
+                max-width: 100%;
+                margin: 6px auto 10px auto;
+                padding: 0 10px;
+                box-sizing: border-box;
+            }
+
+            body.iphone-mockup-enabled .pages-wrapper {
+                position: relative;
+                z-index: 2;
+                padding-top: 0;
+                padding-bottom: 22px;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                box-sizing: border-box;
+            }
+
+            /* В режиме телефона на ПК: максимум 4 в ряд, всегда 6 рядов (вместимость 24 иконки) */
+            body.iphone-mockup-enabled .app-page {
+                grid-template-columns: repeat(min(var(--grid-cols, 4), 4), 1fr) !important;
+                row-gap: 8px !important;
+                padding: 0 10px 4px 10px !important;
+                align-content: start;
+            }
+
+            body.iphone-mockup-enabled .app-page .app-item {
+                height: 82px !important;
+            }
+
+            body.iphone-mockup-enabled .app-page .icon-container {
+                width: 58px !important;
+                height: 58px !important;
+                margin-bottom: 4px !important;
+            }
+
+            body.iphone-mockup-enabled .pagination-dots {
+                margin-top: 6px !important;
+                margin-bottom: 8px !important;
+            }
+
+            /* Самая левая страница: Виджеты внутри экрана iPhone */
+            .iphone-widgets-page {
+                flex: 0 0 100%;
+                width: 100%;
+                height: 100%;
+                scroll-snap-align: center;
+                display: flex;
+                flex-direction: column;
+                box-sizing: border-box;
+                padding: 0 4px 6px 4px;
+                margin-top: 0;
+                overflow: hidden;
+                position: relative;
+            }
+
+            .iphone-widgets-page .iphone-widgets-frame {
+                width: 100%;
+                height: 100%;
+                border: none;
+                background: transparent;
+                border-radius: 26px;
+            }
+
+            /* Иконка виджетов (крайняя левая иконка дашборда/виджетов в пагинации) */
+            .dot.widgets-dot {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 13px;
+                height: 13px;
+                border-radius: 4px;
+                background: transparent !important;
+                opacity: 0.55;
+                transition: opacity 0.25s ease, transform 0.25s ease;
+            }
+
+            .dot.widgets-dot svg {
+                width: 11px;
+                height: 11px;
+                fill: none;
+                stroke: #ffffff;
+                stroke-width: 2.2;
+                display: block;
+            }
+
+            .dot.widgets-dot.active {
+                opacity: 1;
+                transform: scale(1.15);
+            }
+
+            /* Иконка Библиотеки приложений в пагинации (крайняя справа) */
+            .dot.library-dot {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 13px;
+                height: 13px;
+                border-radius: 4px;
+                background: transparent !important;
+                opacity: 0.55;
+                transition: opacity 0.25s ease, transform 0.25s ease;
+            }
+
+            .dot.library-dot svg {
+                width: 12px;
+                height: 12px;
+                fill: none;
+                stroke: #ffffff;
+                stroke-width: 2.2;
+                display: block;
+            }
+
+            .dot.library-dot.active {
+                opacity: 1;
+                transform: scale(1.15);
+            }
+
+            /* В режиме телефона на ПК вкладки (категории) скрываются сверху, так как они представлены в Библиотеке приложений */
+            body.iphone-mockup-enabled .category-bar-wrapper {
+                display: none !important;
+            }
+
+            /* В режиме макета на ПК внешняя кнопка виджетов скрывается, так как они внутри телефона */
+            body.iphone-mockup-enabled #widgetBtn {
+                display: none !important;
+            }
+
+            /* --- СТИЛИ БИБЛИОТЕКИ ПРИЛОЖЕНИЙ (APP LIBRARY КАК НА iOS) --- */
+            .app-library-page {
+                flex: 0 0 100%;
+                width: 100%;
+                height: 100%;
+                scroll-snap-align: center;
+                display: flex;
+                flex-direction: column;
+                box-sizing: border-box;
+                padding: 14px 14px 40px 14px;
+                overflow-y: auto;
+                overflow-x: hidden;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+
+            .app-library-page::-webkit-scrollbar {
+                display: none;
+            }
+
+            /* Сетка капсул категорий библиотеки (2 колонки) */
+            .app-library-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px 14px;
+                width: 100%;
+                box-sizing: border-box;
+                align-content: start;
+            }
+
+            /* Отдельный блок категории в библиотеке */
+            .app-library-category-block {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 6px;
+            }
+
+            /* Карточка 2x2 с блюром и скруглением 24px */
+            .app-library-pod {
+                width: 100%;
+                aspect-ratio: 1 / 1;
+                background: rgba(255, 255, 255, 0.14);
+                backdrop-filter: blur(28px) saturate(160%);
+                -webkit-backdrop-filter: blur(28px) saturate(160%);
+                border: 0.5px solid rgba(255, 255, 255, 0.2);
+                border-radius: 26px;
+                padding: 10px;
+                box-sizing: border-box;
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: repeat(2, 1fr);
+                gap: 10px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            }
+
+            /* Большая иконка приложения в библиотеке */
+            .app-library-app-slot {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+                cursor: pointer;
+                text-decoration: none;
+                transition: transform 0.15s ease;
+                border-radius: 14px;
+            }
+
+            .app-library-app-slot:active {
+                transform: scale(0.92);
+            }
+
+            .app-library-app-slot img {
+                width: 100%;
+                height: 100%;
+                max-width: 58px;
+                max-height: 58px;
+                border-radius: 14px;
+                object-fit: cover;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+                display: block;
+            }
+
+            /* Четвертый слот: микро-сетка из 4 маленьких иконок */
+            .app-library-mini-pod {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: repeat(2, 1fr);
+                gap: 4px;
+                width: 100%;
+                height: 100%;
+                max-width: 58px;
+                max-height: 58px;
+                padding: 3px;
+                box-sizing: border-box;
+                background: rgba(255, 255, 255, 0.08);
+                border-radius: 14px;
+                cursor: pointer;
+                transition: transform 0.15s ease, background 0.15s ease;
+                justify-self: center;
+                align-self: center;
+            }
+
+            .app-library-mini-pod:hover {
+                background: rgba(255, 255, 255, 0.18);
+            }
+
+            .app-library-mini-pod:active {
+                transform: scale(0.92);
+            }
+
+            .app-library-mini-icon {
+                width: 100%;
+                height: 100%;
+                border-radius: 6px;
+                object-fit: cover;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+                display: block;
+            }
+
+            /* Название категории под блоком */
+            .app-library-category-title {
+                font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+                font-size: 12px;
+                font-weight: 500;
+                color: #ffffff;
+                text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+                text-align: center;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+                cursor: pointer;
+            }
+
+            /* Адаптация открытой вкладки/папки внутри телефона на ПК: точно как на iOS (4 в ряд) */
+            body.iphone-mockup-enabled .folder-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                width: 100%;
+                height: 100%;
+                border-radius: 44px;
+                overflow: hidden;
+                padding-top: 56px;
+                z-index: 500;
+                box-sizing: border-box;
+            }
+
+            body.iphone-mockup-enabled .folder-overlay .folder-content {
+                width: 100%;
+                max-width: 100%;
+                padding: 0 10px;
+                box-sizing: border-box;
+                align-items: flex-start;
+            }
+
+            body.iphone-mockup-enabled .folder-overlay .folder-title-wrapper {
+                width: 100%;
+                padding: 0 12px;
+                margin-bottom: 24px;
+                box-sizing: border-box;
+            }
+
+            body.iphone-mockup-enabled .folder-overlay .folder-title {
+                font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+                font-size: 32px;
+                font-weight: 700;
+                letter-spacing: -0.5px;
+                color: #ffffff;
+                text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+                padding: 0;
+                margin: 0;
+            }
+
+            body.iphone-mockup-enabled .folder-overlay .title-convert-btn,
+            body.iphone-mockup-enabled .folder-overlay .title-save-btn {
+                display: none !important;
+            }
+
+            body.iphone-mockup-enabled .folder-overlay .folder-grid {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+                row-gap: 14px !important;
+                column-gap: 6px !important;
+                width: 100% !important;
+                padding: 0 4px 60px 4px !important;
+                box-sizing: border-box !important;
+                max-height: calc(100% - 90px) !important;
+                overflow-y: auto !important;
+                scrollbar-width: none !important;
+            }
+
+            body.iphone-mockup-enabled .folder-overlay .folder-grid::-webkit-scrollbar {
+                display: none !important;
+            }
+
+            body.iphone-mockup-enabled .folder-overlay .folder-grid .app-item {
+                height: 84px !important;
+            }
+
+            body.iphone-mockup-enabled .folder-overlay .folder-grid .icon-container {
+                width: 58px !important;
+                height: 58px !important;
+                border-radius: 14px !important;
+            }
+
+            body.iphone-mockup-enabled .folder-overlay .folder-grid .icon-container img {
+                border-radius: 14px !important;
+            }
+
+            body.iphone-mockup-enabled .folder-overlay .folder-grid .app-name {
+                font-size: 11px !important;
+                max-width: 68px !important;
+                color: #ffffff !important;
+                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+            }
+        }
+
+        /* По умолчанию на экранах без активного макета статус-бар скрыт */
+        .iphone-status-bar,
+        .iphone-dynamic-island {
+            display: none;
+        }
     </style>
 </head>
 
@@ -2613,86 +3204,115 @@
         </div>
     </div>
 
-    <div class="iphone-screen">
-        <header id="header">
-        </header>
-        <div class="menu-btn widget-btn" id="widgetBtn">
-            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none"
-                stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-            </svg>
-        </div>
-        <div class="menu-btn" id="menuBtn">
-            <span></span><span></span><span></span>
-        </div>
-
-        <div class="pages-wrapper">
-            <div id="categoryBarWrapper" class="category-bar-wrapper">
-                <button id="catScrollBtnLeft" class="cat-scroll-btn left" title="Прокрутить влево">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-                </button>
-                <div id="categoryBar" class="category-bar" style="display: none;"></div>
-                <button id="catScrollBtnRight" class="cat-scroll-btn right" title="Прокрутить вправо">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-                </button>
-            </div>
-            <div id="pagesContainer" class="pages-container"></div>
-            <div id="paginationDots" class="pagination-dots"></div>
-        </div>
-        <div id="pageNavLeft" class="page-nav-zone left">
-            <svg viewBox="0 0 24 24">
-                <path d="M15 18l-6-6 6-6" />
-            </svg>
-        </div>
-        <div id="pageNavRight" class="page-nav-zone right">
-            <svg viewBox="0 0 24 24">
-                <path d="M9 18l6-6-6-6" />
-            </svg>
-        </div>
-        <div class="app-grid" id="appGrid" style="display: none;"></div>
+    <div class="menu-btn widget-btn" id="widgetBtn">
+        <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+    </div>
+    <div class="menu-btn" id="menuBtn">
+        <span></span><span></span><span></span>
     </div>
 
-    <div id="iosModalOverlay" class="ios-modal-overlay">
-        <div class="ios-modal">
-            <div class="fake-blur-bg"></div>
-            <div class="real-backdrop-layer"></div>
-            <div class="glass-tint"></div>
-            <div class="ios-modal-content">
-                <div class="ios-modal-text">
-                    <h3 id="iosModalTitle">Удалить приложение?</h3>
-                    <p id="iosModalDesc">Приложение будет удалено с главного экрана.</p>
-                </div>
-                <div class="ios-modal-actions">
-                    <button id="iosModalUngroup" class="ios-btn ungroup">Разгрупировать папку</button>
-                    <button id="iosModalConfirm" class="ios-btn delete">Удалить папку</button>
-                    <button id="iosModalCancel" class="ios-btn cancel">Отменить</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="folderOverlay" class="folder-overlay">
-        <div class="fake-blur-bg"></div>
-        <div class="real-backdrop-layer"></div>
-        <div class="glass-tint"></div>
-        <div class="folder-content">
-            <div id="removeFromFolderZone" class="remove-from-folder-zone">
-                <span>Вынести из папки</span>
-            </div>
-            <div class="folder-title-wrapper">
-                <h1 id="folderTitle" class="folder-title">Папка</h1>
-                <div id="titleConvertBtn" class="title-convert-btn" title="Конвертировать папку во вкладку">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                        <path d="M13 11l4 4m0 0l-4 4m4-4H9"></path>
+    <div class="iphone-device-frame" id="iphoneDeviceFrame">
+        <div class="iphone-screen">
+            <div class="iphone-wallpaper-bg"></div>
+            <div class="iphone-wallpaper-dim"></div>
+            <div class="iphone-dynamic-island"></div>
+            <div class="iphone-status-bar">
+                <span class="iphone-status-time" id="iphoneStatusTime">9:41</span>
+                <div class="iphone-status-icons">
+                    <!-- Cellular Signal -->
+                    <svg class="ios-status-svg ios-signal" width="18" height="12" viewBox="0 0 18 12" fill="currentColor">
+                        <rect x="0" y="8.5" width="3" height="3.5" rx="1"/>
+                        <rect x="4.8" y="6" width="3" height="6" rx="1"/>
+                        <rect x="9.6" y="3.2" width="3" height="8.8" rx="1"/>
+                        <rect x="14.4" y="0.5" width="3" height="11.5" rx="1"/>
                     </svg>
+                    <!-- Wi-Fi -->
+                    <svg class="ios-status-svg ios-wifi" width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M8 2.2C10.7 2.2 13.1 3.2 15 4.9C15.4 5.3 15.4 5.9 15 6.3C14.6 6.7 14 6.7 13.6 6.3C12.1 4.9 10.1 4 8 4C5.9 4 3.9 4.9 2.4 6.3C2 6.7 1.4 6.7 1 6.3C0.6 5.9 0.6 5.3 1 4.9C2.9 3.2 5.3 2.2 8 2.2ZM8 6C9.6 6 11.1 6.6 12.2 7.7C12.6 8.1 12.6 8.7 12.2 9.1C11.8 9.5 11.2 9.5 10.8 9.1C10.1 8.4 9.1 8 8 8C6.9 8 5.9 8.4 5.2 9.1C4.8 9.5 4.2 9.5 3.8 9.1C3.4 8.7 3.4 8.1 3.8 7.7C4.9 6.6 6.4 6 8 6ZM8 10C8.8 10 9.5 10.7 9.5 11.5C9.5 12.3 8.8 13 8 13C7.2 13 6.5 12.3 6.5 11.5C6.5 10.7 7.2 10 8 10Z"/>
+                    </svg>
+                    <!-- Battery -->
+                    <div class="ios-battery-pill">
+                        <div class="ios-battery-body">
+                            <div class="ios-battery-fill"></div>
+                        </div>
+                        <div class="ios-battery-cap"></div>
+                    </div>
                 </div>
-                <div id="titleSaveBtn" class="title-save-btn" title="Сохранить название"></div>
             </div>
-            <div id="folderGrid" class="folder-grid app-grid">
+            <header id="header">
+            </header>
+
+            <div class="pages-wrapper">
+                <div id="categoryBarWrapper" class="category-bar-wrapper">
+                    <button id="catScrollBtnLeft" class="cat-scroll-btn left" title="Прокрутить влево">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <div id="categoryBar" class="category-bar" style="display: none;"></div>
+                    <button id="catScrollBtnRight" class="cat-scroll-btn right" title="Прокрутить вправо">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                </div>
+                <div id="pagesContainer" class="pages-container"></div>
+                <div id="paginationDots" class="pagination-dots"></div>
+            </div>
+            <div id="pageNavLeft" class="page-nav-zone left">
+                <svg viewBox="0 0 24 24">
+                    <path d="M15 18l-6-6 6-6" />
+                </svg>
+            </div>
+            <div id="pageNavRight" class="page-nav-zone right">
+                <svg viewBox="0 0 24 24">
+                    <path d="M9 18l6-6-6-6" />
+                </svg>
+            </div>
+            <div class="app-grid" id="appGrid" style="display: none;"></div>
+
+            <div id="iosModalOverlay" class="ios-modal-overlay">
+                <div class="ios-modal">
+                    <div class="fake-blur-bg"></div>
+                    <div class="real-backdrop-layer"></div>
+                    <div class="glass-tint"></div>
+                    <div class="ios-modal-content">
+                        <div class="ios-modal-text">
+                            <h3 id="iosModalTitle">Удалить приложение?</h3>
+                            <p id="iosModalDesc">Приложение будет удалено с главного экрана.</p>
+                        </div>
+                        <div class="ios-modal-actions">
+                            <button id="iosModalUngroup" class="ios-btn ungroup">Разгрупировать папку</button>
+                            <button id="iosModalConfirm" class="ios-btn delete">Удалить папку</button>
+                            <button id="iosModalCancel" class="ios-btn cancel">Отменить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="folderOverlay" class="folder-overlay">
+                <div class="fake-blur-bg"></div>
+                <div class="real-backdrop-layer"></div>
+                <div class="glass-tint"></div>
+                <div class="folder-content">
+                    <div id="removeFromFolderZone" class="remove-from-folder-zone">
+                        <span>Вынести из папки</span>
+                    </div>
+                    <div class="folder-title-wrapper">
+                        <h1 id="folderTitle" class="folder-title">Папка</h1>
+                        <div id="titleConvertBtn" class="title-convert-btn" title="Конвертировать папку во вкладку">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                <path d="M13 11l4 4m0 0l-4 4m4-4H9"></path>
+                            </svg>
+                        </div>
+                        <div id="titleSaveBtn" class="title-save-btn" title="Сохранить название"></div>
+                    </div>
+                    <div id="folderGrid" class="folder-grid app-grid">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2764,6 +3384,25 @@
             document.body.classList.add('show-facts-widget-enabled');
         }
 
+        // Режим макета iPhone (по умолчанию включен на десктопе, если не отключен явно)
+        const savedIphoneMockup = localStorage.getItem('iphoneMockupMode');
+        const isMockupActive = savedIphoneMockup === null ? true : savedIphoneMockup === 'true';
+        if (isMockupActive) {
+            document.body.classList.add('iphone-mockup-enabled');
+        }
+
+        // Обновление часов в статус-баре iPhone
+        function updateIphoneTime() {
+            const timeEl = document.getElementById('iphoneStatusTime');
+            if (!timeEl) return;
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            timeEl.textContent = `${hours}:${minutes}`;
+        }
+        updateIphoneTime();
+        setInterval(updateIphoneTime, 1000);
+
         const savedCols = localStorage.getItem('gridColumns') || '4';
         const savedRows = localStorage.getItem('gridRows') || '6';
         document.documentElement.style.setProperty('--grid-cols', savedCols);
@@ -2772,14 +3411,21 @@
         function getAppsPerPage() {
             let cols = parseInt(localStorage.getItem('gridColumns') || '4');
             let rows = parseInt(localStorage.getItem('gridRows') || '6');
-            if (window.innerWidth <= 600) {
+            const isMockup = document.body.classList.contains('iphone-mockup-enabled');
+
+            if (isMockup) {
+                cols = 4;
+                rows = 6;
+            } else if (window.innerWidth <= 600) {
                 cols = Math.min(cols, 4);
-                // Динамически подбираем строки в зависимости от высоты экрана телефона
+                // Динамически подбираем строки в зависимости от высоты экрана
                 const h = window.innerHeight;
                 if (h < 740) {
                     rows = Math.min(rows, 4);
                 } else if (h < 850) {
                     rows = Math.min(rows, 5);
+                } else {
+                    rows = Math.min(rows, 6);
                 }
             }
             // Синхронизируем CSS переменные с реально вычисленными для корректного отображения
@@ -3134,6 +3780,45 @@
 
             const numPages = Math.ceil(appsToRender.length / APPS_PER_PAGE) || 1;
 
+            const isMockup = document.body.classList.contains('iphone-mockup-enabled');
+            let totalPageCount = numPages;
+            let pageOffset = 0;
+
+            // В режиме iPhone макета самая первая (левая) страница — это экран виджетов (как на iOS)
+            if (isMockup) {
+                totalPageCount += 1;
+                pageOffset = 1;
+
+                const widgetPageDiv = document.createElement('div');
+                widgetPageDiv.className = 'iphone-widgets-page';
+                widgetPageDiv.dataset.pageType = 'widgets';
+                widgetPageDiv.innerHTML = `
+                    <iframe class="iphone-widgets-frame" src="dashboard.html" allowtransparency="true"></iframe>
+                `;
+                pagesContainer.appendChild(widgetPageDiv);
+
+                // Добавляем крайнюю левую иконку виджетов
+                const widgetDot = document.createElement('div');
+                widgetDot.className = 'dot widgets-dot';
+                widgetDot.title = 'Виджеты';
+                widgetDot.style.cursor = 'pointer';
+                widgetDot.innerHTML = `
+                    <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7.5" height="7.5" rx="2"></rect>
+                        <rect x="13.5" y="3" width="7.5" height="7.5" rx="2"></rect>
+                        <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"></rect>
+                        <rect x="3" y="13.5" width="7.5" height="7.5" rx="2"></rect>
+                    </svg>
+                `;
+                widgetDot.onclick = () => {
+                    pagesContainer.scrollTo({
+                        left: 0,
+                        behavior: 'smooth'
+                    });
+                };
+                dotsContainer.appendChild(widgetDot);
+            }
+
             for (let i = 0; i < numPages; i++) {
                 const pageDiv = document.createElement('div');
                 pageDiv.className = 'app-page';
@@ -3210,18 +3895,179 @@
                 });
 
                 // Add dot
-                if (numPages > 1) {
+                if (totalPageCount > 1) {
+                    const dotIndex = i + pageOffset;
                     const dot = document.createElement('div');
-                    dot.className = 'dot' + (i === 0 ? ' active' : '');
+                    dot.className = 'dot' + (dotIndex === (isMockup ? 1 : 0) ? ' active' : '');
                     dot.style.cursor = 'pointer';
                     dot.onclick = () => {
                         pagesContainer.scrollTo({
-                            left: i * pagesContainer.clientWidth,
+                            left: dotIndex * pagesContainer.clientWidth,
                             behavior: 'smooth'
                         });
                     };
                     dotsContainer.appendChild(dot);
                 }
+            }
+
+            // В режиме iPhone макета самая правая страница — Библиотека приложений (App Library)
+            if (isMockup) {
+                totalPageCount += 1;
+                const libPageIndex = totalPageCount - 1;
+
+                const libPageDiv = document.createElement('div');
+                libPageDiv.className = 'app-library-page';
+                libPageDiv.dataset.pageType = 'app-library';
+
+                // Сетка категорий (Pods 2x2)
+                const libGrid = document.createElement('div');
+                libGrid.className = 'app-library-grid';
+                libGrid.id = 'appLibraryGrid';
+                libPageDiv.appendChild(libGrid);
+
+                // Собираем все уникальные категории, которые реально есть у приложений, плюс вкладки пользователя
+                const dynamicCategories = new Set();
+                (window.userCategories || []).forEach(c => {
+                    if (c && c !== 'Главная') dynamicCategories.add(c);
+                });
+
+                appsArray.forEach(app => {
+                    if (app.type === 'folder') {
+                        (app.items || []).forEach(subItem => {
+                            const cats = Array.isArray(subItem.category) ? subItem.category : (subItem.category ? [subItem.category] : []);
+                            cats.forEach(c => { if (c && c !== 'Главная') dynamicCategories.add(c); });
+                        });
+                    } else {
+                        const cats = Array.isArray(app.category) ? app.category : (app.category ? [app.category] : []);
+                        cats.forEach(c => { if (c && c !== 'Главная') dynamicCategories.add(c); });
+                    }
+                });
+
+                // Базовые категории, если список пуст
+                let categoriesToList = Array.from(dynamicCategories);
+                if (categoriesToList.length === 0) {
+                    categoriesToList = ['Утилиты', 'Развлечения', 'Соцсети', 'Продуктивность', 'Покупки', 'Другое'];
+                }
+
+                // Отрисовка карточек категорий (Pods)
+                categoriesToList.forEach(catName => {
+                    // Собираем все приложения из этой категории
+                    const catApps = [];
+                    appsArray.forEach(app => {
+                        if (app.type === 'folder') {
+                            (app.items || []).forEach(subItem => {
+                                const matchCat = Array.isArray(subItem.category) ? subItem.category.includes(catName) : subItem.category === catName;
+                                if (matchCat) catApps.push(subItem);
+                            });
+                        } else {
+                            const matchCat = Array.isArray(app.category) ? app.category.includes(catName) : app.category === catName;
+                            if (matchCat) catApps.push(app);
+                        }
+                    });
+
+                    // Создаем карточку категории
+                    const block = document.createElement('div');
+                    block.className = 'app-library-category-block';
+
+                    const pod = document.createElement('div');
+                    pod.className = 'app-library-pod';
+
+                    const openInNewTab = localStorage.getItem('openInNewTab') === 'true';
+                    const targetAttr = openInNewTab ? 'target="_blank" rel="noopener noreferrer"' : '';
+
+                    // 3 больших приложения (слоты 0, 1, 2)
+                    const bigApps = catApps.slice(0, 3);
+                    bigApps.forEach(item => {
+                        const slot = document.createElement('a');
+                        slot.className = 'app-library-app-slot';
+                        slot.href = item.url || '#';
+                        if (targetAttr) slot.setAttribute('target', '_blank');
+                        slot.title = item.name;
+                        slot.innerHTML = `<img src="${item.icon}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/62?text=?'">`;
+                        pod.appendChild(slot);
+                    });
+
+                    // Если больших меньше 3, заполняем аккуратными пустыми слотами
+                    for (let k = bigApps.length; k < 3; k++) {
+                        const emptySlot = document.createElement('div');
+                        emptySlot.className = 'app-library-app-slot';
+                        emptySlot.style.opacity = '0.15';
+                        emptySlot.innerHTML = `<div style="width: 58px; height: 58px; background: rgba(255,255,255,0.1); border-radius: 14px;"></div>`;
+                        pod.appendChild(emptySlot);
+                    }
+
+                    // 4-й слот: микро-сетка из 4 маленьких иконок (оставшиеся приложения)
+                    const remainingApps = catApps.slice(3);
+                    const miniPod = document.createElement('div');
+                    miniPod.className = 'app-library-mini-pod';
+                    miniPod.title = `Открыть «${catName}»`;
+
+                    const miniItems = remainingApps.slice(0, 4);
+                    miniItems.forEach(item => {
+                        const miniImg = document.createElement('img');
+                        miniImg.className = 'app-library-mini-icon';
+                        miniImg.src = item.icon;
+                        miniImg.alt = item.name;
+                        miniImg.onerror = () => { miniImg.style.opacity = '0'; };
+                        miniPod.appendChild(miniImg);
+                    });
+
+                    // Заполняем пустыми если меньше 4
+                    for (let m = miniItems.length; m < 4; m++) {
+                        const placeholder = document.createElement('div');
+                        placeholder.style.cssText = 'width: 100%; height: 100%; border-radius: 6px; background: rgba(255,255,255,0.06);';
+                        miniPod.appendChild(placeholder);
+                    }
+
+                    // Клик по микро-сетке или по названию категории открывает полноэкранный вид папки (4 в ряд)
+                    const openCategoryFolder = () => {
+                        if (folderManager) {
+                            const virtualFolder = {
+                                type: 'folder',
+                                name: catName,
+                                items: catApps,
+                                _isVirtualCategory: true
+                            };
+                            folderManager.open(virtualFolder, virtualFolder);
+                        }
+                    };
+
+                    miniPod.onclick = openCategoryFolder;
+                    pod.appendChild(miniPod);
+
+                    // Название категории
+                    const titleEl = document.createElement('div');
+                    titleEl.className = 'app-library-category-title';
+                    titleEl.innerText = catName;
+                    titleEl.onclick = openCategoryFolder;
+
+                    block.appendChild(pod);
+                    block.appendChild(titleEl);
+                    libGrid.appendChild(block);
+                });
+
+                pagesContainer.appendChild(libPageDiv);
+
+                // Добавляем крайнюю правую иконку пагинации библиотеки приложений
+                const libDot = document.createElement('div');
+                libDot.className = 'dot library-dot';
+                libDot.title = 'Библиотека приложений';
+                libDot.style.cursor = 'pointer';
+                libDot.innerHTML = `
+                    <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="2"></rect>
+                        <rect x="14" y="3" width="7" height="7" rx="2"></rect>
+                        <rect x="14" y="14" width="7" height="7" rx="2"></rect>
+                        <rect x="3" y="14" width="7" height="7" rx="2"></rect>
+                    </svg>
+                `;
+                libDot.onclick = () => {
+                    pagesContainer.scrollTo({
+                        left: libPageIndex * pagesContainer.clientWidth,
+                        behavior: 'smooth'
+                    });
+                };
+                dotsContainer.appendChild(libDot);
             }
 
             initAppItems();
@@ -3522,6 +4368,14 @@
         } else { renderAppsToDOM(DEFAULT_APPS); }
         if (window.renderCategoryBar) window.renderCategoryBar();
 
+        // Если включен режим макета, стартуем с 1-й страницы (главный экран приложений, а виджеты слева)
+        if (document.body.classList.contains('iphone-mockup-enabled')) {
+            requestAnimationFrame(() => {
+                const pc = document.getElementById('pagesContainer');
+                if (pc) pc.scrollLeft = pc.clientWidth;
+            });
+        }
+
         // --- UI & EVENTS ---
         window.addEventListener('scroll', () => {
             const header = document.getElementById('header');
@@ -3540,34 +4394,89 @@
 
         const pagesContainer = document.getElementById('pagesContainer');
         pagesContainer.addEventListener('scroll', () => {
-            const pageWidth = pagesContainer.clientWidth;
+            const pageWidth = pagesContainer.clientWidth || 1;
             const index = Math.round(pagesContainer.scrollLeft / pageWidth);
             const dots = document.querySelectorAll('.dot');
             dots.forEach((dot, i) => {
                 dot.classList.toggle('active', i === index);
             });
+
+            const isMockup = document.body.classList.contains('iphone-mockup-enabled');
+            if (isMockup) {
+                if (index === 0) {
+                    document.body.classList.add('on-widgets-page');
+                } else {
+                    document.body.classList.remove('on-widgets-page');
+                }
+            }
         });
 
         // Поддержка прокрутки колесиком мыши (горизонтально)
         let wheelTimeout;
         pagesContainer.addEventListener('wheel', (e) => {
-            if (e.deltaY !== 0) {
+            const isMockup = document.body.classList.contains('iphone-mockup-enabled');
+            const pageWidth = pagesContainer.clientWidth || 1;
+            const currentIndex = Math.round(pagesContainer.scrollLeft / pageWidth);
+            const totalPages = pagesContainer.children.length;
+
+            // Если находимся на странице виджетов
+            if (isMockup && currentIndex === 0) {
+                // Любой скролл вправо или вниз возвращает на экран приложений
+                if (e.deltaX > 8 || e.deltaY > 8) {
+                    pagesContainer.scrollTo({
+                        left: 1 * pageWidth,
+                        behavior: 'smooth'
+                    });
+                }
+                return;
+            }
+
+            // Если находимся на последней странице (Библиотека приложений)
+            const isLibPage = isMockup && currentIndex === totalPages - 1;
+            if (isLibPage) {
+                // Если горизонтальный свайп влево (вернуться на главный экран)
+                if (e.deltaX < -15 || (e.shiftKey && e.deltaY < -15)) {
+                    pagesContainer.scrollTo({
+                        left: (totalPages - 2) * pageWidth,
+                        behavior: 'smooth'
+                    });
+                    e.preventDefault();
+                }
+                // Иначе позволяем прокручивать библиотеку приложений вертикально
+                return;
+            }
+
+            const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+            if (Math.abs(delta) > 5) {
                 e.preventDefault();
 
                 // Накапливаем прокрутку для переключения страниц
-                const direction = e.deltaY > 0 ? 1 : -1;
-                const pageWidth = pagesContainer.clientWidth;
-                const currentIndex = Math.round(pagesContainer.scrollLeft / pageWidth);
+                const direction = delta > 0 ? 1 : -1;
+                const nextIndex = Math.max(0, Math.min(currentIndex + direction, totalPages - 1));
 
                 clearTimeout(wheelTimeout);
                 wheelTimeout = setTimeout(() => {
                     pagesContainer.scrollTo({
-                        left: (currentIndex + direction) * pageWidth,
+                        left: nextIndex * pageWidth,
                         behavior: 'smooth'
                     });
                 }, 50);
             }
         }, { passive: false });
+
+        // Прием сообщений от iframe виджетов при свайпе/прокрутке вправо
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'iphone_navigate_page') {
+                const pageWidth = pagesContainer.clientWidth || 1;
+                const totalPages = pagesContainer.children.length;
+                const currentIndex = Math.round(pagesContainer.scrollLeft / pageWidth);
+                const nextIndex = Math.max(0, Math.min(currentIndex + (e.data.direction || 1), totalPages - 1));
+                pagesContainer.scrollTo({
+                    left: nextIndex * pageWidth,
+                    behavior: 'smooth'
+                });
+            }
+        });
 
         // Мы не используем один animationController для всего, 
         // так как структура стала сложнее. Можно добавить на каждую страницу в renderAppsToDOM.
@@ -3628,10 +4537,12 @@
                         const pagesContainer = document.getElementById('pagesContainer');
                         const pageWidth = pagesContainer.clientWidth;
                         const currentIndex = Math.round(pagesContainer.scrollLeft / pageWidth);
-                        const numPages = document.querySelectorAll('.app-page').length;
+                        const isMockup = document.body.classList.contains('iphone-mockup-enabled');
+                        const totalPages = pagesContainer.children.length;
+                        const minIndex = isMockup ? 1 : 0; // Не скроллить при перетаскивании иконки на страницу виджетов
                         const nextIndex = currentIndex + direction;
 
-                        if (nextIndex >= 0 && nextIndex < numPages) {
+                        if (nextIndex >= minIndex && nextIndex < totalPages) {
                             pagesContainer.scrollTo({
                                 left: nextIndex * pageWidth,
                                 behavior: 'smooth'
@@ -3897,6 +4808,7 @@
         function openWidgetMenu() {
             widgetSidebar.classList.add('active');
             widgetSidebarOverlay.classList.add('active');
+            document.body.classList.add('widget-sidebar-open');
             document.body.style.overflow = 'hidden';
         }
 
@@ -3915,6 +4827,7 @@
         window.closeWidgetMenu = function () {
             widgetSidebar.classList.remove('active');
             widgetSidebarOverlay.classList.remove('active');
+            document.body.classList.remove('widget-sidebar-open');
             document.body.style.overflow = '';
         }
 

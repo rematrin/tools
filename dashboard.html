@@ -10,23 +10,23 @@
             --gap: 10px;
         }
 
-        /* --- BEAUTIFUL SCROLLBAR (LEFT SIDE) --- */
-        html {
-            direction: rtl;
-            /* Move scrollbar to the left */
+        /* --- LOCK SCROLL (NO VERTICAL SCROLL) --- */
+        html, body {
+            overflow: hidden !important;
+            height: 100% !important;
+            max-height: 100% !important;
         }
 
         body {
             background-color: transparent;
             margin: 0;
-            padding: 40px 20px;
+            padding: 8px 10px 0 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             direction: ltr;
-            /* Reset content direction */
-            overflow-x: hidden;
+            box-sizing: border-box;
         }
 
         /* --- HIDE SCROLLBAR --- */
@@ -42,7 +42,7 @@
         .dashboard-container {
             display: flex;
             flex-direction: column;
-            gap: var(--gap);
+            gap: 10px;
             width: fit-content;
         }
 
@@ -105,6 +105,17 @@
         </div>
     </div>
 
+    <script>
+        // Передача событий колесика мыши родительскому окну (home.html)
+        // Любой скролл вниз или вправо возвращает обратно на экран приложений
+        window.addEventListener('wheel', (e) => {
+            if (e.deltaY > 5 || e.deltaX > 5) {
+                try {
+                    window.parent.postMessage({ type: 'iphone_navigate_page', direction: 1 }, '*');
+                } catch (err) {}
+            }
+        }, { passive: true });
+    </script>
 </body>
 
 </html>

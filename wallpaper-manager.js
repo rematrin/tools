@@ -1,13 +1,78 @@
 export class WallpaperManager {
     constructor() {
         this.STORAGE_KEY = 'user_wallpaper_settings_v1';
+        this.PHONE_STORAGE_KEY = 'user_iphone_wallpaper_v1';
+        this.PHONE_SETTINGS_KEY = 'user_iphone_wallpaper_settings_v1';
         this.defaultSettings = {
             url: 'https://i.ibb.co/9krvx4ms/465581.jpg',
             blur: 0, // 0-100%
             dim: 30   // 0-100%
         };
+        this.defaultPhoneSettings = {
+            url: 'https://images.unsplash.com/photo-1511497584788-87676104235f?q=80&w=1200&auto=format&fit=crop',
+            blur: 0,
+            dim: 15
+        };
         this.settings = this.loadSettings();
+        this.phoneSettings = this.loadPhoneSettings();
+        this.phoneWallpaper = this.phoneSettings.url;
+        this.currentChangeTarget = 'desktop'; // 'desktop' | 'phone'
         this.applySettings();
+        this.applyPhoneWallpaper();
+    }
+
+    loadPhoneSettings() {
+        const saved = localStorage.getItem(this.PHONE_SETTINGS_KEY);
+        if (saved) {
+            try {
+                return { ...this.defaultPhoneSettings, ...JSON.parse(saved) };
+            } catch (e) {}
+        }
+        // Fallback если ранее был сохранен только URL
+        const oldUrl = localStorage.getItem(this.PHONE_STORAGE_KEY);
+        return {
+            ...this.defaultPhoneSettings,
+            url: oldUrl || this.defaultPhoneSettings.url
+        };
+    }
+
+    savePhoneSettings() {
+        localStorage.setItem(this.PHONE_SETTINGS_KEY, JSON.stringify(this.phoneSettings));
+        localStorage.setItem(this.PHONE_STORAGE_KEY, this.phoneSettings.url);
+        this.phoneWallpaper = this.phoneSettings.url;
+    }
+
+    loadPhoneWallpaper() {
+        return this.phoneSettings ? this.phoneSettings.url : (localStorage.getItem(this.PHONE_STORAGE_KEY) || this.defaultPhoneSettings.url);
+    }
+
+    savePhoneWallpaper() {
+        this.phoneSettings.url = this.phoneWallpaper;
+        this.savePhoneSettings();
+    }
+
+    applyPhoneWallpaper() {
+        const phoneBg = document.querySelector('.iphone-wallpaper-bg');
+        const phoneDimEl = document.querySelector('.iphone-wallpaper-dim');
+        
+        document.documentElement.style.setProperty('--iphone-wallpaper', `url('${this.phoneSettings.url}')`);
+        
+        const blurPx = (this.phoneSettings.blur / 100) * 30;
+        const scale = 1.02 + (blurPx * 0.003);
+        const dimOpacity = this.phoneSettings.dim / 100;
+        
+        document.documentElement.style.setProperty('--iphone-wallpaper-blur', `${blurPx}px`);
+        document.documentElement.style.setProperty('--iphone-wallpaper-scale', `${scale}`);
+        document.documentElement.style.setProperty('--iphone-wallpaper-dim', `${dimOpacity}`);
+        
+        if (phoneBg) {
+            phoneBg.style.backgroundImage = `url('${this.phoneSettings.url}')`;
+            phoneBg.style.filter = `blur(${blurPx}px)`;
+            phoneBg.style.transform = `scale(${scale})`;
+        }
+        if (phoneDimEl) {
+            phoneDimEl.style.background = `rgba(20, 20, 20, ${dimOpacity})`;
+        }
     }
 
     loadSettings() {
@@ -23,6 +88,10 @@ export class WallpaperManager {
         // Сохраняем в БД только если пользователь вошел
         if (window.dbApi && window.auth && window.auth.currentUser) {
             window.dbApi.saveWallpaper(this.settings);
+            window.dbApi.saveSettings({ 
+                iphoneWallpaper: this.phoneSettings.url,
+                iphoneWallpaperSettings: this.phoneSettings
+            });
         }
     }
 
@@ -33,8 +102,24 @@ export class WallpaperManager {
                 this.settings = { ...this.defaultSettings, ...cloudSettings };
                 this.saveSettings();
                 this.applySettings();
-                this.refreshUI();
             }
+            if (window.dbApi.loadSettings) {
+                const userSettings = await window.dbApi.loadSettings();
+                if (userSettings) {
+                    if (userSettings.iphoneWallpaperSettings) {
+                        this.phoneSettings = { ...this.defaultPhoneSettings, ...userSettings.iphoneWallpaperSettings };
+                        this.phoneWallpaper = this.phoneSettings.url;
+                        this.savePhoneSettings();
+                        this.applyPhoneWallpaper();
+                    } else if (userSettings.iphoneWallpaper) {
+                        this.phoneSettings.url = userSettings.iphoneWallpaper;
+                        this.phoneWallpaper = this.phoneSettings.url;
+                        this.savePhoneSettings();
+                        this.applyPhoneWallpaper();
+                    }
+                }
+            }
+            this.refreshUI();
         }
     }
 
@@ -71,12 +156,24 @@ export class WallpaperManager {
         const dimLabel = document.getElementById('dimValueLabel');
         const blurLabel = document.getElementById('blurValueLabel');
         const preview = document.querySelector('.wallpaper-preview-bg');
+        
+        const sliderPhoneDim = document.getElementById('sliderPhoneDim');
+        const sliderPhoneBlur = document.getElementById('sliderPhoneBlur');
+        const phoneDimLabel = document.getElementById('phoneDimValueLabel');
+        const phoneBlurLabel = document.getElementById('phoneBlurValueLabel');
+        const phonePreview = document.querySelector('.phone-wallpaper-preview-bg');
 
         if (sliderDim) { sliderDim.value = this.settings.dim; }
         if (sliderBlur) { sliderBlur.value = this.settings.blur; }
         if (dimLabel) { dimLabel.innerText = `${this.settings.dim}%`; }
         if (blurLabel) { blurLabel.innerText = `${this.settings.blur}%`; }
         if (preview) { preview.style.backgroundImage = `url('${this.settings.url}')`; }
+
+        if (sliderPhoneDim) { sliderPhoneDim.value = this.phoneSettings.dim; }
+        if (sliderPhoneBlur) { sliderPhoneBlur.value = this.phoneSettings.blur; }
+        if (phoneDimLabel) { phoneDimLabel.innerText = `${this.phoneSettings.dim}%`; }
+        if (phoneBlurLabel) { phoneBlurLabel.innerText = `${this.phoneSettings.blur}%`; }
+        if (phonePreview) { phonePreview.style.backgroundImage = `url('${this.phoneSettings.url}')`; }
     }
 
     // showWarning = true добавит красную надпись
@@ -90,13 +187,14 @@ export class WallpaperManager {
                 <h2 class="profile-title-in-card" style="margin-bottom: 12px;">Обои</h2>
                 ${warningHTML}
                 
+                <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.6; margin-bottom: 6px;">Фон рабочего стола</div>
                 <div class="wallpaper-preview-container" id="wpPreviewContainer">
                     <div class="wallpaper-preview-bg" style="background-image: url('${this.settings.url}');"></div>
                     <button class="wp-change-btn" id="btnChangeWallpaper">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
                         </svg>
-                        Сменить обои
+                        Сменить обои стола
                     </button>
                 </div>
 
@@ -115,6 +213,36 @@ export class WallpaperManager {
                     </div>
                     <input type="range" min="0" max="100" value="${this.settings.blur}" class="ios-slider" id="sliderBlur">
                 </div>
+
+                <!-- ВТОРОЙ ФОН: ЭКРАН ТЕЛЕФОНА -->
+                <div style="margin-top: 14px; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 12px;">
+                    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.6; margin-bottom: 6px;">Обои экрана телефона</div>
+                    <div class="wallpaper-preview-container">
+                        <div class="wallpaper-preview-bg phone-wallpaper-preview-bg" style="background-image: url('${this.phoneSettings.url}');"></div>
+                        <button class="wp-change-btn" id="btnChangePhoneWallpaper">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                            </svg>
+                            Сменить обои телефона
+                        </button>
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <span>Затемнение (телефон)</span>
+                            <span id="phoneDimValueLabel">${this.phoneSettings.dim}%</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="${this.phoneSettings.dim}" class="ios-slider" id="sliderPhoneDim">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <span>Размытие (телефон)</span>
+                            <span id="phoneBlurValueLabel">${this.phoneSettings.blur}%</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="${this.phoneSettings.blur}" class="ios-slider" id="sliderPhoneBlur">
+                    </div>
+                </div>
             </div>
         `;
     }
@@ -122,10 +250,13 @@ export class WallpaperManager {
     attachListeners() {
         const sliderDim = document.getElementById('sliderDim');
         const sliderBlur = document.getElementById('sliderBlur');
+        const sliderPhoneDim = document.getElementById('sliderPhoneDim');
+        const sliderPhoneBlur = document.getElementById('sliderPhoneBlur');
         const btnChange = document.getElementById('btnChangeWallpaper');
+        const btnChangePhone = document.getElementById('btnChangePhoneWallpaper');
         
         const updateDim = (val) => {
-            this.settings.dim = val;
+            this.settings.dim = parseInt(val);
             const label = document.getElementById('dimValueLabel');
             if(label) label.innerText = `${val}%`;
             this.applySettings();
@@ -133,11 +264,27 @@ export class WallpaperManager {
         };
 
         const updateBlur = (val) => {
-            this.settings.blur = val;
+            this.settings.blur = parseInt(val);
             const label = document.getElementById('blurValueLabel');
             if(label) label.innerText = `${val}%`;
             this.applySettings();
             this.saveSettings();
+        };
+
+        const updatePhoneDim = (val) => {
+            this.phoneSettings.dim = parseInt(val);
+            const label = document.getElementById('phoneDimValueLabel');
+            if(label) label.innerText = `${val}%`;
+            this.applyPhoneWallpaper();
+            this.savePhoneSettings();
+        };
+
+        const updatePhoneBlur = (val) => {
+            this.phoneSettings.blur = parseInt(val);
+            const label = document.getElementById('phoneBlurValueLabel');
+            if(label) label.innerText = `${val}%`;
+            this.applyPhoneWallpaper();
+            this.savePhoneSettings();
         };
 
         if (sliderDim) {
@@ -150,8 +297,26 @@ export class WallpaperManager {
             sliderBlur.addEventListener('change', () => this.saveToCloud());
         }
 
+        if (sliderPhoneDim) {
+            sliderPhoneDim.addEventListener('input', (e) => updatePhoneDim(e.target.value));
+            sliderPhoneDim.addEventListener('change', () => this.saveToCloud());
+        }
+
+        if (sliderPhoneBlur) {
+            sliderPhoneBlur.addEventListener('input', (e) => updatePhoneBlur(e.target.value));
+            sliderPhoneBlur.addEventListener('change', () => this.saveToCloud());
+        }
+
         if (btnChange) {
             btnChange.addEventListener('click', () => {
+                this.currentChangeTarget = 'desktop';
+                this.openUrlModal();
+            });
+        }
+
+        if (btnChangePhone) {
+            btnChangePhone.addEventListener('click', () => {
+                this.currentChangeTarget = 'phone';
                 this.openUrlModal();
             });
         }
@@ -271,26 +436,43 @@ export class WallpaperManager {
             // Сохранение по ссылке
             wpBtnSave.onclick = () => {
                 if (urlInput.value && urlInput.value.trim() !== '') {
-                    this.settings.url = urlInput.value.trim();
-                    this.applySettings();
-                    this.saveSettings();
-                    this.saveToCloud();
-                    
-                    const preview = document.querySelector('.wallpaper-preview-bg');
-                    if(preview) preview.style.backgroundImage = `url('${this.settings.url}')`;
+                    const newUrl = urlInput.value.trim();
+                    if (this.currentChangeTarget === 'phone') {
+                        this.phoneWallpaper = newUrl;
+                        this.applyPhoneWallpaper();
+                        this.savePhoneWallpaper();
+                        this.saveToCloud();
+                        const phonePreview = document.querySelector('.phone-wallpaper-preview-bg');
+                        if (phonePreview) phonePreview.style.backgroundImage = `url('${this.phoneWallpaper}')`;
+                    } else {
+                        this.settings.url = newUrl;
+                        this.applySettings();
+                        this.saveSettings();
+                        this.saveToCloud();
+                        const preview = document.querySelector('.wallpaper-preview-bg');
+                        if (preview) preview.style.backgroundImage = `url('${this.settings.url}')`;
+                    }
                 }
                 modal.classList.remove('active');
             };
 
             // Удаление картинки (сброс к дефолтным обоям)
             deleteBtn.onclick = () => {
-                this.settings.url = this.defaultSettings.url;
-                this.applySettings();
-                this.saveSettings();
-                this.saveToCloud();
-                
-                const preview = document.querySelector('.wallpaper-preview-bg');
-                if(preview) preview.style.backgroundImage = `url('${this.settings.url}')`;
+                if (this.currentChangeTarget === 'phone') {
+                    this.phoneWallpaper = this.defaultPhoneSettings.url;
+                    this.applyPhoneWallpaper();
+                    this.savePhoneWallpaper();
+                    this.saveToCloud();
+                    const phonePreview = document.querySelector('.phone-wallpaper-preview-bg');
+                    if (phonePreview) phonePreview.style.backgroundImage = `url('${this.phoneWallpaper}')`;
+                } else {
+                    this.settings.url = this.defaultSettings.url;
+                    this.applySettings();
+                    this.saveSettings();
+                    this.saveToCloud();
+                    const preview = document.querySelector('.wallpaper-preview-bg');
+                    if (preview) preview.style.backgroundImage = `url('${this.settings.url}')`;
+                }
                 modal.classList.remove('active');
             };
 
@@ -344,13 +526,21 @@ export class WallpaperManager {
                 reader.onload = async (evt) => {
                     try {
                         const hostedUrl = await this.uploadToImgBB(evt.target.result);
-                        this.settings.url = hostedUrl;
-                        this.applySettings();
-                        this.saveSettings();
-                        this.saveToCloud();
-
-                        const preview = document.querySelector('.wallpaper-preview-bg');
-                        if (preview) preview.style.backgroundImage = `url('${this.settings.url}')`;
+                        if (this.currentChangeTarget === 'phone') {
+                            this.phoneWallpaper = hostedUrl;
+                            this.applyPhoneWallpaper();
+                            this.savePhoneWallpaper();
+                            this.saveToCloud();
+                            const phonePreview = document.querySelector('.phone-wallpaper-preview-bg');
+                            if (phonePreview) phonePreview.style.backgroundImage = `url('${this.phoneWallpaper}')`;
+                        } else {
+                            this.settings.url = hostedUrl;
+                            this.applySettings();
+                            this.saveSettings();
+                            this.saveToCloud();
+                            const preview = document.querySelector('.wallpaper-preview-bg');
+                            if (preview) preview.style.backgroundImage = `url('${this.settings.url}')`;
+                        }
                         modal.classList.remove('active');
                     } catch (err) {
                         console.error(err);

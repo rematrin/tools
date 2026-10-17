@@ -319,6 +319,7 @@ export function initSidebarManager(context) {
     function openMenu() {
         sidebar.classList.add('active');
         sidebarOverlay.classList.add('active');
+        document.body.classList.add('sidebar-open');
         document.body.style.overflow = 'hidden';
         renderSidebar();
     }
@@ -326,6 +327,7 @@ export function initSidebarManager(context) {
     function closeMenu() {
         sidebar.classList.remove('active');
         sidebarOverlay.classList.remove('active');
+        document.body.classList.remove('sidebar-open');
         document.body.style.overflow = '';
     }
 
@@ -459,6 +461,13 @@ export function initSidebarManager(context) {
                     <span style="font-size: 14px; flex: 1; padding-right: 10px;">Интересные факты и цитаты</span>
                     <label class="switch" style="transform: scale(0.85); transform-origin: right;">
                         <input type="checkbox" id="showFactsWidgetToggle" ${showFactsWidget ? 'checked' : ''}>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
+                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Корпус iPhone (на ПК)</span>
+                    <label class="switch" style="transform: scale(0.85); transform-origin: right;">
+                        <input type="checkbox" id="iphoneMockupToggle" ${localStorage.getItem('iphoneMockupMode') === null || localStorage.getItem('iphoneMockupMode') === 'true' ? 'checked' : ''}>
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
@@ -621,6 +630,19 @@ export function initSidebarManager(context) {
                 if (auth.currentUser) window.dbApi.saveSettings({ showFactsWidget: isEnabled });
                 if (isEnabled) document.body.classList.add('show-facts-widget-enabled');
                 else document.body.classList.remove('show-facts-widget-enabled');
+            };
+        }
+
+        // Корпус iPhone (макет)
+        const iphoneMockupToggle = document.getElementById('iphoneMockupToggle');
+        if (iphoneMockupToggle) {
+            iphoneMockupToggle.onchange = (e) => {
+                const isEnabled = e.target.checked;
+                localStorage.setItem('iphoneMockupMode', isEnabled.toString());
+                if (auth.currentUser) window.dbApi.saveSettings({ iphoneMockupMode: isEnabled });
+                if (isEnabled) document.body.classList.add('iphone-mockup-enabled');
+                else document.body.classList.remove('iphone-mockup-enabled');
+                if (context.onLayoutChange) context.onLayoutChange();
             };
         }
 
@@ -862,6 +884,13 @@ export function initSidebarManager(context) {
                                 localStorage.setItem('expandedFolders', data.expandedFolders.toString());
                                 if (data.expandedFolders) document.body.classList.add('expanded-folders');
                                 else document.body.classList.remove('expanded-folders');
+                            }
+
+                            // Импорт режима корпуса iPhone
+                            if (typeof data.iphoneMockupMode !== 'undefined') {
+                                localStorage.setItem('iphoneMockupMode', data.iphoneMockupMode.toString());
+                                if (data.iphoneMockupMode) document.body.classList.add('iphone-mockup-enabled');
+                                else document.body.classList.remove('iphone-mockup-enabled');
                             }
 
 

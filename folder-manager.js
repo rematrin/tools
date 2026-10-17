@@ -233,7 +233,8 @@ export class FolderManager {
 
         const activeFilter = window.currentCategoryFilter;
         const allItems = this.currentFolderData.items || [];
-        const items = allItems.filter(app => {
+        const isVirtualCategory = this.currentFolderData._isVirtualCategory || !this.targetFolderRef;
+        const items = isVirtualCategory ? allItems : allItems.filter(app => {
             if (activeFilter && activeFilter !== 'Главная') {
                 return Array.isArray(app.category) ? app.category.includes(activeFilter) : app.category === activeFilter;
             }

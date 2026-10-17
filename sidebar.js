@@ -423,6 +423,8 @@ export function initSidebarManager(context) {
         const currentRows = localStorage.getItem('gridRows') || '6';
         const isGlassEnabled = localStorage.getItem('glassEffect') === 'true';
         const openInNewTab = localStorage.getItem('openInNewTab') === 'true';
+        const showSearchBar = localStorage.getItem('showSearchBar') === null || localStorage.getItem('showSearchBar') === 'true';
+        const searchOpenInNewTab = localStorage.getItem('searchOpenInNewTab') === null || localStorage.getItem('searchOpenInNewTab') !== 'false';
         const expandedFolders = localStorage.getItem('expandedFolders') === 'true';
         const showFactsWidget = localStorage.getItem('showFactsWidget') !== 'false';
 
@@ -433,6 +435,20 @@ export function initSidebarManager(context) {
                     <span style="font-size: 14px;">Эффект стекла</span>
                     <label class="switch" style="transform: scale(0.85); transform-origin: right;">
                         <input type="checkbox" id="globalGlassToggle" ${isGlassEnabled ? 'checked' : ''}>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
+                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Поисковая строка Google</span>
+                    <label class="switch" style="transform: scale(0.85); transform-origin: right;">
+                        <input type="checkbox" id="showSearchBarToggle" ${showSearchBar ? 'checked' : ''}>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
+                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Результаты поиска в новой вкладке</span>
+                    <label class="switch" style="transform: scale(0.85); transform-origin: right;">
+                        <input type="checkbox" id="searchOpenInNewTabToggle" ${searchOpenInNewTab ? 'checked' : ''}>
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
@@ -581,6 +597,28 @@ export function initSidebarManager(context) {
                 else document.body.classList.remove('glass-mode');
                 localStorage.setItem('glassEffect', isEnabled.toString());
                 if (auth.currentUser) window.dbApi.saveSettings({ glassEffect: isEnabled });
+            };
+        }
+
+        // Поисковая строка Google
+        const showSearchBarToggle = document.getElementById('showSearchBarToggle');
+        if (showSearchBarToggle) {
+            showSearchBarToggle.onchange = (e) => {
+                const isEnabled = e.target.checked;
+                localStorage.setItem('showSearchBar', isEnabled.toString());
+                if (auth.currentUser) window.dbApi.saveSettings({ showSearchBar: isEnabled });
+                if (isEnabled) document.body.classList.add('search-bar-enabled');
+                else document.body.classList.remove('search-bar-enabled');
+            };
+        }
+
+        // Результаты поиска в новой вкладке
+        const searchOpenInNewTabToggle = document.getElementById('searchOpenInNewTabToggle');
+        if (searchOpenInNewTabToggle) {
+            searchOpenInNewTabToggle.onchange = (e) => {
+                const isEnabled = e.target.checked;
+                localStorage.setItem('searchOpenInNewTab', isEnabled.toString());
+                if (auth.currentUser) window.dbApi.saveSettings({ searchOpenInNewTab: isEnabled });
             };
         }
 
@@ -781,6 +819,8 @@ export function initSidebarManager(context) {
                     gridRows: localStorage.getItem('gridRows') || '6',
                     glassEffect: localStorage.getItem('glassEffect') === 'true',
                     openInNewTab: localStorage.getItem('openInNewTab') === 'true',
+                    showSearchBar: localStorage.getItem('showSearchBar') === null || localStorage.getItem('showSearchBar') === 'true',
+                    searchOpenInNewTab: localStorage.getItem('searchOpenInNewTab') === null || localStorage.getItem('searchOpenInNewTab') !== 'false',
                     expandedFolders: localStorage.getItem('expandedFolders') === 'true',
                     wallpaper: JSON.parse(localStorage.getItem('user_wallpaper_settings_v1') || '{}')
                 };
@@ -891,6 +931,16 @@ export function initSidebarManager(context) {
                                 localStorage.setItem('iphoneMockupMode', data.iphoneMockupMode.toString());
                                 if (data.iphoneMockupMode) document.body.classList.add('iphone-mockup-enabled');
                                 else document.body.classList.remove('iphone-mockup-enabled');
+                            }
+
+                            // Импорт настроек поиска
+                            if (typeof data.showSearchBar !== 'undefined') {
+                                localStorage.setItem('showSearchBar', data.showSearchBar.toString());
+                                if (data.showSearchBar) document.body.classList.add('search-bar-enabled');
+                                else document.body.classList.remove('search-bar-enabled');
+                            }
+                            if (typeof data.searchOpenInNewTab !== 'undefined') {
+                                localStorage.setItem('searchOpenInNewTab', data.searchOpenInNewTab.toString());
                             }
 
 

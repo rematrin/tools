@@ -25,6 +25,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js" defer></script>
     <script src="facts.js" defer></script>
+    <script src="search-widget.js" defer></script>
     <script>
         // --- CRITICAL WALLPAPER LOADER ---
         (function () {
@@ -2606,6 +2607,265 @@
             }
         }
 
+        /* --- ДЕСКТОПНЫЙ ПОИСКОВЫЙ ВИДЖЕТ (В СТИЛЕ INFINITY TAB) --- */
+        .desktop-search-widget {
+            display: none;
+            position: fixed;
+            z-index: 45;
+            width: min(540px, calc(100vw - 520px));
+            box-sizing: border-box;
+            transition: left 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+            user-select: none;
+        }
+
+        @media (min-width: 900px) {
+            /* Когда макет iPhone включен — центрируем в пространстве слева от телефона (выше кота) */
+            body.iphone-mockup-enabled.search-bar-enabled:not(.bookmarks-view-active) .desktop-search-widget {
+                display: block;
+                left: calc((100vw - 455px) / 2);
+                transform: translateX(-50%);
+                top: max(110px, 19vh);
+            }
+
+            /* Когда открыто правое меню настроек */
+            body.iphone-mockup-enabled.sidebar-open.search-bar-enabled:not(.bookmarks-view-active) .desktop-search-widget {
+                left: calc((100vw - 795px) / 2);
+            }
+
+            /* Когда открыто левое меню виджетов */
+            body.iphone-mockup-enabled.widget-sidebar-open.search-bar-enabled:not(.bookmarks-view-active) .desktop-search-widget {
+                left: calc((100vw + 215px) / 2);
+            }
+
+            /* Если макет iPhone отключен (полноэкранная сетка) — по центру сверху */
+            body:not(.iphone-mockup-enabled).search-bar-enabled:not(.bookmarks-view-active) .desktop-search-widget {
+                display: block;
+                left: 50%;
+                transform: translateX(-50%);
+                top: 14vh;
+                width: min(560px, 86vw);
+            }
+        }
+
+        .desktop-search-box {
+            position: relative;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: box-shadow 0.25s ease, border-radius 0.15s ease;
+            overflow: hidden;
+        }
+
+        .desktop-search-widget.has-suggestions .desktop-search-box {
+            border-radius: 16px;
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.26);
+        }
+
+        .desktop-search-bar {
+            display: flex;
+            align-items: center;
+            height: 48px;
+            padding: 0 14px;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .search-engine-badge {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            padding: 5px 6px;
+            border-radius: 8px;
+            transition: background-color 0.15s ease;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .search-engine-badge:hover {
+            background: rgba(0, 0, 0, 0.06);
+        }
+
+        .search-engine-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-engine-arrow {
+            display: block;
+            transition: transform 0.2s ease;
+        }
+
+        .search-engine-badge.open .search-engine-arrow {
+            transform: rotate(180deg);
+        }
+
+        .desktop-search-input {
+            flex: 1;
+            height: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #202124;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        .desktop-search-input::placeholder {
+            color: #9aa0a6;
+            font-size: 15px;
+        }
+
+        .desktop-search-clear {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #70757a;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 4px;
+            transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+        }
+
+        .desktop-search-clear:hover {
+            background: rgba(0, 0, 0, 0.08);
+            color: #202124;
+        }
+
+        .desktop-search-clear:active {
+            transform: scale(0.92);
+        }
+
+        .desktop-search-clear.visible {
+            display: flex;
+        }
+
+        /* Выпадающее меню выбора поисковика */
+        .search-engine-menu {
+            display: none;
+            position: absolute;
+            top: 54px;
+            left: 8px;
+            background: #ffffff;
+            border-radius: 14px;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+            padding: 6px;
+            z-index: 100;
+            min-width: 160px;
+            box-sizing: border-box;
+            animation: searchFadeIn 0.15s ease;
+        }
+
+        .search-engine-menu.visible {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .search-engine-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #3c4043;
+            cursor: pointer;
+            transition: background-color 0.12s ease, color 0.12s ease;
+            user-select: none;
+        }
+
+        .search-engine-item:hover,
+        .search-engine-item.active {
+            background: #f1f3f4;
+            color: #202124;
+        }
+
+        .search-engine-item.active {
+            font-weight: 600;
+        }
+
+        .search-engine-item-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Список подсказок Google (Suggestions Dropdown) */
+        .desktop-search-suggestions {
+            display: none;
+            background: #ffffff;
+            border-top: 1px solid #f1f3f4;
+            padding: 6px 0 10px 0;
+            max-height: 380px;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .desktop-search-suggestions::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .desktop-search-suggestions::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 3px;
+        }
+
+        .desktop-search-widget.has-suggestions .desktop-search-suggestions {
+            display: block;
+        }
+
+        .search-suggestion-item:last-child {
+            border-radius: 0 0 16px 16px;
+        }
+
+        .search-suggestion-item {
+            display: flex;
+            align-items: center;
+            padding: 9px 20px 9px 68px; /* выравнивание строго под началом текста инпута */
+            font-size: 14px;
+            color: #3c4043;
+            cursor: pointer;
+            transition: background-color 0.1s ease;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            user-select: none;
+            line-height: 1.4;
+        }
+
+        .search-suggestion-item:hover,
+        .search-suggestion-item.selected {
+            background: #f1f3f4;
+            color: #202124;
+        }
+
+        @keyframes searchFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         /* --- IPHONE MOCKUP FRAME & LAYOUT --- */
         .iphone-device-frame {
             display: contents; /* По умолчанию без рамки на мобильных */
@@ -3252,6 +3512,36 @@
         </div>
     </div>
 
+    <!-- Десктопный поисковый виджет в стиле Infinity Tab (слева от телефона) -->
+    <div id="desktopSearchWidget" class="desktop-search-widget">
+        <div class="desktop-search-box">
+            <div class="desktop-search-bar" id="desktopSearchBar">
+                <div class="search-engine-badge" id="searchEngineBadge" title="Поисковая система: Google">
+                    <div class="search-engine-icon" id="searchEngineIcon">
+                        <svg viewBox="0 0 24 24" width="20" height="20">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        </svg>
+                    </div>
+                    <svg class="search-engine-arrow" viewBox="0 0 10 6" width="8" height="5">
+                        <path d="M1 1l4 4 4-4" stroke="#9aa0a6" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <input type="text" id="desktopSearchInput" class="desktop-search-input" placeholder="Поиск в Google" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off">
+                <button type="button" id="desktopSearchClear" class="desktop-search-clear" title="Очистить" aria-label="Очистить">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div id="desktopSearchSuggestions" class="desktop-search-suggestions"></div>
+        </div>
+        <div id="searchEngineMenu" class="search-engine-menu"></div>
+    </div>
+
     <div class="menu-btn widget-btn" id="widgetBtn">
         <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none"
             stroke-linecap="round" stroke-linejoin="round">
@@ -3430,6 +3720,13 @@
         const savedShowFacts = localStorage.getItem('showFactsWidget') !== 'false';
         if (savedShowFacts) {
             document.body.classList.add('show-facts-widget-enabled');
+        }
+
+        // Поисковая строка Google (по умолчанию включена)
+        const savedShowSearchBar = localStorage.getItem('showSearchBar');
+        const isSearchBarActive = savedShowSearchBar === null ? true : savedShowSearchBar === 'true';
+        if (isSearchBarActive) {
+            document.body.classList.add('search-bar-enabled');
         }
 
         // Режим макета iPhone (по умолчанию включен на десктопе, если не отключен явно)

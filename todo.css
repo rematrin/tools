@@ -903,6 +903,8 @@ body.dark .task-item.completed .custom-checkbox svg {
     display: flex;
     align-items: center;
     cursor: pointer;
+    position: relative;
+    z-index: 1;
 }
 
 .task-title-text {
@@ -924,6 +926,8 @@ body.dark .task-item.completed .custom-checkbox svg {
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
+    position: relative;
+    z-index: 1;
 }
 
 .task-item.completed .task-title-text {
@@ -936,6 +940,9 @@ body.dark .task-item.completed .custom-checkbox svg {
     text-decoration: underline;
     cursor: pointer;
     word-break: break-all;
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
 }
 
 body.dark .task-title-link {
@@ -5094,8 +5101,48 @@ body.dark .progress-bg-circle {
     height: 22px;
 }
 
-.modal-task-title-input {
+.modal-task-title-display {
     flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-family: inherit;
+    line-height: 1.4;
+    cursor: pointer;
+    word-break: break-word;
+    white-space: pre-wrap;
+    min-height: 28px;
+    padding: 0;
+    margin: 0;
+}
+
+.modal-task-title-display .task-title-link {
+    color: #2563eb;
+    text-decoration: underline;
+    cursor: pointer;
+    word-break: break-all;
+}
+
+body.dark .modal-task-title-display .task-title-link {
+    color: #60a5fa;
+}
+
+.task-details-title-row.completed .modal-task-title-display {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.modal-task-title-input {
+    /* Let the textarea keep the height calculated from its full contents.
+       flex: 1 made it shrink back to its default two-row height. */
+    flex: 0 0 auto;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    box-sizing: border-box;
     border: none;
     background: transparent;
     color: var(--text);
@@ -5108,6 +5155,7 @@ body.dark .progress-bg-circle {
     margin: 0;
     line-height: 1.4;
     overflow-y: hidden;
+    min-height: 28px;
 }
 
 /* Prevent clipping/masking of subtask creation calendar and priority dropdowns in details modal */

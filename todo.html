@@ -1451,8 +1451,11 @@
                             </svg>
                         </button>
                     </div>
-                    <textarea id="modalTaskTitle" class="modal-task-title-input" placeholder="Название задачи"
-                        rows="1"></textarea>
+                    <div class="modal-task-title-wrapper" style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+                        <div id="modalTaskTitleDisplay" class="modal-task-title-display"></div>
+                        <textarea id="modalTaskTitle" class="modal-task-title-input" placeholder="Название задачи"
+                            style="display: none;"></textarea>
+                    </div>
                 </div>
 
                 <div class="modal-subtasks-section">

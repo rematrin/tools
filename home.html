@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Home</title>
     <link rel="icon" type="image/svg+xml" href="img/house-favicon.svg">
     <link rel="apple-touch-icon" href="img/house-favicon.svg">
@@ -2875,7 +2875,8 @@
             display: none;
         }
 
-        @media (min-width: 900px) {
+        /* Внутренний iPhone-интерфейс общий для макета на ПК и настоящего телефона. */
+        @media (min-width: 0px) {
             body.iphone-mockup-enabled {
                 overflow: hidden;
             }
@@ -3473,6 +3474,86 @@
             }
         }
 
+        /* На настоящем телефоне тот же экран занимает весь viewport без внешней рамки устройства. */
+        @media (max-width: 899px) {
+            html,
+            body,
+            body.iphone-mockup-enabled {
+                width: 100%;
+                height: 100%;
+                min-height: 100dvh;
+                overflow: hidden;
+                background: #000;
+            }
+
+            body.iphone-mockup-enabled .iphone-device-frame {
+                display: block;
+                position: fixed;
+                inset: 0;
+                width: 100%;
+                height: 100dvh;
+                max-height: none;
+                padding: 0;
+                border-radius: 0;
+                background: #000;
+                box-shadow: none;
+                transform: none;
+                z-index: 50;
+            }
+
+            body.iphone-mockup-enabled.sidebar-open .iphone-device-frame,
+            body.iphone-mockup-enabled.widget-sidebar-open .iphone-device-frame {
+                right: auto;
+                transform: none;
+            }
+
+            body.iphone-mockup-enabled .iphone-screen {
+                width: 100%;
+                height: 100%;
+                min-height: 0;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            body.iphone-mockup-enabled .folder-overlay {
+                border-radius: 0;
+            }
+
+            body.iphone-mockup-enabled .desktop-fact-widget,
+            body.iphone-mockup-enabled .desktop-search-widget,
+            body.iphone-mockup-enabled #widgetBtn {
+                display: none !important;
+            }
+
+            body.iphone-mockup-enabled #menuBtn {
+                top: calc(env(safe-area-inset-top, 0px) + 10px);
+                right: 12px;
+                width: 38px;
+                height: 38px;
+                padding: 8px;
+                z-index: 220;
+            }
+
+            body.iphone-mockup-enabled .iphone-dynamic-island,
+            body.iphone-mockup-enabled .iphone-status-bar {
+                display: none !important;
+            }
+
+            body.iphone-mockup-enabled header {
+                padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+            }
+
+            body.iphone-mockup-enabled .pages-wrapper {
+                padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
+            }
+
+            body.iphone-mockup-enabled .app-library-page {
+                padding-top: calc(env(safe-area-inset-top, 0px) + 58px);
+                padding-bottom: max(40px, calc(env(safe-area-inset-bottom, 0px) + 24px));
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
         /* По умолчанию на экранах без активного макета статус-бар скрыт */
         .iphone-status-bar,
         .iphone-dynamic-island {
@@ -3729,9 +3810,11 @@
             document.body.classList.add('search-bar-enabled');
         }
 
-        // Режим макета iPhone (по умолчанию включен на десктопе, если не отключен явно)
+        // На настоящем телефоне всегда используем тот же iPhone-интерфейс, что и в макете на ПК.
+        // На десктопе сохраненный переключатель продолжает работать как раньше.
         const savedIphoneMockup = localStorage.getItem('iphoneMockupMode');
-        const isMockupActive = savedIphoneMockup === null ? true : savedIphoneMockup === 'true';
+        const isRealMobileViewport = window.matchMedia('(max-width: 899px)').matches;
+        const isMockupActive = isRealMobileViewport || (savedIphoneMockup === null ? true : savedIphoneMockup === 'true');
         if (isMockupActive) {
             document.body.classList.add('iphone-mockup-enabled');
         }

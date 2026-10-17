@@ -6213,7 +6213,7 @@ function createTaskRowElement(task, isStandalone = false) {
         `;
 
         item.addEventListener('click', (e) => {
-            if (e.target.closest('.action-btn') || e.target.closest('.task-actions-dropdown')) {
+            if (e.target.closest('.action-btn') || e.target.closest('.task-actions-dropdown') || e.target.closest('a') || e.target.closest('.task-title-link')) {
                 return;
             }
             window.location.hash = '#countdown';
@@ -7231,7 +7231,7 @@ function createTaskRowElement(task, isStandalone = false) {
 
     // Клик на саму задачу открывает модалку деталей
     item.addEventListener('click', (e) => {
-        if (e.target.closest('button, input, textarea, a, .checkbox-wrapper, .custom-checkbox, .task-actions-dropdown, .task-drag-handle, .new-subtask-temp, .pomo-task-count-badge, .pomo-select-target-btn')) {
+        if (e.target.closest('button, input, textarea, a, .task-title-link, .checkbox-wrapper, .custom-checkbox, .task-actions-dropdown, .task-drag-handle, .new-subtask-temp, .pomo-task-count-badge, .pomo-select-target-btn')) {
             return;
         }
         if (item.classList.contains('editing')) {
@@ -7376,9 +7376,10 @@ function formatTaskTitle(title) {
         displayTitle = displayTitle.slice(2);
     }
     const escaped = escapeHtml(displayTitle);
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s]|https?:\/\/[^\s<]+)/g;
     return escaped.replace(urlRegex, (url) => {
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="task-title-link" onclick="event.stopPropagation();">${url}</a>`;
+        const hrefUrl = url.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#039;/g, "'");
+        return `<a href="${hrefUrl}" target="_blank" rel="noopener noreferrer" class="task-title-link" onclick="event.stopPropagation();">${url}</a>`;
     });
 }
 
@@ -10943,6 +10944,7 @@ const taskDetailsModal = document.getElementById('taskDetailsModal');
 const btnTaskDetailsClose = document.getElementById('btnTaskDetailsClose');
 const modalTaskCheckbox = document.querySelector('.modal-task-checkbox');
 const modalTaskTitle = document.getElementById('modalTaskTitle');
+const modalTaskTitleDisplay = document.getElementById('modalTaskTitleDisplay');
 const modalSubtasksToggle = document.getElementById('modalSubtasksToggle');
 const modalSubtasksCounter = document.getElementById('modalSubtasksCounter');
 const modalSubtasksList = document.getElementById('modalSubtasksList');
@@ -10970,7 +10972,11 @@ initSubtasksDragAndDrop();
 function autoResizeTextarea(textarea) {
     if (!textarea) return;
     textarea.style.height = 'auto';
-    textarea.style.height = textarea.scrollHeight + 'px';
+    const scrollH = textarea.scrollHeight;
+    if (scrollH > 0) {
+        textarea.style.height = scrollH + 'px';
+    }
+    textarea.scrollTop = 0;
 }
 
 function openTaskDetailsModal(taskId) {
@@ -11171,10 +11177,18 @@ function updateModalUI(task) {
         }
     }
 
+    const hasAsterisk = task.title && task.title.startsWith('* ');
+    const displayVal = hasAsterisk ? task.title.slice(2) : (task.title || '');
     if (modalTaskTitle && document.activeElement !== modalTaskTitle) {
-        const hasAsterisk = task.title && task.title.startsWith('* ');
-        modalTaskTitle.value = hasAsterisk ? task.title.slice(2) : (task.title || '');
+        modalTaskTitle.value = displayVal;
         autoResizeTextarea(modalTaskTitle);
+    }
+    if (modalTaskTitleDisplay) {
+        modalTaskTitleDisplay.innerHTML = formatTaskTitle(displayVal) || '<span style="color: var(--text-secondary); opacity: 0.5;">Название задачи</span>';
+        if (document.activeElement !== modalTaskTitle) {
+            modalTaskTitleDisplay.style.display = 'block';
+            if (modalTaskTitle) modalTaskTitle.style.display = 'none';
+        }
     }
 
     if (modalProjectName) {
@@ -11431,8 +11445,7 @@ function populateModalActionsDropdown(task) {
         btnEdit.addEventListener('click', (e) => {
             e.stopPropagation();
             modalActionsDropdown.style.display = 'none';
-            const input = document.getElementById('modalTaskTitle');
-            if (input) input.focus();
+            enterModalTitleEditMode();
         });
     }
 
@@ -11789,7 +11802,7 @@ function createSubtaskElement(subtask) {
             </button>
         </div>
         <div class="modal-subtask-title-wrapper" style="flex-grow: 1; min-width: 0; margin-right: 8px; display: flex; flex-direction: column;">
-            <span class="modal-subtask-title modal-subtask-title-text" style="word-break: break-word; white-space: pre-wrap; cursor: pointer; font-size: 0.92rem; line-height: 1.4;">${escapeHtml(displayTitle)}</span>
+            <span class="modal-subtask-title modal-subtask-title-text" style="word-break: break-word; white-space: pre-wrap; cursor: pointer; font-size: 0.92rem; line-height: 1.4;">${formatTaskTitle(displayTitle)}</span>
             <textarea class="modal-subtask-title-input" style="display: none; width: 100%; min-height: 24px; max-height: 120px; background: transparent; border: none; outline: none; resize: none; font-family: inherit; color: var(--text); padding: 0; box-sizing: border-box; font-size: 0.92rem; line-height: 1.4; overflow-y: hidden;"></textarea>
         </div>
         ${dueHtml}
@@ -12462,12 +12475,46 @@ if (modalTaskCheckbox) {
     });
 }
 
+function enterModalTitleEditMode() {
+    if (!modalTaskTitle || !currentModalTaskId) return;
+    const currentTask = allTasks.find(t => t.id === currentModalTaskId);
+    if (!currentTask) return;
+
+    if (modalTaskTitleDisplay) {
+        modalTaskTitleDisplay.style.display = 'none';
+    }
+
+    modalTaskTitle.value = currentTask.title || '';
+    modalTaskTitle.style.display = 'block';
+    autoResizeTextarea(modalTaskTitle);
+    modalTaskTitle.focus();
+
+    requestAnimationFrame(() => {
+        autoResizeTextarea(modalTaskTitle);
+        modalTaskTitle.scrollTop = 0;
+    });
+}
+
+if (modalTaskTitleDisplay) {
+    modalTaskTitleDisplay.addEventListener('click', (e) => {
+        if (e.target.closest('a, .task-title-link')) {
+            return;
+        }
+        enterModalTitleEditMode();
+    });
+}
+
 if (modalTaskTitle) {
     modalTaskTitle.addEventListener('focus', () => {
         const currentTask = allTasks.find(t => t.id === currentModalTaskId);
-        if (currentTask && currentTask.title && currentTask.title.startsWith('* ')) {
+        if (currentTask && currentTask.title && modalTaskTitle.value !== currentTask.title) {
             modalTaskTitle.value = currentTask.title;
         }
+        autoResizeTextarea(modalTaskTitle);
+        requestAnimationFrame(() => {
+            autoResizeTextarea(modalTaskTitle);
+            modalTaskTitle.scrollTop = 0;
+        });
     });
     modalTaskTitle.addEventListener('input', () => {
         autoResizeTextarea(modalTaskTitle);
@@ -12489,10 +12536,17 @@ if (modalTaskTitle) {
             } catch (err) {
                 console.error("Ошибка при сохранении названия:", err);
             }
-        } else if (currentTask) {
-            const hasAsteriskNow = currentTask.title && currentTask.title.startsWith('* ');
-            modalTaskTitle.value = hasAsteriskNow ? currentTask.title.slice(2) : (currentTask.title || '');
-            autoResizeTextarea(modalTaskTitle);
+        }
+        const finalTitle = newTitle || (currentTask ? currentTask.title : '');
+        const hasAsteriskNow = finalTitle.startsWith('* ');
+        const displayVal = hasAsteriskNow ? finalTitle.slice(2) : finalTitle;
+        modalTaskTitle.value = displayVal;
+        modalTaskTitle.scrollTop = 0;
+        if (modalTaskTitleDisplay) {
+            modalTaskTitleDisplay.innerHTML = formatTaskTitle(displayVal) || '<span style="color: var(--text-secondary); opacity: 0.5;">Название задачи</span>';
+            modalTaskTitleDisplay.style.display = 'block';
+            modalTaskTitle.style.display = 'none';
+            modalTaskTitle.scrollTop = 0;
         }
     });
 }

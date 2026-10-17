@@ -104,7 +104,37 @@ export class IconEditor {
             container.appendChild(mainItem);
 
             // 2. Пользовательские вкладки
-            const customCats = userCategories.filter(c => c !== 'Главная');
+            const allCats = Array.isArray(userCategories) ? [...userCategories] : [];
+
+            // Подтягиваем категории, которые есть у текущего значка (включая не входящие в userCategories)
+            if (Array.isArray(this.selectedCategories)) {
+                this.selectedCategories.forEach(cat => {
+                    if (cat && cat !== 'Главная' && !allCats.includes(cat)) {
+                        allCats.push(cat);
+                    }
+                });
+            }
+
+            // Также подтягиваем сиротские категории со всех остальных приложений в хранилище
+            if (window.getAppsFromStorage) {
+                const checkAppCats = (list) => {
+                    (list || []).forEach(item => {
+                        if (item.type === 'folder' && Array.isArray(item.items)) {
+                            checkAppCats(item.items);
+                        } else {
+                            const cats = Array.isArray(item.category) ? item.category : (item.category ? [item.category] : []);
+                            cats.forEach(c => {
+                                if (c && c !== 'Главная' && !allCats.includes(c)) {
+                                    allCats.push(c);
+                                }
+                            });
+                        }
+                    });
+                };
+                checkAppCats(window.getAppsFromStorage());
+            }
+
+            const customCats = allCats.filter(c => c !== 'Главная');
             customCats.forEach((cat, idx) => {
                 const item = document.createElement('div');
                 item.className = 'category-dropdown-item';
@@ -149,8 +179,16 @@ export class IconEditor {
                     
                     const saveRename = () => {
                         const newName = input.value.trim();
-                        if (newName && newName !== currentName && !userCategories.includes(newName)) {
-                            userCategories[idx] = newName;
+                        if (newName && newName !== currentName) {
+                            const uIdx = userCategories.indexOf(cat);
+                            if (uIdx !== -1) {
+                                userCategories[uIdx] = newName;
+                            } else {
+                                userCategories.push(newName);
+                            }
+                            localStorage.setItem('userCategories', JSON.stringify(userCategories));
+                            window.userCategories = userCategories;
+
                             const sIdx = this.selectedCategories.indexOf(cat);
                             if (sIdx !== -1) {
                                 this.selectedCategories[sIdx] = newName;
@@ -226,13 +264,19 @@ export class IconEditor {
                     item.classList.remove('drag-over');
                     const draggedIdx = parseInt(e.dataTransfer.getData('text/plain'));
                     if (draggedIdx !== idx) {
-                        const draggedCat = userCategories[draggedIdx];
-                        userCategories.splice(draggedIdx, 1);
-                        userCategories.splice(idx, 0, draggedCat);
-                        
-                        if (window.auth && window.auth.currentUser && window.dbApi) window.dbApi.saveCategories(userCategories);
-                        if (window.renderCategoryBar) window.renderCategoryBar();
-                        renderCats();
+                        const fromCat = customCats[draggedIdx];
+                        const toCat = customCats[idx];
+                        const realFrom = userCategories.indexOf(fromCat);
+                        const realTo = userCategories.indexOf(toCat);
+                        if (realFrom !== -1 && realTo !== -1 && realFrom !== realTo) {
+                            const [moved] = userCategories.splice(realFrom, 1);
+                            userCategories.splice(realTo, 0, moved);
+                            localStorage.setItem('userCategories', JSON.stringify(userCategories));
+                            window.userCategories = userCategories;
+                            if (window.auth && window.auth.currentUser && window.dbApi) window.dbApi.saveCategories(userCategories);
+                            if (window.renderCategoryBar) window.renderCategoryBar();
+                            renderCats();
+                        }
                     }
                 };
                 
@@ -269,8 +313,18 @@ export class IconEditor {
 
                     item.querySelector('.yes').onclick = (e2) => {
                         e2.stopPropagation();
-                        userCategories.splice(idx, 1);
-                        this.selectedCategories = this.selectedCategories.filter(c => c !== cat);
+                        const catToDelete = cat;
+                        const realIdx = userCategories.indexOf(catToDelete);
+                        if (realIdx !== -1) {
+                            userCategories.splice(realIdx, 1);
+                        }
+                        localStorage.setItem('userCategories', JSON.stringify(userCategories));
+                        window.userCategories = userCategories;
+
+                        this.selectedCategories = this.selectedCategories.filter(c => c !== catToDelete);
+                        if (this.selectedCategories.length === 0) {
+                            this.selectedCategories = ['Главная'];
+                        }
                         
                         // Clean up deleted category from all apps (recursively handling folder items)
                         if (window.getAppsFromStorage && window.saveCurrentState && window.renderAppsToDOM) {
@@ -280,9 +334,14 @@ export class IconEditor {
                                     if (app.type === 'folder') {
                                         app.items = cleanApps(app.items || []);
                                     } else if (Array.isArray(app.category)) {
-                                        app.category = app.category.filter(c => c !== cat);
-                                    } else if (app.category === cat) {
-                                        app.category = '';
+                                        app.category = app.category.filter(c => c !== catToDelete);
+                                        if (app.category.length === 0) {
+                                            app.category = ['Главная'];
+                                            delete app._explicitNoMain;
+                                        }
+                                    } else if (app.category === catToDelete) {
+                                        app.category = ['Главная'];
+                                        delete app._explicitNoMain;
                                     }
                                     return app;
                                 });
@@ -319,6 +378,8 @@ export class IconEditor {
                         const val = newCatInput.value.trim();
                         if (val && !userCategories.includes(val)) {
                             userCategories.push(val);
+                            localStorage.setItem('userCategories', JSON.stringify(userCategories));
+                            window.userCategories = userCategories;
                             this.selectedCategories.push(val);
                             newCatInput.value = '';
                             if (window.auth && window.auth.currentUser && window.dbApi) window.dbApi.saveCategories(userCategories);

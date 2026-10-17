@@ -87,7 +87,37 @@ export class FolderManager {
             this.titleEl.innerText = newName;
 
             if (this.currentFolderData && this.currentFolderData.name !== newName) {
+                const oldName = this.currentFolderData.name;
                 this.currentFolderData.name = newName;
+
+                if (this.currentFolderData._isVirtualCategory) {
+                    const allApps = this.ctx.getApps();
+                    const renameInList = (list) => {
+                        list.forEach(app => {
+                            if (app.type === 'folder' && Array.isArray(app.items)) {
+                                renameInList(app.items);
+                            } else if (Array.isArray(app.category)) {
+                                app.category = app.category.map(c => c === oldName ? newName : c);
+                            } else if (app.category === oldName) {
+                                app.category = newName;
+                            }
+                        });
+                    };
+                    renameInList(allApps);
+                    this.ctx.saveApps(allApps);
+
+                    if (Array.isArray(window.userCategories)) {
+                        const cIdx = window.userCategories.indexOf(oldName);
+                        if (cIdx !== -1) {
+                            window.userCategories[cIdx] = newName;
+                            localStorage.setItem('userCategories', JSON.stringify(window.userCategories));
+                        }
+                    }
+                    if (window.renderCategoryBar) window.renderCategoryBar();
+                    if (this.ctx.renderMain) this.ctx.renderMain(allApps, true);
+                    return;
+                }
+
                 this.syncToGlobalState();
             }
         });
@@ -166,6 +196,10 @@ export class FolderManager {
         this.isOpen = true;
         this.currentFolderData = JSON.parse(JSON.stringify(folderData));
 
+        if (this.titleConvertBtn) {
+            this.titleConvertBtn.style.display = this.currentFolderData._isVirtualCategory ? 'none' : '';
+        }
+
         this.titleEl.innerText = this.currentFolderData.name;
         this.renderItems();
 
@@ -211,6 +245,10 @@ export class FolderManager {
         this.isOpen = false;
         this.activeFolderIndex = -1;
         this.targetFolderRef = null;
+
+        if (this.titleConvertBtn) {
+            this.titleConvertBtn.style.display = '';
+        }
 
         this.overlay.classList.remove('active');
         document.body.classList.remove('folder-open');
@@ -293,6 +331,43 @@ export class FolderManager {
                     this.ctx.iconEditor.open((newData) => {
                         if (realIdx !== -1) {
                             const updatedApp = { ...app, ...newData };
+
+                            if (this.currentFolderData._isVirtualCategory) {
+                                const allApps = this.ctx.getApps();
+                                const updateAppInList = (list) => {
+                                    for (let i = 0; i < list.length; i++) {
+                                        if (list[i].type === 'folder' && Array.isArray(list[i].items)) {
+                                            updateAppInList(list[i].items);
+                                        } else if (list[i] === app || (list[i].name === app.name && list[i].url === app.url)) {
+                                            Object.assign(list[i], updatedApp);
+                                        }
+                                    }
+                                };
+                                updateAppInList(allApps);
+                                this.ctx.saveApps(allApps);
+
+                                const catName = this.currentFolderData.name;
+                                const stillBelongs = Array.isArray(updatedApp.category)
+                                    ? updatedApp.category.includes(catName)
+                                    : updatedApp.category === catName;
+
+                                if (!stillBelongs) {
+                                    this.currentFolderData.items.splice(realIdx, 1);
+                                } else {
+                                    this.currentFolderData.items[realIdx] = updatedApp;
+                                }
+
+                                if (this.currentFolderData.items.length === 0) {
+                                    this.close();
+                                } else {
+                                    this.renderItems();
+                                }
+                                if (this.ctx.renderMain) {
+                                    this.ctx.renderMain(allApps, true);
+                                }
+                                return;
+                            }
+
                             const isOnMain = window.isAppOnMain ? window.isAppOnMain(updatedApp) : !updatedApp._explicitNoMain;
                             if (!isOnMain) {
                                 this.currentFolderData.items.splice(realIdx, 1);
@@ -411,6 +486,44 @@ export class FolderManager {
         // Обновляем UI внутри папки
         this.renderItems();
 
+        if (this.currentFolderData._isVirtualCategory) {
+            const catName = this.currentFolderData.name;
+            const allApps = this.ctx.getApps();
+
+            // Удаляем эту категорию у приложения в глобальном стейте
+            const removeCatFromApp = (list) => {
+                for (let i = 0; i < list.length; i++) {
+                    const item = list[i];
+                    if (item.type === 'folder' && Array.isArray(item.items)) {
+                        removeCatFromApp(item.items);
+                    } else if (item === app || (item.name === app.name && item.url === app.url)) {
+                        if (Array.isArray(item.category)) {
+                            item.category = item.category.filter(c => c !== catName);
+                        } else if (item.category === catName) {
+                            item.category = [];
+                        }
+                        if (!item.category || item.category.length === 0) {
+                            item.category = ['Главная'];
+                            delete item._explicitNoMain;
+                        }
+                    }
+                }
+            };
+            removeCatFromApp(allApps);
+
+            this.ctx.saveApps(allApps);
+            if (this.currentFolderData.items.length === 0) {
+                this.close();
+            }
+            if (this.ctx.renderMain) {
+                this.ctx.renderMain(allApps, true);
+            }
+            if (typeof window.showToast === 'function') {
+                window.showToast(`«${app.name}» убрано из категории «${catName}»`);
+            }
+            return;
+        }
+
         // Обновляем папку в глобальном стейте
         const allApps = this.ctx.getApps();
         const targetIndex = this.getRealFolderIndex(allApps);
@@ -454,12 +567,47 @@ export class FolderManager {
     }
 
     deleteItem(index) {
+        if (this.currentFolderData && this.currentFolderData._isVirtualCategory) {
+            const app = this.currentFolderData.items.splice(index, 1)[0];
+            const allApps = this.ctx.getApps();
+
+            const removeAppFromList = (list) => {
+                const idx = list.findIndex(item => item === app || (item.name === app.name && item.url === app.url));
+                if (idx !== -1) {
+                    list.splice(idx, 1);
+                    return true;
+                }
+                for (const item of list) {
+                    if (item.type === 'folder' && Array.isArray(item.items)) {
+                        if (removeAppFromList(item.items)) return true;
+                    }
+                }
+                return false;
+            };
+            removeAppFromList(allApps);
+
+            this.ctx.saveApps(allApps);
+            if (this.currentFolderData.items.length === 0) {
+                this.close();
+            } else {
+                this.renderItems();
+            }
+            if (this.ctx.renderMain) {
+                this.ctx.renderMain(allApps, true);
+            }
+            return;
+        }
+
         this.currentFolderData.items.splice(index, 1);
         this.renderItems();
         this.syncToGlobalState();
     }
 
     saveOrderFromDOM() {
+        if (this.currentFolderData && this.currentFolderData._isVirtualCategory) {
+            return;
+        }
+
         const domItems = this.gridEl.querySelectorAll('.app-item');
         const subRenderedList = [];
         domItems.forEach(el => {

@@ -3900,6 +3900,34 @@
         } catch (e) {
             window.userCategories = [];
         }
+
+        // Авто-синхронизация: подтягиваем категории, которые есть у сохраненных сайтов, но выпали из списка
+        try {
+            const cachedAppsRaw = localStorage.getItem('my_apps_cache_v1');
+            if (cachedAppsRaw) {
+                const parsed = JSON.parse(cachedAppsRaw);
+                let addedAny = false;
+                const scanCats = (list) => {
+                    (list || []).forEach(item => {
+                        if (item && item.type === 'folder' && Array.isArray(item.items)) {
+                            scanCats(item.items);
+                        } else if (item) {
+                            const cats = Array.isArray(item.category) ? item.category : (item.category ? [item.category] : []);
+                            cats.forEach(c => {
+                                if (c && c !== 'Главная' && !window.userCategories.includes(c)) {
+                                    window.userCategories.push(c);
+                                    addedAny = true;
+                                }
+                            });
+                        }
+                    });
+                };
+                scanCats(parsed);
+                if (addedAny) {
+                    localStorage.setItem('userCategories', JSON.stringify(window.userCategories));
+                }
+            }
+        } catch (e) {}
         let currentCategoryFilter = null;
         Object.defineProperty(window, 'currentCategoryFilter', {
             get: () => currentCategoryFilter,

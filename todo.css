@@ -3264,21 +3264,23 @@ body.dark .btn-empty-trash:hover {
     fill: currentColor;
 }
 
-/* Появление иконки при наведении */
-@media (hover: hover) {
-    .task-item:hover .task-drag-handle {
-        opacity: 0.6;
-        pointer-events: auto;
-    }
-
-    .task-item:hover .task-drag-handle:hover {
-        opacity: 1;
-        color: var(--text);
-    }
+/* Появление иконки при наведении.
+ * Не завязываемся на @media (hover: hover): на гибридных устройствах
+ * браузер может вернуть hover: none даже при наличии мыши/трекпада. */
+.task-item:hover .task-drag-handle,
+.task-item:focus-within .task-drag-handle {
+    opacity: 0.6;
+    pointer-events: auto;
 }
 
-/* На мобильных (тач) хэндл скрыт */
-@media (hover: none) {
+.task-item:hover .task-drag-handle:hover,
+.task-item:focus-within .task-drag-handle:hover {
+    opacity: 1;
+    color: var(--text);
+}
+
+/* На узких touch-экранах хэндл скрыт */
+@media (max-width: 768px) {
     .task-drag-handle {
         display: none !important;
     }
@@ -4794,7 +4796,8 @@ body.dark .section-actions-btn:hover {
     border-radius: 14px;
     border: 1px solid #ebf0f5;
     padding: 0;
-    overflow: hidden;
+    /* Хэндл задачи находится левее карточки, поэтому его нельзя обрезать. */
+    overflow: visible;
     margin-bottom: 0px !important;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
     min-height: 20px;

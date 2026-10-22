@@ -1872,6 +1872,75 @@
             }
         }
 
+        /* Expanded player becomes the full page canvas below the fixed header. */
+        #main-player-card.active {
+            top: 56px !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            max-width: none !important;
+            max-height: none !important;
+            height: auto !important;
+            border-radius: 0;
+            padding: 24px clamp(16px, 3vw, 48px);
+        }
+
+        #main-player-card.active #player-container {
+            width: 100%;
+            max-width: 1200px;
+            height: 100%;
+            margin: 0 auto;
+        }
+
+        body:has(#main-player-card.active) .vk-sidebar-container {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Keep the fixed header visually part of the expanded player. */
+        body:has(#main-player-card.active) .vk-header {
+            --card-bg: #171719;
+            --border: rgba(255, 255, 255, 0.12);
+            --text: #ffffff;
+            --hover-bg: rgba(255, 255, 255, 0.08);
+            background-color: #171719;
+            border-bottom-color: rgba(255, 255, 255, 0.12);
+        }
+
+        body:has(#main-player-card.active) .vk-header .logo-img.logo-light {
+            display: none;
+        }
+
+        body:has(#main-player-card.active) .vk-header .logo-img.logo-dark {
+            display: block;
+        }
+
+        body:has(#main-player-card.active) .vk-header .vk-tp-btn,
+        body:has(#main-player-card.active) .vk-header .vk-tp-action-btn,
+        body:has(#main-player-card.active) .vk-header .vk-tp-extra,
+        body:has(#main-player-card.active) .vk-header .vk-tp-time,
+        body:has(#main-player-card.active) .vk-header .vk-tp-artist {
+            color: #aeb5c0;
+        }
+
+        body:has(#main-player-card.active) .vk-header .vk-tp-btn.vk-tp-btn-nav,
+        body:has(#main-player-card.active) .vk-header .vk-tp-btn.active,
+        body:has(#main-player-card.active) .vk-header .vk-tp-action-btn.active {
+            color: #7da5e0 !important;
+        }
+
+        body:has(#main-player-card.active) .vk-header .vk-tp-progress-track {
+            background: #3c414a;
+        }
+
+        /* Larger artwork on wide displays, capped to preserve the player balance. */
+        #main-player-card.active #main-player-area.mode-audio #visual-container {
+            width: clamp(280px, 26vw, 420px);
+            max-width: calc(100% - 32px);
+            max-height: none;
+        }
+
         /* 8. Заглушки */
         .empty-list-stub {
             display: flex;

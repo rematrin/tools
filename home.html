@@ -3272,14 +3272,17 @@
                 display: none;
             }
 
-            /* Сетка капсул категорий библиотеки (2 колонки) */
+            /* Адаптивная сетка капсул библиотеки: от 2 до 4 колонок */
             .app-library-grid {
                 display: grid;
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(auto-fit, minmax(150px, 160px));
                 gap: 16px 14px;
                 width: 100%;
+                max-width: 700px;
+                margin: 0 auto;
                 box-sizing: border-box;
                 align-content: start;
+                justify-content: center;
             }
 
             /* Отдельный блок категории в библиотеке */
@@ -3564,6 +3567,13 @@
                 padding-top: calc(env(safe-area-inset-top, 0px) + 58px);
                 padding-bottom: max(40px, calc(env(safe-area-inset-bottom, 0px) + 24px));
                 -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        /* Компактная ширина библиотеки на небольших экранах: карточки не растягиваются */
+        @media (max-width: 600px) {
+            body.iphone-mockup-enabled .app-library-grid {
+                max-width: 350px;
             }
         }
 

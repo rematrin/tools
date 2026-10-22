@@ -31,7 +31,7 @@
         (function () {
             const STORAGE_KEY = 'user_wallpaper_settings_v1';
             const defaultSettings = {
-                url: 'https://i.ibb.co/9krvx4ms/465581.jpg',
+                url: 'https://i.ibb.co/qFV3RdfY/29e2c667e908.png',
                 blur: 0,
                 dim: 30
             };
@@ -69,7 +69,7 @@
 
                 // Загружаем обои и эффекты для экрана телефона
                 const savedPhoneSettingsStr = localStorage.getItem('user_iphone_wallpaper_settings_v1');
-                let phoneWpUrl = localStorage.getItem('user_iphone_wallpaper_v1') || 'https://images.unsplash.com/photo-1511497584788-87676104235f?q=80&w=1200&auto=format&fit=crop';
+                let phoneWpUrl = localStorage.getItem('user_iphone_wallpaper_v1') || 'https://i.ibb.co/Ps0ntx5Y/9d792efca2c0.png';
                 let phoneBlur = 0;
                 let phoneDim = 15;
                 if (savedPhoneSettingsStr) {
@@ -2958,7 +2958,7 @@
                 display: block;
                 position: absolute;
                 inset: 0;
-                background-image: var(--iphone-wallpaper, url('https://images.unsplash.com/photo-1511497584788-87676104235f?q=80&w=1200&auto=format&fit=crop'));
+                background-image: var(--iphone-wallpaper, url('https://i.ibb.co/Ps0ntx5Y/9d792efca2c0.png'));
                 background-size: cover;
                 background-position: center center;
                 z-index: 0;

@@ -4,12 +4,12 @@ export class WallpaperManager {
         this.PHONE_STORAGE_KEY = 'user_iphone_wallpaper_v1';
         this.PHONE_SETTINGS_KEY = 'user_iphone_wallpaper_settings_v1';
         this.defaultSettings = {
-            url: 'https://i.ibb.co/9krvx4ms/465581.jpg',
+            url: 'https://i.ibb.co/qFV3RdfY/29e2c667e908.png',
             blur: 0, // 0-100%
             dim: 30   // 0-100%
         };
         this.defaultPhoneSettings = {
-            url: 'https://images.unsplash.com/photo-1511497584788-87676104235f?q=80&w=1200&auto=format&fit=crop',
+            url: 'https://i.ibb.co/Ps0ntx5Y/9d792efca2c0.png',
             blur: 0,
             dim: 15
         };

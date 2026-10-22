@@ -228,7 +228,9 @@
             transition: opacity 1.2s ease;
         }
 
-        .has-dynamic-bg .player-ambient { opacity: 1; }
+        .has-dynamic-bg .player-ambient {
+            opacity: 1;
+        }
 
         .player-ambient::before,
         .player-ambient::after {
@@ -254,19 +256,39 @@
         }
 
         @keyframes ambient-orbit {
-            0%, 100% { transform: translate(-6%, -4%) rotate(0deg) scale(1); }
-            33% { transform: translate(7%, -5%) rotate(55deg) scale(1.12); }
-            66% { transform: translate(-3%, 7%) rotate(125deg) scale(1.04); }
+
+            0%,
+            100% {
+                transform: translate(-6%, -4%) rotate(0deg) scale(1);
+            }
+
+            33% {
+                transform: translate(7%, -5%) rotate(55deg) scale(1.12);
+            }
+
+            66% {
+                transform: translate(-3%, 7%) rotate(125deg) scale(1.04);
+            }
         }
 
         @keyframes ambient-drift {
-            0%, 100% { transform: translate(6%, 4%) rotate(15deg) scale(1.1); }
-            50% { transform: translate(-8%, -6%) rotate(-80deg) scale(1.22); }
+
+            0%,
+            100% {
+                transform: translate(6%, 4%) rotate(15deg) scale(1.1);
+            }
+
+            50% {
+                transform: translate(-8%, -6%) rotate(-80deg) scale(1.22);
+            }
         }
 
         @media (prefers-reduced-motion: reduce) {
+
             #main-player-card .player-ambient::before,
-            #main-player-card .player-ambient::after { animation: none; }
+            #main-player-card .player-ambient::after {
+                animation: none;
+            }
         }
 
         html.page-hidden #main-player-card .player-ambient::before,
@@ -899,31 +921,82 @@
             flex-shrink: 0;
         }
 
-        #main-player-card .playlist-index { color: #fff; }
+        #main-player-card .playlist-index {
+            color: #fff;
+        }
 
-        .playlist-thumb { position: relative; }
+        .playlist-thumb {
+            position: relative;
+        }
+
         .queue-cover-control {
-            position: absolute; inset: 0; width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center;
-            border: 0; padding: 0; color: #fff; background: rgba(0, 0, 0, 0.5);
-            opacity: 0; cursor: pointer; transition: opacity 0.15s ease;
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            padding: 0;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            cursor: pointer;
+            transition: opacity 0.15s ease;
         }
-        .queue-cover-control svg { width: 22px; height: 22px; fill: currentColor; }
+
+        .queue-cover-control svg {
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
+        }
+
         .queue-cover-control .queue-pause-icon,
-        .queue-cover-control .eq-container { display: none; }
-        :is(.playlist-item, .playlist-track-row, tr):hover .queue-cover-control,
-        :is(.playlist-item, .playlist-track-row, tr).playing .queue-cover-control { opacity: 1; }
-        :is(.playlist-item, .playlist-track-row, tr).playing .queue-play-icon { display: none; }
-        :is(.playlist-item, .playlist-track-row, tr).playing .eq-container { display: flex; }
-        :is(.playlist-item, .playlist-track-row, tr).playing:hover .eq-container { display: none; }
-        :is(.playlist-item, .playlist-track-row, tr).playing:hover .queue-pause-icon { display: block; }
-        .queue-cover-control .eq-bar { background: #fff; }
-        .queue-cover-control:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
-        @media (hover: none) {
-            .queue-cover-control { opacity: 1; }
+        .queue-cover-control .eq-container {
+            display: none;
         }
+
+        :is(.playlist-item, .playlist-track-row, tr):hover .queue-cover-control,
+        :is(.playlist-item, .playlist-track-row, tr).playing .queue-cover-control {
+            opacity: 1;
+        }
+
+        :is(.playlist-item, .playlist-track-row, tr).playing .queue-play-icon {
+            display: none;
+        }
+
+        :is(.playlist-item, .playlist-track-row, tr).playing .eq-container {
+            display: flex;
+        }
+
+        :is(.playlist-item, .playlist-track-row, tr).playing:hover .eq-container {
+            display: none;
+        }
+
+        :is(.playlist-item, .playlist-track-row, tr).playing:hover .queue-pause-icon {
+            display: block;
+        }
+
+        .queue-cover-control .eq-bar {
+            background: #fff;
+        }
+
+        .queue-cover-control:focus-visible {
+            outline: 2px solid #fff;
+            outline-offset: -2px;
+        }
+
+        @media (hover: none) {
+            .queue-cover-control {
+                opacity: 1;
+            }
+        }
+
         @media (prefers-reduced-motion: reduce) {
-            .queue-cover-control .eq-bar { animation: none; }
+            .queue-cover-control .eq-bar {
+                animation: none;
+            }
         }
 
         .playlist-thumb {
@@ -1087,7 +1160,8 @@
 
 
         /* --- VK Sidebar Layout --- */
-        html, body {
+        html,
+        body {
             min-height: 100vh;
             margin: 0;
             padding: 0;
@@ -1232,6 +1306,7 @@
                 padding-left: 0 !important;
                 padding-right: 0 !important;
             }
+
             #main-player-card {
                 left: calc(50% - 540px + 174px) !important;
                 right: calc(50% - 540px + 8px) !important;
@@ -1937,12 +2012,19 @@
             max-width: 1200px;
             height: 100%;
             margin: 0 auto;
+            gap: 40px;
         }
 
         /* Keep the queue as a compact panel and scroll its track list internally. */
         #main-player-card.active #playlist-sidebar {
             height: min(720px, calc(100vh - 104px));
             align-self: center;
+        }
+
+        @media (min-width: 769px) {
+            #main-player-card.active #main-player-area {
+                transform: translateX(clamp(-28px, -1.5vw, -16px));
+            }
         }
 
         body:has(#main-player-card.active) .vk-sidebar-container {
@@ -1991,8 +2073,20 @@
             width: clamp(280px, 26vw, 420px);
             max-width: calc(100% - 32px);
             max-height: none;
+            margin-top: 8px;
+            margin-bottom: 18px;
+            margin-left: auto;
+            margin-right: auto;
             box-shadow: 0 18px 38px rgba(0, 0, 0, 0.28),
                 0 5px 12px rgba(0, 0, 0, 0.16);
+        }
+
+        #main-player-card.active #main-player-area.mode-audio {
+            transform: translateX(10px);
+        }
+
+        #main-player-card.active #controls .volume-container {
+            display: none;
         }
 
         /* 8. Заглушки */
@@ -2466,34 +2560,78 @@
         }
 
         .radio-favorite-btn {
-            width: 34px; height: 34px; padding: 7px; border: none;
-            border-radius: 50%; background: rgba(0, 0, 0, 0.55);
-            color: #fff; cursor: pointer; display: inline-flex;
-            align-items: center; justify-content: center; flex-shrink: 0;
+            width: 34px;
+            height: 34px;
+            padding: 7px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.55);
+            color: #fff;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
-        .radio-card-cover > .radio-favorite-btn,
-        .radio-hero-banner > .radio-favorite-btn {
-            position: absolute; top: 8px; left: 8px; z-index: 20;
+
+        .radio-card-cover>.radio-favorite-btn,
+        .radio-hero-banner>.radio-favorite-btn {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            z-index: 20;
         }
+
         @media (hover: hover) {
-            .radio-card-cover > .radio-favorite-btn,
-            .radio-hero-banner > .radio-favorite-btn {
-                opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+
+            .radio-card-cover>.radio-favorite-btn,
+            .radio-hero-banner>.radio-favorite-btn {
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.15s ease;
             }
+
             .radio-card:hover .radio-favorite-btn,
             .radio-card:focus-within .radio-favorite-btn,
-            .radio-hero-banner:hover > .radio-favorite-btn,
-            .radio-hero-banner:focus-within > .radio-favorite-btn {
-                opacity: 1; pointer-events: auto;
+            .radio-hero-banner:hover>.radio-favorite-btn,
+            .radio-hero-banner:focus-within>.radio-favorite-btn {
+                opacity: 1;
+                pointer-events: auto;
             }
         }
-        .radio-hero-banner .radio-badge { margin-left: 36px; }
-        .radio-favorite-btn[aria-pressed="true"] { color: #ffd66b; }
-        .radio-favorite-btn:hover { background: rgba(0, 0, 0, 0.8); }
-        .radio-favorite-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-        .radio-favorite-btn:disabled { opacity: 0.55; cursor: wait; }
-        .radio-favorite-btn svg { width: 20px; height: 20px; }
-        .radio-live-controls { display: inline-flex; align-items: center; gap: 10px; }
+
+        .radio-hero-banner .radio-badge {
+            margin-left: 36px;
+        }
+
+        .radio-favorite-btn[aria-pressed="true"] {
+            color: #ffd66b;
+        }
+
+        .radio-favorite-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .radio-favorite-btn:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 3px;
+        }
+
+        .radio-favorite-btn:disabled {
+            opacity: 0.55;
+            cursor: wait;
+        }
+
+        .radio-favorite-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .radio-live-controls {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
 
         .radio-antenna-badge {
             position: absolute;
@@ -2523,9 +2661,11 @@
             margin-bottom: 24px;
             scrollbar-width: none;
         }
+
         .radio-tabs-bar::-webkit-scrollbar {
             display: none;
         }
+
         .radio-tab-pill {
             display: inline-flex;
             align-items: center;
@@ -2542,10 +2682,12 @@
             transition: all 0.2s ease;
             user-select: none;
         }
+
         .radio-tab-pill:hover {
             background: var(--active-bg);
             color: var(--text);
         }
+
         .radio-tab-pill.active {
             background: var(--text);
             color: var(--bg);
@@ -2559,6 +2701,7 @@
             max-width: 480px;
             width: 100%;
         }
+
         .radio-search-input {
             width: 100%;
             padding: 10px 16px 10px 40px;
@@ -2572,10 +2715,12 @@
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
             box-sizing: border-box;
         }
+
         .radio-search-input:focus {
             border-color: var(--accent);
             box-shadow: 0 0 0 3px rgba(252, 60, 68, 0.15);
         }
+
         .radio-search-icon {
             position: absolute;
             left: 14px;
@@ -2586,6 +2731,7 @@
             display: flex;
             align-items: center;
         }
+
         .radio-search-clear {
             position: absolute;
             right: 12px;
@@ -2599,6 +2745,7 @@
             padding: 4px;
             border-radius: 50%;
         }
+
         .radio-search-clear:hover {
             color: var(--text);
         }
@@ -2611,9 +2758,11 @@
             position: relative;
             transition: transform 0.2s ease;
         }
+
         .radio-card:hover {
             transform: translateY(-4px);
         }
+
         .radio-card-cover {
             position: relative;
             width: 100%;
@@ -2624,6 +2773,7 @@
             border: 1px solid var(--border);
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
         }
+
         .radio-card-img {
             position: absolute;
             inset: 0;
@@ -2632,9 +2782,11 @@
             object-fit: cover;
             transition: transform 0.3s ease;
         }
+
         .radio-card:hover .radio-card-img {
             transform: scale(1.05);
         }
+
         .radio-card-logo-fallback {
             position: absolute;
             inset: 0;
@@ -2647,6 +2799,7 @@
             font-size: 1.8rem;
             text-transform: uppercase;
         }
+
         .radio-card-overlay {
             position: absolute;
             inset: 0;
@@ -2657,14 +2810,17 @@
             justify-content: center;
             transition: opacity 0.2s ease;
         }
+
         .radio-card:hover .radio-card-overlay,
         .radio-card.playing .radio-card-overlay {
             opacity: 1;
         }
+
         .radio-card.playing .radio-card-cover {
             border-color: var(--accent);
             box-shadow: 0 0 0 2px var(--accent);
         }
+
         .radio-card-play-btn {
             width: 44px;
             height: 44px;
@@ -2679,13 +2835,16 @@
             box-shadow: 0 4px 12px rgba(252, 60, 68, 0.4);
             transition: transform 0.15s ease, background-color 0.15s ease;
         }
+
         .radio-card-play-btn:hover {
             transform: scale(1.08);
             background: var(--accent-hover);
         }
+
         .radio-card-info {
             margin-top: 10px;
         }
+
         .radio-card-title {
             font-weight: 700;
             font-size: 0.9rem;
@@ -2694,6 +2853,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         .radio-card-tags {
             font-size: 0.75rem;
             color: var(--text-secondary);
@@ -2705,6 +2865,7 @@
             align-items: center;
             gap: 6px;
         }
+
         .radio-bitrate-badge {
             font-size: 9px;
             font-weight: 700;
@@ -2714,27 +2875,48 @@
             border: 1px solid var(--border);
             color: var(--text-secondary);
         }
+
         .radio-live-eq {
             display: none;
             align-items: flex-end;
             gap: 2px;
             height: 14px;
         }
+
         .radio-card.playing .radio-live-eq {
             display: flex;
         }
+
         .radio-live-eq-bar {
             width: 3px;
             background: var(--accent);
             border-radius: 1px;
             animation: radio-eq 0.8s ease-in-out infinite alternate;
         }
-        .radio-live-eq-bar:nth-child(1) { height: 100%; animation-delay: 0.1s; }
-        .radio-live-eq-bar:nth-child(2) { height: 60%; animation-delay: 0.3s; }
-        .radio-live-eq-bar:nth-child(3) { height: 80%; animation-delay: 0.2s; }
+
+        .radio-live-eq-bar:nth-child(1) {
+            height: 100%;
+            animation-delay: 0.1s;
+        }
+
+        .radio-live-eq-bar:nth-child(2) {
+            height: 60%;
+            animation-delay: 0.3s;
+        }
+
+        .radio-live-eq-bar:nth-child(3) {
+            height: 80%;
+            animation-delay: 0.2s;
+        }
+
         @keyframes radio-eq {
-            0% { height: 20%; }
-            100% { height: 100%; }
+            0% {
+                height: 20%;
+            }
+
+            100% {
+                height: 100%;
+            }
         }
 
         /* Playbar in Radio Mode (No expansion, no underlines) */
@@ -2742,9 +2924,11 @@
             cursor: default !important;
             text-decoration: none !important;
         }
+
         .bottom-playbar.is-radio .playbar-title:hover {
             text-decoration: none !important;
         }
+
         .bottom-playbar.is-radio .playbar-thumbnail {
             cursor: default !important;
         }
@@ -3222,9 +3406,15 @@
         }
 
         @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
+
         .spinning {
             animation: spin 1s linear infinite;
         }
@@ -3260,8 +3450,8 @@
             pointer-events: none;
             margin-left: 0;
             transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                        opacity 0.25s ease,
-                        margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                opacity 0.25s ease,
+                margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .header-search-box.expanded {
@@ -3607,8 +3797,15 @@
         }
 
         @keyframes fadeInScale {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         .artist-options-dropdown .dropdown-item {
@@ -3718,7 +3915,7 @@
         .artist-view-mode-btn.active {
             background: var(--card-bg, #282828);
             color: #fa243c;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
         }
 
         .artist-detail-meta-text {
@@ -3957,8 +4154,9 @@
             z-index: 40;
             transition: none;
         }
-            z-index: 40;
-            transition: none;
+
+        z-index: 40;
+        transition: none;
         }
 
         body.dark .vk-top-player {
@@ -4379,6 +4577,7 @@
                 box-shadow: 0 0 0 2px rgba(255, 60, 120, 0.5), 0 0 10px rgba(255, 60, 120, 0.5), 0 0 18px rgba(113, 89, 237, 0.35);
                 transform: none;
             }
+
             100% {
                 box-shadow: 0 0 0 2px rgba(142, 68, 243, 0.8), 0 0 22px rgba(255, 60, 120, 0.85), 0 0 34px rgba(113, 89, 237, 0.7);
                 transform: none;
@@ -4393,8 +4592,13 @@
         }
 
         @keyframes vkGradientMove {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
+            0% {
+                background-position: 0% 50%;
+            }
+
+            100% {
+                background-position: 100% 50%;
+            }
         }
 
         /* Radio mode styles for top player */
@@ -4655,35 +4859,44 @@
                 <div id="vk-top-player" class="vk-top-player">
                     <!-- Левые кнопки управления -->
                     <div class="vk-tp-left">
-                        <button type="button" class="vk-tp-btn vk-tp-btn-nav" id="vk-player-prev" onclick="prevTrack()" aria-label="Предыдущий трек">
+                        <button type="button" class="vk-tp-btn vk-tp-btn-nav" id="vk-player-prev" onclick="prevTrack()"
+                            aria-label="Предыдущий трек">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M6 6h2v12H6zm3.5 6l8.5 6V6l-8.5 6z" />
                             </svg>
                         </button>
 
-                        <button type="button" class="vk-tp-play-pause" id="vk-player-play-pause" onclick="toggleVkPlayerPlay()" aria-label="Воспроизведение">
+                        <button type="button" class="vk-tp-play-pause" id="vk-player-play-pause"
+                            onclick="toggleVkPlayerPlay()" aria-label="Воспроизведение">
                             <svg id="vk-icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M8 5v14l11-7z" />
                             </svg>
-                            <svg id="vk-icon-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+                            <svg id="vk-icon-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
+                                style="display:none;">
                                 <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                             </svg>
                         </button>
 
-                        <button type="button" class="vk-tp-btn vk-tp-btn-nav" id="vk-player-next" onclick="nextTrack()" aria-label="Следующий трек">
+                        <button type="button" class="vk-tp-btn vk-tp-btn-nav" id="vk-player-next" onclick="nextTrack()"
+                            aria-label="Следующий трек">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
                             </svg>
                         </button>
 
-                        <button type="button" class="vk-tp-btn vk-tp-btn-shuffle" id="vk-player-shuffle" onclick="toggleVkPlayerShuffle()" data-vk-tooltip="Перемешать" aria-label="Перемешать">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3" />
+                        <button type="button" class="vk-tp-btn vk-tp-btn-shuffle" id="vk-player-shuffle"
+                            onclick="toggleVkPlayerShuffle()" data-vk-tooltip="Перемешать" aria-label="Перемешать">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path
+                                    d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3" />
                             </svg>
                         </button>
 
-                        <button type="button" class="vk-tp-btn" id="vk-player-repeat" onclick="toggleVkPlayerRepeat()" data-vk-tooltip="Повторять все треки" aria-label="Повторять">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <button type="button" class="vk-tp-btn" id="vk-player-repeat" onclick="toggleVkPlayerRepeat()"
+                            data-vk-tooltip="Повторять все треки" aria-label="Повторять">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="17 1 21 5 17 9"></polyline>
                                 <path d="M3 11V9a4 4 0 0 1 4-4h14M7 23 3 19 7 15"></path>
                                 <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
@@ -4694,9 +4907,12 @@
                     <!-- Центральный блок: Обложка + Инфо + Экшены + Полоса прогресса -->
                     <div class="vk-tp-center">
                         <div class="vk-tp-cover" id="vk-player-cover" onclick="toggleFullPlayerCard()">
-                            <img id="vk-player-cover-img" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23222'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='16' fill='%23666'>🎵</text></svg>" alt="Cover">
+                            <img id="vk-player-cover-img"
+                                src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23222'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='16' fill='%23666'>🎵</text></svg>"
+                                alt="Cover">
                             <div class="vk-tp-cover-overlay">
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ffffff"
+                                    stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
                                     <polyline points="15 3 21 3 21 9"></polyline>
                                     <line x1="21" y1="3" x2="14" y2="10"></line>
                                     <polyline points="9 21 3 21 3 15"></polyline>
@@ -4709,52 +4925,80 @@
                             <!-- Верхний ряд: Название трека слева, кнопки и время справа -->
                             <div class="vk-tp-top-row">
                                 <div class="vk-tp-title-group">
-                                    <span id="vk-player-title" class="vk-tp-title" onclick="toggleFullPlayerCard()">Выберите трек для воспроизведения</span>
+                                    <span id="vk-player-title" class="vk-tp-title"
+                                        onclick="toggleFullPlayerCard()">Выберите трек для воспроизведения</span>
                                     <span id="vk-player-extra" class="vk-tp-extra"></span>
                                 </div>
                                 <div class="vk-tp-inline-actions">
                                     <!-- Radio Favorite Star Button (Only shown during Radio) -->
-                                    <button type="button" class="vk-tp-action-btn radio-favorite-btn" id="vk-player-btn-radio-fav" onclick="toggleVkPlayerRadioFav()" data-vk-tooltip="Добавить в избранное" aria-label="Избранное" style="display:none;">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
-                                            <path d="m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.6l6.2-.9Z" />
+                                    <button type="button" class="vk-tp-action-btn radio-favorite-btn"
+                                        id="vk-player-btn-radio-fav" onclick="toggleVkPlayerRadioFav()"
+                                        data-vk-tooltip="Добавить в избранное" aria-label="Избранное"
+                                        style="display:none;">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+                                            <path
+                                                d="m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.6l6.2-.9Z" />
                                         </svg>
                                     </button>
 
-                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-add" onclick="toggleVkPlayerAdd()" data-vk-tooltip="Добавить в Мою музыку" aria-label="Добавить">
-                                        <svg id="vk-icon-add-plus" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-add"
+                                        onclick="toggleVkPlayerAdd()" data-vk-tooltip="Добавить в Мою музыку"
+                                        aria-label="Добавить">
+                                        <svg id="vk-icon-add-plus" width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                                             <line x1="12" y1="5" x2="12" y2="19"></line>
                                             <line x1="5" y1="12" x2="19" y2="12"></line>
                                         </svg>
-                                        <svg id="vk-icon-add-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#476faf" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                        <svg id="vk-icon-add-check" width="20" height="20" viewBox="0 0 24 24"
+                                            fill="none" stroke="#476faf" stroke-width="2.5" stroke-linecap="round"
+                                            stroke-linejoin="round" style="display:none;">
                                             <polyline points="20 6 9 17 4 12"></polyline>
                                         </svg>
                                     </button>
 
-                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-dislike" onclick="toggleVkPlayerDislike()" data-vk-tooltip="Не рекомендовать" aria-label="Не рекомендовать">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
+                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-dislike"
+                                        onclick="toggleVkPlayerDislike()" data-vk-tooltip="Не рекомендовать"
+                                        aria-label="Не рекомендовать">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path
+                                                d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
                                         </svg>
                                     </button>
 
-                                    <button type="button" class="vk-tp-action-btn active" id="vk-player-btn-crossfade" onclick="toggleVkPlayerCrossfade()" data-vk-tooltip="Кроссфейд вкл." aria-label="Кроссфейд">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <button type="button" class="vk-tp-action-btn active" id="vk-player-btn-crossfade"
+                                        onclick="toggleVkPlayerCrossfade()" data-vk-tooltip="Кроссфейд вкл."
+                                        aria-label="Кроссфейд">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
                                             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                                         </svg>
                                     </button>
 
-                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-similar" onclick="toggleVkPlayerSimilar()" data-vk-tooltip="Турбо-микс выкл." aria-label="Турбо-микс">
+                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-similar"
+                                        onclick="toggleVkPlayerSimilar()" data-vk-tooltip="Турбо-микс выкл."
+                                        aria-label="Турбо-микс">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                                            <path d="M16 10a4 4 0 0 1 0 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                            <path d="M19 7.5a7.5 7.5 0 0 1 0 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path
+                                                d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                                            <path d="M16 10a4 4 0 0 1 0 4" fill="none" stroke="currentColor"
+                                                stroke-width="1.8" stroke-linecap="round" />
+                                            <path d="M19 7.5a7.5 7.5 0 0 1 0 9" fill="none" stroke="currentColor"
+                                                stroke-width="1.8" stroke-linecap="round" />
                                         </svg>
                                     </button>
 
-                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-lyrics" onclick="toggleVkPlayerLyrics()" data-vk-tooltip="Текст песни" aria-label="Текст песни">
+                                    <button type="button" class="vk-tp-action-btn" id="vk-player-btn-lyrics"
+                                        onclick="toggleVkPlayerLyrics()" data-vk-tooltip="Текст песни"
+                                        aria-label="Текст песни">
                                         <span class="vk-tp-lyrics-text">Tт</span>
                                     </button>
 
-                                    <div class="vk-tp-time" id="vk-player-time" onclick="toggleVkPlayerTimeMode()">0:00</div>
+                                    <div class="vk-tp-time" id="vk-player-time" onclick="toggleVkPlayerTimeMode()">0:00
+                                    </div>
                                 </div>
                             </div>
 
@@ -4777,14 +5021,20 @@
                     <!-- Правый блок: Громкость -->
                     <div class="vk-tp-right">
                         <div class="vk-tp-volume-block">
-                            <button type="button" class="vk-tp-volume-btn" id="vk-player-vol-icon" onclick="toggleMute()" aria-label="Звук">
-                                <svg id="vk-vol-high" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <button type="button" class="vk-tp-volume-btn" id="vk-player-vol-icon"
+                                onclick="toggleMute()" aria-label="Звук">
+                                <svg id="vk-vol-high" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                    stroke-linejoin="round">
                                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                                     <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                                     <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
                                 </svg>
-                                <svg id="vk-vol-mute" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="currentColor"></polygon>
+                                <svg id="vk-vol-mute" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                    stroke-linejoin="round" style="display:none;">
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"
+                                        stroke="currentColor"></polygon>
                                     <line x1="23" y1="9" x2="17" y2="15"></line>
                                     <line x1="17" y1="9" x2="23" y2="15"></line>
                                 </svg>
@@ -4792,7 +5042,8 @@
 
                             <div class="vk-tp-volume-slider-container" id="vk-player-volume-container">
                                 <div class="vk-tp-volume-track">
-                                    <div id="vk-player-volume-fill" class="vk-tp-volume-fill" style="width: 100%;"></div>
+                                    <div id="vk-player-volume-fill" class="vk-tp-volume-fill" style="width: 100%;">
+                                    </div>
                                 </div>
                                 <div id="vk-player-volume-tooltip" class="vk-tp-tooltip">100%</div>
                             </div>
@@ -4802,9 +5053,12 @@
 
                 <div class="header-right">
                     <div class="vk-profile" id="profile-container">
-                        <img src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" alt="Profile" class="user-avatar" id="user-avatar">
-                        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style="opacity: 0.5; stroke: var(--text);">
-                            <path d="M1 1.5L6 6.5L11 1.5" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                        <img src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" alt="Profile" class="user-avatar"
+                            id="user-avatar">
+                        <svg width="12" height="8" viewBox="0 0 12 8" fill="none"
+                            style="opacity: 0.5; stroke: var(--text);">
+                            <path d="M1 1.5L6 6.5L11 1.5" stroke-width="1.4" stroke-linecap="round"
+                                stroke-linejoin="round" />
                         </svg>
                     </div>
                 </div>
@@ -4856,8 +5110,7 @@
                             <path
                                 d="M263.682,147.594L43.473,412.466l56.061,56.061l264.872-220.21L263.682,147.594z M99.534,468.528 l264.872-220.21">
                             </path>
-                            <path
-                                d="M43.642,412.297l220.223-264.551l100.371,100.738L99.549,468.203L43.642,412.297z">
+                            <path d="M43.642,412.297l220.223-264.551l100.371,100.738L99.549,468.203L43.642,412.297z">
                             </path>
                             <path
                                 d="M273.211,120.521l118.268,118.268c29.522,0.34,59.073-10.42,82.226-31.882L305.092,38.295 C283.631,61.447,272.872,90.999,273.211,120.521z">
@@ -5002,7 +5255,8 @@
                             <div class="queue-mode-switches" aria-label="Режимы воспроизведения">
                                 <button type="button" class="queue-mode-toggle" id="queue-crossfade-toggle"
                                     onclick="toggleVkPlayerCrossfade()" aria-pressed="false">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
                                     </svg>
                                     <span>Crossfade</span>
@@ -5010,9 +5264,13 @@
                                 <button type="button" class="queue-mode-toggle" id="queue-turbo-toggle"
                                     onclick="toggleVkPlayerSimilar()" aria-pressed="false">
                                     <svg viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"></path>
-                                        <path d="M16 10a4 4 0 0 1 0 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
-                                        <path d="M19 7.5a7.5 7.5 0 0 1 0 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+                                        <path
+                                            d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z">
+                                        </path>
+                                        <path d="M16 10a4 4 0 0 1 0 4" fill="none" stroke="currentColor"
+                                            stroke-width="1.8" stroke-linecap="round"></path>
+                                        <path d="M19 7.5a7.5 7.5 0 0 1 0 9" fill="none" stroke="currentColor"
+                                            stroke-width="1.8" stroke-linecap="round"></path>
                                     </svg>
                                     <span>Турбо-микс</span>
                                 </button>
@@ -5055,7 +5313,8 @@
                                         </svg>
                                     </button>
                                     <button class="icon-action-btn" id="btn-close-player-card"
-                                        onclick="toggleFullPlayerCard()" data-tooltip="Свернуть плеер" aria-label="Свернуть плеер">
+                                        onclick="toggleFullPlayerCard()" data-tooltip="Свернуть плеер"
+                                        aria-label="Свернуть плеер">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                                             stroke-linecap="round" stroke-linejoin="round">
                                             <polyline points="18 15 12 9 6 15"></polyline>
@@ -5222,16 +5481,24 @@
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <h2 class="saved-playlists-title">Плейлисты</h2>
                             <div class="header-search-wrapper" id="playlists-search-wrapper">
-                                <button class="header-search-btn" id="playlists-search-btn" onclick="toggleHeaderSearch('playlists')" title="Поиск плейлистов">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;">
+                                <button class="header-search-btn" id="playlists-search-btn"
+                                    onclick="toggleHeaderSearch('playlists')" title="Поиск плейлистов">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round"
+                                        style="width: 15px; height: 15px;">
                                         <circle cx="11" cy="11" r="8"></circle>
                                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                                     </svg>
                                 </button>
                                 <div class="header-search-box" id="playlists-search-box">
-                                    <input type="text" id="playlists-search-input" class="header-search-input" placeholder="Поиск плейлистов..." oninput="handlePlaylistsSearch(this.value)" autocomplete="off">
-                                    <button id="playlists-search-clear" class="header-search-clear-btn" onclick="clearHeaderSearch('playlists')" title="Очистить">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 11px; height: 11px;">
+                                    <input type="text" id="playlists-search-input" class="header-search-input"
+                                        placeholder="Поиск плейлистов..." oninput="handlePlaylistsSearch(this.value)"
+                                        autocomplete="off">
+                                    <button id="playlists-search-clear" class="header-search-clear-btn"
+                                        onclick="clearHeaderSearch('playlists')" title="Очистить">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                            stroke-linecap="round" stroke-linejoin="round"
+                                            style="width: 11px; height: 11px;">
                                             <line x1="18" y1="6" x2="6" y2="18"></line>
                                             <line x1="6" y1="6" x2="18" y2="18"></line>
                                         </svg>
@@ -5274,7 +5541,7 @@
             window.musicAlbums = JSON.parse(localStorage.getItem('cached_music_albums') || '[]');
             window.musicArtists = JSON.parse(localStorage.getItem('cached_music_artists') || '[]');
             window.currentSavedPlaylists = JSON.parse(localStorage.getItem('cached_music_playlists') || '[]');
-        } catch(e) {
+        } catch (e) {
             window.musicSongs = [];
             window.musicAlbums = [];
             window.musicArtists = [];
@@ -6676,7 +6943,7 @@
                 const cardUrl = card.getAttribute('data-playlist-url');
                 const cardListId = card.getAttribute('data-playlist-id');
                 const isCurrent = !!((activePlaylistUrl && cardUrl && (cardUrl === activePlaylistUrl || cardUrl.includes(activePlaylistUrl) || activePlaylistUrl.includes(cardUrl))) ||
-                                  (activeListId && cardListId && activeListId === cardListId));
+                    (activeListId && cardListId && activeListId === cardListId));
                 const isPlayingCurrent = isCurrent && isPlaying && !window.currentRadioStation;
                 card.classList.toggle('active', isCurrent);
                 card.classList.toggle('playing', isPlayingCurrent);
@@ -6701,7 +6968,7 @@
         let isVkDisliked = false;
         let isVkBroadcastActive = false;
 
-        function showVkToast(text, icon = '') {}
+        function showVkToast(text, icon = '') { }
 
         function parseVkTrackInfo(title, artist, trackObj) {
             let rawArtist = artist || (trackObj ? (trackObj.artist || trackObj.artistName || trackObj.channel || trackObj.channelTitle || trackObj.videoOwnerChannelTitle || trackObj.author) : '') || '';
@@ -6714,10 +6981,10 @@
             const isGeneric = (str) => {
                 if (!str || typeof str !== 'string') return true;
                 const s = str.trim().toLowerCase();
-                return s === '' || s === 'youtube video' || s === 'youtube' || s === 'вконтакте музыка' || 
-                       s === 'исполнитель' || s === 'различные исполнители' || s === 'трек' || 
-                       s === 'youtube music player' || s === 'ожидание трека...' || s === 'плейлист' ||
-                       s === 'неизвестный исполнитель' || s === 'unknown artist';
+                return s === '' || s === 'youtube video' || s === 'youtube' || s === 'вконтакте музыка' ||
+                    s === 'исполнитель' || s === 'различные исполнители' || s === 'трек' ||
+                    s === 'youtube music player' || s === 'ожидание трека...' || s === 'плейлист' ||
+                    s === 'неизвестный исполнитель' || s === 'unknown artist';
             };
 
             if (typeof rawArtist === 'string' && rawArtist.trim()) {
@@ -6799,7 +7066,7 @@
             }
 
             if (isRadio && window.currentRadioStation) {
-                const stationName = typeof formatRadioStationName === 'function' 
+                const stationName = typeof formatRadioStationName === 'function'
                     ? formatRadioStationName(window.currentRadioStation.name)
                     : (window.currentRadioStation.name || 'Радио');
                 if (titleEl) titleEl.innerText = window.currentRadioSongTitle || stationName;
@@ -6846,7 +7113,7 @@
                                 track.title = vData.title;
                             }
                         }
-                    } catch (e) {}
+                    } catch (e) { }
                 }
 
                 const info = parseVkTrackInfo(track.title, track.artist, track);
@@ -6895,7 +7162,7 @@
 
         function updateVkTopPlayerProgress(current, duration, force = false) {
             if (isVkPlayerDragging && !force) return;
-            
+
             let displayCurrent = current;
             if (!force && isVkPlayerSeeking) {
                 if (Date.now() < vkPlayerSeekLockUntil && Math.abs(current - vkPlayerSeekTargetTime) > 1.5) {
@@ -7127,7 +7394,7 @@
             try {
                 localStorage.setItem('cached_music_songs', JSON.stringify(window.musicSongs));
                 localStorage.setItem('cached_music_artists', JSON.stringify(window.musicArtists));
-            } catch(e) {}
+            } catch (e) { }
 
             // Если трек был в разделе «Новое» — автоматически удаляем его из Нового на YouTube и в приложении
             const newSongIdx = (window.musicNewSongs || []).findIndex(s => s.id === song.id);
@@ -7150,7 +7417,7 @@
                                     await window.GYoutubeService.deletePlaylistItem(pItemId);
                                     console.log("Удален из плейлиста Новое при добавлении в медиатеку:", pItemId);
                                 }
-                            } catch(e) {
+                            } catch (e) {
                                 console.log("Не удалось удалить из Нового на YouTube:", e);
                             }
                         })();
@@ -7159,10 +7426,10 @@
                 window.musicNewSongs.splice(newSongIdx, 1);
                 try {
                     localStorage.setItem('cached_music_new_songs', JSON.stringify(window.musicNewSongs));
-                } catch(e) {}
+                } catch (e) { }
                 if (uid && window.db) {
                     const newDocRef = window.doc(window.db, "users", uid, "music_new_songs", song.id);
-                    window.deleteDoc(newDocRef).catch(() => {});
+                    window.deleteDoc(newDocRef).catch(() => { });
                 }
             }
 
@@ -7222,7 +7489,7 @@
             window.musicNewSongs = (window.musicNewSongs || []).filter(s => s.id !== songId);
             try {
                 localStorage.setItem('cached_music_new_songs', JSON.stringify(window.musicNewSongs));
-            } catch(e) {}
+            } catch (e) { }
 
             if (uid && window.db) {
                 const songRef = window.doc(window.db, "users", uid, "music_new_songs", songId);
@@ -7274,7 +7541,7 @@
                             const dur = activeP.getDuration();
                             const cur = activeP.getCurrentTime();
                             if (dur && dur > 0) updateVkTopPlayerProgress(cur, dur, true);
-                        } catch(e) {}
+                        } catch (e) { }
                     }
                 }
             }
@@ -7810,14 +8077,14 @@
                 } else {
                     activeP.playVideo();
                     if (isCrossfading && nextP && typeof nextP.playVideo === 'function') {
-                        try { nextP.playVideo(); } catch (e) {}
+                        try { nextP.playVideo(); } catch (e) { }
                     }
                     startVideoLoadingTimeout(trackIndex);
                 }
             } else {
                 activeP.pauseVideo();
                 if (isCrossfading && nextP && typeof nextP.pauseVideo === 'function') {
-                    try { nextP.pauseVideo(); } catch (e) {}
+                    try { nextP.pauseVideo(); } catch (e) { }
                 }
                 clearVideoLoadingTimeout();
             }
@@ -7833,19 +8100,19 @@
                 setMixStatus(false);
             }
             if (p2 && typeof p2.stopVideo === 'function') {
-                try { p2.stopVideo(); p2.setVolume(0); } catch (e) {}
+                try { p2.stopVideo(); p2.setVolume(0); } catch (e) { }
             }
             if (p1 && typeof p1.setPlaybackRate === 'function') {
-                try { p1.setPlaybackRate(1.0); } catch (e) {}
+                try { p1.setPlaybackRate(1.0); } catch (e) { }
             }
             if (p2 && typeof p2.setPlaybackRate === 'function') {
-                try { p2.setPlaybackRate(1.0); } catch (e) {}
+                try { p2.setPlaybackRate(1.0); } catch (e) { }
             }
             currentDeck = 1;
             trackIndex = (targetIndex >= 0 && targetIndex < playlist.length) ? targetIndex : 0;
             loadDeck(p1, trackIndex, true);
             if (p1 && typeof p1.playVideo === 'function') {
-                try { p1.playVideo(); } catch (e) {}
+                try { p1.playVideo(); } catch (e) { }
             }
             isPlaying = true;
             startVideoLoadingTimeout(trackIndex);
@@ -7870,7 +8137,7 @@
             let otherP = (currentDeck === 1) ? p2 : p1;
 
             if (otherP && typeof otherP.stopVideo === 'function') {
-                try { otherP.stopVideo(); otherP.setVolume(0); } catch (e) {}
+                try { otherP.stopVideo(); otherP.setVolume(0); } catch (e) { }
             }
 
             activeP.setVolume(playerVolume);
@@ -7945,7 +8212,7 @@
                 setMixStatus(false);
                 let nextP = (currentDeck === 1) ? p2 : p1;
                 if (nextP && typeof nextP.stopVideo === 'function') {
-                    try { nextP.stopVideo(); nextP.setVolume(0); } catch (e) {}
+                    try { nextP.stopVideo(); nextP.setVolume(0); } catch (e) { }
                 }
             }
 
@@ -8266,7 +8533,7 @@
                             }
                         }
                     }
-                } catch (e) {}
+                } catch (e) { }
             }
 
             const curText = document.getElementById('playbar-currentTime');
@@ -8322,10 +8589,10 @@
             let nextP = (currentDeck === 1) ? p2 : p1;
 
             if (nextP && typeof nextP.setVolume === 'function') {
-                try { nextP.setVolume(0); } catch (e) {}
+                try { nextP.setVolume(0); } catch (e) { }
             }
             if (nextP && typeof nextP.playVideo === 'function') {
-                try { nextP.playVideo(); } catch (e) {}
+                try { nextP.playVideo(); } catch (e) { }
             }
 
             // Start the loading timeout for the next track being faded in!
@@ -8345,7 +8612,7 @@
             let vol = 0;
 
             if (activeP && typeof activeP.setVolume === 'function') {
-                try { activeP.setVolume(playerVolume); } catch (e) {}
+                try { activeP.setVolume(playerVolume); } catch (e) { }
             }
 
             clearInterval(activeCrossfadeInterval);
@@ -8409,10 +8676,10 @@
                 let realActiveVol = activeVolFactor * playerVolume;
 
                 if (nextP && typeof nextP.setVolume === 'function') {
-                    try { nextP.setVolume(realNextVol); } catch (e) {}
+                    try { nextP.setVolume(realNextVol); } catch (e) { }
                 }
                 if (activeP && typeof activeP.setVolume === 'function') {
-                    try { activeP.setVolume(realActiveVol); } catch (e) {}
+                    try { activeP.setVolume(realActiveVol); } catch (e) { }
                 }
 
                 if (vol >= 100) {
@@ -8439,7 +8706,7 @@
             clearInterval(activeCrossfadeInterval);
             activeCrossfadeInterval = null;
             if (oldP && typeof oldP.stopVideo === 'function') {
-                try { oldP.stopVideo(); oldP.setVolume(0); } catch (e) {}
+                try { oldP.stopVideo(); oldP.setVolume(0); } catch (e) { }
             }
             isCrossfading = false;
             setMixStatus(false);
@@ -8484,7 +8751,7 @@
                     const dur = activeP.getDuration();
                     const cur = activeP.getCurrentTime();
                     if (dur && dur > 0) updateVkTopPlayerProgress(cur, dur, true);
-                } catch(e) {}
+                } catch (e) { }
             }
         }
 
@@ -9141,16 +9408,16 @@
                 isCrossfading = false;
                 setMixStatus(false);
                 if (otherP && typeof otherP.stopVideo === 'function') {
-                    try { otherP.stopVideo(); otherP.setVolume(0); } catch (e) {}
+                    try { otherP.stopVideo(); otherP.setVolume(0); } catch (e) { }
                 }
                 if (p1 && typeof p1.setPlaybackRate === 'function') {
-                    try { p1.setPlaybackRate(1.0); } catch (e) {}
+                    try { p1.setPlaybackRate(1.0); } catch (e) { }
                 }
                 if (p2 && typeof p2.setPlaybackRate === 'function') {
-                    try { p2.setPlaybackRate(1.0); } catch (e) {}
+                    try { p2.setPlaybackRate(1.0); } catch (e) { }
                 }
                 if (activeP && typeof activeP.setVolume === 'function') {
-                    try { activeP.setVolume(playerVolume); } catch (e) {}
+                    try { activeP.setVolume(playerVolume); } catch (e) { }
                 }
                 prepareNext();
             }
@@ -10089,7 +10356,7 @@
             const artistInput = document.getElementById('modalEditAlbumArtist');
             const titleInput = document.getElementById('modalEditAlbumTitle');
             const searchInput = document.getElementById('metadataSearchInput');
-            
+
             let query = "";
             if (artistInput && artistInput.value.trim()) query += artistInput.value.trim() + " ";
             if (titleInput && titleInput.value.trim()) query += titleInput.value.trim();
@@ -10821,7 +11088,7 @@
                     try {
                         const parsedUrl = new URL(item.url, window.location.origin);
                         listId = parsedUrl.searchParams.get('list') || '';
-                    } catch(e) {}
+                    } catch (e) { }
                     const isCurrent = !!((window.loadedPlaylistUrl && (item.url === window.loadedPlaylistUrl || item.url.includes(window.loadedPlaylistUrl) || window.loadedPlaylistUrl.includes(item.url))) || (listId && window.currentListId === listId));
                     const isPlayingCurrent = isCurrent && isPlaying && !window.currentRadioStation;
                     return `
@@ -11026,7 +11293,7 @@
                 window.currentSavedPlaylists = savedPlaylists;
                 try {
                     localStorage.setItem('cached_music_playlists', JSON.stringify(savedPlaylists));
-                } catch (e) {}
+                } catch (e) { }
                 renderSavedPlaylists(savedPlaylists);
                 renderHomePlaylists();
             } catch (e) {
@@ -12289,7 +12556,7 @@
                     // Если трек уже есть в медиатеке — удаляем его из плейлиста «Новое» на YouTube и не добавляем в раздел
                     if (existingLibraryIds.has(track.videoId)) {
                         if (window.GYoutubeService && window.GYoutubeService.getStoredAccessToken() && track.playlistItemId) {
-                            window.GYoutubeService.deletePlaylistItem(track.playlistItemId).catch(() => {});
+                            window.GYoutubeService.deletePlaylistItem(track.playlistItemId).catch(() => { });
                         }
                         continue;
                     }
@@ -12328,7 +12595,7 @@
                 window.musicNewSongs = newSongsList;
                 try {
                     localStorage.setItem('cached_music_new_songs', JSON.stringify(window.musicNewSongs));
-                } catch(e) {}
+                } catch (e) { }
 
                 if (window.location.hash === '#new') {
                     renderNewSongsTable();
@@ -12585,7 +12852,7 @@
                 window.musicNewSongs = loadedNewSongs;
                 try {
                     localStorage.setItem('cached_music_new_songs', JSON.stringify(window.musicNewSongs));
-                } catch(e) {}
+                } catch (e) { }
 
                 // Fetch Albums
                 const albumsRef = window.collection(window.db, "users", uid, "music_albums");
@@ -12632,7 +12899,7 @@
                     localStorage.setItem('cached_music_albums', JSON.stringify(window.musicAlbums));
                     localStorage.setItem('cached_music_artists', JSON.stringify(window.musicArtists));
                     localStorage.setItem('favorite_artist_ids', JSON.stringify(userFavArtistIds));
-                } catch (e) {}
+                } catch (e) { }
 
                 // Clean empty artists
                 let activeArtistIds = new Set(window.musicSongs.map(s => s.artistId));
@@ -12937,7 +13204,7 @@
             window.artistFavoriteOnly = !window.artistFavoriteOnly;
             try {
                 localStorage.setItem('artist_favorite_only', window.artistFavoriteOnly ? 'true' : 'false');
-            } catch (e) {}
+            } catch (e) { }
 
             const btn = document.getElementById('artist-filter-favorite-btn');
             if (btn) {
@@ -13075,7 +13342,7 @@
             if (!artistIdOrName) return false;
             const favorites = getFavoriteArtistIds();
             if (favorites.includes(artistIdOrName)) return true;
-            
+
             const artist = (window.musicArtists || []).find(a => a.id === artistIdOrName || a.name === artistIdOrName);
             if (artist) {
                 if (artist.isFavorite) return true;
@@ -13120,7 +13387,7 @@
 
             try {
                 localStorage.setItem('favorite_artist_ids', JSON.stringify(favorites));
-            } catch (e) {}
+            } catch (e) { }
 
             const activeId = window.selectedArtistId || artistId;
             if (activeId === artistId || (artist && activeId === artist.id)) {
@@ -13159,7 +13426,7 @@
                 const isActive = (artist.id === activeArtistId);
                 const isFav = isArtistFavorite(artist.id);
                 const avatarSrc = getArtistCoverUrl(artist);
-                
+
                 return `
                     <div class="artist-list-item ${isActive ? 'active' : ''}" id="artist-item-${artist.id}" onclick="selectArtist('${artist.id}')">
                         <div class="artist-avatar">
@@ -13204,7 +13471,7 @@
 
         function selectArtist(artistId) {
             window.selectedArtistId = artistId;
-            
+
             // Update active styling in sidebar
             const items = document.querySelectorAll('.artist-list-item');
             items.forEach(el => el.classList.remove('active'));
@@ -13222,7 +13489,7 @@
             window.artistViewMode = mode;
             try {
                 localStorage.setItem('artist_view_mode', mode);
-            } catch (e) {}
+            } catch (e) { }
             if (window.selectedArtistId) {
                 renderSelectedArtistDetail(window.selectedArtistId);
             }
@@ -13239,7 +13506,7 @@
 
             const artist = window.musicArtists.find(a => a.id === artistId);
             const artistName = artist?.name || window.musicSongs.find(s => s.artistId === artistId)?.artistName || "";
-            
+
             const artistAlbums = window.musicAlbums
                 .filter(a => a.artistId === artistId)
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -13592,7 +13859,7 @@
             window.activeArtistMenuId = null;
         }
 
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             if (!e.target.closest('#artistOptionsMenu') && !e.target.closest('[id^="artist-more-btn-"]')) {
                 hideArtistOptionsMenu();
             }
@@ -13794,7 +14061,7 @@
             const fullStr = `${song.artistName} - ${song.title}`;
             navigator.clipboard.writeText(fullStr).then(() => {
                 showAlertModal("Скопировано", `«${fullStr}» скопировано в буфер обмена.`);
-            }).catch(() => {});
+            }).catch(() => { });
         }
 
         async function deleteSongFromLibrary(songId, deleteOnYouTube = true) {
@@ -13864,8 +14131,8 @@
                     }
                 }
 
-                const msg = ytDeleted 
-                    ? `«${song.title}» успешно удалена из YouTube плейлиста и медиатеки!` 
+                const msg = ytDeleted
+                    ? `«${song.title}» успешно удалена из YouTube плейлиста и медиатеки!`
                     : `«${song.title}» удалена из медиатеки сайта.`;
                 if (typeof showAlertModal === 'function') {
                     showAlertModal("Удалено", msg);
@@ -13898,7 +14165,7 @@
             if (select) {
                 const currentArtistName = song.artistName || '';
                 const sortedArtists = [...(window.musicArtists || [])].sort((a, b) => a.name.localeCompare(b.name));
-                
+
                 let optionsHtml = '';
                 let matched = false;
 
@@ -13947,7 +14214,7 @@
             const songId = activeChangeSongId;
             const select = document.getElementById('modalChangeSongArtistSelect');
             const selectedVal = select ? select.value : '';
-            
+
             let newArtistName = '';
             if (selectedVal === '__NEW_ARTIST__') {
                 const newInput = document.getElementById('modalChangeSongArtistNewInput');
@@ -14377,7 +14644,7 @@
                 targetSong.lastPlayedAt = now;
                 try {
                     localStorage.setItem('cached_music_songs', JSON.stringify(window.musicSongs));
-                } catch(e) {}
+                } catch (e) { }
                 if (uid && window.db) {
                     const songRef = window.doc(window.db, "users", uid, "music_songs", songId);
                     window.setDoc(songRef, { lastPlayedAt: now }, { merge: true }).catch(err => console.error(err));
@@ -14388,7 +14655,7 @@
                     targetNew.lastPlayedAt = now;
                     try {
                         localStorage.setItem('cached_music_new_songs', JSON.stringify(window.musicNewSongs));
-                    } catch(e) {}
+                    } catch (e) { }
                     if (uid && window.db) {
                         const songRef = window.doc(window.db, "users", uid, "music_new_songs", songId);
                         window.setDoc(songRef, { lastPlayedAt: now }, { merge: true }).catch(err => console.error(err));
@@ -15100,8 +15367,8 @@
                     titleEl.innerText = window.currentRadioSongTitle || cleanStationName;
                 }
                 if (subEl) {
-                    subEl.innerText = window.currentRadioSongTitle 
-                        ? `${cleanStationName} • Прямой эфир` 
+                    subEl.innerText = window.currentRadioSongTitle
+                        ? `${cleanStationName} • Прямой эфир`
                         : `Прямой эфир • ${window.currentRadioStation.genre || 'Радио'}`;
                 }
                 if (coverEl) {
@@ -15120,8 +15387,8 @@
                 updateVkTopPlayerUI(null, true);
                 updateVkTopPlayerPlayPause(window.isRadioPlaying);
 
-                document.title = window.currentRadioSongTitle 
-                    ? `${window.currentRadioSongTitle} – ${cleanStationName}` 
+                document.title = window.currentRadioSongTitle
+                    ? `${window.currentRadioSongTitle} – ${cleanStationName}`
                     : `${cleanStationName} – Радио (Прямой эфир)`;
             } else {
                 if (playbar) {
@@ -15262,7 +15529,7 @@
         let radioFavoritesError = false;
 
         function escapeRadioHTML(value) {
-            return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
+            return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
 
         function visibleRadioFavorites() {
@@ -15288,8 +15555,8 @@
             if (status) {
                 status.textContent = !window.currentUser ? 'Войдите в аккаунт, чтобы сохранять радиостанции.'
                     : radioFavoritesError ? 'Не удалось загрузить избранное. Проверьте подключение и обновите страницу.'
-                    : !radioFavoritesReady ? 'Загрузка избранного…'
-                    : favorites.length ? '' : 'Нажмите звёздочку на станции или рядом с LIVE — она появится здесь.';
+                        : !radioFavoritesReady ? 'Загрузка избранного…'
+                            : favorites.length ? '' : 'Нажмите звёздочку на станции или рядом с LIVE — она появится здесь.';
                 status.hidden = !status.textContent;
             }
             if (homeFavContainer) {
@@ -15332,7 +15599,7 @@
                             starSvg.style.stroke = 'currentColor';
                         }
                     }
-                } catch (e) {}
+                } catch (e) { }
             });
         }
 
@@ -15406,10 +15673,10 @@
         }
 
         function renderRadioStationCard(station) {
-                const isCurrentPlaying = window.currentRadioStation && window.currentRadioStation.streamUrl === station.streamUrl && window.isRadioPlaying;
-                const displayName = escapeRadioHTML(formatRadioStationName(station.name));
-                const encodedStation = encodeURIComponent(JSON.stringify(station)).replace(/'/g, '%27');
-                return `
+            const isCurrentPlaying = window.currentRadioStation && window.currentRadioStation.streamUrl === station.streamUrl && window.isRadioPlaying;
+            const displayName = escapeRadioHTML(formatRadioStationName(station.name));
+            const encodedStation = encodeURIComponent(JSON.stringify(station)).replace(/'/g, '%27');
+            return `
                     <div class="radio-card ${isCurrentPlaying ? 'playing' : ''}" data-stream="${escapeRadioHTML(station.streamUrl)}" onclick="handleRadioCardClick('${encodedStation}')">
                         <div class="radio-card-cover">
                             ${station.logo ? `<img class="radio-card-img" src="${escapeRadioHTML(station.logo)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
@@ -15583,14 +15850,17 @@
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
                 <div class="modal-field">
                     <label for="modalEditArtistName">Имя артиста</label>
-                    <input type="text" id="modalEditArtistName" class="modal-input" placeholder="Имя исполнителя" autocomplete="off" onkeydown="if(event.key==='Enter') submitEditArtist()">
+                    <input type="text" id="modalEditArtistName" class="modal-input" placeholder="Имя исполнителя"
+                        autocomplete="off" onkeydown="if(event.key==='Enter') submitEditArtist()">
                 </div>
                 <div class="modal-field">
                     <label for="modalEditArtistCoverUrl">Ссылка на обложку / фото (URL)</label>
-                    <input type="text" id="modalEditArtistCoverUrl" class="modal-input" placeholder="https://..." autocomplete="off" onkeydown="if(event.key==='Enter') submitEditArtist()">
+                    <input type="text" id="modalEditArtistCoverUrl" class="modal-input" placeholder="https://..."
+                        autocomplete="off" onkeydown="if(event.key==='Enter') submitEditArtist()">
                 </div>
             </div>
-            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div class="modal-footer"
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <button class="btn-modal btn-modal-cancel" onclick="closeEditArtistModal()">Отмена</button>
                 <button class="btn-modal btn-modal-submit" onclick="submitEditArtist()">Сохранить</button>
             </div>
@@ -15605,18 +15875,23 @@
                 <button class="modal-close" onclick="closeChangeSongArtistModal()">&times;</button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
-                <div id="change-song-artist-info" style="font-size: 0.9rem; font-weight: 600; color: var(--text);"></div>
+                <div id="change-song-artist-info" style="font-size: 0.9rem; font-weight: 600; color: var(--text);">
+                </div>
                 <div class="modal-field">
                     <label for="modalChangeSongArtistSelect">Исполнитель</label>
-                    <select id="modalChangeSongArtistSelect" class="modal-input" onchange="onModalChangeSongArtistSelectChange(this.value)">
+                    <select id="modalChangeSongArtistSelect" class="modal-input"
+                        onchange="onModalChangeSongArtistSelectChange(this.value)">
                     </select>
                 </div>
                 <div class="modal-field" id="new-artist-input-container" style="display: none;">
                     <label for="modalChangeSongArtistNewInput">Имя нового исполнителя</label>
-                    <input type="text" id="modalChangeSongArtistNewInput" class="modal-input" placeholder="Введите имя артиста" autocomplete="off" onkeydown="if(event.key==='Enter') submitChangeSongArtist()">
+                    <input type="text" id="modalChangeSongArtistNewInput" class="modal-input"
+                        placeholder="Введите имя артиста" autocomplete="off"
+                        onkeydown="if(event.key==='Enter') submitChangeSongArtist()">
                 </div>
             </div>
-            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div class="modal-footer"
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <button class="btn-modal btn-modal-cancel" onclick="closeChangeSongArtistModal()">Отмена</button>
                 <button class="btn-modal btn-modal-submit" onclick="submitChangeSongArtist()">Сохранить</button>
             </div>
@@ -15705,7 +15980,8 @@
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
                 <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">
-                    Укажите ссылку на ваш главный плейлист на YouTube (например, «Медиатека» или «Понравившиеся»). Сайт будет автоматически при входе синхронизировать новые песни и распределять их по исполнителям.
+                    Укажите ссылку на ваш главный плейлист на YouTube (например, «Медиатека» или «Понравившиеся»). Сайт
+                    будет автоматически при входе синхронизировать новые песни и распределять их по исполнителям.
                 </p>
                 <div class="modal-field">
                     <label for="modalSyncLibraryUrl">Ссылка на YouTube плейлист</label>
@@ -15713,11 +15989,15 @@
                         placeholder="https://music.youtube.com/playlist?list=..." autocomplete="off"
                         onkeydown="if(event.key==='Enter') saveAndSyncMediaLibrary()">
                 </div>
-                <div id="sync-library-status-info" style="font-size: 0.82rem; color: var(--text-secondary); display: none; word-break: break-all;"></div>
+                <div id="sync-library-status-info"
+                    style="font-size: 0.82rem; color: var(--text-secondary); display: none; word-break: break-all;">
+                </div>
             </div>
-            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div class="modal-footer"
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <button class="btn-modal btn-modal-cancel" onclick="closeSyncMediaLibraryModal()">Отмена</button>
-                <button class="btn-modal btn-modal-submit" id="btn-sync-library-submit" onclick="saveAndSyncMediaLibrary()">Сохранить и синхронизировать</button>
+                <button class="btn-modal btn-modal-submit" id="btn-sync-library-submit"
+                    onclick="saveAndSyncMediaLibrary()">Сохранить и синхронизировать</button>
             </div>
         </div>
     </div>
@@ -15731,7 +16011,9 @@
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
                 <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">
-                    Укажите ссылку на плейлист для раздела «Новое». Песни из этого раздела не добавляются в вашу медиатеку и альбомы автоматически. Вы можете добавить трек в медиатеку кнопкой «+» или удалить из Нового кнопкой дизлайка.
+                    Укажите ссылку на плейлист для раздела «Новое». Песни из этого раздела не добавляются в вашу
+                    медиатеку и альбомы автоматически. Вы можете добавить трек в медиатеку кнопкой «+» или удалить из
+                    Нового кнопкой дизлайка.
                 </p>
                 <div class="modal-field">
                     <label for="modalSyncNewUrl">Ссылка на YouTube плейлист «Новое»</label>
@@ -15739,11 +16021,15 @@
                         placeholder="https://music.youtube.com/playlist?list=..." autocomplete="off"
                         onkeydown="if(event.key==='Enter') saveAndSyncNewLibrary()">
                 </div>
-                <div id="sync-new-status-info" style="font-size: 0.82rem; color: var(--text-secondary); display: none; word-break: break-all;"></div>
+                <div id="sync-new-status-info"
+                    style="font-size: 0.82rem; color: var(--text-secondary); display: none; word-break: break-all;">
+                </div>
             </div>
-            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div class="modal-footer"
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <button class="btn-modal btn-modal-cancel" onclick="closeSyncNewLibraryModal()">Отмена</button>
-                <button class="btn-modal btn-modal-submit" id="btn-sync-new-submit" onclick="saveAndSyncNewLibrary()">Сохранить и синхронизировать</button>
+                <button class="btn-modal btn-modal-submit" id="btn-sync-new-submit"
+                    onclick="saveAndSyncNewLibrary()">Сохранить и синхронизировать</button>
             </div>
         </div>
     </div>
@@ -15812,7 +16098,8 @@
                 <div style="display: flex; gap: 10px;">
                     <div class="modal-field" style="flex: 1.2;">
                         <label for="modalEditAlbumType">Тип релиза</label>
-                        <select id="modalEditAlbumType" class="modal-input" style="padding: 9px 8px; font-size: 0.88rem;">
+                        <select id="modalEditAlbumType" class="modal-input"
+                            style="padding: 9px 8px; font-size: 0.88rem;">
                             <option value="Альбом">Альбом</option>
                             <option value="Сингл">Сингл</option>
                             <option value="EP">EP (Мини-альбом)</option>
@@ -15835,9 +16122,12 @@
                         autocomplete="off">
                 </div>
             </div>
-            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <button class="btn-modal" onclick="openMetadataSearchModal()" style="background: rgba(252, 60, 68, 0.12); color: var(--accent); border: 1px solid rgba(252, 60, 68, 0.25); display: flex; align-items: center; gap: 6px; font-weight: 600; padding: 8px 14px; border-radius: 10px; cursor: pointer;">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <div class="modal-footer"
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <button class="btn-modal" onclick="openMetadataSearchModal()"
+                    style="background: rgba(252, 60, 68, 0.12); color: var(--accent); border: 1px solid rgba(252, 60, 68, 0.25); display: flex; align-items: center; gap: 6px; font-weight: 600; padding: 8px 14px; border-radius: 10px; cursor: pointer;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
@@ -15853,25 +16143,38 @@
 
     <!-- Модальное окно "Получить метаданные" (в стиле Playnite) -->
     <div id="metadataSearchModal" class="modal-overlay" style="z-index: 2100;">
-        <div class="modal-card" style="max-width: 600px; width: 92%; max-height: 85vh; display: flex; flex-direction: column; padding: 20px;">
+        <div class="modal-card"
+            style="max-width: 600px; width: 92%; max-height: 85vh; display: flex; flex-direction: column; padding: 20px;">
             <div class="modal-header" style="margin-bottom: 12px;">
                 <h3 class="modal-title">Получить метаданные</h3>
                 <button class="modal-close" onclick="closeMetadataSearchModal()">&times;</button>
             </div>
-            
-            <div class="modal-body" style="flex: 1; overflow-y: auto; padding-right: 4px; min-height: 260px; max-height: 380px;">
-                <div id="geniusTokenConfigRow" style="display: none; margin-bottom: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(252, 60, 68, 0.08); border: 1px dashed rgba(252, 60, 68, 0.3); font-size: 0.85rem;">
-                    <div style="font-weight: 600; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+
+            <div class="modal-body"
+                style="flex: 1; overflow-y: auto; padding-right: 4px; min-height: 260px; max-height: 380px;">
+                <div id="geniusTokenConfigRow"
+                    style="display: none; margin-bottom: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(252, 60, 68, 0.08); border: 1px dashed rgba(252, 60, 68, 0.3); font-size: 0.85rem;">
+                    <div
+                        style="font-weight: 600; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
                         <span>🔥 Ваш токен Genius (в профиле Firebase)</span>
-                        <span id="geniusTokenStatusBadge" style="font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; background: rgba(0,0,0,0.1); color: var(--text-secondary);">Не настроен</span>
+                        <span id="geniusTokenStatusBadge"
+                            style="font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; background: rgba(0,0,0,0.1); color: var(--text-secondary);">Не
+                            настроен</span>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        <input type="password" id="geniusTokenInput" class="modal-input" placeholder="Client Access Token от Genius..." style="flex: 1; font-size: 0.85rem; padding: 7px 10px;">
-                        <button onclick="saveGeniusTokenToFirebase()" class="btn-modal btn-modal-submit" style="padding: 7px 14px; font-size: 0.82rem; white-space: nowrap;">Сохранить в профиль</button>
+                        <input type="password" id="geniusTokenInput" class="modal-input"
+                            placeholder="Client Access Token от Genius..."
+                            style="flex: 1; font-size: 0.85rem; padding: 7px 10px;">
+                        <button onclick="saveGeniusTokenToFirebase()" class="btn-modal btn-modal-submit"
+                            style="padding: 7px 14px; font-size: 0.82rem; white-space: nowrap;">Сохранить в
+                            профиль</button>
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px; line-height: 1.4;">
-                        Токен сохраняется в профиле Firebase. Создается на <a href="https://genius.com/api-clients" target="_blank" style="color: var(--accent); text-decoration: underline;">genius.com/api-clients</a>.<br>
-                        <span style="color: var(--accent); font-weight: 600;">⚠️ Важно:</span> Вставляйте именно <b>Client Access Token</b> (кнопка Generate Access Token), НЕ Client ID!
+                        Токен сохраняется в профиле Firebase. Создается на <a href="https://genius.com/api-clients"
+                            target="_blank"
+                            style="color: var(--accent); text-decoration: underline;">genius.com/api-clients</a>.<br>
+                        <span style="color: var(--accent); font-weight: 600;">⚠️ Важно:</span> Вставляйте именно
+                        <b>Client Access Token</b> (кнопка Generate Access Token), НЕ Client ID!
                     </div>
                 </div>
 
@@ -15881,22 +16184,30 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="modal-footer" style="flex-direction: column; gap: 12px; border-top: 1px solid var(--border); padding-top: 14px; margin-top: 8px;">
+
+            <div class="modal-footer"
+                style="flex-direction: column; gap: 12px; border-top: 1px solid var(--border); padding-top: 14px; margin-top: 8px;">
                 <!-- Строка поиска с выбором источника -->
                 <div style="display: flex; gap: 8px; width: 100%;">
-                    <select id="metadataSourceSelect" class="modal-input" style="width: auto; flex-shrink: 0; padding: 8px 10px; font-size: 0.85rem; border-radius: 10px;" onchange="handleMetadataSourceChange()">
+                    <select id="metadataSourceSelect" class="modal-input"
+                        style="width: auto; flex-shrink: 0; padding: 8px 10px; font-size: 0.85rem; border-radius: 10px;"
+                        onchange="handleMetadataSourceChange()">
                         <option value="all" selected>Все источники</option>
                         <option value="genius">Genius</option>
                         <option value="itunes">iTunes Music</option>
                     </select>
-                    <input type="text" id="metadataSearchInput" class="modal-input" style="flex: 1; padding: 8px 12px; font-size: 0.9rem;" placeholder="Название / Исполнитель..." onkeydown="if(event.key==='Enter') performMetadataSearch()">
-                    <button class="btn-modal btn-modal-submit" onclick="performMetadataSearch()" style="padding: 8px 16px; font-size: 0.88rem;">Поиск</button>
+                    <input type="text" id="metadataSearchInput" class="modal-input"
+                        style="flex: 1; padding: 8px 12px; font-size: 0.9rem;" placeholder="Название / Исполнитель..."
+                        onkeydown="if(event.key==='Enter') performMetadataSearch()">
+                    <button class="btn-modal btn-modal-submit" onclick="performMetadataSearch()"
+                        style="padding: 8px 16px; font-size: 0.88rem;">Поиск</button>
                 </div>
                 <!-- Кнопки выбора/отмены -->
                 <div style="display: flex; justify-content: flex-end; gap: 8px; width: 100%;">
-                    <button id="btnSelectMetadata" class="btn-modal btn-modal-submit" onclick="applySelectedMetadata()" disabled style="padding: 8px 20px;">Выбрать</button>
-                    <button class="btn-modal btn-modal-cancel" onclick="closeMetadataSearchModal()" style="padding: 8px 16px;">Отменить</button>
+                    <button id="btnSelectMetadata" class="btn-modal btn-modal-submit" onclick="applySelectedMetadata()"
+                        disabled style="padding: 8px 20px;">Выбрать</button>
+                    <button class="btn-modal btn-modal-cancel" onclick="closeMetadataSearchModal()"
+                        style="padding: 8px 16px;">Отменить</button>
                 </div>
             </div>
         </div>
@@ -15957,11 +16268,13 @@
                 <button class="modal-close" onclick="closeDeleteAlbumModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <p style="margin: 0; font-size: 0.95rem; color: var(--text-secondary);">Вы уверены, что хотите удалить этот альбом и все его песни? Это действие нельзя отменить.</p>
+                <p style="margin: 0; font-size: 0.95rem; color: var(--text-secondary);">Вы уверены, что хотите удалить
+                    этот альбом и все его песни? Это действие нельзя отменить.</p>
             </div>
             <div class="modal-footer">
                 <button class="btn-modal btn-modal-cancel" onclick="closeDeleteAlbumModal()">Отмена</button>
-                <button class="btn-modal btn-modal-submit btn-modal-danger" style="background:#e02448; color:white; border:none;" onclick="submitDeleteAlbum()">Удалить</button>
+                <button class="btn-modal btn-modal-submit btn-modal-danger"
+                    style="background:#e02448; color:white; border:none;" onclick="submitDeleteAlbum()">Удалить</button>
             </div>
         </div>
     </div>

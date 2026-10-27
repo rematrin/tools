@@ -101,6 +101,18 @@
     }
 }
 
+/* Возвращаем светлый фон мобильной версии */
+@media (max-width: 768px) {
+    body:not(.dark),
+    html:not(.dark) body {
+        background-color: #f5f8fd !important;
+    }
+
+    body:not(.dark) .todo-app {
+        background-color: #f5f8fd !important;
+    }
+}
+
 /* Основной контейнер */
 .todo-app {
     display: flex;

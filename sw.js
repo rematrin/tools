@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tools-pwa-v27';
+const CACHE_NAME = 'tools-pwa-v28';
 const DYNAMIC_CACHE = 'tools-dynamic-image-cache-v1';
 const ASSETS = [
     './fx_converter.html',
@@ -29,6 +29,8 @@ const ASSETS = [
     './sidebar.css',
     './sidebar.html',
     './left-sidebar.js',
+    './gcalendar-service.js',
+    './completed.mp3',
     './img/exchange.png',
     './img/exchange2.png',
     './img/clock.png',
@@ -40,14 +42,35 @@ const ASSETS = [
     './img/hub256t.png',
     './img/music256.png',
     './img/house-favicon.svg',
-    './img/glass.jpg'
+    './img/glass.jpg',
+    // External CDN scripts & styles for full offline PWA boot
+    'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js',
+    'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js',
+    'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js',
+    'https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css',
+    'https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js',
+    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+    'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap',
+    'https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.14/dist/dotlottie-wc.js'
 ];
 
 self.addEventListener('install', event => {
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(ASSETS))
-            .then(() => self.skipWaiting())
+        caches.open(CACHE_NAME).then(async cache => {
+            // Robust caching using allSettled so one external CDN failure never halts SW installation
+            await Promise.allSettled(
+                ASSETS.map(async url => {
+                    try {
+                        const response = await fetch(url);
+                        if (response && (response.ok || response.type === 'opaque')) {
+                            await cache.put(url, response);
+                        }
+                    } catch (e) {
+                        console.warn('SW pre-cache item warning for', url, e);
+                    }
+                })
+            );
+        }).then(() => self.skipWaiting())
     );
 });
 
@@ -67,8 +90,16 @@ self.addEventListener('fetch', event => {
     // Skip non-http/https requests (like chrome-extension://)
     if (!url.protocol.startsWith('http')) return;
 
-    // Skip caching for Firebase APIs and Auth to ensure logic doesn't break
-    if (url.hostname.includes('firebaseio.com') || url.hostname.includes('googleapis.com') || url.hostname.includes('identitytoolkit')) {
+    // Skip caching only for Firebase streaming / live backend APIs so Firestore & Auth manage network cleanly
+    const isFirebaseBackend = (
+        url.hostname === 'firestore.googleapis.com' ||
+        url.hostname.endsWith('.firestore.googleapis.com') ||
+        url.hostname.includes('identitytoolkit') ||
+        url.hostname.includes('securetoken.googleapis.com') ||
+        url.hostname.includes('firebaseio.com') ||
+        url.hostname.includes('firebasestorage.googleapis.com')
+    );
+    if (isFirebaseBackend) {
         return;
     }
 
@@ -77,10 +108,8 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // Dynamic Image Caching (Cache First for ANY external or internal images used in home.html)
-    const isImage = event.request.destination === 'image' || url.pathname.match(/\.(png|jpg|jpeg|gif|webp|svg)$/i);
-
-    // External images and user icons
+    // Dynamic Image Caching (Cache First for ANY external or internal images)
+    const isImage = event.request.destination === 'image' || url.pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/i);
     if (isImage || url.hostname === 'flagcdn.com' || url.hostname === 'cdn-icons-png.flaticon.com' || url.hostname.includes('ibb.co')) {
         event.respondWith(
             caches.match(event.request).then(cached => {
@@ -94,12 +123,40 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // Network First strategy: Try the network, fallback to cache if offline
+    // CDN Dependencies & Fonts (Cache-First strategy for ultra-fast offline startup)
+    const isCdnAsset = (
+        url.hostname === 'www.gstatic.com' ||
+        url.hostname === 'fonts.gstatic.com' ||
+        url.hostname === 'fonts.googleapis.com' ||
+        url.hostname === 'cdn.jsdelivr.net' ||
+        url.hostname === 'unpkg.com'
+    );
+    if (isCdnAsset) {
+        event.respondWith(
+            caches.match(event.request).then(cached => {
+                if (cached) {
+                    return cached;
+                }
+                return fetch(event.request).then(response => {
+                    if (response && (response.ok || response.type === 'opaque')) {
+                        const resClone = response.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, resClone));
+                    }
+                    return response;
+                }).catch(() => new Response('', { status: 408, statusText: 'Offline' }));
+            })
+        );
+        return;
+    }
+
+    // Navigation and local assets: Network First strategy with Cache Fallback
     event.respondWith(
         fetch(event.request).then(response => {
             // Copy the response to cache for later offline use
-            const resClone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, resClone));
+            if (response && response.ok) {
+                const resClone = response.clone();
+                caches.open(CACHE_NAME).then(cache => cache.put(event.request, resClone));
+            }
             return response;
         }).catch(() => {
             // If offline, check the cache
@@ -108,9 +165,11 @@ self.addEventListener('fetch', event => {
                     if (cachedResponse) {
                         return cachedResponse;
                     }
-                    // If it's a navigation request and we don't have it in cache, 
-                    // we don't aggressively redirect to fx_converter anymore to avoid wrong page loads.
-                    // We just let it fail or you could return a custom offline.html here in the future.
+                    // If navigation request and we don't have it in cache, fallback to todo.html
+                    if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+                        return caches.match('./todo.html');
+                    }
+                    return null;
                 });
         })
     );

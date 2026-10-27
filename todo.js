@@ -6,16 +6,96 @@ import {
     query,
     orderBy,
     onSnapshot,
-    addDoc,
+    addDoc as _rawAddDoc,
     deleteDoc,
-    updateDoc,
+    updateDoc as _rawUpdateDoc,
+    setDoc as _rawSetDoc,
     doc,
     serverTimestamp,
-    writeBatch,
-    enableMultiTabIndexedDbPersistence
+    writeBatch as _rawWriteBatch
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const db = getFirestore();
+const db = window.db || getFirestore();
+
+// Safe mutation wrappers that automatically attach accurate client timestamps (updatedAt / clientCreatedAt)
+// to prevent stale offline writes from overwriting newer changes on other devices
+const updateDoc = (docRef, data, ...rest) => {
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+        data = { ...data, updatedAt: Date.now() };
+    }
+    return _rawUpdateDoc(docRef, data, ...rest);
+};
+
+const addDoc = (collRef, data, ...rest) => {
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+        const now = Date.now();
+        data = {
+            ...data,
+            clientCreatedAt: data.clientCreatedAt || now,
+            updatedAt: data.updatedAt || now
+        };
+    }
+    return _rawAddDoc(collRef, data, ...rest);
+};
+
+const setDoc = (docRef, data, ...rest) => {
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+        data = { ...data, updatedAt: Date.now() };
+    }
+    return _rawSetDoc(docRef, data, ...rest);
+};
+
+const writeBatch = (firestoreDb) => {
+    const batch = _rawWriteBatch(firestoreDb || db);
+    const origUpdate = batch.update.bind(batch);
+    const origSet = batch.set.bind(batch);
+    batch.update = (docRef, data, ...rest) => {
+        if (data && typeof data === 'object' && !Array.isArray(data)) {
+            data = { ...data, updatedAt: Date.now() };
+        }
+        return origUpdate(docRef, data, ...rest);
+    };
+    batch.set = (docRef, data, ...rest) => {
+        if (data && typeof data === 'object' && !Array.isArray(data)) {
+            data = { ...data, updatedAt: Date.now() };
+        }
+        return origSet(docRef, data, ...rest);
+    };
+    return batch;
+};
+
+// LocalStorage snapshot cache helpers for 0ms instantaneous PWA startup
+function loadCachedSnapshots(uid) {
+    if (!uid) return;
+    try {
+        const cachedTasksStr = localStorage.getItem(`todo_cache_tasks_${uid}`);
+        if (cachedTasksStr && allTasks.length === 0) {
+            allTasks = JSON.parse(cachedTasksStr);
+            renderTasks();
+        }
+        const cachedProjectsStr = localStorage.getItem(`todo_cache_projects_${uid}`);
+        if (cachedProjectsStr && projectsList.length === 0) {
+            projectsList = JSON.parse(cachedProjectsStr);
+            renderProjects();
+        }
+    } catch (e) {
+        console.warn("Error loading cached snapshots:", e);
+    }
+}
+
+function saveCachedTasksSnapshot(uid) {
+    if (!uid || !Array.isArray(allTasks)) return;
+    try {
+        localStorage.setItem(`todo_cache_tasks_${uid}`, JSON.stringify(allTasks.slice(0, 500)));
+    } catch (e) {}
+}
+
+function saveCachedProjectsSnapshot(uid) {
+    if (!uid || !Array.isArray(projectsList)) return;
+    try {
+        localStorage.setItem(`todo_cache_projects_${uid}`, JSON.stringify(projectsList));
+    } catch (e) {}
+}
 
 // Helper to get HTML for project icon (supports both image URLs and emojis)
 function getProjectIconHtml(iconUrl, defaultSvgHtml, sizeStyle = '') {
@@ -26,18 +106,6 @@ function getProjectIconHtml(iconUrl, defaultSvgHtml, sizeStyle = '') {
         return `<img src="${iconUrl}" style="${sizeStyle}">`;
     }
     return `<span class="project-emoji-icon" style="${sizeStyle}">${iconUrl}</span>`;
-}
-
-try {
-    enableMultiTabIndexedDbPersistence(db).catch((err) => {
-        if (err.code == 'failed-precondition') {
-            console.warn("Firestore multi-tab persistence failed-precondition:", err);
-        } else if (err.code == 'unimplemented') {
-            console.warn("Firestore persistence is unimplemented:", err);
-        }
-    });
-} catch (e) {
-    console.error("Error enabling Firestore persistence:", e);
 }
 
 function getCalendarSvg(day) {
@@ -2688,44 +2756,74 @@ window.addEventListener('resize', () => {
 // Слушаем изменение URL хэша
 window.addEventListener('hashchange', handleRoute);
 
-// Слушатель состояния авторизации
-window.addEventListener('authChanged', (e) => {
-    const user = e.detail.user;
-    currentUid = user ? user.uid : null;
+// Функция инициализации пользовательской сессии (поддерживает мгновенный оффлайн-запуск)
+function initUserSession(user) {
+    if (!user || !user.uid) return;
+    const isNewUser = currentUid !== user.uid;
+    currentUid = user.uid;
 
-    if (user) {
-        // Заполняем профиль в боковом меню
-        if (sidebarName) sidebarName.textContent = user.displayName || "Пользователь";
-        if (sidebarAvatar) {
-            if (user.photoURL) {
-                sidebarAvatar.src = user.photoURL;
-                sidebarAvatar.style.display = 'block';
-            } else {
-                const firstLetter = (user.displayName || "U")[0].toUpperCase();
-                sidebarAvatar.src = `https://via.placeholder.com/40/CCCCCC/FFFFFF?text=${firstLetter}`;
-                sidebarAvatar.style.display = 'block';
-            }
+    // Заполняем профиль в боковом меню
+    if (sidebarName) sidebarName.textContent = user.displayName || "Пользователь";
+    if (sidebarAvatar) {
+        if (user.photoURL) {
+            sidebarAvatar.src = user.photoURL;
+            sidebarAvatar.style.display = 'block';
+        } else {
+            const firstLetter = (user.displayName || "U")[0].toUpperCase();
+            sidebarAvatar.src = `https://via.placeholder.com/40/CCCCCC/FFFFFF?text=${firstLetter}`;
+            sidebarAvatar.style.display = 'block';
         }
+    }
 
-        // Показываем интерфейс
-        if (authRequiredState) authRequiredState.style.setProperty('display', 'none', 'important');
-        if (todoMainLayout) todoMainLayout.style.display = 'flex';
+    // Мгновенно показываем интерфейс
+    if (authRequiredState) authRequiredState.style.setProperty('display', 'none', 'important');
+    if (todoMainLayout) todoMainLayout.style.display = 'flex';
 
+    if (isNewUser || !unsubscribeTasks) {
+        // Загружаем локальный слепок для 0мс отображения
+        loadCachedSnapshots(currentUid);
+
+        // Запускаем слушатели Firestore (работают через IndexedDB локально и по сети)
+        startTodoForUser(currentUid);
+        startProjectsForUser(currentUid);
+        startSectionsForUser(currentUid);
+        startCountdownsForUser(currentUid);
+        startHabitsForUser(currentUid);
+        handleRoute();
+
+        // Фоновая загрузка Google Календаря без блокировки задач
         loadGCalConfig().then(() => {
             updateGCalSettingsUI();
-            startTodoForUser(currentUid);
-            startProjectsForUser(currentUid);
-            startSectionsForUser(currentUid);
-            startCountdownsForUser(currentUid);
-            startHabitsForUser(currentUid);
-            handleRoute();
-
-            // Запускаем синхронизацию с Google Календарем ровно 1 раз при заходе/обновлении страницы
             if (typeof fetchAndRenderGCalEvents === 'function') {
                 fetchAndRenderGCalEvents(true, false);
             }
+        }).catch(err => {
+            console.warn("Фоновая загрузка GCal:", err);
         });
+    }
+}
+
+// Мгновенная инициализация из кэша при старте скрипта (для оффлайна без ожидания Firebase Auth)
+try {
+    const cachedUserRaw = localStorage.getItem('todo_cached_user');
+    if (cachedUserRaw) {
+        const cachedUser = JSON.parse(cachedUserRaw);
+        if (cachedUser && cachedUser.uid) {
+            initUserSession(cachedUser);
+        }
+    }
+} catch (e) {
+    console.warn("Ошибка разбора кэшированного пользователя:", e);
+}
+
+// Слушатель состояния авторизации от Firebase Auth
+window.addEventListener('authChanged', (e) => {
+    const user = e.detail.user;
+
+    if (user) {
+        initUserSession(user);
     } else {
+        currentUid = null;
         // Скрываем интерфейс
         if (todoMainLayout) todoMainLayout.style.setProperty('display', 'none', 'important');
         if (authRequiredState) authRequiredState.style.display = 'block';
@@ -2829,9 +2927,16 @@ function getTaskVisualHash(task) {
 function startTodoForUser(uid) {
     if (unsubscribeTasks) unsubscribeTasks();
 
-    const q = query(collection(db, 'users', uid, 'tasks'), orderBy('createdAt', 'desc'));
+    // Загружаем сохраненный локальный слепок для мгновенного рендера
+    loadCachedSnapshots(uid);
 
-    unsubscribeTasks = onSnapshot(q, (snapshot) => {
+    // Запрос без orderBy('createdAt'), чтобы оффлайн-задачи с ожидающим serverTimestamp() не скрывались Firestore
+    const q = query(collection(db, 'users', uid, 'tasks'));
+
+    unsubscribeTasks = onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
+        const hasPendingWrites = snapshot.metadata.hasPendingWrites;
+        updateSyncStatusIndicator(hasPendingWrites);
+
         allTasks = [];
         const now = Date.now();
         const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -2840,9 +2945,9 @@ function startTodoForUser(uid) {
             const data = docSnap.data();
 
             // Автоматическое удаление навсегда через 30 дней
-            if (data.deleted === true && data.deletedAt) {
+            if (data.deleted === true && (data.deletedAt || data.deletedAtMs)) {
                 try {
-                    const delTime = data.deletedAt.toDate().getTime();
+                    const delTime = data.deletedAt ? (data.deletedAt.toDate ? data.deletedAt.toDate().getTime() : (typeof data.deletedAt === 'number' ? data.deletedAt : new Date(data.deletedAt).getTime())) : (data.deletedAtMs || 0);
                     if (now - delTime > THIRTY_DAYS_MS) {
                         deleteDoc(doc(db, 'users', uid, 'tasks', docSnap.id));
                         return; // Пропускаем добавление в локальный список
@@ -2854,9 +2959,13 @@ function startTodoForUser(uid) {
 
             allTasks.push({
                 id: docSnap.id,
-                ...data
+                ...data,
+                _hasPendingWrites: docSnap.metadata.hasPendingWrites
             });
         });
+
+        // Сохраняем свежий снимок задач в localStorage для мгновенного старта
+        saveCachedTasksSnapshot(uid);
 
         // Синхронизация изменений с Google Календарем
         let hasVisualTaskChanges = false;
@@ -3268,10 +3377,12 @@ if (taskTitleBackdrop) {
 async function deleteTask(taskId) {
     if (!currentUid || !taskId) return;
     try {
+        const now = Date.now();
         const promises = [];
         promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
             deleted: true,
-            deletedAt: serverTimestamp()
+            deletedAt: serverTimestamp(),
+            deletedAtMs: now
         }));
 
         // Немедленная синхронизация удаления из Google Календаря для родительской задачи
@@ -3285,7 +3396,8 @@ async function deleteTask(taskId) {
         subtasks.forEach(sub => {
             promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', sub.id), {
                 deleted: true,
-                deletedAt: serverTimestamp()
+                deletedAt: serverTimestamp(),
+                deletedAtMs: now
             }));
             if (sub.gcal_event_id && typeof handleTaskSync === 'function') {
                 handleTaskSync({ ...sub, deleted: true });
@@ -3352,7 +3464,8 @@ async function restoreTask(taskId) {
         const promises = [];
         promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
             deleted: false,
-            deletedAt: null
+            deletedAt: null,
+            deletedAtMs: null
         }));
 
         const targetTask = allTasks.find(t => t.id === taskId);
@@ -3365,7 +3478,8 @@ async function restoreTask(taskId) {
         subtasks.forEach(sub => {
             promises.push(updateDoc(doc(db, 'users', currentUid, 'tasks', sub.id), {
                 deleted: false,
-                deletedAt: null
+                deletedAt: null,
+                deletedAtMs: null
             }));
             if (sub.dueDate && typeof handleTaskSync === 'function') {
                 handleTaskSync({ ...sub, deleted: false });
@@ -4672,7 +4786,10 @@ function getEmptyStateHtml() {
     `;
 }
 
-function updateNetworkStatus() {
+let lastKnownHasPendingWrites = false;
+
+function updateSyncStatusIndicator(hasPending = lastKnownHasPendingWrites) {
+    lastKnownHasPendingWrites = hasPending;
     const isOnline = navigator.onLine;
     const offlineBanner = document.getElementById('offlineBanner');
     const sidebarStatusBadge = document.getElementById('sidebarStatusBadge');
@@ -4693,10 +4810,28 @@ function updateNetworkStatus() {
                     <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.5M5 12.5a10.94 10.94 0 0 1 5.83-2.84M8.5 16.5a6.75 6.75 0 0 1 7 0M10.5 19.5a2 2 0 0 1 3 0"></path>
                 </svg>Оффлайн`;
             sidebarStatusBadge.style.display = 'inline-flex';
+        } else if (hasPending) {
+            sidebarStatusBadge.className = 'sidebar-status-badge syncing';
+            sidebarStatusBadge.innerHTML = `
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="spin-icon" style="margin-right: 2.5px; vertical-align: middle;">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                </svg>Синхронизация...`;
+            sidebarStatusBadge.style.display = 'inline-flex';
         } else {
-            sidebarStatusBadge.style.display = 'none';
+            sidebarStatusBadge.className = 'sidebar-status-badge online';
+            sidebarStatusBadge.innerHTML = `В сети`;
+            sidebarStatusBadge.style.display = 'inline-flex';
+            setTimeout(() => {
+                if (navigator.onLine && !lastKnownHasPendingWrites && sidebarStatusBadge) {
+                    sidebarStatusBadge.style.display = 'none';
+                }
+            }, 3000);
         }
     }
+}
+
+function updateNetworkStatus() {
+    updateSyncStatusIndicator(lastKnownHasPendingWrites);
 }
 
 window.addEventListener('online', () => {
@@ -5136,8 +5271,8 @@ function doRenderTasks() {
                 const orderB = b.order !== undefined ? b.order : 0;
                 if (orderA !== orderB) return orderA - orderB;
 
-                const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
-                const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
+                const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : (typeof a.createdAt === 'number' ? a.createdAt : new Date(a.createdAt).getTime())) : (a.clientCreatedAt || a.updatedAt || 0);
+                const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : (typeof b.createdAt === 'number' ? b.createdAt : new Date(b.createdAt).getTime())) : (b.clientCreatedAt || b.updatedAt || 0);
                 return (timeB - timeA) * mult;
             });
         }
@@ -7528,7 +7663,7 @@ function startProjectsForUser(uid) {
 
     const qProjects = query(collection(db, 'users', uid, 'projects'));
 
-    unsubscribeProjects = onSnapshot(qProjects, (snapshot) => {
+    unsubscribeProjects = onSnapshot(qProjects, { includeMetadataChanges: true }, (snapshot) => {
         projectsList = [];
         snapshot.forEach((docSnap) => {
             projectsList.push({
@@ -7543,10 +7678,12 @@ function startProjectsForUser(uid) {
             const orderB = b.order !== undefined ? b.order : 0;
             if (orderA !== orderB) return orderA - orderB;
 
-            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
-            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
+            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : (typeof a.createdAt === 'number' ? a.createdAt : new Date(a.createdAt).getTime())) : (a.clientCreatedAt || a.updatedAt || Date.now());
+            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : (typeof b.createdAt === 'number' ? b.createdAt : new Date(b.createdAt).getTime())) : (b.clientCreatedAt || b.updatedAt || Date.now());
             return timeA - timeB; // Старые вверху (по возрастанию)
         });
+
+        saveCachedProjectsSnapshot(uid);
 
         snapshot.docChanges().forEach((change) => {
             const projData = change.doc.data();
@@ -7606,7 +7743,7 @@ function startCountdownsForUser(uid) {
 
     const qCountdowns = query(collection(db, 'users', uid, 'countdowns'));
 
-    unsubscribeCountdowns = onSnapshot(qCountdowns, (snapshot) => {
+    unsubscribeCountdowns = onSnapshot(qCountdowns, { includeMetadataChanges: true }, (snapshot) => {
         const newCountdownsList = [];
         snapshot.forEach((docSnap) => {
             const cdData = docSnap.data();
@@ -7663,7 +7800,7 @@ function startSectionsForUser(uid) {
 
     const qSections = query(collection(db, 'users', uid, 'sections'));
 
-    unsubscribeSections = onSnapshot(qSections, (snapshot) => {
+    unsubscribeSections = onSnapshot(qSections, { includeMetadataChanges: true }, (snapshot) => {
         sectionsList = [];
         snapshot.forEach((docSnap) => {
             sectionsList.push({
@@ -7696,19 +7833,6 @@ function stopSectionsForUser() {
 function renderProjects() {
     if (!projectsListContainer) return;
     projectsListContainer.innerHTML = '';
-
-    if (projectsList.length === 0 && !navigator.onLine) {
-        const placeholder = document.createElement('div');
-        placeholder.className = 'projects-offline-placeholder';
-        placeholder.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="offline-placeholder-icon">
-                <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.5M5 12.5a10.94 10.94 0 0 1 5.83-2.84M8.5 16.5a6.75 6.75 0 0 1 7 0M10.5 19.5a2 2 0 0 1 3 0"></path>
-            </svg>
-            <div class="offline-placeholder-text">Устройство оффлайн.<br>Списки загрузятся при подключении к сети.</div>
-        `;
-        projectsListContainer.appendChild(placeholder);
-        return;
-    }
 
     projectsList.forEach(project => {
         const itemContainer = document.createElement('div');
@@ -16380,7 +16504,7 @@ function startHabitsForUser(uid) {
 
     const qHabits = query(collection(db, 'users', uid, 'habits'));
 
-    unsubscribeHabits = onSnapshot(qHabits, (snapshot) => {
+    unsubscribeHabits = onSnapshot(qHabits, { includeMetadataChanges: true }, (snapshot) => {
         const newHabitsList = [];
         snapshot.forEach((docSnap) => {
             newHabitsList.push({
@@ -16392,8 +16516,8 @@ function startHabitsForUser(uid) {
         habitsList = newHabitsList;
 
         habitsList.sort((a, b) => {
-            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : Date.now();
-            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : Date.now();
+            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : (typeof a.createdAt === 'number' ? a.createdAt : new Date(a.createdAt).getTime())) : (a.clientCreatedAt || a.updatedAt || Date.now());
+            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : (typeof b.createdAt === 'number' ? b.createdAt : new Date(b.createdAt).getTime())) : (b.clientCreatedAt || b.updatedAt || Date.now());
             return timeA - timeB;
         });
 

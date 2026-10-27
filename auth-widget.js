@@ -1,6 +1,6 @@
 // auth-widget.js
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
     getAuth,
     createUserWithEmailAndPassword,
@@ -12,7 +12,13 @@ import {
     signInWithPopup
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import {
+    initializeFirestore,
     getFirestore,
+    persistentLocalCache,
+    persistentMultipleTabManager,
+    persistentSingleTabManager,
+    CACHE_SIZE_UNLIMITED,
+    enableIndexedDbPersistence,
     doc,
     setDoc,
     getDoc,
@@ -122,10 +128,39 @@ const modalHTML = `
 function initAuthWidget() {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-    const app = initializeApp(firebaseConfig);
+    let app;
+    try {
+        const apps = getApps();
+        app = apps.length ? getApp() : initializeApp(firebaseConfig);
+    } catch (e) {
+        app = initializeApp(firebaseConfig);
+    }
     const auth = getAuth(app);
-    const db = getFirestore(app);
-    window.db = db; // Экспортируем для сервиса диска
+
+    let db;
+    try {
+        db = initializeFirestore(app, {
+            localCache: persistentLocalCache({
+                tabManager: persistentMultipleTabManager(),
+                cacheSizeBytes: CACHE_SIZE_UNLIMITED
+            })
+        });
+    } catch (e1) {
+        try {
+            db = initializeFirestore(app, {
+                localCache: persistentLocalCache({
+                    tabManager: persistentSingleTabManager(),
+                    cacheSizeBytes: CACHE_SIZE_UNLIMITED
+                })
+            });
+        } catch (e2) {
+            db = getFirestore(app);
+            try {
+                enableIndexedDbPersistence(db).catch(() => {});
+            } catch (e3) {}
+        }
+    }
+    window.db = db; // Экспортируем для сервиса диска и todo.js
 
     const provider = new GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/drive.file');
@@ -429,6 +464,7 @@ function initAuthWidget() {
     });
     document.getElementById('btnLogout').addEventListener('click', () => {
         signOut(auth);
+        localStorage.removeItem('todo_cached_user');
         localStorage.removeItem('google_access_token');
         localStorage.removeItem('google_calendar_access_token');
         localStorage.removeItem('google_calendar_refresh_token');
@@ -443,6 +479,15 @@ function initAuthWidget() {
     onAuthStateChanged(auth, async (user) => {
         window.currentUser = user; // Делаем пользователя доступным глобально
         if (user) {
+            try {
+                localStorage.setItem('todo_cached_user', JSON.stringify({
+                    uid: user.uid,
+                    displayName: user.displayName || "Пользователь",
+                    email: user.email || "",
+                    photoURL: user.photoURL || ""
+                }));
+            } catch (e) {}
+
             modal.classList.remove('mode-login', 'mode-register');
             modal.classList.add('mode-profile');
             document.getElementById('profileName').textContent = user.displayName || "Пользователь";
@@ -457,33 +502,43 @@ function initAuthWidget() {
             }
             modal.classList.add('logged-in-flag');
 
-            // Попробуем достать токены из БД если их нет в localStorage
-            try {
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    if (data.google_access_token) {
-                        localStorage.setItem('google_access_token', data.google_access_token);
-                        localStorage.setItem('google_token_expiry', data.google_token_expiry || 0);
-                    }
-                    if (data.google_calendar_access_token) {
-                        localStorage.setItem('google_calendar_access_token', data.google_calendar_access_token);
-                        localStorage.setItem('google_calendar_token_expiry', data.google_calendar_token_expiry || 0);
-                        if (data.google_calendar_refresh_token) {
-                            localStorage.setItem('google_calendar_refresh_token', data.google_calendar_refresh_token);
-                        }
-                    }
-                    if (data.google_youtube_access_token) {
-                        localStorage.setItem('google_youtube_access_token', data.google_youtube_access_token);
-                        localStorage.setItem('google_youtube_token_expiry', data.google_youtube_token_expiry || 0);
-                        if (data.google_youtube_refresh_token) {
-                            localStorage.setItem('google_youtube_refresh_token', data.google_youtube_refresh_token);
-                        }
-                    }
-                }
-            } catch (e) { console.error("Ошибка синхронизации токенов:", e); }
+            // Немедленно генерируем событие authChanged для мгновенного рендера To-Do без ожидания сети
+            window.dispatchEvent(new CustomEvent('authChanged', { detail: { user } }));
 
-            updateGoogleConnectedUI();
+            // Асинхронно достаем токены из БД в фоне только при наличии сети
+            if (navigator.onLine) {
+                (async () => {
+                    try {
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if (userDoc.exists()) {
+                            const data = userDoc.data();
+                            if (data.google_access_token) {
+                                localStorage.setItem('google_access_token', data.google_access_token);
+                                localStorage.setItem('google_token_expiry', data.google_token_expiry || 0);
+                            }
+                            if (data.google_calendar_access_token) {
+                                localStorage.setItem('google_calendar_access_token', data.google_calendar_access_token);
+                                localStorage.setItem('google_calendar_token_expiry', data.google_calendar_token_expiry || 0);
+                                if (data.google_calendar_refresh_token) {
+                                    localStorage.setItem('google_calendar_refresh_token', data.google_calendar_refresh_token);
+                                }
+                            }
+                            if (data.google_youtube_access_token) {
+                                localStorage.setItem('google_youtube_access_token', data.google_youtube_access_token);
+                                localStorage.setItem('google_youtube_token_expiry', data.google_youtube_token_expiry || 0);
+                                if (data.google_youtube_refresh_token) {
+                                    localStorage.setItem('google_youtube_refresh_token', data.google_youtube_refresh_token);
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn("Фоновая синхронизация токенов:", e);
+                    }
+                    updateGoogleConnectedUI();
+                })();
+            } else {
+                updateGoogleConnectedUI();
+            }
 
             const returnUrl = sessionStorage.getItem('oauth_return_url');
             if (returnUrl) {
@@ -493,10 +548,8 @@ function initAuthWidget() {
                     return;
                 }
             }
-
-            // Генерируем событие об изменении состояния авторизации
-            window.dispatchEvent(new CustomEvent('authChanged', { detail: { user } }));
         } else {
+            localStorage.removeItem('todo_cached_user');
             modal.classList.remove('mode-profile', 'logged-in-flag');
             modal.classList.add('mode-login');
 

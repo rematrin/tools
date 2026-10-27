@@ -8350,6 +8350,28 @@ body.dark .calendar-cell .cell-circle {
     box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
 }
 
+.sidebar-status-badge.syncing {
+    color: #3b82f6;
+    /* Soft Blue for syncing */
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.sidebar-status-badge.syncing::before {
+    background-color: #3b82f6;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+}
+
+.sidebar-status-badge .spin-icon {
+    animation: spin-sync 1.2s linear infinite;
+}
+
+@keyframes spin-sync {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 @keyframes offline-pulse {
     0% {
         opacity: 0.6;

@@ -9509,6 +9509,11 @@ input:checked+.view-slider:before {
         display: none !important;
     }
 
+    /* В шторке уже есть кнопка отмены в шапке */
+    #mobileCreateTaskSheet #btnCancelTask {
+        display: none !important;
+    }
+
     #mobileCreateTaskSheet .project-dropdown,
     #mobileCreateTaskSheet .priority-dropdown {
         top: 100% !important;
@@ -11538,6 +11543,12 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
     .action-btn.btn-more:hover {
         color: var(--text) !important;
         background: transparent !important;
+    }
+}
+
+@media (max-width: 768px) {
+    body.mobile-create-task-open #mobileCreateTaskSheet #mainAddTaskForm .form-actions-right {
+        display: none !important;
     }
 }
 

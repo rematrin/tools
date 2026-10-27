@@ -1,11 +1,104 @@
 /* todo.css - Стили для Туду Листа */
 
-body {
-    padding-top: 0 !important;
+/* === ВЕРХНЯЯ ШАПКА RETOOLS (как на главной, с аватаром как в Music) === */
+.vk-header {
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50px;
+    z-index: 1000;
+    box-sizing: border-box;
+    transition: background 0.3s ease, border-color 0.3s ease;
 }
 
-#header-container {
-    display: none !important;
+.vk-header-content {
+    max-width: 1080px;
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 100%;
+}
+
+.vk-header-logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    height: 100%;
+    transition: opacity 0.2s ease;
+}
+
+.vk-header-logo:hover {
+    opacity: 0.85;
+}
+
+.logo-img {
+    height: 30px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 100%;
+}
+
+.vk-profile {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    gap: 6px;
+    padding: 4px 6px;
+    border-radius: 10px;
+    transition: background 0.2s ease;
+    height: 36px;
+}
+
+.vk-profile:hover {
+    background-color: var(--hover-bg);
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--border);
+    object-fit: cover;
+}
+
+.desktop-only {
+    display: none;
+}
+
+@media (min-width: 769px) {
+    .desktop-only {
+        display: block;
+    }
+}
+
+/* На мобильных устройствах меню не трогаем, шапку прячем */
+@media (max-width: 768px) {
+    .vk-header {
+        display: none !important;
+    }
+    body {
+        padding-top: 0 !important;
+    }
 }
 
 /* Основной контейнер */
@@ -210,6 +303,7 @@ body {
     height: 20px;
     display: block;
     flex-shrink: 0;
+    stroke-width: 2.2;
 }
 
 .menu-counter {
@@ -461,11 +555,13 @@ body.dark .project-header-more-btn {
     justify-content: center;
     min-height: 34px;
     cursor: pointer;
-    transition: background-color 0.2s, border-color 0.2s;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
 body.dark .add-task-form {
     background-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
 }
 
 
@@ -1961,6 +2057,10 @@ body.dark .completed-tasks-container {
     .settings-modal-card {
         max-width: calc(100vw - 32px) !important;
         box-sizing: border-box !important;
+    }
+
+    .tasks-list {
+        margin-bottom: 12px !important;
     }
 
     .due-date-dropdown.new-modal-layout {
@@ -3473,7 +3573,7 @@ body.dark .project-drag-placeholder {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
     padding: 6px;
     width: 180px;
-    z-index: 210;
+    z-index: 99999;
     display: none;
     flex-direction: column;
     gap: 2px;
@@ -4517,7 +4617,7 @@ body.dark .gcal-color-opt-btn:hover {
 
     /* Уменьшаем отступы и размеры внутри календаря на мобильных, чтобы всё влезало без скролла */
     .add-task-form .due-date-dropdown {
-        padding: 12px !important;
+        padding: 14px 12px !important;
     }
 
     .add-task-form .due-date-dropdown .due-divider {
@@ -8781,6 +8881,7 @@ body.dark .offline-banner-close:hover {
 #habitSidebarContainer .menu-icon,
 #pomodoroSidebarContainer .menu-icon {
     cursor: pointer !important;
+    color: #4b84d1;
 }
 
 /* Нижнее меню кнопок в боковой панели */
@@ -10720,3 +10821,660 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
         border-radius: 14px;
     }
 }
+
+/* ==========================================================================
+   НОВЫЙ ДИЗАЙН ДЛЯ ПК (ПО МАКЕТУ)
+   - Контейнер начинается ровно от логотипа и заканчивается аватаркой
+   - Фон страницы как в Music (--bg: #edeef0 / #191919)
+   - Левая колонка: 2 отдельных белых блока (Меню и Проекты)
+   - Правая колонка: единый белый блок для задач
+   - Разделы внутри единого белого полотна (без тяжелых внешних рамок)
+   - Синий кружок с плюсиком в поле добавления задачи
+   - Время задач справа аккуратным текстом
+   - Три точки у задач и разделов
+   ========================================================================== */
+
+@media (min-width: 769px) {
+    body {
+        padding-top: 56px !important;
+        background-color: var(--bg) !important;
+    }
+
+    /* Главный контейнер точно по ширине контента шапки */
+    .todo-app {
+        max-width: 1080px !important;
+        margin: 12px auto 40px auto !important;
+        padding: 0 8px 0 0 !important;
+        display: flex !important;
+        gap: 20px !important;
+        align-items: flex-start !important;
+        min-height: calc(100vh - 76px) !important;
+    }
+
+    /* БОКОВАЯ ПАНЕЛЬ: 2 отдельные белые карточки */
+    .todo-sidebar {
+        position: static !important;
+        width: 266px !important;
+        min-width: 266px !important;
+        max-width: 266px !important;
+        flex-shrink: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+        padding: 0 !important;
+        height: auto !important;
+        left: auto !important;
+        z-index: 10 !important;
+    }
+
+    .todo-sidebar.collapsed {
+        left: auto !important;
+    }
+
+    /* Прячем старую шапку сайдбара и ресайзер на ПК */
+    .todo-sidebar .sidebar-header,
+    .todo-sidebar .sidebar-resizer,
+    .todo-sidebar .sidebar-footer-menu,
+    .sidebar-close-toggle {
+        display: none !important;
+    }
+
+    .sidebar-menu {
+        padding: 0 !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+        overflow: visible !important;
+    }
+
+    /* Карточки "Меню" и "Проекты" */
+    .sidebar-card {
+        background: var(--card-bg, #ffffff) !important;
+        border-radius: 18px !important;
+        padding: 12px !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .sidebar-projects-card {
+        padding-left: 8px !important;
+        padding-right: 10px !important;
+    }
+
+    body.dark .sidebar-card {
+        background: var(--card-bg, #202022) !important;
+        border-color: var(--border, rgba(255, 255, 255, 0.08)) !important;
+    }
+
+    .sidebar-card-title {
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        color: var(--text) !important;
+        padding: 2px 8px 8px 8px !important;
+        margin: 0 !important;
+    }
+
+    .sidebar-section-title {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 2px 8px 8px 8px !important;
+        margin: 0 !important;
+        border-top: none !important;
+        border-bottom: none !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        color: var(--text) !important;
+    }
+
+    .sidebar-section-title-left {
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        color: var(--text) !important;
+    }
+
+    .btn-add-project {
+        color: #4b84d1 !important;
+        background: transparent !important;
+        width: 24px !important;
+        height: 24px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 6px !important;
+    }
+
+    .btn-add-project svg {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    .btn-add-project:hover {
+        background-color: var(--hover-bg) !important;
+    }
+
+    /* Пункты меню и проектов */
+    .menu-item {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 6px 10px !important;
+        border-radius: 10px !important;
+        font-size: 14px !important;
+        color: var(--text) !important;
+        font-weight: 500 !important;
+        text-decoration: none !important;
+        transition: background-color 0.15s ease, color 0.15s ease !important;
+    }
+
+    .sidebar-projects-card .project-item-container .menu-item {
+        padding-top: 7px !important;
+        padding-bottom: 7px !important;
+        font-size: 15px !important;
+        font-weight: 500 !important;
+    }
+
+    .sidebar-projects-card .project-item-container .menu-item.active {
+        font-weight: 600 !important;
+    }
+
+    .sidebar-projects-card .project-item-container .menu-icon img,
+    .sidebar-projects-card .project-item-container .menu-icon svg {
+        width: 20px !important;
+        height: 20px !important;
+        object-fit: contain !important;
+    }
+
+    .sidebar-projects-card .project-item-container .project-emoji-icon {
+        font-size: 18px !important;
+        line-height: 1 !important;
+    }
+
+    .sidebar-projects-card .project-item-container .menu-counter {
+        font-size: 14px !important;
+    }
+
+    .todo-sidebar .project-actions-btn {
+        right: 4px !important;
+    }
+
+    .sidebar-nav-card .menu-item {
+        font-size: 15px !important;
+        font-weight: 500 !important;
+    }
+
+    .sidebar-nav-card .menu-item.active {
+        font-weight: 600 !important;
+    }
+
+    .sidebar-nav-card .menu-counter {
+        font-size: 14px !important;
+    }
+
+    /* Увеличиваем рисунок «Помодоро», сохраняя сетку меню */
+    #pomodoroSidebarContainer .menu-icon svg {
+        transform: scale(1.2) !important;
+        transform-origin: center !important;
+    }
+
+    .menu-item:hover {
+        background-color: var(--hover-bg) !important;
+    }
+
+    .menu-item.active {
+        background-color: transparent !important;
+        color: #4b84d1 !important;
+        font-weight: 600 !important;
+    }
+
+    .menu-item.active .menu-icon {
+        color: #4b84d1 !important;
+    }
+
+    body.dark .menu-item.active {
+        background-color: transparent !important;
+        color: #4b84d1 !important;
+    }
+
+    .menu-counter {
+        margin-left: auto !important;
+        color: #9ca3af !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        min-width: auto !important;
+        height: auto !important;
+        line-height: 1 !important;
+    }
+
+    .menu-item.active .menu-counter {
+        color: #4b84d1 !important;
+        font-weight: 600 !important;
+        background: transparent !important;
+        border: none !important;
+    }
+
+    body.dark .menu-item.active .menu-counter {
+        color: #4b84d1 !important;
+    }
+
+    /* ПРАВАЯ ОБЛАСТЬ: Единая большая белая карточка */
+    .todo-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        background: transparent !important;
+    }
+
+    .todo-main-layout {
+        background: var(--card-bg, #ffffff) !important;
+        border-radius: 20px !important;
+        padding: 24px 28px 10px !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+        min-height: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Убираем лишний запас под последней задачей внутри карточки */
+    #activeTasksContainer.tasks-list {
+        margin-bottom: 0 !important;
+    }
+
+    #activeTasksContainer > .project-section:last-child {
+        margin-bottom: 0 !important;
+    }
+
+    .todo-main-layout:has(.countdown-grid) {
+        padding-bottom: 24px !important;
+    }
+
+    body.dark .todo-main-layout {
+        background: var(--card-bg, #202022) !important;
+        border-color: var(--border, rgba(255, 255, 255, 0.08)) !important;
+    }
+
+    /* Шапка списка: заголовок и кнопки действий */
+    .list-header {
+        margin-bottom: 20px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .list-title {
+        font-size: 24px !important;
+        font-weight: 710 !important;
+        color: var(--text) !important;
+        letter-spacing: -0.02em !important;
+    }
+
+    #viewDisplayBtn {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 10px !important;
+        padding: 6px 12px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: var(--text) !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    }
+
+    #projectHeaderMoreBtn {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 10px !important;
+        padding: 6px 10px !important;
+        color: var(--text-secondary) !important;
+        opacity: 0.8 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    }
+
+    #projectHeaderMoreBtn:hover,
+    #viewDisplayBtn:hover {
+        opacity: 1 !important;
+        background-color: var(--hover-bg) !important;
+        color: var(--text) !important;
+    }
+
+    .task-input {
+        font-size: 14px !important;
+    }
+
+    /* Кнопки действий формы задачи должны быть одинаковой высоты */
+    .add-task-form .form-actions-right {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    .add-task-form .form-actions-right .btn-cancel,
+    .add-task-form .form-actions-right .btn-add-task {
+        height: 34px !important;
+        min-height: 34px !important;
+        box-sizing: border-box !important;
+        padding: 0 16px !important;
+        font-size: 14px !important;
+        line-height: 1 !important;
+        border-radius: 10px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* РАЗДЕЛЫ ВНУТРИ БЕЛОЙ КАРТОЧКИ: бесшовные, без лишних тяжелых плашек */
+    .project-section {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        margin-top: 24px !important;
+        margin-bottom: 6px !important;
+    }
+
+    #activeTasksContainer > .project-section:first-child {
+        margin-top: 8px !important;
+    }
+
+    body.dark .project-section {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .project-section-header {
+        padding: 4px 0 10px 0 !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .section-title-text {
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        color: var(--text) !important;
+    }
+
+    .section-count-badge {
+        background-color: #f1f3f5 !important;
+        color: #6b7280 !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        padding: 2px 8px !important;
+        border-radius: 10px !important;
+        margin-left: 6px !important;
+    }
+
+    body.dark .section-count-badge {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        color: #9ca3af !important;
+    }
+
+    .project-section-header {
+        border: none !important;
+        border-radius: 0 !important;
+        background-image: linear-gradient(var(--border), var(--border)) !important;
+        background-size: calc(100% - 36px) 1px !important;
+        background-position: right bottom !important;
+        background-repeat: no-repeat !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* Выполненные задачи оформлены в том же плоском стиле, что и основной список */
+    .completed-section {
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 24px 0 0 !important;
+    }
+
+    .completed-header {
+        padding: 4px 0 10px !important;
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background-image: linear-gradient(var(--border), var(--border)) !important;
+        background-size: calc(100% - 36px) 1px !important;
+        background-position: right bottom !important;
+        background-repeat: no-repeat !important;
+    }
+
+    .completed-toggle {
+        font-size: 16px !important;
+        font-weight: 700 !important;
+    }
+
+    .completed-clear-btn {
+        padding: 4px 0 4px 8px !important;
+        font-size: 13px !important;
+    }
+
+    .completed-tasks-container {
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+
+    .completed-tasks-container > .task-item:last-child {
+        background-image: none !important;
+    }
+
+    #completedTasksContainer .task-item.completed .custom-checkbox {
+        background: #aeb4bf !important;
+        border-color: #aeb4bf !important;
+    }
+
+    #completedTasksContainer .task-item.completed .custom-checkbox svg {
+        color: #ffffff !important;
+        opacity: 1 !important;
+        transform: scale(1) !important;
+    }
+
+    body.dark #completedTasksContainer .task-item.completed .custom-checkbox {
+        background: #5b606a !important;
+        border-color: #5b606a !important;
+    }
+
+    body.dark .completed-section,
+    body.dark .completed-tasks-container {
+        background: transparent !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .section-tasks-container:has(.task-item, .section-drag-placeholder, .task-drag-placeholder, .drag-placeholder),
+    .unsectioned-tasks-container:has(.task-item, .section-drag-placeholder, .task-drag-placeholder, .drag-placeholder),
+    #activeTasksContainer:has(> .task-item, > .drag-placeholder) {
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+
+    .section-collapse-btn {
+        order: 10 !important;
+        margin-left: auto !important;
+        color: #9ca3af !important;
+    }
+
+    .section-actions-wrapper {
+        order: 11 !important;
+        margin-right: 6px !important;
+        opacity: 0.45 !important;
+        transition: opacity 0.15s ease !important;
+    }
+
+    .section-actions-wrapper:hover,
+    .project-section-header:hover .section-actions-wrapper,
+    .project-section-header.menu-open .section-actions-wrapper {
+        opacity: 1 !important;
+    }
+
+    .section-actions-btn {
+        color: #9ca3af !important;
+    }
+
+    /* СТРОКИ ЗАДАЧ: аккуратные разделители, время справа, три точки */
+    .task-item {
+        padding: 6px 4px !important;
+        border: none !important;
+        border-bottom: none !important;
+        background: transparent !important;
+        background-image: linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05)) !important;
+        background-size: calc(100% - 32px) 1px !important;
+        background-position: right bottom !important;
+        background-repeat: no-repeat !important;
+        border-radius: 0 !important;
+        gap: 12px !important;
+    }
+
+    body.dark .task-item {
+        background-image: linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06)) !important;
+    }
+
+    .section-tasks-container > .task-item:last-child {
+        background-image: none !important;
+    }
+
+    .task-item:hover {
+        background-color: rgba(0, 0, 0, 0.015) !important;
+    }
+
+    body.dark .task-item:hover {
+        background-color: rgba(255, 255, 255, 0.02) !important;
+    }
+
+    /* Чекбокс - аккуратный скругленный квадрат как на макете */
+    .custom-checkbox {
+        width: 20px !important;
+        height: 20px !important;
+        border-radius: 6px !important;
+        border: 2px solid #c7cdd6 !important;
+        background: transparent !important;
+        transition: border-color 0.15s ease, background-color 0.15s ease !important;
+    }
+
+    body.dark .custom-checkbox {
+        border-color: #555860 !important;
+    }
+
+    .custom-checkbox:hover {
+        border-color: #9ca3af !important;
+    }
+
+    .task-title-text {
+        font-size: 14px !important;
+        font-weight: 460 !important;
+        color: var(--text) !important;
+    }
+
+    /* Время задачи аккуратным серым текстом справа */
+    .task-due-badge {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        color: #9ca3af !important;
+        font-size: 13px !important;
+        font-weight: 400 !important;
+        margin-left: auto !important;
+        margin-right: 14px !important;
+        white-space: nowrap !important;
+    }
+
+    .task-due-badge.task-project-badge {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: max-content !important;
+        max-width: none !important;
+        flex: 0 0 auto !important;
+        padding: 4px 10px !important;
+        margin: 0 !important;
+        border: 1px solid #c9c5ff !important;
+        border-radius: 8px !important;
+        background: #eeedff !important;
+        color: #5656e8 !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        line-height: 1.2 !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+    }
+
+    body.dark .task-due-badge.task-project-badge {
+        border-color: rgba(147, 143, 255, 0.38) !important;
+        background: rgba(99, 91, 255, 0.2) !important;
+        color: #aaa7ff !important;
+    }
+
+    body.dark .task-due-badge {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        color: #9ca3af !important;
+    }
+
+    .today-overdue-section .task-due-badge {
+        color: #dc2626 !important;
+    }
+
+    body.dark .today-overdue-section .task-due-badge {
+        color: #f87171 !important;
+    }
+
+    .task-due-badge svg {
+        display: none !important;
+    }
+
+    /* Три точки у задачи всегда видны полупрозрачно, на hover становятся ярче */
+    .task-actions {
+        opacity: 0.45 !important;
+        margin-left: 0 !important;
+        transition: opacity 0.15s ease !important;
+    }
+
+    .task-item:hover .task-actions,
+    .task-item.menu-open .task-actions {
+        opacity: 1 !important;
+    }
+
+    .action-btn.btn-more {
+        width: 28px !important;
+        height: 28px !important;
+        color: #9ca3af !important;
+        border-radius: 6px !important;
+    }
+
+    .action-btn.btn-more:hover {
+        color: var(--text) !important;
+        background-color: var(--hover-bg) !important;
+    }
+}
+

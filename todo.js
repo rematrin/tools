@@ -578,7 +578,7 @@ document.addEventListener('click', (e) => {
 
     // 7. Закрытие меню пользователя при клике вне
     const userProfileMenuEl = document.getElementById('userProfileMenu');
-    if (userProfileMenuEl && userProfileMenuEl.style.display !== 'none' && !e.target.closest('.sidebar-user') && !userProfileMenuEl.contains(e.target)) {
+    if (userProfileMenuEl && userProfileMenuEl.style.display !== 'none' && !e.target.closest('.sidebar-user') && !e.target.closest('#profile-container') && !userProfileMenuEl.contains(e.target)) {
         userProfileMenuEl.style.display = 'none';
     }
 });
@@ -860,13 +860,11 @@ function formatDateOnlyDisplay(dateStr, timeStr = null, endDateStr = null, endTi
         if (dStr === todayStr) return 'Сегодня';
         if (dStr === tomorrowStr) return 'Завтра';
         if (dStr === yesterdayStr) return 'Вчера';
-        const [year, month, day] = dStr.split('-');
-        const monthsRuShort = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-        let l = `${parseInt(day, 10)} ${monthsRuShort[parseInt(month, 10) - 1]}`;
-        if (parseInt(year, 10) !== today.getFullYear()) {
-            l += ` ${year}`;
-        }
-        return l;
+        const [year, month, day] = dStr.split('-').map(Number);
+        const monthsRuShort = ['янв.', 'фев.', 'мар.', 'апр.', 'май', 'июн.', 'июл.', 'авг.', 'сен.', 'окт.', 'нояб.', 'дек.'];
+        let label = `${day} ${monthsRuShort[month - 1]}`;
+        if (year !== today.getFullYear()) label += ` ${year}`;
+        return label;
     };
 
     let label = formatDatePart(dateStr);
@@ -874,7 +872,7 @@ function formatDateOnlyDisplay(dateStr, timeStr = null, endDateStr = null, endTi
     if (timeStr) {
         if (endTimeStr) {
             if (!endDateStr || endDateStr === dateStr) {
-                label += ` в ${timeStr}-${endTimeStr}`;
+                label += ` в ${timeStr}–${endTimeStr}`;
             } else {
                 label += ` в ${timeStr} - ${formatDatePart(endDateStr)} в ${endTimeStr}`;
             }
@@ -1643,37 +1641,6 @@ if (btnLoginLarge) {
 
 // Клик на имя/аватар пользователя для открытия простого меню
 const sidebarUser = document.querySelector('.sidebar-user');
-const sidebarHeader = document.querySelector('.sidebar-header');
-if (sidebarHeader && !document.getElementById('userProfileMenu')) {
-    const userMenuHtml = `
-        <div class="user-profile-menu" id="userProfileMenu" style="display: none;">
-            <button class="user-menu-item" id="btnUserMenuSettings">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                </svg>
-                <span>Настройки</span>
-            </button>
-            <button class="user-menu-item" id="btnUserMenuTrash">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-                <span>Корзина</span>
-            </button>
-            <button class="user-menu-item item-danger" id="btnUserMenuLogout">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-                <span>Выйти</span>
-            </button>
-        </div>
-    `;
-    sidebarHeader.insertAdjacentHTML('beforeend', userMenuHtml);
-}
-
 const userProfileMenu = document.getElementById('userProfileMenu');
 const btnUserMenuSettings = document.getElementById('btnUserMenuSettings');
 const btnUserMenuHabit = document.getElementById('btnUserMenuHabit');
@@ -1681,66 +1648,80 @@ const btnUserMenuPomodoro = document.getElementById('btnUserMenuPomodoro');
 const btnUserMenuTrash = document.getElementById('btnUserMenuTrash');
 const btnUserMenuLogout = document.getElementById('btnUserMenuLogout');
 
-if (sidebarUser && userProfileMenu) {
+if (sidebarUser) {
     sidebarUser.style.cursor = 'pointer';
     sidebarUser.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!currentUid) {
-            if (typeof window.openAuthModal === 'function') {
-                window.openAuthModal(sidebarUser);
-            }
+        const menu = document.getElementById('userProfileMenu');
+        if (!menu) return;
+
+        const isAuth = !!(currentUid || (window.firebaseAuth && window.firebaseAuth.currentUser) || window.currentUser);
+        if (!isAuth && typeof window.openAuthModal === 'function') {
+            window.openAuthModal(sidebarUser);
             return;
         }
-        if (userProfileMenu.style.display === 'none' || userProfileMenu.style.display === '') {
-            userProfileMenu.style.display = 'flex';
+
+        if (menu.style.display === 'none' || menu.style.display === '') {
+            const rect = sidebarUser.getBoundingClientRect();
+            menu.style.position = 'fixed';
+            menu.style.top = (rect.bottom + 8) + 'px';
+            menu.style.left = Math.max(16, rect.left) + 'px';
+            menu.style.right = 'auto';
+            menu.style.zIndex = '99999';
+            menu.style.display = 'flex';
         } else {
-            userProfileMenu.style.display = 'none';
+            menu.style.display = 'none';
         }
     });
+}
 
-    if (btnUserMenuSettings) {
-        btnUserMenuSettings.addEventListener('click', (e) => {
-            e.stopPropagation();
-            userProfileMenu.style.display = 'none';
-            openSettingsModal();
-        });
-    }
+if (btnUserMenuSettings) {
+    btnUserMenuSettings.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const menu = document.getElementById('userProfileMenu');
+        if (menu) menu.style.display = 'none';
+        openSettingsModal();
+    });
+}
 
-    if (btnUserMenuHabit) {
-        btnUserMenuHabit.addEventListener('click', (e) => {
-            e.stopPropagation();
-            userProfileMenu.style.display = 'none';
-            window.location.hash = '#habit';
-        });
-    }
+if (btnUserMenuHabit) {
+    btnUserMenuHabit.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const menu = document.getElementById('userProfileMenu');
+        if (menu) menu.style.display = 'none';
+        window.location.hash = '#habit';
+    });
+}
 
-    if (btnUserMenuPomodoro) {
-        btnUserMenuPomodoro.addEventListener('click', (e) => {
-            e.stopPropagation();
-            userProfileMenu.style.display = 'none';
-            window.location.hash = '#pomodoro';
-        });
-    }
+if (btnUserMenuPomodoro) {
+    btnUserMenuPomodoro.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const menu = document.getElementById('userProfileMenu');
+        if (menu) menu.style.display = 'none';
+        window.location.hash = '#pomodoro';
+    });
+}
 
-    if (btnUserMenuTrash) {
-        btnUserMenuTrash.addEventListener('click', (e) => {
-            e.stopPropagation();
-            userProfileMenu.style.display = 'none';
-            window.location.hash = '#trash';
-        });
-    }
+if (btnUserMenuTrash) {
+    btnUserMenuTrash.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const menu = document.getElementById('userProfileMenu');
+        if (menu) menu.style.display = 'none';
+        window.location.hash = '#trash';
+    });
+}
 
-    if (btnUserMenuLogout) {
-        btnUserMenuLogout.addEventListener('click', (e) => {
-            e.stopPropagation();
-            userProfileMenu.style.display = 'none';
-            if (window.firebaseAuth) {
-                window.firebaseAuth.signOut();
-                localStorage.removeItem('google_access_token');
-            }
-        });
-    }
+if (btnUserMenuLogout) {
+    btnUserMenuLogout.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const menu = document.getElementById('userProfileMenu');
+        if (menu) menu.style.display = 'none';
+        if (window.firebaseAuth) {
+            window.firebaseAuth.signOut();
+            localStorage.removeItem('google_access_token');
+        }
+    });
 }
 
 // === ЛОГИКА ОКНА НАСТРОЕК ===
@@ -2768,16 +2749,24 @@ function initUserSession(user, verifiedAuth = false) {
         isAuthVerified = true;
     }
 
-    // Заполняем профиль в боковом меню
+    // Заполняем профиль в боковом меню и в шапке
     if (sidebarName) sidebarName.textContent = user.displayName || "Пользователь";
-    if (sidebarAvatar) {
+    const headerAvatar = document.getElementById('headerAvatar');
+    if (sidebarAvatar || headerAvatar) {
         if (user.photoURL) {
-            sidebarAvatar.src = user.photoURL;
-            sidebarAvatar.style.display = 'block';
+            if (sidebarAvatar) {
+                sidebarAvatar.src = user.photoURL;
+                sidebarAvatar.style.display = 'block';
+            }
+            if (headerAvatar) headerAvatar.src = user.photoURL;
         } else {
             const firstLetter = (user.displayName || "U")[0].toUpperCase();
-            sidebarAvatar.src = `https://via.placeholder.com/40/CCCCCC/FFFFFF?text=${firstLetter}`;
-            sidebarAvatar.style.display = 'block';
+            const placeholder = `https://via.placeholder.com/40/CCCCCC/FFFFFF?text=${firstLetter}`;
+            if (sidebarAvatar) {
+                sidebarAvatar.src = placeholder;
+                sidebarAvatar.style.display = 'block';
+            }
+            if (headerAvatar) headerAvatar.src = placeholder;
         }
     }
 
@@ -2837,6 +2826,8 @@ window.addEventListener('authChanged', (e) => {
         if (authRequiredState) authRequiredState.style.display = 'block';
         if (sidebarName) sidebarName.textContent = "Войти";
         if (sidebarAvatar) sidebarAvatar.style.display = 'none';
+        const headerAvatar = document.getElementById('headerAvatar');
+        if (headerAvatar) headerAvatar.src = "https://i.ibb.co/Z6vRKK9x/0000000.jpg";
 
         stopTodoForUser();
         stopProjectsForUser();
@@ -3387,6 +3378,7 @@ if (taskTitleInput) {
             taskTitleBackdrop.scrollLeft = taskTitleInput.scrollLeft;
         }
     });
+
 }
 
 if (taskTitleBackdrop) {
@@ -5003,6 +4995,9 @@ function doRenderTasks() {
     const hideInboxCount = localStorage.getItem('todo_hide_counter_inbox') === 'true';
     const hideTodayCount = localStorage.getItem('todo_hide_counter_today') === 'true';
     const hideTomorrowCount = localStorage.getItem('todo_hide_counter_tomorrow') === 'true';
+    const hideCalendarCount = localStorage.getItem('todo_hide_counter_calendar') === 'true';
+    const hideHabitCount = localStorage.getItem('todo_hide_counter_habit') === 'true';
+    const hidePomodoroCount = localStorage.getItem('todo_hide_counter_pomodoro') === 'true';
 
     if (inboxCounter) {
         inboxCounter.textContent = inboxActiveCount;
@@ -5018,13 +5013,24 @@ function doRenderTasks() {
     }
     const calendarCounter = document.getElementById('calendarCounter');
     const bottomCalendarCounter = document.getElementById('bottomCalendarCounter');
+    const habitCounter = document.getElementById('habitCounter');
+    const pomodoroCounter = document.getElementById('pomodoroCounter');
     if (calendarCounter) {
         calendarCounter.textContent = calendarActiveCount;
-        calendarCounter.style.display = (showCounters && calendarActiveCount > 0) ? 'inline-block' : 'none';
+        calendarCounter.style.display = (showCounters && !hideCalendarCount && calendarActiveCount > 0) ? 'inline-block' : 'none';
     }
     if (bottomCalendarCounter) {
         bottomCalendarCounter.textContent = calendarActiveCount;
-        bottomCalendarCounter.style.display = (showCounters && calendarActiveCount > 0) ? 'inline-block' : 'none';
+        bottomCalendarCounter.style.display = (showCounters && !hideCalendarCount && calendarActiveCount > 0) ? 'inline-block' : 'none';
+    }
+    if (habitCounter) {
+        habitCounter.textContent = habitsList.length;
+        habitCounter.style.display = (showCounters && !hideHabitCount && habitsList.length > 0) ? 'inline-block' : 'none';
+    }
+    const pomodoroActiveCount = nonDeletedTasks.filter(t => t.inPomodoro).length;
+    if (pomodoroCounter) {
+        pomodoroCounter.textContent = pomodoroActiveCount;
+        pomodoroCounter.style.display = (showCounters && !hidePomodoroCount && pomodoroActiveCount > 0) ? 'inline-block' : 'none';
     }
 
     const trashCounter = document.getElementById('trashCounter');
@@ -5639,7 +5645,7 @@ function doRenderTasks() {
                             </svg>
                         </button>
                         <span class="section-title-text" style="font-weight: 600;">Просрочено</span>
-                        <span style="color: var(--text-secondary); font-size: 0.9rem; font-weight: normal; margin-left: 2px;">${overdueActiveTasks.length}</span>
+                        <span class="section-count-badge">${overdueActiveTasks.length}</span>
                     </div>
                     <div class="section-tasks-container" style="${isOverdueCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
                 `;
@@ -6197,7 +6203,7 @@ function doRenderTasks() {
                                 </svg>
                             </button>
                             <span class="section-title-text" style="font-weight: 600;">Просрочено</span>
-                            <span style="color: var(--text-secondary); font-size: 0.9rem; font-weight: normal; margin-left: 2px;">${overdueActiveTasks.length}</span>
+                            <span class="section-count-badge">${overdueActiveTasks.length}</span>
                         </div>
                         <div class="section-tasks-container" style="${isOverdueCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
                     `;
@@ -6225,7 +6231,7 @@ function doRenderTasks() {
                                 </svg>
                             </button>
                             <span class="section-title-text" style="font-weight: 600;">Сегодня</span>
-                            <span style="color: var(--text-secondary); font-size: 0.9rem; font-weight: normal; margin-left: 2px;">${displayActiveTasks.length}</span>
+                            <span class="section-count-badge">${displayActiveTasks.length}</span>
                         </div>
                         <div class="section-tasks-container" style="${isTodayCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
                     `;
@@ -6474,8 +6480,8 @@ function createTaskRowElement(task, isStandalone = false) {
                 <button class="action-btn btn-more" title="Действия">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="1.5"></circle>
-                        <circle cx="12" cy="5" r="1.5"></circle>
-                        <circle cx="12" cy="19" r="1.5"></circle>
+                        <circle cx="5" cy="12" r="1.5"></circle>
+                        <circle cx="19" cy="12" r="1.5"></circle>
                     </svg>
                 </button>
                 <div class="task-actions-dropdown" style="display: none;">
@@ -6727,12 +6733,10 @@ function createTaskRowElement(task, isStandalone = false) {
         ` : '';
 
         if (isTodayOrTomorrow && isTodayTomorrowRoute) {
-            if (task.dueTime) {
-                let timeStr = task.dueTime;
-                if (task.dueEndTime) {
-                    timeStr += `-${task.dueEndTime}`;
-                }
-                mobileDueHtml = `
+            const dueLabel = currentRoute === 'today' && isDateToday(task.dueDate) && task.dueTime
+                ? (task.dueEndTime ? `${task.dueTime}–${task.dueEndTime}` : task.dueTime)
+                : formatDateOnlyDisplay(task.dueDate, task.dueTime, task.dueEndDate, task.dueEndTime);
+            mobileDueHtml = `
                     <span class="mobile-due-time ${isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '')}">
                         <svg class="mobile-due-icon-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -6740,13 +6744,12 @@ function createTaskRowElement(task, isStandalone = false) {
                             <line x1="8" y1="2" x2="8" y2="6"></line>
                             <line x1="3" y1="10" x2="21" y2="10"></line>
                         </svg>
-                        <span style="vertical-align: middle; font-weight: 600;">${timeStr}</span>
+                        <span style="vertical-align: middle; font-weight: 600;">${dueLabel}</span>
                         ${repeatIconHtml}
                     </span>
                 `;
-            }
         } else {
-            const rawDueLabel = formatDueDateDisplay(task.dueDate, task.dueTime, task.dueRepeat, task.dueEndDate, task.dueEndTime);
+            const rawDueLabel = formatDateOnlyDisplay(task.dueDate, task.dueTime, task.dueEndDate, task.dueEndTime);
             mobileDueHtml = `
                 <span class="mobile-due-time ${isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '')}">
                     <svg class="mobile-due-icon-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
@@ -6818,27 +6821,18 @@ function createTaskRowElement(task, isStandalone = false) {
 
             if (isTodayTomorrowRoute) {
                 if (isTodayOrTomorrowDate) {
-                    if (task.dueTime) {
-                        let timeStr = task.dueTime;
-                        if (task.dueEndTime) {
-                            timeStr += `-${task.dueEndTime}`;
-                        }
-                        const badgeClass = isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '');
-                        badgesHtml += `
+                    const badgeClass = isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '');
+                    const dueLabel = currentRoute === 'today' && isDateToday(task.dueDate) && task.dueTime
+                        ? (task.dueEndTime ? `${task.dueTime}–${task.dueEndTime}` : task.dueTime)
+                        : formatDateOnlyDisplay(task.dueDate, task.dueTime, task.dueEndDate, task.dueEndTime);
+                    badgesHtml += `
                         <span class="task-time-col" style="${!hasFirstBadge ? 'margin-left: auto;' : 'margin-left: 6px;'}">
                             <span class="task-due-badge ${badgeClass}">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
-                                <span style="vertical-align: middle;">${timeStr}</span>
+                                <span style="vertical-align: middle;">${dueLabel}</span>
                             </span>
                         </span>
                         `;
-                        hasFirstBadge = true;
-                    }
+                    hasFirstBadge = true;
 
                     const proj = task.projectId ? projectsList.find(p => p.id === task.projectId) : null;
                     const projName = proj ? proj.name : 'Входящие';
@@ -6896,12 +6890,6 @@ function createTaskRowElement(task, isStandalone = false) {
                 const badgeClass = isDateToday(task.dueDate) ? 'today' : (isDateOverdue(task.dueDate) ? 'overdue' : '');
                 badgesHtml += `
                 <span class="task-due-badge ${badgeClass}" style="${!hasFirstBadge ? 'margin-left: auto;' : 'margin-left: 6px;'}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
                     <span style="vertical-align: middle;">${rawDueLabel}</span>
                 </span>
                 `;
@@ -6925,8 +6913,8 @@ function createTaskRowElement(task, isStandalone = false) {
             <button class="action-btn btn-more" title="Действия">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="1.5"></circle>
-                    <circle cx="12" cy="5" r="1.5"></circle>
-                    <circle cx="12" cy="19" r="1.5"></circle>
+                    <circle cx="5" cy="12" r="1.5"></circle>
+                    <circle cx="19" cy="12" r="1.5"></circle>
                 </svg>
             </button>
             <div class="task-actions-dropdown" style="display: none;">
@@ -12217,8 +12205,8 @@ function createSubtaskElement(subtask) {
             <button class="action-btn btn-more" title="Действия">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="1.5"></circle>
-                    <circle cx="12" cy="5" r="1.5"></circle>
-                    <circle cx="12" cy="19" r="1.5"></circle>
+                    <circle cx="5" cy="12" r="1.5"></circle>
+                    <circle cx="19" cy="12" r="1.5"></circle>
                 </svg>
             </button>
             <div class="task-actions-dropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 4px); z-index: 1000; width: 230px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 6px; flex-direction: column; gap: 2px; box-sizing: border-box;">
@@ -16626,6 +16614,15 @@ window.renderCountdownEventsBanner = renderCountdownEventsBanner;
 
 let habitsRetryTimer = null;
 
+function updateHabitSidebarCounter() {
+    const counter = document.getElementById('habitCounter');
+    if (!counter) return;
+    const showCounters = localStorage.getItem('todo_show_sidebar_counters') !== 'hide';
+    const hidden = localStorage.getItem('todo_hide_counter_habit') === 'true';
+    counter.textContent = habitsList.length;
+    counter.style.display = (showCounters && !hidden && habitsList.length > 0) ? 'inline-block' : 'none';
+}
+
 // === ЛОГИКА ПРИВЫЧЕК ===
 function startHabitsForUser(uid) {
     if (unsubscribeHabits) {
@@ -16656,6 +16653,8 @@ function startHabitsForUser(uid) {
             return timeA - timeB;
         });
 
+        updateHabitSidebarCounter();
+
         if (currentRoute === 'habit') {
             renderHabits();
         }
@@ -16681,6 +16680,7 @@ function stopHabitsForUser() {
         unsubscribeHabits = null;
     }
     habitsList = [];
+    updateHabitSidebarCounter();
     const grid = document.getElementById('habitGrid');
     if (grid) grid.innerHTML = '';
 }
@@ -18181,7 +18181,7 @@ window.startHabitsForUser = startHabitsForUser;
 window.stopHabitsForUser = stopHabitsForUser;
 
 // === ЛОГИКА ДЕЙСТВИЙ ДЛЯ СИСТЕМНЫХ ПАПОК (Входящие, Сегодня, Завтра) ===
-function showSystemRouteContextMenu(e, routeId, routeName, itemContainer) {
+function showSystemRouteContextMenu(e, routeId, routeName, itemContainer, includeGrouping = true) {
     if (activeContextMenu) activeContextMenu.remove();
 
     const keyCount = `todo_hide_counter_${routeId}`;
@@ -18222,6 +18222,10 @@ function showSystemRouteContextMenu(e, routeId, routeName, itemContainer) {
             <span>Группировать по приоритету</span>
         </div>
     `;
+
+    if (!includeGrouping) {
+        menu.querySelectorAll('.ctx-divider, .ctx-group-item').forEach(item => item.remove());
+    }
 
     document.body.appendChild(menu);
     activeContextMenu = menu;
@@ -18283,10 +18287,16 @@ function initSystemRouteActions() {
     const inboxActionsBtn = document.getElementById('inboxActionsBtn');
     const todayActionsBtn = document.getElementById('todayActionsBtn');
     const tomorrowActionsBtn = document.getElementById('tomorrowActionsBtn');
+    const calendarActionsBtn = document.getElementById('calendarActionsBtn');
+    const habitActionsBtn = document.getElementById('habitActionsBtn');
+    const pomodoroActionsBtn = document.getElementById('pomodoroActionsBtn');
 
     const inboxSidebarContainer = document.getElementById('inboxSidebarContainer');
     const todaySidebarContainer = document.getElementById('todaySidebarContainer');
     const tomorrowSidebarContainer = document.getElementById('tomorrowSidebarContainer');
+    const calendarSidebarContainer = document.getElementById('calendarSidebarContainer');
+    const habitSidebarContainer = document.getElementById('habitSidebarContainer');
+    const pomodoroSidebarContainer = document.getElementById('pomodoroSidebarContainer');
 
     if (inboxActionsBtn) {
         inboxActionsBtn.addEventListener('click', (e) => {
@@ -18309,6 +18319,19 @@ function initSystemRouteActions() {
             showSystemRouteContextMenu(e, 'tomorrow', 'Завтра', tomorrowSidebarContainer);
         });
     }
+
+    [
+        [calendarActionsBtn, 'calendar', 'Календарь', calendarSidebarContainer],
+        [habitActionsBtn, 'habit', 'Отслеживаемое', habitSidebarContainer],
+        [pomodoroActionsBtn, 'pomodoro', 'Помодоро', pomodoroSidebarContainer]
+    ].forEach(([button, routeId, routeName, container]) => {
+        if (!button) return;
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            showSystemRouteContextMenu(e, routeId, routeName, container, false);
+        });
+    });
 
     if (inboxSidebarContainer) {
         inboxSidebarContainer.addEventListener('contextmenu', (e) => {
@@ -18337,6 +18360,21 @@ function initSystemRouteActions() {
             }
         });
     }
+
+    [
+        [calendarSidebarContainer, 'calendar', 'Календарь'],
+        [habitSidebarContainer, 'habit', 'Отслеживаемое'],
+        [pomodoroSidebarContainer, 'pomodoro', 'Помодоро']
+    ].forEach(([container, routeId, routeName]) => {
+        if (!container) return;
+        container.addEventListener('contextmenu', (e) => {
+            if (window.matchMedia('(hover: hover)').matches) {
+                e.preventDefault();
+                e.stopPropagation();
+                showSystemRouteContextMenu(e, routeId, routeName, container, false);
+            }
+        });
+    });
 }
 
 initSystemRouteActions();

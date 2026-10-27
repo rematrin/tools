@@ -46,11 +46,18 @@
     <link rel="stylesheet" href="todo.css">
     <style>
         :root {
-            --bg: #f5f9fc;
+            --bg: #edeef0;
+            --sidebar-bg: #edeef0;
+            --card-bg: #ffffff;
+            --border: rgba(0, 0, 0, 0.08);
         }
 
-        body.dark {
-            --bg: #0b0e14;
+        body.dark,
+        html.dark {
+            --bg: #191919;
+            --sidebar-bg: #191919;
+            --card-bg: #202022;
+            --border: rgba(255, 255, 255, 0.08);
         }
     </style>
 
@@ -76,7 +83,25 @@
     <!-- Загрузка сохраненной темы (предотвращает вспышку белого) -->
     <script src="theme-loader.js"></script>
 
-
+    <!-- Шапка страницы с логотипом Retools и круглой аватаркой профиля (как на Music) -->
+    <header class="vk-header">
+        <div class="vk-header-content">
+            <div class="header-left">
+                <a href="#inbox" class="vk-header-logo" title="Входящие">
+                    <img src="img/Retools_logo.png" alt="Retools" class="logo-img">
+                </a>
+            </div>
+            <div class="header-right">
+                <div class="vk-profile" id="profile-container" title="Профиль"
+                    onclick="event.stopPropagation(); const menu = document.getElementById('userProfileMenu'); if (menu) { const opening = menu.style.display !== 'flex'; const rect = this.getBoundingClientRect(); menu.style.position = 'fixed'; menu.style.top = (rect.bottom + 8) + 'px'; menu.style.right = Math.max(16, window.innerWidth - rect.right) + 'px'; menu.style.left = 'auto'; menu.style.zIndex = '99999'; menu.style.display = opening ? 'flex' : 'none'; }">
+                    <img src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" alt="Profile" class="user-avatar" id="headerAvatar">
+                    <svg width="12" height="8" viewBox="0 0 12 8" fill="none" style="opacity: 0.5; stroke: var(--text);">
+                        <path d="M1 1.5L6 6.5L11 1.5" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </header>
 
     <div class="todo-app">
         <!-- Боковое меню -->
@@ -112,7 +137,10 @@
                 </div>
             </div>
             <nav class="sidebar-menu">
-                <div class="project-item-container" id="inboxSidebarContainer">
+                <!-- Блок Меню (на ПК отдельная белая карточка) -->
+                <div class="sidebar-card sidebar-nav-card">
+                    <div class="sidebar-card-title desktop-only">Меню</div>
+                    <div class="project-item-container" id="inboxSidebarContainer">
                     <a href="#inbox" class="menu-item active" id="menuInbox">
                         <span class="menu-item-left">
                             <span class="menu-icon">
@@ -205,6 +233,11 @@
                         </span>
                         <span class="menu-counter" id="calendarCounter" style="display:none">0</span>
                     </a>
+                    <button class="project-actions-btn" id="calendarActionsBtn" title="Действия">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3" />
+                        </svg>
+                    </button>
                 </div>
                 <div class="project-item-container desktop-only-menu-item" id="habitSidebarContainer">
                     <a href="#habit" class="menu-item" id="menuHabit">
@@ -218,7 +251,13 @@
                             </span>
                             <span>Отслеживаемое</span>
                         </span>
+                        <span class="menu-counter" id="habitCounter" style="display:none">0</span>
                     </a>
+                    <button class="project-actions-btn" id="habitActionsBtn" title="Действия">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3" />
+                        </svg>
+                    </button>
                 </div>
                 <div class="project-item-container desktop-only-menu-item" id="pomodoroSidebarContainer">
                     <a href="#pomodoro" class="menu-item" id="menuPomodoro">
@@ -232,26 +271,36 @@
                             </span>
                             <span>Помодоро</span>
                         </span>
+                        <span class="menu-counter" id="pomodoroCounter" style="display:none">0</span>
                     </a>
+                    <button class="project-actions-btn" id="pomodoroActionsBtn" title="Действия">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3" />
+                        </svg>
+                    </button>
                 </div>
+                </div> <!-- /.sidebar-nav-card -->
 
-                <div class="sidebar-section-title">
-                    <div class="sidebar-section-title-left">
-                        <span>Мои проекты</span>
+                <!-- Блок Проекты (на ПК отдельная белая карточка) -->
+                <div class="sidebar-card sidebar-projects-card">
+                    <div class="sidebar-section-title">
+                        <div class="sidebar-section-title-left">
+                            <span>Проекты</span>
+                        </div>
+                        <div class="sidebar-section-title-right">
+                            <button class="btn-add-project" id="btnAddProject" title="Создать проект">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14"
+                                    height="14">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-                    <div class="sidebar-section-title-right">
-                        <button class="btn-add-project" id="btnAddProject" title="Создать проект">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14"
-                                height="14">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                        </button>
+                    <div class="projects-list-wrapper">
+                        <div class="projects-list" id="projectsList"></div>
                     </div>
-                </div>
-                <div class="projects-list-wrapper">
-                    <div class="projects-list" id="projectsList"></div>
-                </div>
+                </div> <!-- /.sidebar-projects-card -->
 
                 <div class="sidebar-footer-menu">
                     <div class="sidebar-bottom-bar">
@@ -718,6 +767,122 @@
                     </div>
                 </div>
 
+                <!-- Панель быстрого добавления -->
+                <div class="add-task-form" id="mainAddTaskForm">
+                    <div class="task-input-wrapper">
+                        <div id="taskTitleBackdrop" class="task-input-backdrop"></div>
+                        <textarea id="taskTitleInput" class="task-input" placeholder="+ Добавить задачу" rows="1"
+                            autocomplete="off" style="height: auto;"></textarea>
+                    </div>
+                    <div id="charLimitWarning" class="char-limit-warning">Лимит названия задачи: 0 / 500</div>
+                    <div class="form-actions">
+                        <div class="form-actions-left" style="display: flex; gap: 8px; align-items: center;">
+                            <div class="due-date-wrapper">
+                                <button class="btn-due-date" id="btnDueDate" type="button">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    <span id="dueDateBtnText">Срок</span>
+                                    <span id="btnClearDueDate" class="clear-due-icon" style="display:none"
+                                        title="Очистить">&times;</span>
+                                </button>
+                            </div>
+
+                            <!-- Выбор проекта для новой задачи -->
+                            <div class="add-task-project-wrapper" id="addTaskProjectWrapper">
+                                <button class="btn-due-date" id="btnAddTaskProject" type="button" style="font-weight: 700;">
+                                    <span class="project-icon" id="addTaskProjectIcon"
+                                        style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; flex-shrink: 0; margin-right: 4px;">
+                                    </span>
+                                    <span id="addTaskProjectText">Входящие</span>
+                                </button>
+                                <div class="due-date-dropdown project-dropdown" id="addTaskProjectDropdown"
+                                    style="display: none; width: 220px; max-height: 300px; overflow-y: auto;">
+                                    <!-- Сюда будут рендериться проекты динамически -->
+                                </div>
+                            </div>
+
+                            <!-- Выбор приоритета -->
+                            <div class="priority-wrapper" style="position: relative;">
+                                <button class="btn-due-date" id="btnPriority" type="button" style="font-weight: 700;">
+                                    <span class="priority-icon-wrapper" id="priorityBtnIcon"
+                                        style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; flex-shrink: 0; margin-right: 4px; color: #808080;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                            <line x1="4" y1="22" x2="4" y2="15"></line>
+                                        </svg>
+                                    </span>
+                                    <span id="priorityBtnText">Приоритет</span>
+                                </button>
+                                <div class="due-date-dropdown priority-dropdown" id="priorityDropdown"
+                                    style="display: none; width: 170px; flex-direction: column; gap: 2px; padding: 4px;">
+                                    <button class="priority-opt-btn dropdown-item" type="button" data-priority="3">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"
+                                            style="color: #dc2626;">
+                                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                            <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                                        </svg>
+                                        <span style="flex-grow: 1;">Приоритет 1</span>
+                                        <span class="priority-check"
+                                            style="display: none; color: #dc2626; font-weight: bold;">✓</span>
+                                    </button>
+                                    <button class="priority-opt-btn dropdown-item" type="button" data-priority="2">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"
+                                            style="color: #d97706;">
+                                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                            <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                                        </svg>
+                                        <span style="flex-grow: 1;">Приоритет 2</span>
+                                        <span class="priority-check"
+                                            style="display: none; color: #d97706; font-weight: bold;">✓</span>
+                                    </button>
+                                    <button class="priority-opt-btn dropdown-item" type="button" data-priority="1">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"
+                                            style="color: #2563eb;">
+                                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                            <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                                        </svg>
+                                        <span style="flex-grow: 1;">Приоритет 3</span>
+                                        <span class="priority-check"
+                                            style="display: none; color: #2563eb; font-weight: bold;">✓</span>
+                                    </button>
+                                    <button class="priority-opt-btn dropdown-item" type="button" data-priority="0">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2" style="color: #9ca3af;">
+                                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                            <line x1="4" y1="22" x2="4" y2="15"></line>
+                                        </svg>
+                                        <span style="flex-grow: 1;">Без приоритета</span>
+                                        <span class="priority-check"
+                                            style="display: none; color: #4b5563; font-weight: bold;">✓</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions-right">
+                            <button class="btn-cancel" id="btnCancelTask" type="button">Отмена</button>
+                            <button class="btn-add-task" id="btnAddTask" type="button" disabled>
+                                <svg class="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" width="16" height="16">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" width="16" height="16">
+                                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                                    <polyline points="5 12 12 5 19 12"></polyline>
+                                </svg>
+                                <span>Добавить</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Список активных задач -->
                 <div class="tasks-list" id="activeTasksContainer">
                     <div style="text-align: center; padding: 40px; opacity: 0.5;">Загрузка задач...</div>
@@ -847,119 +1012,6 @@
             </div>
         </main>
 
-        <!-- Панель быстрого добавления -->
-        <div class="add-task-form" id="mainAddTaskForm">
-            <div class="task-input-wrapper">
-                <div id="taskTitleBackdrop" class="task-input-backdrop"></div>
-                <textarea id="taskTitleInput" class="task-input" placeholder="+ Добавить задачу" rows="1"
-                    autocomplete="off" style="height: auto;"></textarea>
-            </div>
-            <div id="charLimitWarning" class="char-limit-warning">Лимит названия задачи: 0 / 500</div>
-            <div class="form-actions">
-                <div class="form-actions-left" style="display: flex; gap: 8px; align-items: center;">
-                    <div class="due-date-wrapper">
-                        <button class="btn-due-date" id="btnDueDate" type="button">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                            <span id="dueDateBtnText">Срок</span>
-                            <span id="btnClearDueDate" class="clear-due-icon" style="display:none"
-                                title="Очистить">&times;</span>
-                        </button>
-                    </div>
-
-                    <!-- Выбор проекта для новой задачи -->
-                    <div class="add-task-project-wrapper" id="addTaskProjectWrapper">
-                        <button class="btn-due-date" id="btnAddTaskProject" type="button" style="font-weight: 700;">
-                            <span class="project-icon" id="addTaskProjectIcon"
-                                style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; flex-shrink: 0; margin-right: 4px;">
-                            </span>
-                            <span id="addTaskProjectText">Входящие</span>
-                        </button>
-                        <div class="due-date-dropdown project-dropdown" id="addTaskProjectDropdown"
-                            style="display: none; width: 220px; max-height: 300px; overflow-y: auto;">
-                            <!-- Сюда будут рендериться проекты динамически -->
-                        </div>
-                    </div>
-
-                    <!-- Выбор приоритета -->
-                    <div class="priority-wrapper" style="position: relative;">
-                        <button class="btn-due-date" id="btnPriority" type="button" style="font-weight: 700;">
-                            <span class="priority-icon-wrapper" id="priorityBtnIcon"
-                                style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; flex-shrink: 0; margin-right: 4px; color: #808080;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                                    <line x1="4" y1="22" x2="4" y2="15"></line>
-                                </svg>
-                            </span>
-                            <span id="priorityBtnText">Приоритет</span>
-                        </button>
-                        <div class="due-date-dropdown priority-dropdown" id="priorityDropdown"
-                            style="display: none; width: 170px; flex-direction: column; gap: 2px; padding: 4px;">
-                            <button class="priority-opt-btn dropdown-item" type="button" data-priority="3">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"
-                                    style="color: #dc2626;">
-                                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                                    <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
-                                </svg>
-                                <span style="flex-grow: 1;">Приоритет 1</span>
-                                <span class="priority-check"
-                                    style="display: none; color: #dc2626; font-weight: bold;">✓</span>
-                            </button>
-                            <button class="priority-opt-btn dropdown-item" type="button" data-priority="2">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"
-                                    style="color: #d97706;">
-                                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                                    <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
-                                </svg>
-                                <span style="flex-grow: 1;">Приоритет 2</span>
-                                <span class="priority-check"
-                                    style="display: none; color: #d97706; font-weight: bold;">✓</span>
-                            </button>
-                            <button class="priority-opt-btn dropdown-item" type="button" data-priority="1">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"
-                                    style="color: #2563eb;">
-                                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                                    <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
-                                </svg>
-                                <span style="flex-grow: 1;">Приоритет 3</span>
-                                <span class="priority-check"
-                                    style="display: none; color: #2563eb; font-weight: bold;">✓</span>
-                            </button>
-                            <button class="priority-opt-btn dropdown-item" type="button" data-priority="0">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" style="color: #808080;">
-                                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                                    <line x1="4" y1="22" x2="4" y2="15"></line>
-                                </svg>
-                                <span style="flex-grow: 1;">Приоритет 4</span>
-                                <span class="priority-check"
-                                    style="display: none; color: #dc2626; font-weight: bold;">✓</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <button class="btn-add-task" id="btnAddTask">
-                    <svg class="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-                        width="12" height="12">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    <svg class="icon-arrow bi bi-arrow-up-short" xmlns="http://www.w3.org/2000/svg" width="16"
-                        height="16" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
-                        <path fill-rule="evenodd"
-                            d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5" />
-                    </svg>
-                    <span>Добавить</span>
-                </button>
-            </div>
-        </div>
 
         <button id="mobileCreateTaskFab" class="mobile-create-task-fab" type="button" aria-label="Создать задачу"
             aria-haspopup="dialog">
@@ -1876,6 +1928,31 @@
             </svg>
         </button>
     </div>
+    <!-- Выпадающее меню профиля пользователя -->
+    <div class="user-profile-menu" id="userProfileMenu" style="display: none;">
+        <button class="user-menu-item" id="btnUserMenuSettings" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>Настройки</span>
+        </button>
+        <button class="user-menu-item" id="btnUserMenuTrash" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Корзина</span>
+        </button>
+        <button class="user-menu-item item-danger" id="btnUserMenuLogout" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Выйти</span>
+        </button>
+    </div>
 
     <!-- Задний фон оверлея для мобильного меню -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -1884,7 +1961,6 @@
     <script type="module" src="nav-widget.js"></script>
     <script type="module" src="auth-widget.js"></script>
     <script src="gcalendar-service.js"></script>
-
     <!-- Локальный скрипт -->
     <script type="module" src="todo.js"></script>
 

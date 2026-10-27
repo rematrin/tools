@@ -11236,8 +11236,8 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
         border: none !important;
         border-radius: 0 !important;
         background-image: linear-gradient(var(--border), var(--border)) !important;
-        background-size: calc(100% - 36px) 1px !important;
-        background-position: right bottom !important;
+        background-size: 100% 1px !important;
+        background-position: left bottom !important;
         background-repeat: no-repeat !important;
         margin-bottom: 0 !important;
     }
@@ -11326,8 +11326,8 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
 
     .section-actions-wrapper {
         order: 11 !important;
-        margin-right: 6px !important;
-        opacity: 0.45 !important;
+        margin-right: 2px !important;
+        opacity: 0.65 !important;
         transition: opacity 0.15s ease !important;
     }
 
@@ -11338,7 +11338,22 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
     }
 
     .section-actions-btn {
-        color: #9ca3af !important;
+        color: #818a98 !important;
+    }
+
+    .section-actions-btn:hover {
+        background: transparent !important;
+    }
+
+    .section-actions-btn:hover,
+    .action-btn.btn-more:hover {
+        background: transparent !important;
+        border-radius: 7px !important;
+    }
+
+    body.dark .section-actions-btn:hover,
+    body.dark .action-btn.btn-more:hover {
+        background: transparent !important;
     }
 
     /* СТРОКИ ЗАДАЧ: аккуратные разделители, время справа, три точки */
@@ -11355,6 +11370,37 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
         gap: 12px !important;
     }
 
+    .task-item::before {
+        left: -28px !important;
+        right: -28px !important;
+        background: transparent !important;
+        transition: background-color 0.15s ease !important;
+    }
+
+    .task-item:hover {
+        background-color: transparent !important;
+    }
+
+    .task-item:hover::before {
+        background: rgba(15, 23, 42, 0.045) !important;
+    }
+
+    body.dark .task-item:hover::before {
+        background: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    .task-item > .checkbox-wrapper,
+    .task-item > .task-content,
+    .task-item > .task-time-col,
+    .task-item > .task-proj-col {
+        position: relative !important;
+        z-index: 1 !important;
+    }
+
+    .task-item:has(.checkbox-wrapper[style*="display: none"]) {
+        background-size: calc(100% - 4px) 1px !important;
+    }
+
     body.dark .task-item {
         background-image: linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06)) !important;
     }
@@ -11364,11 +11410,11 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
     }
 
     .task-item:hover {
-        background-color: rgba(0, 0, 0, 0.015) !important;
+        background-color: transparent !important;
     }
 
     body.dark .task-item:hover {
-        background-color: rgba(255, 255, 255, 0.02) !important;
+        background-color: transparent !important;
     }
 
     /* Чекбокс - аккуратный скругленный квадрат как на макете */
@@ -11376,9 +11422,13 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
         width: 20px !important;
         height: 20px !important;
         border-radius: 6px !important;
-        border: 2px solid #c7cdd6 !important;
+        border: 2.25px solid #c7cdd6 !important;
         background: transparent !important;
         transition: border-color 0.15s ease, background-color 0.15s ease !important;
+    }
+
+    .task-item > .checkbox-wrapper {
+        transform: translateX(-4px) !important;
     }
 
     body.dark .custom-checkbox {
@@ -11390,7 +11440,7 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
     }
 
     .task-title-text {
-        font-size: 14px !important;
+        font-size: 15px !important;
         font-weight: 460 !important;
         color: var(--text) !important;
     }
@@ -11455,7 +11505,7 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
 
     /* Три точки у задачи всегда видны полупрозрачно, на hover становятся ярче */
     .task-actions {
-        opacity: 0.45 !important;
+        opacity: 0.65 !important;
         margin-left: 0 !important;
         transition: opacity 0.15s ease !important;
     }
@@ -11468,13 +11518,14 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
     .action-btn.btn-more {
         width: 28px !important;
         height: 28px !important;
-        color: #9ca3af !important;
+        color: #818a98 !important;
         border-radius: 6px !important;
+        transform: translateX(4px) !important;
     }
 
     .action-btn.btn-more:hover {
         color: var(--text) !important;
-        background-color: var(--hover-bg) !important;
+        background: transparent !important;
     }
 }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tools-pwa-v28';
+const CACHE_NAME = 'tools-pwa-v29';
 const DYNAMIC_CACHE = 'tools-dynamic-image-cache-v1';
 const ASSETS = [
     './fx_converter.html',

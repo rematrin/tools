@@ -2757,10 +2757,16 @@ window.addEventListener('resize', () => {
 window.addEventListener('hashchange', handleRoute);
 
 // Функция инициализации пользовательской сессии (поддерживает мгновенный оффлайн-запуск)
-function initUserSession(user) {
+let isAuthVerified = false;
+
+// Функция инициализации пользовательской сессии (поддерживает мгновенный оффлайн-запуск)
+function initUserSession(user, verifiedAuth = false) {
     if (!user || !user.uid) return;
     const isNewUser = currentUid !== user.uid;
     currentUid = user.uid;
+    if (verifiedAuth) {
+        isAuthVerified = true;
+    }
 
     // Заполняем профиль в боковом меню
     if (sidebarName) sidebarName.textContent = user.displayName || "Пользователь";
@@ -2779,11 +2785,12 @@ function initUserSession(user) {
     if (authRequiredState) authRequiredState.style.setProperty('display', 'none', 'important');
     if (todoMainLayout) todoMainLayout.style.display = 'flex';
 
-    if (isNewUser || !unsubscribeTasks) {
-        // Загружаем локальный слепок для 0мс отображения
-        loadCachedSnapshots(currentUid);
+    // Загружаем локальный слепок для 0мс отображения при любом запуске
+    loadCachedSnapshots(currentUid);
 
-        // Запускаем слушатели Firestore (работают через IndexedDB локально и по сети)
+    // Запускаем слушатели Firestore (если сменился пользователь, если подтвердилась авторизация или слушатели отсутствуют)
+    const needStartListeners = isNewUser || verifiedAuth || !unsubscribeTasks || !unsubscribeProjects;
+    if (needStartListeners) {
         startTodoForUser(currentUid);
         startProjectsForUser(currentUid);
         startSectionsForUser(currentUid);
@@ -2809,7 +2816,7 @@ try {
     if (cachedUserRaw) {
         const cachedUser = JSON.parse(cachedUserRaw);
         if (cachedUser && cachedUser.uid) {
-            initUserSession(cachedUser);
+            initUserSession(cachedUser, false);
         }
     }
 } catch (e) {
@@ -2821,9 +2828,10 @@ window.addEventListener('authChanged', (e) => {
     const user = e.detail.user;
 
     if (user) {
-        initUserSession(user);
+        initUserSession(user, true);
     } else {
         currentUid = null;
+        isAuthVerified = false;
         // Скрываем интерфейс
         if (todoMainLayout) todoMainLayout.style.setProperty('display', 'none', 'important');
         if (authRequiredState) authRequiredState.style.display = 'block';
@@ -2923,9 +2931,18 @@ function getTaskVisualHash(task) {
     return `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.dueRepeat || ''}|${task.dueEndDate || ''}|${task.dueEndTime || ''}|${task.completed ? '1' : '0'}|${task.deleted ? '1' : '0'}|${task.projectId || ''}|${task.order ?? 0}|${task.description || ''}|${subCount}`;
 }
 
+let tasksRetryTimer = null;
+
 // Загрузка данных пользователя
 function startTodoForUser(uid) {
-    if (unsubscribeTasks) unsubscribeTasks();
+    if (unsubscribeTasks) {
+        unsubscribeTasks();
+        unsubscribeTasks = null;
+    }
+    if (tasksRetryTimer) {
+        clearTimeout(tasksRetryTimer);
+        tasksRetryTimer = null;
+    }
 
     // Загружаем сохраненный локальный слепок для мгновенного рендера
     loadCachedSnapshots(uid);
@@ -2998,11 +3015,22 @@ function startTodoForUser(uid) {
         renderTasks();
     }, (error) => {
         console.error("Ошибка при получении списка задач:", error);
+        unsubscribeTasks = null;
+        if (currentUid === uid && !tasksRetryTimer) {
+            tasksRetryTimer = setTimeout(() => {
+                tasksRetryTimer = null;
+                if (currentUid === uid) startTodoForUser(uid);
+            }, 2500);
+        }
     });
 }
 
 // Отписка и очистка
 function stopTodoForUser() {
+    if (tasksRetryTimer) {
+        clearTimeout(tasksRetryTimer);
+        tasksRetryTimer = null;
+    }
     if (unsubscribeTasks) {
         unsubscribeTasks();
         unsubscribeTasks = null;
@@ -4836,6 +4864,13 @@ function updateNetworkStatus() {
 
 window.addEventListener('online', () => {
     updateNetworkStatus();
+    if (currentUid) {
+        if (!unsubscribeTasks) startTodoForUser(currentUid);
+        if (!unsubscribeProjects) startProjectsForUser(currentUid);
+        if (!unsubscribeSections) startSectionsForUser(currentUid);
+        if (!unsubscribeCountdowns) startCountdownsForUser(currentUid);
+        if (!unsubscribeHabits) startHabitsForUser(currentUid);
+    }
     renderProjects();
     renderTasks();
 });
@@ -7657,8 +7692,17 @@ window.addEventListener('resize', () => {
 
 let previousProjectGCalColors = {};
 
+let projectsRetryTimer = null;
+
 function startProjectsForUser(uid) {
-    if (unsubscribeProjects) unsubscribeProjects();
+    if (unsubscribeProjects) {
+        unsubscribeProjects();
+        unsubscribeProjects = null;
+    }
+    if (projectsRetryTimer) {
+        clearTimeout(projectsRetryTimer);
+        projectsRetryTimer = null;
+    }
     previousProjectGCalColors = {};
 
     const qProjects = query(collection(db, 'users', uid, 'projects'));
@@ -7725,10 +7769,21 @@ function startProjectsForUser(uid) {
         renderTasks(); // Re-render to update counters in sidebar!
     }, (error) => {
         console.error("Ошибка при получении списка проектов:", error);
+        unsubscribeProjects = null;
+        if (currentUid === uid && !projectsRetryTimer) {
+            projectsRetryTimer = setTimeout(() => {
+                projectsRetryTimer = null;
+                if (currentUid === uid) startProjectsForUser(uid);
+            }, 2500);
+        }
     });
 }
 
 function stopProjectsForUser() {
+    if (projectsRetryTimer) {
+        clearTimeout(projectsRetryTimer);
+        projectsRetryTimer = null;
+    }
     if (unsubscribeProjects) {
         unsubscribeProjects();
         unsubscribeProjects = null;
@@ -7738,8 +7793,17 @@ function stopProjectsForUser() {
     if (projectsListContainer) projectsListContainer.innerHTML = '';
 }
 
+let countdownsRetryTimer = null;
+
 function startCountdownsForUser(uid) {
-    if (unsubscribeCountdowns) unsubscribeCountdowns();
+    if (unsubscribeCountdowns) {
+        unsubscribeCountdowns();
+        unsubscribeCountdowns = null;
+    }
+    if (countdownsRetryTimer) {
+        clearTimeout(countdownsRetryTimer);
+        countdownsRetryTimer = null;
+    }
 
     const qCountdowns = query(collection(db, 'users', uid, 'countdowns'));
 
@@ -7782,10 +7846,21 @@ function startCountdownsForUser(uid) {
         }
     }, (error) => {
         console.error("Ошибка при получении списка обратных отсчетов:", error);
+        unsubscribeCountdowns = null;
+        if (currentUid === uid && !countdownsRetryTimer) {
+            countdownsRetryTimer = setTimeout(() => {
+                countdownsRetryTimer = null;
+                if (currentUid === uid) startCountdownsForUser(uid);
+            }, 2500);
+        }
     });
 }
 
 function stopCountdownsForUser() {
+    if (countdownsRetryTimer) {
+        clearTimeout(countdownsRetryTimer);
+        countdownsRetryTimer = null;
+    }
     if (unsubscribeCountdowns) {
         unsubscribeCountdowns();
         unsubscribeCountdowns = null;
@@ -7795,8 +7870,17 @@ function stopCountdownsForUser() {
     if (grid) grid.innerHTML = '';
 }
 
+let sectionsRetryTimer = null;
+
 function startSectionsForUser(uid) {
-    if (unsubscribeSections) unsubscribeSections();
+    if (unsubscribeSections) {
+        unsubscribeSections();
+        unsubscribeSections = null;
+    }
+    if (sectionsRetryTimer) {
+        clearTimeout(sectionsRetryTimer);
+        sectionsRetryTimer = null;
+    }
 
     const qSections = query(collection(db, 'users', uid, 'sections'));
 
@@ -7819,10 +7903,21 @@ function startSectionsForUser(uid) {
         renderTasks();
     }, (error) => {
         console.error("Ошибка при получении списка разделов:", error);
+        unsubscribeSections = null;
+        if (currentUid === uid && !sectionsRetryTimer) {
+            sectionsRetryTimer = setTimeout(() => {
+                sectionsRetryTimer = null;
+                if (currentUid === uid) startSectionsForUser(uid);
+            }, 2500);
+        }
     });
 }
 
 function stopSectionsForUser() {
+    if (sectionsRetryTimer) {
+        clearTimeout(sectionsRetryTimer);
+        sectionsRetryTimer = null;
+    }
     if (unsubscribeSections) {
         unsubscribeSections();
         unsubscribeSections = null;
@@ -7972,6 +8067,7 @@ if (btnAddProject) {
         `;
 
         projectsListContainer.appendChild(itemContainer);
+        itemContainer.scrollIntoView({ block: 'nearest' });
 
         const input = itemContainer.querySelector('.project-inline-input');
         input.focus();
@@ -7987,11 +8083,25 @@ if (btnAddProject) {
                     if (projectsList.length > 0) {
                         maxOrder = Math.max(...projectsList.map(p => p.order !== undefined ? p.order : 0));
                     }
-                    await addDoc(collection(db, 'users', currentUid, 'projects'), {
+                    const now = Date.now();
+                    const newProjData = {
                         name: nameText,
                         order: maxOrder + 1000,
                         createdAt: serverTimestamp()
-                    });
+                    };
+                    const docRef = await addDoc(collection(db, 'users', currentUid, 'projects'), newProjData);
+                    if (docRef && docRef.id && !projectsList.some(p => p.id === docRef.id)) {
+                        projectsList.push({
+                            id: docRef.id,
+                            name: nameText,
+                            order: maxOrder + 1000,
+                            createdAt: now,
+                            clientCreatedAt: now,
+                            updatedAt: now
+                        });
+                        saveCachedProjectsSnapshot(currentUid);
+                        renderProjects();
+                    }
                 } catch (err) {
                     console.error("Не удалось добавить проект:", err);
                     itemContainer.remove();
@@ -8013,7 +8123,6 @@ if (btnAddProject) {
             }
         });
         input.addEventListener('click', (ev) => {
-            ev.preventDefault();
             ev.stopPropagation();
         });
     });
@@ -8700,11 +8809,17 @@ function enableHeaderProjectInlineEdit(projectId, oldName) {
 
         if (newVal && newVal !== oldVal) {
             try {
+                const proj = projectsList.find(p => p.id === projectId);
+                if (proj) {
+                    proj.name = newVal;
+                    saveCachedProjectsSnapshot(currentUid);
+                }
                 await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
                     name: newVal
                 });
                 titleEl.textContent = newVal;
                 updateBrowserTitle();
+                renderProjects();
             } catch (err) {
                 console.error("Ошибка при изменении названия проекта:", err);
                 titleEl.textContent = oldVal;
@@ -9473,6 +9588,10 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
     const menu = document.createElement('div');
     menu.className = 'custom-context-menu';
     menu.innerHTML = `
+        <div class="ctx-item" id="ctx-rename-project">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            <span>Переименовать</span>
+        </div>
         <div class="ctx-item" id="ctx-change-icon-project">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
             <span>Сменить иконку</span>
@@ -9539,6 +9658,14 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
 
     menu.style.left = `${x}px`;
     menu.style.top = `${y}px`;
+
+    // Обработчик переименования проекта
+    menu.querySelector('#ctx-rename-project')?.addEventListener('click', (evt) => {
+        evt.stopPropagation();
+        menu.remove();
+        activeContextMenu = null;
+        enableProjectInlineEdit(itemContainer, projectId, projectName);
+    });
 
     // Обработчик изменения цвета проекта
     menu.querySelector('#ctx-change-color-project')?.addEventListener('click', (evt) => {
@@ -10268,6 +10395,11 @@ function enableProjectInlineEdit(itemContainer, projectId, oldName) {
 
         if (newVal && newVal !== oldVal) {
             try {
+                const proj = projectsList.find(p => p.id === projectId);
+                if (proj) {
+                    proj.name = newVal;
+                    saveCachedProjectsSnapshot(currentUid);
+                }
                 await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
                     name: newVal
                 });
@@ -10276,7 +10408,9 @@ function enableProjectInlineEdit(itemContainer, projectId, oldName) {
                 if (currentRoute === `project/${projectId}`) {
                     const titleEl = document.querySelector('.list-title');
                     if (titleEl) titleEl.textContent = newVal;
+                    updateBrowserTitle();
                 }
+                renderProjects();
             } catch (err) {
                 console.error("Ошибка при изменении названия проекта:", err);
                 labelSpan.textContent = oldVal;
@@ -16498,9 +16632,18 @@ function renderCountdownEventsBanner() {
 
 window.renderCountdownEventsBanner = renderCountdownEventsBanner;
 
+let habitsRetryTimer = null;
+
 // === ЛОГИКА ПРИВЫЧЕК ===
 function startHabitsForUser(uid) {
-    if (unsubscribeHabits) unsubscribeHabits();
+    if (unsubscribeHabits) {
+        unsubscribeHabits();
+        unsubscribeHabits = null;
+    }
+    if (habitsRetryTimer) {
+        clearTimeout(habitsRetryTimer);
+        habitsRetryTimer = null;
+    }
 
     const qHabits = query(collection(db, 'users', uid, 'habits'));
 
@@ -16526,10 +16669,21 @@ function startHabitsForUser(uid) {
         }
     }, (error) => {
         console.error("Ошибка при получении списка привычек:", error);
+        unsubscribeHabits = null;
+        if (currentUid === uid && !habitsRetryTimer) {
+            habitsRetryTimer = setTimeout(() => {
+                habitsRetryTimer = null;
+                if (currentUid === uid) startHabitsForUser(uid);
+            }, 2500);
+        }
     });
 }
 
 function stopHabitsForUser() {
+    if (habitsRetryTimer) {
+        clearTimeout(habitsRetryTimer);
+        habitsRetryTimer = null;
+    }
     if (unsubscribeHabits) {
         unsubscribeHabits();
         unsubscribeHabits = null;

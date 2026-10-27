@@ -4833,27 +4833,10 @@ function updateSyncStatusIndicator(hasPending = lastKnownHasPendingWrites) {
     if (sidebarStatusBadge) {
         if (!isOnline) {
             sidebarStatusBadge.className = 'sidebar-status-badge offline';
-            sidebarStatusBadge.innerHTML = `
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-right: 2.5px; vertical-align: middle;">
-                    <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.5M5 12.5a10.94 10.94 0 0 1 5.83-2.84M8.5 16.5a6.75 6.75 0 0 1 7 0M10.5 19.5a2 2 0 0 1 3 0"></path>
-                </svg>Оффлайн`;
-            sidebarStatusBadge.style.display = 'inline-flex';
-        } else if (hasPending) {
-            sidebarStatusBadge.className = 'sidebar-status-badge syncing';
-            sidebarStatusBadge.innerHTML = `
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="spin-icon" style="margin-right: 2.5px; vertical-align: middle;">
-                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
-                </svg>Синхронизация...`;
+            sidebarStatusBadge.textContent = 'Оффлайн';
             sidebarStatusBadge.style.display = 'inline-flex';
         } else {
-            sidebarStatusBadge.className = 'sidebar-status-badge online';
-            sidebarStatusBadge.innerHTML = `В сети`;
-            sidebarStatusBadge.style.display = 'inline-flex';
-            setTimeout(() => {
-                if (navigator.onLine && !lastKnownHasPendingWrites && sidebarStatusBadge) {
-                    sidebarStatusBadge.style.display = 'none';
-                }
-            }, 3000);
+            sidebarStatusBadge.style.display = 'none';
         }
     }
 }
@@ -4861,6 +4844,15 @@ function updateSyncStatusIndicator(hasPending = lastKnownHasPendingWrites) {
 function updateNetworkStatus() {
     updateSyncStatusIndicator(lastKnownHasPendingWrites);
 }
+
+// Предупреждение при попытке закрыть вкладку до окончания синхронизации
+window.addEventListener('beforeunload', (e) => {
+    if (lastKnownHasPendingWrites) {
+        e.preventDefault();
+        e.returnValue = 'Синхронизация изменений еще не завершена. Подождите пару секунд, чтобы данные успели сохраниться в облаке.';
+        return e.returnValue;
+    }
+});
 
 window.addEventListener('online', () => {
     updateNetworkStatus();

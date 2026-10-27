@@ -10861,7 +10861,8 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
     .todo-app {
         max-width: 1080px !important;
         margin: 12px auto 40px auto !important;
-        padding: 0 8px 0 0 !important;
+        padding: 0 20px !important;
+        box-sizing: border-box !important;
         display: flex !important;
         gap: 20px !important;
         align-items: flex-start !important;
@@ -10911,7 +10912,7 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
     /* Карточки "Меню" и "Проекты" */
     .sidebar-card {
         background: var(--card-bg, #ffffff) !important;
-        border-radius: 18px !important;
+        border-radius: 12px !important;
         padding: 12px !important;
         border: 1px solid var(--border) !important;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
@@ -11098,7 +11099,7 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
 
     .todo-main-layout {
         background: var(--card-bg, #ffffff) !important;
-        border-radius: 20px !important;
+        border-radius: 12px !important;
         padding: 24px 28px 10px !important;
         border: 1px solid var(--border) !important;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
@@ -11118,6 +11119,10 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
     }
 
     .todo-main-layout:has(.countdown-grid) {
+        padding-bottom: 24px !important;
+    }
+
+    .todo-main-layout:has(#completedSection[style*="display: block"]) {
         padding-bottom: 24px !important;
     }
 

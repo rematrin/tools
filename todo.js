@@ -2531,6 +2531,10 @@ function handleRoute() {
     setPriority(0); // сброс приоритета при смене вкладки
     updateMobileBottomNavActiveState();
     updateBackButtonVisibility();
+    updateProjectWhiteboardButtonVisibility();
+    if (!currentRoute.startsWith('project/')) {
+        closeProjectWhiteboardModal();
+    }
     if (typeof updateMobileFabVisibility === 'function') {
         updateMobileFabVisibility();
     }
@@ -5069,10 +5073,7 @@ function doRenderTasks() {
         viewDisplayContainer.style.display = (currentRoute === 'pomodoro' || currentRoute === 'habit' || currentRoute === 'calendar') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') ? 'block' : 'none');
     }
 
-    const projectWhiteboardBtn = document.getElementById('projectWhiteboardBtn');
-    if (projectWhiteboardBtn) {
-        projectWhiteboardBtn.style.display = currentRoute.startsWith('project/') ? 'inline-flex' : 'none';
-    }
+    updateProjectWhiteboardButtonVisibility();
 
     // Фильтруем задачи для отображения в зависимости от текущей вкладки (роута)
     let displayActiveTasks = [];
@@ -20317,7 +20318,26 @@ function syncProjectWhiteboardTitle(projectId, newTitle) {
     }
 }
 
+function updateProjectWhiteboardButtonVisibility() {
+    const projectWhiteboardBtn = document.getElementById('projectWhiteboardBtn');
+    if (!projectWhiteboardBtn) return;
+
+    // Доска должна отображаться ИСКЛЮЧИТЕЛЬНО для проектов (project/...)
+    // На страницах: сегодня (today), завтра (tomorrow), входящие (inbox), 
+    // помодоро (pomodoro), отслеживание (habit), календарь (calendar), корзина (trash) — кнопка скрыта!
+    const isProject = typeof currentRoute === 'string' && currentRoute.startsWith('project/');
+    if (isProject) {
+        projectWhiteboardBtn.classList.add('is-visible');
+        projectWhiteboardBtn.style.setProperty('display', 'inline-flex', 'important');
+    } else {
+        projectWhiteboardBtn.classList.remove('is-visible');
+        projectWhiteboardBtn.style.setProperty('display', 'none', 'important');
+    }
+}
+
 function initProjectWhiteboardModalHandlers() {
+    updateProjectWhiteboardButtonVisibility();
+
     const projectWhiteboardBtn = document.getElementById('projectWhiteboardBtn');
     if (projectWhiteboardBtn) {
         projectWhiteboardBtn.addEventListener('click', (e) => {

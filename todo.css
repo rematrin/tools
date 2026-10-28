@@ -11560,6 +11560,16 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
 /* ========================================================
    МОДАЛЬНОЕ ОКНО ИНТЕРАКТИВНОЙ ДОСКИ ПРОЕКТА (WHITEBOARD)
    ======================================================== */
+#projectWhiteboardBtn,
+.project-whiteboard-btn {
+    display: none !important;
+}
+
+#projectWhiteboardBtn.is-visible,
+.project-whiteboard-btn.is-visible {
+    display: inline-flex !important;
+}
+
 .project-whiteboard-modal-overlay {
     position: fixed;
     top: 0;

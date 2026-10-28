@@ -43,20 +43,6 @@ let currentChannelId = localStorage.getItem("creatorhub_current_channel_id") || 
 let bulkSelectedVideoIds = [];
 let isBulkSelectionMode = false;
 
-// Переменные для интеграции с todo.html
-let youtubeProjectId = null;
-let videoSectionId = null;
-let unsubscribeTasks = null;
-let unsubscribeProjects = null;
-let unsubscribeSections = null;
-let projectsList = [];
-let sectionsList = [];
-let chTasksCompletedCollapsed = localStorage.getItem("ch_tasks_completed_collapsed") === "true";
-
-// Переменные для редактирования задачи в CreatorHub
-let currentEditingTask = null;
-let chTaskEditModalSelectedPriority = 0;
-let currentTasksList = [];
 
 const SHORTS_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="16" height="16" baseProfile="basic" style="vertical-align: middle; margin-right: 6px; flex-shrink: 0; display: inline-block;"><path fill="#ff3d00" d="M29.103,2.631c4.217-2.198,9.438-0.597,11.658,3.577c2.22,4.173,0.6,9.337-3.617,11.534l-3.468,1.823	c2.987,0.109,5.836,1.75,7.328,4.555c2.22,4.173,0.604,9.337-3.617,11.534L18.897,45.37c-4.217,2.198-9.438,0.597-11.658-3.577	s-0.6-9.337,3.617-11.534l3.468-1.823c-2.987-0.109-5.836-1.75-7.328-4.555c-2.22-4.173-0.6-9.337,3.617-11.534	C10.612,12.346,29.103,2.631,29.103,2.631z M19.122,17.12l11.192,6.91l-11.192,6.877C19.122,30.907,19.122,17.12,19.122,17.12z"/><path fill="#fff" d="M19.122,17.12v13.787l11.192-6.877L19.122,17.12z"/></svg>`;
 
@@ -151,6 +137,142 @@ function normalizeEditorContent(container) {
             block.insertBefore(btn, block.firstChild);
         }
     });
+
+    // Убеждаемся, что контролы списков нередактируемые и имеют SVG
+    container.querySelectorAll('.references-todo-checkbox').forEach(cb => {
+        cb.setAttribute('contenteditable', 'false');
+        if (!cb.querySelector('svg')) {
+            cb.innerHTML = `<svg viewBox="0 0 12 12" fill="none"><path d="M2.5 6.5L4.8 9L9.5 3.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        }
+    });
+    container.querySelectorAll('.references-bullet-dot, .references-numbered-num').forEach(el => {
+        el.setAttribute('contenteditable', 'false');
+    });
+
+    // Обновляем состояние пустоты для отображения плейсхолдеров
+    container.querySelectorAll('.references-todo-text, .references-bullet-text, .references-numbered-text').forEach(el => {
+        const text = el.textContent.replace(/\u200B/g, '').trim();
+        if (!text && (!el.children.length || (el.children.length === 1 && el.children[0].tagName === 'BR'))) {
+            el.classList.add('is-empty');
+        } else {
+            el.classList.remove('is-empty');
+        }
+    });
+}
+
+function createTodoItem(contentHtml = "", checked = false) {
+    const item = document.createElement("div");
+    item.className = "references-todo-item" + (checked ? " completed" : "");
+    item.setAttribute("data-type", "todo");
+    if (checked) item.setAttribute("data-checked", "true");
+    
+    const checkBtn = document.createElement("span");
+    checkBtn.className = "references-todo-checkbox";
+    checkBtn.setAttribute("contenteditable", "false");
+    checkBtn.title = "Отметить выполненным";
+    checkBtn.innerHTML = `<svg viewBox="0 0 12 12" fill="none"><path d="M2.5 6.5L4.8 9L9.5 3.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    
+    const textDiv = document.createElement("div");
+    textDiv.className = "references-todo-text";
+    textDiv.setAttribute("data-placeholder", "To-do");
+    textDiv.innerHTML = contentHtml ? contentHtml : "<br>";
+    if (!contentHtml || contentHtml === "<br>") {
+        textDiv.classList.add("is-empty");
+    }
+    
+    item.appendChild(checkBtn);
+    item.appendChild(textDiv);
+    return item;
+}
+
+function createBulletItem(contentHtml = "") {
+    const item = document.createElement("div");
+    item.className = "references-bullet-item";
+    item.setAttribute("data-type", "bullet");
+    
+    const dot = document.createElement("span");
+    dot.className = "references-bullet-dot";
+    dot.setAttribute("contenteditable", "false");
+    dot.innerHTML = "&bull;";
+    
+    const textDiv = document.createElement("div");
+    textDiv.className = "references-bullet-text";
+    textDiv.setAttribute("data-placeholder", "List");
+    textDiv.innerHTML = contentHtml ? contentHtml : "<br>";
+    if (!contentHtml || contentHtml === "<br>") {
+        textDiv.classList.add("is-empty");
+    }
+    
+    item.appendChild(dot);
+    item.appendChild(textDiv);
+    return item;
+}
+
+function createNumberedItem(num = 1, contentHtml = "") {
+    const item = document.createElement("div");
+    item.className = "references-numbered-item";
+    item.setAttribute("data-type", "numbered");
+    item.setAttribute("data-num", num);
+    
+    const numSpan = document.createElement("span");
+    numSpan.className = "references-numbered-num";
+    numSpan.setAttribute("contenteditable", "false");
+    numSpan.textContent = `${num}.`;
+    
+    const textDiv = document.createElement("div");
+    textDiv.className = "references-numbered-text";
+    textDiv.setAttribute("data-placeholder", "List");
+    textDiv.innerHTML = contentHtml ? contentHtml : "<br>";
+    if (!contentHtml || contentHtml === "<br>") {
+        textDiv.classList.add("is-empty");
+    }
+    
+    item.appendChild(numSpan);
+    item.appendChild(textDiv);
+    return item;
+}
+
+function getTextContainerAtSelection(range) {
+    if (!range) return null;
+    let node = range.startContainer;
+    if (node.nodeType === Node.TEXT_NODE) {
+        node = node.parentNode;
+    }
+    return node ? node.closest(".references-todo-text, .references-bullet-text, .references-numbered-text") : null;
+}
+
+function isCursorAtStartOf(range, container) {
+    if (!range || !container || range.startOffset !== 0) return false;
+    let node = range.startContainer;
+    while (node && node !== container) {
+        if (node.previousSibling) return false;
+        node = node.parentNode;
+    }
+    return node === container;
+}
+
+function extractTextAfterCursor(range, container) {
+    try {
+        const afterRange = document.createRange();
+        afterRange.setStart(range.startContainer, range.startOffset);
+        afterRange.setEnd(container, container.childNodes.length);
+        const fragment = afterRange.extractContents();
+        const temp = document.createElement("div");
+        temp.appendChild(fragment);
+        
+        // Очищаем контейнер, если он остался пустым
+        const remainingText = container.textContent.replace(/\u200B/g, '').trim();
+        if (!remainingText && (!container.children.length || (container.children.length === 1 && container.children[0].tagName === 'BR'))) {
+            container.innerHTML = "<br>";
+        }
+        
+        let extractedHtml = temp.innerHTML.trim();
+        if (extractedHtml === "<br>") extractedHtml = "";
+        return extractedHtml;
+    } catch (e) {
+        console.warn("extractTextAfterCursor fallback:", e);
+        return "";
+    }
 }
 
 function focusOnBlock(block) {
@@ -1206,17 +1328,445 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // === NOTION-LIKE SLASH COMMAND MENU ДЛЯ ОПИСАНИЯ ВИДЕО ===
+    const slashMenuEl = document.getElementById("slashCommandMenu");
+    const slashMenuItemsEl = document.getElementById("slashMenuItems");
+    const slashMenuSearchLabel = document.getElementById("slashMenuSearchLabel");
+    let slashContext = null;
+    let filteredSlashCommands = [];
+    let activeSlashIndex = 0;
+
+    const SLASH_COMMANDS = [
+        {
+            id: "todo",
+            title: "To-do list",
+            desc: "Сделать туду-лист с чекбоксом",
+            shortcut: "[]",
+            icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="14" height="14" rx="3"></rect><path d="M7 12l2.5 2.5 5-5"></path></svg>`,
+            keywords: ["todo", "to-do", "туду", "туду-лист", "сделать туду-лист", "задача", "задачи", "список задач", "чеклист", "чек", "галочка", "check", "task", "list", "[]"],
+            action: (blockEl, remainingHtml) => {
+                const clean = remainingHtml.replace(/<br\s*\/?>/gi, '').replace(/\u200B/g, '').trim();
+                const newTodo = createTodoItem(clean ? remainingHtml : "");
+                blockEl.parentNode.replaceChild(newTodo, blockEl);
+                const textDiv = newTodo.querySelector(".references-todo-text");
+                focusAtEndOfBlock(textDiv);
+            }
+        },
+        {
+            id: "bullet",
+            title: "Bulleted list",
+            desc: "Буллет-лист (маркированный)",
+            shortcut: "•",
+            icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="6" x2="20" y2="6"></line><line x1="9" y1="12" x2="20" y2="12"></line><line x1="9" y1="18" x2="20" y2="18"></line><circle cx="4" cy="6" r="1.5" fill="currentColor"></circle><circle cx="4" cy="12" r="1.5" fill="currentColor"></circle><circle cx="4" cy="18" r="1.5" fill="currentColor"></circle></svg>`,
+            keywords: ["bullet", "bulleted", "буллет", "булет", "буллет-лист", "булет-лист", "маркированный", "список", "точка", "list", "ul", "•", "-"],
+            action: (blockEl, remainingHtml) => {
+                const clean = remainingHtml.replace(/<br\s*\/?>/gi, '').replace(/\u200B/g, '').trim();
+                const newBullet = createBulletItem(clean ? remainingHtml : "");
+                blockEl.parentNode.replaceChild(newBullet, blockEl);
+                const textDiv = newBullet.querySelector(".references-bullet-text");
+                focusAtEndOfBlock(textDiv);
+            }
+        },
+        {
+            id: "divider",
+            title: "Divider",
+            desc: "Разделитель (линия)",
+            shortcut: "---",
+            icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line></svg>`,
+            keywords: ["divider", "разделитель", "черта", "линия", "полоса", "сепаратор", "hr", "separator", "line", "---"],
+            action: (blockEl) => {
+                const hr = document.createElement("hr");
+                hr.setAttribute("contenteditable", "false");
+                hr.className = "references-separator";
+                const clean = blockEl.textContent.replace(/\u200B/g, '').trim();
+                if (clean === "") {
+                    blockEl.parentNode.replaceChild(hr, blockEl);
+                } else {
+                    blockEl.parentNode.insertBefore(hr, blockEl.nextSibling);
+                }
+                ensureEditableSiblings(hr, referencesContent);
+                if (hr.nextSibling) {
+                    focusOnBlock(hr.nextSibling);
+                }
+            }
+        },
+        {
+            id: "numbered",
+            title: "Numbered list",
+            desc: "Нумерованный список",
+            shortcut: "1.",
+            icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><path d="M4 6h1v4"></path><path d="M4 10h2"></path><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path></svg>`,
+            keywords: ["numbered", "number", "нумерованный", "цифры", "числовой", "список", "1.", "ol"],
+            action: (blockEl, remainingHtml) => {
+                const clean = remainingHtml.replace(/<br\s*\/?>/gi, '').replace(/\u200B/g, '').trim();
+                const newNum = createNumberedItem(1, clean ? remainingHtml : "");
+                blockEl.parentNode.replaceChild(newNum, blockEl);
+                const textDiv = newNum.querySelector(".references-numbered-text");
+                focusAtEndOfBlock(textDiv);
+            }
+        }
+    ];
+
+    function isSlashMenuOpen() {
+        return slashMenuEl && slashMenuEl.style.display !== "none";
+    }
+
+    function hideSlashMenu() {
+        if (slashMenuEl) {
+            slashMenuEl.style.display = "none";
+        }
+        slashContext = null;
+    }
+
+    function updateSlashActiveHighlight() {
+        if (!slashMenuItemsEl) return;
+        const items = slashMenuItemsEl.querySelectorAll(".slash-menu-item");
+        items.forEach((item, idx) => {
+            if (idx === activeSlashIndex) {
+                item.classList.add("active");
+                item.scrollIntoView({ block: "nearest" });
+            } else {
+                item.classList.remove("active");
+            }
+        });
+    }
+
+    function renderSlashMenu(query) {
+        if (!slashMenuItemsEl) return;
+        if (slashMenuSearchLabel) {
+            slashMenuSearchLabel.textContent = query ? `Поиск: "${query}"` : "Type to search";
+        }
+
+        if (filteredSlashCommands.length === 0) {
+            slashMenuItemsEl.innerHTML = `<div class="slash-menu-empty">Ничего не найдено</div>`;
+            return;
+        }
+
+        slashMenuItemsEl.innerHTML = filteredSlashCommands.map((cmd, idx) => `
+            <div class="slash-menu-item ${idx === activeSlashIndex ? 'active' : ''}" data-index="${idx}">
+                <span class="slash-menu-item-icon">${cmd.icon}</span>
+                <div class="slash-menu-item-info">
+                    <span class="slash-menu-item-title">${escapeHtml(cmd.title)}</span>
+                    <span class="slash-menu-item-desc">${escapeHtml(cmd.desc)}</span>
+                </div>
+                <span class="slash-menu-item-shortcut">${escapeHtml(cmd.shortcut)}</span>
+            </div>
+        `).join("");
+    }
+
+    function filterSlashCommands(query) {
+        const q = (query || "").toLowerCase().trim();
+        if (!q) {
+            filteredSlashCommands = [...SLASH_COMMANDS];
+        } else {
+            filteredSlashCommands = SLASH_COMMANDS.filter(cmd => {
+                return cmd.title.toLowerCase().includes(q) ||
+                       cmd.desc.toLowerCase().includes(q) ||
+                       cmd.shortcut.toLowerCase().includes(q) ||
+                       cmd.keywords.some(k => k.toLowerCase().includes(q));
+            });
+        }
+        activeSlashIndex = 0;
+    }
+
+    function showSlashMenu(range, query, textNode, slashIndex) {
+        if (!slashMenuEl) return;
+        
+        filterSlashCommands(query);
+        renderSlashMenu(query);
+
+        slashContext = {
+            range: range.cloneRange(),
+            query,
+            textNode,
+            slashIndex
+        };
+
+        slashMenuEl.style.display = "flex";
+
+        let rect = range.getBoundingClientRect();
+        if ((rect.width === 0 && rect.height === 0) || (rect.top === 0 && rect.bottom === 0)) {
+            const parent = textNode.parentElement || referencesContent;
+            if (parent) {
+                rect = parent.getBoundingClientRect();
+            }
+        }
+
+        const menuWidth = 270;
+        const menuHeight = slashMenuEl.offsetHeight || 260;
+
+        let left = rect.left;
+        let top = rect.bottom + 6;
+
+        if (left + menuWidth > window.innerWidth - 12) {
+            left = window.innerWidth - menuWidth - 12;
+        }
+        if (left < 12) {
+            left = 12;
+        }
+
+        if (top + menuHeight > window.innerHeight - 12) {
+            top = rect.top - menuHeight - 6;
+        }
+        if (top < 12) {
+            top = 12;
+        }
+
+        slashMenuEl.style.left = `${Math.round(left)}px`;
+        slashMenuEl.style.top = `${Math.round(top)}px`;
+    }
+
+    function selectNextSlashItem() {
+        if (!filteredSlashCommands.length) return;
+        activeSlashIndex = (activeSlashIndex + 1) % filteredSlashCommands.length;
+        updateSlashActiveHighlight();
+    }
+
+    function selectPrevSlashItem() {
+        if (!filteredSlashCommands.length) return;
+        activeSlashIndex = (activeSlashIndex - 1 + filteredSlashCommands.length) % filteredSlashCommands.length;
+        updateSlashActiveHighlight();
+    }
+
+    function executeActiveSlashItem() {
+        if (!filteredSlashCommands.length || activeSlashIndex < 0 || activeSlashIndex >= filteredSlashCommands.length) return;
+        executeSlashCommand(filteredSlashCommands[activeSlashIndex]);
+    }
+
+    function executeSlashCommand(cmd) {
+        if (!slashContext) return;
+        const { textNode, slashIndex, query } = slashContext;
+        hideSlashMenu();
+
+        if (!textNode || !textNode.parentNode) return;
+
+        // Находим непосредственного потомка referencesContent
+        let blockEl = textNode;
+        while (blockEl && blockEl.parentNode && blockEl.parentNode !== referencesContent) {
+            blockEl = blockEl.parentNode;
+        }
+        if (!blockEl || blockEl === referencesContent) {
+            const wrapper = document.createElement("div");
+            referencesContent.insertBefore(wrapper, textNode);
+            wrapper.appendChild(textNode);
+            blockEl = wrapper;
+        } else if (blockEl.nodeType === Node.TEXT_NODE) {
+            const wrapper = document.createElement("div");
+            blockEl.parentNode.insertBefore(wrapper, blockEl);
+            wrapper.appendChild(blockEl);
+            blockEl = wrapper;
+        }
+
+        // Удаляем слэш и поисковый запрос из текста
+        const fullText = textNode.textContent || "";
+        const before = fullText.slice(0, slashIndex);
+        const after = fullText.slice(slashIndex + 1 + query.length);
+        textNode.textContent = before + after;
+
+        // Извлекаем оставшееся содержимое блока
+        let remainingHtml = "";
+        const innerTextDiv = blockEl.querySelector(".references-todo-text, .references-bullet-text, .references-numbered-text");
+        if (innerTextDiv) {
+            remainingHtml = innerTextDiv.innerHTML;
+        } else {
+            remainingHtml = blockEl.innerHTML;
+        }
+
+        cmd.action(blockEl, remainingHtml);
+        referencesContent.dispatchEvent(new Event("input"));
+    }
+
+    function checkSlashCommandTrigger() {
+        const selection = window.getSelection();
+        if (!selection || !selection.rangeCount) {
+            hideSlashMenu();
+            return;
+        }
+        const range = selection.getRangeAt(0);
+        if (!range.collapsed) {
+            hideSlashMenu();
+            return;
+        }
+        if (!referencesContent.contains(range.startContainer)) {
+            hideSlashMenu();
+            return;
+        }
+
+        let textNode = range.startContainer;
+        let offset = range.startOffset;
+
+        if (textNode.nodeType !== Node.TEXT_NODE) {
+            if (textNode.childNodes.length > 0 && offset > 0) {
+                textNode = textNode.childNodes[offset - 1];
+                if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+                    offset = textNode.textContent.length;
+                } else {
+                    hideSlashMenu();
+                    return;
+                }
+            } else {
+                hideSlashMenu();
+                return;
+            }
+        }
+
+        const text = textNode.textContent || "";
+        const textBeforeCursor = text.slice(0, offset);
+        const slashIndex = textBeforeCursor.lastIndexOf('/');
+
+        if (slashIndex === -1) {
+            hideSlashMenu();
+            return;
+        }
+
+        // Слэш должен быть в начале строки или после пробела
+        if (slashIndex > 0 && !/\s/.test(textBeforeCursor[slashIndex - 1])) {
+            hideSlashMenu();
+            return;
+        }
+
+        const query = textBeforeCursor.slice(slashIndex + 1);
+        if (/[\s\n]/.test(query) || query.length > 20) {
+            hideSlashMenu();
+            return;
+        }
+
+        showSlashMenu(range, query, textNode, slashIndex);
+    }
+
+    function checkMarkdownTriggers() {
+        const selection = window.getSelection();
+        if (!selection || !selection.rangeCount) return false;
+        const range = selection.getRangeAt(0);
+        if (!range.collapsed) return false;
+
+        let blockEl = range.startContainer;
+        while (blockEl && blockEl.parentNode && blockEl.parentNode !== referencesContent) {
+            blockEl = blockEl.parentNode;
+        }
+        if (!blockEl || blockEl === referencesContent) return false;
+
+        if (blockEl.classList && (blockEl.classList.contains("references-todo-item") || blockEl.classList.contains("references-bullet-item") || blockEl.classList.contains("references-numbered-item"))) {
+            return false;
+        }
+
+        const text = blockEl.textContent || "";
+        if (text.startsWith("[] ") || text.startsWith("[ ] ")) {
+            const after = text.replace(/^(\[\]|\[ \])\s*/, "");
+            const newTodo = createTodoItem(after ? escapeHtml(after) : "");
+            blockEl.parentNode.replaceChild(newTodo, blockEl);
+            const textDiv = newTodo.querySelector(".references-todo-text");
+            focusAtEndOfBlock(textDiv);
+            hideSlashMenu();
+            return true;
+        }
+        if (text.startsWith("- ") || text.startsWith("* ")) {
+            const after = text.replace(/^[-*]\s*/, "");
+            const newBullet = createBulletItem(after ? escapeHtml(after) : "");
+            blockEl.parentNode.replaceChild(newBullet, blockEl);
+            const textDiv = newBullet.querySelector(".references-bullet-text");
+            focusAtEndOfBlock(textDiv);
+            hideSlashMenu();
+            return true;
+        }
+        if (/^1\.\s/.test(text)) {
+            const after = text.replace(/^1\.\s*/, "");
+            const newNum = createNumberedItem(1, after ? escapeHtml(after) : "");
+            blockEl.parentNode.replaceChild(newNum, blockEl);
+            const textDiv = newNum.querySelector(".references-numbered-text");
+            focusAtEndOfBlock(textDiv);
+            hideSlashMenu();
+            return true;
+        }
+        return false;
+    }
+
+    // Слушатели событий для выпадающего слэш-меню
+    if (slashMenuItemsEl) {
+        slashMenuItemsEl.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+        });
+
+        slashMenuItemsEl.addEventListener("click", (e) => {
+            const itemEl = e.target.closest(".slash-menu-item");
+            if (!itemEl) return;
+            const index = parseInt(itemEl.getAttribute("data-index"), 10);
+            if (!isNaN(index) && filteredSlashCommands[index]) {
+                activeSlashIndex = index;
+                executeActiveSlashItem();
+            }
+        });
+
+        slashMenuItemsEl.addEventListener("mousemove", (e) => {
+            const itemEl = e.target.closest(".slash-menu-item");
+            if (!itemEl) return;
+            const index = parseInt(itemEl.getAttribute("data-index"), 10);
+            if (!isNaN(index) && index !== activeSlashIndex) {
+                activeSlashIndex = index;
+                updateSlashActiveHighlight();
+            }
+        });
+    }
+
+    document.addEventListener("mousedown", (e) => {
+        if (isSlashMenuOpen()) {
+            if (!slashMenuEl.contains(e.target) && !referencesContent.contains(e.target)) {
+                hideSlashMenu();
+            }
+        }
+    });
+
+    window.addEventListener("resize", () => hideSlashMenu(), { passive: true });
+    const detailSidebarEl = document.getElementById("detailSidebar");
+    if (detailSidebarEl) {
+        detailSidebarEl.addEventListener("scroll", () => hideSlashMenu(), { passive: true });
+    }
+    const paneReferencesEl = document.getElementById("pane-references");
+    if (paneReferencesEl) {
+        paneReferencesEl.addEventListener("scroll", () => hideSlashMenu(), { passive: true });
+    }
+
     if (referencesContent) {
         // Сохранение референсов при изменении
-        referencesContent.addEventListener("input", () => {
+        referencesContent.addEventListener("input", (e) => {
             if (!selectedVideo) return;
+            const handledMarkdown = checkMarkdownTriggers();
+            if (!handledMarkdown) {
+                checkSlashCommandTrigger();
+            }
             normalizeEditorContent(referencesContent);
             selectedVideo.references = referencesContent.innerHTML;
             saveVideoData("references", selectedVideo.references);
         });
 
+        referencesContent.addEventListener("keyup", (e) => {
+            if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "Backspace" || e.key === "Delete") {
+                checkSlashCommandTrigger();
+            }
+        });
+
         // Замена дефисов на сепаратор при нажатии Enter, защита от удаления при Backspace и навигация ArrowUp/ArrowDown
         referencesContent.addEventListener("keydown", (e) => {
+            if (isSlashMenuOpen()) {
+                if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    selectNextSlashItem();
+                    return;
+                } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    selectPrevSlashItem();
+                    return;
+                } else if (e.key === "Enter" || e.key === "Tab") {
+                    e.preventDefault();
+                    executeActiveSlashItem();
+                    return;
+                } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    hideSlashMenu();
+                    return;
+                }
+            }
+
             const selection = window.getSelection();
             if (!selection.rangeCount) return;
             const range = selection.getRangeAt(0);
@@ -1232,6 +1782,44 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!lineElement) return;
 
             if (e.key === "Enter") {
+                // Проверяем, находимся ли мы внутри туду-листа, буллет-листа или нумерованного списка
+                const textEl = getTextContainerAtSelection(range);
+                if (textEl) {
+                    const item = textEl.closest(".references-todo-item, .references-bullet-item, .references-numbered-item");
+                    if (item) {
+                        e.preventDefault();
+                        const cleanText = textEl.textContent.replace(/\u200B/g, '').trim();
+                        if (!cleanText || textEl.innerHTML === "<br>") {
+                            // Пустой пункт: выходим из списка и превращаем в обычную редактируемую строку
+                            const normalDiv = document.createElement("div");
+                            normalDiv.innerHTML = "<br>";
+                            item.parentNode.replaceChild(normalDiv, item);
+                            focusOnBlock(normalDiv);
+                        } else {
+                            // Непустой пункт: переносим текст за курсором в новый элемент списка ниже
+                            const textAfter = extractTextAfterCursor(range, textEl);
+                            let newItem = null;
+                            if (item.classList.contains("references-todo-item")) {
+                                newItem = createTodoItem(textAfter);
+                            } else if (item.classList.contains("references-bullet-item")) {
+                                newItem = createBulletItem(textAfter);
+                            } else if (item.classList.contains("references-numbered-item")) {
+                                const currNum = parseInt(item.getAttribute("data-num") || "1", 10);
+                                newItem = createNumberedItem(currNum + 1, textAfter);
+                            }
+                            if (newItem) {
+                                item.parentNode.insertBefore(newItem, item.nextSibling);
+                                const newTextDiv = newItem.querySelector(".references-todo-text, .references-bullet-text, .references-numbered-text");
+                                if (newTextDiv) {
+                                    focusOnBlock(newTextDiv);
+                                }
+                            }
+                        }
+                        referencesContent.dispatchEvent(new Event("input"));
+                        return;
+                    }
+                }
+
                 const blockText = lineElement.textContent || "";
                 const cleanText = blockText.replace(/\u200B/g, '').trim();
                 
@@ -1261,6 +1849,29 @@ document.addEventListener("DOMContentLoaded", () => {
                 const selection = window.getSelection();
                 if (selection.rangeCount > 0) {
                     const range = selection.getRangeAt(0);
+
+                    // Проверяем удаление в начале туду/буллета/нумерованного списка
+                    if (range.collapsed) {
+                        const textEl = getTextContainerAtSelection(range);
+                        if (textEl && isCursorAtStartOf(range, textEl)) {
+                            const item = textEl.closest(".references-todo-item, .references-bullet-item, .references-numbered-item");
+                            if (item) {
+                                e.preventDefault();
+                                const cleanText = textEl.textContent.replace(/\u200B/g, '').trim();
+                                const normalDiv = document.createElement("div");
+                                if (!cleanText || textEl.innerHTML === "<br>") {
+                                    normalDiv.innerHTML = "<br>";
+                                } else {
+                                    normalDiv.innerHTML = textEl.innerHTML;
+                                }
+                                item.parentNode.replaceChild(normalDiv, item);
+                                focusOnBlock(normalDiv);
+                                referencesContent.dispatchEvent(new Event("input"));
+                                return;
+                            }
+                        }
+                    }
+
                     // Проверяем, стоит ли курсор в самом начале строки (offset === 0)
                     if (range.startOffset === 0) {
                         const prev = lineElement.previousSibling;
@@ -1363,8 +1974,34 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // Просмотр картинок в полный размер (лайтбокс) при клике, а также переход по ссылкам
+        // Просмотр картинок в полный размер (лайтбокс) при клике, а также переход по ссылкам и переключение чекбоксов
         referencesContent.addEventListener("click", (e) => {
+            // Клик по чекбоксу туду-листа
+            const todoCheck = e.target.closest(".references-todo-checkbox");
+            if (todoCheck) {
+                e.preventDefault();
+                e.stopPropagation();
+                const todoItem = todoCheck.closest(".references-todo-item");
+                if (todoItem) {
+                    const isCompleted = todoItem.classList.toggle("completed");
+                    todoItem.setAttribute("data-checked", isCompleted ? "true" : "false");
+                    if (selectedVideo) {
+                        selectedVideo.references = referencesContent.innerHTML;
+                        saveVideoData("references", selectedVideo.references);
+                    }
+                }
+                return;
+            }
+
+            // Клик по строке туду/буллета вне самого текста
+            const listItem = e.target.closest(".references-todo-item, .references-bullet-item, .references-numbered-item");
+            if (listItem && !e.target.closest(".references-todo-text, .references-bullet-text, .references-numbered-text, .references-todo-checkbox")) {
+                const textDiv = listItem.querySelector(".references-todo-text, .references-bullet-text, .references-numbered-text");
+                if (textDiv) {
+                    focusAtEndOfBlock(textDiv);
+                }
+            }
+
             const deleteBtn = e.target.closest(".yt-link-card-delete");
             if (deleteBtn) {
                 e.preventDefault();
@@ -1600,9 +2237,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Инициализация Drag and Drop
     initDragAndDrop();
     initTouchDragAndDrop();
-
-    // Инициализация модального окна редактирования задач CreatorHub
-    initChTaskEditModal();
 
     // Клавиатурная навигация по списку видео стрелочками (вверх/вниз, для сетки также влево/вправо)
     let activeNavigationPanel = 'list'; // 'list' или 'sidebar'
@@ -3033,12 +3667,6 @@ function selectVideoItem(id) {
             detailSidebarResizer.style.display = "block";
         }
     }
-
-    if (currentUid) {
-        ensureVideoSection(selectedVideo);
-    } else {
-        renderLocalTasks();
-    }
 }
 
 function updateDetailThumbnailPlaceholder() {
@@ -3130,33 +3758,6 @@ window.addEventListener('authChanged', (e) => {
             console.error("Error loading profile details from Firestore:", err);
         });
 
-        // Подписка на проекты
-        const qProj = query(collection(db, 'users', currentUid, 'projects'));
-        if (unsubscribeProjects) unsubscribeProjects();
-        unsubscribeProjects = onSnapshot(qProj, (snapshot) => {
-            projectsList = [];
-            snapshot.forEach(docSnap => {
-                projectsList.push({ id: docSnap.id, ...docSnap.data() });
-            });
-            const ytProj = projectsList.find(p => p.name && p.name.toLowerCase() === 'youtube');
-            if (ytProj) {
-                youtubeProjectId = ytProj.id;
-            }
-        });
-
-        // Подписка на разделы
-        const qSec = query(collection(db, 'users', currentUid, 'sections'));
-        if (unsubscribeSections) unsubscribeSections();
-        unsubscribeSections = onSnapshot(qSec, (snapshot) => {
-            sectionsList = [];
-            snapshot.forEach(docSnap => {
-                sectionsList.push({ id: docSnap.id, ...docSnap.data() });
-            });
-            if (selectedVideo) {
-                ensureVideoSection(selectedVideo);
-            }
-        });
-
         // Подписка на коллекцию видео в Firestore
         const q = query(collection(db, "users", currentUid, "videos"), orderBy("createdAt", "asc"));
         if (unsubscribeVideos) unsubscribeVideos();
@@ -3212,13 +3813,6 @@ window.addEventListener('authChanged', (e) => {
             unsubscribeVideos();
             unsubscribeVideos = null;
         }
-        if (unsubscribeProjects) { unsubscribeProjects(); unsubscribeProjects = null; }
-        if (unsubscribeSections) { unsubscribeSections(); unsubscribeSections = null; }
-        if (unsubscribeTasks) { unsubscribeTasks(); unsubscribeTasks = null; }
-        youtubeProjectId = null;
-        videoSectionId = null;
-        projectsList = [];
-        sectionsList = [];
         // Загрузка локальных данных с автоудалением
         let localData = JSON.parse(localStorage.getItem("local_videos")) || [];
         const now = Date.now();
@@ -3433,10 +4027,6 @@ function clearDetailSidebar() {
     } else {
         if (emptyStateEl) emptyStateEl.style.display = "none";
         if (contentWrapperEl) contentWrapperEl.style.display = "block";
-    }
-    if (unsubscribeTasks) {
-        unsubscribeTasks();
-        unsubscribeTasks = null;
     }
 }
 
@@ -4987,125 +5577,6 @@ function initDragAndDrop() {
         }
         draggingElement = null;
     });
-
-    // --- DRAG AND DROP ДЛЯ ЗАДАЧ ---
-    const activeTasksContainer = document.getElementById("chActiveTasksList");
-    if (activeTasksContainer) {
-        let taskDraggingElement = null;
-        let taskPlaceholder = null;
-
-        activeTasksContainer.addEventListener('dragstart', (e) => {
-            const taskItem = e.target.closest('.ch-task-item');
-            if (!taskItem || taskItem.classList.contains('completed')) {
-                e.preventDefault();
-                return;
-            }
-            taskDraggingElement = taskItem;
-            taskItem.classList.add('dragging');
-
-            taskPlaceholder = document.createElement('div');
-            taskPlaceholder.className = 'task-drag-placeholder';
-            taskPlaceholder.style.height = `${taskDraggingElement.offsetHeight}px`;
-
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', taskItem.getAttribute('data-id'));
-
-            setTimeout(() => {
-                if (taskDraggingElement) {
-                    taskDraggingElement.style.display = 'none';
-                }
-            }, 0);
-        });
-
-        activeTasksContainer.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            if (!taskDraggingElement || !taskPlaceholder) return;
-
-            const afterElement = getDragAfterTask(activeTasksContainer, e.clientY);
-            if (afterElement) {
-                activeTasksContainer.insertBefore(taskPlaceholder, afterElement);
-            } else {
-                activeTasksContainer.appendChild(taskPlaceholder);
-            }
-        });
-
-        activeTasksContainer.addEventListener('dragend', () => {
-            if (taskDraggingElement) {
-                taskDraggingElement.style.display = '';
-                taskDraggingElement.classList.remove('dragging');
-                taskDraggingElement.removeAttribute('draggable');
-            }
-            if (taskPlaceholder && taskPlaceholder.parentNode) {
-                taskPlaceholder.remove();
-            }
-            taskPlaceholder = null;
-            taskDraggingElement = null;
-        });
-
-        activeTasksContainer.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            if (!taskDraggingElement || !taskPlaceholder) return;
-
-            const prevElement = taskPlaceholder.previousElementSibling;
-            const nextElement = taskPlaceholder.nextElementSibling;
-
-            taskPlaceholder.remove();
-            taskPlaceholder = null;
-
-            if (taskDraggingElement) {
-                taskDraggingElement.style.display = '';
-                taskDraggingElement.classList.remove('dragging');
-            }
-
-            const taskId = taskDraggingElement.getAttribute('data-id');
-            const task = currentTasksList.find(t => t.id === taskId);
-            if (!task) {
-                taskDraggingElement = null;
-                return;
-            }
-
-            const prevTaskId = prevElement ? prevElement.getAttribute('data-id') : null;
-            const nextTaskId = nextElement ? nextElement.getAttribute('data-id') : null;
-
-            const prevTask = currentTasksList.find(t => t.id === prevTaskId);
-            const nextTask = currentTasksList.find(t => t.id === nextTaskId);
-
-            let newOrder = 0;
-            if (!prevTask && !nextTask) {
-                newOrder = 0;
-            } else if (!prevTask) {
-                newOrder = (nextTask.order !== undefined ? nextTask.order : 0) - 1000;
-            } else if (!nextTask) {
-                newOrder = (prevTask.order !== undefined ? prevTask.order : 0) + 1000;
-            } else {
-                const prevOrder = prevTask.order !== undefined ? prevTask.order : 0;
-                const nextOrder = nextTask.order !== undefined ? nextTask.order : 0;
-                newOrder = (prevOrder + nextOrder) / 2;
-            }
-
-            task.order = newOrder;
-
-            if (currentUid) {
-                try {
-                    await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
-                        order: newOrder
-                    });
-                } catch (err) {
-                    console.error("Ошибка при переупорядочивании задачи в Firestore:", err);
-                }
-            } else {
-                if (!selectedVideo) return;
-                const localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
-                const t = localTasks.find(item => item.id === taskId);
-                if (t) {
-                    t.order = newOrder;
-                    localStorage.setItem(`local_tasks_${selectedVideo.id}`, JSON.stringify(localTasks));
-                    renderLocalTasks();
-                }
-            }
-            taskDraggingElement = null;
-        });
-    }
 }
 
 function getDragAfterVideo(container, x, y) {
@@ -5143,20 +5614,6 @@ function getDragAfterVideo(container, x, y) {
     }
 }
 
-function getDragAfterTask(container, y) {
-    const dragElements = [...container.querySelectorAll('.ch-task-item:not(.dragging):not(.task-drag-placeholder)')];
-    if (dragElements.length === 0) return null;
-
-    return dragElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
 
 function initTouchDragAndDrop() {
     let touchStartTimer = null;
@@ -5961,638 +6418,6 @@ function initVideoDetailMobileBottomSheet() {
         titleBlock.addEventListener("touchmove", onTouchMove, { passive: true });
         titleBlock.addEventListener("touchend", onTouchEnd);
     }
-}
-
-// === Интеграция задач Мои Задачи (todo.html) ===
-async function getOrCreateYouTubeProjectAndSection(video) {
-    if (!currentUid || !db || !video) return null;
-
-    // 1. Убедимся, что проект "YouTube" существует в БД
-    let projectId = youtubeProjectId;
-    if (!projectId) {
-        const ytProj = projectsList.find(p => p.name && p.name.toLowerCase() === 'youtube');
-        if (ytProj) {
-            projectId = ytProj.id;
-            youtubeProjectId = projectId;
-        } else {
-            try {
-                const docRef = await addDoc(collection(db, 'users', currentUid, 'projects'), {
-                    name: 'YouTube',
-                    createdAt: serverTimestamp(),
-                    order: 0
-                });
-                projectId = docRef.id;
-                youtubeProjectId = projectId;
-            } catch (err) {
-                console.error("Ошибка при создании проекта YouTube:", err);
-                return null;
-            }
-        }
-    }
-
-    // 2. Убедимся, что раздел для видео существует
-    let sectionId = videoSectionId;
-    let sec = sectionsList.find(s => s.projectId === projectId && s.videoId === video.id);
-    if (!sec) {
-        const cleanTitle = formatVideoTitle(video.title);
-        sec = sectionsList.find(s => s.projectId === projectId && s.name === cleanTitle && !s.videoId);
-        if (sec) {
-            try {
-                await updateDoc(doc(db, 'users', currentUid, 'sections', sec.id), {
-                    videoId: video.id
-                });
-                sectionId = sec.id;
-                videoSectionId = sectionId;
-            } catch (err) {
-                console.error("Ошибка при привязке videoId к разделу:", err);
-            }
-        }
-    } else {
-        sectionId = sec.id;
-        videoSectionId = sectionId;
-    }
-
-    if (!sec) {
-        try {
-            const cleanTitle = formatVideoTitle(video.title);
-            const maxOrder = sectionsList
-                .filter(s => s.projectId === projectId)
-                .reduce((max, s) => Math.max(max, s.order !== undefined ? s.order : 0), 0);
-
-            const docRef = await addDoc(collection(db, 'users', currentUid, 'sections'), {
-                name: cleanTitle,
-                projectId: projectId,
-                videoId: video.id,
-                order: maxOrder + 1,
-                createdAt: serverTimestamp()
-            });
-            sectionId = docRef.id;
-            videoSectionId = sectionId;
-        } catch (err) {
-            console.error("Ошибка при создании раздела для видео:", err);
-            return null;
-        }
-    } else {
-        const cleanTitle = formatVideoTitle(video.title);
-        if (sec.name !== cleanTitle) {
-            try {
-                await updateDoc(doc(db, 'users', currentUid, 'sections', sec.id), {
-                    name: cleanTitle
-                });
-            } catch (err) {
-                console.error("Ошибка при обновлении названия раздела:", err);
-            }
-        }
-    }
-
-    return { projectId, sectionId };
-}
-
-async function ensureVideoSection(video) {
-    if (!currentUid || !db || !video) return;
-    
-    // 1. Ищем ID проекта YouTube
-    let projectId = youtubeProjectId;
-    if (!projectId) {
-        const ytProj = projectsList.find(p => p.name && p.name.toLowerCase() === 'youtube');
-        if (ytProj) {
-            projectId = ytProj.id;
-            youtubeProjectId = projectId;
-        }
-    }
-
-    if (!projectId) {
-        videoSectionId = null;
-        subscribeToTasks(null);
-        return;
-    }
-
-    // 2. Ищем, существует ли раздел для этого видео
-    let sec = sectionsList.find(s => s.projectId === projectId && s.videoId === video.id);
-    if (!sec) {
-        const cleanTitle = formatVideoTitle(video.title);
-        sec = sectionsList.find(s => s.projectId === projectId && s.name === cleanTitle && !s.videoId);
-        if (sec) {
-            try {
-                await updateDoc(doc(db, 'users', currentUid, 'sections', sec.id), {
-                    videoId: video.id
-                });
-                videoSectionId = sec.id;
-            } catch (err) {
-                console.error("Ошибка при привязке videoId к разделу:", err);
-            }
-        }
-    } else {
-        videoSectionId = sec.id;
-    }
-
-    if (sec) {
-        subscribeToTasks(sec.id);
-        
-        const cleanTitle = formatVideoTitle(video.title);
-        if (sec.name !== cleanTitle) {
-            try {
-                await updateDoc(doc(db, 'users', currentUid, 'sections', sec.id), {
-                    name: cleanTitle
-                });
-            } catch (err) {
-                console.error("Ошибка при обновлении названия раздела:", err);
-            }
-        }
-    } else {
-        videoSectionId = null;
-        subscribeToTasks(null);
-    }
-}
-
-function subscribeToTasks(sectionId) {
-    if (unsubscribeTasks) {
-        unsubscribeTasks();
-        unsubscribeTasks = null;
-    }
-    
-    if (!currentUid || !sectionId) {
-        if (!currentUid) {
-            renderLocalTasks();
-        } else {
-            renderTasksUI([]);
-        }
-        return;
-    }
-    
-    const qTasks = query(
-        collection(db, 'users', currentUid, 'tasks'),
-        where('projectId', '==', youtubeProjectId),
-        where('sectionId', '==', sectionId)
-    );
-    
-    unsubscribeTasks = onSnapshot(qTasks, async (snapshot) => {
-        const tasksList = [];
-        snapshot.forEach(docSnap => {
-            tasksList.push({ id: docSnap.id, ...docSnap.data() });
-        });
-
-        renderTasksUI(tasksList);
-    }, (error) => {
-        console.error("Ошибка при получении задач видео:", error);
-    });
-}
-
-function renderTasksUI(tasksList) {
-    currentTasksList = tasksList;
-    const activeListEl = document.getElementById("chActiveTasksList");
-    const completedListEl = document.getElementById("chCompletedTasksList");
-    const completedHeader = document.getElementById("chCompletedHeader");
-    const completedCountEl = document.getElementById("chCompletedCount");
-    
-    if (!activeListEl || !completedListEl) return;
-    
-    activeListEl.innerHTML = "";
-    completedListEl.innerHTML = "";
-    
-    const activeTasks = tasksList.filter(t => !t.completed && !t.deleted);
-    const completedTasks = tasksList.filter(t => t.completed && !t.deleted);
-    
-    if (activeTasks.length === 0) {
-        activeListEl.innerHTML = `<div style="text-align: center; color: var(--ch-text-gray); padding: 20px 0; font-size: 0.9rem;">Нет активных задач</div>`;
-    } else {
-        // Сортируем задачи по order, затем по createdAt
-        activeTasks.sort((a, b) => {
-            const orderA = a.order !== undefined ? a.order : 0;
-            const orderB = b.order !== undefined ? b.order : 0;
-            if (orderA !== orderB) {
-                return orderA - orderB;
-            }
-            const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
-            const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
-            return timeA - timeB;
-        });
-        activeTasks.forEach(task => {
-            activeListEl.appendChild(createTaskDOMElement(task));
-        });
-    }
-    
-    if (completedTasks.length > 0) {
-        if (completedHeader) completedHeader.style.display = "block";
-        if (completedCountEl) completedCountEl.textContent = completedTasks.length;
-        
-        completedTasks.sort((a, b) => {
-            const timeA = a.completedAt ? (a.completedAt.toDate ? a.completedAt.toDate().getTime() : new Date(a.completedAt).getTime()) : 0;
-            const timeB = b.completedAt ? (b.completedAt.toDate ? b.completedAt.toDate().getTime() : new Date(b.completedAt).getTime()) : 0;
-            return timeB - timeA; // Недавно выполненные сверху
-        });
-        
-        completedTasks.forEach(task => {
-            completedListEl.appendChild(createTaskDOMElement(task));
-        });
-        
-        if (chTasksCompletedCollapsed) {
-            if (completedHeader) completedHeader.classList.add("collapsed");
-            completedListEl.style.display = "none";
-        } else {
-            if (completedHeader) completedHeader.classList.remove("collapsed");
-            completedListEl.style.display = "block";
-        }
-    } else {
-        if (completedHeader) completedHeader.style.display = "none";
-        completedListEl.style.display = "none";
-    }
-}
-
-function createTaskDOMElement(task) {
-    const item = document.createElement("div");
-    item.className = `ch-task-item ${task.completed ? 'completed' : ''} priority-${task.priority || 0}`;
-    item.setAttribute("data-id", task.id);
-
-    const badgeHtml = getDueDateBadgeHtml(task.dueDate);
-
-    item.innerHTML = `
-        <button class="ch-task-checkbox" type="button" aria-label="Отметить задачу">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5">
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-        </button>
-        <div class="ch-task-content">${escapeHTML(task.title)}</div>
-        ${badgeHtml}
-        <div class="ch-task-actions">
-            <button class="ch-task-action-btn btn-edit-task" title="Редактировать задачу" type="button">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-            </button>
-        </div>
-    `;
-    
-    // Клик по чекбоксу
-    const checkbox = item.querySelector(".ch-task-checkbox");
-    checkbox.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        await toggleTaskCompleted(task);
-    });
-    
-    // Клик по кнопке редактирования (открывает модалку)
-    const btnEdit = item.querySelector(".btn-edit-task");
-    btnEdit.addEventListener("click", (e) => {
-        e.stopPropagation();
-        openChTaskEditModal(task);
-    });
-
-    // Открытие модалки при клике на элемент задачи
-    item.addEventListener("click", (e) => {
-        if (!e.target.closest(".ch-task-checkbox") && !e.target.closest(".ch-task-actions")) {
-            openChTaskEditModal(task);
-        }
-    });
-
-    // Настройка активации draggable при взаимодействии (для десктопа)
-    item.addEventListener('mousedown', (e) => {
-        if (e.target.closest('button, input, textarea, a, select')) {
-            return;
-        }
-        item.setAttribute('draggable', 'true');
-    });
-    item.addEventListener('mouseup', () => {
-        item.removeAttribute('draggable');
-    });
-    
-    return item;
-}
-
-async function toggleTaskCompleted(task) {
-    const nextState = !task.completed;
-    if (currentUid) {
-        try {
-            await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
-                completed: nextState,
-                completedAt: nextState ? serverTimestamp() : null
-            });
-        } catch (err) {
-            console.error("Ошибка при обновлении статуса задачи:", err);
-        }
-    } else {
-        if (!selectedVideo) return;
-        const localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
-        const t = localTasks.find(item => item.id === task.id);
-        if (t) {
-            t.completed = nextState;
-            t.completedAt = nextState ? Date.now() : null;
-            localStorage.setItem(`local_tasks_${selectedVideo.id}`, JSON.stringify(localTasks));
-            renderLocalTasks();
-        }
-    }
-}
-
-async function deleteTask(taskId) {
-    if (currentUid) {
-        try {
-            await updateDoc(doc(db, 'users', currentUid, 'tasks', taskId), {
-                deleted: true,
-                deletedAt: serverTimestamp()
-            });
-        } catch (err) {
-            console.error("Ошибка при удалении задачи:", err);
-        }
-    } else {
-        if (!selectedVideo) return;
-        let localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
-        localTasks = localTasks.filter(item => item.id !== taskId);
-        localStorage.setItem(`local_tasks_${selectedVideo.id}`, JSON.stringify(localTasks));
-        renderLocalTasks();
-    }
-}
-
-function renderLocalTasks() {
-    if (!selectedVideo) return;
-    const localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
-    renderTasksUI(localTasks);
-}
-
-function escapeHTML(str) {
-    if (!str) return "";
-    return str.replace(/[&<>'"]/g, 
-        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-    );
-}
-
-// Слушатели событий
-const chAddTaskInput = document.getElementById("chAddTaskInput");
-if (chAddTaskInput) {
-    chAddTaskInput.addEventListener("keydown", async (e) => {
-        if (e.key === "Enter") {
-            const title = chAddTaskInput.value.trim();
-            if (!title) return;
-            chAddTaskInput.value = "";
-
-            if (currentUid) {
-                const res = await getOrCreateYouTubeProjectAndSection(selectedVideo);
-                if (!res) return;
-                try {
-                    await addDoc(collection(db, 'users', currentUid, 'tasks'), {
-                        title: title,
-                        completed: false,
-                        projectId: res.projectId,
-                        sectionId: res.sectionId,
-                        priority: 0,
-                        createdAt: serverTimestamp()
-                    });
-                } catch (err) {
-                    console.error("Ошибка при добавлении задачи:", err);
-                }
-            } else {
-                if (!selectedVideo) return;
-                const localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
-                localTasks.push({
-                    id: "local_task_" + Date.now(),
-                    title: title,
-                    completed: false,
-                    createdAt: Date.now()
-                });
-                localStorage.setItem(`local_tasks_${selectedVideo.id}`, JSON.stringify(localTasks));
-                renderLocalTasks();
-            }
-        }
-    });
-}
-
-const chToggleCompletedBtn = document.getElementById("chToggleCompletedBtn");
-if (chToggleCompletedBtn) {
-    chToggleCompletedBtn.addEventListener("click", () => {
-        chTasksCompletedCollapsed = !chTasksCompletedCollapsed;
-        localStorage.setItem("ch_tasks_completed_collapsed", chTasksCompletedCollapsed);
-        
-        const completedHeader = document.getElementById("chCompletedHeader");
-        const completedListEl = document.getElementById("chCompletedTasksList");
-        if (chTasksCompletedCollapsed) {
-            if (completedHeader) completedHeader.classList.add("collapsed");
-            if (completedListEl) completedListEl.style.display = "none";
-        } else {
-            if (completedHeader) completedHeader.classList.remove("collapsed");
-            if (completedListEl) completedListEl.style.display = "block";
-        }
-    });
-}
-
-// === ЛОГИКА РЕДАКТИРОВАНИЯ ЗАДАЧ В CREATORHUB ===
-function initChTaskEditModal() {
-    const modal = document.getElementById("chTaskEditModal");
-    const btnClose = document.getElementById("btnChTaskEditClose");
-    const btnCancel = document.getElementById("btnChTaskEditCancel");
-    const btnSave = document.getElementById("btnChTaskEditSave");
-    const btnDelete = document.getElementById("btnChTaskEditDelete");
-    const priorityButtons = document.querySelectorAll("#chTaskEditModal .priority-btn");
-
-    if (!modal) return;
-
-    // Выбор приоритета
-    priorityButtons.forEach(btn => {
-        btn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const priorityVal = parseInt(btn.getAttribute("data-priority"), 10);
-            chTaskEditModalSelectedPriority = priorityVal;
-            
-            priorityButtons.forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-        });
-    });
-
-    // Кнопка закрытия (крестик)
-    if (btnClose) {
-        btnClose.addEventListener("click", (e) => {
-            e.stopPropagation();
-            closeChTaskEditModal();
-        });
-    }
-
-    // Кнопка Отмена
-    if (btnCancel) {
-        btnCancel.addEventListener("click", (e) => {
-            e.stopPropagation();
-            closeChTaskEditModal();
-        });
-    }
-
-    // Кнопка Удалить
-    if (btnDelete) {
-        btnDelete.addEventListener("click", async (e) => {
-            e.stopPropagation();
-            if (currentEditingTask) {
-                const confirmed = await showCustomConfirm("Удалить задачу?", "Вы действительно хотите удалить эту задачу?");
-                if (confirmed) {
-                    await deleteTask(currentEditingTask.id);
-                    closeChTaskEditModal();
-                }
-            }
-        });
-    }
-
-    // Кнопка Сохранить
-    if (btnSave) {
-        btnSave.addEventListener("click", async (e) => {
-            e.stopPropagation();
-            await saveChTaskEditModal();
-        });
-    }
-
-    // Клик по оверлею для закрытия
-    modal.addEventListener("click", (e) => {
-        if (e.target === modal) {
-            closeChTaskEditModal();
-        }
-    });
-
-    // Нажатие клавиши Escape
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && modal.style.display === "flex") {
-            closeChTaskEditModal();
-        }
-    });
-}
-
-function openChTaskEditModal(task) {
-    currentEditingTask = task;
-    chTaskEditModalSelectedPriority = task.priority || 0;
-
-    const modal = document.getElementById("chTaskEditModal");
-    const titleInput = document.getElementById("chTaskEditTitle");
-    const dueDateInput = document.getElementById("chTaskEditDueDate");
-    const priorityButtons = document.querySelectorAll("#chTaskEditModal .priority-btn");
-
-    if (!modal) return;
-
-    // Заполняем поля
-    if (titleInput) titleInput.value = task.title || "";
-    if (dueDateInput) {
-        dueDateInput.value = task.dueDate || "";
-    }
-
-    // Устанавливаем активный приоритет
-    priorityButtons.forEach(b => {
-        const val = parseInt(b.getAttribute("data-priority"), 10);
-        if (val === chTaskEditModalSelectedPriority) {
-            b.classList.add("active");
-        } else {
-            b.classList.remove("active");
-        }
-    });
-
-    modal.style.display = "flex";
-}
-
-function closeChTaskEditModal() {
-    const modal = document.getElementById("chTaskEditModal");
-    if (modal) {
-        modal.style.display = "none";
-    }
-    currentEditingTask = null;
-}
-
-async function saveChTaskEditModal() {
-    if (!currentEditingTask) return;
-
-    const titleInput = document.getElementById("chTaskEditTitle");
-    const dueDateInput = document.getElementById("chTaskEditDueDate");
-
-    const newTitle = titleInput ? titleInput.value.trim() : "";
-    const newDueDate = dueDateInput ? dueDateInput.value || null : null;
-    const newPriority = chTaskEditModalSelectedPriority;
-
-    if (!newTitle) {
-        alert("Название задачи не может быть пустым!");
-        return;
-    }
-
-    if (currentUid) {
-        try {
-            await updateDoc(doc(db, 'users', currentUid, 'tasks', currentEditingTask.id), {
-                title: newTitle,
-                dueDate: newDueDate,
-                priority: newPriority
-            });
-        } catch (err) {
-            console.error("Ошибка при обновлении задачи в Firestore:", err);
-        }
-    } else {
-        if (!selectedVideo) return;
-        const localTasks = JSON.parse(localStorage.getItem(`local_tasks_${selectedVideo.id}`)) || [];
-        const t = localTasks.find(item => item.id === currentEditingTask.id);
-        if (t) {
-            t.title = newTitle;
-            t.dueDate = newDueDate;
-            t.priority = newPriority;
-            localStorage.setItem(`local_tasks_${selectedVideo.id}`, JSON.stringify(localTasks));
-            renderLocalTasks();
-        }
-    }
-
-    closeChTaskEditModal();
-}
-
-// Вспомогательные функции для плашки срока задачи
-function isDateOverdue(dueDateStr) {
-    if (!dueDateStr) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const [year, month, day] = dueDateStr.split('-');
-    const dueDate = new Date(year, month - 1, day);
-    return dueDate < today;
-}
-
-function getDueDateBadgeHtml(dueDateStr) {
-    if (!dueDateStr) return "";
-
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
-
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
-
-    let label = "";
-    let badgeClass = "";
-
-    if (dueDateStr === todayStr) {
-        label = "Сегодня";
-        badgeClass = "today";
-    } else if (dueDateStr === tomorrowStr) {
-        label = "Завтра";
-        badgeClass = "tomorrow";
-    } else if (dueDateStr === yesterdayStr) {
-        label = "Вчера";
-        badgeClass = "overdue";
-    } else if (isDateOverdue(dueDateStr)) {
-        const [year, month, day] = dueDateStr.split('-');
-        const monthsRuShort = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-        label = `${parseInt(day, 10)} ${monthsRuShort[parseInt(month, 10) - 1]}`;
-        if (parseInt(year, 10) !== today.getFullYear()) {
-            label += ` ${year}`;
-        }
-        badgeClass = "overdue";
-    } else {
-        const [year, month, day] = dueDateStr.split('-');
-        const monthsRuShort = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-        label = `${parseInt(day, 10)} ${monthsRuShort[parseInt(month, 10) - 1]}`;
-        if (parseInt(year, 10) !== today.getFullYear()) {
-            label += ` ${year}`;
-        }
-        badgeClass = "future";
-    }
-
-    return `
-        <span class="ch-task-due-badge ${badgeClass}" style="margin-left: auto; margin-right: 8px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-            <span style="vertical-align: middle;">${label}</span>
-        </span>
-    `;
 }
 
 // === Управление каналами ===

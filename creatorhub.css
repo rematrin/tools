@@ -2878,6 +2878,347 @@ body.dark .references-editor hr.references-separator {
     background-color: rgba(248, 250, 252, 0.15);
 }
 
+/* === NOTION-LIKE BLOCKS (TO-DO, BULLET, NUMBERED, QUOTE) === */
+.references-todo-item,
+.references-bullet-item,
+.references-numbered-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 4px 0;
+    line-height: 1.55;
+    position: relative;
+    box-sizing: border-box;
+}
+
+/* Чекбокс туду-листа */
+.references-todo-checkbox {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid rgba(55, 53, 47, 0.35);
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    box-sizing: border-box;
+}
+
+body.dark .references-todo-checkbox {
+    border-color: rgba(255, 255, 255, 0.38);
+}
+
+.references-todo-checkbox:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+body.dark .references-todo-checkbox:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.references-todo-checkbox:active {
+    transform: scale(0.92);
+}
+
+.references-todo-checkbox svg {
+    display: none;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+}
+
+.references-todo-item.completed .references-todo-checkbox {
+    background: #2383e2;
+    border-color: #2383e2;
+}
+
+.references-todo-item.completed .references-todo-checkbox svg {
+    display: block;
+}
+
+.references-todo-text {
+    flex: 1;
+    min-width: 0;
+    outline: none;
+    word-break: break-word;
+    color: var(--ch-text-dark);
+    position: relative;
+}
+
+.references-todo-item.completed .references-todo-text {
+    text-decoration: line-through;
+    color: var(--ch-text-gray);
+    opacity: 0.65;
+}
+
+/* Маркированный список (Буллет-лист) */
+.references-bullet-dot {
+    width: 16px;
+    height: 24px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    line-height: 1;
+    color: var(--ch-text-dark);
+    user-select: none;
+    -webkit-user-select: none;
+    margin-top: 1px;
+}
+
+.references-bullet-text {
+    flex: 1;
+    min-width: 0;
+    outline: none;
+    word-break: break-word;
+    color: var(--ch-text-dark);
+    position: relative;
+}
+
+/* Нумерованный список */
+.references-numbered-item {
+    gap: 8px;
+}
+
+.references-numbered-num {
+    width: 22px;
+    min-width: 22px;
+    height: 24px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    text-align: right;
+    font: inherit;
+    color: var(--ch-text-dark);
+    user-select: none;
+    -webkit-user-select: none;
+    margin-top: 0;
+    box-sizing: border-box;
+}
+
+.references-numbered-text {
+    flex: 1;
+    min-width: 0;
+    outline: none;
+    word-break: break-word;
+    color: var(--ch-text-dark);
+    position: relative;
+}
+
+/* Плейсхолдеры для пустых блоков в стиле Notion */
+.references-todo-text:empty::before,
+.references-todo-text:has(> br:only-child)::before,
+.references-todo-text.is-empty::before {
+    content: "To-do";
+    color: var(--ch-text-gray);
+    opacity: 0.45;
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.references-bullet-text:empty::before,
+.references-bullet-text:has(> br:only-child)::before,
+.references-bullet-text.is-empty::before {
+    content: "List";
+    color: var(--ch-text-gray);
+    opacity: 0.45;
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.references-numbered-text:empty::before,
+.references-numbered-text:has(> br:only-child)::before,
+.references-numbered-text.is-empty::before {
+    content: "List";
+    color: var(--ch-text-gray);
+    opacity: 0.45;
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+/* === NOTION SLASH COMMAND MENU === */
+.slash-command-menu {
+    position: fixed;
+    z-index: 100000;
+    width: 270px;
+    max-height: 330px;
+    background: var(--ch-card-bg);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--ch-font);
+    animation: slashMenuFadeIn 0.1s ease-out;
+}
+
+body.dark .slash-command-menu {
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55), 0 3px 10px rgba(0, 0, 0, 0.35);
+}
+
+@keyframes slashMenuFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slash-menu-header {
+    padding: 8px 12px 6px 12px;
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--ch-text-gray);
+    letter-spacing: 0.2px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body.dark .slash-menu-header {
+    border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+.slash-menu-items {
+    padding: 4px;
+    overflow-y: auto;
+    max-height: 250px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-sizing: border-box;
+}
+
+.slash-menu-items::-webkit-scrollbar {
+    width: 5px;
+}
+.slash-menu-items::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+}
+body.dark .slash-menu-items::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.slash-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.1s ease;
+    box-sizing: border-box;
+}
+
+.slash-menu-item:hover,
+.slash-menu-item.active {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+body.dark .slash-menu-item:hover,
+body.dark .slash-menu-item.active {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.slash-menu-item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: var(--ch-text-gray);
+    flex-shrink: 0;
+}
+
+.slash-menu-item:hover .slash-menu-item-icon,
+.slash-menu-item.active .slash-menu-item-icon {
+    color: var(--ch-text-dark);
+}
+
+.slash-menu-item-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.slash-menu-item-title {
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: var(--ch-text-dark);
+    line-height: 1.25;
+}
+
+.slash-menu-item-desc {
+    font-size: 0.72rem;
+    color: var(--ch-text-gray);
+    line-height: 1.2;
+    margin-top: 1px;
+}
+
+.slash-menu-item-shortcut {
+    font-size: 0.75rem;
+    color: var(--ch-text-gray);
+    opacity: 0.65;
+    font-family: inherit;
+    margin-left: auto;
+    padding-left: 8px;
+}
+
+.slash-menu-empty {
+    padding: 14px 12px;
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--ch-text-gray);
+}
+
+.slash-menu-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    background: rgba(0, 0, 0, 0.015);
+    font-size: 0.72rem;
+    color: var(--ch-text-gray);
+}
+
+body.dark .slash-menu-footer {
+    border-top-color: rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.slash-menu-kbd {
+    font-size: 0.7rem;
+    background: rgba(0, 0, 0, 0.06);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+body.dark .slash-menu-kbd {
+    background: rgba(255, 255, 255, 0.1);
+}
+
 /* --- YOUTUBE PREVIEW CARDS --- */
 .yt-link-card {
     position: relative;
@@ -4360,378 +4701,6 @@ body.dark .tag-color-gray {
     height: 15px !important;
     margin: 0 !important;
     display: block;
-}
-
-/* === Вкладка задач (Tasks Tab) === */
-#pane-tasks {
-    display: none;
-    flex-direction: column;
-    height: 100%;
-}
-
-#pane-tasks.active {
-    display: flex;
-}
-
-.ch-tasks-card {
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    background: var(--ch-card-bg);
-    border-radius: var(--ch-radius);
-    border: 1px solid var(--ch-border);
-    box-shadow: var(--ch-shadow);
-    gap: 16px;
-    height: 100%;
-    box-sizing: border-box;
-    overflow-y: auto;
-}
-
-.ch-add-task-container {
-    width: 100%;
-}
-
-.ch-task-input {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1px solid var(--ch-border);
-    border-radius: 8px;
-    background: var(--ch-bg);
-    color: var(--ch-text-dark);
-    font-family: var(--ch-font);
-    font-size: 0.95rem;
-    outline: none;
-    box-sizing: border-box;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.ch-task-input:focus {
-    border-color: var(--ch-purple);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-}
-
-.ch-tasks-list {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-}
-
-.ch-task-item {
-    display: flex;
-    align-items: center;
-    padding: 10px 8px;
-    gap: 12px;
-    border-bottom: 1px solid var(--ch-border);
-    transition: background-color 0.2s;
-    position: relative;
-}
-
-.ch-task-item:hover {
-    background-color: var(--ch-bg);
-}
-
-/* Кастомный чекбокс */
-.ch-task-checkbox {
-    width: 18px;
-    height: 18px;
-    border: 1.5px solid #b8bac2;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s, border-color 0.2s;
-    background: transparent;
-    padding: 0;
-    margin: 0;
-    flex-shrink: 0;
-    outline: none;
-}
-
-body.dark .ch-task-checkbox {
-    border-color: #555964;
-}
-
-.ch-task-checkbox:hover {
-    border-color: var(--ch-purple);
-}
-
-.ch-task-checkbox svg {
-    width: 12px;
-    height: 12px;
-    stroke-width: 3.5px;
-    color: transparent;
-    opacity: 0;
-    transform: scale(0.8);
-    transition: opacity 0.2s, transform 0.2s;
-}
-
-.ch-task-checkbox:hover svg {
-    opacity: 0.5;
-    transform: scale(1);
-    color: var(--ch-text-gray);
-}
-
-.ch-task-item.completed .ch-task-checkbox {
-    background-color: var(--ch-purple);
-    border-color: var(--ch-purple);
-}
-
-.ch-task-item.completed .ch-task-checkbox svg {
-    opacity: 1;
-    transform: scale(1);
-    color: #ffffff !important;
-}
-
-.ch-task-content {
-    flex: 1;
-    min-width: 0;
-    font-size: 0.95rem;
-    line-height: 1.4;
-    color: var(--ch-text-dark);
-    word-break: break-word;
-    user-select: text;
-}
-
-.ch-task-item.completed .ch-task-content {
-    text-decoration: line-through;
-    color: var(--ch-text-gray);
-    opacity: 0.7;
-}
-
-.ch-task-actions {
-    display: flex;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-.ch-task-item:hover .ch-task-actions {
-    opacity: 1;
-}
-
-.ch-task-action-btn {
-    background: transparent;
-    border: none;
-    color: var(--ch-text-gray);
-    padding: 4px;
-    cursor: pointer;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s, color 0.2s;
-}
-
-.ch-task-action-btn:hover {
-    background-color: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-}
-
-/* Секция выполненных задач */
-.ch-completed-header {
-    border-top: 1px solid var(--ch-border);
-    margin-top: 8px;
-    padding-top: 12px;
-    width: 100%;
-}
-
-.ch-toggle-completed-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: transparent;
-    border: none;
-    color: var(--ch-text-gray);
-    font-family: var(--ch-font);
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 4px 6px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-}
-
-.ch-toggle-completed-btn:hover {
-    background-color: var(--ch-bg);
-}
-
-.ch-chevron-icon {
-    transition: transform 0.2s;
-}
-
-.ch-completed-header.collapsed .ch-chevron-icon {
-    transform: rotate(-90deg);
-}
-
-.ch-completed-count {
-    background-color: var(--ch-bg);
-    padding: 2px 6px;
-    border-radius: 10px;
-    font-size: 0.75rem;
-}
-
-.ch-completed-list {
-    margin-top: 4px;
-}
-
-/* Priority system checkbox styling */
-.ch-task-item.priority-3 .ch-task-checkbox {
-    border-color: #dc2626 !important;
-    background-color: rgba(220, 38, 38, 0.08) !important;
-}
-
-.ch-task-item.priority-3 .ch-task-checkbox:hover {
-    background-color: rgba(220, 38, 38, 0.15) !important;
-}
-
-.ch-task-item.priority-3 .ch-task-checkbox svg {
-    color: #dc2626 !important;
-}
-
-.ch-task-item.completed.priority-3 .ch-task-checkbox {
-    background-color: #dc2626 !important;
-    border-color: #dc2626 !important;
-}
-
-.ch-task-item.priority-2 .ch-task-checkbox {
-    border-color: #d97706 !important;
-    background-color: rgba(217, 119, 6, 0.08) !important;
-}
-
-.ch-task-item.priority-2 .ch-task-checkbox:hover {
-    background-color: rgba(217, 119, 6, 0.15) !important;
-}
-
-.ch-task-item.priority-2 .ch-task-checkbox svg {
-    color: #d97706 !important;
-}
-
-.ch-task-item.completed.priority-2 .ch-task-checkbox {
-    background-color: #d97706 !important;
-    border-color: #d97706 !important;
-}
-
-.ch-task-item.priority-1 .ch-task-checkbox {
-    border-color: #2563eb !important;
-    background-color: rgba(37, 99, 235, 0.08) !important;
-}
-
-.ch-task-item.priority-1 .ch-task-checkbox:hover {
-    background-color: rgba(37, 99, 235, 0.15) !important;
-}
-
-.ch-task-item.priority-1 .ch-task-checkbox svg {
-    color: #2563eb !important;
-}
-
-.ch-task-item.completed.priority-1 .ch-task-checkbox {
-    background-color: #2563eb !important;
-    border-color: #2563eb !important;
-}
-
-/* --- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ ЗАДАЧИ --- */
-.ch-task-edit-card {
-    max-width: 480px;
-    width: 95%;
-}
-
-.ch-priority-selector .priority-btn {
-    border: 1px solid var(--ch-border) !important;
-    background: var(--ch-card-bg) !important;
-    color: var(--ch-text-dark) !important;
-}
-
-.ch-priority-selector .priority-btn:hover {
-    background: var(--ch-bg) !important;
-}
-
-.ch-priority-selector .priority-btn.active {
-    border-color: var(--ch-purple) !important;
-    background: var(--ch-purple-light) !important;
-    color: var(--ch-purple) !important;
-    font-weight: 600 !important;
-}
-
-.ch-modal-close-btn:hover {
-    color: var(--ch-text-dark) !important;
-}
-
-#btnChTaskEditDelete:hover {
-    background-color: rgba(220, 38, 38, 0.08) !important;
-}
-
-#chTaskEditDueDate:focus,
-#chTaskEditTitle:focus {
-    border-color: var(--ch-purple) !important;
-}
-
-/* --- DRAG AND DROP ЗАДАЧ --- */
-.ch-task-item.dragging {
-    opacity: 0.3 !important;
-    background-color: var(--ch-bg) !important;
-}
-
-.task-drag-placeholder {
-    box-sizing: border-box;
-    border-radius: 8px;
-    background-color: var(--ch-border);
-    border: 1.5px dashed var(--ch-purple);
-    margin: 4px 0;
-    width: 100%;
-}
-
-body.dark .task-drag-placeholder {
-    background-color: #1e293b;
-}
-
-/* --- ПЛАШКА СРОКА ЗАДАЧИ --- */
-.ch-task-due-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.76rem;
-    font-weight: 600;
-    color: #2563eb;
-    background-color: rgba(37, 99, 235, 0.05);
-    border: 1px solid rgba(37, 99, 235, 0.12);
-    padding: 2px 8px;
-    border-radius: 6px;
-    user-select: none;
-    transition: all 0.2s;
-    flex-shrink: 0;
-}
-
-body.dark .ch-task-due-badge {
-    color: #60a5fa;
-    background-color: rgba(96, 165, 250, 0.1);
-    border-color: rgba(96, 165, 250, 0.15);
-}
-
-.ch-task-due-badge.today {
-    color: #16a34a;
-    background-color: rgba(22, 163, 74, 0.05);
-    border-color: rgba(22, 163, 74, 0.15);
-}
-
-body.dark .ch-task-due-badge.today {
-    background-color: rgba(22, 163, 74, 0.12);
-}
-
-.ch-task-due-badge.overdue {
-    color: #ef4444;
-    background-color: rgba(239, 68, 68, 0.06);
-    border-color: rgba(239, 68, 68, 0.15);
-}
-
-body.dark .ch-task-due-badge.overdue {
-    background-color: rgba(239, 68, 68, 0.12);
-}
-
-.ch-task-item.completed .ch-task-due-badge {
-    color: var(--ch-text-gray) !important;
-    background-color: var(--ch-border) !important;
-    border-color: var(--ch-border) !important;
-    opacity: 0.6;
 }
 
 /* --- ДИНАМИЧЕСКИЕ КНОПКИ И ССЫЛКИ НАСТРОЕК --- */

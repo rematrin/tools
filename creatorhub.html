@@ -463,10 +463,6 @@
                         <svg class="detail-tab-icon" viewBox="0 0 24 24" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                         <span>Описание</span>
                     </button>
-                    <button class="detail-tab-btn" data-tab="tasks">
-                        <svg class="detail-tab-icon" viewBox="0 0 24 24" stroke-width="2.5"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-                        <span>Задачи</span>
-                    </button>
                     <button class="detail-tab-btn" data-tab="settings">
                         <svg class="detail-tab-icon" viewBox="0 0 24 24" stroke-width="2.5"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                         <span>Настройки</span>
@@ -600,32 +596,7 @@
                         </div>
                     </div>
 
-                    <!-- Вкладка: Задачи -->
-                    <div class="tab-pane" id="pane-tasks">
-                        <div class="detail-card ch-tasks-card">
-                            <!-- Добавить задачу -->
-                            <div class="ch-add-task-container">
-                                <input type="text" id="chAddTaskInput" class="ch-task-input" placeholder="Добавить задачу..." autocomplete="off">
-                            </div>
-                            
-                            <!-- Список невыполненных задач -->
-                            <div id="chActiveTasksList" class="ch-tasks-list"></div>
-                            
-                            <!-- Разделитель выполненных задач -->
-                            <div id="chCompletedHeader" class="ch-completed-header" style="display: none;">
-                                <button id="chToggleCompletedBtn" class="ch-toggle-completed-btn" type="button">
-                                    <svg class="ch-chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
-                                        <polyline points="6 9 12 15 18 9"></polyline>
-                                    </svg>
-                                    <span>Выполненные</span>
-                                    <span id="chCompletedCount" class="ch-completed-count">0</span>
-                                </button>
-                            </div>
-                            
-                            <!-- Список выполненных задач -->
-                            <div id="chCompletedTasksList" class="ch-tasks-list ch-completed-list" style="display: none;"></div>
-                        </div>
-                    </div>
+
                 </div>
             </div>
             </div> <!-- /detail-sidebar-content-wrapper -->
@@ -901,62 +872,7 @@
 
 
 
-    <!-- Модальное окно редактирования задачи -->
-    <div class="confirm-modal-overlay" id="chTaskEditModal" style="display: none;">
-        <div class="confirm-modal-card ch-task-edit-card">
-            <div class="ch-modal-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                <h3 class="confirm-modal-title">Редактирование задачи</h3>
-                <button type="button" class="ch-modal-close-btn" id="btnChTaskEditClose" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--ch-text-gray); line-height: 1; padding: 0 4px;">&times;</button>
-            </div>
-            
-            <div class="ch-modal-body" style="display: flex; flex-direction: column; gap: 16px;">
-                <!-- Переименование задачи -->
-                <div class="ch-modal-field">
-                    <label style="font-size: 0.82rem; font-weight: 600; color: var(--ch-text-gray); display: block; margin-bottom: 6px;">Название задачи</label>
-                    <textarea id="chTaskEditTitle" style="width: 100%; border: 1px solid var(--ch-border); border-radius: 8px; padding: 10px 12px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 0.95rem; resize: vertical; box-sizing: border-box; outline: none; transition: border-color 0.2s;" rows="3" placeholder="Введите название задачи..."></textarea>
-                </div>
-                
-                <!-- Выбор срока -->
-                <div class="ch-modal-field">
-                    <label style="font-size: 0.82rem; font-weight: 600; color: var(--ch-text-gray); display: block; margin-bottom: 6px;">Срок выполнения</label>
-                    <input type="date" id="chTaskEditDueDate" style="width: 100%; border: 1px solid var(--ch-border); border-radius: 8px; padding: 8px 12px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 0.95rem; box-sizing: border-box; outline: none; transition: border-color 0.2s;">
-                </div>
-                
-                <!-- Выбор приоритета -->
-                <div class="ch-modal-field">
-                    <label style="font-size: 0.82rem; font-weight: 600; color: var(--ch-text-gray); display: block; margin-bottom: 8px;">Приоритет</label>
-                    <div class="ch-priority-selector" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
-                        <button type="button" class="priority-btn" data-priority="0" style="padding: 8px; border: 1px solid var(--ch-border); border-radius: 8px; background: var(--ch-bg); color: var(--ch-text-dark); font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
-                            Без
-                        </button>
-                        <button type="button" class="priority-btn" data-priority="1" style="padding: 8px; border: 1px solid var(--ch-border); border-radius: 8px; background: var(--ch-bg); color: var(--ch-text-dark); font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
-                            <span style="display:inline-block; width: 8px; height: 8px; border-radius: 50%; background: #2563eb;"></span> Низкий
-                        </button>
-                        <button type="button" class="priority-btn" data-priority="2" style="padding: 8px; border: 1px solid var(--ch-border); border-radius: 8px; background: var(--ch-bg); color: var(--ch-text-dark); font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
-                            <span style="display:inline-block; width: 8px; height: 8px; border-radius: 50%; background: #d97706;"></span> Средний
-                        </button>
-                        <button type="button" class="priority-btn" data-priority="3" style="padding: 8px; border: 1px solid var(--ch-border); border-radius: 8px; background: var(--ch-bg); color: var(--ch-text-dark); font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
-                            <span style="display:inline-block; width: 8px; height: 8px; border-radius: 50%; background: #dc2626;"></span> Высокий
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="confirm-modal-actions" style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px;">
-                <button class="confirm-btn-cancel btn-task-delete" id="btnChTaskEditDelete" style="background: none; color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.2); border-radius: 8px; padding: 10px 16px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                    Удалить
-                </button>
-                <div style="display: flex; gap: 12px;">
-                    <button class="confirm-btn-cancel" id="btnChTaskEditCancel" style="border-radius: 8px; padding: 10px 16px;">Отмена</button>
-                    <button class="confirm-btn-danger" id="btnChTaskEditSave" style="background: var(--ch-purple); color: white; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 500; cursor: pointer; transition: opacity 0.2s;">Сохранить</button>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Скрытые элементы для обложки -->
     <input type="file" id="thumbnailFileInput" accept="image/*" style="display: none;">
@@ -1237,6 +1153,20 @@
                 <button class="confirm-btn-cancel" id="btnChCustomModalCancel">Отмена</button>
                 <button class="confirm-btn-danger" id="btnChCustomModalConfirm" style="background: var(--ch-purple); border-color: var(--ch-purple);">ОК</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Меню слэш-команд в стиле Notion для описания видео -->
+    <div id="slashCommandMenu" class="slash-command-menu" style="display: none;">
+        <div class="slash-menu-header">
+            <span class="slash-menu-search-label" id="slashMenuSearchLabel">Type to search</span>
+        </div>
+        <div class="slash-menu-items" id="slashMenuItems">
+            <!-- Команды рендерятся через JS -->
+        </div>
+        <div class="slash-menu-footer">
+            <span>Закрыть меню</span>
+            <span class="slash-menu-kbd">esc</span>
         </div>
     </div>
 

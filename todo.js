@@ -11,6 +11,9 @@ import {
     updateDoc as _rawUpdateDoc,
     setDoc as _rawSetDoc,
     doc,
+    getDoc,
+    getDocs,
+    where,
     serverTimestamp,
     writeBatch as _rawWriteBatch
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -5066,6 +5069,11 @@ function doRenderTasks() {
         viewDisplayContainer.style.display = (currentRoute === 'pomodoro' || currentRoute === 'habit' || currentRoute === 'calendar') ? 'none' : ((currentRoute.startsWith('project/') || currentRoute === 'today' || currentRoute === 'inbox' || currentRoute === 'tomorrow') ? 'block' : 'none');
     }
 
+    const projectWhiteboardBtn = document.getElementById('projectWhiteboardBtn');
+    if (projectWhiteboardBtn) {
+        projectWhiteboardBtn.style.display = currentRoute.startsWith('project/') ? 'inline-flex' : 'none';
+    }
+
     // Фильтруем задачи для отображения в зависимости от текущей вкладки (роута)
     let displayActiveTasks = [];
     let displayCompletedTasks = [];
@@ -8670,6 +8678,14 @@ function renderProjectHeaderDropdown() {
     const isGroupByDate = project.groupByDate === true;
 
     projectHeaderDropdown.innerHTML = `
+        <button class="dropdown-item" id="btnProjectOpenWhiteboard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+                <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+            <span>Открыть доску</span>
+        </button>
         <button class="dropdown-item" id="btnProjectAddSection">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 6px; flex-shrink: 0;">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -8721,6 +8737,12 @@ function renderProjectHeaderDropdown() {
     `;
 
     // Bind listeners
+    document.getElementById('btnProjectOpenWhiteboard')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        projectHeaderDropdown.style.display = 'none';
+        openProjectWhiteboardModal(projectId);
+    });
+
     document.getElementById('btnProjectAddSection')?.addEventListener('click', (e) => {
         e.stopPropagation();
         addSectionForCurrentProject();
@@ -8800,6 +8822,7 @@ function enableHeaderProjectInlineEdit(projectId, oldName) {
                 titleEl.textContent = newVal;
                 updateBrowserTitle();
                 renderProjects();
+                syncProjectWhiteboardTitle(projectId, newVal);
             } catch (err) {
                 console.error("Ошибка при изменении названия проекта:", err);
                 titleEl.textContent = oldVal;
@@ -9568,6 +9591,14 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
     const menu = document.createElement('div');
     menu.className = 'custom-context-menu';
     menu.innerHTML = `
+        <div class="ctx-item" id="ctx-open-whiteboard-project">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+                <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+            <span>Открыть доску</span>
+        </div>
         <div class="ctx-item" id="ctx-rename-project">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             <span>Переименовать</span>
@@ -9638,6 +9669,14 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
 
     menu.style.left = `${x}px`;
     menu.style.top = `${y}px`;
+
+    // Обработчик открытия доски проекта
+    menu.querySelector('#ctx-open-whiteboard-project')?.addEventListener('click', (evt) => {
+        evt.stopPropagation();
+        menu.remove();
+        activeContextMenu = null;
+        openProjectWhiteboardModal(projectId);
+    });
 
     // Обработчик переименования проекта
     menu.querySelector('#ctx-rename-project')?.addEventListener('click', (evt) => {
@@ -10391,6 +10430,7 @@ function enableProjectInlineEdit(itemContainer, projectId, oldName) {
                     updateBrowserTitle();
                 }
                 renderProjects();
+                syncProjectWhiteboardTitle(projectId, newVal);
             } catch (err) {
                 console.error("Ошибка при изменении названия проекта:", err);
                 labelSpan.textContent = oldVal;
@@ -20090,3 +20130,255 @@ function renderDayView(container, tasks, gcalEvents, dateObj, options = {}) {
 
 // Initialize Calendar Listeners
 initCalendarEventListeners();
+
+// ========================================================
+// ИНТЕГРАЦИЯ ИНТЕРАКТИВНОЙ ДОСКИ (WHITEBOARD) С ПРОЕКТАМИ
+// ========================================================
+let activeModalWhiteboardId = null;
+
+async function getOrCreateProjectWhiteboard(projectId) {
+    const project = projectsList.find(p => p.id === projectId);
+    if (!project) return null;
+
+    let boardId = project.whiteboardId || null;
+
+    // 1. Проверяем, существует ли уже привязанная доска
+    if (boardId) {
+        let boardExists = false;
+        if (currentUid && db) {
+            try {
+                const snap = await getDoc(doc(db, "users", currentUid, "whiteboards", boardId));
+                if (snap.exists()) {
+                    boardExists = true;
+                    // Если название проекта изменилось, синхронизируем с доской
+                    if (snap.data().title !== project.name) {
+                        updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), {
+                            title: project.name,
+                            updatedAt: Date.now()
+                        }).catch(() => {});
+                    }
+                }
+            } catch (e) {
+                console.warn("Ошибка проверки доски в Firestore:", e);
+                boardExists = true; // Предполагаем оффлайн режим
+            }
+        } else {
+            const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+            const found = localBoards.find(b => b.id === boardId);
+            if (found) {
+                boardExists = true;
+                if (found.title !== project.name) {
+                    found.title = project.name;
+                    found.updatedAt = Date.now();
+                    localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+                }
+            }
+        }
+        if (boardExists) {
+            return boardId;
+        }
+    }
+
+    // 2. Если у проекта еще не сохранен whiteboardId, поищем существующую доску по projectId
+    if (currentUid && db) {
+        try {
+            const q = query(collection(db, "users", currentUid, "whiteboards"), where("projectId", "==", projectId));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                const foundId = snap.docs[0].id;
+                project.whiteboardId = foundId;
+                updateDoc(doc(db, "users", currentUid, "projects", projectId), { whiteboardId: foundId }).catch(() => {});
+                saveCachedProjectsSnapshot(currentUid);
+                return foundId;
+            }
+        } catch (e) {
+            console.warn("Поиск существующей доски по projectId:", e);
+        }
+    } else {
+        const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+        const found = localBoards.find(b => b.projectId === projectId);
+        if (found) {
+            project.whiteboardId = found.id;
+            saveCachedProjectsSnapshot(currentUid);
+            return found.id;
+        }
+    }
+
+    // 3. Создаем новую доску с названием проекта!
+    const newBoardId = "board_" + Math.random().toString(36).substring(2, 11);
+    const newBoardData = {
+        id: newBoardId,
+        title: project.name || "Доска проекта",
+        projectId: projectId,
+        width: 2400,
+        height: 1600,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+    };
+
+    if (currentUid && db) {
+        try {
+            await setDoc(doc(db, "users", currentUid, "whiteboards", newBoardId), newBoardData);
+        } catch (e) {
+            console.error("Ошибка сохранения новой доски в Firestore:", e);
+        }
+    }
+
+    // Всегда сохраняем также в localStorage для оффлайн поддержки и списка досок
+    const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+    if (!localBoards.some(b => b.id === newBoardId)) {
+        localBoards.push(newBoardData);
+        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+    }
+
+    // Привязываем whiteboardId к проекту в БД и локально
+    project.whiteboardId = newBoardId;
+    if (currentUid && db) {
+        try {
+            await updateDoc(doc(db, "users", currentUid, "projects", projectId), {
+                whiteboardId: newBoardId
+            });
+        } catch (e) {
+            console.error("Ошибка обновления whiteboardId в проекте:", e);
+        }
+    }
+    saveCachedProjectsSnapshot(currentUid);
+
+    return newBoardId;
+}
+
+async function openProjectWhiteboardModal(projectId) {
+    const project = projectsList.find(p => p.id === projectId);
+    if (!project) return;
+
+    const modal = document.getElementById('projectWhiteboardModal');
+    const titleEl = document.getElementById('projectWhiteboardModalTitle');
+    const openExtBtn = document.getElementById('projectWhiteboardOpenExternalBtn');
+    const loader = document.getElementById('projectWhiteboardLoader');
+    const iframe = document.getElementById('projectWhiteboardIframe');
+    if (!modal || !iframe) return;
+
+    titleEl.textContent = project.name ? `Доска: ${project.name}` : 'Доска проекта';
+    if (loader) loader.style.display = 'flex';
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    try {
+        const boardId = await getOrCreateProjectWhiteboard(projectId);
+        if (!boardId) {
+            closeProjectWhiteboardModal();
+            return;
+        }
+
+        activeModalWhiteboardId = boardId;
+        if (openExtBtn) {
+            openExtBtn.href = `whiteboard.html?id=${encodeURIComponent(boardId)}`;
+        }
+
+        iframe.onload = () => {
+            if (loader) loader.style.display = 'none';
+        };
+
+        iframe.src = `whiteboard.html?id=${encodeURIComponent(boardId)}&embed=1`;
+    } catch (err) {
+        console.error("Ошибка при открытии доски проекта:", err);
+        if (loader) loader.style.display = 'none';
+    }
+}
+
+function closeProjectWhiteboardModal() {
+    const modal = document.getElementById('projectWhiteboardModal');
+    const iframe = document.getElementById('projectWhiteboardIframe');
+    if (modal) modal.style.display = 'none';
+    if (iframe) iframe.src = 'about:blank';
+    activeModalWhiteboardId = null;
+    document.body.style.overflow = '';
+}
+
+function syncProjectWhiteboardTitle(projectId, newTitle) {
+    if (!projectId || !newTitle) return;
+    const proj = projectsList.find(p => p.id === projectId);
+    if (!proj || !proj.whiteboardId) return;
+
+    const boardId = proj.whiteboardId;
+    if (currentUid && db) {
+        updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), {
+            title: newTitle,
+            updatedAt: Date.now()
+        }).catch(() => {});
+    }
+
+    const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+    const idx = localBoards.findIndex(b => b.id === boardId);
+    if (idx !== -1) {
+        localBoards[idx].title = newTitle;
+        localBoards[idx].updatedAt = Date.now();
+        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+    }
+}
+
+function initProjectWhiteboardModalHandlers() {
+    const projectWhiteboardBtn = document.getElementById('projectWhiteboardBtn');
+    if (projectWhiteboardBtn) {
+        projectWhiteboardBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (currentRoute.startsWith('project/')) {
+                const projectId = currentRoute.split('/')[1];
+                openProjectWhiteboardModal(projectId);
+            }
+        });
+    }
+
+    const closeBtn = document.getElementById('projectWhiteboardCloseBtn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeProjectWhiteboardModal();
+        });
+    }
+
+    const modal = document.getElementById('projectWhiteboardModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'projectWhiteboardModal') {
+                closeProjectWhiteboardModal();
+            }
+        });
+    }
+
+    const fullscreenBtn = document.getElementById('projectWhiteboardFullscreenBtn');
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const card = document.querySelector('.project-whiteboard-modal-card');
+            if (!card) return;
+            const isFull = card.classList.toggle('is-fullscreen');
+            const iconExpand = fullscreenBtn.querySelector('.icon-expand');
+            const iconCompress = fullscreenBtn.querySelector('.icon-compress');
+            if (iconExpand && iconCompress) {
+                iconExpand.style.display = isFull ? 'none' : 'block';
+                iconCompress.style.display = isFull ? 'block' : 'none';
+            }
+            fullscreenBtn.title = isFull ? 'Восстановить размер' : 'Развернуть на весь экран';
+        });
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const m = document.getElementById('projectWhiteboardModal');
+            if (m && m.style.display === 'flex') {
+                closeProjectWhiteboardModal();
+            }
+        }
+    });
+
+    window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'closeWhiteboardModal') {
+            closeProjectWhiteboardModal();
+        }
+    });
+}
+
+initProjectWhiteboardModalHandlers();
+

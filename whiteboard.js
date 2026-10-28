@@ -884,6 +884,15 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
+    if (e.key === 'Escape') {
+        if (selectedElementIds.size > 0) {
+            selectedElementIds.clear();
+            renderElements();
+        } else if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'closeWhiteboardModal' }, '*');
+        }
+    }
+
 });
 
 window.addEventListener('keyup', (e) => {

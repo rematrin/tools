@@ -3722,10 +3722,20 @@ window.addEventListener('authChanged', (e) => {
                         const localIdx = globalButtons.findIndex(b => b.id === fireBtn.id);
                         if (localIdx >= 0) {
                             globalButtons[localIdx].name = fireBtn.name;
+                            if (fireBtn.iconUrl !== undefined) {
+                                globalButtons[localIdx].iconUrl = fireBtn.iconUrl;
+                            }
                         } else {
                             globalButtons.push(fireBtn);
                         }
                     });
+                    if (!globalButtons.some(b => b.id === "gb_youtube_studio")) {
+                        globalButtons.push({
+                            id: "gb_youtube_studio",
+                            name: "YouTube Studio",
+                            isSystem: true
+                        });
+                    }
                     localStorage.setItem("creatorhub_global_buttons", JSON.stringify(globalButtons));
                     recoverMissingGlobalButtons();
                     renderSelectedVideoButtons();
@@ -4585,13 +4595,17 @@ function loadGlobalButtons() {
         if (stored) {
             globalButtons = JSON.parse(stored);
         } else {
-            // Seed default buttons
-            globalButtons = [
-                { id: "gb_notion", name: "Notion" },
-                { id: "gb_board", name: "Доска" },
-                { id: "gb_script", name: "Сценарий" },
-                { id: "gb_figma", name: "Figma" }
-            ];
+            globalButtons = [];
+            saveGlobalButtons();
+        }
+
+        // Ensure system button for YouTube Studio exists
+        if (!globalButtons.some(b => b.id === "gb_youtube_studio")) {
+            globalButtons.push({
+                id: "gb_youtube_studio",
+                name: "YouTube Studio",
+                isSystem: true
+            });
             saveGlobalButtons();
         }
 
@@ -4748,8 +4762,11 @@ function renderSelectedVideoButtons() {
         row.dataset.buttonId = vidBtn.buttonId;
 
         row.innerHTML = `
-            <div class="video-button-name-label" title="${globalBtn.name}">${globalBtn.name}</div>
-            <input type="text" class="video-button-url-input" placeholder="Введите ссылку для ${globalBtn.name}..." value="${vidBtn.url || ''}" autocomplete="off">
+            <div class="video-button-name-label" title="${escapeHtml(globalBtn.name)}">
+                <span class="video-button-name-icon">${getButtonIconHtml(globalBtn)}</span>
+                <span>${escapeHtml(globalBtn.name)}</span>
+            </div>
+            <input type="text" class="video-button-url-input" placeholder="Введите ссылку для ${escapeHtml(globalBtn.name)}..." value="${escapeHtml(vidBtn.url || '')}" autocomplete="off">
             <button class="video-button-remove-btn" type="button" title="Убрать из видео">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -4791,7 +4808,7 @@ function renderAddButtonDropdown() {
     if (!selectedVideo.buttons) selectedVideo.buttons = [];
 
     const availableButtons = globalButtons.filter(gb => {
-        return !selectedVideo.buttons.some(vb => vb.buttonId === gb.id);
+        return gb.id !== "gb_youtube_studio" && !selectedVideo.buttons.some(vb => vb.buttonId === gb.id);
     });
 
     if (availableButtons.length === 0) {
@@ -4803,7 +4820,15 @@ function renderAddButtonDropdown() {
         const item = document.createElement("button");
         item.type = "button";
         item.className = "add-button-dropdown-item";
-        item.textContent = btn.name;
+        item.style.display = "flex";
+        item.style.alignItems = "center";
+        item.style.gap = "8px";
+        item.innerHTML = `
+            <span style="width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; flex-shrink: 0;">
+                ${getButtonIconHtml(btn)}
+            </span>
+            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(btn.name)}</span>
+        `;
         
         item.addEventListener("click", () => {
             selectedVideo.buttons.push({
@@ -4865,6 +4890,396 @@ if (btnCreateGlobalButton) {
     });
 }
 
+// Helper to resize image to max dimension (e.g. 256x256) using an off-screen canvas
+function resizeImageToMaxDimension(file, maxDimension = 256) {
+    return new Promise((resolve, reject) => {
+        if (!file || !file.type.startsWith("image/")) {
+            return reject(new Error("Файл не является изображением"));
+        }
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Ошибка чтения файла"));
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onerror = () => reject(new Error("Ошибка декодирования изображения"));
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+                if (width > maxDimension || height > maxDimension) {
+                    if (width > height) {
+                        height = Math.round((height * maxDimension) / width);
+                        width = maxDimension;
+                    } else {
+                        width = Math.round((width * maxDimension) / height);
+                        height = maxDimension;
+                    }
+                }
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.max(1, width);
+                canvas.height = Math.max(1, height);
+                const ctx = canvas.getContext("2d");
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = "high";
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL("image/png"));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Get icon HTML for a button: uploaded icon or first letter on solid black background
+function getButtonIconHtml(btn) {
+    if (btn && btn.iconUrl) {
+        return `<img src="${escapeHtml(btn.iconUrl)}" alt="" class="video-grid-btn-icon-img" onerror="this.style.display='none'">`;
+    }
+    const name = (btn && btn.name ? btn.name.trim() : "").trim();
+    const firstChar = name ? Array.from(name)[0].toUpperCase() : "";
+    return `<span class="video-btn-letter-stub">${escapeHtml(firstChar)}</span>`;
+}
+
+// Modal for choosing/uploading button icon (identical UI to thumbnail modal with tabs "Из файла" / "По ссылке")
+function openButtonIconModal({ currentIconUrl, title = "Иконка кнопки", onSelect, onDelete }) {
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-confirm-overlay';
+    overlay.style.zIndex = '10005';
+
+    // Collect all existing uploaded icons from database and videos
+    const existingIcons = [];
+    const seenUrls = new Set();
+    const collectBtnIcon = (name, iconUrl) => {
+        if (!iconUrl || typeof iconUrl !== "string") return;
+        const cleanUrl = iconUrl.trim();
+        if (!cleanUrl) return;
+        if (!seenUrls.has(cleanUrl)) {
+            seenUrls.add(cleanUrl);
+            existingIcons.push({ url: cleanUrl, name: name || "Иконка" });
+        }
+    };
+
+    if (Array.isArray(globalButtons)) {
+        globalButtons.forEach(b => collectBtnIcon(b.name, b.iconUrl));
+    }
+    if (Array.isArray(videos)) {
+        videos.forEach(v => {
+            if (Array.isArray(v.buttons)) {
+                v.buttons.forEach(vb => collectBtnIcon(vb.name, vb.iconUrl));
+            }
+        });
+    }
+
+    const existingIconsHtml = existingIcons.length > 0 ? `
+        <div class="existing-icons-section">
+            <div class="existing-icons-title">Использовать уже загруженную иконку:</div>
+            <div class="existing-icons-grid">
+                ${existingIcons.map(item => `
+                    <button type="button" class="existing-icon-btn ${currentIconUrl === item.url ? 'is-active' : ''}" data-url="${escapeHtml(item.url)}" title="${escapeHtml(item.name)}">
+                        <img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.name)}">
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+    ` : '';
+
+    overlay.innerHTML = `
+        <div class="confirm-box thumbnail-confirm-box button-icon-confirm-box" style="padding: 24px;">
+            <div class="confirm-title" style="font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                ${escapeHtml(title)}
+            </div>
+            
+            <div class="modal-tabs" style="flex-shrink: 0;">
+                <button class="modal-tab active" data-tab="file">Из файла</button>
+                <button class="modal-tab" data-tab="url">По ссылке</button>
+            </div>
+
+            <!-- Вкладка: Из файла -->
+            <div id="tab-content-file" class="tab-content-pane">
+                <div class="confirm-message" style="margin-bottom: 14px; font-size: 13px; opacity: 0.85; line-height: 1.4;">
+                    Загрузите изображение, вставьте из буфера обмена (Ctrl + V) или перетащите файл в область ниже.
+                </div>
+
+                <div id="icon-dropzone" class="icon-dropzone" style="margin-bottom: 14px;">
+                    <div class="dropzone-preview" style="max-width: 100%; display: flex; align-items: center; justify-content: center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-icon lucide-upload" style="opacity: 0.6; color: var(--ch-text-gray);"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+                    </div>
+                    <div class="dropzone-text" style="font-size: 13px; font-weight: 500; margin-top: 8px;">
+                        Кликните для выбора файла или перетащите его сюда
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вкладка: По ссылке -->
+            <div id="tab-content-url" class="tab-content-pane" style="display: none;">
+                <div class="confirm-message" style="margin-bottom: 14px; font-size: 13px; opacity: 0.85; line-height: 1.4;">
+                    Вставьте прямую ссылку на изображение в поле ниже.
+                </div>
+                
+                <input type="text" id="modal-url-input" class="video-title-input" placeholder="https://site.com/image.png" autocomplete="off" style="width: 100%; margin-bottom: 16px; box-sizing: border-box; padding: 10px; border-radius: 8px; border: 1px solid var(--ch-border); background: var(--ch-bg); color: var(--ch-text-dark);">
+            </div>
+
+            <!-- Скрытый инпут для выбора файла -->
+            <input type="file" id="modalButtonIconFileInput" accept="image/*" style="display: none;">
+
+            <!-- Ранее загруженные иконки (быстрый выбор) -->
+            ${existingIconsHtml}
+
+            <!-- Общие действия -->
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto; flex-shrink: 0;">
+                <button class="confirm-btn-primary" id="btn-select-file" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Выбрать файл...</button>
+                <button class="confirm-btn-primary" id="btn-load-link" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%; display: none;">Сохранить</button>
+                
+                ${currentIconUrl ? 
+                    `<button class="confirm-btn-delete" id="btn-delete-icon" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Удалить картинку</button>` : 
+                    ''
+                }
+                
+                <button class="confirm-btn-secondary" id="btn-close-icon-modal" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Отмена</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const dropzone = overlay.querySelector('#icon-dropzone');
+    const fileInput = overlay.querySelector('#modalButtonIconFileInput');
+    const selectFileBtn = overlay.querySelector('#btn-select-file');
+    const deleteIconBtn = overlay.querySelector('#btn-delete-icon');
+    const closeBtn = overlay.querySelector('#btn-close-icon-modal');
+    
+    const tabBtns = overlay.querySelectorAll('.modal-tab');
+    const tabPanes = overlay.querySelectorAll('.tab-content-pane');
+    const urlInput = overlay.querySelector('#modal-url-input');
+    const loadLinkBtn = overlay.querySelector('#btn-load-link');
+
+    // Переключение вкладок
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const targetTab = btn.dataset.tab;
+            tabPanes.forEach(pane => pane.style.display = 'none');
+            overlay.querySelector(`#tab-content-${targetTab}`).style.display = 'flex';
+            
+            if (targetTab === 'file') {
+                selectFileBtn.style.display = 'block';
+                loadLinkBtn.style.display = 'none';
+            } else if (targetTab === 'url') {
+                selectFileBtn.style.display = 'none';
+                loadLinkBtn.style.display = 'block';
+                if (urlInput) {
+                    setTimeout(() => urlInput.focus(), 100);
+                }
+            }
+        });
+    });
+
+    // 1. Paste handler (Ctrl + V)
+    async function handlePaste(e) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (const item of items) {
+            if (item.type.indexOf("image") === 0) {
+                const file = item.getAsFile();
+                await processAndUploadFile(file);
+                break;
+            }
+        }
+    }
+    document.addEventListener('paste', handlePaste);
+
+    // 2. Drag & Drop handler
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#1070e5';
+        dropzone.style.background = 'rgba(16, 112, 229, 0.05)';
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.borderColor = '';
+        dropzone.style.background = '';
+    });
+
+    dropzone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '';
+        dropzone.style.background = '';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            await processAndUploadFile(file);
+        }
+    });
+
+    // 3. Selection
+    dropzone.addEventListener('click', () => fileInput.click());
+    selectFileBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) await processAndUploadFile(file);
+    });
+
+    // 3.5. Existing Icon Quick Selection
+    overlay.querySelectorAll('.existing-icon-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const url = btn.dataset.url;
+            if (url && onSelect) {
+                await onSelect(url);
+                cleanup();
+            }
+        });
+    });
+
+    // 4. Link Upload
+    loadLinkBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const urlVal = urlInput.value.trim();
+        if (!urlVal) return;
+
+        try {
+            setLoadingState(true);
+            const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(urlVal)}`;
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            
+            const handleImgLoaded = async (loadedImg) => {
+                const maxDim = 256;
+                let width = loadedImg.width;
+                let height = loadedImg.height;
+                if (width > maxDim || height > maxDim) {
+                    if (width > height) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    } else {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+                }
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.max(1, width);
+                canvas.height = Math.max(1, height);
+                const ctx = canvas.getContext("2d");
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = "high";
+                ctx.drawImage(loadedImg, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL("image/png");
+                try {
+                    const hostedUrl = await uploadToImgBB(dataUrl);
+                    if (onSelect) await onSelect(hostedUrl);
+                    cleanup();
+                } catch (e) {
+                    console.error(e);
+                    alert("Не удалось сохранить изображение.");
+                    setLoadingState(false);
+                }
+            };
+
+            img.onload = () => handleImgLoaded(img);
+            img.onerror = () => {
+                const directImg = new Image();
+                directImg.crossOrigin = "anonymous";
+                directImg.onload = () => handleImgLoaded(directImg);
+                directImg.onerror = () => {
+                    alert("Не удалось загрузить изображение по указанной ссылке.");
+                    setLoadingState(false);
+                };
+                directImg.src = urlVal;
+            };
+
+            img.src = proxyUrl;
+        } catch (err) {
+            console.error(err);
+            alert("Ошибка загрузки.");
+            setLoadingState(false);
+        }
+    });
+
+    function setLoadingState(loading) {
+        const tabsContainer = overlay.querySelector('.modal-tabs');
+        const existingIconsSec = overlay.querySelector('.existing-icons-section');
+        if (loading) {
+            loadLinkBtn.disabled = true;
+            loadLinkBtn.innerText = 'Загрузка...';
+            selectFileBtn.disabled = true;
+            selectFileBtn.innerText = 'Загрузка...';
+            if (tabsContainer) {
+                tabsContainer.style.pointerEvents = 'none';
+                tabsContainer.style.opacity = '0.5';
+            }
+            if (existingIconsSec) {
+                existingIconsSec.style.pointerEvents = 'none';
+                existingIconsSec.style.opacity = '0.5';
+            }
+            if (deleteIconBtn) deleteIconBtn.style.display = 'none';
+            dropzone.style.pointerEvents = 'none';
+            
+            dropzone.querySelector('.dropzone-preview').innerHTML = `
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation: spin 1s linear infinite;">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="8" fill="none" opacity="0.3"></circle>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+                </svg>
+            `;
+            dropzone.querySelector('.dropzone-text').innerText = 'Загрузка и сжатие...';
+        } else {
+            loadLinkBtn.disabled = false;
+            loadLinkBtn.innerText = 'Сохранить';
+            selectFileBtn.disabled = false;
+            selectFileBtn.innerText = 'Выбрать файл...';
+            if (tabsContainer) {
+                tabsContainer.style.pointerEvents = 'auto';
+                tabsContainer.style.opacity = '1';
+            }
+            if (existingIconsSec) {
+                existingIconsSec.style.pointerEvents = 'auto';
+                existingIconsSec.style.opacity = '1';
+            }
+            if (deleteIconBtn) deleteIconBtn.style.display = 'block';
+            dropzone.style.pointerEvents = 'auto';
+            
+            dropzone.querySelector('.dropzone-preview').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-icon lucide-upload" style="opacity: 0.6; color: var(--ch-text-gray);"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>`;
+            dropzone.querySelector('.dropzone-text').innerText = 'Кликните для выбора файла или перетащите его сюда';
+        }
+    }
+
+    function cleanup() {
+        overlay.remove();
+        document.removeEventListener('paste', handlePaste);
+    }
+
+    // 5. Delete Cover
+    if (deleteIconBtn) {
+        deleteIconBtn.addEventListener('click', async () => {
+            if (onDelete) await onDelete();
+            cleanup();
+        });
+    }
+
+    // 6. Cancel / Close
+    closeBtn.addEventListener('click', cleanup);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            cleanup();
+        }
+    });
+
+    // Upload & Process File
+    async function processAndUploadFile(file) {
+        setLoadingState(true);
+        try {
+            const compressed = await resizeImageToMaxDimension(file, 256);
+            const hostedUrl = await uploadToImgBB(compressed);
+            if (onSelect) await onSelect(hostedUrl);
+            cleanup();
+        } catch (err) {
+            console.error(err);
+            alert("Не удалось загрузить изображение.");
+            setLoadingState(false);
+        }
+    }
+}
+
 // Render Global Buttons list inside the database manager modal
 function renderGlobalButtonsList() {
     if (!globalButtonsListContainer) return;
@@ -4880,20 +5295,46 @@ function renderGlobalButtonsList() {
     createRow.style.gap = "10px";
     createRow.style.background = "var(--ch-bg)";
     createRow.innerHTML = `
+        <div class="global-btn-icon-box" id="newButtonIconBox" title="Выбрать иконку">
+            <div class="global-btn-icon-preview" id="newButtonIconPreview">
+                <span class="video-btn-letter-stub">+</span>
+            </div>
+            <div class="global-btn-icon-hover-overlay" title="Выбрать иконку">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            </div>
+        </div>
         <input type="text" id="inputNewGlobalButtonName" placeholder="Название кнопки (например, Figma)..." style="flex-grow: 1; border: 1px solid var(--ch-border); border-radius: 8px; padding: 6px 12px; font-family: inherit; font-size: 0.9rem; background: var(--ch-card-bg); color: var(--ch-text-dark); outline: none;">
         <button id="btnSaveNewGlobalButton" style="background: var(--ch-purple); color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">Сохранить</button>
         <button id="btnCancelNewGlobalButton" style="background: none; border: 1px solid var(--ch-border); color: var(--ch-text-dark); border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; cursor: pointer;">Отмена</button>
     `;
 
+    let newButtonUploadedIconUrl = null;
+    const newIconBox = createRow.querySelector("#newButtonIconBox");
+    const newIconPreview = createRow.querySelector("#newButtonIconPreview");
+    const newNameInput = createRow.querySelector("#inputNewGlobalButtonName");
     const saveNewBtn = createRow.querySelector("#btnSaveNewGlobalButton");
     const cancelNewBtn = createRow.querySelector("#btnCancelNewGlobalButton");
-    const newNameInput = createRow.querySelector("#inputNewGlobalButtonName");
+
+    newIconBox.addEventListener("click", () => {
+        openButtonIconModal({
+            currentIconUrl: newButtonUploadedIconUrl,
+            title: "Иконка кнопки",
+            onSelect: (url) => {
+                newButtonUploadedIconUrl = url;
+                newIconPreview.innerHTML = `<img src="${url}" alt="">`;
+            },
+            onDelete: () => {
+                newButtonUploadedIconUrl = null;
+                newIconPreview.innerHTML = `<span class="video-btn-letter-stub">+</span>`;
+            }
+        });
+    });
 
     const saveAction = () => {
         const nameVal = newNameInput.value.trim();
         if (!nameVal) return;
         
-        if (globalButtons.some(b => b.name.toLowerCase() === nameVal.toLowerCase())) {
+        if (nameVal.toLowerCase() === "youtube studio" || globalButtons.some(b => b.name.toLowerCase() === nameVal.toLowerCase())) {
             alert("Кнопка с таким названием уже существует!");
             return;
         }
@@ -4902,11 +5343,15 @@ function renderGlobalButtonsList() {
             id: "gb_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9),
             name: nameVal
         };
+        if (newButtonUploadedIconUrl) {
+            newBtn.iconUrl = newButtonUploadedIconUrl;
+        }
 
         globalButtons.push(newBtn);
         saveGlobalButtons();
         renderGlobalButtonsList();
-        renderSelectedVideoButtons(); // Update settings list view immediately
+        renderSelectedVideoButtons();
+        updateNotionButtonState();
     };
 
     saveNewBtn.addEventListener("click", saveAction);
@@ -4917,40 +5362,91 @@ function renderGlobalButtonsList() {
     cancelNewBtn.addEventListener("click", () => {
         createRow.style.display = "none";
         newNameInput.value = "";
+        newButtonUploadedIconUrl = null;
+        newIconPreview.innerHTML = `<span class="video-btn-letter-stub">+</span>`;
     });
 
     globalButtonsListContainer.appendChild(createRow);
 
-    if (globalButtons.length === 0) {
-        const emptyMsg = document.createElement("div");
-        emptyMsg.style.padding = "20px";
-        emptyMsg.style.textAlign = "center";
-        emptyMsg.style.color = "var(--ch-text-gray)";
-        emptyMsg.style.fontSize = "0.9rem";
-        emptyMsg.textContent = "Нет созданных кнопок";
-        globalButtonsListContainer.appendChild(emptyMsg);
-        return;
+    // Ensure YouTube Studio system button exists
+    if (!globalButtons.some(b => b.id === "gb_youtube_studio")) {
+        globalButtons.push({
+            id: "gb_youtube_studio",
+            name: "YouTube Studio",
+            isSystem: true
+        });
+        saveGlobalButtons();
     }
 
-    globalButtons.forEach(btn => {
-        const count = videos.reduce((acc, v) => {
-            if (v.buttons && v.buttons.some(vb => vb.buttonId === btn.id)) {
-                return acc + 1;
-            }
-            return acc;
-        }, 0);
+    // Always sort user-created buttons first, and YouTube Studio at the very bottom
+    const sortedButtons = [
+        ...globalButtons.filter(b => b.id !== "gb_youtube_studio"),
+        ...globalButtons.filter(b => b.id === "gb_youtube_studio")
+    ];
+
+    sortedButtons.forEach(btn => {
+        const isSystem = btn.id === "gb_youtube_studio" || btn.isSystem;
+        let countText = "";
+        if (isSystem) {
+            const count = videos.filter(v => v.videoLink && getYouTubeId(v.videoLink)).length;
+            countText = `Системная кнопка • видео с YouTube: ${count}`;
+        } else {
+            const count = videos.reduce((acc, v) => {
+                if (v.buttons && v.buttons.some(vb => vb.buttonId === btn.id)) {
+                    return acc + 1;
+                }
+                return acc;
+            }, 0);
+            countText = `использовано в ${count} видео`;
+        }
 
         const item = document.createElement("div");
         item.className = "global-button-item";
         item.dataset.id = btn.id;
 
         item.innerHTML = `
-            <div class="button-item-view-mode" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                <span class="button-item-name" style="font-size: 0.95rem; color: var(--ch-text-dark); font-weight: 500;">
-                    ${btn.name} 
-                    <span style="font-size: 0.8rem; color: var(--ch-text-gray); font-weight: 400; margin-left: 8px;">(использовано в ${count} видео)</span>
-                </span>
-                <div style="display: flex; gap: 8px; align-items: center;">
+            <div class="button-item-view-mode" style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-grow: 1; min-width: 0;">
+                    <div class="global-btn-icon-box" title="Выбрать иконку">
+                        <div class="global-btn-icon-preview">
+                            ${getButtonIconHtml(btn)}
+                        </div>
+                        <div class="global-btn-icon-hover-overlay" title="Выбрать иконку">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                        </div>
+                    </div>
+                    <div style="flex-grow: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span class="button-item-name" style="font-size: 0.92rem; color: var(--ch-text-dark); font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${escapeHtml(btn.name)}
+                            </span>
+                            ${isSystem ? `<span style="font-size: 0.68rem; font-weight: 600; text-transform: uppercase; background: rgba(99, 102, 241, 0.1); color: var(--ch-purple); padding: 2px 6px; border-radius: 4px; letter-spacing: 0.3px;">Авто</span>` : ''}
+                        </div>
+                        <span style="font-size: 0.78rem; color: var(--ch-text-gray); font-weight: 400; display: block;">
+                            ${countText}
+                        </span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                    <button class="btn-upload-icon-trigger" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 6px; display: flex; align-items: center; justify-content: center; transition: color 0.2s;" title="Выбрать иконку">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                    </button>
+                    ${btn.iconUrl ? `
+                    <button class="btn-remove-icon-trigger" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 6px; display: flex; align-items: center; justify-content: center; transition: color 0.2s;" title="Сбросить загруженную иконку">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                    ` : ""}
+                    ${!isSystem ? `
                     <button class="btn-edit-global-button" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 6px; display: flex; align-items: center; justify-content: center; transition: color 0.2s;" title="Редактировать">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -4963,84 +5459,141 @@ function renderGlobalButtonsList() {
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                         </svg>
                     </button>
+                    ` : ""}
                 </div>
             </div>
+            ${!isSystem ? `
             <div class="button-item-edit-mode" style="display: none; align-items: center; gap: 10px; width: 100%;">
-                <input type="text" class="input-edit-global-button-name" value="${btn.name}" style="flex-grow: 1; border: 1px solid var(--ch-border); border-radius: 8px; padding: 6px 12px; font-family: inherit; font-size: 0.9rem; background: var(--ch-bg); color: var(--ch-text-dark); outline: none;">
+                <input type="text" class="input-edit-global-button-name" value="${escapeHtml(btn.name)}" style="flex-grow: 1; border: 1px solid var(--ch-border); border-radius: 8px; padding: 6px 12px; font-family: inherit; font-size: 0.9rem; background: var(--ch-bg); color: var(--ch-text-dark); outline: none;">
                 <button class="btn-save-edit-global-button" style="background: var(--ch-purple); color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">Сохранить</button>
                 <button class="btn-cancel-edit-global-button" style="background: none; border: 1px solid var(--ch-border); color: var(--ch-text-dark); border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; cursor: pointer;">Отмена</button>
             </div>
+            ` : ""}
         `;
 
         const viewModeDiv = item.querySelector(".button-item-view-mode");
         const editModeDiv = item.querySelector(".button-item-edit-mode");
         const editInput = item.querySelector(".input-edit-global-button-name");
-        
-        item.querySelector(".btn-edit-global-button").addEventListener("click", () => {
-            viewModeDiv.style.display = "none";
-            editModeDiv.style.display = "flex";
-            editInput.focus();
-        });
+        const iconBox = item.querySelector(".global-btn-icon-box");
+        const uploadIconBtn = item.querySelector(".btn-upload-icon-trigger");
+        const removeIconBtn = item.querySelector(".btn-remove-icon-trigger");
 
-        item.querySelector(".btn-cancel-edit-global-button").addEventListener("click", () => {
-            viewModeDiv.style.display = "flex";
-            editModeDiv.style.display = "none";
-            editInput.value = btn.name;
-        });
-
-        const saveEditAction = () => {
-            const newName = editInput.value.trim();
-            if (!newName) return;
-            if (newName.toLowerCase() !== btn.name.toLowerCase() && globalButtons.some(b => b.name.toLowerCase() === newName.toLowerCase())) {
-                alert("Кнопка с таким названием уже существует!");
-                return;
-            }
-
-            btn.name = newName;
-            saveGlobalButtons();
-            
-            renderGlobalButtonsList();
-            renderSelectedVideoButtons();
-            updateNotionButtonState();
+        const triggerUpload = () => {
+            openButtonIconModal({
+                currentIconUrl: btn.iconUrl,
+                title: `Иконка для "${btn.name}"`,
+                onSelect: async (url) => {
+                    btn.iconUrl = url;
+                    saveGlobalButtons();
+                    renderGlobalButtonsList();
+                    renderSelectedVideoButtons();
+                    updateNotionButtonState();
+                },
+                onDelete: async () => {
+                    delete btn.iconUrl;
+                    saveGlobalButtons();
+                    renderGlobalButtonsList();
+                    renderSelectedVideoButtons();
+                    updateNotionButtonState();
+                }
+            });
         };
 
-        item.querySelector(".btn-save-edit-global-button").addEventListener("click", saveEditAction);
-        editInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") saveEditAction();
-        });
+        iconBox.addEventListener("click", triggerUpload);
+        if (uploadIconBtn) {
+            uploadIconBtn.addEventListener("click", triggerUpload);
+        }
 
-        item.querySelector(".btn-delete-global-button").addEventListener("click", () => {
-            if (confirm(`Удалить кнопку "${btn.name}" из глобальной базы? Она также исчезнет из настроек и вкладок "Информация" во всех видео.`)) {
-                globalButtons = globalButtons.filter(b => b.id !== btn.id);
+        if (removeIconBtn) {
+            removeIconBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                delete btn.iconUrl;
                 saveGlobalButtons();
-
-                videos.forEach(v => {
-                    if (v.buttons) {
-                        const origLen = v.buttons.length;
-                        v.buttons = v.buttons.filter(vb => vb.buttonId !== btn.id);
-                        if (v.buttons.length !== origLen) {
-                            if (currentUid) {
-                                try {
-                                    updateDoc(doc(db, "users", currentUid, "videos", v.id), {
-                                        buttons: v.buttons
-                                    });
-                                } catch (e) {
-                                    console.error("Firestore sync error", e);
-                                }
-                            }
-                        }
-                    }
-                });
-
-                if (!currentUid) {
-                    localStorage.setItem("local_videos", JSON.stringify(videos));
-                }
-
                 renderGlobalButtonsList();
                 renderSelectedVideoButtons();
                 updateNotionButtonState();
+            });
+        }
+
+        if (!isSystem) {
+            const editBtn = item.querySelector(".btn-edit-global-button");
+            if (editBtn) {
+                editBtn.addEventListener("click", () => {
+                    viewModeDiv.style.display = "none";
+                    editModeDiv.style.display = "flex";
+                    editInput.focus();
+                });
             }
-        });
+
+            const cancelBtn = item.querySelector(".btn-cancel-edit-global-button");
+            if (cancelBtn) {
+                cancelBtn.addEventListener("click", () => {
+                    viewModeDiv.style.display = "flex";
+                    editModeDiv.style.display = "none";
+                    editInput.value = btn.name;
+                });
+            }
+
+            const saveEditAction = () => {
+                const newName = editInput.value.trim();
+                if (!newName) return;
+                if (newName.toLowerCase() !== btn.name.toLowerCase() && globalButtons.some(b => b.name.toLowerCase() === newName.toLowerCase())) {
+                    alert("Кнопка с таким названием уже существует!");
+                    return;
+                }
+
+                btn.name = newName;
+                saveGlobalButtons();
+                
+                renderGlobalButtonsList();
+                renderSelectedVideoButtons();
+                updateNotionButtonState();
+            };
+
+            const saveBtn = item.querySelector(".btn-save-edit-global-button");
+            if (saveBtn) saveBtn.addEventListener("click", saveEditAction);
+            if (editInput) {
+                editInput.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") saveEditAction();
+                });
+            }
+
+            const deleteBtn = item.querySelector(".btn-delete-global-button");
+            if (deleteBtn) {
+                deleteBtn.addEventListener("click", () => {
+                    if (confirm(`Удалить кнопку "${btn.name}" из глобальной базы? Она также исчезнет из настроек и вкладок "Описание" во всех видео.`)) {
+                        globalButtons = globalButtons.filter(b => b.id !== btn.id);
+                        saveGlobalButtons();
+
+                        videos.forEach(v => {
+                            if (v.buttons) {
+                                const origLen = v.buttons.length;
+                                v.buttons = v.buttons.filter(vb => vb.buttonId !== btn.id);
+                                if (v.buttons.length !== origLen) {
+                                    if (currentUid) {
+                                        try {
+                                            updateDoc(doc(db, "users", currentUid, "videos", v.id), {
+                                                buttons: v.buttons
+                                            });
+                                        } catch (e) {
+                                            console.error("Firestore sync error", e);
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        if (!currentUid) {
+                            localStorage.setItem("local_videos", JSON.stringify(videos));
+                        }
+
+                        renderGlobalButtonsList();
+                        renderSelectedVideoButtons();
+                        updateNotionButtonState();
+                    }
+                });
+            }
+        }
 
         globalButtonsListContainer.appendChild(item);
     });
@@ -5081,79 +5634,12 @@ function updateSidebarStatusPill(status) {
     if (text) text.textContent = textLabel;
 }
 
-// Brand icons helper for links carousel cards
-function getBrandIcon(name) {
-    const lowercase = name.toLowerCase();
-    if (lowercase.includes("notion")) {
-        return `<img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Notion-logo.svg" width="16" height="16" style="display: block;">`;
-    }
-    if (lowercase.includes("chatgpt")) {
-        return `<img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" width="16" height="16" style="display: block;">`;
-    }
-    if (lowercase.includes("figma")) {
-        return `<img src="https://upload.wikimedia.org/wikipedia/commons/3/33/Figma-logo.svg" width="12" height="16" style="display: block;">`;
-    }
-    if (lowercase.includes("youtube") || lowercase.includes("studio") || lowercase.includes("ютуб")) {
-        return `<img src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg" width="18" height="16" style="display: block;">`;
-    }
-    if (lowercase.includes("docs") || lowercase.includes("документ")) {
-        return `📄`;
-    }
-    if (lowercase.includes("сценарий") || lowercase.includes("script")) {
-        return `📝`;
-    }
-    if (lowercase.includes("доска") || lowercase.includes("board")) {
-        return `📋`;
-    }
-    if (lowercase.includes("таблица")) {
-        return `📊`;
-    }
-    if (lowercase.includes("съемк")) {
-        return `📷`;
-    }
-    return `🔗`;
-}
-
-// Update scroll state and arrow visibility for carousel
+// Backward compatibility stub for carousel arrows
 function updateCarouselScrollArrows() {
-    const carousel = document.getElementById("videoButtonsContainer");
-    const nextBtn = document.getElementById("btnCarouselNext");
-    const prevBtn = document.getElementById("btnCarouselPrev");
-    const fadeOverlay = document.querySelector(".carousel-fade-overlay");
-    const fadeOverlayLeft = document.querySelector(".carousel-fade-overlay-left");
-    if (!carousel) return;
-
-    setTimeout(() => {
-        const hasOverflow = carousel.scrollWidth > carousel.clientWidth;
-        if (hasOverflow) {
-            // Left scroll state
-            if (carousel.scrollLeft > 5) {
-                if (prevBtn) { prevBtn.style.display = "flex"; prevBtn.style.opacity = "1"; }
-                if (fadeOverlayLeft) fadeOverlayLeft.style.opacity = "1";
-            } else {
-                if (prevBtn) { prevBtn.style.display = "none"; prevBtn.style.opacity = "0"; }
-                if (fadeOverlayLeft) fadeOverlayLeft.style.opacity = "0";
-            }
-
-            // Right scroll state
-            const isAtEnd = carousel.scrollLeft + carousel.clientWidth >= carousel.scrollWidth - 5;
-            if (!isAtEnd) {
-                if (nextBtn) { nextBtn.style.display = "flex"; nextBtn.style.opacity = "1"; }
-                if (fadeOverlay) fadeOverlay.style.opacity = "1";
-            } else {
-                if (nextBtn) { nextBtn.style.display = "none"; nextBtn.style.opacity = "0"; }
-                if (fadeOverlay) fadeOverlay.style.opacity = "0";
-            }
-        } else {
-            if (prevBtn) { prevBtn.style.display = "none"; prevBtn.style.opacity = "0"; }
-            if (fadeOverlayLeft) fadeOverlayLeft.style.opacity = "0";
-            if (nextBtn) { nextBtn.style.display = "none"; nextBtn.style.opacity = "0"; }
-            if (fadeOverlay) fadeOverlay.style.opacity = "0";
-        }
-    }, 50);
+    // No-op for responsive grid layout
 }
 
-// Render dynamic links in the header links carousel
+// Render dynamic links in the header links grid (Screenshot 2 style)
 function updateNotionButtonState() {
     if (!videoButtonsContainer) return;
     videoButtonsContainer.innerHTML = "";
@@ -5169,17 +5655,16 @@ function updateNotionButtonState() {
                         const linkEl = document.createElement("a");
                         linkEl.href = vidBtn.url.trim();
                         linkEl.target = "_blank";
-                        linkEl.className = "btn-notion-link";
-                        linkEl.style.flexShrink = "0";
-                        linkEl.style.whiteSpace = "nowrap";
+                        linkEl.className = "video-grid-btn";
+                        linkEl.title = globalBtn.name;
                         linkEl.innerHTML = `
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14"
-                                height="14" style="margin-right: 6px; vertical-align: middle;">
+                            <span class="video-grid-btn-icon-wrap">${getButtonIconHtml(globalBtn)}</span>
+                            <span class="video-grid-btn-label">${escapeHtml(globalBtn.name)}</span>
+                            <svg class="video-grid-btn-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                                 <polyline points="15 3 21 3 21 9"></polyline>
                                 <line x1="10" y1="14" x2="21" y2="3"></line>
                             </svg>
-                            ${globalBtn.name}
                         `;
                         activeButtons.push(linkEl);
                     }
@@ -5190,20 +5675,20 @@ function updateNotionButtonState() {
         if (selectedVideo.videoLink && selectedVideo.videoLink.trim() !== "") {
             const ytid = getYouTubeId(selectedVideo.videoLink);
             if (ytid) {
+                const ytBtnObj = globalButtons.find(b => b.id === "gb_youtube_studio") || { name: "YouTube Studio" };
                 const studioEl = document.createElement("a");
                 studioEl.href = `https://studio.youtube.com/video/${ytid}/analytics/`;
                 studioEl.target = "_blank";
-                studioEl.className = "btn-notion-link";
-                studioEl.style.flexShrink = "0";
-                studioEl.style.whiteSpace = "nowrap";
+                studioEl.className = "video-grid-btn";
+                studioEl.title = "YouTube Studio";
                 studioEl.innerHTML = `
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14"
-                        height="14" style="margin-right: 6px; vertical-align: middle;">
+                    <span class="video-grid-btn-icon-wrap">${getButtonIconHtml(ytBtnObj)}</span>
+                    <span class="video-grid-btn-label">YouTube Studio</span>
+                    <svg class="video-grid-btn-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                         <polyline points="15 3 21 3 21 9"></polyline>
                         <line x1="10" y1="14" x2="21" y2="3"></line>
                     </svg>
-                    YouTube Studio
                 `;
                 activeButtons.push(studioEl);
             }
@@ -5214,12 +5699,10 @@ function updateNotionButtonState() {
         videoButtonsContainer.appendChild(btn);
     });
 
-    const wrapper = document.querySelector(".video-links-carousel-wrapper");
+    const wrapper = document.querySelector(".video-links-grid-wrapper") || document.querySelector(".video-links-carousel-wrapper");
     if (wrapper) {
         wrapper.style.display = activeButtons.length > 0 ? "block" : "none";
     }
-    
-    updateCarouselScrollArrows();
 }
 
 function openImageLightbox(src) {

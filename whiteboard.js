@@ -1434,6 +1434,7 @@ function createNewElement(type, x, y, extra = {}) {
     setTool('select');
     selectedElementIds.clear();
     selectedElementIds.add(id);
+    return elData;
 }
 
 tools.text.addEventListener('click', () => createNewElement('text', undefined, undefined, { content: "" }));
@@ -1799,6 +1800,180 @@ tools.image.addEventListener('click', () => {
         }
     });
 });
+
+// === БЫСТРАЯ ВСТАВКА ИЗОБРАЖЕНИЙ ПО CTRL+V И DRAG & DROP НА ДОСКУ ===
+
+let lastCanvasPointerX = null;
+let lastCanvasPointerY = null;
+
+window.addEventListener('mousemove', (e) => {
+    lastCanvasPointerX = e.clientX;
+    lastCanvasPointerY = e.clientY;
+}, { passive: true });
+
+async function insertImageFileToBoard(file, targetCanvasX, targetCanvasY) {
+    if (!file || !file.type || !file.type.startsWith('image/')) return;
+    
+    showSaveStatus("Вставка изображения...");
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const localDataUrl = e.target.result;
+        insertImageDataUrlToBoard(localDataUrl, targetCanvasX, targetCanvasY, file);
+    };
+    reader.readAsDataURL(file);
+}
+
+function insertImageDataUrlToBoard(dataUrl, targetCanvasX, targetCanvasY, originalFile = null) {
+    if (!dataUrl) return;
+    
+    const tempImg = new Image();
+    tempImg.onload = async () => {
+        const aspect = (tempImg.width && tempImg.height) ? (tempImg.width / tempImg.height) : (4 / 3);
+        let targetWidth = 320;
+        if (tempImg.width > 0) {
+            targetWidth = Math.min(Math.max(tempImg.width, 200), 500);
+        }
+        const targetHeight = Math.round(targetWidth / aspect);
+
+        let posX = targetCanvasX;
+        let posY = targetCanvasY;
+        if (posX === undefined || posY === undefined) {
+            if (lastCanvasPointerX !== null && lastCanvasPointerY !== null && boardViewport) {
+                const rect = boardViewport.getBoundingClientRect();
+                if (lastCanvasPointerX >= rect.left && lastCanvasPointerX <= rect.right &&
+                    lastCanvasPointerY >= rect.top && lastCanvasPointerY <= rect.bottom) {
+                    posX = Math.round((lastCanvasPointerX - panX) / zoom);
+                    posY = Math.round((lastCanvasPointerY - panY) / zoom);
+                }
+            }
+        }
+        if (posX === undefined || posY === undefined) {
+            const viewportCenterX = window.innerWidth / 2;
+            const viewportCenterY = window.innerHeight / 2;
+            posX = Math.round((viewportCenterX - panX) / zoom);
+            posY = Math.round((viewportCenterY - panY) / zoom);
+        }
+
+        const newEl = createNewElement('image', posX, posY, {
+            imageUrl: dataUrl,
+            width: targetWidth,
+            height: targetHeight
+        });
+
+        // Пытаемся загрузить на хостинг ImgBB в фоне для устойчивой ссылки
+        if (originalFile || dataUrl.startsWith('data:image/')) {
+            try {
+                const hostedUrl = await uploadToImgBB(originalFile || dataUrl);
+                if (hostedUrl && newEl && elements[newEl.id]) {
+                    elements[newEl.id].imageUrl = hostedUrl;
+                    saveElement(elements[newEl.id]);
+                    renderElements();
+                }
+                showSaveStatus("Сохранено");
+            } catch (err) {
+                console.warn("ImgBB upload failed, preserved as local DataURL:", err);
+                showSaveStatus("Сохранено локально");
+            }
+        } else {
+            showSaveStatus("Сохранено");
+        }
+    };
+    tempImg.onerror = () => {
+        createNewElement('image', targetCanvasX, targetCanvasY, {
+            imageUrl: dataUrl,
+            width: 300,
+            height: 200
+        });
+        showSaveStatus("Сохранено");
+    };
+    tempImg.src = dataUrl;
+}
+
+// Глобальный слушатель paste (Ctrl+V / Cmd+V)
+window.addEventListener('paste', (e) => {
+    // Вставка изображений активна только на самой доске
+    if (!activeBoardId || (boardActiveView && boardActiveView.style.display === 'none')) return;
+
+    // Если открыто модальное окно выбора файла (где свой обработчик), даем ему отработать
+    if (document.querySelector('.custom-confirm-overlay')) return;
+
+    const clipboardData = e.clipboardData || window.clipboardData;
+    if (!clipboardData) return;
+
+    let imageFile = null;
+
+    if (clipboardData.items) {
+        for (let i = 0; i < clipboardData.items.length; i++) {
+            const item = clipboardData.items[i];
+            if (item.type && item.type.startsWith('image/')) {
+                imageFile = item.getAsFile();
+                break;
+            }
+        }
+    }
+
+    if (!imageFile && clipboardData.files && clipboardData.files.length > 0) {
+        for (let i = 0; i < clipboardData.files.length; i++) {
+            const file = clipboardData.files[i];
+            if (file.type && file.type.startsWith('image/')) {
+                imageFile = file;
+                break;
+            }
+        }
+    }
+
+    if (imageFile) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        let posX = undefined;
+        let posY = undefined;
+        if (lastCanvasPointerX !== null && lastCanvasPointerY !== null && boardViewport) {
+            const rect = boardViewport.getBoundingClientRect();
+            if (lastCanvasPointerX >= rect.left && lastCanvasPointerX <= rect.right &&
+                lastCanvasPointerY >= rect.top && lastCanvasPointerY <= rect.bottom) {
+                posX = Math.round((lastCanvasPointerX - panX) / zoom);
+                posY = Math.round((lastCanvasPointerY - panY) / zoom);
+            }
+        }
+
+        insertImageFileToBoard(imageFile, posX, posY);
+    }
+});
+
+// Слушатель сообщений от родительского окна (например из модалки Todo)
+window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'pasteImage' && e.data.dataUrl) {
+        insertImageDataUrlToBoard(e.data.dataUrl);
+    }
+});
+
+// Drag & Drop изображений напрямую на холст доски
+if (boardViewport) {
+    boardViewport.addEventListener('dragover', (e) => {
+        if (e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files')) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+        }
+    });
+
+    boardViewport.addEventListener('drop', (e) => {
+        const files = e.dataTransfer ? e.dataTransfer.files : null;
+        if (files && files.length > 0) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.type && file.type.startsWith('image/')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const posX = Math.round((e.clientX - panX) / zoom);
+                    const posY = Math.round((e.clientY - panY) / zoom);
+                    insertImageFileToBoard(file, posX, posY);
+                }
+            }
+        }
+    });
+}
 
 // === ХЕЛПЕРЫ СТАТИСТИКИ И ЦВЕТОВ ВСТРОЕННЫХ ДОСОК ===
 const BOARD_PASTEL_COLORS = [

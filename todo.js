@@ -20398,6 +20398,48 @@ function initProjectWhiteboardModalHandlers() {
             closeProjectWhiteboardModal();
         }
     });
+
+    // Проброс вставки изображения (Ctrl+V / Cmd+V) в открытое модальное окно доски
+    window.addEventListener('paste', (e) => {
+        const modal = document.getElementById('projectWhiteboardModal');
+        if (!modal || modal.style.display !== 'flex') return;
+
+        const clipboardData = e.clipboardData || window.clipboardData;
+        if (!clipboardData) return;
+
+        let imageFile = null;
+        if (clipboardData.items) {
+            for (let i = 0; i < clipboardData.items.length; i++) {
+                const item = clipboardData.items[i];
+                if (item.type && item.type.startsWith('image/')) {
+                    imageFile = item.getAsFile();
+                    break;
+                }
+            }
+        }
+        if (!imageFile && clipboardData.files && clipboardData.files.length > 0) {
+            for (let i = 0; i < clipboardData.files.length; i++) {
+                const file = clipboardData.files[i];
+                if (file.type && file.type.startsWith('image/')) {
+                    imageFile = file;
+                    break;
+                }
+            }
+        }
+
+        if (imageFile) {
+            e.preventDefault();
+            e.stopPropagation();
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const iframe = document.getElementById('projectWhiteboardIframe');
+                if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({ type: 'pasteImage', dataUrl: ev.target.result }, '*');
+                }
+            };
+            reader.readAsDataURL(imageFile);
+        }
+    });
 }
 
 initProjectWhiteboardModalHandlers();

@@ -68,9 +68,17 @@ const dashboardView = document.getElementById('dashboardView');
 const boardActiveView = document.getElementById('boardActiveView');
 const boardsGrid = document.getElementById('boardsGrid');
 const btnCreateBoard = document.getElementById('btnCreateBoard');
+const btnCreateFolder = document.getElementById('btnCreateFolder');
 const boardSortSelect = document.getElementById('boardSortSelect');
+const dashboardMainTitle = document.getElementById('dashboardMainTitle');
+const dashboardBreadcrumbs = document.getElementById('dashboardBreadcrumbs');
+const folderReturnBanner = document.getElementById('folderReturnBanner');
+const btnBackToRoot = document.getElementById('btnBackToRoot');
 
 let loadedBoardsList = [];
+let loadedFoldersList = [];
+let unsubscribeFoldersList = null;
+let currentFolderId = sessionStorage.getItem('whiteboard_active_folder') || null;
 let currentSortOption = localStorage.getItem('board_sort_option') || 'updatedDesc';
 
 
@@ -164,6 +172,9 @@ function initRouting() {
     }
 }
 
+// Первичная инициализация роутинга
+initRouting();
+
 // Отслеживание входа пользователя
 window.addEventListener('authChanged', (e) => {
     const user = e.detail.user;
@@ -179,7 +190,7 @@ setTimeout(() => {
         db = window.db || getFirestore();
     }
     initRouting();
-}, 800);
+}, 400);
 
 // === УПРАВЛЕНИЕ СТЕКОМ ОТМЕНЫ И ПОВТОРА (UNDO / REDO) ===
 
@@ -284,10 +295,228 @@ function redo() {
     applyState(nextState, "Повтор действия...");
 }
 
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function getBoardsCountLabel(count) {
+    const c = Math.abs(count);
+    if (c % 10 === 1 && c % 100 !== 11) return `${count} доска`;
+    if ([2, 3, 4].includes(c % 10) && ![12, 13, 14].includes(c % 100)) return `${count} доски`;
+    return `${count} досок`;
+}
+
 // === ЛОГИКА ДЛЯ ДАШБОРДА ===
+
+let isSyncingSpecialFolders = false;
+async function ensureSpecialFoldersOrganized() {
+    if (isSyncingSpecialFolders) return;
+    isSyncingSpecialFolders = true;
+
+    try {
+        let localFolders = JSON.parse(localStorage.getItem('whiteboard_folders') || '[]');
+        let localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+        let firestoreFolders = null;
+
+        // Вспомогательная функция для поиска или создания папки
+        async function getOrMakeFolder(folderName) {
+            let found = localFolders.find(f => f.title === folderName);
+
+            if (currentUid && db) {
+                try {
+                    if (!firestoreFolders) {
+                        const fSnap = await getDocs(collection(db, "users", currentUid, "whiteboard_folders"));
+                        firestoreFolders = [];
+                        fSnap.forEach(d => firestoreFolders.push({ id: d.id, ...d.data() }));
+                    }
+
+                    const fireFolder = firestoreFolders.find(f => f.title === folderName);
+                    if (fireFolder) {
+                        found = fireFolder;
+                        if (!localFolders.some(f => f.id === fireFolder.id)) {
+                            localFolders.push(fireFolder);
+                            localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
+                        }
+                    } else if (!found) {
+                        const newFolderId = "folder_" + Math.random().toString(36).substring(2, 11);
+                        found = {
+                            id: newFolderId,
+                            title: folderName,
+                            createdAt: Date.now(),
+                            updatedAt: Date.now()
+                        };
+                        await setDoc(doc(db, "users", currentUid, "whiteboard_folders", newFolderId), found);
+                        localFolders.push(found);
+                        localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
+                        firestoreFolders.push(found);
+                    } else {
+                        await setDoc(doc(db, "users", currentUid, "whiteboard_folders", found.id), found);
+                    }
+                } catch (e) {
+                    console.warn(`Ошибка проверки папки '${folderName}' в Firestore:`, e);
+                }
+            }
+
+            if (!found) {
+                const newFolderId = "folder_" + Math.random().toString(36).substring(2, 11);
+                found = {
+                    id: newFolderId,
+                    title: folderName,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                };
+                localFolders.push(found);
+                localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
+            }
+
+            return found;
+        }
+
+        let boardsChanged = false;
+
+        // ----------------------------------------------------
+        // 1. ОРГАНИЗАЦИЯ ДОСОК ДЛЯ CREATORHUB (Папка "Видео")
+        // ----------------------------------------------------
+        const videoBoardIds = new Set();
+        const videoTitles = new Set();
+        let localVideos = [];
+        try {
+            localVideos = JSON.parse(localStorage.getItem('local_videos') || '[]');
+            localVideos.forEach(v => {
+                if (v.whiteboardId) videoBoardIds.add(v.whiteboardId);
+                if (v.title) videoTitles.add(v.title.trim().toLowerCase());
+            });
+        } catch (e) { }
+
+        if (currentUid && db) {
+            try {
+                const vidSnap = await getDocs(collection(db, "users", currentUid, "videos"));
+                vidSnap.forEach(d => {
+                    const data = d.data();
+                    if (data.whiteboardId) videoBoardIds.add(data.whiteboardId);
+                    if (data.title) videoTitles.add(data.title.trim().toLowerCase());
+                });
+            } catch (e) { }
+        }
+
+        const matchingVideoBoards = (loadedBoardsList || []).filter(b => {
+            if (b.videoId) return true;
+            if (videoBoardIds.has(b.id)) return true;
+            const t = (b.title || '').trim().toLowerCase();
+            if (t && videoTitles.has(t)) return true;
+            return false;
+        });
+
+        const hasCreatorHub = Boolean(localStorage.getItem('local_videos') || localStorage.getItem('creatorhub_global_buttons'));
+        if (matchingVideoBoards.length > 0 || hasCreatorHub || videoBoardIds.size > 0) {
+            const videoFolder = await getOrMakeFolder("Видео");
+            matchingVideoBoards.forEach(b => {
+                if (b.folderId !== videoFolder.id) {
+                    b.folderId = videoFolder.id;
+                    b.updatedAt = Date.now();
+                    boardsChanged = true;
+
+                    const lb = localBoards.find(x => x.id === b.id);
+                    if (lb) {
+                        lb.folderId = videoFolder.id;
+                        lb.updatedAt = Date.now();
+                    }
+
+                    if (currentUid && db) {
+                        setDoc(doc(db, "users", currentUid, "whiteboards", b.id), {
+                            folderId: videoFolder.id,
+                            updatedAt: Date.now()
+                        }, { merge: true }).catch(() => {});
+                    }
+                }
+            });
+        }
+
+        // ----------------------------------------------------
+        // 2. ОРГАНИЗАЦИЯ ДОСОК ДЛЯ TODO ПРОЕКТОВ (Папка "ToDo")
+        // ----------------------------------------------------
+        const todoBoardIds = new Set();
+        const todoTitles = new Set();
+        let hasTodo = false;
+
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('todo_cache_projects_')) {
+                    hasTodo = true;
+                    const projs = JSON.parse(localStorage.getItem(key) || '[]');
+                    projs.forEach(p => {
+                        if (p.whiteboardId) todoBoardIds.add(p.whiteboardId);
+                        if (p.name) todoTitles.add(p.name.trim().toLowerCase());
+                    });
+                }
+            }
+        } catch (e) { }
+
+        if (currentUid && db) {
+            try {
+                const projSnap = await getDocs(collection(db, "users", currentUid, "projects"));
+                if (!projSnap.empty) hasTodo = true;
+                projSnap.forEach(d => {
+                    const data = d.data();
+                    if (data.whiteboardId) todoBoardIds.add(data.whiteboardId);
+                    if (data.name) todoTitles.add(data.name.trim().toLowerCase());
+                });
+            } catch (e) { }
+        }
+
+        const matchingTodoBoards = (loadedBoardsList || []).filter(b => {
+            if (b.projectId) return true;
+            if (todoBoardIds.has(b.id)) return true;
+            const t = (b.title || '').trim().toLowerCase();
+            if (t && todoTitles.has(t)) return true;
+            return false;
+        });
+
+        if (matchingTodoBoards.length > 0 || hasTodo || todoBoardIds.size > 0) {
+            const todoFolder = await getOrMakeFolder("ToDo");
+            matchingTodoBoards.forEach(b => {
+                if (b.folderId !== todoFolder.id) {
+                    b.folderId = todoFolder.id;
+                    b.updatedAt = Date.now();
+                    boardsChanged = true;
+
+                    const lb = localBoards.find(x => x.id === b.id);
+                    if (lb) {
+                        lb.folderId = todoFolder.id;
+                        lb.updatedAt = Date.now();
+                    }
+
+                    if (currentUid && db) {
+                        setDoc(doc(db, "users", currentUid, "whiteboards", b.id), {
+                            folderId: todoFolder.id,
+                            updatedAt: Date.now()
+                        }, { merge: true }).catch(() => {});
+                    }
+                }
+            });
+        }
+
+        loadedFoldersList = localFolders;
+
+        if (boardsChanged) {
+            localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+            renderBoardsGrid();
+        }
+    } finally {
+        isSyncingSpecialFolders = false;
+    }
+}
 
 function setupFirebaseSyncForDashboard() {
     if (unsubscribeBoardsList) unsubscribeBoardsList();
+    if (unsubscribeFoldersList) unsubscribeFoldersList();
 
     const boardsCollRef = collection(db, "users", currentUid, "whiteboards");
     unsubscribeBoardsList = onSnapshot(boardsCollRef, (snap) => {
@@ -295,23 +524,132 @@ function setupFirebaseSyncForDashboard() {
         snap.forEach(docSnap => {
             boardsList.push({ id: docSnap.id, ...docSnap.data() });
         });
-        renderBoardsGrid(boardsList);
+        loadedBoardsList = boardsList;
+        localStorage.setItem('whiteboards_list', JSON.stringify(boardsList));
+        ensureSpecialFoldersOrganized();
+        renderBoardsGrid();
+    });
+
+    const foldersCollRef = collection(db, "users", currentUid, "whiteboard_folders");
+    unsubscribeFoldersList = onSnapshot(foldersCollRef, (snap) => {
+        const foldersList = [];
+        snap.forEach(docSnap => {
+            foldersList.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        loadedFoldersList = foldersList;
+        localStorage.setItem('whiteboard_folders', JSON.stringify(foldersList));
+        ensureSpecialFoldersOrganized();
+        renderBoardsGrid();
     });
 }
 
 function setupOfflineModeForDashboard() {
-    const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
-    renderBoardsGrid(localBoards);
+    loadedBoardsList = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+    loadedFoldersList = JSON.parse(localStorage.getItem('whiteboard_folders') || '[]');
+    ensureSpecialFoldersOrganized();
+    renderBoardsGrid();
 }
 
 function renderBoardsGrid(boardsList) {
     if (boardsList) {
         loadedBoardsList = boardsList;
     }
-    
-    // Сортировка loadedBoardsList
-    const sorted = [...loadedBoardsList];
-    sorted.sort((a, b) => {
+
+    if (!loadedFoldersList || loadedFoldersList.length === 0) {
+        loadedFoldersList = JSON.parse(localStorage.getItem('whiteboard_folders') || '[]');
+    }
+
+    // Проверяем, существует ли активная папка
+    if (currentFolderId && !loadedFoldersList.some(f => f.id === currentFolderId)) {
+        currentFolderId = null;
+        sessionStorage.removeItem('whiteboard_active_folder');
+    }
+
+    // Обновляем заголовок, хлебные крошки и плашку возврата
+    if (currentFolderId) {
+        const activeFolder = loadedFoldersList.find(f => f.id === currentFolderId);
+        const folderTitle = activeFolder ? activeFolder.title : 'Папка';
+
+        if (dashboardMainTitle) dashboardMainTitle.style.display = 'none';
+        if (dashboardBreadcrumbs) {
+            dashboardBreadcrumbs.style.display = 'flex';
+            dashboardBreadcrumbs.innerHTML = `
+                <a class="breadcrumb-link" id="breadcrumbRoot">Все доски</a>
+                <span class="breadcrumb-sep">/</span>
+                <span class="breadcrumb-current">${escapeHtml(folderTitle)}</span>
+            `;
+
+            const breadcrumbRoot = document.getElementById('breadcrumbRoot');
+            if (breadcrumbRoot) {
+                breadcrumbRoot.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    currentFolderId = null;
+                    sessionStorage.removeItem('whiteboard_active_folder');
+                    renderBoardsGrid();
+                });
+
+                breadcrumbRoot.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                });
+                breadcrumbRoot.addEventListener('dragenter', (e) => {
+                    e.preventDefault();
+                    breadcrumbRoot.classList.add('drag-over');
+                });
+                breadcrumbRoot.addEventListener('dragleave', () => {
+                    breadcrumbRoot.classList.remove('drag-over');
+                });
+                breadcrumbRoot.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    breadcrumbRoot.classList.remove('drag-over');
+                    const boardId = e.dataTransfer.getData('text/plain');
+                    if (boardId) {
+                        moveBoardToFolder(boardId, null);
+                    }
+                });
+            }
+        }
+
+        if (folderReturnBanner) {
+            folderReturnBanner.style.display = 'flex';
+            if (btnBackToRoot) {
+                btnBackToRoot.onclick = () => {
+                    currentFolderId = null;
+                    sessionStorage.removeItem('whiteboard_active_folder');
+                    renderBoardsGrid();
+                };
+            }
+            folderReturnBanner.ondragover = (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            };
+            folderReturnBanner.ondragenter = (e) => {
+                e.preventDefault();
+                folderReturnBanner.classList.add('drag-over');
+            };
+            folderReturnBanner.ondragleave = (e) => {
+                if (!folderReturnBanner.contains(e.relatedTarget)) {
+                    folderReturnBanner.classList.remove('drag-over');
+                }
+            };
+            folderReturnBanner.ondrop = (e) => {
+                e.preventDefault();
+                folderReturnBanner.classList.remove('drag-over');
+                const boardId = e.dataTransfer.getData('text/plain');
+                if (boardId) {
+                    moveBoardToFolder(boardId, null);
+                }
+            };
+        }
+    } else {
+        if (dashboardMainTitle) dashboardMainTitle.style.display = 'block';
+        if (dashboardBreadcrumbs) dashboardBreadcrumbs.style.display = 'none';
+        if (folderReturnBanner) folderReturnBanner.style.display = 'none';
+    }
+
+    // Сортировка досок
+    const sortedBoards = [...loadedBoardsList];
+    sortedBoards.sort((a, b) => {
         const titleA = (a.title || '').toLowerCase();
         const titleB = (b.title || '').toLowerCase();
         const createdA = a.createdAt || a.updatedAt || 0;
@@ -334,123 +672,720 @@ function renderBoardsGrid(boardsList) {
         }
     });
 
-    const topLevelBoards = sorted.filter(board => !board.parentBoardId);
+    // Сортировка папок
+    const sortedFolders = [...loadedFoldersList];
+    sortedFolders.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
     boardsGrid.innerHTML = '';
-    
-    if (topLevelBoards.length === 0) {
-        boardsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-sec); padding: 40px;">
-            У вас пока нет досок. Нажмите "Создать доску", чтобы начать!
-        </div>`;
-        return;
+
+    if (currentFolderId === null) {
+        // === ГЛАВНАЯ СТРАНИЦА (КОРЕНЬ) ===
+        const rootBoards = sortedBoards.filter(b => !b.parentBoardId && !b.folderId);
+
+        if (sortedFolders.length === 0 && rootBoards.length === 0) {
+            boardsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-sec); padding: 40px;">
+                У вас пока нет досок и папок. Нажмите "Создать доску" или "Создать папку", чтобы начать!
+            </div>`;
+            return;
+        }
+
+        // Рендерим папки
+        sortedFolders.forEach(folder => {
+            const folderCard = createFolderCard(folder);
+            boardsGrid.appendChild(folderCard);
+        });
+
+        // Рендерим доски
+        rootBoards.forEach(board => {
+            const boardCard = createBoardCard(board, false);
+            boardsGrid.appendChild(boardCard);
+        });
+    } else {
+        // === ВНУТРИ ПАПКИ ===
+        const folderBoards = sortedBoards.filter(b => !b.parentBoardId && b.folderId === currentFolderId);
+
+        if (folderBoards.length === 0) {
+            boardsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-sec); padding: 50px 20px;">
+                <div style="font-size: 2rem; margin-bottom: 8px;">📂</div>
+                <div style="font-weight: 600; font-size: 1.05rem; color: var(--text-color); margin-bottom: 6px;">В этой папке пока пусто</div>
+                <div style="font-size: 0.9rem;">Перетащите сюда доски с главной страницы или нажмите «Создать доску».</div>
+            </div>`;
+            return;
+        }
+
+        folderBoards.forEach(board => {
+            const boardCard = createBoardCard(board, true);
+            boardsGrid.appendChild(boardCard);
+        });
+    }
+}
+
+function createFolderCard(folder) {
+    const card = document.createElement('div');
+    card.className = 'board-folder-card';
+    card.dataset.folderId = folder.id;
+
+    const boardsCount = loadedBoardsList.filter(b => b.folderId === folder.id && !b.parentBoardId).length;
+
+    // Выпадающее меню действий для папки
+    const dropdown = document.createElement('div');
+    dropdown.className = 'board-actions-dropdown';
+    dropdown.style.display = 'none';
+
+    const openBtn = document.createElement('button');
+    openBtn.type = 'button';
+    openBtn.className = 'board-dropdown-item';
+    openBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span>Открыть</span>
+    `;
+    openBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.style.display = 'none';
+        currentFolderId = folder.id;
+        sessionStorage.setItem('whiteboard_active_folder', currentFolderId);
+        renderBoardsGrid();
+    });
+
+    const renameBtn = document.createElement('button');
+    renameBtn.type = 'button';
+    renameBtn.className = 'board-dropdown-item';
+    renameBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+        <span>Переименовать</span>
+    `;
+    renameBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.style.display = 'none';
+        showRenameFolderModal(folder.id, folder.title);
+    });
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'board-dropdown-item btn-delete';
+    deleteBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        <span>Удалить</span>
+    `;
+    deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.style.display = 'none';
+        showDeleteFolderModal(folder.id, folder.title);
+    });
+
+    dropdown.appendChild(openBtn);
+    dropdown.appendChild(renameBtn);
+    dropdown.appendChild(deleteBtn);
+    card.appendChild(dropdown);
+
+    const openMenu = () => {
+        document.querySelectorAll('.board-actions-dropdown').forEach(dd => {
+            if (dd !== dropdown) dd.style.display = 'none';
+        });
+        const isHidden = dropdown.style.display === 'none';
+        if (isHidden) {
+            dropdown.style.display = 'flex';
+            dropdown.style.position = 'absolute';
+            dropdown.style.left = 'auto';
+            dropdown.style.right = '16px';
+            dropdown.style.top = '48px';
+        } else {
+            dropdown.style.display = 'none';
+        }
+    };
+
+    card.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openMenu();
+    });
+
+    card.addEventListener('click', (e) => {
+        if (e.target.closest('.board-card-more') || e.target.closest('.board-actions-dropdown')) return;
+        currentFolderId = folder.id;
+        sessionStorage.setItem('whiteboard_active_folder', currentFolderId);
+        renderBoardsGrid();
+    });
+
+    // Drag and Drop (Папка как цель сброса)
+    card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    });
+    card.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        card.classList.add('drag-over');
+    });
+    card.addEventListener('dragleave', (e) => {
+        if (!card.contains(e.relatedTarget)) {
+            card.classList.remove('drag-over');
+        }
+    });
+    card.addEventListener('drop', (e) => {
+        e.preventDefault();
+        card.classList.remove('drag-over');
+        const boardId = e.dataTransfer.getData('text/plain');
+        if (boardId) {
+            moveBoardToFolder(boardId, folder.id);
+        }
+    });
+
+    const iconWrap = document.createElement('div');
+    iconWrap.className = 'folder-icon-wrap';
+    iconWrap.innerHTML = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+    `;
+    card.appendChild(iconWrap);
+
+    const title = document.createElement('h3');
+    title.className = 'board-card-title';
+    title.innerText = folder.title || 'Новая папка';
+    card.appendChild(title);
+
+    const meta = document.createElement('div');
+    meta.className = 'folder-card-meta';
+    meta.innerHTML = `
+        <span>${getBoardsCountLabel(boardsCount)}</span>
+        <span>Папка</span>
+    `;
+    card.appendChild(meta);
+
+    const moreBtn = document.createElement('button');
+    moreBtn.type = 'button';
+    moreBtn.className = 'board-card-more';
+    moreBtn.title = 'Действия с папкой';
+    moreBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1.5"></circle>
+            <circle cx="12" cy="5" r="1.5"></circle>
+            <circle cx="12" cy="19" r="1.5"></circle>
+        </svg>
+    `;
+    moreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openMenu();
+    });
+    card.appendChild(moreBtn);
+
+    return card;
+}
+
+function createBoardCard(board, isInFolder) {
+    const card = document.createElement('div');
+    card.className = 'board-card';
+    card.setAttribute('draggable', 'true');
+    card.dataset.boardId = board.id;
+
+    // Drag events для карточки доски
+    card.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', board.id);
+        e.dataTransfer.effectAllowed = 'move';
+        card.classList.add('is-dragging');
+    });
+
+    card.addEventListener('dragend', () => {
+        card.classList.remove('is-dragging');
+    });
+
+    // Создаем выпадающее меню действий
+    const dropdown = document.createElement('div');
+    dropdown.className = 'board-actions-dropdown';
+    dropdown.style.display = 'none';
+
+    const renameBtn = document.createElement('button');
+    renameBtn.type = 'button';
+    renameBtn.className = 'board-dropdown-item';
+    renameBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+        <span>Переименовать</span>
+    `;
+    renameBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.style.display = 'none';
+        showRenameBoardModal(board.id, board.title);
+    });
+    dropdown.appendChild(renameBtn);
+
+    // Кнопка перемещения на главную (если мы внутри папки)
+    if (isInFolder) {
+        const moveToRootBtn = document.createElement('button');
+        moveToRootBtn.type = 'button';
+        moveToRootBtn.className = 'board-dropdown-item';
+        moveToRootBtn.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>На главную</span>
+        `;
+        moveToRootBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.style.display = 'none';
+            moveBoardToFolder(board.id, null);
+        });
+        dropdown.appendChild(moveToRootBtn);
     }
 
-    topLevelBoards.forEach(board => {
-        const card = document.createElement('div');
-        card.className = 'board-card';
-        
-        // Создаем выпадающее меню действий
-        const dropdown = document.createElement('div');
-        dropdown.className = 'board-actions-dropdown';
+    // Кнопка перемещения в папку (или другую папку)
+    const moveBtn = document.createElement('button');
+    moveBtn.type = 'button';
+    moveBtn.className = 'board-dropdown-item';
+    moveBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            <polyline points="12 11 12 17 9 14"></polyline>
+        </svg>
+        <span>${isInFolder ? 'В другую папку...' : 'В папку...'}</span>
+    `;
+    moveBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         dropdown.style.display = 'none';
-        
-        const renameBtn = document.createElement('button');
-        renameBtn.className = 'board-dropdown-item';
-        renameBtn.innerHTML = `
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            <span>Переименовать</span>
-        `;
-        renameBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            dropdown.style.display = 'none';
-            showRenameBoardModal(board.id, board.title);
-        });
-        
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'board-dropdown-item btn-delete';
-        deleteBtn.innerHTML = `
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-            <span>Удалить</span>
-        `;
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            dropdown.style.display = 'none';
-            showDeleteBoardModal(board.id, board.title);
-        });
-        
-        dropdown.appendChild(renameBtn);
-        dropdown.appendChild(deleteBtn);
-        card.appendChild(dropdown);
+        showMoveBoardModal(board.id, board.title);
+    });
+    dropdown.appendChild(moveBtn);
 
-        const openMenu = () => {
-            document.querySelectorAll('.board-actions-dropdown').forEach(dd => {
-                if (dd !== dropdown) dd.style.display = 'none';
-            });
-            
-            const isHidden = dropdown.style.display === 'none';
-            if (isHidden) {
-                dropdown.style.display = 'flex';
-                dropdown.style.position = 'absolute';
-                dropdown.style.left = 'auto';
-                dropdown.style.right = '16px';
-                dropdown.style.top = '48px';
-            } else {
-                dropdown.style.display = 'none';
-            }
-        };
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'board-dropdown-item btn-delete';
+    deleteBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        <span>Удалить</span>
+    `;
+    deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.style.display = 'none';
+        showDeleteBoardModal(board.id, board.title);
+    });
+    dropdown.appendChild(deleteBtn);
 
-        card.addEventListener('contextmenu', (e) => {
+    card.appendChild(dropdown);
+
+    const openMenu = () => {
+        document.querySelectorAll('.board-actions-dropdown').forEach(dd => {
+            if (dd !== dropdown) dd.style.display = 'none';
+        });
+        const isHidden = dropdown.style.display === 'none';
+        if (isHidden) {
+            dropdown.style.display = 'flex';
+            dropdown.style.position = 'absolute';
+            dropdown.style.left = 'auto';
+            dropdown.style.right = '16px';
+            dropdown.style.top = '48px';
+        } else {
+            dropdown.style.display = 'none';
+        }
+    };
+
+    card.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openMenu();
+    });
+
+    card.addEventListener('click', (e) => {
+        if (e.target.closest('.board-card-more') || e.target.closest('.board-actions-dropdown')) return;
+        window.location.search = `?id=${board.id}`;
+    });
+
+    const title = document.createElement('h3');
+    title.className = 'board-card-title';
+    title.innerText = board.title || 'Без названия';
+    card.appendChild(title);
+
+    const dateStr = board.updatedAt ? new Date(board.updatedAt).toLocaleDateString('ru-RU') : 'Недавно';
+    const date = document.createElement('div');
+    date.className = 'board-card-date';
+    date.innerText = `Изменено: ${dateStr}`;
+    card.appendChild(date);
+
+    const moreBtn = document.createElement('button');
+    moreBtn.type = 'button';
+    moreBtn.className = 'board-card-more';
+    moreBtn.title = 'Действия';
+    moreBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1.5"></circle>
+            <circle cx="12" cy="5" r="1.5"></circle>
+            <circle cx="12" cy="19" r="1.5"></circle>
+        </svg>
+    `;
+    moreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openMenu();
+    });
+    card.appendChild(moreBtn);
+
+    return card;
+}
+
+// Перемещение доски в папку (или на главную при targetFolderId = null)
+async function moveBoardToFolder(boardId, targetFolderId) {
+    if (!boardId) return;
+
+    // Обновляем в локальном массиве
+    const board = loadedBoardsList.find(b => b.id === boardId);
+    if (board) {
+        board.folderId = targetFolderId || null;
+        board.updatedAt = Date.now();
+    }
+
+    // Сохраняем в localStorage
+    const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+    const idx = localBoards.findIndex(b => b.id === boardId);
+    if (idx !== -1) {
+        localBoards[idx].folderId = targetFolderId || null;
+        localBoards[idx].updatedAt = Date.now();
+        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+    }
+
+    // Сохраняем в Firestore
+    if (currentUid && db) {
+        try {
+            const boardDocRef = doc(db, "users", currentUid, "whiteboards", boardId);
+            await setDoc(boardDocRef, {
+                folderId: targetFolderId || null,
+                updatedAt: Date.now()
+            }, { merge: true });
+        } catch (err) {
+            console.error("Error moving board:", err);
+        }
+    }
+
+    renderBoardsGrid();
+}
+
+// Модальное окно создания папки
+function showCreateFolderModal() {
+    const modal = document.getElementById('createFolderModal');
+    const input = document.getElementById('createFolderInput');
+    const cancelBtn = document.getElementById('btnCreateFolderCancel');
+    const confirmBtn = document.getElementById('btnCreateFolderConfirm');
+    if (!modal || !input) return;
+
+    input.value = "Новая папка";
+    modal.style.display = 'flex';
+    input.focus();
+    input.select();
+
+    const newCancel = cancelBtn.cloneNode(true);
+    const newConfirm = confirmBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+    confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+
+    const handleCreate = async () => {
+        const trimmed = input.value.trim();
+        if (!trimmed) {
+            alert("Название папки не может быть пустым!");
+            return;
+        }
+        modal.style.display = 'none';
+        await executeCreateFolder(trimmed);
+    };
+
+    newCancel.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    newConfirm.addEventListener('click', handleCreate);
+
+    const handleKeydown = (e) => {
+        if (e.key === 'Enter') {
             e.preventDefault();
-            e.stopPropagation();
-            openMenu();
-        });
+            handleCreate();
+        } else if (e.key === 'Escape') {
+            modal.style.display = 'none';
+        }
+    };
+    input.removeEventListener('keydown', input._keydownHandler);
+    input._keydownHandler = handleKeydown;
+    input.addEventListener('keydown', handleKeydown);
+}
 
-        card.addEventListener('click', (e) => {
-            if (e.target.closest('.board-card-more') || e.target.closest('.board-actions-dropdown')) return;
-            window.location.search = `?id=${board.id}`;
-        });
+async function executeCreateFolder(title) {
+    const newFolderId = "folder_" + Math.random().toString(36).substring(2, 11);
+    const newFolderData = {
+        id: newFolderId,
+        title: title || "Новая папка",
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+    };
 
-        const title = document.createElement('h3');
-        title.className = 'board-card-title';
-        title.innerText = board.title || 'Без названия';
-        card.appendChild(title);
+    const localFolders = JSON.parse(localStorage.getItem('whiteboard_folders') || '[]');
+    localFolders.push(newFolderData);
+    localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
+    loadedFoldersList = localFolders;
 
-        const dateStr = board.updatedAt ? new Date(board.updatedAt).toLocaleDateString('ru-RU') : 'Недавно';
-        const date = document.createElement('div');
-        date.className = 'board-card-date';
-        date.innerText = `Изменено: ${dateStr}`;
-        card.appendChild(date);
+    if (currentUid && db) {
+        try {
+            const folderDocRef = doc(db, "users", currentUid, "whiteboard_folders", newFolderId);
+            await setDoc(folderDocRef, newFolderData);
+        } catch (err) {
+            console.error("Error creating folder in Firestore:", err);
+        }
+    }
 
-        const moreBtn = document.createElement('button');
-        moreBtn.className = 'board-card-more';
-        moreBtn.title = 'Действия';
-        moreBtn.innerHTML = `
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="1.5"></circle>
-                <circle cx="12" cy="5" r="1.5"></circle>
-                <circle cx="12" cy="19" r="1.5"></circle>
-            </svg>
-        `;
-        moreBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            openMenu();
-        });
-        card.appendChild(moreBtn);
+    renderBoardsGrid();
+}
 
-        boardsGrid.appendChild(card);
+// Модальное окно переименования папки
+function showRenameFolderModal(folderId, currentTitle) {
+    const modal = document.getElementById('renameFolderModal');
+    const input = document.getElementById('renameFolderInput');
+    const cancelBtn = document.getElementById('btnRenameFolderCancel');
+    const confirmBtn = document.getElementById('btnRenameFolderConfirm');
+    if (!modal || !input) return;
+
+    input.value = currentTitle || "";
+    modal.style.display = 'flex';
+    input.focus();
+    input.select();
+
+    const newCancel = cancelBtn.cloneNode(true);
+    const newConfirm = confirmBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+    confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+
+    const handleSave = async () => {
+        const trimmed = input.value.trim();
+        if (!trimmed) {
+            alert("Название папки не может быть пустым!");
+            return;
+        }
+        modal.style.display = 'none';
+        await executeRenameFolder(folderId, trimmed);
+    };
+
+    newCancel.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    newConfirm.addEventListener('click', handleSave);
+
+    const handleKeydown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSave();
+        } else if (e.key === 'Escape') {
+            modal.style.display = 'none';
+        }
+    };
+    input.removeEventListener('keydown', input._keydownHandler);
+    input._keydownHandler = handleKeydown;
+    input.addEventListener('keydown', handleKeydown);
+}
+
+async function executeRenameFolder(folderId, trimmedTitle) {
+    const localFolders = JSON.parse(localStorage.getItem('whiteboard_folders') || '[]');
+    const f = localFolders.find(x => x.id === folderId);
+    if (f) {
+        f.title = trimmedTitle;
+        f.updatedAt = Date.now();
+        localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
+    }
+    const memF = loadedFoldersList.find(x => x.id === folderId);
+    if (memF) {
+        memF.title = trimmedTitle;
+        memF.updatedAt = Date.now();
+    }
+
+    if (currentUid && db) {
+        try {
+            const folderDocRef = doc(db, "users", currentUid, "whiteboard_folders", folderId);
+            await setDoc(folderDocRef, {
+                title: trimmedTitle,
+                updatedAt: Date.now()
+            }, { merge: true });
+        } catch (err) {
+            console.error("Error renaming folder in Firestore:", err);
+        }
+    }
+
+    renderBoardsGrid();
+}
+
+// Модальное окно удаления папки
+function showDeleteFolderModal(folderId, folderTitle) {
+    const modal = document.getElementById('deleteFolderModal');
+    const titleSpan = document.getElementById('deleteFolderTitle');
+    const cancelBtn = document.getElementById('btnDeleteFolderCancel');
+    const confirmBtn = document.getElementById('btnDeleteFolderConfirm');
+    if (!modal) return;
+
+    if (titleSpan) titleSpan.innerText = `«${folderTitle || 'Без названия'}»`;
+    modal.style.display = 'flex';
+
+    const newCancel = cancelBtn.cloneNode(true);
+    const newConfirm = confirmBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+    confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+
+    newCancel.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    newConfirm.addEventListener('click', async () => {
+        modal.style.display = 'none';
+        await executeDeleteFolder(folderId);
     });
 }
+
+async function executeDeleteFolder(folderId) {
+    // 1. Возвращаем все доски из этой папки на главную
+    const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+    localBoards.forEach(b => {
+        if (b.folderId === folderId) {
+            b.folderId = null;
+            b.updatedAt = Date.now();
+        }
+    });
+    localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+
+    loadedBoardsList.forEach(b => {
+        if (b.folderId === folderId) {
+            b.folderId = null;
+            b.updatedAt = Date.now();
+        }
+    });
+
+    // 2. Удаляем саму папку из локального хранилища
+    let localFolders = JSON.parse(localStorage.getItem('whiteboard_folders') || '[]');
+    localFolders = localFolders.filter(f => f.id !== folderId);
+    localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
+    loadedFoldersList = localFolders;
+
+    // 3. Синхронизируем с Firestore
+    if (currentUid && db) {
+        try {
+            const batch = writeBatch(db);
+            loadedBoardsList.forEach(b => {
+                if (b.folderId === folderId) {
+                    const ref = doc(db, "users", currentUid, "whiteboards", b.id);
+                    batch.update(ref, { folderId: null, updatedAt: Date.now() });
+                }
+            });
+            const folderRef = doc(db, "users", currentUid, "whiteboard_folders", folderId);
+            batch.delete(folderRef);
+            await batch.commit();
+        } catch (err) {
+            console.error("Error deleting folder from Firestore:", err);
+        }
+    }
+
+    if (currentFolderId === folderId) {
+        currentFolderId = null;
+        sessionStorage.removeItem('whiteboard_active_folder');
+    }
+
+    renderBoardsGrid();
+}
+
+// Модальное окно выбора папки для перемещения доски
+function showMoveBoardModal(boardId, boardTitle) {
+    const modal = document.getElementById('moveBoardModal');
+    const titleSpan = document.getElementById('moveBoardTargetTitle');
+    const folderList = document.getElementById('moveBoardFolderList');
+    const cancelBtn = document.getElementById('btnMoveBoardCancel');
+    if (!modal || !folderList) return;
+
+    if (titleSpan) titleSpan.innerText = `«${boardTitle || 'Без названия'}»`;
+    folderList.innerHTML = '';
+
+    const currentBoard = loadedBoardsList.find(b => b.id === boardId);
+    const isInAnyFolder = currentBoard && Boolean(currentBoard.folderId);
+
+    if (isInAnyFolder) {
+        const rootOption = document.createElement('button');
+        rootOption.type = 'button';
+        rootOption.className = 'move-board-folder-item';
+        rootOption.innerHTML = `
+            <span style="display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                Главная страница (без папки)
+            </span>
+            <span style="font-size: 0.8rem; opacity: 0.7;">Корень</span>
+        `;
+        rootOption.addEventListener('click', () => {
+            modal.style.display = 'none';
+            moveBoardToFolder(boardId, null);
+        });
+        folderList.appendChild(rootOption);
+    }
+
+    const availableFolders = loadedFoldersList.filter(f => !currentBoard || f.id !== currentBoard.folderId);
+
+    if (availableFolders.length === 0 && !isInAnyFolder) {
+        folderList.innerHTML = `<div style="text-align: center; color: var(--text-sec); font-size: 0.88rem; padding: 16px;">
+            Папок пока нет. Создайте папку с помощью кнопки «Создать папку».
+        </div>`;
+    } else {
+        availableFolders.forEach(folder => {
+            const count = loadedBoardsList.filter(b => b.folderId === folder.id && !b.parentBoardId).length;
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'move-board-folder-item';
+            item.innerHTML = `
+                <span style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    ${escapeHtml(folder.title)}
+                </span>
+                <span style="font-size: 0.8rem; opacity: 0.7;">${getBoardsCountLabel(count)}</span>
+            `;
+            item.addEventListener('click', () => {
+                modal.style.display = 'none';
+                moveBoardToFolder(boardId, folder.id);
+            });
+            folderList.appendChild(item);
+        });
+    }
+
+    modal.style.display = 'flex';
+
+    cancelBtn.onclick = () => {
+        modal.style.display = 'none';
+    };
+}
+
+if (btnCreateFolder) {
+    btnCreateFolder.addEventListener('click', () => {
+        showCreateFolderModal();
+    });
+}
+
+// Закрытие контекстных меню при клике в любое место документа
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.board-actions-dropdown') && !e.target.closest('.board-card-more')) {
+        document.querySelectorAll('.board-actions-dropdown').forEach(dd => {
+            dd.style.display = 'none';
+        });
+    }
+});
 
 btnCreateBoard.addEventListener('click', () => {
     const newBoardId = "board_" + Math.random().toString(36).substring(2, 11);
     const newBoardData = {
         id: newBoardId,
+        folderId: currentFolderId || null,
         title: "Новая доска",
         width: 2400,
         height: 1600,

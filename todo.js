@@ -7717,6 +7717,7 @@ function startProjectsForUser(uid) {
         });
 
         saveCachedProjectsSnapshot(uid);
+        syncAllProjectBoardsToTodoFolder();
 
         snapshot.docChanges().forEach((change) => {
             const projData = change.doc.data();
@@ -20137,10 +20138,116 @@ initCalendarEventListeners();
 // ========================================================
 let activeModalWhiteboardId = null;
 
+async function getOrCreateTodoFolder() {
+    const FOLDER_NAME = "ToDo";
+
+    // 1. Проверяем в localStorage
+    let localFolders = JSON.parse(localStorage.getItem('whiteboard_folders') || '[]');
+    let todoFolder = localFolders.find(f => f.title === FOLDER_NAME);
+
+    // 2. Если авторизован, проверяем также в Firestore
+    if (currentUid && db) {
+        try {
+            const snap = await getDocs(collection(db, "users", currentUid, "whiteboard_folders"));
+            let fireFolder = null;
+            snap.forEach(d => {
+                const data = d.data();
+                if (data.title === FOLDER_NAME) {
+                    fireFolder = { id: d.id, ...data };
+                }
+            });
+            if (fireFolder) {
+                todoFolder = fireFolder;
+                if (!localFolders.some(f => f.id === fireFolder.id)) {
+                    localFolders.push(fireFolder);
+                    localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
+                }
+            } else if (!todoFolder) {
+                // Создаем новую папку "ToDo" в Firestore
+                const newFolderId = "folder_" + Math.random().toString(36).substring(2, 11);
+                const newFolderData = {
+                    id: newFolderId,
+                    title: FOLDER_NAME,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                };
+                await setDoc(doc(db, "users", currentUid, "whiteboard_folders", newFolderId), newFolderData);
+                localFolders.push(newFolderData);
+                localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
+                return newFolderId;
+            } else {
+                // Есть локально, синхронизируем в Firestore
+                await setDoc(doc(db, "users", currentUid, "whiteboard_folders", todoFolder.id), todoFolder);
+            }
+        } catch (e) {
+            console.warn("Ошибка проверки папки 'ToDo' в Firestore:", e);
+        }
+    }
+
+    // Если оффлайн и папки еще нет
+    if (!todoFolder) {
+        const newFolderId = "folder_" + Math.random().toString(36).substring(2, 11);
+        todoFolder = {
+            id: newFolderId,
+            title: FOLDER_NAME,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+        localFolders.push(todoFolder);
+        localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
+    }
+
+    return todoFolder.id;
+}
+
+async function syncAllProjectBoardsToTodoFolder() {
+    try {
+        const projectsWithBoards = projectsList.filter(p => p.whiteboardId);
+        if (projectsWithBoards.length === 0) return;
+
+        const todoFolderId = await getOrCreateTodoFolder();
+        if (!todoFolderId) return;
+
+        // Локальная синхронизация
+        const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+        let localChanged = false;
+        projectsWithBoards.forEach(p => {
+            const b = localBoards.find(item => item.id === p.whiteboardId);
+            if (b && b.folderId !== todoFolderId) {
+                b.folderId = todoFolderId;
+                b.updatedAt = Date.now();
+                localChanged = true;
+            }
+        });
+        if (localChanged) {
+            localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+        }
+
+        // Облачная синхронизация Firestore
+        if (currentUid && db) {
+            projectsWithBoards.forEach(async (p) => {
+                try {
+                    const boardRef = doc(db, "users", currentUid, "whiteboards", p.whiteboardId);
+                    const snap = await getDoc(boardRef);
+                    if (snap.exists() && snap.data().folderId !== todoFolderId) {
+                        await updateDoc(boardRef, {
+                            folderId: todoFolderId,
+                            updatedAt: Date.now()
+                        });
+                    }
+                } catch (e) { }
+            });
+        }
+    } catch (err) {
+        console.warn("Ошибка синхронизации досок проектов с папкой 'ToDo':", err);
+    }
+}
+
 async function getOrCreateProjectWhiteboard(projectId) {
     const project = projectsList.find(p => p.id === projectId);
     if (!project) return null;
 
+    const todoFolderId = await getOrCreateTodoFolder();
     let boardId = project.whiteboardId || null;
 
     // 1. Проверяем, существует ли уже привязанная доска
@@ -20151,12 +20258,17 @@ async function getOrCreateProjectWhiteboard(projectId) {
                 const snap = await getDoc(doc(db, "users", currentUid, "whiteboards", boardId));
                 if (snap.exists()) {
                     boardExists = true;
-                    // Если название проекта изменилось, синхронизируем с доской
-                    if (snap.data().title !== project.name) {
-                        updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), {
-                            title: project.name,
-                            updatedAt: Date.now()
-                        }).catch(() => {});
+                    const data = snap.data();
+                    const updates = {};
+                    if (data.title !== project.name) {
+                        updates.title = project.name;
+                    }
+                    if (data.folderId !== todoFolderId) {
+                        updates.folderId = todoFolderId;
+                    }
+                    if (Object.keys(updates).length > 0) {
+                        updates.updatedAt = Date.now();
+                        updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), updates).catch(() => {});
                     }
                 }
             } catch (e) {
@@ -20168,8 +20280,16 @@ async function getOrCreateProjectWhiteboard(projectId) {
             const found = localBoards.find(b => b.id === boardId);
             if (found) {
                 boardExists = true;
+                let changed = false;
                 if (found.title !== project.name) {
                     found.title = project.name;
+                    changed = true;
+                }
+                if (found.folderId !== todoFolderId) {
+                    found.folderId = todoFolderId;
+                    changed = true;
+                }
+                if (changed) {
                     found.updatedAt = Date.now();
                     localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
                 }
@@ -20186,10 +20306,18 @@ async function getOrCreateProjectWhiteboard(projectId) {
             const q = query(collection(db, "users", currentUid, "whiteboards"), where("projectId", "==", projectId));
             const snap = await getDocs(q);
             if (!snap.empty) {
-                const foundId = snap.docs[0].id;
+                const foundDoc = snap.docs[0];
+                const foundId = foundDoc.id;
                 project.whiteboardId = foundId;
                 updateDoc(doc(db, "users", currentUid, "projects", projectId), { whiteboardId: foundId }).catch(() => {});
                 saveCachedProjectsSnapshot(currentUid);
+
+                if (foundDoc.data().folderId !== todoFolderId) {
+                    updateDoc(doc(db, "users", currentUid, "whiteboards", foundId), {
+                        folderId: todoFolderId,
+                        updatedAt: Date.now()
+                    }).catch(() => {});
+                }
                 return foundId;
             }
         } catch (e) {
@@ -20200,17 +20328,23 @@ async function getOrCreateProjectWhiteboard(projectId) {
         const found = localBoards.find(b => b.projectId === projectId);
         if (found) {
             project.whiteboardId = found.id;
+            if (found.folderId !== todoFolderId) {
+                found.folderId = todoFolderId;
+                found.updatedAt = Date.now();
+                localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+            }
             saveCachedProjectsSnapshot(currentUid);
             return found.id;
         }
     }
 
-    // 3. Создаем новую доску с названием проекта!
+    // 3. Создаем новую доску с названием проекта в папке "ToDo"!
     const newBoardId = "board_" + Math.random().toString(36).substring(2, 11);
     const newBoardData = {
         id: newBoardId,
         title: project.name || "Доска проекта",
         projectId: projectId,
+        folderId: todoFolderId,
         width: 2400,
         height: 1600,
         createdAt: Date.now(),
@@ -20227,10 +20361,13 @@ async function getOrCreateProjectWhiteboard(projectId) {
 
     // Всегда сохраняем также в localStorage для оффлайн поддержки и списка досок
     const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
-    if (!localBoards.some(b => b.id === newBoardId)) {
+    const existingIdx = localBoards.findIndex(b => b.id === newBoardId);
+    if (existingIdx !== -1) {
+        localBoards[existingIdx] = newBoardData;
+    } else {
         localBoards.push(newBoardData);
-        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
     }
+    localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
 
     // Привязываем whiteboardId к проекту в БД и локально
     project.whiteboardId = newBoardId;
@@ -20443,4 +20580,6 @@ function initProjectWhiteboardModalHandlers() {
 }
 
 initProjectWhiteboardModalHandlers();
-
+setTimeout(() => {
+    syncAllProjectBoardsToTodoFolder();
+}, 400);

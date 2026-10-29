@@ -451,7 +451,7 @@
                     </button>
                     <button class="detail-tab-btn" data-tab="settings">
                         <svg class="detail-tab-icon" viewBox="0 0 24 24" stroke-width="2.5"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                        <span>Настройки</span>
+                        <span>Свойства</span>
                     </button>
                 </div>
 
@@ -485,11 +485,11 @@
                                     placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
                             </div>
 
-                            <!-- Кнопки и ссылки -->
+                            <!-- Кнопки -->
                             <div class="settings-buttons-section" style="margin-top: 16px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
                                 <div class="settings-buttons-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                                     <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span class="info-label" style="font-weight: 700; margin-bottom: 0;">Кнопки и ссылки</span>
+                                        <span class="info-label" style="font-weight: 700; margin-bottom: 0;">Кнопки</span>
                                         <button id="btnOpenGlobalButtons" type="button" class="btn-gear-settings" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 4px; display: flex; align-items: center; transition: color 0.2s;" title="База кнопок">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <circle cx="12" cy="12" r="3"></circle>
@@ -504,7 +504,7 @@
                                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                             </svg>
-                                            Добавить кнопку
+                                            Добавить
                                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left: 2px;">
                                                 <polyline points="6 9 12 15 18 9"></polyline>
                                             </svg>
@@ -515,15 +515,11 @@
                                     </div>
                                 </div>
                                 
-                                <p style="font-size: 0.82rem; color: var(--ch-text-gray); margin-bottom: 12px; margin-top: 0;">Добавьте кнопки, которые будут отображаться в этом видео.</p>
-                                
                                 <div style="font-size: 0.88rem; font-weight: 600; color: var(--ch-text-dark); margin-bottom: 10px;">Добавленные кнопки</div>
                                 
                                 <div id="selectedVideoButtonsContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
                                     <!-- Сюда будут рендериться добавленные кнопки для видео -->
                                 </div>
-                                
-                                <p style="font-size: 0.82rem; color: var(--ch-text-gray); margin-top: 12px; margin-bottom: 0;">Эти ссылки отображаются в верхней части панели информации.</p>
                             </div>
                             
                             <div class="settings-row"
@@ -1153,6 +1149,61 @@
         <div class="slash-menu-footer">
             <span>Закрыть меню</span>
             <span class="slash-menu-kbd">esc</span>
+        </div>
+    </div>
+
+    <!-- Модальное окно интерактивной доски видео -->
+    <div class="video-whiteboard-modal-overlay" id="videoWhiteboardModal" style="display: none;">
+        <div class="video-whiteboard-modal-card">
+            <div class="video-whiteboard-header">
+                <div class="video-whiteboard-header-left">
+                    <span class="video-whiteboard-icon-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                    </span>
+                    <span class="video-whiteboard-modal-title" id="videoWhiteboardModalTitle">Доска видео</span>
+                    <span class="video-whiteboard-badge">Whiteboard</span>
+                </div>
+                <div class="video-whiteboard-header-right">
+                    <a id="videoWhiteboardOpenExternalBtn" href="whiteboard.html" target="_blank" rel="noopener noreferrer" class="video-whiteboard-header-btn" title="Открыть в отдельной вкладке">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                    </a>
+                    <button type="button" id="videoWhiteboardFullscreenBtn" class="video-whiteboard-header-btn" title="Развернуть на весь экран">
+                        <svg class="icon-expand" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <polyline points="9 21 3 21 3 15"></polyline>
+                            <line x1="21" y1="3" x2="14" y2="10"></line>
+                            <line x1="3" y1="21" x2="10" y2="14"></line>
+                        </svg>
+                        <svg class="icon-compress" style="display: none;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="4 14 10 14 10 20"></polyline>
+                            <polyline points="20 10 14 10 14 4"></polyline>
+                            <line x1="14" y1="10" x2="21" y2="3"></line>
+                            <line x1="3" y1="21" x2="10" y2="14"></line>
+                        </svg>
+                    </button>
+                    <button type="button" id="videoWhiteboardCloseBtn" class="video-whiteboard-header-btn video-whiteboard-close-btn" title="Закрыть (Esc)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="video-whiteboard-body">
+                <div class="video-whiteboard-loader" id="videoWhiteboardLoader">
+                    <div class="video-whiteboard-spinner"></div>
+                    <span>Загрузка интерактивной доски...</span>
+                </div>
+                <iframe id="videoWhiteboardIframe" class="video-whiteboard-iframe" src="about:blank" allow="clipboard-read; clipboard-write"></iframe>
+            </div>
         </div>
     </div>
 

@@ -2518,6 +2518,204 @@ body.dark .board-element.in-column:not(.el-text):not(.el-sticker) {
     opacity: 0.75;
 }
 
+/* ========================================================
+   ПАПКИ И КАТАЛОГ ДОСОК (DASHBOARD FOLDERS & DRAG & DROP)
+   ======================================================== */
+.btn-secondary-action {
+    display: inline-flex;
+    align-items: center;
+    background: var(--canvas-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+}
+
+.btn-secondary-action:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    background: rgba(99, 102, 241, 0.06);
+    box-shadow: var(--shadow-md);
+}
+
+.board-folder-card {
+    background: var(--canvas-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 140px;
+    user-select: none;
+}
+
+.board-folder-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.board-folder-card.drag-over {
+    border: 2px dashed var(--accent-color) !important;
+    background: rgba(99, 102, 241, 0.12) !important;
+    transform: scale(1.02);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+}
+
+.board-card[draggable="true"] {
+    user-select: none;
+}
+
+.board-card.is-dragging {
+    opacity: 0.45;
+    transform: scale(0.97);
+}
+
+.folder-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--accent-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+body.dark .folder-icon-wrap {
+    background: rgba(99, 102, 241, 0.22);
+}
+
+.folder-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-sec);
+    margin-top: 8px;
+}
+
+.folder-return-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 18px;
+    margin-bottom: 24px;
+    background: var(--canvas-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.folder-return-banner.drag-over {
+    border: 2px dashed var(--accent-color) !important;
+    background: rgba(99, 102, 241, 0.14) !important;
+    transform: scale(1.01);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+}
+
+.folder-return-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.folder-return-btn:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    background: rgba(99, 102, 241, 0.06);
+}
+
+.folder-drop-hint {
+    font-size: 0.85rem;
+    color: var(--text-sec);
+}
+
+.dashboard-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.breadcrumb-link {
+    color: var(--text-sec);
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.15s ease;
+    border-radius: 4px;
+    padding: 2px 4px;
+}
+
+.breadcrumb-link:hover {
+    color: var(--accent-color);
+}
+
+.breadcrumb-link.drag-over {
+    color: var(--accent-color);
+    background: rgba(99, 102, 241, 0.14);
+    outline: 2px dashed var(--accent-color);
+}
+
+.breadcrumb-sep {
+    color: var(--text-sec);
+    opacity: 0.5;
+}
+
+.breadcrumb-current {
+    color: var(--text-color);
+    font-weight: 700;
+}
+
+.move-board-folder-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--canvas-bg);
+    color: var(--text-color);
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.move-board-folder-item:hover {
+    border-color: var(--accent-color);
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--accent-color);
+}
+
 
 
 

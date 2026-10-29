@@ -41,7 +41,17 @@ try {
 if (!channels) {
     channels = [];
 }
-let currentChannelId = localStorage.getItem("creatorhub_current_channel_id") || (channels[0] ? channels[0].id : null);
+let currentChannelId = localStorage.getItem("creatorhub_current_channel_id");
+if (currentChannelId && currentChannelId !== "no_channel") {
+    const isVis = channels.some(c => c.id === currentChannelId && !c.hidden);
+    if (!isVis) {
+        const firstVis = channels.find(c => !c.hidden);
+        currentChannelId = firstVis ? firstVis.id : (channels[0] ? channels[0].id : null);
+    }
+} else if (!currentChannelId) {
+    const firstVis = channels.find(c => !c.hidden);
+    currentChannelId = firstVis ? firstVis.id : (channels[0] ? channels[0].id : null);
+}
 let bulkSelectedVideoIds = [];
 let isBulkSelectionMode = false;
 
@@ -3760,8 +3770,9 @@ window.addEventListener('authChanged', (e) => {
                 if (userData && userData.channels && Array.isArray(userData.channels)) {
                     channels = userData.channels;
                     localStorage.setItem("creatorhub_channels", JSON.stringify(channels));
-                    if (channels.length > 0 && (!currentChannelId || !channels.some(c => c.id === currentChannelId))) {
-                        currentChannelId = channels[0].id;
+                    const visibleChannels = channels.filter(c => !c.hidden);
+                    if (visibleChannels.length > 0 && (!currentChannelId || (!visibleChannels.some(c => c.id === currentChannelId) && currentChannelId !== "no_channel"))) {
+                        currentChannelId = visibleChannels[0].id;
                         localStorage.setItem("creatorhub_current_channel_id", currentChannelId);
                     }
                     renderChannelSwitcher();
@@ -7732,6 +7743,9 @@ if (btnSelectButtonToAdd) {
                 ch.bannerUrl = currentBanner;
                 ch.avatarUrl = currentAvatar;
                 ch.notionUrl = notionUrlInput ? notionUrlInput.value.trim() : "";
+                if (ch.whiteboardId) {
+                    syncChannelWhiteboardTitle(ch.id, `Доска: ${ch.name}`);
+                }
 
                 saveChannels();
                 renderChannelSwitcher();
@@ -7822,6 +7836,16 @@ if (btnSelectButtonToAdd) {
             }
         }
 
+        // Настройка кнопки открытия интерактивной доски канала
+        const btnOpenWhiteboard = document.getElementById("btnChannelOpenWhiteboard");
+        if (btnOpenWhiteboard) {
+            btnOpenWhiteboard.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openChannelWhiteboardModal(ch.id);
+            };
+        }
+
         // Кнопка закрытия/назад на баннере
         const btnBack = document.getElementById("btnChannelPageBack");
         if (btnBack) {
@@ -7867,13 +7891,30 @@ if (btnSelectButtonToAdd) {
         if (!row) return;
         row.innerHTML = "";
 
-        if (!channels || channels.length === 0) {
+        const visibleChannels = (channels || []).filter(ch => !ch.hidden);
+        const hasVideosWithoutChannel = videos.some(v => !v.deleted && (!v.channelId || !channels.some(ch => ch.id === v.channelId)));
+
+        if (visibleChannels.length === 0 && !hasVideosWithoutChannel) {
             row.style.display = "none";
             return;
         }
         row.style.display = "flex";
 
-        channels.forEach(ch => {
+        // Если текущий выбранный канал стал скрытым или не найден среди видимых
+        if (currentChannelId && currentChannelId !== "no_channel") {
+            const isCurrentVisible = visibleChannels.some(ch => ch.id === currentChannelId);
+            if (!isCurrentVisible) {
+                currentChannelId = visibleChannels[0] ? visibleChannels[0].id : (hasVideosWithoutChannel ? "no_channel" : null);
+                localStorage.setItem("creatorhub_current_channel_id", currentChannelId || "");
+                updateHashRoute(currentFilter, currentChannelId);
+            }
+        } else if (!currentChannelId && visibleChannels.length > 0) {
+            currentChannelId = visibleChannels[0].id;
+            localStorage.setItem("creatorhub_current_channel_id", currentChannelId);
+            updateHashRoute(currentFilter, currentChannelId);
+        }
+
+        visibleChannels.forEach(ch => {
             const btn = document.createElement("button");
             btn.type = "button";
             btn.className = "channel-pill-btn" + (ch.id === currentChannelId ? " active" : "");
@@ -7943,7 +7984,6 @@ if (btnSelectButtonToAdd) {
         });
 
         // Добавляем вкладку "Без канала", только если есть видео без привязанного канала
-        const hasVideosWithoutChannel = videos.some(v => !v.deleted && (!v.channelId || !channels.some(ch => ch.id === v.channelId)));
         if (hasVideosWithoutChannel) {
             const btn = document.createElement("button");
             btn.type = "button";
@@ -7990,7 +8030,7 @@ if (btnSelectButtonToAdd) {
 
         channels.forEach((ch, idx) => {
             const item = document.createElement("div");
-            item.className = "channel-settings-item";
+            item.className = "channel-settings-item" + (ch.hidden ? " is-hidden" : "");
             item.style.display = "flex";
             item.style.alignItems = "center";
             item.style.justifyContent = "space-between";
@@ -8113,12 +8153,28 @@ if (btnSelectButtonToAdd) {
             nameInput.style.transition = "all 0.2s";
 
             leftWrap.appendChild(nameInput);
+
+            if (ch.hidden) {
+                const hiddenBadge = document.createElement("span");
+                hiddenBadge.className = "channel-hidden-badge";
+                hiddenBadge.textContent = "Скрыт";
+                hiddenBadge.style.fontSize = "0.72rem";
+                hiddenBadge.style.fontWeight = "600";
+                hiddenBadge.style.padding = "2px 8px";
+                hiddenBadge.style.borderRadius = "6px";
+                hiddenBadge.style.backgroundColor = "rgba(148, 163, 184, 0.15)";
+                hiddenBadge.style.color = "var(--ch-text-gray)";
+                hiddenBadge.style.marginLeft = "4px";
+                hiddenBadge.style.flexShrink = "0";
+                leftWrap.appendChild(hiddenBadge);
+            }
+
             item.appendChild(leftWrap);
 
             const actionsWrap = document.createElement("div");
             actionsWrap.style.display = "flex";
             actionsWrap.style.alignItems = "center";
-            actionsWrap.style.gap = "8px";
+            actionsWrap.style.gap = "6px";
 
             const saveBtn = document.createElement("button");
             saveBtn.type = "button";
@@ -8141,14 +8197,73 @@ if (btnSelectButtonToAdd) {
 
             saveBtn.addEventListener("click", () => {
                 ch.name = nameInput.value.trim() || "Без названия";
+                if (ch.whiteboardId) {
+                    syncChannelWhiteboardTitle(ch.id, `Доска: ${ch.name}`);
+                }
                 saveChannels();
                 renderSettingsChannels();
                 renderChannelSwitcher();
             });
 
+            // Кнопка видимости канала (глазик)
+            const visibilityBtn = document.createElement("button");
+            visibilityBtn.type = "button";
+            visibilityBtn.className = "btn-toggle-channel-visibility" + (ch.hidden ? " is-hidden" : "");
+            visibilityBtn.title = ch.hidden ? "Показать канал на главной" : "Скрыть канал с главной (в архив)";
+            visibilityBtn.setAttribute("aria-label", visibilityBtn.title);
+
+            if (ch.hidden) {
+                // Перечеркнутый глазик (скрыт)
+                visibilityBtn.innerHTML = `
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>`;
+            } else {
+                // Открытый глазик (видим)
+                visibilityBtn.innerHTML = `
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>`;
+            }
+
+            visibilityBtn.addEventListener("click", () => {
+                ch.hidden = !ch.hidden;
+
+                // Если скрыли канал, который сейчас был активным на главной странице
+                if (ch.hidden && currentChannelId === ch.id) {
+                    const firstVisible = channels.find(c => !c.hidden);
+                    if (firstVisible) {
+                        currentChannelId = firstVisible.id;
+                    } else {
+                        const hasNoChannelVideos = videos.some(v => !v.deleted && (!v.channelId || !channels.some(ch => ch.id === v.channelId)));
+                        currentChannelId = hasNoChannelVideos ? "no_channel" : null;
+                    }
+                    localStorage.setItem("creatorhub_current_channel_id", currentChannelId || "");
+                    updateHashRoute(currentFilter, currentChannelId);
+                } else if (!ch.hidden && (!currentChannelId || currentChannelId === "no_channel")) {
+                    const visibleList = channels.filter(c => !c.hidden);
+                    if (visibleList.length === 1) {
+                        currentChannelId = ch.id;
+                        localStorage.setItem("creatorhub_current_channel_id", currentChannelId);
+                        updateHashRoute(currentFilter, currentChannelId);
+                    }
+                }
+
+                saveChannels();
+                renderSettingsChannels();
+                renderChannelSwitcher();
+                renderVideosList();
+                updateStatsCounters();
+            });
+
+            actionsWrap.appendChild(visibilityBtn);
+
             const deleteBtn = document.createElement("button");
             deleteBtn.type = "button";
             deleteBtn.className = "btn-delete-channel";
+            deleteBtn.title = "Удалить канал";
             deleteBtn.style.background = "none";
             deleteBtn.style.border = "none";
             deleteBtn.style.color = "#dc2626";
@@ -8183,7 +8298,8 @@ if (btnSelectButtonToAdd) {
                 // Удаляем канал из списка
                 channels.splice(idx, 1);
                 if (currentChannelId === ch.id) {
-                    currentChannelId = channels[0] ? channels[0].id : null;
+                    const firstVisible = channels.find(c => !c.hidden);
+                    currentChannelId = firstVisible ? firstVisible.id : null;
                     localStorage.setItem("creatorhub_current_channel_id", currentChannelId || "");
                     updateHashRoute(currentFilter, currentChannelId);
                 }
@@ -8304,10 +8420,11 @@ if (btnSelectButtonToAdd) {
                     const newCh = {
                         id: "ch_" + Date.now(),
                         name: newName.trim(),
-                        avatarUrl: ""
+                        avatarUrl: "",
+                        hidden: false
                     };
                     channels.push(newCh);
-                    if (!currentChannelId) {
+                    if (!currentChannelId || currentChannelId === "no_channel") {
                         currentChannelId = newCh.id;
                         localStorage.setItem("creatorhub_current_channel_id", newCh.id);
                     }
@@ -8777,7 +8894,8 @@ if (btnSelectButtonToAdd) {
     async function syncAllVideoBoardsToVideoFolder() {
         try {
             const videosWithBoards = videos.filter(v => v.whiteboardId);
-            if (videosWithBoards.length === 0) return;
+            const channelsWithBoards = (channels || []).filter(c => c.whiteboardId);
+            if (videosWithBoards.length === 0 && channelsWithBoards.length === 0) return;
 
             const videoFolderId = await getOrCreateVideoFolder();
             if (!videoFolderId) return;
@@ -8793,6 +8911,14 @@ if (btnSelectButtonToAdd) {
                     localChanged = true;
                 }
             });
+            channelsWithBoards.forEach(c => {
+                const b = localBoards.find(item => item.id === c.whiteboardId);
+                if (b && b.folderId !== videoFolderId) {
+                    b.folderId = videoFolderId;
+                    b.updatedAt = Date.now();
+                    localChanged = true;
+                }
+            });
             if (localChanged) {
                 localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
             }
@@ -8802,6 +8928,18 @@ if (btnSelectButtonToAdd) {
                 videosWithBoards.forEach(async (v) => {
                     try {
                         const boardRef = doc(db, "users", currentUid, "whiteboards", v.whiteboardId);
+                        const snap = await getDoc(boardRef);
+                        if (snap.exists() && snap.data().folderId !== videoFolderId) {
+                            await updateDoc(boardRef, {
+                                folderId: videoFolderId,
+                                updatedAt: Date.now()
+                            });
+                        }
+                    } catch (e) { }
+                });
+                channelsWithBoards.forEach(async (c) => {
+                    try {
+                        const boardRef = doc(db, "users", currentUid, "whiteboards", c.whiteboardId);
                         const snap = await getDoc(boardRef);
                         if (snap.exists() && snap.data().folderId !== videoFolderId) {
                             await updateDoc(boardRef, {
@@ -9012,6 +9150,206 @@ if (btnSelectButtonToAdd) {
         if (!video || !video.whiteboardId) return;
 
         const boardId = video.whiteboardId;
+        if (currentUid && db) {
+            updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), {
+                title: newTitle,
+                updatedAt: Date.now()
+            }).catch(() => { });
+        }
+
+        const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+        const idx = localBoards.findIndex(b => b.id === boardId);
+        if (idx !== -1) {
+            localBoards[idx].title = newTitle;
+            localBoards[idx].updatedAt = Date.now();
+            localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+        }
+    }
+
+    async function getOrCreateChannelWhiteboard(channelId) {
+        const ch = channels.find(c => c.id === channelId);
+        if (!ch) return null;
+
+        const videoFolderId = await getOrCreateVideoFolder();
+        let boardId = ch.whiteboardId || null;
+        const boardTitle = ch.name ? `Доска: ${ch.name}` : "Доска канала";
+
+        // 1. Проверяем, существует ли уже привязанная доска
+        if (boardId) {
+            let boardExists = false;
+            if (currentUid && db) {
+                try {
+                    const snap = await getDoc(doc(db, "users", currentUid, "whiteboards", boardId));
+                    if (snap.exists()) {
+                        boardExists = true;
+                        const data = snap.data();
+                        const updates = {};
+                        if (data.title !== boardTitle) {
+                            updates.title = boardTitle;
+                        }
+                        if (data.folderId !== videoFolderId) {
+                            updates.folderId = videoFolderId;
+                        }
+                        if (Object.keys(updates).length > 0) {
+                            updates.updatedAt = Date.now();
+                            updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), updates).catch(() => { });
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Ошибка проверки доски канала в Firestore:", e);
+                    boardExists = true;
+                }
+            } else {
+                const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+                const found = localBoards.find(b => b.id === boardId);
+                if (found) {
+                    boardExists = true;
+                    let changed = false;
+                    if (found.title !== boardTitle) {
+                        found.title = boardTitle;
+                        changed = true;
+                    }
+                    if (found.folderId !== videoFolderId) {
+                        found.folderId = videoFolderId;
+                        changed = true;
+                    }
+                    if (changed) {
+                        found.updatedAt = Date.now();
+                        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+                    }
+                }
+            }
+            if (boardExists) {
+                return boardId;
+            }
+        }
+
+        // 2. Поищем существующую доску по channelId
+        if (currentUid && db) {
+            try {
+                const q = query(collection(db, "users", currentUid, "whiteboards"), where("channelId", "==", channelId));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const foundDoc = snap.docs[0];
+                    const foundId = foundDoc.id;
+                    ch.whiteboardId = foundId;
+                    saveChannels();
+
+                    if (foundDoc.data().folderId !== videoFolderId || foundDoc.data().title !== boardTitle) {
+                        updateDoc(doc(db, "users", currentUid, "whiteboards", foundId), {
+                            folderId: videoFolderId,
+                            title: boardTitle,
+                            updatedAt: Date.now()
+                        }).catch(() => { });
+                    }
+                    return foundId;
+                }
+            } catch (e) {
+                console.warn("Поиск существующей доски по channelId:", e);
+            }
+        } else {
+            const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+            const found = localBoards.find(b => b.channelId === channelId);
+            if (found) {
+                ch.whiteboardId = found.id;
+                saveChannels();
+                let changed = false;
+                if (found.folderId !== videoFolderId) {
+                    found.folderId = videoFolderId;
+                    changed = true;
+                }
+                if (found.title !== boardTitle) {
+                    found.title = boardTitle;
+                    changed = true;
+                }
+                if (changed) {
+                    found.updatedAt = Date.now();
+                    localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+                }
+                return found.id;
+            }
+        }
+
+        // 3. Создаем новую доску с названием канала в папке "Видео"
+        const newBoardId = "board_" + Math.random().toString(36).substring(2, 11);
+        const newBoardData = {
+            id: newBoardId,
+            title: boardTitle,
+            channelId: channelId,
+            folderId: videoFolderId,
+            width: 2400,
+            height: 1600,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+
+        if (currentUid && db) {
+            try {
+                await setDoc(doc(db, "users", currentUid, "whiteboards", newBoardId), newBoardData);
+            } catch (e) {
+                console.error("Ошибка сохранения новой доски канала в Firestore:", e);
+            }
+        }
+
+        const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+        const existingIdx = localBoards.findIndex(b => b.id === newBoardId);
+        if (existingIdx !== -1) {
+            localBoards[existingIdx] = newBoardData;
+        } else {
+            localBoards.push(newBoardData);
+        }
+        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+
+        ch.whiteboardId = newBoardId;
+        saveChannels();
+
+        return newBoardId;
+    }
+
+    async function openChannelWhiteboardModal(channelId) {
+        const ch = channels.find(c => c.id === channelId);
+        if (!ch) return;
+
+        const modal = document.getElementById('videoWhiteboardModal');
+        const titleEl = document.getElementById('videoWhiteboardModalTitle');
+        const openExtBtn = document.getElementById('videoWhiteboardOpenExternalBtn');
+        const loader = document.getElementById('videoWhiteboardLoader');
+        const iframe = document.getElementById('videoWhiteboardIframe');
+        if (!modal || !iframe) return;
+
+        titleEl.textContent = ch.name ? `Доска канала: ${ch.name}` : 'Доска канала';
+        if (loader) loader.style.display = 'flex';
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        try {
+            const boardId = await getOrCreateChannelWhiteboard(channelId);
+            if (!boardId) {
+                closeVideoWhiteboardModal();
+                return;
+            }
+
+            if (openExtBtn) {
+                openExtBtn.href = `whiteboard.html?id=${encodeURIComponent(boardId)}`;
+            }
+
+            iframe.onload = () => {
+                if (loader) loader.style.display = 'none';
+            };
+
+            iframe.src = `whiteboard.html?id=${encodeURIComponent(boardId)}&embed=1`;
+        } catch (err) {
+            console.error("Ошибка при открытии доски канала:", err);
+            if (loader) loader.style.display = 'none';
+        }
+    }
+
+    function syncChannelWhiteboardTitle(channelId, newTitle) {
+        if (!channelId || !newTitle) return;
+        const ch = channels.find(c => c.id === channelId);
+        if (!ch || !ch.whiteboardId) return;
+
+        const boardId = ch.whiteboardId;
         if (currentUid && db) {
             updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), {
                 title: newTitle,

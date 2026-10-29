@@ -33,6 +33,7 @@ let panY = 100;
 let isPanning = false;
 let startPanX = 0;
 let startPanY = 0;
+let hasCenteredOnLoad = false;
 
 // Состояние сессии рисования (iOS PencilKit style)
 let isDrawing = false;
@@ -150,6 +151,9 @@ function initRouting() {
     const boardId = urlParams.get('id');
 
     if (boardId) {
+        if (activeBoardId !== boardId) {
+            hasCenteredOnLoad = false;
+        }
         activeBoardId = boardId;
         dashboardView.style.display = 'none';
         boardActiveView.style.display = 'block';
@@ -174,6 +178,10 @@ function initRouting() {
 
 // Первичная инициализация роутинга
 initRouting();
+
+window.addEventListener('popstate', () => {
+    initRouting();
+});
 
 // Отслеживание входа пользователя
 window.addEventListener('authChanged', (e) => {
@@ -1745,6 +1753,53 @@ function zoomTo(newZoom, centerX, centerY) {
     zoom = Math.min(Math.max(newZoom, 0.2), 3.0);
     panX = centerX - ((centerX - panX) * zoom) / prevZoom;
     panY = centerY - ((centerY - panY) * zoom) / prevZoom;
+    updateTransform();
+}
+
+function centerBoardOnElements() {
+    const els = Object.values(elements || {});
+    const headerEl = document.querySelector('.board-header');
+    const headerHeight = headerEl ? headerEl.offsetHeight : 64;
+    const bannerEl = document.getElementById('mobileReadOnlyBanner');
+    const bannerHeight = (bannerEl && bannerEl.style.display !== 'none') ? (bannerEl.offsetHeight || 40) : 0;
+    
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = Math.max(100, window.innerHeight - headerHeight - bannerHeight);
+    const isMobileOrTablet = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    let validCount = 0;
+    els.forEach(el => {
+        if (el && typeof el.x === 'number' && typeof el.y === 'number') {
+            validCount++;
+            minX = Math.min(minX, el.x);
+            maxX = Math.max(maxX, el.x + (el.width || 200));
+            minY = Math.min(minY, el.y);
+            maxY = Math.max(maxY, el.y + (el.height || 150));
+        }
+    });
+
+    if (validCount > 0 && isFinite(minX) && isFinite(maxX)) {
+        const contentWidth = maxX - minX;
+        const contentHeight = maxY - minY;
+        const centerX = minX + contentWidth / 2;
+        const centerY = minY + contentHeight / 2;
+
+        if (isMobileOrTablet) {
+            zoom = Math.min(viewportWidth / (contentWidth + 80), viewportHeight / (contentHeight + 80));
+            zoom = Math.min(Math.max(zoom, 0.15), 1.2);
+        }
+        
+        panX = viewportWidth / 2 - centerX * zoom;
+        panY = (headerHeight + bannerHeight) + viewportHeight / 2 - centerY * zoom;
+    } else {
+        if (isMobileOrTablet) {
+            zoom = Math.min(viewportWidth / (boardConfig.width || 2400), viewportHeight / (boardConfig.height || 1600)) * 0.95;
+            zoom = Math.min(Math.max(zoom, 0.15), 1.0);
+        }
+        panX = (viewportWidth - (boardConfig.width || 2400) * zoom) / 2;
+        panY = (headerHeight + bannerHeight) + (viewportHeight - (boardConfig.height || 1600) * zoom) / 2;
+    }
     updateTransform();
 }
 

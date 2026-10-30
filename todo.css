@@ -3561,6 +3561,32 @@ body.dark .drag-placeholder {
     z-index: 11;
 }
 
+/* Подсветка при наведении на правую часть для вложения в проект */
+.project-item-container.drag-over-nest .menu-item {
+    background-color: var(--hover-bg) !important;
+    outline: 2px dashed var(--accent) !important;
+    outline-offset: -2px !important;
+    border-radius: 8px !important;
+}
+
+.project-item-container.drag-over-nest::after {
+    content: '↳ вложить';
+    position: absolute;
+    right: 36px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--card-bg);
+    padding: 2px 7px;
+    border-radius: 6px;
+    border: 1px solid var(--accent);
+    pointer-events: none;
+    z-index: 15;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
 .project-drag-placeholder {
     box-sizing: border-box;
     border-radius: 8px;
@@ -11785,5 +11811,293 @@ body.dark .project-whiteboard-loader {
         max-width: 180px;
     }
 }
+
+/* ==========================================
+   ВЛОЖЕННЫЕ ПРОЕКТЫ (ПОДПРОЕКТЫ)
+   ========================================== */
+
+/* Стрелочка сворачивания/разворачивания в боковом меню (абсолютно слева, не смещает иконку) */
+.project-tree-chevron-btn {
+    position: absolute;
+    left: -2px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    padding: 0;
+    width: 14px;
+    height: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 4px;
+    z-index: 5;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.project-tree-chevron-btn:hover {
+    color: var(--text);
+    background-color: var(--hover-bg);
+}
+
+.project-tree-chevron-btn svg {
+    transition: transform 0.18s ease;
+}
+
+.project-tree-chevron-btn.collapsed svg {
+    transform: rotate(-90deg);
+}
+
+/* Контейнер дерева подпроектов в боковом меню */
+.project-subprojects-tree {
+    position: relative;
+    margin-left: 18px;
+    padding-left: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 1px;
+    margin-bottom: 3px;
+}
+
+.project-subproject-item-container {
+    position: relative;
+}
+
+/* Вертикальная линия дерева */
+.project-subproject-item-container::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 0;
+    bottom: 0;
+    width: 1.5px;
+    background-color: var(--border);
+}
+
+/* Для первого элемента линия начинается от верха */
+.project-subproject-item-container:first-child::before {
+    top: 0;
+}
+
+/* Для последнего элемента линия обрывается на середине высоты (на горизонтальной ветке) */
+.project-subproject-item-container:last-child::before {
+    bottom: 50%;
+}
+
+/* Горизонтальная ветка дерева к иконке подпроекта */
+.project-subproject-item-container::after {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 50%;
+    width: 8px;
+    height: 1.5px;
+    background-color: var(--border);
+    transform: translateY(-50%);
+}
+
+.project-subproject-item-container .menu-item {
+    padding-left: 8px !important;
+}
+
+/* --- СЕКЦИЯ ПОДПРОЕКТОВ В ОСНОВНОЙ ЧАСТИ (СПРАВА) --- */
+.subprojects-project-section {
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+.subprojects-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.subprojects-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.subprojects-section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.2px;
+}
+
+.subprojects-count-badge {
+    background-color: var(--hover-bg, #f1f3f5);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-add-subproject {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    user-select: none;
+}
+
+.btn-add-subproject:hover {
+    background-color: var(--hover-bg);
+    border-color: var(--text-secondary);
+}
+
+.btn-add-subproject:active {
+    transform: scale(0.98);
+}
+
+/* Сетка карточек подпроектов */
+.subprojects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 12px;
+}
+
+/* Карточка подпроекта */
+.subproject-card {
+    position: relative;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--text);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    overflow: hidden;
+    box-sizing: border-box;
+    min-height: 64px;
+}
+
+.subproject-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: var(--card-accent-color, transparent);
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+}
+
+.subproject-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    border-color: var(--border-hover, var(--border));
+}
+
+body.dark .subproject-card:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.subproject-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.subproject-card-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.subproject-card-title {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.25;
+}
+
+.subproject-card-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.2;
+}
+
+.subproject-card-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    flex-shrink: 0;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.subproject-card:hover .subproject-card-arrow {
+    opacity: 1;
+    transform: translateX(3px);
+}
+
+/* Форма добавления подпроекта в карточке */
+.subproject-card-new {
+    border-style: dashed;
+    border-color: var(--accent);
+    cursor: default;
+}
+
+.subproject-card-new:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.subproject-inline-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    font-family: inherit;
+    width: 100%;
+    padding: 0;
+}
+
+.subproject-inline-input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+@media (max-width: 600px) {
+    .subprojects-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 
 

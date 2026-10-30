@@ -90,14 +90,14 @@ function saveCachedTasksSnapshot(uid) {
     if (!uid || !Array.isArray(allTasks)) return;
     try {
         localStorage.setItem(`todo_cache_tasks_${uid}`, JSON.stringify(allTasks.slice(0, 500)));
-    } catch (e) {}
+    } catch (e) { }
 }
 
 function saveCachedProjectsSnapshot(uid) {
     if (!uid || !Array.isArray(projectsList)) return;
     try {
         localStorage.setItem(`todo_cache_projects_${uid}`, JSON.stringify(projectsList));
-    } catch (e) {}
+    } catch (e) { }
 }
 
 // Helper to get HTML for project icon (supports both image URLs and emojis)
@@ -723,11 +723,14 @@ function renderAddTaskProjectDropdown() {
     addTaskProjectDropdown.appendChild(inboxItem);
 
     // 2. Пользовательские проекты
-    projectsList.forEach(project => {
+    getSortedHierarchicalProjects().forEach(project => {
         const isSelected = addTaskSelectedProjectId === project.id;
         const projectItem = document.createElement('button');
         projectItem.className = 'dropdown-item';
         projectItem.type = 'button';
+        if (project.depth > 0) {
+            projectItem.style.paddingLeft = `${12 + project.depth * 14}px`;
+        }
 
         const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
         const iconHtml = getProjectIconHtml(project.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 3px; font-size: 13px; line-height: 1;');
@@ -2105,7 +2108,7 @@ function renderPrefHomeDropdown() {
     todayItem.type = 'button';
     todayItem.dataset.id = 'today';
     todayItem.dataset.name = 'Сегодня';
-    
+
     const todaySvgHtml = getCalendarSvg(new Date().getDate());
     todayItem.innerHTML = `
         <span class="dropdown-item-left">
@@ -2544,10 +2547,10 @@ function handleRoute() {
 function updateBackButtonVisibility() {
     const contentBackBtn = document.getElementById('contentBackBtn');
     if (!contentBackBtn) return;
-    const isSubPage = currentRoute === 'trash' || 
-                      currentRoute === 'habit' || 
-                      currentRoute === 'pomodoro' || 
-                      currentRoute.startsWith('project/');
+    const isSubPage = currentRoute === 'trash' ||
+        currentRoute === 'habit' ||
+        currentRoute === 'pomodoro' ||
+        currentRoute.startsWith('project/');
     if (window.innerWidth <= 768 && isSubPage) {
         contentBackBtn.style.display = 'inline-flex';
     } else {
@@ -2649,7 +2652,7 @@ function initMobileBottomNavDragGesture() {
 
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        
+
         const deltaX = Math.abs(clientX - startX);
         const deltaY = Math.abs(clientY - startY);
 
@@ -5399,64 +5402,70 @@ function doRenderTasks() {
             } else {
                 activeTasksContainer.innerHTML = getEmptyStateHtml();
             }
+            if (currentRoute.startsWith('project/')) {
+                const spList = projectsList.filter(p => p.parentId === currentViewProjectId);
+                if (spList.length > 0) {
+                    renderSubprojectsSection(spList, activeTasksContainer, currentViewProjectId);
+                }
+            }
         } else {
             if (currentProjectCountdowns.length > 0 && countdownOrder !== null && countdownOrder < 0) {
                 renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
             }
             if (systemGroupBy === 'date') {
-            const dateGroups = {};
-            const dateOrder = [];
+                const dateGroups = {};
+                const dateOrder = [];
 
-            tasksToGroup.forEach(t => {
-                let dateKey = 'no_date';
-                let dateLabel = 'Без срока';
+                tasksToGroup.forEach(t => {
+                    let dateKey = 'no_date';
+                    let dateLabel = 'Без срока';
 
-                if (t.dueDate) {
-                    dateKey = t.dueDate;
-                    if (t.dueDate === todayStr) {
-                        dateLabel = 'Сегодня';
-                    } else {
-                        const d = new Date(t.dueDate + 'T00:00:00');
-                        dateLabel = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', weekday: 'short' });
+                    if (t.dueDate) {
+                        dateKey = t.dueDate;
+                        if (t.dueDate === todayStr) {
+                            dateLabel = 'Сегодня';
+                        } else {
+                            const d = new Date(t.dueDate + 'T00:00:00');
+                            dateLabel = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', weekday: 'short' });
+                        }
                     }
+
+                    if (!dateGroups[dateKey]) {
+                        dateGroups[dateKey] = { key: dateKey, label: dateLabel, tasks: [] };
+                        dateOrder.push(dateKey);
+                    }
+                    dateGroups[dateKey].tasks.push(t);
+                });
+
+                let groupDir = 'asc';
+                if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
+                    groupDir = localStorage.getItem(`todo_group_dir_${currentRoute}`) || 'asc';
+                } else if (currentRoute.startsWith('project/')) {
+                    const projectId = currentRoute.split('/')[1];
+                    const project = projectsList.find(p => p.id === projectId);
+                    if (project && project.groupDir) groupDir = project.groupDir;
                 }
+                const isGroupDesc = groupDir === 'desc';
 
-                if (!dateGroups[dateKey]) {
-                    dateGroups[dateKey] = { key: dateKey, label: dateLabel, tasks: [] };
-                    dateOrder.push(dateKey);
-                }
-                dateGroups[dateKey].tasks.push(t);
-            });
+                dateOrder.sort((a, b) => {
+                    if (a === 'no_date') return 1;
+                    if (b === 'no_date') return -1;
+                    return isGroupDesc ? b.localeCompare(a) : a.localeCompare(b);
+                });
 
-            let groupDir = 'asc';
-            if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
-                groupDir = localStorage.getItem(`todo_group_dir_${currentRoute}`) || 'asc';
-            } else if (currentRoute.startsWith('project/')) {
-                const projectId = currentRoute.split('/')[1];
-                const project = projectsList.find(p => p.id === projectId);
-                if (project && project.groupDir) groupDir = project.groupDir;
-            }
-            const isGroupDesc = groupDir === 'desc';
+                dateOrder.forEach(dKey => {
+                    const group = dateGroups[dKey];
+                    sortTasksByOrder(group.tasks);
 
-            dateOrder.sort((a, b) => {
-                if (a === 'no_date') return 1;
-                if (b === 'no_date') return -1;
-                return isGroupDesc ? b.localeCompare(a) : a.localeCompare(b);
-            });
+                    const collapseKey = `group_${currentRoute}_date_${dKey}`;
+                    const isCollapsed = isSectionCollapsed(collapseKey);
 
-            dateOrder.forEach(dKey => {
-                const group = dateGroups[dKey];
-                sortTasksByOrder(group.tasks);
+                    const calSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 6px; flex-shrink: 0; color: var(--accent);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
 
-                const collapseKey = `group_${currentRoute}_date_${dKey}`;
-                const isCollapsed = isSectionCollapsed(collapseKey);
-
-                const calSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 6px; flex-shrink: 0; color: var(--accent);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
-
-                const sectionEl = document.createElement('div');
-                sectionEl.className = `project-section ${isCollapsed ? 'collapsed' : ''}`;
-                sectionEl.style.marginTop = '16px';
-                sectionEl.innerHTML = `
+                    const sectionEl = document.createElement('div');
+                    sectionEl.className = `project-section ${isCollapsed ? 'collapsed' : ''}`;
+                    sectionEl.style.marginTop = '16px';
+                    sectionEl.innerHTML = `
                     <div class="project-section-header" style="cursor: pointer;">
                         <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
                             <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
@@ -5469,68 +5478,68 @@ function doRenderTasks() {
                     </div>
                     <div class="section-tasks-container" style="${isCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
                 `;
-                activeTasksContainer.appendChild(sectionEl);
+                    activeTasksContainer.appendChild(sectionEl);
 
-                const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
-                renderTasksGroup(group.tasks, sectionTasksContainer);
+                    const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
+                    renderTasksGroup(group.tasks, sectionTasksContainer);
 
-                sectionEl.querySelector('.project-section-header').addEventListener('click', () => {
-                    toggleSectionCollapsed(collapseKey);
-                    renderTasks();
+                    sectionEl.querySelector('.project-section-header').addEventListener('click', () => {
+                        toggleSectionCollapsed(collapseKey);
+                        renderTasks();
+                    });
                 });
-            });
-        } else if (systemGroupBy === 'project') {
-            const groupsMap = {};
-            tasksToGroup.forEach(t => {
-                const projId = t.projectId;
-                const proj = projId ? projectsList.find(p => p.id === projId) : null;
-                const key = (projId && proj) ? projId : 'inbox';
-                if (!groupsMap[key]) {
-                    groupsMap[key] = {
-                        id: key,
-                        name: proj ? proj.name : 'Входящие',
-                        iconUrl: proj ? proj.iconUrl : null,
-                        color: proj ? proj.color : null,
-                        tasks: []
-                    };
+            } else if (systemGroupBy === 'project') {
+                const groupsMap = {};
+                tasksToGroup.forEach(t => {
+                    const projId = t.projectId;
+                    const proj = projId ? projectsList.find(p => p.id === projId) : null;
+                    const key = (projId && proj) ? projId : 'inbox';
+                    if (!groupsMap[key]) {
+                        groupsMap[key] = {
+                            id: key,
+                            name: proj ? proj.name : 'Входящие',
+                            iconUrl: proj ? proj.iconUrl : null,
+                            color: proj ? proj.color : null,
+                            tasks: []
+                        };
+                    }
+                    groupsMap[key].tasks.push(t);
+                });
+
+                const groupKeys = Object.keys(groupsMap);
+                let groupDir = 'asc';
+                if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
+                    groupDir = localStorage.getItem(`todo_group_dir_${currentRoute}`) || 'asc';
                 }
-                groupsMap[key].tasks.push(t);
-            });
+                const isGroupDesc = groupDir === 'desc';
+                groupKeys.sort((a, b) => {
+                    if (a === 'inbox') return -1;
+                    if (b === 'inbox') return 1;
+                    const indexA = projectsList.findIndex(p => p.id === a);
+                    const indexB = projectsList.findIndex(p => p.id === b);
+                    return isGroupDesc ? (indexB - indexA) : (indexA - indexB);
+                });
 
-            const groupKeys = Object.keys(groupsMap);
-            let groupDir = 'asc';
-            if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
-                groupDir = localStorage.getItem(`todo_group_dir_${currentRoute}`) || 'asc';
-            }
-            const isGroupDesc = groupDir === 'desc';
-            groupKeys.sort((a, b) => {
-                if (a === 'inbox') return -1;
-                if (b === 'inbox') return 1;
-                const indexA = projectsList.findIndex(p => p.id === a);
-                const indexB = projectsList.findIndex(p => p.id === b);
-                return isGroupDesc ? (indexB - indexA) : (indexA - indexB);
-            });
+                groupKeys.forEach(key => {
+                    const group = groupsMap[key];
+                    sortTasksByOrder(group.tasks);
 
-            groupKeys.forEach(key => {
-                const group = groupsMap[key];
-                sortTasksByOrder(group.tasks);
+                    const collapseKey = `group_${currentRoute}_proj_${group.id}`;
+                    const isCollapsed = isSectionCollapsed(collapseKey);
 
-                const collapseKey = `group_${currentRoute}_proj_${group.id}`;
-                const isCollapsed = isSectionCollapsed(collapseKey);
+                    let iconHtml = '';
+                    if (group.id === 'inbox') {
+                        iconHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="margin-right: 6px; flex-shrink: 0; color: var(--accent);"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>`;
+                    } else {
+                        const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0; margin-right: 6px;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+                        iconHtml = getProjectIconHtml(group.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 6px;');
+                    }
 
-                let iconHtml = '';
-                if (group.id === 'inbox') {
-                    iconHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="margin-right: 6px; flex-shrink: 0; color: var(--accent);"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>`;
-                } else {
-                    const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0; margin-right: 6px;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
-                    iconHtml = getProjectIconHtml(group.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 6px;');
-                }
-
-                const sectionEl = document.createElement('div');
-                sectionEl.className = `project-section ${isCollapsed ? 'collapsed' : ''}`;
-                sectionEl.setAttribute('data-group-project-id', group.id);
-                sectionEl.style.marginTop = '16px';
-                sectionEl.innerHTML = `
+                    const sectionEl = document.createElement('div');
+                    sectionEl.className = `project-section ${isCollapsed ? 'collapsed' : ''}`;
+                    sectionEl.setAttribute('data-group-project-id', group.id);
+                    sectionEl.style.marginTop = '16px';
+                    sectionEl.innerHTML = `
                     <div class="project-section-header" style="cursor: pointer;">
                         <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
                             <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
@@ -5543,60 +5552,60 @@ function doRenderTasks() {
                     </div>
                     <div class="section-tasks-container" style="${isCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
                 `;
-                activeTasksContainer.appendChild(sectionEl);
+                    activeTasksContainer.appendChild(sectionEl);
 
-                const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
-                renderTasksGroup(group.tasks, sectionTasksContainer);
+                    const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
+                    renderTasksGroup(group.tasks, sectionTasksContainer);
 
-                sectionEl.querySelector('.project-section-header').addEventListener('click', () => {
-                    toggleSectionCollapsed(collapseKey);
-                    renderTasks();
+                    sectionEl.querySelector('.project-section-header').addEventListener('click', () => {
+                        toggleSectionCollapsed(collapseKey);
+                        renderTasks();
+                    });
                 });
-            });
-        } else if (systemGroupBy === 'priority') {
-            const priorityMeta = {
-                3: { name: 'Приоритет 1', color: '#dc2626' },
-                2: { name: 'Приоритет 2', color: '#d97706' },
-                1: { name: 'Приоритет 3', color: '#2563eb' },
-                0: { name: 'Приоритет 4', color: '#808080' }
-            };
+            } else if (systemGroupBy === 'priority') {
+                const priorityMeta = {
+                    3: { name: 'Приоритет 1', color: '#dc2626' },
+                    2: { name: 'Приоритет 2', color: '#d97706' },
+                    1: { name: 'Приоритет 3', color: '#2563eb' },
+                    0: { name: 'Приоритет 4', color: '#808080' }
+                };
 
-            const priorityGroups = { 3: [], 2: [], 1: [], 0: [] };
+                const priorityGroups = { 3: [], 2: [], 1: [], 0: [] };
 
-            tasksToGroup.forEach(t => {
-                const prio = (t.priority !== undefined && t.priority !== null) ? t.priority : 0;
-                if (priorityGroups[prio] !== undefined) {
-                    priorityGroups[prio].push(t);
-                } else {
-                    priorityGroups[0].push(t);
+                tasksToGroup.forEach(t => {
+                    const prio = (t.priority !== undefined && t.priority !== null) ? t.priority : 0;
+                    if (priorityGroups[prio] !== undefined) {
+                        priorityGroups[prio].push(t);
+                    } else {
+                        priorityGroups[0].push(t);
+                    }
+                });
+
+                let groupDir = 'asc';
+                if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
+                    groupDir = localStorage.getItem(`todo_group_dir_${currentRoute}`) || 'asc';
+                } else if (currentRoute.startsWith('project/')) {
+                    const projectId = currentRoute.split('/')[1];
+                    const project = projectsList.find(p => p.id === projectId);
+                    if (project && project.groupDir) groupDir = project.groupDir;
                 }
-            });
+                const levels = groupDir === 'desc' ? [0, 1, 2, 3] : [3, 2, 1, 0];
+                levels.forEach(lvl => {
+                    const groupTasks = priorityGroups[lvl];
+                    if (groupTasks.length === 0) return;
 
-            let groupDir = 'asc';
-            if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
-                groupDir = localStorage.getItem(`todo_group_dir_${currentRoute}`) || 'asc';
-            } else if (currentRoute.startsWith('project/')) {
-                const projectId = currentRoute.split('/')[1];
-                const project = projectsList.find(p => p.id === projectId);
-                if (project && project.groupDir) groupDir = project.groupDir;
-            }
-            const levels = groupDir === 'desc' ? [0, 1, 2, 3] : [3, 2, 1, 0];
-            levels.forEach(lvl => {
-                const groupTasks = priorityGroups[lvl];
-                if (groupTasks.length === 0) return;
+                    sortTasksByOrder(groupTasks);
+                    const meta = priorityMeta[lvl];
+                    const collapseKey = `group_${currentRoute}_prio_${lvl}`;
+                    const isCollapsed = isSectionCollapsed(collapseKey);
 
-                sortTasksByOrder(groupTasks);
-                const meta = priorityMeta[lvl];
-                const collapseKey = `group_${currentRoute}_prio_${lvl}`;
-                const isCollapsed = isSectionCollapsed(collapseKey);
+                    const flagSvg = `<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="margin-right: 6px; flex-shrink: 0; color: ${meta.color};"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z"/></svg>`;
 
-                const flagSvg = `<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="margin-right: 6px; flex-shrink: 0; color: ${meta.color};"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z"/></svg>`;
-
-                const sectionEl = document.createElement('div');
-                sectionEl.className = `project-section ${isCollapsed ? 'collapsed' : ''}`;
-                sectionEl.setAttribute('data-group-priority', lvl);
-                sectionEl.style.marginTop = '16px';
-                sectionEl.innerHTML = `
+                    const sectionEl = document.createElement('div');
+                    sectionEl.className = `project-section ${isCollapsed ? 'collapsed' : ''}`;
+                    sectionEl.setAttribute('data-group-priority', lvl);
+                    sectionEl.style.marginTop = '16px';
+                    sectionEl.innerHTML = `
                     <div class="project-section-header" style="cursor: pointer;">
                         <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
                             <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
@@ -5609,23 +5618,29 @@ function doRenderTasks() {
                     </div>
                     <div class="section-tasks-container" style="${isCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
                 `;
-                activeTasksContainer.appendChild(sectionEl);
+                    activeTasksContainer.appendChild(sectionEl);
 
-                const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
-                renderTasksGroup(groupTasks, sectionTasksContainer);
+                    const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
+                    renderTasksGroup(groupTasks, sectionTasksContainer);
 
-                sectionEl.querySelector('.project-section-header').addEventListener('click', () => {
-                    toggleSectionCollapsed(collapseKey);
-                    renderTasks();
+                    sectionEl.querySelector('.project-section-header').addEventListener('click', () => {
+                        toggleSectionCollapsed(collapseKey);
+                        renderTasks();
+                    });
                 });
-            });
-        }
+            }
 
-        if (tasksToGroup.length > 0 && currentProjectCountdowns.length > 0 && (countdownOrder === null || countdownOrder >= 0)) {
-            renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+            if (tasksToGroup.length > 0 && currentProjectCountdowns.length > 0 && (countdownOrder === null || countdownOrder >= 0)) {
+                renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+            }
+            if (currentRoute.startsWith('project/')) {
+                const spList = projectsList.filter(p => p.parentId === currentViewProjectId);
+                if (spList.length > 0) {
+                    renderSubprojectsSection(spList, activeTasksContainer, currentViewProjectId);
+                }
+            }
         }
-    }
-} else if (displayActiveTasks.length === 0 && !currentRoute.startsWith('project/')) {
+    } else if (displayActiveTasks.length === 0 && !currentRoute.startsWith('project/')) {
         if (currentRoute === 'trash') {
             activeTasksContainer.innerHTML = `
                 <div class="empty-state">
@@ -5707,6 +5722,12 @@ function doRenderTasks() {
             } else {
                 activeTasksContainer.innerHTML = getEmptyStateHtml();
             }
+            if (currentRoute.startsWith('project/')) {
+                const spList = projectsList.filter(p => p.parentId === currentViewProjectId);
+                if (spList.length > 0) {
+                    renderSubprojectsSection(spList, activeTasksContainer, currentViewProjectId);
+                }
+            }
         }
     } else {
         if (currentRoute === 'trash') {
@@ -5752,10 +5773,10 @@ function doRenderTasks() {
                         const getPeriodBucket = (dateStr) => {
                             const [y, m, d] = dateStr.split('-').map(Number);
                             const date = new Date(y, m - 1, d);
-                            date.setHours(0,0,0,0);
+                            date.setHours(0, 0, 0, 0);
 
                             const time = date.getTime();
-                            
+
                             const day = todayObj.getDay();
                             const daysToSunday = day === 0 ? 0 : 7 - day;
                             const sundayOfThisWeek = new Date(todayObj);
@@ -5764,18 +5785,18 @@ function doRenderTasks() {
 
                             const nextMonday = new Date(sundayOfThisWeek);
                             nextMonday.setDate(nextMonday.getDate() + 1);
-                            nextMonday.setHours(0,0,0,0);
+                            nextMonday.setHours(0, 0, 0, 0);
                             const nextSunday = new Date(nextMonday);
                             nextSunday.setDate(nextSunday.getDate() + 6);
-                            nextSunday.setHours(23,59,59,999);
+                            nextSunday.setHours(23, 59, 59, 999);
 
                             const endOfThisMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 0);
-                            endOfThisMonth.setHours(23,59,59,999);
+                            endOfThisMonth.setHours(23, 59, 59, 999);
 
                             const startOfNextMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 1);
-                            startOfNextMonth.setHours(0,0,0,0);
+                            startOfNextMonth.setHours(0, 0, 0, 0);
                             const endOfNextMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 2, 0);
-                            endOfNextMonth.setHours(23,59,59,999);
+                            endOfNextMonth.setHours(23, 59, 59, 999);
 
                             if (time <= sundayOfThisWeek.getTime()) {
                                 return { id: 'this_week', name: 'На этой неделе' };
@@ -5895,17 +5916,22 @@ function doRenderTasks() {
                         if (currentProjectCountdowns.length > 0 && (countdownOrder === null || countdownOrder >= 0)) {
                             renderCountdownSection(currentProjectCountdowns, activeTasksContainer, projectId);
                         }
+                        const currentProjectSubprojectsGrouped = projectsList.filter(p => p.parentId === projectId);
+                        if (currentProjectSubprojectsGrouped.length > 0) {
+                            renderSubprojectsSection(currentProjectSubprojectsGrouped, activeTasksContainer, projectId);
+                        }
                     }
                 } else {
                     const projectSections = sectionsList.filter(s => s.projectId === projectId);
                     const hasCountdowns = currentProjectCountdowns.length > 0;
+                    const currentProjectSubprojects = projectsList.filter(p => p.parentId === projectId);
 
                     // If user dragged countdown above unsectioned tasks (order < 0)
                     if (hasCountdowns && countdownOrder !== null && countdownOrder < 0) {
                         renderCountdownSection(currentProjectCountdowns, activeTasksContainer, projectId);
                     }
 
-                    if (displayActiveTasks.length === 0 && projectTodayTasks.length === 0) {
+                    if (displayActiveTasks.length === 0 && projectTodayTasks.length === 0 && !hasCountdowns && currentProjectSubprojects.length === 0) {
                         const emptyStateEl = document.createElement('div');
                         emptyStateEl.style.marginTop = '20px';
                         emptyStateEl.style.marginBottom = '20px';
@@ -5952,12 +5978,32 @@ function doRenderTasks() {
                         });
                     }
 
+                    if (currentProjectSubprojects.length > 0) {
+                        const maxCustomOrder = projectSections.length > 0
+                            ? Math.max(...projectSections.map(s => s.order !== undefined ? s.order : 0))
+                            : 0;
+                        const defaultOrder = maxCustomOrder + 2000;
+                        const countdownFinalOrder = (countdownOrder !== null) ? countdownOrder : (maxCustomOrder + 1000);
+                        const subprojectsOrder = hasCountdowns ? (countdownFinalOrder + 1) : defaultOrder;
+
+                        sectionsToRender.push({
+                            type: 'subprojects',
+                            id: 'subprojects',
+                            order: subprojectsOrder,
+                            subprojects: currentProjectSubprojects
+                        });
+                    }
+
                     sectionsToRender.sort((a, b) => a.order - b.order);
 
                     // Render each section
                     sectionsToRender.forEach(item => {
                         if (item.type === 'countdown') {
                             renderCountdownSection(item.countdowns, activeTasksContainer, projectId);
+                            return;
+                        }
+                        if (item.type === 'subprojects') {
+                            renderSubprojectsSection(item.subprojects, activeTasksContainer, projectId);
                             return;
                         }
                         const section = item.section;
@@ -5968,7 +6014,7 @@ function doRenderTasks() {
                         sectionEl.className = `project-section ${isCollapsed ? 'collapsed' : ''}`;
                         sectionEl.setAttribute('data-section-id', section.id);
 
-                    sectionEl.innerHTML = `
+                        sectionEl.innerHTML = `
                         <div class="project-section-header">
                             <button class="section-drag-handle-btn" title="Перетащить раздел" type="button">
                                 <svg viewBox="0 0 640 640" width="14" height="14" fill="currentColor">
@@ -6000,8 +6046,8 @@ function doRenderTasks() {
                                     </button>
 
                                     ${(() => {
-                            if (projectsList.length === 0) return '';
-                            return `
+                                if (projectsList.length === 0) return '';
+                                return `
                                         <div class="dropdown-submenu-container">
                                             <button class="dropdown-item btn-move-section-trigger" type="button">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; width: 14px; height: 14px; margin-right: 2px;">
@@ -6013,12 +6059,12 @@ function doRenderTasks() {
                                                 </svg>
                                             </button>
                                             <div class="dropdown-submenu">
-                                                ${projectsList.map(proj => {
-                                const isCurrent = projectId === proj.id;
-                                const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
-                                const iconHtml = getProjectIconHtml(proj.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 0; font-size: 13px; line-height: 1;');
-                                return `
-                                                        <button class="dropdown-item btn-select-project-for-section ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}" type="button">
+                                                ${getSortedHierarchicalProjects().map(proj => {
+                                    const isCurrent = projectId === proj.id;
+                                    const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+                                    const iconHtml = getProjectIconHtml(proj.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 0; font-size: 13px; line-height: 1;');
+                                    return `
+                                                        <button class="dropdown-item btn-select-project-for-section ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}" type="button" style="${proj.depth ? `padding-left: ${12 + proj.depth * 14}px;` : ''}">
                                                             ${iconHtml}
                                                             <span>${escapeHtml(proj.name)}</span>
                                                             ${isCurrent ? `
@@ -6028,11 +6074,11 @@ function doRenderTasks() {
                                                             ` : ''}
                                                         </button>
                                                     `;
-                            }).join('')}
+                                }).join('')}
                                             </div>
                                         </div>
                                         `;
-                        })()}
+                            })()}
 
                                     <button class="dropdown-item btn-delete-section btn-delete" type="button" style="color: #ff4d4f;">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px; color: #ff4d4f;">
@@ -6046,165 +6092,165 @@ function doRenderTasks() {
                         </div>
                         <div class="section-tasks-container" style="${isCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
                     `;
-                    activeTasksContainer.appendChild(sectionEl);
+                        activeTasksContainer.appendChild(sectionEl);
 
-                    const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
-                    renderTasksGroup(sectionTasks, sectionTasksContainer);
+                        const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
+                        renderTasksGroup(sectionTasks, sectionTasksContainer);
 
-                    const dragHandle = sectionEl.querySelector('.section-drag-handle-btn');
-                    if (dragHandle) {
-                        dragHandle.addEventListener('mousedown', () => {
-                            sectionEl.setAttribute('draggable', 'true');
-                        });
-                        dragHandle.addEventListener('mouseup', () => {
-                            sectionEl.removeAttribute('draggable');
-                        });
-                    }
-
-                    const collapseBtn = sectionEl.querySelector('.section-collapse-btn');
-                    collapseBtn.addEventListener('click', (ev) => {
-                        ev.stopPropagation();
-                        toggleSectionCollapsed(section.id);
-                        renderTasks();
-                    });
-
-                    const actionsBtn = sectionEl.querySelector('.section-actions-btn');
-                    const dropdown = sectionEl.querySelector('.section-actions-dropdown');
-
-                    const openSectionDropdown = (clickEvent = null) => {
-                        const headerEl = sectionEl.querySelector('.project-section-header');
-                        const isHidden = dropdown.style.display === 'none' || dropdown.style.display === '';
-
-                        if (isHidden) {
-                            document.querySelectorAll('.section-actions-dropdown').forEach(d => {
-                                d.style.display = 'none';
-                                d.closest('.project-section-header')?.classList.remove('menu-open');
+                        const dragHandle = sectionEl.querySelector('.section-drag-handle-btn');
+                        if (dragHandle) {
+                            dragHandle.addEventListener('mousedown', () => {
+                                sectionEl.setAttribute('draggable', 'true');
                             });
-                            dropdown.style.display = 'flex';
-                            headerEl?.classList.add('menu-open');
+                            dragHandle.addEventListener('mouseup', () => {
+                                sectionEl.removeAttribute('draggable');
+                            });
+                        }
 
-                            const menuWidth = dropdown.offsetWidth || 170;
-                            const menuHeight = dropdown.offsetHeight || 120;
+                        const collapseBtn = sectionEl.querySelector('.section-collapse-btn');
+                        collapseBtn.addEventListener('click', (ev) => {
+                            ev.stopPropagation();
+                            toggleSectionCollapsed(section.id);
+                            renderTasks();
+                        });
 
-                            if (clickEvent) {
-                                dropdown.style.position = 'fixed';
-                                dropdown.style.zIndex = '10000';
-                                let x = clickEvent.clientX;
-                                let y = clickEvent.clientY;
+                        const actionsBtn = sectionEl.querySelector('.section-actions-btn');
+                        const dropdown = sectionEl.querySelector('.section-actions-dropdown');
 
-                                if (x + menuWidth > window.innerWidth - 10) {
-                                    x = clickEvent.clientX - menuWidth;
-                                    if (x < 10) x = Math.max(10, window.innerWidth - menuWidth - 10);
-                                }
+                        const openSectionDropdown = (clickEvent = null) => {
+                            const headerEl = sectionEl.querySelector('.project-section-header');
+                            const isHidden = dropdown.style.display === 'none' || dropdown.style.display === '';
 
-                                const spaceBelow = window.innerHeight - clickEvent.clientY;
-                                if (spaceBelow < menuHeight + 10) {
-                                    y = clickEvent.clientY - menuHeight;
-                                    if (y < 10) y = Math.max(10, window.innerHeight - menuHeight - 10);
-                                } else {
-                                    y = clickEvent.clientY;
-                                }
+                            if (isHidden) {
+                                document.querySelectorAll('.section-actions-dropdown').forEach(d => {
+                                    d.style.display = 'none';
+                                    d.closest('.project-section-header')?.classList.remove('menu-open');
+                                });
+                                dropdown.style.display = 'flex';
+                                headerEl?.classList.add('menu-open');
 
-                                dropdown.style.left = `${x}px`;
-                                dropdown.style.top = `${y}px`;
-                                dropdown.style.right = 'auto';
-                                dropdown.style.bottom = 'auto';
-                            } else {
-                                dropdown.style.position = 'absolute';
-                                dropdown.style.left = 'auto';
-                                dropdown.style.right = '0';
-                                const rect = actionsBtn.getBoundingClientRect();
-                                const spaceBelow = window.innerHeight - rect.bottom;
-                                if (spaceBelow < menuHeight + 10 && rect.top > spaceBelow) {
-                                    dropdown.style.top = 'auto';
-                                    dropdown.style.bottom = 'calc(100% + 4px)';
-                                } else {
-                                    dropdown.style.top = 'calc(100% + 4px)';
+                                const menuWidth = dropdown.offsetWidth || 170;
+                                const menuHeight = dropdown.offsetHeight || 120;
+
+                                if (clickEvent) {
+                                    dropdown.style.position = 'fixed';
+                                    dropdown.style.zIndex = '10000';
+                                    let x = clickEvent.clientX;
+                                    let y = clickEvent.clientY;
+
+                                    if (x + menuWidth > window.innerWidth - 10) {
+                                        x = clickEvent.clientX - menuWidth;
+                                        if (x < 10) x = Math.max(10, window.innerWidth - menuWidth - 10);
+                                    }
+
+                                    const spaceBelow = window.innerHeight - clickEvent.clientY;
+                                    if (spaceBelow < menuHeight + 10) {
+                                        y = clickEvent.clientY - menuHeight;
+                                        if (y < 10) y = Math.max(10, window.innerHeight - menuHeight - 10);
+                                    } else {
+                                        y = clickEvent.clientY;
+                                    }
+
+                                    dropdown.style.left = `${x}px`;
+                                    dropdown.style.top = `${y}px`;
+                                    dropdown.style.right = 'auto';
                                     dropdown.style.bottom = 'auto';
+                                } else {
+                                    dropdown.style.position = 'absolute';
+                                    dropdown.style.left = 'auto';
+                                    dropdown.style.right = '0';
+                                    const rect = actionsBtn.getBoundingClientRect();
+                                    const spaceBelow = window.innerHeight - rect.bottom;
+                                    if (spaceBelow < menuHeight + 10 && rect.top > spaceBelow) {
+                                        dropdown.style.top = 'auto';
+                                        dropdown.style.bottom = 'calc(100% + 4px)';
+                                    } else {
+                                        dropdown.style.top = 'calc(100% + 4px)';
+                                        dropdown.style.bottom = 'auto';
+                                    }
                                 }
+                            } else {
+                                dropdown.style.display = 'none';
+                                headerEl?.classList.remove('menu-open');
+                                dropdown.style.position = '';
+                                dropdown.style.left = '';
+                                dropdown.style.right = '';
+                                dropdown.style.top = '';
+                                dropdown.style.bottom = '';
                             }
-                        } else {
-                            dropdown.style.display = 'none';
-                            headerEl?.classList.remove('menu-open');
-                            dropdown.style.position = '';
-                            dropdown.style.left = '';
-                            dropdown.style.right = '';
-                            dropdown.style.top = '';
-                            dropdown.style.bottom = '';
-                        }
-                    };
+                        };
 
-                    actionsBtn.addEventListener('click', (ev) => {
-                        ev.stopPropagation();
-                        openSectionDropdown();
-                    });
-
-                    const headerEl = sectionEl.querySelector('.project-section-header');
-                    headerEl.addEventListener('contextmenu', (ev) => {
-                        if (window.matchMedia('(hover: hover)').matches) {
-                            ev.preventDefault();
+                        actionsBtn.addEventListener('click', (ev) => {
                             ev.stopPropagation();
-                            openSectionDropdown(ev);
-                        }
-                    });
+                            openSectionDropdown();
+                        });
 
-                    const btnMoveSectionTrigger = sectionEl.querySelector('.btn-move-section-trigger');
-                    if (btnMoveSectionTrigger) {
-                        btnMoveSectionTrigger.addEventListener('click', (ev) => {
-                            if (window.innerWidth > 768) return;
-                            ev.stopPropagation();
-                            const submenu = btnMoveSectionTrigger.nextElementSibling;
-                            if (submenu && submenu.classList.contains('dropdown-submenu')) {
-                                const isHidden = getComputedStyle(submenu).display === 'none';
-                                submenu.style.display = isHidden ? 'flex' : 'none';
-                                const arrowIcon = btnMoveSectionTrigger.querySelector('svg:last-child');
-                                if (arrowIcon) {
-                                    arrowIcon.style.transform = isHidden ? 'rotate(90deg)' : 'none';
-                                }
+                        const headerEl = sectionEl.querySelector('.project-section-header');
+                        headerEl.addEventListener('contextmenu', (ev) => {
+                            if (window.matchMedia('(hover: hover)').matches) {
+                                ev.preventDefault();
+                                ev.stopPropagation();
+                                openSectionDropdown(ev);
                             }
                         });
-                    }
 
-                    sectionEl.querySelectorAll('.btn-select-project-for-section').forEach(btn => {
-                        btn.addEventListener('click', async (ev) => {
+                        const btnMoveSectionTrigger = sectionEl.querySelector('.btn-move-section-trigger');
+                        if (btnMoveSectionTrigger) {
+                            btnMoveSectionTrigger.addEventListener('click', (ev) => {
+                                if (window.innerWidth > 768) return;
+                                ev.stopPropagation();
+                                const submenu = btnMoveSectionTrigger.nextElementSibling;
+                                if (submenu && submenu.classList.contains('dropdown-submenu')) {
+                                    const isHidden = getComputedStyle(submenu).display === 'none';
+                                    submenu.style.display = isHidden ? 'flex' : 'none';
+                                    const arrowIcon = btnMoveSectionTrigger.querySelector('svg:last-child');
+                                    if (arrowIcon) {
+                                        arrowIcon.style.transform = isHidden ? 'rotate(90deg)' : 'none';
+                                    }
+                                }
+                            });
+                        }
+
+                        sectionEl.querySelectorAll('.btn-select-project-for-section').forEach(btn => {
+                            btn.addEventListener('click', async (ev) => {
+                                ev.stopPropagation();
+                                dropdown.style.display = 'none';
+                                const targetProjId = btn.getAttribute('data-project-id');
+                                if (targetProjId) {
+                                    await moveSectionToProject(section.id, targetProjId);
+                                }
+                            });
+                        });
+
+                        sectionEl.querySelector('.btn-rename-section').addEventListener('click', (ev) => {
                             ev.stopPropagation();
                             dropdown.style.display = 'none';
-                            const targetProjId = btn.getAttribute('data-project-id');
-                            if (targetProjId) {
-                                await moveSectionToProject(section.id, targetProjId);
-                            }
+                            renameSection(section.id);
+                        });
+                        sectionEl.querySelector('.btn-delete-section').addEventListener('click', (ev) => {
+                            ev.stopPropagation();
+                            dropdown.style.display = 'none';
+                            deleteSection(section.id);
                         });
                     });
-
-                    sectionEl.querySelector('.btn-rename-section').addEventListener('click', (ev) => {
-                        ev.stopPropagation();
-                        dropdown.style.display = 'none';
-                        renameSection(section.id);
-                    });
-                    sectionEl.querySelector('.btn-delete-section').addEventListener('click', (ev) => {
-                        ev.stopPropagation();
-                        dropdown.style.display = 'none';
-                        deleteSection(section.id);
-                    });
-                });
-            }
-        } else {
-            if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
-                if (currentProjectCountdowns.length > 0 && countdownOrder !== null && countdownOrder < 0) {
-                    renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
                 }
-            }
-            if (currentRoute === 'today') {
-                const overdueActiveTasks = activeTasks.filter(t => t.dueDate && t.dueDate < todayStr);
-                sortTasksByOrder(overdueActiveTasks);
+            } else {
+                if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
+                    if (currentProjectCountdowns.length > 0 && countdownOrder !== null && countdownOrder < 0) {
+                        renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+                    }
+                }
+                if (currentRoute === 'today') {
+                    const overdueActiveTasks = activeTasks.filter(t => t.dueDate && t.dueDate < todayStr);
+                    sortTasksByOrder(overdueActiveTasks);
 
-                if (overdueActiveTasks.length > 0) {
-                    // Render overdue section
-                    const isOverdueCollapsed = localStorage.getItem('todo_today_overdue_collapsed') === 'true';
-                    const overdueSectionEl = document.createElement('div');
-                    overdueSectionEl.className = `project-section today-overdue-section ${isOverdueCollapsed ? 'collapsed' : ''}`;
-                    overdueSectionEl.style.marginTop = '20px';
-                    overdueSectionEl.innerHTML = `
+                    if (overdueActiveTasks.length > 0) {
+                        // Render overdue section
+                        const isOverdueCollapsed = localStorage.getItem('todo_today_overdue_collapsed') === 'true';
+                        const overdueSectionEl = document.createElement('div');
+                        overdueSectionEl.className = `project-section today-overdue-section ${isOverdueCollapsed ? 'collapsed' : ''}`;
+                        overdueSectionEl.style.marginTop = '20px';
+                        overdueSectionEl.innerHTML = `
                         <div class="project-section-header" style="cursor: pointer;">
                             <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
                                 <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
@@ -6216,23 +6262,23 @@ function doRenderTasks() {
                         </div>
                         <div class="section-tasks-container" style="${isOverdueCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
                     `;
-                    activeTasksContainer.appendChild(overdueSectionEl);
+                        activeTasksContainer.appendChild(overdueSectionEl);
 
-                    const overdueContainer = overdueSectionEl.querySelector('.section-tasks-container');
-                    renderTasksGroup(overdueActiveTasks, overdueContainer);
+                        const overdueContainer = overdueSectionEl.querySelector('.section-tasks-container');
+                        renderTasksGroup(overdueActiveTasks, overdueContainer);
 
-                    overdueSectionEl.querySelector('.project-section-header').addEventListener('click', () => {
-                        const collapsed = localStorage.getItem('todo_today_overdue_collapsed') === 'true';
-                        localStorage.setItem('todo_today_overdue_collapsed', !collapsed);
-                        renderTasks();
-                    });
+                        overdueSectionEl.querySelector('.project-section-header').addEventListener('click', () => {
+                            const collapsed = localStorage.getItem('todo_today_overdue_collapsed') === 'true';
+                            localStorage.setItem('todo_today_overdue_collapsed', !collapsed);
+                            renderTasks();
+                        });
 
-                    // Render today section
-                    const isTodayCollapsed = localStorage.getItem('todo_today_current_collapsed') === 'true';
-                    const todaySectionEl = document.createElement('div');
-                    todaySectionEl.className = `project-section today-current-section ${isTodayCollapsed ? 'collapsed' : ''}`;
-                    todaySectionEl.style.marginTop = '20px';
-                    todaySectionEl.innerHTML = `
+                        // Render today section
+                        const isTodayCollapsed = localStorage.getItem('todo_today_current_collapsed') === 'true';
+                        const todaySectionEl = document.createElement('div');
+                        todaySectionEl.className = `project-section today-current-section ${isTodayCollapsed ? 'collapsed' : ''}`;
+                        todaySectionEl.style.marginTop = '20px';
+                        todaySectionEl.innerHTML = `
                         <div class="project-section-header" style="cursor: pointer;">
                             <button class="section-collapse-btn" type="button" aria-label="Свернуть/развернуть раздел">
                                 <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
@@ -6244,18 +6290,39 @@ function doRenderTasks() {
                         </div>
                         <div class="section-tasks-container" style="${isTodayCollapsed ? 'display: none;' : ''}; min-height: 20px;"></div>
                     `;
-                    activeTasksContainer.appendChild(todaySectionEl);
+                        activeTasksContainer.appendChild(todaySectionEl);
 
-                    const todayContainer = todaySectionEl.querySelector('.section-tasks-container');
-                    renderTasksGroup(displayActiveTasks, todayContainer);
+                        const todayContainer = todaySectionEl.querySelector('.section-tasks-container');
+                        renderTasksGroup(displayActiveTasks, todayContainer);
 
-                    todaySectionEl.querySelector('.project-section-header').addEventListener('click', () => {
-                        const collapsed = localStorage.getItem('todo_today_current_collapsed') === 'true';
-                        localStorage.setItem('todo_today_current_collapsed', !collapsed);
-                        renderTasks();
-                    });
+                        todaySectionEl.querySelector('.project-section-header').addEventListener('click', () => {
+                            const collapsed = localStorage.getItem('todo_today_current_collapsed') === 'true';
+                            localStorage.setItem('todo_today_current_collapsed', !collapsed);
+                            renderTasks();
+                        });
+                    } else {
+                        // Render standard list without headers wrapped in double-background card
+                        if (displayActiveTasks.length > 0) {
+                            const unsectionedOuter = document.createElement('div');
+                            unsectionedOuter.className = 'project-section unsectioned-card';
+                            unsectionedOuter.style.marginTop = '0px';
+                            unsectionedOuter.innerHTML = `<div class="section-tasks-container unsectioned-tasks-container"></div>`;
+                            activeTasksContainer.appendChild(unsectionedOuter);
+                            const innerContainer = unsectionedOuter.querySelector('.section-tasks-container');
+                            renderTasksGroup(displayActiveTasks, innerContainer);
+                        }
+                    }
+                } else if (currentRoute === 'tomorrow') {
+                    if (displayActiveTasks.length > 0) {
+                        const unsectionedOuter = document.createElement('div');
+                        unsectionedOuter.className = 'project-section unsectioned-card';
+                        unsectionedOuter.style.marginTop = '0px';
+                        unsectionedOuter.innerHTML = `<div class="section-tasks-container unsectioned-tasks-container"></div>`;
+                        activeTasksContainer.appendChild(unsectionedOuter);
+                        const innerContainer = unsectionedOuter.querySelector('.section-tasks-container');
+                        renderTasksGroup(displayActiveTasks, innerContainer);
+                    }
                 } else {
-                    // Render standard list without headers wrapped in double-background card
                     if (displayActiveTasks.length > 0) {
                         const unsectionedOuter = document.createElement('div');
                         unsectionedOuter.className = 'project-section unsectioned-card';
@@ -6266,34 +6333,13 @@ function doRenderTasks() {
                         renderTasksGroup(displayActiveTasks, innerContainer);
                     }
                 }
-            } else if (currentRoute === 'tomorrow') {
-                if (displayActiveTasks.length > 0) {
-                    const unsectionedOuter = document.createElement('div');
-                    unsectionedOuter.className = 'project-section unsectioned-card';
-                    unsectionedOuter.style.marginTop = '0px';
-                    unsectionedOuter.innerHTML = `<div class="section-tasks-container unsectioned-tasks-container"></div>`;
-                    activeTasksContainer.appendChild(unsectionedOuter);
-                    const innerContainer = unsectionedOuter.querySelector('.section-tasks-container');
-                    renderTasksGroup(displayActiveTasks, innerContainer);
-                }
-            } else {
-                if (displayActiveTasks.length > 0) {
-                    const unsectionedOuter = document.createElement('div');
-                    unsectionedOuter.className = 'project-section unsectioned-card';
-                    unsectionedOuter.style.marginTop = '0px';
-                    unsectionedOuter.innerHTML = `<div class="section-tasks-container unsectioned-tasks-container"></div>`;
-                    activeTasksContainer.appendChild(unsectionedOuter);
-                    const innerContainer = unsectionedOuter.querySelector('.section-tasks-container');
-                    renderTasksGroup(displayActiveTasks, innerContainer);
-                }
-            }
 
-            if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
-                if (currentProjectCountdowns.length > 0 && (countdownOrder === null || countdownOrder >= 0)) {
-                    renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+                if (currentRoute === 'today' || currentRoute === 'tomorrow' || currentRoute === 'inbox') {
+                    if (currentProjectCountdowns.length > 0 && (countdownOrder === null || countdownOrder >= 0)) {
+                        renderCountdownSection(currentProjectCountdowns, activeTasksContainer, currentViewProjectId);
+                    }
                 }
             }
-        }
         }
     }
 
@@ -7076,12 +7122,12 @@ function createTaskRowElement(task, isStandalone = false) {
                                 </svg>
                             ` : ''}
                         </button>
-                        ${projectsList.map(proj => {
+                        ${getSortedHierarchicalProjects().map(proj => {
             const isCurrent = task.projectId === proj.id;
             const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="flex-shrink: 0;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
             const iconHtml = getProjectIconHtml(proj.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 3px; flex-shrink: 0; margin-right: 0; font-size: 13px; line-height: 1;');
             return `
-                                    <button class="dropdown-item btn-select-project ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}">
+                                    <button class="dropdown-item btn-select-project ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}" style="${proj.depth ? `padding-left: ${12 + proj.depth * 14}px;` : ''}">
                                         ${iconHtml}
                                         <span>${escapeHtml(proj.name)}</span>
                                         ${isCurrent ? `
@@ -7915,27 +7961,432 @@ function stopSectionsForUser() {
     sectionsList = [];
 }
 
+// === ПОДПРОЕКТЫ (ВЛОЖЕННЫЕ ПРОЕКТЫ) ===
+
+function formatTaskCountRu(count) {
+    const n = Math.abs(count);
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod100 >= 11 && mod100 <= 19) return `${count} задач`;
+    if (mod10 === 1) return `${count} задача`;
+    if (mod10 >= 2 && mod10 <= 4) return `${count} задачи`;
+    return `${count} задач`;
+}
+
+function hasActiveDescendant(projectId) {
+    if (!currentRoute || !currentRoute.startsWith('project/')) return false;
+    const activeId = currentRoute.replace('project/', '');
+    if (activeId === projectId) return false;
+
+    let curr = projectsList.find(p => p.id === activeId);
+    let depth = 0;
+    while (curr && curr.parentId && depth < 20) {
+        if (curr.parentId === projectId) return true;
+        curr = projectsList.find(p => p.id === curr.parentId);
+        depth++;
+    }
+    return false;
+}
+
+function getSortedHierarchicalProjects() {
+    if (!Array.isArray(projectsList)) return [];
+    const roots = projectsList.filter(p => !p.parentId || !projectsList.some(parent => parent.id === p.parentId));
+    roots.sort((a, b) => (a.order !== undefined ? a.order : 0) - (b.order !== undefined ? b.order : 0));
+
+    const result = [];
+    const visited = new Set();
+
+    function traverse(parentId, depth) {
+        const children = projectsList.filter(c => c.parentId === parentId);
+        children.sort((a, b) => (a.order !== undefined ? a.order : 0) - (b.order !== undefined ? b.order : 0));
+        children.forEach(child => {
+            if (!visited.has(child.id)) {
+                visited.add(child.id);
+                result.push({ ...child, depth });
+                traverse(child.id, depth + 1);
+            }
+        });
+    }
+
+    roots.forEach(root => {
+        if (!visited.has(root.id)) {
+            visited.add(root.id);
+            result.push({ ...root, depth: 0 });
+            traverse(root.id, 1);
+        }
+    });
+
+    projectsList.forEach(p => {
+        if (!visited.has(p.id)) {
+            visited.add(p.id);
+            result.push({ ...p, depth: 0 });
+            traverse(p.id, 1);
+        }
+    });
+
+    return result;
+}
+
+function isProjectCollapsed(projectId) {
+    return localStorage.getItem(`todo_project_collapsed_${projectId}`) === 'true';
+}
+
+function toggleProjectCollapsed(projectId) {
+    const current = isProjectCollapsed(projectId);
+    localStorage.setItem(`todo_project_collapsed_${projectId}`, current ? 'false' : 'true');
+    renderProjects();
+}
+
+function addNewSubprojectToProject(parentId) {
+    if (!currentUid || !parentId) return;
+    if (currentRoute === `project/${parentId}`) {
+        let sectionEl = document.querySelector('.subprojects-project-section');
+        if (!sectionEl) {
+            const activeTasksContainer = document.getElementById('activeTasksContainer');
+            if (activeTasksContainer) {
+                sectionEl = renderSubprojectsSection([], activeTasksContainer, parentId, true);
+            }
+        } else {
+            showNewSubprojectCard(sectionEl, parentId);
+        }
+    } else {
+        createSubprojectInSidebar(parentId);
+    }
+}
+
+function createSubprojectInSidebar(parentId) {
+    if (!currentUid || !parentId) return;
+    localStorage.setItem(`todo_project_collapsed_${parentId}`, 'false');
+    renderProjects();
+
+    const subTree = document.getElementById(`subprojects-tree-${parentId}`);
+    if (!subTree) return;
+
+    if (subTree.querySelector('.new-project-temp')) {
+        subTree.querySelector('.project-inline-input')?.focus();
+        return;
+    }
+
+    const itemContainer = document.createElement('div');
+    itemContainer.className = 'project-item-container project-subproject-item-container new-project-temp';
+
+    itemContainer.innerHTML = `
+        <div class="menu-item active" style="padding: 6px 12px; margin: 2px 0; border-radius: 8px; display: flex; align-items: center; width: 100%; box-sizing: border-box;">
+            <span class="menu-item-left" style="width: 100%; display: flex; align-items: center; gap: 8px; min-width: 0;">
+                <span class="menu-icon" style="opacity: 0.85; flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" y1="9" x2="20" y2="9"></line>
+                        <line x1="4" y1="15" x2="20" y2="15"></line>
+                        <line x1="10" y1="3" x2="8" y2="21"></line>
+                        <line x1="16" y1="3" x2="14" y2="21"></line>
+                    </svg>
+                </span>
+                <input type="text" class="project-inline-input" placeholder="Новый подпроект..." maxlength="50" style="background: transparent; border: none; outline: none; color: var(--text); font-family: inherit; font-size: 14px; width: 100%; padding: 0;">
+            </span>
+        </div>
+    `;
+
+    subTree.appendChild(itemContainer);
+    itemContainer.scrollIntoView({ block: 'nearest' });
+
+    const input = itemContainer.querySelector('.project-inline-input');
+    input.focus();
+
+    let finished = false;
+    const save = async () => {
+        if (finished) return;
+        finished = true;
+        const nameText = input.value.trim();
+        if (nameText && nameText.length <= 50) {
+            try {
+                let maxOrder = 0;
+                if (projectsList.length > 0) {
+                    maxOrder = Math.max(...projectsList.map(p => p.order !== undefined ? p.order : 0));
+                }
+                const now = Date.now();
+
+                const newProjData = {
+                    name: nameText,
+                    parentId: parentId,
+                    order: maxOrder + 1000,
+                    createdAt: serverTimestamp()
+                };
+                const docRef = await addDoc(collection(db, 'users', currentUid, 'projects'), newProjData);
+                if (docRef && docRef.id && !projectsList.some(p => p.id === docRef.id)) {
+                    projectsList.push({
+                        id: docRef.id,
+                        name: nameText,
+                        parentId: parentId,
+                        order: maxOrder + 1000,
+                        createdAt: now,
+                        clientCreatedAt: now,
+                        updatedAt: now
+                    });
+                    saveCachedProjectsSnapshot(currentUid);
+                    renderProjects();
+                    renderTasks();
+                }
+            } catch (err) {
+                console.error("Не удалось добавить подпроект:", err);
+                itemContainer.remove();
+            }
+        } else {
+            itemContainer.remove();
+        }
+    };
+
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', (ev) => {
+        ev.stopPropagation();
+        if (ev.key === 'Enter') {
+            ev.preventDefault();
+            input.blur();
+        } else if (ev.key === 'Escape') {
+            finished = true;
+            itemContainer.remove();
+        }
+    });
+    input.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+    });
+}
+
+function renderSubprojectsSection(subprojects, container, projectId, forceShowInput = false) {
+    if (!container || !projectId) return null;
+    if ((!subprojects || subprojects.length === 0) && !forceShowInput) return null;
+
+    let sectionEl = container.querySelector('.subprojects-project-section');
+    if (sectionEl) {
+        if (forceShowInput) {
+            showNewSubprojectCard(sectionEl, projectId);
+        }
+        return sectionEl;
+    }
+
+    sectionEl = document.createElement('div');
+    sectionEl.className = 'project-section subprojects-project-section';
+    sectionEl.setAttribute('data-section-type', 'subprojects');
+
+    const count = subprojects ? subprojects.length : 0;
+
+    sectionEl.innerHTML = `
+        <div class="subprojects-section-header">
+            <div class="subprojects-header-left">
+                <span class="subprojects-section-title">Подпроекты</span>
+                <span class="subprojects-count-badge">${count}</span>
+            </div>
+            <button class="btn-add-subproject" type="button">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Добавить подпроект</span>
+            </button>
+        </div>
+        <div class="subprojects-grid"></div>
+    `;
+
+    const grid = sectionEl.querySelector('.subprojects-grid');
+    if (subprojects && subprojects.length > 0) {
+        subprojects.forEach((sp, idx) => {
+            const card = createSubprojectCard(sp, idx);
+            grid.appendChild(card);
+        });
+    }
+
+    const addBtn = sectionEl.querySelector('.btn-add-subproject');
+    addBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showNewSubprojectCard(sectionEl, projectId);
+    });
+
+    container.appendChild(sectionEl);
+
+    if (forceShowInput) {
+        showNewSubprojectCard(sectionEl, projectId);
+    }
+
+    return sectionEl;
+}
+
+function showNewSubprojectCard(sectionEl, projectId) {
+    const grid = sectionEl.querySelector('.subprojects-grid');
+    if (!grid) return;
+
+    if (grid.querySelector('.subproject-card-new')) {
+        grid.querySelector('.subproject-inline-input')?.focus();
+        return;
+    }
+
+    const newCard = document.createElement('div');
+    newCard.className = 'subproject-card subproject-card-new';
+    newCard.style.setProperty('--card-accent-color', 'var(--accent)');
+
+    newCard.innerHTML = `
+        <div class="subproject-card-icon" style="color: var(--text-secondary);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="9" x2="20" y2="9"></line>
+                <line x1="4" y1="15" x2="20" y2="15"></line>
+                <line x1="10" y1="3" x2="8" y2="21"></line>
+                <line x1="16" y1="3" x2="14" y2="21"></line>
+            </svg>
+        </div>
+        <div class="subproject-card-info" style="flex: 1;">
+            <input type="text" class="subproject-inline-input" placeholder="Новый подпроект..." maxlength="50" autocomplete="off" />
+        </div>
+    `;
+
+    grid.appendChild(newCard);
+    const input = newCard.querySelector('.subproject-inline-input');
+    input.focus();
+
+    let finished = false;
+    const save = async () => {
+        if (finished) return;
+        finished = true;
+        const nameText = input.value.trim();
+        if (nameText && nameText.length <= 50) {
+            try {
+                let maxOrder = 0;
+                if (projectsList.length > 0) {
+                    maxOrder = Math.max(...projectsList.map(p => p.order !== undefined ? p.order : 0));
+                }
+                const now = Date.now();
+
+                const newProjData = {
+                    name: nameText,
+                    parentId: projectId,
+                    order: maxOrder + 1000,
+                    createdAt: serverTimestamp()
+                };
+                const docRef = await addDoc(collection(db, 'users', currentUid, 'projects'), newProjData);
+                if (docRef && docRef.id && !projectsList.some(p => p.id === docRef.id)) {
+                    projectsList.push({
+                        id: docRef.id,
+                        name: nameText,
+                        parentId: projectId,
+                        order: maxOrder + 1000,
+                        createdAt: now,
+                        clientCreatedAt: now,
+                        updatedAt: now
+                    });
+                    saveCachedProjectsSnapshot(currentUid);
+                }
+                localStorage.setItem(`todo_project_collapsed_${projectId}`, 'false');
+                renderProjects();
+                renderTasks();
+            } catch (err) {
+                console.error("Ошибка при создании подпроекта:", err);
+                newCard.remove();
+            }
+        } else {
+            newCard.remove();
+            const remainingCards = grid.querySelectorAll('.subproject-card:not(.subproject-card-new)');
+            if (remainingCards.length === 0) {
+                sectionEl.remove();
+            }
+        }
+    };
+
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', (ev) => {
+        ev.stopPropagation();
+        if (ev.key === 'Enter') {
+            ev.preventDefault();
+            input.blur();
+        } else if (ev.key === 'Escape') {
+            finished = true;
+            newCard.remove();
+            const remainingCards = grid.querySelectorAll('.subproject-card:not(.subproject-card-new)');
+            if (remainingCards.length === 0) {
+                sectionEl.remove();
+            }
+        }
+    });
+}
+
+function createSubprojectCard(sp, idx) {
+    const card = document.createElement('a');
+    card.href = `#project/${sp.id}`;
+    card.className = 'subproject-card';
+    card.setAttribute('data-subproject-id', sp.id);
+
+    const accentColor = sp.color || 'transparent';
+    card.style.setProperty('--card-accent-color', accentColor);
+
+    const taskCount = allTasks.filter(t => !t.deleted && !t.completed && t.projectId === sp.id).length;
+    const countText = formatTaskCountRu(taskCount);
+
+    const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
+    const iconHtml = getProjectIconHtml(sp.iconUrl, defaultSvg, 'width: 20px; height: 20px; object-fit: contain; font-size: 18px;');
+
+    card.innerHTML = `
+        <div class="subproject-card-icon" style="${sp.color ? `color: ${sp.color};` : 'color: var(--text-secondary);'}">
+            ${iconHtml}
+        </div>
+        <div class="subproject-card-info">
+            <div class="subproject-card-title">${escapeHtml(sp.name)}</div>
+            <div class="subproject-card-count">${countText}</div>
+        </div>
+        <div class="subproject-card-arrow">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+        </div>
+    `;
+
+    return card;
+}
+
 function renderProjects() {
     if (!projectsListContainer) return;
     projectsListContainer.innerHTML = '';
 
-    projectsList.forEach(project => {
+    const showCounters = localStorage.getItem('todo_show_sidebar_counters') !== 'hide';
+
+    const roots = projectsList.filter(p => !p.parentId || !projectsList.some(parent => parent.id === p.parentId));
+    roots.sort((a, b) => (a.order !== undefined ? a.order : 0) - (b.order !== undefined ? b.order : 0));
+
+    const renderedIds = new Set();
+
+    function renderProjectNode(project, depth, targetContainer) {
+        if (renderedIds.has(project.id)) return;
+        renderedIds.add(project.id);
+
         const itemContainer = document.createElement('div');
-        itemContainer.className = 'project-item-container';
+        itemContainer.className = 'project-item-container' + (depth > 0 ? ' project-subproject-item-container' : '');
+        itemContainer.setAttribute('data-id', project.id);
+        itemContainer.setAttribute('data-depth', depth);
 
         const projectHash = `project/${project.id}`;
         const isActive = currentRoute === projectHash;
 
-        // Calculate task count for this project
+        const subprojects = projectsList.filter(p => p.parentId === project.id);
+        subprojects.sort((a, b) => (a.order !== undefined ? a.order : 0) - (b.order !== undefined ? b.order : 0));
+        const hasChildren = subprojects.length > 0;
+
+        let isCollapsed = isProjectCollapsed(project.id);
+        if (hasChildren && hasActiveDescendant(project.id)) {
+            isCollapsed = false;
+            localStorage.setItem(`todo_project_collapsed_${project.id}`, 'false');
+        }
+
         const projectTaskCount = allTasks.filter(t => !t.deleted && !t.completed && t.projectId === project.id).length;
+        const hideProjectCount = project.hideCount === true;
 
         const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
         const iconHtml = getProjectIconHtml(project.iconUrl, defaultSvg, 'width: 16px; height: 16px; object-fit: contain; border-radius: 4px; flex-shrink: 0; font-size: 14px; line-height: 1;');
 
-        const showCounters = localStorage.getItem('todo_show_sidebar_counters') !== 'hide';
-        const hideProjectCount = project.hideCount === true;
+        const chevronHtml = hasChildren ? `
+            <button class="project-tree-chevron-btn ${isCollapsed ? 'collapsed' : ''}" type="button" aria-label="Свернуть/развернуть подпроекты" title="${isCollapsed ? 'Развернуть' : 'Свернуть'}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+        ` : '';
 
         itemContainer.innerHTML = `
+            ${chevronHtml}
             <a href="#${projectHash}" class="menu-item ${isActive ? 'active' : ''}">
                 <span class="menu-item-left">
                     <span class="menu-icon">
@@ -7945,7 +8396,7 @@ function renderProjects() {
                 </span>
                 <span style="display: flex; align-items: center; gap: 8px;">
                     ${project.color ? `<span class="project-color-dot" style="background-color: ${project.color};"></span>` : ''}
-                    <span class="menu-counter" style="${(showCounters && !hideProjectCount && projectTaskCount > 0) ? '' : 'display:none'}">${projectTaskCount}</span>
+                    <span class="menu-counter" style="${(showCounters && !hideProjectCount && (projectTaskCount > 0 || depth > 0)) ? '' : 'display:none'}">${projectTaskCount}</span>
                 </span>
             </a>
             <button class="project-actions-btn" data-id="${project.id}" title="Действия">
@@ -7955,15 +8406,29 @@ function renderProjects() {
             </button>
         `;
 
-        // Add project actions listener
-        const actionsBtn = itemContainer.querySelector('.project-actions-btn');
-        actionsBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            showProjectContextMenu(e, project.id, project.name, itemContainer);
-        });
+        const chevronBtn = itemContainer.querySelector('.project-tree-chevron-btn');
+        if (chevronBtn) {
+            chevronBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const nowCollapsed = chevronBtn.classList.toggle('collapsed');
+                localStorage.setItem(`todo_project_collapsed_${project.id}`, nowCollapsed ? 'true' : 'false');
+                const subTree = document.getElementById(`subprojects-tree-${project.id}`);
+                if (subTree) {
+                    subTree.style.display = nowCollapsed ? 'none' : 'flex';
+                }
+            });
+        }
 
-        // Открытие меню проектов по правому клику (ПКМ) на десктопе
+        const actionsBtn = itemContainer.querySelector('.project-actions-btn');
+        if (actionsBtn) {
+            actionsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                showProjectContextMenu(e, project.id, project.name, itemContainer);
+            });
+        }
+
         itemContainer.addEventListener('contextmenu', (e) => {
             if (window.matchMedia('(hover: hover)').matches) {
                 e.preventDefault();
@@ -7972,7 +8437,6 @@ function renderProjects() {
             }
         });
 
-        // Drag and Drop активация через иконку
         const menuIcon = itemContainer.querySelector('.menu-icon');
         if (menuIcon) {
             menuIcon.addEventListener('mousedown', () => {
@@ -7983,13 +8447,42 @@ function renderProjects() {
             });
         }
 
-        projectsListContainer.appendChild(itemContainer);
+        targetContainer.appendChild(itemContainer);
+
+        if (hasChildren) {
+            const subTreeContainer = document.createElement('div');
+            subTreeContainer.className = 'project-subprojects-tree';
+            subTreeContainer.id = `subprojects-tree-${project.id}`;
+            subTreeContainer.style.display = isCollapsed ? 'none' : 'flex';
+
+            subprojects.forEach(child => {
+                renderProjectNode(child, depth + 1, subTreeContainer);
+            });
+
+            targetContainer.appendChild(subTreeContainer);
+        }
+    }
+
+    roots.forEach(root => {
+        renderProjectNode(root, 0, projectsListContainer);
+    });
+
+    projectsList.forEach(p => {
+        if (!renderedIds.has(p.id)) {
+            renderProjectNode(p, 0, projectsListContainer);
+        }
     });
 }
 
 async function deleteProject(projectId) {
     if (!currentUid || !projectId) return;
     try {
+        // Рекурсивно удаляем подпроекты
+        const childProjects = projectsList.filter(p => p.parentId === projectId);
+        for (const child of childProjects) {
+            await deleteProject(child.id);
+        }
+
         await deleteDoc(doc(db, 'users', currentUid, 'projects', projectId));
 
         // Перемещаем задачи этого проекта в Корзину
@@ -8702,6 +9195,14 @@ function renderProjectHeaderDropdown() {
             </svg>
             <span>Добавить отсчет</span>
         </button>
+        <button class="dropdown-item" id="btnProjectAddSubproject">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                <line x1="12" y1="11" x2="12" y2="17"></line>
+                <line x1="9" y1="14" x2="15" y2="14"></line>
+            </svg>
+            <span>Добавить подпроект</span>
+        </button>
         <button class="dropdown-item" id="btnProjectRename">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -8754,6 +9255,12 @@ function renderProjectHeaderDropdown() {
         e.stopPropagation();
         projectHeaderDropdown.style.display = 'none';
         openCountdownModal(null, projectId);
+    });
+
+    document.getElementById('btnProjectAddSubproject')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        projectHeaderDropdown.style.display = 'none';
+        addNewSubprojectToProject(projectId);
     });
 
     document.getElementById('btnProjectRename')?.addEventListener('click', (e) => {
@@ -9601,6 +10108,23 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
             </svg>
             <span>Открыть доску</span>
         </div>
+        <div class="ctx-item" id="ctx-add-subproject">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                <line x1="12" y1="11" x2="12" y2="17"></line>
+                <line x1="9" y1="14" x2="15" y2="14"></line>
+            </svg>
+            <span>Добавить подпроект</span>
+        </div>
+        ${project && project.parentId ? `
+        <div class="ctx-item" id="ctx-make-root-project">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 14 20 9 15 4"></polyline>
+                <path d="M4 20v-7a4 4 0 0 1 4-4h12"></path>
+            </svg>
+            <span>Сделать основным проектом</span>
+        </div>
+        ` : ''}
         <div class="ctx-item" id="ctx-rename-project">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             <span>Переименовать</span>
@@ -9678,6 +10202,33 @@ function showProjectContextMenu(e, projectId, projectName, itemContainer) {
         menu.remove();
         activeContextMenu = null;
         openProjectWhiteboardModal(projectId);
+    });
+
+    // Обработчик добавления подпроекта
+    menu.querySelector('#ctx-add-subproject')?.addEventListener('click', (evt) => {
+        evt.stopPropagation();
+        menu.remove();
+        activeContextMenu = null;
+        addNewSubprojectToProject(projectId);
+    });
+
+    // Обработчик превращения подпроекта в основной проект
+    menu.querySelector('#ctx-make-root-project')?.addEventListener('click', async (evt) => {
+        evt.stopPropagation();
+        menu.remove();
+        activeContextMenu = null;
+        try {
+            await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                parentId: null
+            });
+            const p = projectsList.find(proj => proj.id === projectId);
+            if (p) p.parentId = null;
+            saveCachedProjectsSnapshot(currentUid);
+            renderProjects();
+            renderTasks();
+        } catch (err) {
+            console.error("Ошибка при переносе проекта в корень:", err);
+        }
     });
 
     // Обработчик переименования проекта
@@ -10454,12 +11005,51 @@ function enableProjectInlineEdit(itemContainer, projectId, oldName) {
     });
 }
 
+function isProjectDescendantOf(candidateParentId, movingProjId) {
+    if (!candidateParentId || !movingProjId) return false;
+    if (candidateParentId === movingProjId) return true;
+    let curr = projectsList.find(p => p.id === candidateParentId);
+    let depth = 0;
+    while (curr && curr.parentId && depth < 20) {
+        if (curr.parentId === movingProjId) return true;
+        curr = projectsList.find(p => p.id === curr.parentId);
+        depth++;
+    }
+    return false;
+}
+
 // Инициализация Drag and Drop для проектов в боковой панели
 function initProjectsDragAndDrop() {
     let draggingProject = null;
     let placeholder = null;
+    let nestTargetProject = null;
+    let nestTargetId = null;
 
     if (!projectsListContainer) return;
+
+    const clearNestHighlight = () => {
+        if (nestTargetProject) {
+            nestTargetProject.classList.remove('drag-over-nest');
+            nestTargetProject = null;
+            nestTargetId = null;
+        }
+        projectsListContainer.querySelectorAll('.drag-over-nest').forEach(el => el.classList.remove('drag-over-nest'));
+    };
+
+    function getDragAfterProjectInContainer(container, y) {
+        const dragElements = Array.from(container.children).filter(child => 
+            child.classList.contains('project-item-container') && !child.classList.contains('dragging')
+        );
+        return dragElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - (box.top + box.height / 2);
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
 
     projectsListContainer.addEventListener('dragstart', (e) => {
         const projectItem = e.target.closest('.project-item-container');
@@ -10470,10 +11060,9 @@ function initProjectsDragAndDrop() {
         draggingProject = projectItem;
         projectItem.classList.add('dragging');
 
-        // Создаем плейсхолдер
         placeholder = document.createElement('div');
         placeholder.className = 'project-drag-placeholder';
-        placeholder.style.height = `${draggingProject.offsetHeight}px`;
+        placeholder.style.height = `${draggingProject.offsetHeight || 36}px`;
 
         e.dataTransfer.effectAllowed = 'move';
         const actionsBtn = projectItem.querySelector('.project-actions-btn');
@@ -10481,7 +11070,6 @@ function initProjectsDragAndDrop() {
             e.dataTransfer.setData('text/plain', actionsBtn.getAttribute('data-id'));
         }
 
-        // Скрываем исходный элемент, чтобы он не дублировался в списке
         setTimeout(() => {
             if (draggingProject) {
                 draggingProject.style.display = 'none';
@@ -10491,21 +11079,89 @@ function initProjectsDragAndDrop() {
 
     projectsListContainer.addEventListener('dragover', (e) => {
         e.preventDefault();
-        if (!draggingProject || !placeholder) return;
+        if (!draggingProject) return;
 
-        const afterElement = getDragAfterProject(projectsListContainer, e.clientY);
+        const draggingBtn = draggingProject.querySelector('.project-actions-btn');
+        const movingProjId = draggingBtn ? draggingBtn.getAttribute('data-id') : draggingProject.getAttribute('data-id');
+
+        const targetItem = e.target.closest('.project-item-container');
+
+        if (targetItem && targetItem !== draggingProject) {
+            const targetBtn = targetItem.querySelector('.project-actions-btn');
+            const targetId = targetBtn ? targetBtn.getAttribute('data-id') : targetItem.getAttribute('data-id');
+
+            const rect = targetItem.getBoundingClientRect();
+            const relY = (e.clientY - rect.top) / rect.height;
+            const relX = (e.clientX - rect.left) / rect.width;
+
+            // ВЛОЖЕНИЕ: курсор строго в вертикальном центре (22% - 78%) И в правой части (более 45% ширины)
+            const canNest = targetId && targetId !== movingProjId && !isProjectDescendantOf(targetId, movingProjId);
+            if (canNest && relY >= 0.22 && relY <= 0.78 && relX >= 0.45) {
+                if (placeholder && placeholder.parentNode) {
+                    placeholder.remove();
+                }
+                if (nestTargetProject !== targetItem) {
+                    clearNestHighlight();
+                    nestTargetProject = targetItem;
+                    nestTargetId = targetId;
+                    targetItem.classList.add('drag-over-nest');
+                }
+                return;
+            }
+
+            // ПЕРЕМЕЩЕНИЕ (РЕОРДЕР) В СПИСКЕ
+            clearNestHighlight();
+
+            if (!placeholder) {
+                placeholder = document.createElement('div');
+                placeholder.className = 'project-drag-placeholder';
+                placeholder.style.height = '36px';
+            }
+
+            const parentContainer = targetItem.parentElement;
+            if (parentContainer) {
+                if (relY < 0.5) {
+                    // Вставляем перед целевым элементом
+                    parentContainer.insertBefore(placeholder, targetItem);
+                } else {
+                    // Вставляем после целевого элемента (или после его развернутого поддерева)
+                    const targetSubTree = document.getElementById(`subprojects-tree-${targetId}`);
+                    if (targetSubTree && targetSubTree.parentElement === parentContainer && targetSubTree.style.display !== 'none') {
+                        parentContainer.insertBefore(placeholder, targetSubTree.nextSibling);
+                    } else {
+                        parentContainer.insertBefore(placeholder, targetItem.nextSibling);
+                    }
+                }
+                return;
+            }
+        }
+
+        // Если курсор не над карточкой проекта, а над контейнером
+        clearNestHighlight();
+        if (!placeholder) {
+            placeholder = document.createElement('div');
+            placeholder.className = 'project-drag-placeholder';
+            placeholder.style.height = '36px';
+        }
+
+        const subTree = e.target.closest('.project-subprojects-tree');
+        const container = subTree || projectsListContainer;
+        const afterElement = getDragAfterProjectInContainer(container, e.clientY);
         if (afterElement) {
-            projectsListContainer.insertBefore(placeholder, afterElement);
+            container.insertBefore(placeholder, afterElement);
         } else {
-            projectsListContainer.appendChild(placeholder);
+            container.appendChild(placeholder);
         }
     });
 
     projectsListContainer.addEventListener('dragleave', (e) => {
-        // Больше не нужно сбрасывать классы
+        if (!e.relatedTarget || !projectsListContainer.contains(e.relatedTarget)) {
+            clearNestHighlight();
+        }
     });
 
     projectsListContainer.addEventListener('dragend', (e) => {
+        clearNestHighlight();
         if (draggingProject) {
             draggingProject.style.display = '';
             draggingProject.classList.remove('dragging');
@@ -10519,10 +11175,119 @@ function initProjectsDragAndDrop() {
 
     projectsListContainer.addEventListener('drop', async (e) => {
         e.preventDefault();
-        if (!draggingProject || !placeholder) return;
+        if (!draggingProject) return;
 
-        const nextElement = placeholder.nextElementSibling;
-        placeholder.remove();
+        const actionsBtn = draggingProject.querySelector('.project-actions-btn');
+        const projectId = actionsBtn ? actionsBtn.getAttribute('data-id') : draggingProject.getAttribute('data-id');
+        if (!projectId) return;
+
+        const movingProj = projectsList.find(p => p.id === projectId);
+        if (!movingProj) return;
+
+        // ВАРИАНТ 1: ДРОП В ПРАВУЮ ЧАСТЬ (ВЛОЖЕНИЕ В ПРОЕКТ)
+        if (nestTargetId && nestTargetId !== projectId && !isProjectDescendantOf(nestTargetId, projectId)) {
+            const targetParentId = nestTargetId;
+            clearNestHighlight();
+            if (placeholder && placeholder.parentNode) placeholder.remove();
+            placeholder = null;
+
+            if (draggingProject) {
+                draggingProject.style.display = '';
+                draggingProject.classList.remove('dragging');
+            }
+
+            const existingChildren = projectsList.filter(p => p.parentId === targetParentId);
+            let maxChildOrder = 0;
+            if (existingChildren.length > 0) {
+                maxChildOrder = Math.max(...existingChildren.map(c => c.order !== undefined ? c.order : 0));
+            }
+            const newOrder = maxChildOrder + 1000;
+
+            movingProj.parentId = targetParentId;
+            movingProj.order = newOrder;
+
+            localStorage.setItem(`todo_project_collapsed_${targetParentId}`, 'false');
+            saveCachedProjectsSnapshot(currentUid);
+            renderProjects();
+            renderTasks();
+
+            if (currentUid && projectId) {
+                try {
+                    await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                        parentId: targetParentId,
+                        order: newOrder
+                    });
+                } catch (err) {
+                    console.error("Ошибка при переносе проекта в подпроект:", err);
+                }
+            }
+            draggingProject = null;
+            return;
+        }
+
+        // ВАРИАНТ 2: ПЕРЕМЕЩЕНИЕ (РЕОРДЕР) В СПИСКЕ
+        clearNestHighlight();
+        const parentContainer = placeholder ? placeholder.parentElement : null;
+        if (!parentContainer) {
+            if (draggingProject) {
+                draggingProject.style.display = '';
+                draggingProject.classList.remove('dragging');
+            }
+            placeholder = null;
+            draggingProject = null;
+            return;
+        }
+
+        // Определяем нового родителя на основе родительского контейнера плейсхолдера
+        let newParentId = null;
+        if (parentContainer.classList.contains('project-subprojects-tree')) {
+            newParentId = parentContainer.id ? parentContainer.id.replace('subprojects-tree-', '') : null;
+        }
+
+        // Находим соседей плейсхолдера среди элементов этого контейнера
+        const containerChildren = Array.from(parentContainer.children);
+        const placeholderIdx = containerChildren.indexOf(placeholder);
+
+        let prevItem = null;
+        for (let i = placeholderIdx - 1; i >= 0; i--) {
+            const el = containerChildren[i];
+            if (el.classList?.contains('project-item-container') && el !== draggingProject) {
+                prevItem = el;
+                break;
+            }
+        }
+
+        let nextItem = null;
+        for (let i = placeholderIdx + 1; i < containerChildren.length; i++) {
+            const el = containerChildren[i];
+            if (el.classList?.contains('project-item-container') && el !== draggingProject) {
+                nextItem = el;
+                break;
+            }
+        }
+
+        const prevId = prevItem ? (prevItem.querySelector('.project-actions-btn')?.getAttribute('data-id') || prevItem.getAttribute('data-id')) : null;
+        const nextId = nextItem ? (nextItem.querySelector('.project-actions-btn')?.getAttribute('data-id') || nextItem.getAttribute('data-id')) : null;
+
+        const prevProj = prevId ? projectsList.find(p => p.id === prevId) : null;
+        const nextProj = nextId ? projectsList.find(p => p.id === nextId) : null;
+
+        let newOrder = 0;
+        if (prevProj && nextProj) {
+            const prevO = prevProj.order !== undefined ? prevProj.order : 0;
+            const nextO = nextProj.order !== undefined ? nextProj.order : 0;
+            newOrder = (prevO + nextO) / 2;
+        } else if (prevProj) {
+            newOrder = (prevProj.order !== undefined ? prevProj.order : 0) + 1000;
+        } else if (nextProj) {
+            newOrder = (nextProj.order !== undefined ? nextProj.order : 0) - 1000;
+        } else {
+            newOrder = 1000;
+        }
+
+        if (placeholder && placeholder.parentNode) {
+            placeholder.remove();
+        }
         placeholder = null;
 
         if (draggingProject) {
@@ -10530,81 +11295,26 @@ function initProjectsDragAndDrop() {
             draggingProject.classList.remove('dragging');
         }
 
-        const actionsBtn = draggingProject.querySelector('.project-actions-btn');
-        if (!actionsBtn) return;
-        const projectId = actionsBtn.getAttribute('data-id');
+        movingProj.parentId = newParentId;
+        movingProj.order = newOrder;
 
-        const projectItems = Array.from(projectsListContainer.querySelectorAll('.project-item-container'));
-        const draggingIndex = projectItems.indexOf(draggingProject);
+        saveCachedProjectsSnapshot(currentUid);
+        renderProjects();
+        renderTasks();
 
-        let targetIndex;
-        if (!nextElement) {
-            targetIndex = projectItems.length - 1;
-        } else {
-            let nextIndex = projectItems.indexOf(nextElement);
-            if (draggingIndex < nextIndex) {
-                targetIndex = nextIndex - 1;
-            } else {
-                targetIndex = nextIndex;
-            }
-        }
-
-        // Копируем текущий список для расчета order
-        let currentProjects = [...projectsList];
-
-        const movingProj = currentProjects.find(p => p.id === projectId);
-        if (!movingProj) return;
-
-        const movingProjIndex = currentProjects.indexOf(movingProj);
-        currentProjects.splice(movingProjIndex, 1);
-        currentProjects.splice(targetIndex, 0, movingProj);
-
-        // Вычисляем новый order
-        let newOrder = 0;
-        if (currentProjects.length === 1) {
-            newOrder = 0;
-        } else if (targetIndex === 0) {
-            const nextProj = currentProjects[1];
-            const nextOrder = nextProj.order !== undefined ? nextProj.order : 0;
-            newOrder = nextOrder - 1000;
-        } else if (targetIndex === currentProjects.length - 1) {
-            const prevProj = currentProjects[currentProjects.length - 2];
-            const prevOrder = prevProj.order !== undefined ? prevProj.order : 0;
-            newOrder = prevOrder + 1000;
-        } else {
-            const prevProj = currentProjects[targetIndex - 1];
-            const nextProj = currentProjects[targetIndex + 1];
-            const prevOrder = prevProj.order !== undefined ? prevProj.order : 0;
-            const nextOrder = nextProj.order !== undefined ? nextProj.order : 0;
-            newOrder = (prevOrder + nextOrder) / 2;
-        }
-
-        // Обновляем в Firebase
         if (currentUid && projectId) {
             try {
                 await updateDoc(doc(db, 'users', currentUid, 'projects', projectId), {
+                    parentId: newParentId,
                     order: newOrder
                 });
             } catch (err) {
                 console.error("Ошибка обновления порядка проектов:", err);
             }
         }
+
         draggingProject = null;
     });
-}
-
-function getDragAfterProject(container, y) {
-    const dragElements = [...container.querySelectorAll('.project-item-container:not(.dragging)')];
-
-    return dragElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - (box.top + box.height / 2);
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
 initProjectsDragAndDrop();
@@ -10970,18 +11680,18 @@ function initTouchDragAndDrop() {
                                             tempCounts[pt.dueDate] = (tempCounts[pt.dueDate] || 0) + 1;
                                         }
                                     });
-                                    
+
                                     if (tempCounts[currentDueDate] > 2) {
                                         alreadyMatches = (dateGroupId === 'date-' + currentDueDate);
                                     } else {
                                         const getPeriodBucketLocal = (dStr) => {
                                             const [y, m, d] = dStr.split('-').map(Number);
                                             const dObj = new Date(y, m - 1, d);
-                                            dObj.setHours(0,0,0,0);
+                                            dObj.setHours(0, 0, 0, 0);
                                             const time = dObj.getTime();
-                                            
+
                                             const todayObj = new Date();
-                                            todayObj.setHours(0,0,0,0);
+                                            todayObj.setHours(0, 0, 0, 0);
                                             const day = todayObj.getDay();
                                             const daysToSunday = day === 0 ? 0 : 7 - day;
                                             const sundayOfThisWeek = new Date(todayObj);
@@ -10990,18 +11700,18 @@ function initTouchDragAndDrop() {
 
                                             const nextMonday = new Date(sundayOfThisWeek);
                                             nextMonday.setDate(nextMonday.getDate() + 1);
-                                            nextMonday.setHours(0,0,0,0);
+                                            nextMonday.setHours(0, 0, 0, 0);
                                             const nextSunday = new Date(nextMonday);
                                             nextSunday.setDate(nextSunday.getDate() + 6);
-                                            nextSunday.setHours(23,59,59,999);
+                                            nextSunday.setHours(23, 59, 59, 999);
 
                                             const endOfThisMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 0);
-                                            endOfThisMonth.setHours(23,59,59,999);
+                                            endOfThisMonth.setHours(23, 59, 59, 999);
 
                                             const startOfNextMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 1, 1);
-                                            startOfNextMonth.setHours(0,0,0,0);
+                                            startOfNextMonth.setHours(0, 0, 0, 0);
                                             const endOfNextMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() + 2, 0);
-                                            endOfNextMonth.setHours(23,59,59,999);
+                                            endOfNextMonth.setHours(23, 59, 59, 999);
 
                                             if (time <= sundayOfThisWeek.getTime()) {
                                                 return 'this_week';
@@ -12409,7 +13119,7 @@ function createSubtaskElement(subtask) {
 
         titleSpan.style.display = 'none';
         titleInput.style.display = 'block';
-        
+
         const hasAsteriskNow = subtask.title && subtask.title.startsWith('* ');
         titleInput.value = hasAsteriskNow ? subtask.title : displayTitle;
 
@@ -12448,7 +13158,7 @@ function createSubtaskElement(subtask) {
                     console.error("Ошибка при обновлении подзадачи:", err);
                 }
             }
-            
+
             itemEl.classList.remove('editing');
             titleSpan.style.display = '';
             titleInput.style.display = 'none';
@@ -13211,12 +13921,12 @@ if (modalProjectBtn) {
                     </button>
                 `;
 
-                projectsList.forEach(proj => {
+                getSortedHierarchicalProjects().forEach(proj => {
                     const isCurrent = currentTask.projectId === proj.id;
                     const defaultHtml = `<span style="font-weight: bold; color: var(--text-secondary);">#</span>`;
                     const iconHtml = getProjectIconHtml(proj.iconUrl, defaultHtml, 'width: 14px; height: 14px; object-fit: contain; border-radius: 3px; font-size: 13px; line-height: 1;');
                     html += `
-                        <button class="dropdown-item ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}" style="display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 8px 12px; cursor: pointer; text-align: left; color: var(--text);">
+                        <button class="dropdown-item ${isCurrent ? 'selected' : ''}" data-project-id="${proj.id}" style="display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 8px 12px; ${proj.depth ? `padding-left: ${12 + proj.depth * 14}px;` : ''} cursor: pointer; text-align: left; color: var(--text);">
                             ${iconHtml}
                             <span style="flex-grow: 1;">${escapeHtml(proj.name)}</span>
                         </button>
@@ -16861,20 +17571,20 @@ function createHabitCardElement(habit) {
     if (isFrequencyMonthly) {
         const monthShortNames = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
         const todayDate = new Date();
-        
+
         // Показываем последние 6 месяцев
         for (let i = 5; i >= 0; i--) {
             const tempDate = new Date(todayDate.getFullYear(), todayDate.getMonth() - i, 1);
             const yearVal = tempDate.getFullYear();
             const monthVal = tempDate.getMonth(); // 0-11
             const monthLabel = monthShortNames[monthVal];
-            
+
             // Проверяем, есть ли в этом месяце хоть одна запись
             const monthPrefix = `${yearVal}-${String(monthVal + 1).padStart(2, '0')}-`;
             const isCompleted = historyArray.some(d => d.startsWith(monthPrefix));
             const isCurrentMonth = todayDate.getFullYear() === yearVal && todayDate.getMonth() === monthVal;
-            
-            const targetDateStr = isCurrentMonth 
+
+            const targetDateStr = isCurrentMonth
                 ? `${yearVal}-${String(monthVal + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`
                 : `${yearVal}-${String(monthVal + 1).padStart(2, '0')}-01`;
 
@@ -17271,7 +17981,7 @@ function openHabitStatsModal(habit) {
             // Скрываем остальные карточки
             if (weekCard) weekCard.style.display = 'none';
             if (streakCard) streakCard.style.display = 'none';
-            
+
             // Задаем сетку из 2 колонок для оставшихся карточек
             const statsGrid = overlay.querySelector('.habit-stats-grid');
             if (statsGrid) statsGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
@@ -17604,21 +18314,21 @@ function openHabitModal(habit = null) {
                 <span class="habit-modal-section-title" style="font-size: 12px;">Выберите активные дни</span>
                 <div class="habit-weekdays-selector" style="display: flex; gap: 6px; justify-content: space-between;">
                     ${[
-                        { label: 'Пн', val: 1 },
-                        { label: 'Вт', val: 2 },
-                        { label: 'Ср', val: 3 },
-                        { label: 'Чт', val: 4 },
-                        { label: 'Пт', val: 5 },
-                        { label: 'Сб', val: 6 },
-                        { label: 'Вс', val: 0 }
-                    ].map(day => {
-                        const isDayActive = habit && habit.frequency === 'custom' && habit.activeDays && habit.activeDays.includes(day.val);
-                        return `
+            { label: 'Пн', val: 1 },
+            { label: 'Вт', val: 2 },
+            { label: 'Ср', val: 3 },
+            { label: 'Чт', val: 4 },
+            { label: 'Пт', val: 5 },
+            { label: 'Сб', val: 6 },
+            { label: 'Вс', val: 0 }
+        ].map(day => {
+            const isDayActive = habit && habit.frequency === 'custom' && habit.activeDays && habit.activeDays.includes(day.val);
+            return `
                             <button type="button" class="habit-day-btn ${isDayActive ? 'active' : ''}" data-day="${day.val}" style="flex: 1; height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-hover); color: var(--text); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease;">
                                 ${day.label}
                             </button>
                         `;
-                    }).join('')}
+        }).join('')}
                 </div>
             </div>
             
@@ -18187,7 +18897,7 @@ function initHabitEvents() {
                 // Close other header dropdowns if any
                 const projectHeaderDropdown = document.getElementById('projectHeaderDropdown');
                 if (projectHeaderDropdown) projectHeaderDropdown.style.display = 'none';
-                
+
                 habitHeaderDropdown.style.display = 'flex';
             } else {
                 habitHeaderDropdown.style.display = 'none';
@@ -18909,7 +19619,7 @@ async function renderCalendarView() {
     // Fetch Google Calendar Events if Google Calendar filter is checked
     const isGCalVisible = calendarSelectedProjects.has('all') || calendarSelectedProjects.has('gcal');
     const rawGCalEvents = await fetchCalendarGCalEvents(range.start, range.end);
-    
+
     // Prevent stale renders if a newer render request was initiated during await
     if (renderId !== calendarRenderCounter) return;
 
@@ -20268,7 +20978,7 @@ async function getOrCreateProjectWhiteboard(projectId) {
                     }
                     if (Object.keys(updates).length > 0) {
                         updates.updatedAt = Date.now();
-                        updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), updates).catch(() => {});
+                        updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), updates).catch(() => { });
                     }
                 }
             } catch (e) {
@@ -20309,14 +21019,14 @@ async function getOrCreateProjectWhiteboard(projectId) {
                 const foundDoc = snap.docs[0];
                 const foundId = foundDoc.id;
                 project.whiteboardId = foundId;
-                updateDoc(doc(db, "users", currentUid, "projects", projectId), { whiteboardId: foundId }).catch(() => {});
+                updateDoc(doc(db, "users", currentUid, "projects", projectId), { whiteboardId: foundId }).catch(() => { });
                 saveCachedProjectsSnapshot(currentUid);
 
                 if (foundDoc.data().folderId !== todoFolderId) {
                     updateDoc(doc(db, "users", currentUid, "whiteboards", foundId), {
                         folderId: todoFolderId,
                         updatedAt: Date.now()
-                    }).catch(() => {});
+                    }).catch(() => { });
                 }
                 return foundId;
             }
@@ -20443,7 +21153,7 @@ function syncProjectWhiteboardTitle(projectId, newTitle) {
         updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), {
             title: newTitle,
             updatedAt: Date.now()
-        }).catch(() => {});
+        }).catch(() => { });
     }
 
     const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');

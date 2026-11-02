@@ -235,6 +235,7 @@ const quickDayNextWeek = document.getElementById('quickDayNextWeek');
 
 // Выбор проекта для новой задачи
 let addTaskSelectedProjectId = null;
+let addTaskSelectedSectionId = null;
 const btnAddTaskProject = document.getElementById('btnAddTaskProject');
 const addTaskProjectIcon = document.getElementById('addTaskProjectIcon');
 const addTaskProjectText = document.getElementById('addTaskProjectText');
@@ -656,9 +657,9 @@ function closeAddTaskForm() {
 
     if (currentRoute.startsWith('project/')) {
         const projectId = currentRoute.split('/')[1];
-        setAddTaskProject(projectId);
+        setAddTaskProject(projectId, null);
     } else {
-        setAddTaskProject(null);
+        setAddTaskProject(null, null);
     }
 
     adjustAddTaskFormLocation();
@@ -735,8 +736,9 @@ function closeDueDateDropdown() {
     calendarTargetTask = null;
 }
 
-function setAddTaskProject(projectId) {
+function setAddTaskProject(projectId, sectionId = null) {
     addTaskSelectedProjectId = projectId;
+    addTaskSelectedSectionId = sectionId;
     if (projectId === null) {
         if (addTaskProjectText) addTaskProjectText.textContent = 'Входящие';
         if (addTaskProjectIcon) {
@@ -745,13 +747,20 @@ function setAddTaskProject(projectId) {
     } else {
         const project = projectsList.find(p => p.id === projectId);
         if (project) {
-            if (addTaskProjectText) addTaskProjectText.textContent = project.name;
+            let displayName = project.name;
+            if (sectionId) {
+                const sec = sectionsList.find(s => s.id === sectionId);
+                if (sec) {
+                    displayName = `${project.name} / ${sec.name}`;
+                }
+            }
+            if (addTaskProjectText) addTaskProjectText.textContent = displayName;
             if (addTaskProjectIcon) {
                 const defaultSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block;"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>`;
                 addTaskProjectIcon.innerHTML = getProjectIconHtml(project.iconUrl, defaultSvg, 'width: 14px; height: 14px; object-fit: contain; border-radius: 4px; display: block; font-size: 13px; line-height: 1;');
             }
         } else {
-            setAddTaskProject(null);
+            setAddTaskProject(null, null);
         }
     }
 }
@@ -776,14 +785,14 @@ function renderAddTaskProjectDropdown() {
     `;
     inboxItem.addEventListener('click', (e) => {
         e.stopPropagation();
-        setAddTaskProject(null);
+        setAddTaskProject(null, null);
         addTaskProjectDropdown.style.display = 'none';
     });
     addTaskProjectDropdown.appendChild(inboxItem);
 
     // 2. Пользовательские проекты
     getSortedHierarchicalProjects().forEach(project => {
-        const isSelected = addTaskSelectedProjectId === project.id;
+        const isProjectSelected = addTaskSelectedProjectId === project.id && !addTaskSelectedSectionId;
         const projectItem = document.createElement('button');
         projectItem.className = 'dropdown-item';
         projectItem.type = 'button';
@@ -801,14 +810,43 @@ function renderAddTaskProjectDropdown() {
                 </span>
                 <span>${escapeHtml(project.name)}</span>
             </span>
-            ${isSelected ? '<span class="dropdown-item-checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10"><polyline points="20 6 9 17 4 12"></polyline></svg></span>' : ''}
+            ${isProjectSelected ? '<span class="dropdown-item-checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10"><polyline points="20 6 9 17 4 12"></polyline></svg></span>' : ''}
         `;
         projectItem.addEventListener('click', (e) => {
             e.stopPropagation();
-            setAddTaskProject(project.id);
+            setAddTaskProject(project.id, null);
             addTaskProjectDropdown.style.display = 'none';
         });
         addTaskProjectDropdown.appendChild(projectItem);
+
+        // Разделы этого проекта (если есть)
+        const projectSections = sectionsList.filter(s => s.projectId === project.id);
+        projectSections.sort((a, b) => a.order - b.order);
+        projectSections.forEach(sec => {
+            const isSecSelected = addTaskSelectedProjectId === project.id && addTaskSelectedSectionId === sec.id;
+            const secItem = document.createElement('button');
+            secItem.className = 'dropdown-item';
+            secItem.type = 'button';
+            const depthPadding = 12 + (project.depth || 0) * 14 + 16;
+            secItem.style.paddingLeft = `${depthPadding}px`;
+            secItem.innerHTML = `
+                <span class="dropdown-item-left">
+                    <span class="dropdown-item-icon" style="color: var(--text-secondary); display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                            <line x1="4" y1="12" x2="20" y2="12"></line>
+                        </svg>
+                    </span>
+                    <span style="color: var(--text-secondary); font-size: 13px;">${escapeHtml(sec.name)}</span>
+                </span>
+                ${isSecSelected ? '<span class="dropdown-item-checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10"><polyline points="20 6 9 17 4 12"></polyline></svg></span>' : ''}
+            `;
+            secItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                setAddTaskProject(project.id, sec.id);
+                addTaskProjectDropdown.style.display = 'none';
+            });
+            addTaskProjectDropdown.appendChild(secItem);
+        });
     });
 }
 
@@ -2584,9 +2622,9 @@ function handleRoute() {
 
     if (currentRoute.startsWith('project/')) {
         const projectId = currentRoute.split('/')[1];
-        setAddTaskProject(projectId);
+        setAddTaskProject(projectId, null);
     } else {
-        setAddTaskProject(null);
+        setAddTaskProject(null, null);
     }
 
     setDueDate(getDefaultDueDate());
@@ -3106,13 +3144,14 @@ const charLimitWarning = document.getElementById('charLimitWarning');
 function updateAddFormCharCount() {
     if (!charLimitWarning || !taskTitleInput) return;
     const len = taskTitleInput.value.length;
+    const hasText = taskTitleInput.value.trim().length > 0;
     charLimitWarning.textContent = `Лимит названия задачи: ${len} / 500`;
     if (len > 500) {
         charLimitWarning.classList.add('exceeded');
         if (btnAddTask) btnAddTask.disabled = true;
     } else {
         charLimitWarning.classList.remove('exceeded');
-        if (btnAddTask) btnAddTask.disabled = false;
+        if (btnAddTask) btnAddTask.disabled = !hasText;
     }
 }
 
@@ -3283,8 +3322,12 @@ let isAddingTask = false;
 
 async function handleAddTask() {
     if (isAddingTask) return;
-    let titleText = taskTitleInput.value.trim();
-    if (!titleText || titleText.length > 500 || !currentUid) return;
+    let titleText = taskTitleInput ? taskTitleInput.value.trim() : '';
+    if (!titleText) {
+        if (taskTitleInput) taskTitleInput.focus();
+        return;
+    }
+    if (titleText.length > 500 || !currentUid) return;
 
     // Если была автоопределена дата, удаляем совпавший фрагмент из названия задачи
     if (detectedDateMatch && detectedDateMatch.matchText) {
@@ -3391,10 +3434,10 @@ async function handleAddTask() {
         if (sectionIdForDb) {
             setAddTaskProject(projectId, sectionIdForDb);
         } else {
-            setAddTaskProject(projectId);
+            setAddTaskProject(projectId, null);
         }
     } else {
-        setAddTaskProject(null);
+        setAddTaskProject(null, null);
     }
 
     taskTitleInput.style.height = 'auto';
@@ -3425,7 +3468,7 @@ async function handleAddTask() {
         console.error("Не удалось добавить задачу:", err);
     } finally {
         isAddingTask = false;
-        if (btnAddTask) btnAddTask.disabled = false;
+        updateAddFormCharCount();
         syncMobileCreateTaskSubmit();
     }
 }

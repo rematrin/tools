@@ -1096,6 +1096,7 @@ body.dark .task-title-link {
 .task-item.editing .task-actions,
 .task-item.editing .task-due-badge,
 .task-item.editing .task-repeat-badge,
+.task-item.editing .task-subtasks-badge,
 .task-item.editing .task-attachment-icon,
 .task-item.editing .task-collapse-btn {
     display: none !important;
@@ -4778,6 +4779,47 @@ body.dark .section-count-badge {
     color: #9ca3af;
 }
 
+/* Кнопка быстрого добавления задачи в раздел рядом со счетчиком */
+.section-add-task-btn {
+    order: 4;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-left: 6px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.section-add-task-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--text);
+    opacity: 1;
+}
+
+body.dark .section-add-task-btn {
+    color: #9ca3af;
+}
+
+body.dark .section-add-task-btn:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    opacity: 1;
+}
+
+.section-tasks-container > .add-task-form {
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
 .section-collapse-btn {
     order: 10;
     margin-left: auto !important;
@@ -5884,6 +5926,7 @@ body.dark .modal-subtask-item.completed .custom-checkbox {
 
     .task-due-badge,
     .task-repeat-badge,
+    .task-subtasks-badge,
     .task-time-col,
     .task-proj-col,
     .task-attachment-icon {
@@ -11504,6 +11547,52 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
         margin-left: auto !important;
         margin-right: 14px !important;
         white-space: nowrap !important;
+    }
+
+    /* Иконка и счетчик выполненных подзадач справа как на макете */
+    .task-subtasks-badge {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        color: #9ca3af !important;
+        font-size: 13px !important;
+        font-weight: 400 !important;
+        margin-left: auto !important;
+        margin-right: 14px !important;
+        white-space: nowrap !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        user-select: none !important;
+        flex-shrink: 0 !important;
+    }
+
+    body.dark .task-subtasks-badge {
+        color: #9ca3af !important;
+    }
+
+    .task-item.completed .task-subtasks-badge {
+        opacity: 0.6 !important;
+    }
+
+    .task-subtasks-badge:has(~ .task-due-badge),
+    .task-subtasks-badge:has(~ .task-time-col) {
+        margin-right: 8px !important;
+    }
+
+    .task-subtasks-badge ~ .task-due-badge,
+    .task-subtasks-badge ~ .task-time-col .task-due-badge,
+    .task-subtasks-badge ~ .task-time-col {
+        margin-left: 0 !important;
+    }
+
+    .task-attachment-icon:has(~ .task-subtasks-badge) {
+        margin-left: auto !important;
+        margin-right: 2px !important;
+    }
+
+    .task-attachment-icon ~ .task-subtasks-badge {
+        margin-left: 0 !important;
     }
 
     .task-due-badge.task-project-badge {

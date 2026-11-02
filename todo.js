@@ -509,14 +509,10 @@ document.addEventListener('click', (e) => {
         const isClickInsideForm = addTaskForm.contains(e.target) ||
             (dueDateDropdown && dueDateDropdown.contains(e.target)) ||
             (addTaskProjectDropdown && addTaskProjectDropdown.contains(e.target)) ||
-            (priorityDropdown && priorityDropdown.contains(e.target));
+            (priorityDropdown && priorityDropdown.contains(e.target)) ||
+            e.target.closest('.section-add-task-btn');
         if (!isClickInsideForm && taskTitleInput.value.trim() === '') {
-            addTaskForm.classList.remove('expanded');
-            taskTitleInput.placeholder = '+ Добавить задачу';
-            setDueDate(getDefaultDueDate()); // сбрасываем выбранную дату к дефолтной для текущего раздела
-            setPriority(0); // сбрасываем приоритет
-            taskTitleInput.style.height = 'auto'; // Reset height
-            updateAddFormCharCount(); // Reset counter
+            closeAddTaskForm();
         }
     }
 
@@ -632,12 +628,75 @@ document.addEventListener('mouseenter', (e) => {
 if (addTaskForm) {
     addTaskForm.addEventListener('click', (e) => {
         if (!addTaskForm.classList.contains('expanded')) {
+            if (currentRoute.startsWith('project/')) {
+                const projectId = currentRoute.split('/')[1];
+                setAddTaskProject(projectId);
+            }
             addTaskForm.classList.add('expanded');
-            taskTitleInput.placeholder = 'Что бы вы хотели сделать?';
+            taskTitleInput.placeholder = 'Название задачи';
             taskTitleInput.focus();
             updateAddFormCharCount();
         }
     });
+}
+
+function closeAddTaskForm() {
+    if (!addTaskForm) return;
+    addTaskForm.classList.remove('expanded');
+    taskTitleInput.value = '';
+    if (taskTitleBackdrop) taskTitleBackdrop.innerHTML = '';
+    detectedDateMatch = null;
+    disabledWords.clear();
+    taskTitleInput.blur();
+    taskTitleInput.placeholder = '+ Добавить задачу';
+    setDueDate(getDefaultDueDate());
+    setPriority(0);
+    taskTitleInput.style.height = 'auto';
+    updateAddFormCharCount();
+
+    if (currentRoute.startsWith('project/')) {
+        const projectId = currentRoute.split('/')[1];
+        setAddTaskProject(projectId);
+    } else {
+        setAddTaskProject(null);
+    }
+
+    adjustAddTaskFormLocation();
+}
+
+const btnCancelTask = document.getElementById('btnCancelTask');
+if (btnCancelTask) {
+    btnCancelTask.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeAddTaskForm();
+    });
+}
+
+function openAddTaskInSection(sectionId, projectId) {
+    const sectionEl = document.querySelector(`.project-section[data-section-id="${sectionId}"]`);
+    if (!sectionEl) return;
+
+    if (isSectionCollapsed(sectionId)) {
+        toggleSectionCollapsed(sectionId);
+        sectionEl.classList.remove('collapsed');
+        const tasksContainer = sectionEl.querySelector('.section-tasks-container');
+        if (tasksContainer) tasksContainer.style.display = '';
+    }
+
+    const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
+    const form = document.getElementById('mainAddTaskForm');
+    if (!sectionTasksContainer || !form) return;
+
+    sectionTasksContainer.appendChild(form);
+    setAddTaskProject(projectId, sectionId);
+
+    form.classList.add('expanded');
+    if (taskTitleInput) {
+        taskTitleInput.placeholder = 'Название задачи';
+        taskTitleInput.focus();
+    }
+    updateAddFormCharCount();
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function openDueDateDropdown() {
@@ -2928,8 +2987,10 @@ function isTaskSyncHashEqual(savedHash, task) {
 
 function getTaskVisualHash(task) {
     if (!task) return '';
-    const subCount = task.subtasks ? task.subtasks.length : 0;
-    return `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.dueRepeat || ''}|${task.dueEndDate || ''}|${task.dueEndTime || ''}|${task.completed ? '1' : '0'}|${task.deleted ? '1' : '0'}|${task.projectId || ''}|${task.order ?? 0}|${task.description || ''}|${subCount}`;
+    const subs = Array.isArray(allTasks) ? allTasks.filter(t => t.parentId === task.id && !t.deleted) : [];
+    const subTotal = subs.length;
+    const subDone = subs.filter(t => t.completed).length;
+    return `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.dueRepeat || ''}|${task.dueEndDate || ''}|${task.dueEndTime || ''}|${task.completed ? '1' : '0'}|${task.deleted ? '1' : '0'}|${task.projectId || ''}|${task.order ?? 0}|${task.description || ''}|${task.parentId || ''}|${subTotal}|${subDone}`;
 }
 
 let tasksRetryTimer = null;
@@ -3242,6 +3303,7 @@ async function handleAddTask() {
     const dueEndDateForDb = selectedDueEndDate || null;
     const dueEndTimeForDb = selectedDueEndTime || null;
     const projectIdForDb = addTaskSelectedProjectId;
+    const sectionIdForDb = addTaskSelectedSectionId || null;
     const priorityForDb = selectedPriority || 0;
 
     // Вычисляем order, ориентируясь на задачи, отображаемые в ТЕКУЩЕМ представлении (роуте)
@@ -3270,7 +3332,19 @@ async function handleAddTask() {
         return false;
     };
 
-    if (addTaskPositionPref === 'bottom') {
+    if (sectionIdForDb) {
+        let maxOrder = 0;
+        let foundAnySec = false;
+        allTasks.forEach(t => {
+            if (t.sectionId === sectionIdForDb && !t.deleted && !t.completed && t.order !== undefined) {
+                if (!foundAnySec || t.order > maxOrder) {
+                    maxOrder = t.order;
+                    foundAnySec = true;
+                }
+            }
+        });
+        newOrder = foundAnySec ? maxOrder + 1 : 0;
+    } else if (addTaskPositionPref === 'bottom') {
         let maxOrder = 0;
         allTasks.forEach(t => {
             if (!t.completed && !t.deleted) {
@@ -3314,7 +3388,11 @@ async function handleAddTask() {
 
     if (currentRoute.startsWith('project/')) {
         const projectId = currentRoute.split('/')[1];
-        setAddTaskProject(projectId);
+        if (sectionIdForDb) {
+            setAddTaskProject(projectId, sectionIdForDb);
+        } else {
+            setAddTaskProject(projectId);
+        }
     } else {
         setAddTaskProject(null);
     }
@@ -3323,6 +3401,9 @@ async function handleAddTask() {
     updateAddFormCharCount();
     closeMobileCreateTask();
     syncMobileCreateTaskSubmit();
+    if (!isMobileCreateTaskOpen() && sectionIdForDb) {
+        taskTitleInput.focus();
+    }
 
     isAddingTask = true;
     try {
@@ -3335,6 +3416,7 @@ async function handleAddTask() {
             dueEndDate: dueEndDateForDb,
             dueEndTime: dueEndTimeForDb,
             projectId: projectIdForDb,
+            sectionId: sectionIdForDb,
             priority: priorityForDb,
             order: newOrder,
             createdAt: serverTimestamp()
@@ -3358,20 +3440,7 @@ if (taskTitleInput) {
         } else if (e.key === 'Escape') {
             if (isMobileCreateTaskOpen()) return;
             e.preventDefault();
-            const form = document.getElementById('mainAddTaskForm');
-            taskTitleInput.value = '';
-            if (taskTitleBackdrop) taskTitleBackdrop.innerHTML = '';
-            detectedDateMatch = null;
-            disabledWords.clear();
-            taskTitleInput.blur();
-            if (form) {
-                form.classList.remove('expanded');
-            }
-            taskTitleInput.placeholder = '+ Добавить задачу';
-            setDueDate(getDefaultDueDate());
-            setPriority(0);
-            taskTitleInput.style.height = 'auto'; // Reset height
-            updateAddFormCharCount(); // Reset counter
+            closeAddTaskForm();
         }
     });
 
@@ -5329,6 +5398,7 @@ function doRenderTasks() {
     }
 
     // 1. РЕНДЕРИМ АКТИВНЫЕ ЗАДАЧИ
+    adjustAddTaskFormLocation();
     activeTasksContainer.innerHTML = '';
 
     let currentViewProjectId = null;
@@ -6028,6 +6098,12 @@ function doRenderTasks() {
                             </button>
                             <span class="section-title-text">${escapeHtml(section.name)}</span>
                             <span class="section-count-badge">${sectionTasks.length}</span>
+                            <button class="section-add-task-btn" title="Добавить задачу в раздел" type="button" aria-label="Добавить задачу в раздел">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                            </button>
                             <div class="section-actions-wrapper" style="position: relative; margin-left: auto; display: flex; align-items: center; gap: 4px;">
                                 <button class="section-actions-btn" title="Действия" type="button">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -6096,6 +6172,19 @@ function doRenderTasks() {
 
                         const sectionTasksContainer = sectionEl.querySelector('.section-tasks-container');
                         renderTasksGroup(sectionTasks, sectionTasksContainer);
+
+                        const addTaskFormEl = document.getElementById('mainAddTaskForm');
+                        if (addTaskFormEl && addTaskFormEl.classList.contains('expanded') && addTaskSelectedSectionId === section.id) {
+                            sectionTasksContainer.appendChild(addTaskFormEl);
+                        }
+
+                        const btnAddInSection = sectionEl.querySelector('.section-add-task-btn');
+                        if (btnAddInSection) {
+                            btnAddInSection.addEventListener('click', (ev) => {
+                                ev.stopPropagation();
+                                openAddTaskInSection(section.id, projectId);
+                            });
+                        }
 
                         const dragHandle = sectionEl.querySelector('.section-drag-handle-btn');
                         if (dragHandle) {
@@ -6638,8 +6727,23 @@ function createTaskRowElement(task, isStandalone = false) {
     }
 
     const isSubtask = !!task.parentId && !isStandalone;
-    const hasSubtasks = !isSubtask && allTasks.some(t => t.parentId === task.id && !t.deleted && !t.completed);
+    const taskSubtasks = !isSubtask ? allTasks.filter(t => t.parentId === task.id && !t.deleted) : [];
+    const totalSubtasks = taskSubtasks.length;
+    const completedSubtasks = taskSubtasks.filter(t => t.completed).length;
+    const hasSubtasksBadge = totalSubtasks > 0;
+    const hasSubtasks = !isSubtask && taskSubtasks.some(t => !t.completed);
     const isCollapsed = hasSubtasks && isParentTaskCollapsed(task.id);
+
+    const subtasksBadgeHtml = hasSubtasksBadge ? `
+        <span class="task-subtasks-badge" title="Выполнено подзадач: ${completedSubtasks} из ${totalSubtasks}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="vertical-align: middle; display: inline-block;">
+                <circle cx="6" cy="6" r="3"></circle>
+                <circle cx="18" cy="18" r="3"></circle>
+                <path d="M6 9v4a5 5 0 0 0 5 5h4"></path>
+            </svg>
+            <span style="vertical-align: middle;">${completedSubtasks}/${totalSubtasks}</span>
+        </span>
+    ` : '';
 
     let dueLabel = '';
     let dateOnlyLabel = '';
@@ -6690,10 +6794,12 @@ function createTaskRowElement(task, isStandalone = false) {
                 </span>
                 `;
             })()}
+            ${subtasksBadgeHtml}
             ${task.dueDate ? (() => {
                 const hasAttachments = Array.isArray(task.attachments) && task.attachments.filter(Boolean).length > 0;
+                const hasPrevBadge = hasAttachments || hasSubtasksBadge;
                 return `
-                <span class="task-due-badge" style="opacity: 0.6; ${hasAttachments ? 'margin-left: 6px;' : 'margin-left: auto;'}">
+                <span class="task-due-badge" style="opacity: 0.6; ${hasPrevBadge ? 'margin-left: 6px;' : 'margin-left: auto;'}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align: middle; margin-right: 3px; display: inline-block;">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                         <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -6820,11 +6926,25 @@ function createTaskRowElement(task, isStandalone = false) {
         }
     }
 
+    let mobileSubtasksHtml = '';
+    if (hasSubtasksBadge) {
+        mobileSubtasksHtml = `
+            <span class="mobile-subtasks-count" style="display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-secondary); margin-right: 6px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="10" height="10" style="vertical-align: middle; display: inline-block;">
+                    <circle cx="6" cy="6" r="3"></circle>
+                    <circle cx="18" cy="18" r="3"></circle>
+                    <path d="M6 9v4a5 5 0 0 0 5 5h4"></path>
+                </svg>
+                <span style="vertical-align: middle;">${completedSubtasks}/${totalSubtasks}</span>
+            </span>
+        `;
+    }
+
     let mobileMetaHtml = '';
-    if (mobileDueHtml || mobileProjectHtml) {
+    if (mobileDueHtml || mobileProjectHtml || mobileSubtasksHtml) {
         mobileMetaHtml = `
             <div class="task-mobile-meta">
-                <div class="mobile-meta-left">${mobileDueHtml}</div>
+                <div class="mobile-meta-left">${mobileSubtasksHtml}${mobileDueHtml}</div>
                 ${mobileProjectHtml}
             </div>
         `;
@@ -6853,13 +6973,14 @@ function createTaskRowElement(task, isStandalone = false) {
             if (attachmentCount === 0) return '';
             const tooltip = attachmentCount === 1 ? 'Вложение' : `Вложений: ${attachmentCount}`;
             return `
-            <span class="task-attachment-icon" title="${tooltip}" style="margin-left: auto;">
+            <span class="task-attachment-icon" title="${tooltip}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
                     <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                 </svg>
             </span>
             `;
         })()}
+        ${subtasksBadgeHtml}
         ${task.dueDate ? (() => {
             const today = new Date();
             const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -6872,7 +6993,7 @@ function createTaskRowElement(task, isStandalone = false) {
 
             const hasAttachments = Array.isArray(task.attachments) && task.attachments.filter(Boolean).length > 0;
             let badgesHtml = '';
-            let hasFirstBadge = hasAttachments;
+            let hasFirstBadge = hasAttachments || hasSubtasksBadge;
 
             if (isTodayTomorrowRoute) {
                 if (isTodayOrTomorrowDate) {
@@ -17125,65 +17246,19 @@ function openImageUploadModal(onUploadSuccess, currentIconUrl = '') {
 
     async function processAndUpload(file) {
         setLoadingState(true);
-        const reader = new FileReader();
-        reader.onload = async function (evt) {
-            try {
-                const img = new Image();
-                img.onload = function () {
-                    let width = img.width;
-                    let height = img.height;
-                    const maxSide = 600;
-
-                    if (width > height) {
-                        if (width > maxSide) {
-                            height = Math.round(height * (maxSide / width));
-                            width = maxSide;
-                        }
-                    } else {
-                        if (height > maxSide) {
-                            width = Math.round(width * (maxSide / height));
-                            height = maxSide;
-                        }
-                    }
-
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    canvas.toBlob(async (blob) => {
-                        const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee';
-                        const formData = new FormData();
-                        formData.append('image', blob);
-
-                        try {
-                            const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
-                                method: 'POST',
-                                body: formData
-                            });
-                            const data = await response.json();
-                            if (data && data.data && data.data.url) {
-                                onUploadSuccess(data.data.url);
-                                cleanup();
-                            } else {
-                                throw new Error('Upload failed');
-                            }
-                        } catch (err) {
-                            console.error('Error uploading image:', err);
-                            showCustomConfirm('Ошибка', 'Не удалось загрузить изображение.', 'OK', () => { });
-                            setLoadingState(false);
-                        }
-                    }, 'image/jpeg', 0.85);
-                };
-                img.src = evt.target.result;
-            } catch (err) {
-                console.error(err);
-                showCustomConfirm('Ошибка', 'Не удалось загрузить изображение.', 'OK', () => { });
-                setLoadingState(false);
+        try {
+            const hostedUrl = await uploadToImgBB(file);
+            if (hostedUrl) {
+                onUploadSuccess(hostedUrl);
+                cleanup();
+            } else {
+                throw new Error('Upload failed');
             }
-        };
-        reader.readAsDataURL(file);
+        } catch (err) {
+            console.error('Error uploading image:', err);
+            showCustomConfirm('Ошибка', 'Не удалось загрузить изображение.', 'OK', () => { });
+            setLoadingState(false);
+        }
     }
 }
 

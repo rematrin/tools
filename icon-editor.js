@@ -13,6 +13,8 @@ export class IconEditor {
             offsetX: 0,
             offsetY: 0
         };
+        this.isCleanImageLoaded = false;
+        this.cleanImagePromise = null;
     }
 
     // Метод для извлечения названия из URL
@@ -139,7 +141,7 @@ export class IconEditor {
                 const item = document.createElement('div');
                 item.className = 'category-dropdown-item';
                 const isSelected = this.selectedCategories.includes(cat);
-                
+
                 item.innerHTML = `
                     <div class="cat-drag-handle" style="cursor: grab; display: flex; align-items: center; padding-right: 4px; color: #bbb;" title="Перетащить">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
@@ -159,24 +161,24 @@ export class IconEditor {
                 `;
 
                 // --- КНОПКА РЕДАКТИРОВАНИЯ ---
-                item.querySelector('.cat-edit').onmouseover = function() { this.style.opacity = '1'; this.style.background = 'rgba(154,160,166,0.1)'; };
-                item.querySelector('.cat-edit').onmouseout = function() { this.style.opacity = '0.5'; this.style.background = 'transparent'; };
-                
+                item.querySelector('.cat-edit').onmouseover = function () { this.style.opacity = '1'; this.style.background = 'rgba(154,160,166,0.1)'; };
+                item.querySelector('.cat-edit').onmouseout = function () { this.style.opacity = '0.5'; this.style.background = 'transparent'; };
+
                 item.querySelector('.cat-edit').onclick = (e) => {
                     e.stopPropagation();
                     const nameSpan = item.querySelector('.cat-name');
                     const currentName = nameSpan.innerText;
-                    
+
                     const input = document.createElement('input');
                     input.type = 'text';
                     input.value = currentName;
                     input.style.cssText = 'border: 1px solid #0A84FF; border-radius: 4px; outline: none; padding: 2px 6px; font-size: 14px; width: 100%; box-sizing: border-box;';
-                    
+
                     const checkZone = item.querySelector('.cat-check-zone');
                     checkZone.replaceChild(input, nameSpan);
                     input.focus();
                     input.select();
-                    
+
                     const saveRename = () => {
                         const newName = input.value.trim();
                         if (newName && newName !== currentName) {
@@ -193,7 +195,7 @@ export class IconEditor {
                             if (sIdx !== -1) {
                                 this.selectedCategories[sIdx] = newName;
                             }
-                            
+
                             if (window.getAppsFromStorage && window.saveCurrentState && window.renderAppsToDOM) {
                                 const apps = window.getAppsFromStorage();
                                 const renameCategoryInApps = (appsList) => {
@@ -212,14 +214,14 @@ export class IconEditor {
                                 window.saveCurrentState(updatedApps);
                                 window.renderAppsToDOM(updatedApps);
                             }
-                            
+
                             if (window.auth && window.auth.currentUser && window.dbApi) window.dbApi.saveCategories(userCategories);
                             if (window.renderCategoryBar) window.renderCategoryBar();
                             updateHeaderText();
                         }
                         renderCats();
                     };
-                    
+
                     input.onkeydown = (ev) => {
                         if (ev.key === 'Enter') {
                             ev.preventDefault();
@@ -279,7 +281,7 @@ export class IconEditor {
                         }
                     }
                 };
-                
+
                 item.querySelector('.cat-check-zone').onclick = (e) => {
                     e.stopPropagation();
                     if (isSelected) {
@@ -305,11 +307,11 @@ export class IconEditor {
                             </div>
                         </div>
                     `;
-                    
-                    item.querySelector('.yes').onmouseover = function() { this.style.opacity = '0.8'; };
-                    item.querySelector('.yes').onmouseout = function() { this.style.opacity = '1'; };
-                    item.querySelector('.no').onmouseover = function() { this.style.background = '#e8eaed'; };
-                    item.querySelector('.no').onmouseout = function() { this.style.background = '#f1f3f4'; };
+
+                    item.querySelector('.yes').onmouseover = function () { this.style.opacity = '0.8'; };
+                    item.querySelector('.yes').onmouseout = function () { this.style.opacity = '1'; };
+                    item.querySelector('.no').onmouseover = function () { this.style.background = '#e8eaed'; };
+                    item.querySelector('.no').onmouseout = function () { this.style.background = '#f1f3f4'; };
 
                     item.querySelector('.yes').onclick = (e2) => {
                         e2.stopPropagation();
@@ -325,7 +327,7 @@ export class IconEditor {
                         if (this.selectedCategories.length === 0) {
                             this.selectedCategories = ['Главная'];
                         }
-                        
+
                         // Clean up deleted category from all apps (recursively handling folder items)
                         if (window.getAppsFromStorage && window.saveCurrentState && window.renderAppsToDOM) {
                             const apps = window.getAppsFromStorage();
@@ -370,7 +372,7 @@ export class IconEditor {
             fakeInput.onclick = (e) => { e.stopPropagation(); list.classList.toggle('active'); };
             updateHeaderText();
             renderCats();
-            
+
             if (newCatInput) {
                 newCatInput.onkeydown = (e) => {
                     if (e.key === 'Enter') {
@@ -390,7 +392,7 @@ export class IconEditor {
                     }
                 };
             }
-            
+
             const outsideClick = (e) => {
                 if (!e.target.closest('.modern-input-content') && list.classList.contains('active')) {
                     list.classList.remove('active');
@@ -407,12 +409,21 @@ export class IconEditor {
         this.originalIconUrl = initialData ? (initialData.icon || '') : '';
 
         this.uploadedImage = null;
+        this.isCleanImageLoaded = false;
+        this.cleanImagePromise = null;
         const btnOk = this.modal ? this.modal.querySelector('.btn-ok') : null;
+        if (btnOk) {
+            btnOk.disabled = false;
+            btnOk.innerText = 'Готово';
+        }
 
         if (initialData) {
             this.resetEditor(false);
             const previewBox = document.getElementById('editorPreviewBox');
             if (previewBox) previewBox.classList.add('can-download');
+
+            const previewImg = document.getElementById('editorPreviewImg');
+            if (previewImg && initialData.icon) previewImg.src = initialData.icon;
 
             const nameInput = document.getElementById('editorAppName');
             const urlInput = document.getElementById('editorAppUrl');
@@ -421,87 +432,97 @@ export class IconEditor {
             if (urlInput) urlInput.value = initialData.url || '';
 
             if (initialData.icon) {
-                if (btnOk) {
-                    btnOk.disabled = true;
-                    btnOk.innerText = 'Загрузка...';
-                }
+                const initialIconUrl = initialData.icon;
+                const isDataUrl = initialIconUrl.startsWith('data:') || initialIconUrl.startsWith('blob:');
 
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.onload = () => {
-                    if (this.activeLoadToken !== loadToken) return;
-                    this.uploadedImage = img;
-                    this.resetImageState();
-                    this.draw();
-                    if (btnOk) {
-                        btnOk.disabled = false;
-                        btnOk.innerText = 'Готово';
-                    }
-                };
-                img.onerror = () => {
-                    if (this.activeLoadToken !== loadToken) return;
-                    const fallbackProxy = `https://wsrv.nl/?url=${encodeURIComponent(initialData.icon)}&w=512&h=512&output=png`;
-                    const fallbackImg = new Image();
-                    fallbackImg.crossOrigin = "anonymous";
-                    fallbackImg.onload = () => {
+                    // 1. МГНОВЕННОЕ ОТОБРАЖЕНИЕ: грузим без CORS напрямую из кэша браузера (0 мс)
+                    const fastImg = new Image();
+                    fastImg.onload = () => {
                         if (this.activeLoadToken !== loadToken) return;
-                        this.uploadedImage = fallbackImg;
-                        this.resetImageState();
-                        this.draw();
-                        if (btnOk) {
-                            btnOk.disabled = false;
-                            btnOk.innerText = 'Готово';
+                        if (!this.isCleanImageLoaded) {
+                            this.uploadedImage = fastImg;
+                            this.resetImageState();
+                            this.draw();
                         }
                     };
-                    fallbackImg.onerror = () => {
-                        if (this.activeLoadToken !== loadToken) return;
-                        this.uploadedImage = null;
-                        this.draw();
-                        if (btnOk) {
-                            btnOk.disabled = false;
-                            btnOk.innerText = 'Готово';
-                        }
-                    };
-                    fallbackImg.src = fallbackProxy;
-                };
-
-                img.src = initialData.icon;
-                if (img.complete && img.naturalWidth !== 0) {
-                    if (this.activeLoadToken === loadToken) {
-                        this.uploadedImage = img;
+                    fastImg.src = initialIconUrl;
+                    if (fastImg.complete && fastImg.naturalWidth !== 0) {
+                        this.uploadedImage = fastImg;
                         this.resetImageState();
                         this.draw();
-                        if (btnOk) {
-                            btnOk.disabled = false;
-                            btnOk.innerText = 'Готово';
+                            }
+
+                            if (isDataUrl) {
+                                this.isCleanImageLoaded = true;
+                            } else {
+                                // 2. ФОНОВАЯ ЗАГРУЗКА CORS-чистой версии (на случай, если пользователь изменит значок)
+                                this.cleanImagePromise = (async () => {
+                                    const tryLoad = (src) => new Promise((resolve, reject) => {
+                                        const img = new Image();
+                                        img.crossOrigin = "anonymous";
+                                        img.onload = () => resolve(img);
+                                        img.onerror = reject;
+                                        img.src = src;
+                                        if (img.complete && img.naturalWidth !== 0) resolve(img);
+                                    });
+
+                                    let cleanImg = null;
+
+                                    // Попытка 1: напрямую с cache-buster (работает для ImgBB, GitHub, Firebase, CDN без обращения к прокси)
+                                    try {
+                                        const sep = initialIconUrl.includes('?') ? '&' : '?';
+                                        cleanImg = await tryLoad(`${initialIconUrl}${sep}_c=${Date.now()}`);
+                                    } catch (e) {
+                                        // Прямой CORS не поддерживается (например, favicons Google)
+                                    }
+
+                                        // Попытка 2: через wsrv.nl (быстрый легкий прокси)
+                                        if (!cleanImg) {
+                                            try {
+                                                const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(initialIconUrl)}&output=png`;
+                                                cleanImg = await tryLoad(proxyUrl);
+                                            } catch (e) { }
+                                        }
+
+                                            // Попытка 3: резервный corsproxy.io
+                                            if (!cleanImg) {
+                                                try {
+                                                    const fallbackUrl = `https://corsproxy.io/?url=${encodeURIComponent(initialIconUrl)}`;
+                                                    cleanImg = await tryLoad(fallbackUrl);
+                                                } catch (e) { }
+                                            }
+
+                                        if (cleanImg && this.activeLoadToken === loadToken) {
+                                            const prevImg = this.uploadedImage;
+                                            this.uploadedImage = cleanImg;
+                                            this.isCleanImageLoaded = true;
+
+                                            // Корректируем масштаб, если размеры быстрой и чистой картинок отличаются
+                                            if (prevImg && prevImg.naturalWidth && cleanImg.naturalWidth && prevImg.naturalWidth !== cleanImg.naturalWidth) {
+                                                const ratio = prevImg.naturalWidth / cleanImg.naturalWidth;
+                                                this.state.scale *= ratio;
+                                            }
+                                            this.draw();
+                                        }
+                                    }) ();
+                                }
+                            } else {
+                                this.uploadedImage = null;
+                                this.draw();
+                            }
+                        } else {
+                            this.resetEditor(true);
+                            const previewBox = document.getElementById('editorPreviewBox');
+                            if (previewBox) previewBox.classList.remove('can-download');
                         }
                     }
-                }
-            } else {
-                this.uploadedImage = null;
-                this.draw();
-                if (btnOk) {
-                    btnOk.disabled = false;
-                    btnOk.innerText = 'Готово';
-                }
-            }
-        } else {
-            this.resetEditor(true);
-            const previewBox = document.getElementById('editorPreviewBox');
-            if (previewBox) previewBox.classList.remove('can-download');
-            if (btnOk) {
-                btnOk.disabled = false;
-                btnOk.innerText = 'Готово';
-            }
-        }
-    }
 
-    createModal() {
-        if (document.getElementById('iconEditorModal')) {
-            document.getElementById('iconEditorModal').remove();
-        }
+                    createModal() {
+                        if (document.getElementById('iconEditorModal')) {
+                            document.getElementById('iconEditorModal').remove();
+                        }
 
-        const modalHTML = `
+                        const modalHTML = `
         <div id="iconEditorModal" class="editor-overlay">
             <div class="editor-modal">
                 <div class="editor-header">
@@ -904,226 +925,236 @@ export class IconEditor {
         </style>
         `;
 
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        this.modal = document.getElementById('iconEditorModal');
-        this.attachEvents();
-    }
-
-    attachEvents() {
-        const downloadOverlay = document.getElementById('editorDownloadOverlay');
-        if (downloadOverlay) {
-            downloadOverlay.addEventListener('click', () => {
-                const dataUrl = this.canvas.toDataURL('image/png');
-                const nameInput = document.getElementById('editorAppName');
-                let linkName = (nameInput && nameInput.value.trim() !== '') ? nameInput.value.trim() : 'icon';
-                const link = document.createElement('a');
-                link.download = `${linkName}.png`;
-                link.href = dataUrl;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            });
-        }
-
-        const fileInput = document.getElementById('editorFileInput');
-        fileInput.addEventListener('change', (e) => this.handleUpload(e));
-        const triggerBtn = document.getElementById('triggerFileSelect');
-        if (triggerBtn) triggerBtn.addEventListener('click', () => fileInput.click());
-
-        const urlInput = document.getElementById('editorAppUrl');
-        const nameInput = document.getElementById('editorAppName');
-        const fetchBtn = document.getElementById('btnFetchFromUrl');
-
-        if (urlInput && nameInput) {
-            urlInput.addEventListener('input', () => {
-                const urlVal = urlInput.value.trim();
-                
-                urlInput.classList.remove('input-error');
-                const errorMsg = document.getElementById('urlErrorText');
-                if (errorMsg) errorMsg.style.display = 'none';
-
-                if (urlVal.length > 3) {
-                    const guessedName = this.extractNameFromUrl(urlVal);
-                    if (guessedName && (nameInput.value === '' || nameInput.dataset.autoFilled === 'true')) {
-                        nameInput.value = guessedName;
-                        nameInput.dataset.autoFilled = 'true';
+                        document.body.insertAdjacentHTML('beforeend', modalHTML);
+                        this.modal = document.getElementById('iconEditorModal');
+                        this.attachEvents();
                     }
-                }
-            });
-            nameInput.addEventListener('input', () => { nameInput.dataset.autoFilled = 'false'; });
 
-            // --- НОВАЯ ЛОГИКА: Авто-нажатие (только если иконка НЕ загружена) ---
-            urlInput.addEventListener('paste', () => {
-                setTimeout(() => {
-                    const val = urlInput.value.trim();
-                    // Добавлено условие !this.uploadedImage
-                    if (!this.uploadedImage && val.length > 4 && val.includes('.')) {
-                        if (fetchBtn) fetchBtn.click();
-                    }
-                }, 50);
-            });
-        }
-
-        if (fetchBtn) {
-            fetchBtn.addEventListener('click', () => {
-                const errorMsg = document.getElementById('urlErrorText');
-                urlInput.classList.remove('input-error');
-                if (errorMsg) errorMsg.style.display = 'none';
-
-                let urlVal = urlInput.value.trim();
-                if (!urlVal) {
-                    urlInput.classList.add('input-error');
-                    if (errorMsg) { errorMsg.innerText = 'Введите URL'; errorMsg.style.display = 'inline'; }
-                    urlInput.focus();
-                    return;
-                }
-
-                urlVal = urlVal.replace(/^https?:\/\//, '').replace(/\/$/, '');
-                const highResFaviconUrl = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${urlVal}&size=256`;
-                const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(highResFaviconUrl)}&w=512&h=512&output=png`;
-
-                const originalBtnContent = fetchBtn.innerHTML;
-                fetchBtn.innerHTML = `<span>Загрузка...</span>`;
-                fetchBtn.style.opacity = 0.7;
-
-                this.uploadedImage = new Image();
-                this.uploadedImage.crossOrigin = "anonymous";
-                this.uploadedImage.onload = () => {
-                    this.resetImageState();
-                    this.draw();
-                    fetchBtn.innerHTML = originalBtnContent;
-                    fetchBtn.style.opacity = 1;
-                };
-
-                this.uploadedImage.onerror = () => {
-                    const fallbackUrl = `https://www.google.com/s2/favicons?domain=${urlVal}&sz=512`;
-                    const fallbackProxy = `https://wsrv.nl/?url=${encodeURIComponent(fallbackUrl)}`;
-                    const fallbackImg = new Image();
-                    fallbackImg.crossOrigin = "anonymous";
-                    fallbackImg.onload = () => {
-                        this.uploadedImage = fallbackImg;
-                        this.resetImageState();
-                        this.draw();
-                        fetchBtn.innerHTML = originalBtnContent;
-                        fetchBtn.style.opacity = 1;
-                    };
-                    fallbackImg.onerror = () => {
-                        urlInput.classList.add('input-error');
-                        if (errorMsg) { errorMsg.innerText = 'Иконка не найдена'; errorMsg.style.display = 'inline'; }
-                        this.uploadedImage = null;
-                        this.draw();
-                        fetchBtn.innerHTML = originalBtnContent;
-                        fetchBtn.style.opacity = 1;
-                    };
-                    fallbackImg.src = fallbackProxy;
-                };
-                this.uploadedImage.src = proxyUrl + '&t=' + new Date().getTime();
-            });
-        }
-
-        // --- ЛОГИКА ПОИСКА ICONIFY ---
-        const searchBtn = document.getElementById('btnOpenSearch');
-        const searchPopup = document.getElementById('searchPopup');
-        const closeSearch = document.getElementById('closeSearchPopup');
-        const searchInput = document.getElementById('iconSearchInput');
-        const resultsContainer = document.getElementById('iconSearchResults');
-        const colorPicker = document.getElementById('iconColorPicker');
-
-        let currentSearchColor = colorPicker ? colorPicker.value : '#000000';
-
-        if (searchBtn) {
-            searchBtn.addEventListener('click', () => {
-                const isHidden = searchPopup.style.display === 'none';
-                searchPopup.style.display = isHidden ? 'flex' : 'none';
-                if (isHidden) searchInput.focus();
-            });
-
-            closeSearch.addEventListener('click', () => {
-                searchPopup.style.display = 'none';
-            });
-
-            colorPicker.addEventListener('input', (e) => {
-                currentSearchColor = e.target.value;
-                const images = resultsContainer.querySelectorAll('img');
-                images.forEach(img => {
-                    const baseUrl = img.src.split('?')[0];
-                    img.src = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
-                });
-            });
-
-            let debounceTimer;
-            searchInput.addEventListener('input', (e) => {
-                clearTimeout(debounceTimer);
-                const query = e.target.value.trim();
-
-                if (query.length < 2) {
-                    resultsContainer.innerHTML = '';
-                    return;
-                }
-
-                debounceTimer = setTimeout(async () => {
-                    resultsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">Ищу...</div>';
-
-                    try {
-                        const resp = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=100`);
-                        const data = await resp.json();
-
-                        resultsContainer.innerHTML = '';
-
-                        if (data.icons && data.icons.length > 0) {
-                            data.icons.forEach(iconName => {
-                                const div = document.createElement('div');
-                                div.className = 'search-item';
-                                const baseUrl = `https://api.iconify.design/${iconName}.svg`;
-                                const coloredUrl = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
-
-                                const img = document.createElement('img');
-                                img.src = coloredUrl;
-                                img.loading = "lazy";
-                                div.appendChild(img);
-
-                                div.addEventListener('click', () => {
-                                    this.isImageModified = true;
-                                    const finalUrl = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
-
-                                    this.uploadedImage = new Image();
-                                    this.uploadedImage.crossOrigin = "anonymous";
-
-                                    this.uploadedImage.onload = () => {
-                                        const targetSize = this.canvas.width * 0.6;
-                                        const scale = targetSize / Math.max(this.uploadedImage.width, this.uploadedImage.height);
-
-                                        this.state.scale = scale;
-                                        this.state.rotation = 0;
-                                        this.state.offsetX = 0;
-                                        this.state.offsetY = 0;
-
-                                        this.draw();
-                                        searchPopup.style.display = 'none';
-                                    };
-
-                                    this.uploadedImage.src = finalUrl;
-                                });
-                                resultsContainer.appendChild(div);
+                    attachEvents() {
+                        const downloadOverlay = document.getElementById('editorDownloadOverlay');
+                        if (downloadOverlay) {
+                            downloadOverlay.addEventListener('click', () => {
+                                const nameInput = document.getElementById('editorAppName');
+                                let linkName = (nameInput && nameInput.value.trim() !== '') ? nameInput.value.trim() : 'icon';
+                                try {
+                                    const dataUrl = this.canvas.toDataURL('image/png');
+                                    const link = document.createElement('a');
+                                    link.download = `${linkName}.png`;
+                                    link.href = dataUrl;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                } catch (e) {
+                                    if (this.originalIconUrl) {
+                                        const link = document.createElement('a');
+                                        link.target = '_blank';
+                                        link.href = this.originalIconUrl;
+                                        link.download = `${linkName}.png`;
+                                        link.click();
+                                    }
+                                }
                             });
-                        } else {
-                            resultsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">Ничего не найдено</div>';
                         }
-                    } catch (err) {
-                        console.error(err);
-                        resultsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ea4335; padding: 20px;">Ошибка сети</div>';
-                    }
-                }, 500);
-            });
-        }
 
-        // --- ЛОГИКА ЗАГРУЗКИ ПО ССЫЛКЕ ---
-        const btnLoadFromImgUrl = document.getElementById('btnLoadFromImgUrl');
-        if (btnLoadFromImgUrl) {
-            btnLoadFromImgUrl.addEventListener('click', () => {
-                let modal = document.getElementById('iconEditorUrlModal');
-                if (!modal) {
-                    const modalHTML = `
+                        const fileInput = document.getElementById('editorFileInput');
+                        fileInput.addEventListener('change', (e) => this.handleUpload(e));
+                        const triggerBtn = document.getElementById('triggerFileSelect');
+                        if (triggerBtn) triggerBtn.addEventListener('click', () => fileInput.click());
+
+                        const urlInput = document.getElementById('editorAppUrl');
+                        const nameInput = document.getElementById('editorAppName');
+                        const fetchBtn = document.getElementById('btnFetchFromUrl');
+
+                        if (urlInput && nameInput) {
+                            urlInput.addEventListener('input', () => {
+                                const urlVal = urlInput.value.trim();
+
+                                urlInput.classList.remove('input-error');
+                                const errorMsg = document.getElementById('urlErrorText');
+                                if (errorMsg) errorMsg.style.display = 'none';
+
+                                if (urlVal.length > 3) {
+                                    const guessedName = this.extractNameFromUrl(urlVal);
+                                    if (guessedName && (nameInput.value === '' || nameInput.dataset.autoFilled === 'true')) {
+                                        nameInput.value = guessedName;
+                                        nameInput.dataset.autoFilled = 'true';
+                                    }
+                                }
+                            });
+                            nameInput.addEventListener('input', () => { nameInput.dataset.autoFilled = 'false'; });
+
+                            // --- НОВАЯ ЛОГИКА: Авто-нажатие (только если иконка НЕ загружена) ---
+                            urlInput.addEventListener('paste', () => {
+                                setTimeout(() => {
+                                    const val = urlInput.value.trim();
+                                    // Добавлено условие !this.uploadedImage
+                                    if (!this.uploadedImage && val.length > 4 && val.includes('.')) {
+                                        if (fetchBtn) fetchBtn.click();
+                                    }
+                                }, 50);
+                            });
+                        }
+
+                        if (fetchBtn) {
+                            fetchBtn.addEventListener('click', () => {
+                                const errorMsg = document.getElementById('urlErrorText');
+                                urlInput.classList.remove('input-error');
+                                if (errorMsg) errorMsg.style.display = 'none';
+
+                                let urlVal = urlInput.value.trim();
+                                if (!urlVal) {
+                                    urlInput.classList.add('input-error');
+                                    if (errorMsg) { errorMsg.innerText = 'Введите URL'; errorMsg.style.display = 'inline'; }
+                                    urlInput.focus();
+                                    return;
+                                }
+
+                                urlVal = urlVal.replace(/^https?:\/\//, '').replace(/\/$/, '');
+                                const highResFaviconUrl = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${urlVal}&size=256`;
+                                const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(highResFaviconUrl)}&w=512&h=512&output=png`;
+
+                                const originalBtnContent = fetchBtn.innerHTML;
+                                fetchBtn.innerHTML = `<span>Загрузка...</span>`;
+                                fetchBtn.style.opacity = 0.7;
+
+                                this.uploadedImage = new Image();
+                                this.uploadedImage.crossOrigin = "anonymous";
+                                this.uploadedImage.onload = () => {
+                                    this.resetImageState();
+                                    this.draw();
+                                    fetchBtn.innerHTML = originalBtnContent;
+                                    fetchBtn.style.opacity = 1;
+                                };
+
+                                this.uploadedImage.onerror = () => {
+                                    const fallbackUrl = `https://www.google.com/s2/favicons?domain=${urlVal}&sz=512`;
+                                    const fallbackProxy = `https://wsrv.nl/?url=${encodeURIComponent(fallbackUrl)}`;
+                                    const fallbackImg = new Image();
+                                    fallbackImg.crossOrigin = "anonymous";
+                                    fallbackImg.onload = () => {
+                                        this.uploadedImage = fallbackImg;
+                                        this.resetImageState();
+                                        this.draw();
+                                        fetchBtn.innerHTML = originalBtnContent;
+                                        fetchBtn.style.opacity = 1;
+                                    };
+                                    fallbackImg.onerror = () => {
+                                        urlInput.classList.add('input-error');
+                                        if (errorMsg) { errorMsg.innerText = 'Иконка не найдена'; errorMsg.style.display = 'inline'; }
+                                        this.uploadedImage = null;
+                                        this.draw();
+                                        fetchBtn.innerHTML = originalBtnContent;
+                                        fetchBtn.style.opacity = 1;
+                                    };
+                                    fallbackImg.src = fallbackProxy;
+                                };
+                                this.uploadedImage.src = proxyUrl + '&t=' + new Date().getTime();
+                            });
+                        }
+
+                        // --- ЛОГИКА ПОИСКА ICONIFY ---
+                        const searchBtn = document.getElementById('btnOpenSearch');
+                        const searchPopup = document.getElementById('searchPopup');
+                        const closeSearch = document.getElementById('closeSearchPopup');
+                        const searchInput = document.getElementById('iconSearchInput');
+                        const resultsContainer = document.getElementById('iconSearchResults');
+                        const colorPicker = document.getElementById('iconColorPicker');
+
+                        let currentSearchColor = colorPicker ? colorPicker.value : '#000000';
+
+                        if (searchBtn) {
+                            searchBtn.addEventListener('click', () => {
+                                const isHidden = searchPopup.style.display === 'none';
+                                searchPopup.style.display = isHidden ? 'flex' : 'none';
+                                if (isHidden) searchInput.focus();
+                            });
+
+                            closeSearch.addEventListener('click', () => {
+                                searchPopup.style.display = 'none';
+                            });
+
+                            colorPicker.addEventListener('input', (e) => {
+                                currentSearchColor = e.target.value;
+                                const images = resultsContainer.querySelectorAll('img');
+                                images.forEach(img => {
+                                    const baseUrl = img.src.split('?')[0];
+                                    img.src = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
+                                });
+                            });
+
+                            let debounceTimer;
+                            searchInput.addEventListener('input', (e) => {
+                                clearTimeout(debounceTimer);
+                                const query = e.target.value.trim();
+
+                                if (query.length < 2) {
+                                    resultsContainer.innerHTML = '';
+                                    return;
+                                }
+
+                                debounceTimer = setTimeout(async () => {
+                                    resultsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">Ищу...</div>';
+
+                                    try {
+                                        const resp = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=100`);
+                                        const data = await resp.json();
+
+                                        resultsContainer.innerHTML = '';
+
+                                        if (data.icons && data.icons.length > 0) {
+                                            data.icons.forEach(iconName => {
+                                                const div = document.createElement('div');
+                                                div.className = 'search-item';
+                                                const baseUrl = `https://api.iconify.design/${iconName}.svg`;
+                                                const coloredUrl = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
+
+                                                const img = document.createElement('img');
+                                                img.src = coloredUrl;
+                                                img.loading = "lazy";
+                                                div.appendChild(img);
+
+                                                div.addEventListener('click', () => {
+                                                    this.isImageModified = true;
+                                                    const finalUrl = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
+
+                                                    this.uploadedImage = new Image();
+                                                    this.uploadedImage.crossOrigin = "anonymous";
+
+                                                    this.uploadedImage.onload = () => {
+                                                        const targetSize = this.canvas.width * 0.6;
+                                                        const scale = targetSize / Math.max(this.uploadedImage.width, this.uploadedImage.height);
+
+                                                        this.state.scale = scale;
+                                                        this.state.rotation = 0;
+                                                        this.state.offsetX = 0;
+                                                        this.state.offsetY = 0;
+
+                                                        this.draw();
+                                                        searchPopup.style.display = 'none';
+                                                    };
+
+                                                    this.uploadedImage.src = finalUrl;
+                                                });
+                                                resultsContainer.appendChild(div);
+                                            });
+                                        } else {
+                                            resultsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">Ничего не найдено</div>';
+                                        }
+                                    } catch (err) {
+                                        console.error(err);
+                                        resultsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ea4335; padding: 20px;">Ошибка сети</div>';
+                                    }
+                                }, 500);
+                            });
+                        }
+
+                        // --- ЛОГИКА ЗАГРУЗКИ ПО ССЫЛКЕ ---
+                        const btnLoadFromImgUrl = document.getElementById('btnLoadFromImgUrl');
+                        if (btnLoadFromImgUrl) {
+                            btnLoadFromImgUrl.addEventListener('click', () => {
+                                let modal = document.getElementById('iconEditorUrlModal');
+                                if (!modal) {
+                                    const modalHTML = `
                         <div class="wp-modal-overlay" id="iconEditorUrlModal" style="z-index: 3000;">
                             <div class="fake-blur-bg"></div>
                             <div class="real-backdrop-layer"></div>
@@ -1138,269 +1169,298 @@ export class IconEditor {
                             </div>
                         </div>
                     `;
-                    document.body.insertAdjacentHTML('beforeend', modalHTML);
-                    modal = document.getElementById('iconEditorUrlModal');
-                    
-                    document.getElementById('iconEditorUrlCancel').onclick = () => modal.classList.remove('active');
-                    
-                    document.getElementById('iconEditorUrlSave').onclick = () => {
-                        const input = document.getElementById('iconEditorUrlInput');
-                        const imgUrl = input.value;
-                        if (imgUrl && imgUrl.trim() !== '') {
-                            this.isImageModified = true;
-                            const originalBtnContent = btnLoadFromImgUrl.innerHTML;
-                            btnLoadFromImgUrl.innerHTML = `<span>Загрузка...</span>`;
-                            btnLoadFromImgUrl.style.opacity = 0.7;
+                                    document.body.insertAdjacentHTML('beforeend', modalHTML);
+                                    modal = document.getElementById('iconEditorUrlModal');
 
-                            const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(imgUrl.trim())}&w=512&h=512&output=png`;
+                                    document.getElementById('iconEditorUrlCancel').onclick = () => modal.classList.remove('active');
 
-                            this.uploadedImage = new Image();
-                            this.uploadedImage.crossOrigin = "anonymous";
+                                    document.getElementById('iconEditorUrlSave').onclick = () => {
+                                        const input = document.getElementById('iconEditorUrlInput');
+                                        const imgUrl = input.value;
+                                        if (imgUrl && imgUrl.trim() !== '') {
+                                            this.isImageModified = true;
+                                            const originalBtnContent = btnLoadFromImgUrl.innerHTML;
+                                            btnLoadFromImgUrl.innerHTML = `<span>Загрузка...</span>`;
+                                            btnLoadFromImgUrl.style.opacity = 0.7;
 
-                            this.uploadedImage.onload = () => {
-                                this.resetImageState();
-                                this.draw();
-                                btnLoadFromImgUrl.innerHTML = originalBtnContent;
-                                btnLoadFromImgUrl.style.opacity = 1;
-                            };
+                                            const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(imgUrl.trim())}&w=512&h=512&output=png`;
 
-                            this.uploadedImage.onerror = () => {
-                                this.uploadedImage = new Image();
-                                this.uploadedImage.crossOrigin = "anonymous";
-                                this.uploadedImage.onload = () => {
-                                    this.resetImageState();
-                                    this.draw();
-                                    btnLoadFromImgUrl.innerHTML = originalBtnContent;
-                                    btnLoadFromImgUrl.style.opacity = 1;
-                                };
-                                this.uploadedImage.onerror = () => {
-                                    alert('Не удалось загрузить картинку по этой ссылке. Возможно, она недоступна или заблокирована.');
-                                    this.uploadedImage = null;
-                                    this.draw();
-                                    btnLoadFromImgUrl.innerHTML = originalBtnContent;
-                                    btnLoadFromImgUrl.style.opacity = 1;
-                                };
-                                // Пытаемся без прокси, если прокси упал
-                                this.uploadedImage.src = imgUrl.trim();
-                            };
+                                            this.uploadedImage = new Image();
+                                            this.uploadedImage.crossOrigin = "anonymous";
 
-                            this.uploadedImage.src = proxyUrl + '&t=' + new Date().getTime();
+                                            this.uploadedImage.onload = () => {
+                                                this.resetImageState();
+                                                this.draw();
+                                                btnLoadFromImgUrl.innerHTML = originalBtnContent;
+                                                btnLoadFromImgUrl.style.opacity = 1;
+                                            };
+
+                                            this.uploadedImage.onerror = () => {
+                                                this.uploadedImage = new Image();
+                                                this.uploadedImage.crossOrigin = "anonymous";
+                                                this.uploadedImage.onload = () => {
+                                                    this.resetImageState();
+                                                    this.draw();
+                                                    btnLoadFromImgUrl.innerHTML = originalBtnContent;
+                                                    btnLoadFromImgUrl.style.opacity = 1;
+                                                };
+                                                this.uploadedImage.onerror = () => {
+                                                    alert('Не удалось загрузить картинку по этой ссылке. Возможно, она недоступна или заблокирована.');
+                                                    this.uploadedImage = null;
+                                                    this.draw();
+                                                    btnLoadFromImgUrl.innerHTML = originalBtnContent;
+                                                    btnLoadFromImgUrl.style.opacity = 1;
+                                                };
+                                                // Пытаемся без прокси, если прокси упал
+                                                this.uploadedImage.src = imgUrl.trim();
+                                            };
+
+                                            this.uploadedImage.src = proxyUrl + '&t=' + new Date().getTime();
+                                        }
+                                        modal.classList.remove('active');
+                                    };
+                                }
+
+                                const input = document.getElementById('iconEditorUrlInput');
+                                if (input) {
+                                    input.value = '';
+                                    setTimeout(() => input.focus(), 100);
+                                }
+
+                                setTimeout(() => modal.classList.add('active'), 10);
+                            });
                         }
-                        modal.classList.remove('active');
-                    };
-                }
-                
-                const input = document.getElementById('iconEditorUrlInput');
-                if (input) {
-                    input.value = '';
-                    setTimeout(() => input.focus(), 100); 
-                }
-                
-                setTimeout(() => modal.classList.add('active'), 10);
-            });
-        }
 
-        this.modal.addEventListener('click', (e) => {
-            const btn = e.target.closest('.tool-btn');
-            if (btn) {
-                const action = btn.dataset.action;
-                if (action === 'rotate-left') this.rotate(-90);
-                if (action === 'rotate-right') this.rotate(90);
-                if (action === 'move-left') this.move(-10, 0);
-                if (action === 'move-right') this.move(10, 0);
-                if (action === 'move-up') this.move(0, -10);
-                if (action === 'move-down') this.move(0, 10);
-                if (action === 'zoom-in') this.zoom(0.1);
-                if (action === 'zoom-out') this.zoom(-0.1);
-            }
+                        this.modal.addEventListener('click', (e) => {
+                            const btn = e.target.closest('.tool-btn');
+                            if (btn) {
+                                const action = btn.dataset.action;
+                                if (action === 'rotate-left') this.rotate(-90);
+                                if (action === 'rotate-right') this.rotate(90);
+                                if (action === 'move-left') this.move(-10, 0);
+                                if (action === 'move-right') this.move(10, 0);
+                                if (action === 'move-up') this.move(0, -10);
+                                if (action === 'move-down') this.move(0, 10);
+                                if (action === 'zoom-in') this.zoom(0.1);
+                                if (action === 'zoom-out') this.zoom(-0.1);
+                            }
 
-            const swatch = e.target.closest('.swatch');
-            if (swatch && !swatch.classList.contains('swatch-rainbow')) {
-                this.isImageModified = true;
-                document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
-                swatch.classList.add('active');
-                this.state.bgColor = swatch.dataset.color;
-                this.draw();
-            }
+                            const swatch = e.target.closest('.swatch');
+                            if (swatch && !swatch.classList.contains('swatch-rainbow')) {
+                                this.isImageModified = true;
+                                document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+                                swatch.classList.add('active');
+                                this.state.bgColor = swatch.dataset.color;
+                                this.draw();
+                            }
 
-            if (e.target.closest('.editor-close-btn') || e.target.closest('.btn-cancel')) this.close();
-            if (e.target.closest('.btn-reset')) { this.isImageModified = true; this.resetEditor(false); }
-            if (e.target.closest('.btn-ok') && !e.target.closest('.btn-ok').disabled) this.save();
-        });
+                            if (e.target.closest('.editor-close-btn') || e.target.closest('.btn-cancel')) this.close();
+                            if (e.target.closest('.btn-reset')) { this.isImageModified = true; this.resetEditor(false); }
+                            if (e.target.closest('.btn-ok') && !e.target.closest('.btn-ok').disabled) this.save();
+                        });
 
-        document.getElementById('editorCustomColorPicker').addEventListener('input', (e) => {
-            this.isImageModified = true;
-            this.state.bgColor = e.target.value;
-            document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
-            e.target.parentElement.classList.add('active');
-            this.draw();
-        });
-    }
+                        document.getElementById('editorCustomColorPicker').addEventListener('input', (e) => {
+                            this.isImageModified = true;
+                            this.state.bgColor = e.target.value;
+                            document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+                            e.target.parentElement.classList.add('active');
+                            this.draw();
+                        });
+                    }
 
-    initCanvas() {
-        this.canvas = document.getElementById('editorCanvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.ctx.imageSmoothingEnabled = true;
-        this.ctx.imageSmoothingQuality = 'high';
-    }
+                    initCanvas() {
+                        this.canvas = document.getElementById('editorCanvas');
+                        this.ctx = this.canvas.getContext('2d');
+                        this.ctx.imageSmoothingEnabled = true;
+                        this.ctx.imageSmoothingQuality = 'high';
+                    }
 
-    handleUpload(e) {
-        const file = e.target.files[0];
-        if (file) {
-            this.isImageModified = true;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                this.uploadedImage = new Image();
-                this.uploadedImage.onload = () => { this.resetImageState(); this.draw(); };
-                this.uploadedImage.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-        e.target.value = '';
-    }
+                    handleUpload(e) {
+                        const file = e.target.files[0];
+                        if (file) {
+                            this.isImageModified = true;
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                                this.uploadedImage = new Image();
+                                this.uploadedImage.onload = () => { this.resetImageState(); this.draw(); };
+                                this.uploadedImage.src = event.target.result;
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                        e.target.value = '';
+                    }
 
-    move(x, y) { this.isImageModified = true; this.state.offsetX += x; this.state.offsetY += y; this.draw(); }
-    zoom(delta) { this.isImageModified = true; this.state.scale += delta; if (this.state.scale < 0.01) this.state.scale = 0.01; this.draw(); }
-    rotate(deg) { this.isImageModified = true; this.state.rotation += deg; this.draw(); }
+                    move(x, y) { this.isImageModified = true; this.state.offsetX += x; this.state.offsetY += y; this.draw(); }
+                    zoom(delta) { this.isImageModified = true; this.state.scale += delta; if (this.state.scale < 0.01) this.state.scale = 0.01; this.draw(); }
+                    rotate(deg) { this.isImageModified = true; this.state.rotation += deg; this.draw(); }
 
-    resetImageState() {
-        if (this.uploadedImage) {
-            let scaleX = this.canvas.width / this.uploadedImage.width;
-            let scaleY = this.canvas.height / this.uploadedImage.height;
-            this.state.scale = Math.min(scaleX, scaleY);
-            this.state.rotation = 0;
-            this.state.offsetX = 0;
-            this.state.offsetY = 0;
-        }
-    }
+                    resetImageState() {
+                        if (this.uploadedImage) {
+                            let scaleX = this.canvas.width / this.uploadedImage.width;
+                            let scaleY = this.canvas.height / this.uploadedImage.height;
+                            this.state.scale = Math.min(scaleX, scaleY);
+                            this.state.rotation = 0;
+                            this.state.offsetX = 0;
+                            this.state.offsetY = 0;
+                        }
+                    }
 
-    resetEditor(fullClear = false) {
-        this.state.bgColor = '#ffffff';
-        this.state.rotation = 0;
-        this.state.offsetX = 0;
-        this.state.offsetY = 0;
-        const swatches = document.querySelectorAll('.swatch');
-        if (swatches.length > 0) {
-            swatches.forEach(s => s.classList.remove('active'));
-            const whiteSwatch = document.querySelector('[data-color="#ffffff"]');
-            if (whiteSwatch) whiteSwatch.classList.add('active');
-        }
-        if (fullClear) {
-            const nameInput = document.getElementById('editorAppName');
-            const urlInput = document.getElementById('editorAppUrl');
-            
-            if (nameInput) nameInput.value = '';
-            if (urlInput) urlInput.value = '';
-            
-            this.selectedCategories = [];
-            const fakeInput = document.getElementById('editorAppCategoryFakeInput');
-            if (fakeInput) fakeInput.value = '';
-            const container = document.getElementById('categoryOptionsContainer');
-            if (container) {
-                const checkboxes = container.querySelectorAll('.cat-checkbox');
-                checkboxes.forEach(c => c.classList.remove('checked'));
-            }
-            this.uploadedImage = null;
-            this.state.scale = 1;
-        } else {
-            if (this.uploadedImage) this.resetImageState(); else this.state.scale = 1;
-        }
-        this.draw();
-    }
+                    resetEditor(fullClear = false) {
+                        this.state.bgColor = '#ffffff';
+                        this.state.rotation = 0;
+                        this.state.offsetX = 0;
+                        this.state.offsetY = 0;
+                        const swatches = document.querySelectorAll('.swatch');
+                        if (swatches.length > 0) {
+                            swatches.forEach(s => s.classList.remove('active'));
+                            const whiteSwatch = document.querySelector('[data-color="#ffffff"]');
+                            if (whiteSwatch) whiteSwatch.classList.add('active');
+                        }
+                        if (fullClear) {
+                            const nameInput = document.getElementById('editorAppName');
+                            const urlInput = document.getElementById('editorAppUrl');
 
-    draw() {
-        if (!this.ctx) return;
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        if (this.state.bgColor !== 'transparent') {
-            this.ctx.fillStyle = this.state.bgColor;
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        }
-        if (this.uploadedImage) {
-            this.ctx.save();
-            this.ctx.translate((this.canvas.width / 2) + this.state.offsetX, (this.canvas.height / 2) + this.state.offsetY);
-            this.ctx.rotate(this.state.rotation * Math.PI / 180);
-            this.ctx.scale(this.state.scale, this.state.scale);
-            this.ctx.imageSmoothingEnabled = true;
-            this.ctx.imageSmoothingQuality = 'high';
-            this.ctx.drawImage(this.uploadedImage, -this.uploadedImage.width / 2, -this.uploadedImage.height / 2);
-            this.ctx.restore();
-        }
-        const dataUrl = this.canvas.toDataURL('image/png');
-        const preview = document.getElementById('editorPreviewImg');
-        if (preview) preview.src = dataUrl;
-    }
+                            if (nameInput) nameInput.value = '';
+                            if (urlInput) urlInput.value = '';
+
+                            this.selectedCategories = [];
+                            const fakeInput = document.getElementById('editorAppCategoryFakeInput');
+                            if (fakeInput) fakeInput.value = '';
+                            const container = document.getElementById('categoryOptionsContainer');
+                            if (container) {
+                                const checkboxes = container.querySelectorAll('.cat-checkbox');
+                                checkboxes.forEach(c => c.classList.remove('checked'));
+                            }
+                            this.uploadedImage = null;
+                            this.state.scale = 1;
+                        } else {
+                            if (this.uploadedImage) this.resetImageState(); else this.state.scale = 1;
+                        }
+                        this.draw();
+                    }
+
+                    draw() {
+                        if (!this.ctx) return;
+                        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                        if (this.state.bgColor !== 'transparent') {
+                            this.ctx.fillStyle = this.state.bgColor;
+                            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                        }
+                        if (this.uploadedImage) {
+                            this.ctx.save();
+                            this.ctx.translate((this.canvas.width / 2) + this.state.offsetX, (this.canvas.height / 2) + this.state.offsetY);
+                            this.ctx.rotate(this.state.rotation * Math.PI / 180);
+                            this.ctx.scale(this.state.scale, this.state.scale);
+                            this.ctx.imageSmoothingEnabled = true;
+                            this.ctx.imageSmoothingQuality = 'high';
+                            this.ctx.drawImage(this.uploadedImage, -this.uploadedImage.width / 2, -this.uploadedImage.height / 2);
+                            this.ctx.restore();
+                        }
+                        try {
+                            const dataUrl = this.canvas.toDataURL('image/png');
+                            const preview = document.getElementById('editorPreviewImg');
+                            if (preview) preview.src = dataUrl;
+                        } catch (e) {
+                            // Canvas may be temporarily tainted by non-CORS fastImg before cleanImg loads
+                            const preview = document.getElementById('editorPreviewImg');
+                            if (preview && (!preview.src || preview.src === window.location.href)) {
+                                if (this.originalIconUrl) preview.src = this.originalIconUrl;
+                            }
+                        }
+                    }
 
     async save() {
-        if (this.onSaveCallback) {
-            const btnOk = this.modal.querySelector('.btn-ok');
-            const originalText = btnOk ? btnOk.innerText : 'Готово';
+                        if (this.onSaveCallback) {
+                            const btnOk = this.modal.querySelector('.btn-ok');
+                            const originalText = btnOk ? btnOk.innerText : 'Готово';
 
-            try {
-                let hostedUrl = this.originalIconUrl || '';
+                            try {
+                                let hostedUrl = this.originalIconUrl || '';
 
-                if (this.isImageModified || !hostedUrl) {
-                    if (btnOk) {
-                        btnOk.innerText = 'Загрузка...';
-                        btnOk.disabled = true;
+                                if (this.isImageModified || !hostedUrl) {
+                                    if (btnOk) {
+                                        btnOk.innerText = 'Загрузка...';
+                                        btnOk.disabled = true;
+                                    }
+
+                                    // Если значок был изменен, а фоновая чистая версия еще скачивается:
+                                    if (!this.isCleanImageLoaded && this.cleanImagePromise) {
+                                        try {
+                                            await Promise.race([
+                                                this.cleanImagePromise,
+                                                new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
+                                            ]);
+                                        } catch (e) {
+                                            console.warn('Wait for clean image error/timeout:', e);
+                                        }
+                                    }
+
+                                    const offscreenCanvas = document.createElement('canvas');
+                                    const offCtx = offscreenCanvas.getContext('2d');
+                                    offscreenCanvas.width = 256;
+                                    offscreenCanvas.height = 256;
+                                    offCtx.imageSmoothingEnabled = true;
+                                    offCtx.imageSmoothingQuality = 'high';
+
+                                    if (this.state.bgColor !== 'transparent') {
+                                        offCtx.fillStyle = this.state.bgColor;
+                                        offCtx.fillRect(0, 0, 256, 256);
+                                    }
+
+                                    offCtx.drawImage(this.canvas, 0, 0, 256, 256);
+
+                                    try {
+                                        const dataUrl = offscreenCanvas.toDataURL('image/png');
+                                        hostedUrl = await this.uploadToImgBB(dataUrl);
+                                    } catch (taintErr) {
+                                        console.warn('Canvas export failed (tainted), preserving original icon:', taintErr);
+                                        if (this.originalIconUrl) {
+                                            hostedUrl = this.originalIconUrl;
+                                        } else {
+                                            throw taintErr;
+                                        }
+                                    }
+                                }
+
+                                const name = document.getElementById('editorAppName').value.trim();
+                                const url = document.getElementById('editorAppUrl').value.trim();
+
+                                if (!this.selectedCategories || this.selectedCategories.length === 0) {
+                                    this.selectedCategories = ['Главная'];
+                                }
+
+                                const category = this.selectedCategories;
+                                const explicitNoMain = !this.selectedCategories.includes('Главная');
+
+                                this.onSaveCallback({ icon: hostedUrl, name: name, url: url, category: category, _explicitNoMain: explicitNoMain });
+                                this.close();
+
+                            } catch (error) {
+                                console.error('Save error:', error);
+                                alert('Ошибка загрузки изображения. Проверьте интернет или API ключ.');
+                                if (btnOk) {
+                                    btnOk.innerText = originalText;
+                                    btnOk.disabled = false;
+                                }
+                            }
+                        }
                     }
-
-                    const offscreenCanvas = document.createElement('canvas');
-                    const offCtx = offscreenCanvas.getContext('2d');
-                    offscreenCanvas.width = 256;
-                    offscreenCanvas.height = 256;
-                    offCtx.imageSmoothingEnabled = true;
-                    offCtx.imageSmoothingQuality = 'high';
-
-                    if (this.state.bgColor !== 'transparent') {
-                        offCtx.fillStyle = this.state.bgColor;
-                        offCtx.fillRect(0, 0, 256, 256);
-                    }
-
-                    offCtx.drawImage(this.canvas, 0, 0, 256, 256);
-
-                    const dataUrl = offscreenCanvas.toDataURL('image/png');
-                    hostedUrl = await this.uploadToImgBB(dataUrl);
-                }
-
-                const name = document.getElementById('editorAppName').value.trim();
-                const url = document.getElementById('editorAppUrl').value.trim();
-                
-                if (!this.selectedCategories || this.selectedCategories.length === 0) {
-                    this.selectedCategories = ['Главная'];
-                }
-
-                const category = this.selectedCategories;
-                const explicitNoMain = !this.selectedCategories.includes('Главная');
-
-                this.onSaveCallback({ icon: hostedUrl, name: name, url: url, category: category, _explicitNoMain: explicitNoMain });
-                this.close();
-
-            } catch (error) {
-                console.error('Save error:', error);
-                alert('Ошибка загрузки изображения. Проверьте интернет или API ключ.');
-                if (btnOk) {
-                    btnOk.innerText = originalText;
-                    btnOk.disabled = false;
-                }
-            }
-        }
-    }
 
     async uploadToImgBB(base64Image) {
-        const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee';
-        const cleanBase64 = base64Image.split(',')[1];
-        const formData = new FormData();
-        formData.append('image', cleanBase64);
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
-            method: 'POST',
-            body: formData
-        });
-        const result = await response.json();
-        if (result.success) return result.data.url; else throw new Error('ImgBB Upload Failed');
-    }
+                        const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee';
+                        const cleanBase64 = base64Image.split(',')[1];
+                        const formData = new FormData();
+                        formData.append('image', cleanBase64);
+                        const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await response.json();
+                        if (result.success) return result.data.url; else throw new Error('ImgBB Upload Failed');
+                    }
 
-    close() { 
-        if (this.cleanupOutsideClick) this.cleanupOutsideClick();
-        if (this.modal) { this.modal.remove(); this.modal = null; } 
-    }
-}
+                    close() {
+                        if (this.cleanupOutsideClick) this.cleanupOutsideClick();
+                        if (this.modal) { this.modal.remove(); this.modal = null; }
+                    }
+                }

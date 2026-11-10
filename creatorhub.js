@@ -5987,8 +5987,9 @@ function updateNotionButtonState() {
 
     const wrapper = document.querySelector(".video-links-grid-wrapper") || document.querySelector(".video-links-carousel-wrapper");
     if (wrapper) {
-        wrapper.style.display = activeButtons.length > 0 ? "block" : "none";
+        wrapper.style.display = "block";
     }
+    videoButtonsContainer.style.display = activeButtons.length > 0 ? "grid" : "none";
 }
 
 function openImageLightbox(src) {

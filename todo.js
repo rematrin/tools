@@ -139,6 +139,7 @@ if (mobileNavTodayEl) {
 
 let currentUid = null;
 let unsubscribeTasks = null;
+let unsubscribeUserDoc = null;
 let allTasks = [];
 let previousTaskVisualHashes = {};
 let currentRoute = 'inbox'; // 'inbox' или 'today'
@@ -2173,11 +2174,13 @@ class TodoWallpaperManager {
     }
 
     saveToCloud() {
-        if (typeof currentUid !== 'undefined' && currentUid && window.setDoc && window.doc) {
-            window.setDoc(window.doc(db, "users", currentUid), {
+        if (typeof currentUid !== 'undefined' && currentUid) {
+            setDoc(doc(db, "users", currentUid), {
                 todoWallpaper: this.settings,
                 todoCustomBackground: this.isEnabled
-            }, { merge: true }).catch(() => { });
+            }, { merge: true }).catch((err) => {
+                console.warn("Ошибка сохранения обоев в облако:", err);
+            });
         }
     }
 
@@ -2189,7 +2192,7 @@ class TodoWallpaperManager {
             this.saveSettings();
             changed = true;
         }
-        if (userData.todoCustomBackground !== undefined && localStorage.getItem(this.PREF_KEY) === null) {
+        if (userData.todoCustomBackground !== undefined) {
             this.saveEnabled(userData.todoCustomBackground);
             changed = true;
         }
@@ -3312,10 +3315,24 @@ try {
         if (cachedUser && cachedUser.uid) {
             initUserSession(cachedUser, false);
         }
+    } else if (window.currentUser) {
+        initUserSession(window.currentUser, true);
+    } else if (window.currentUser === null) {
+        if (todoMainLayout) todoMainLayout.style.setProperty('display', 'none', 'important');
+        if (authRequiredState) authRequiredState.style.display = 'block';
     }
 } catch (e) {
     console.warn("Ошибка разбора кэшированного пользователя:", e);
 }
+
+// Защитный таймер: если пользователь не вошел и нет кэша, отображаем карточку входа
+setTimeout(() => {
+    if (!currentUid && !isAuthVerified) {
+        if (todoMainLayout) todoMainLayout.style.setProperty('display', 'none', 'important');
+        if (authRequiredState) authRequiredState.style.display = 'block';
+        if (sidebarName) sidebarName.textContent = "Войти";
+    }
+}, 400);
 
 // Слушатель состояния авторизации от Firebase Auth
 window.addEventListener('authChanged', (e) => {
@@ -3437,9 +3454,26 @@ function startTodoForUser(uid) {
         unsubscribeTasks();
         unsubscribeTasks = null;
     }
+    if (unsubscribeUserDoc) {
+        unsubscribeUserDoc();
+        unsubscribeUserDoc = null;
+    }
     if (tasksRetryTimer) {
         clearTimeout(tasksRetryTimer);
         tasksRetryTimer = null;
+    }
+
+    // Слушатель настроек пользователя (включая обои) в реальном времени
+    try {
+        unsubscribeUserDoc = onSnapshot(doc(db, 'users', uid), (docSnap) => {
+            if (docSnap.exists() && window.todoWallpaperManager) {
+                window.todoWallpaperManager.loadFromCloud(docSnap.data());
+            }
+        }, (err) => {
+            console.warn("Ошибка подписки на профиль пользователя:", err);
+        });
+    } catch (e) {
+        console.warn("Не удалось подписаться на документ пользователя:", e);
     }
 
     // Загружаем сохраненный локальный слепок для мгновенного рендера
@@ -3532,6 +3566,10 @@ function stopTodoForUser() {
     if (unsubscribeTasks) {
         unsubscribeTasks();
         unsubscribeTasks = null;
+    }
+    if (unsubscribeUserDoc) {
+        unsubscribeUserDoc();
+        unsubscribeUserDoc = null;
     }
     allTasks = [];
     previousTaskVisualHashes = {};

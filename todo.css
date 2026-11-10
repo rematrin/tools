@@ -51,6 +51,20 @@
     object-fit: contain;
 }
 
+.logo-img.logo-dark {
+    display: none !important;
+}
+
+body.dark .logo-img.logo-light,
+html.dark .logo-img.logo-light {
+    display: none !important;
+}
+
+body.dark .logo-img.logo-dark,
+html.dark .logo-img.logo-dark {
+    display: block !important;
+}
+
 .header-right {
     display: flex;
     align-items: center;
@@ -11123,7 +11137,8 @@ body.dark .ios-slider::-webkit-slider-thumb {
 
 @media (min-width: 769px) {
     body {
-        padding-top: 56px !important;
+        position: relative !important;
+        padding-top: 76px !important;
         background-color: var(--bg) !important;
     }
 
@@ -11143,16 +11158,45 @@ body.dark .ios-slider::-webkit-slider-thumb {
         display: block !important;
     }
 
+    /* Плавающая островная шапка на ПК (ровно по границам блоков, не едет при скролле) */
+    .vk-header {
+        position: absolute !important;
+        top: 12px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: calc(100% - 40px) !important;
+        max-width: 1040px !important;
+        height: 50px !important;
+        border-radius: 12px !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+        background-color: var(--card-bg) !important;
+        box-sizing: border-box !important;
+        z-index: 1000 !important;
+    }
+
+    .vk-header-content {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 16px !important;
+        height: 100% !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
+    }
+
     /* Главный контейнер точно по ширине контента шапки */
     .todo-app {
         max-width: 1080px !important;
-        margin: 12px auto 40px auto !important;
+        margin: 0 auto 40px auto !important;
         padding: 0 20px !important;
         box-sizing: border-box !important;
         display: flex !important;
         gap: 20px !important;
         align-items: flex-start !important;
-        min-height: calc(100vh - 76px) !important;
+        min-height: calc(100vh - 116px) !important;
     }
 
     /* БОКОВАЯ ПАНЕЛЬ: 2 отдельные белые карточки */
@@ -11386,13 +11430,47 @@ body.dark .ios-slider::-webkit-slider-thumb {
     .todo-main-layout {
         background: var(--card-bg, #ffffff) !important;
         border-radius: 12px !important;
-        padding: 24px 28px 10px !important;
+        padding: 24px 28px 24px !important;
         border: 1px solid var(--border) !important;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
         min-height: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
+    }
+
+    .auth-required-state {
+        background: var(--card-bg, #ffffff) !important;
+        border-radius: 12px !important;
+        padding: 64px 32px !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        text-align: center !important;
+    }
+
+    body.dark .auth-required-state {
+        background: var(--card-bg, #202022) !important;
+    }
+
+    .auth-required-state .empty-state {
+        color: var(--text) !important;
+    }
+
+    .auth-required-state .empty-title {
+        color: var(--text) !important;
+        font-size: 1.35rem !important;
+        font-weight: 700 !important;
+        margin-top: 16px !important;
+    }
+
+    .auth-required-state .empty-text {
+        color: var(--text-secondary, #6b7280) !important;
+        max-width: 420px !important;
+        margin: 8px auto 0 auto !important;
+        line-height: 1.5 !important;
     }
 
     /* Убираем лишний запас под последней задачей внутри карточки */
@@ -11402,6 +11480,15 @@ body.dark .ios-slider::-webkit-slider-thumb {
 
     #activeTasksContainer > .project-section:last-child {
         margin-bottom: 0 !important;
+    }
+
+    #activeTasksContainer > .subprojects-project-section:last-child {
+        margin-bottom: 16px !important;
+    }
+
+    .todo-main-layout:has(.subprojects-project-section),
+    .todo-main-layout:has(.subprojects-grid) {
+        padding-bottom: 32px !important;
     }
 
     .todo-main-layout:has(.countdown-grid) {

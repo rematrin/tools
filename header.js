@@ -54,6 +54,20 @@ const DEFAULT_HEADER_HTML = `<style>
         object-fit: contain;
     }
 
+    .logo-img.logo-dark {
+        display: none !important;
+    }
+
+    body.dark .logo-img.logo-light,
+    html.dark .logo-img.logo-light {
+        display: none !important;
+    }
+
+    body.dark .logo-img.logo-dark,
+    html.dark .logo-img.logo-dark {
+        display: block !important;
+    }
+
     /* ПРАВАЯ ЧАСТЬ */
     .header-right {
         display: flex;
@@ -127,7 +141,8 @@ const DEFAULT_HEADER_HTML = `<style>
 
         <div class="header-left">
             <a href="index.html" class="vk-header-logo" title="Главная">
-                <img src="img/Retools_logo.png" alt="Retools" class="logo-img">
+                <img src="img/Retools_logo.png" alt="Retools" class="logo-img logo-light">
+                <img src="img/Retools_logo_dark.png" alt="Retools" class="logo-img logo-dark">
             </a>
         </div>
 

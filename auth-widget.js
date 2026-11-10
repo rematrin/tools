@@ -512,6 +512,12 @@ function initAuthWidget() {
                         const userDoc = await getDoc(doc(db, "users", user.uid));
                         if (userDoc.exists()) {
                             const data = userDoc.data();
+                            if (data.todoWallpaper) {
+                                localStorage.setItem('todo_custom_wallpaper_settings_v1', JSON.stringify(data.todoWallpaper));
+                            }
+                            if (data.todoCustomBackground !== undefined) {
+                                localStorage.setItem('todo_pref_custom_background', data.todoCustomBackground ? 'true' : 'false');
+                            }
                             if (window.todoWallpaperManager) {
                                 window.todoWallpaperManager.loadFromCloud(data);
                             }

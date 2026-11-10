@@ -512,6 +512,9 @@ function initAuthWidget() {
                         const userDoc = await getDoc(doc(db, "users", user.uid));
                         if (userDoc.exists()) {
                             const data = userDoc.data();
+                            if (window.todoWallpaperManager) {
+                                window.todoWallpaperManager.loadFromCloud(data);
+                            }
                             if (data.google_access_token) {
                                 localStorage.setItem('google_access_token', data.google_access_token);
                                 localStorage.setItem('google_token_expiry', data.google_token_expiry || 0);

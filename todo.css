@@ -10920,10 +10920,227 @@ body.today-calendar-mode #todayCalendarViewContainer .cal-timeline-container {
    - Три точки у задач и разделов
    ========================================================================== */
 
+/* --- СОБСТВЕННЫЙ ФОН И ОБОИ ДЛЯ TODO (НА ПК) --- */
+.global-wallpaper-blurred {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    pointer-events: none;
+    transition: transform 0.1s linear, filter 0.1s linear, opacity 0.4s ease;
+    will-change: transform, filter, opacity;
+    opacity: 0;
+}
+
+.folder-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    transition: background 0.2s ease;
+}
+
+/* Стили блока превью и ползунков в настройках Todo */
+.wallpaper-preview-container {
+    width: 100%;
+    height: 140px;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.wallpaper-preview-bg {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.3s;
+}
+
+.wp-change-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.72);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform 0.1s, background-color 0.15s;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.wp-change-btn:hover {
+    background: rgba(0, 0, 0, 0.85);
+}
+
+.wp-change-btn:active {
+    transform: scale(0.96);
+}
+
+.slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.slider-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 600;
+}
+
+.slider-header span:last-child {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* iOS Slider Style */
+.ios-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: var(--hover-bg, #E5E5EA);
+    border-radius: 3px;
+    outline: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--border);
+    cursor: pointer;
+}
+
+.ios-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    border: 0.5px solid rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.ios-slider::-webkit-slider-thumb:active {
+    transform: scale(1.15);
+}
+
+body.dark .ios-slider {
+    background: #2a2e39;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark .ios-slider::-webkit-slider-thumb {
+    background: #e4e7ed;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.todo-wallpaper-controls {
+    transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+.todo-wallpaper-controls.disabled {
+    opacity: 0.45;
+    pointer-events: none;
+    filter: grayscale(0.5);
+}
+
+/* Модальное окно выбора обоев */
+.wp-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.wp-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.wp-modal-card {
+    background: var(--card-bg, #ffffff);
+    color: var(--text);
+    width: 380px;
+    max-width: 92%;
+    border-radius: 16px;
+    padding: 22px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border);
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+}
+
+.wp-modal-overlay.active .wp-modal-card {
+    transform: scale(1);
+}
+
+@media (max-width: 768px) {
+    .global-wallpaper-blurred,
+    .folder-backdrop {
+        display: none !important;
+    }
+}
+
 @media (min-width: 769px) {
     body {
         padding-top: 56px !important;
         background-color: var(--bg) !important;
+    }
+
+    body.custom-wallpaper-enabled,
+    html.custom-wallpaper-enabled body {
+        background-color: transparent !important;
+    }
+
+    body.custom-wallpaper-enabled .global-wallpaper-blurred,
+    html.custom-wallpaper-enabled .global-wallpaper-blurred {
+        display: block !important;
+        opacity: 1 !important;
+    }
+
+    body.custom-wallpaper-enabled .folder-backdrop,
+    html.custom-wallpaper-enabled .folder-backdrop {
+        display: block !important;
     }
 
     /* Главный контейнер точно по ширине контента шапки */

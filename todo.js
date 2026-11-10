@@ -1969,6 +1969,11 @@ function openSettingsModal() {
     const defaultHomePref = localStorage.getItem('todo_pref_default_home') || 'inbox';
     updatePrefHomeButton(defaultHomePref);
 
+    // Обновляем состояние вкладки собственных обоев
+    if (window.todoWallpaperManager) {
+        window.todoWallpaperManager.refreshUI();
+    }
+
     // Подсвечиваем сохраненную карточку настройки счетчиков
     const currentCountersPref = localStorage.getItem('todo_show_sidebar_counters') || 'show';
     const cardShow = document.getElementById('pref-counters-show');
@@ -2128,6 +2133,399 @@ if (prefThemeMode) {
         }
     });
 }
+
+// === МЕНЕДЖЕР СОБСТВЕННЫХ ОБОЕВ ДЛЯ TODO (КАК В HOME.HTML) ===
+class TodoWallpaperManager {
+    constructor() {
+        this.STORAGE_KEY = 'todo_custom_wallpaper_settings_v1';
+        this.PREF_KEY = 'todo_pref_custom_background';
+        this.defaultSettings = {
+            url: 'https://i.ibb.co/qFV3RdfY/29e2c667e908.png',
+            blur: 0,
+            dim: 30
+        };
+        this.settings = this.loadSettings();
+        this.isEnabled = this.loadEnabled();
+        this.applySettings();
+        this.initUI();
+    }
+
+    loadSettings() {
+        try {
+            const saved = localStorage.getItem(this.STORAGE_KEY);
+            return saved ? { ...this.defaultSettings, ...JSON.parse(saved) } : { ...this.defaultSettings };
+        } catch (e) {
+            return { ...this.defaultSettings };
+        }
+    }
+
+    loadEnabled() {
+        return localStorage.getItem(this.PREF_KEY) === 'true';
+    }
+
+    saveSettings() {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.settings));
+    }
+
+    saveEnabled(enabled) {
+        this.isEnabled = !!enabled;
+        localStorage.setItem(this.PREF_KEY, this.isEnabled ? 'true' : 'false');
+    }
+
+    saveToCloud() {
+        if (typeof currentUid !== 'undefined' && currentUid && window.setDoc && window.doc) {
+            window.setDoc(window.doc(db, "users", currentUid), {
+                todoWallpaper: this.settings,
+                todoCustomBackground: this.isEnabled
+            }, { merge: true }).catch(() => { });
+        }
+    }
+
+    loadFromCloud(userData) {
+        if (!userData) return;
+        let changed = false;
+        if (userData.todoWallpaper) {
+            this.settings = { ...this.defaultSettings, ...userData.todoWallpaper };
+            this.saveSettings();
+            changed = true;
+        }
+        if (userData.todoCustomBackground !== undefined && localStorage.getItem(this.PREF_KEY) === null) {
+            this.saveEnabled(userData.todoCustomBackground);
+            changed = true;
+        }
+        if (changed) {
+            this.applySettings();
+            this.refreshUI();
+        }
+    }
+
+    applySettings() {
+        const bgElement = document.getElementById('globalWallpaperBlurred');
+        const dimElement = document.getElementById('globalFolderBackdrop');
+
+        if (this.isEnabled) {
+            document.documentElement.classList.add('custom-wallpaper-enabled');
+            document.body.classList.add('custom-wallpaper-enabled');
+
+            const maxBlurPx = 30;
+            const currentBlurPx = ((this.settings.blur !== undefined ? this.settings.blur : 0) / 100) * maxBlurPx;
+            const scale = 1.02 + (currentBlurPx * 0.003);
+            const dimOpacity = (this.settings.dim !== undefined ? this.settings.dim : 30) / 100;
+
+            if (bgElement) {
+                bgElement.style.setProperty('background-image', `url('${this.settings.url}')`, 'important');
+                bgElement.style.setProperty('filter', `blur(${currentBlurPx}px)`, 'important');
+                bgElement.style.setProperty('transform', `scale(${scale})`, 'important');
+                bgElement.style.setProperty('opacity', '1', 'important');
+            }
+            if (dimElement) {
+                dimElement.style.setProperty('background', `rgba(20, 20, 20, ${dimOpacity})`, 'important');
+            }
+        } else {
+            document.documentElement.classList.remove('custom-wallpaper-enabled');
+            document.body.classList.remove('custom-wallpaper-enabled');
+            if (bgElement) {
+                bgElement.style.removeProperty('background-image');
+                bgElement.style.removeProperty('filter');
+                bgElement.style.removeProperty('transform');
+                bgElement.style.opacity = '0';
+            }
+            if (dimElement) {
+                dimElement.style.removeProperty('background');
+            }
+        }
+    }
+
+    refreshUI() {
+        const toggle = document.getElementById('prefCustomBackground');
+        const controls = document.getElementById('todoWallpaperControls');
+        const preview = document.getElementById('todoWallpaperPreviewBg');
+        const sliderDim = document.getElementById('sliderTodoDim');
+        const sliderBlur = document.getElementById('sliderTodoBlur');
+        const labelDim = document.getElementById('todoDimValueLabel');
+        const labelBlur = document.getElementById('todoBlurValueLabel');
+
+        if (toggle) toggle.checked = this.isEnabled;
+        if (controls) controls.classList.toggle('disabled', !this.isEnabled);
+        if (preview) preview.style.backgroundImage = `url('${this.settings.url}')`;
+        if (sliderDim) sliderDim.value = this.settings.dim;
+        if (sliderBlur) sliderBlur.value = this.settings.blur;
+        if (labelDim) labelDim.innerText = `${this.settings.dim}%`;
+        if (labelBlur) labelBlur.innerText = `${this.settings.blur}%`;
+    }
+
+    initUI() {
+        const toggle = document.getElementById('prefCustomBackground');
+        const sliderDim = document.getElementById('sliderTodoDim');
+        const sliderBlur = document.getElementById('sliderTodoBlur');
+        const btnChange = document.getElementById('btnChangeTodoWallpaper');
+
+        if (toggle) {
+            toggle.addEventListener('change', (e) => {
+                this.saveEnabled(e.target.checked);
+                this.applySettings();
+                this.refreshUI();
+                this.saveToCloud();
+            });
+        }
+
+        if (sliderDim) {
+            sliderDim.addEventListener('input', (e) => {
+                this.settings.dim = parseInt(e.target.value);
+                const label = document.getElementById('todoDimValueLabel');
+                if (label) label.innerText = `${this.settings.dim}%`;
+                this.applySettings();
+                this.saveSettings();
+            });
+            sliderDim.addEventListener('change', () => this.saveToCloud());
+        }
+
+        if (sliderBlur) {
+            sliderBlur.addEventListener('input', (e) => {
+                this.settings.blur = parseInt(e.target.value);
+                const label = document.getElementById('todoBlurValueLabel');
+                if (label) label.innerText = `${this.settings.blur}%`;
+                this.applySettings();
+                this.saveSettings();
+            });
+            sliderBlur.addEventListener('change', () => this.saveToCloud());
+        }
+
+        if (btnChange) {
+            btnChange.addEventListener('click', () => {
+                this.openModal();
+            });
+        }
+
+        this.refreshUI();
+    }
+
+    async uploadToImgBB(base64Image) {
+        const API_KEY = 'fbd88ce7045582e4c4176c67de93ceee';
+        const cleanBase64 = base64Image.split(',')[1];
+        const formData = new FormData();
+        formData.append('image', cleanBase64);
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        if (result.success && result.data && result.data.url) return result.data.url;
+        throw new Error('ImgBB Upload Failed');
+    }
+
+    openModal() {
+        let modal = document.getElementById('todoWpModal');
+        if (!modal) {
+            const modalHTML = `
+                <div class="wp-modal-overlay" id="todoWpModal">
+                    <div class="wp-modal-card">
+                        <div class="confirm-title" style="font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; color: var(--text); font-weight: bold;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                            Картинка обоев
+                        </div>
+                        
+                        <div class="modal-tabs" style="display: flex; border-bottom: 1px solid var(--border); margin-bottom: 16px; gap: 8px; flex-shrink: 0;">
+                            <button class="modal-tab active" data-tab="file" style="flex: 1; padding: 8px 0 10px 0; background: none; border: none; font-weight: 600; font-size: 14px; color: var(--accent); cursor: pointer; border-bottom: 2px solid var(--accent); text-align: center;">Из файла</button>
+                            <button class="modal-tab" data-tab="url" style="flex: 1; padding: 8px 0 10px 0; background: none; border: none; font-weight: 500; font-size: 14px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; text-align: center;">По ссылке</button>
+                        </div>
+
+                        <!-- Вкладка: Из файла -->
+                        <div id="todo-tab-content-file" class="tab-content-pane" style="display: flex; flex-direction: column;">
+                            <div class="confirm-message" style="margin-bottom: 14px; font-size: 13px; opacity: 0.85; line-height: 1.4; color: var(--text-secondary);">
+                                Загрузите изображение, вставьте из буфера обмена (Ctrl + V) или перетащите файл в область ниже.
+                            </div>
+
+                            <div id="todo-icon-dropzone" class="icon-dropzone" style="margin-bottom: 16px; padding: 24px 16px;">
+                                <div class="dropzone-preview" style="max-width: 100%; display: flex; align-items: center; justify-content: center;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6; color: var(--text-secondary);"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+                                </div>
+                                <div class="dropzone-text" style="font-size: 13px; font-weight: 500; margin-top: 8px; color: var(--text);">
+                                    Кликните для выбора файла или перетащите его сюда
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Вкладка: По ссылке -->
+                        <div id="todo-tab-content-url" class="tab-content-pane" style="display: none; flex-direction: column;">
+                            <div class="confirm-message" style="margin-bottom: 14px; font-size: 13px; opacity: 0.85; line-height: 1.4; color: var(--text-secondary);">
+                                Вставьте прямую ссылку на изображение в поле ниже.
+                            </div>
+                            
+                            <input type="text" id="todoWpUrlInput" style="width: 100%; margin-bottom: 16px; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--hover-bg); color: var(--text); outline: none; font-size: 14px;" placeholder="https://site.com/image.png" autocomplete="off">
+                        </div>
+
+                        <!-- Скрытый инпут для выбора файла -->
+                        <input type="file" id="todoModalFileInput" accept="image/*" style="display: none;">
+
+                        <!-- Кнопки действий -->
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto; flex-shrink: 0;">
+                            <button class="confirm-btn-primary" id="btn-select-todo-file" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Выбрать файл...</button>
+                            <button class="confirm-btn-primary" id="btn-save-todo-url" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%; display: none;">Сохранить</button>
+                            
+                            <button class="confirm-btn-delete" id="btn-reset-todo-wallpaper" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Сбросить к исходным</button>
+                            
+                            <button class="confirm-btn-secondary" id="btn-cancel-todo-wallpaper" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Отмена</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            modal = document.getElementById('todoWpModal');
+
+            const tabBtns = modal.querySelectorAll('.modal-tab');
+            const filePane = document.getElementById('todo-tab-content-file');
+            const urlPane = document.getElementById('todo-tab-content-url');
+            const btnSelectFile = document.getElementById('btn-select-todo-file');
+            const btnSaveUrl = document.getElementById('btn-save-todo-url');
+            const fileInput = document.getElementById('todoModalFileInput');
+            const dropzone = document.getElementById('todo-icon-dropzone');
+            const urlInput = document.getElementById('todoWpUrlInput');
+            const btnReset = document.getElementById('btn-reset-todo-wallpaper');
+            const btnCancel = document.getElementById('btn-cancel-todo-wallpaper');
+
+            // Переключение вкладок модалки
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    tabBtns.forEach(b => {
+                        b.classList.remove('active');
+                        b.style.color = 'var(--text-secondary)';
+                        b.style.fontWeight = '500';
+                        b.style.borderBottomColor = 'transparent';
+                    });
+                    btn.classList.add('active');
+                    btn.style.color = 'var(--accent)';
+                    btn.style.fontWeight = '600';
+                    btn.style.borderBottomColor = 'var(--accent)';
+
+                    const target = btn.dataset.tab;
+                    if (target === 'file') {
+                        filePane.style.display = 'flex';
+                        urlPane.style.display = 'none';
+                        btnSelectFile.style.display = 'block';
+                        btnSaveUrl.style.display = 'none';
+                    } else {
+                        filePane.style.display = 'none';
+                        urlPane.style.display = 'flex';
+                        btnSelectFile.style.display = 'none';
+                        btnSaveUrl.style.display = 'block';
+                        if (urlInput) setTimeout(() => urlInput.focus(), 100);
+                    }
+                });
+            });
+
+            // Закрытие
+            btnCancel.onclick = () => modal.classList.remove('active');
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('active');
+            });
+
+            // Сохранение по ссылке
+            btnSaveUrl.onclick = () => {
+                if (urlInput.value && urlInput.value.trim() !== '') {
+                    this.settings.url = urlInput.value.trim();
+                    this.applySettings();
+                    this.saveSettings();
+                    this.saveToCloud();
+                    this.refreshUI();
+                }
+                modal.classList.remove('active');
+            };
+
+            // Сброс к дефолту
+            btnReset.onclick = () => {
+                this.settings.url = this.defaultSettings.url;
+                this.applySettings();
+                this.saveSettings();
+                this.saveToCloud();
+                this.refreshUI();
+                modal.classList.remove('active');
+            };
+
+            // Выбор файла
+            btnSelectFile.onclick = () => fileInput.click();
+            dropzone.onclick = () => fileInput.click();
+
+            fileInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) await handleFile(file);
+                fileInput.value = '';
+            };
+
+            // Drag and drop
+            dropzone.ondragover = (e) => {
+                e.preventDefault();
+                dropzone.style.borderColor = 'var(--accent)';
+                dropzone.style.background = 'rgba(59, 130, 246, 0.08)';
+            };
+
+            dropzone.ondragleave = () => {
+                dropzone.style.borderColor = '';
+                dropzone.style.background = '';
+            };
+
+            dropzone.ondrop = async (e) => {
+                e.preventDefault();
+                dropzone.style.borderColor = '';
+                dropzone.style.background = '';
+                const file = e.dataTransfer.files[0];
+                if (file) await handleFile(file);
+            };
+
+            // Ctrl + V
+            window.addEventListener('paste', async (e) => {
+                if (!modal.classList.contains('active')) return;
+                const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+                if (!items) return;
+                for (const item of items) {
+                    if (item.type.indexOf('image') === 0) {
+                        const file = item.getAsFile();
+                        if (file) await handleFile(file);
+                    }
+                }
+            });
+
+            const handleFile = async (file) => {
+                const origText = btnSelectFile.innerText;
+                btnSelectFile.innerText = 'Загрузка...';
+                btnSelectFile.disabled = true;
+
+                const reader = new FileReader();
+                reader.onload = async (evt) => {
+                    try {
+                        let finalUrl = evt.target.result;
+                        try {
+                            finalUrl = await this.uploadToImgBB(evt.target.result);
+                        } catch (uploadErr) {
+                            console.warn("Локальное сохранение обоев (ImgBB недоступен):", uploadErr);
+                        }
+                        this.settings.url = finalUrl;
+                        this.applySettings();
+                        this.saveSettings();
+                        this.saveToCloud();
+                        this.refreshUI();
+                        modal.classList.remove('active');
+                    } catch (err) {
+                        console.error(err);
+                        alert("Не удалось обработать изображение.");
+                    } finally {
+                        btnSelectFile.innerText = origText;
+                        btnSelectFile.disabled = false;
+                    }
+                };
+                reader.readAsDataURL(file);
+            };
+        }
+
+        const urlInput = document.getElementById('todoWpUrlInput');
+        if (urlInput) urlInput.value = '';
+        setTimeout(() => modal.classList.add('active'), 10);
+    }
+}
+
+// Инициализируем менеджер обоев Todo
+window.todoWallpaperManager = new TodoWallpaperManager();
 
 // === НАСТРОЙКА ГЛАВНОГО ЭКРАНА ===
 function updatePrefHomeButton(selectedVal) {
@@ -11201,7 +11599,7 @@ function initProjectsDragAndDrop() {
     };
 
     function getDragAfterProjectInContainer(container, y) {
-        const dragElements = Array.from(container.children).filter(child => 
+        const dragElements = Array.from(container.children).filter(child =>
             child.classList.contains('project-item-container') && !child.classList.contains('dragging')
         );
         return dragElements.reduce((closest, child) => {
@@ -14514,6 +14912,9 @@ async function loadGCalConfig() {
         const userDoc = await window.getDoc(window.doc(db, "users", currentUid));
         if (userDoc.exists()) {
             const data = userDoc.data();
+            if (window.todoWallpaperManager) {
+                window.todoWallpaperManager.loadFromCloud(data);
+            }
             gcalMappings = data.gcal_mappings || {};
             gcalDefaultTag = data.gcal_default_tag || "gcal";
             gcalShowEvents = data.gcal_show_events !== false;

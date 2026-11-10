@@ -61,6 +61,59 @@
         }
     </style>
 
+    <!-- Критический загрузчик собственного фона (предотвращает вспышку) -->
+    <script>
+        (function () {
+            const PREF_KEY = 'todo_pref_custom_background';
+            const STORAGE_KEY = 'todo_custom_wallpaper_settings_v1';
+            const defaultSettings = {
+                url: 'https://i.ibb.co/qFV3RdfY/29e2c667e908.png',
+                blur: 0,
+                dim: 30
+            };
+            try {
+                if (localStorage.getItem(PREF_KEY) === 'true') {
+                    document.documentElement.classList.add('custom-wallpaper-enabled');
+                    const savedWp = localStorage.getItem(STORAGE_KEY);
+                    const settings = savedWp ? JSON.parse(savedWp) : defaultSettings;
+
+                    const link = document.createElement('link');
+                    link.rel = 'preload';
+                    link.as = 'image';
+                    link.href = settings.url;
+                    document.head.appendChild(link);
+
+                    const maxBlurPx = 30;
+                    const blurPx = ((settings.blur !== undefined ? settings.blur : 0) / 100) * maxBlurPx;
+                    const scale = 1.02 + (blurPx * 0.003);
+                    const dimOpacity = (settings.dim !== undefined ? settings.dim : 30) / 100;
+
+                    const style = document.createElement('style');
+                    style.id = 'criticalCustomWallpaperStyle';
+                    style.innerHTML = `
+                        @media (min-width: 769px) {
+                            html.custom-wallpaper-enabled body {
+                                background-color: transparent !important;
+                            }
+                            .global-wallpaper-blurred {
+                                display: block !important;
+                                background-image: url('${settings.url}') !important;
+                                filter: blur(${blurPx}px) !important;
+                                transform: scale(${scale}) !important;
+                                opacity: 1 !important;
+                            }
+                            .folder-backdrop {
+                                display: block !important;
+                                background: rgba(20, 20, 20, ${dimOpacity}) !important;
+                            }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+            } catch (e) { }
+        })();
+    </script>
+
     <!-- Polyfill for Mobile Drag and Drop -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
     <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
@@ -79,6 +132,10 @@
 </head>
 
 <body>
+
+    <!-- Фоновые слои для объединенного фона (как в home.html) -->
+    <div class="global-wallpaper-blurred" id="globalWallpaperBlurred"></div>
+    <div class="folder-backdrop" id="globalFolderBackdrop"></div>
 
     <!-- Загрузка сохраненной темы (предотвращает вспышку белого) -->
     <script src="theme-loader.js"></script>
@@ -1149,6 +1206,14 @@
                         </svg>
                         <span>Боковая панель</span>
                     </button>
+                    <button class="settings-menu-item" data-tab="wallpaper">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <span>Обои</span>
+                    </button>
                     <button class="settings-menu-item" data-tab="calendars">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
                             height="16">
@@ -1263,7 +1328,7 @@
                     </div>
                 </div>
 
-                <!-- Вкладка: Внешний вид -->
+                <!-- Вкладка: Боковая панель (Appearance) -->
                 <div class="settings-tab-pane" id="tab-appearance" style="display: none;">
                     <h3 style="margin-top: 0; font-size: 1.1rem; font-weight: 600; color: var(--text);">Количество задач
                         в боковой панели</h3>
@@ -1345,6 +1410,60 @@
                                     <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка: Обои -->
+                <div class="settings-tab-pane" id="tab-wallpaper" style="display: none;">
+                    <h3 style="margin-top: 0; font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 16px;">Обои</h3>
+
+                    <!-- Toggle: Собственный фон -->
+                    <div class="settings-section" style="margin-bottom: 20px;">
+                        <div class="settings-field"
+                            style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0;">
+                            <div class="settings-field-info">
+                                <label
+                                    style="display: block; font-weight: 600; font-size: 0.95rem; color: var(--text); margin-bottom: 2px;">Собственный фон</label>
+                                <span style="font-size: 0.82rem; color: var(--text-secondary);">Использовать персональный фон на ПК вместо стандартного серого</span>
+                            </div>
+                            <label class="switch-container">
+                                <input type="checkbox" id="prefCustomBackground">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Карточка превью и ползунки настройки (точно как в home.html) -->
+                    <div class="todo-wallpaper-controls" id="todoWallpaperControls">
+                        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.6; margin-bottom: 8px;">
+                            Фон рабочего стола
+                        </div>
+
+                        <div class="wallpaper-preview-container" id="wpPreviewContainer">
+                            <div class="wallpaper-preview-bg" id="todoWallpaperPreviewBg" style="background-image: url('https://i.ibb.co/qFV3RdfY/29e2c667e908.png');"></div>
+                            <button class="wp-change-btn" id="btnChangeTodoWallpaper" type="button">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                                </svg>
+                                Сменить обои стола
+                            </button>
+                        </div>
+
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span>Затемнение</span>
+                                <span id="todoDimValueLabel">30%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="30" class="ios-slider" id="sliderTodoDim">
+                        </div>
+
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span>Размытие</span>
+                                <span id="todoBlurValueLabel">0%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="0" class="ios-slider" id="sliderTodoBlur">
                         </div>
                     </div>
                 </div>

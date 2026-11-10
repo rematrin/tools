@@ -9,7 +9,9 @@ import {
     deleteDoc,
     onSnapshot,
     getDocs,
-    writeBatch
+    writeBatch,
+    updateDoc,
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // === Глобальные переменные ===
@@ -70,11 +72,16 @@ const boardActiveView = document.getElementById('boardActiveView');
 const boardsGrid = document.getElementById('boardsGrid');
 const btnCreateBoard = document.getElementById('btnCreateBoard');
 const btnCreateFolder = document.getElementById('btnCreateFolder');
+const btnTrashView = document.getElementById('btnTrashView');
+const trashNoticeBanner = document.getElementById('trashNoticeBanner');
+const btnEmptyTrash = document.getElementById('btnEmptyTrash');
+const trashBadge = document.getElementById('trashBadge');
 const boardSortSelect = document.getElementById('boardSortSelect');
 const dashboardMainTitle = document.getElementById('dashboardMainTitle');
 const dashboardBreadcrumbs = document.getElementById('dashboardBreadcrumbs');
 const folderReturnBanner = document.getElementById('folderReturnBanner');
 const btnBackToRoot = document.getElementById('btnBackToRoot');
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 let loadedBoardsList = [];
 let loadedFoldersList = [];
@@ -157,7 +164,7 @@ function initRouting() {
         activeBoardId = boardId;
         dashboardView.style.display = 'none';
         boardActiveView.style.display = 'block';
-        
+
         if (currentUid) {
             setupFirebaseSyncForBoard();
         } else {
@@ -167,7 +174,7 @@ function initRouting() {
         activeBoardId = null;
         boardActiveView.style.display = 'none';
         dashboardView.style.display = 'block';
-        
+
         if (currentUid) {
             setupFirebaseSyncForDashboard();
         } else {
@@ -209,19 +216,19 @@ function updateUndoRedoButtons() {
 
 function saveUndoState() {
     redoStack = [];
-    
+
     const elementsClone = JSON.parse(JSON.stringify(elements));
     const configClone = JSON.parse(JSON.stringify(boardConfig));
-    
+
     undoStack.push({
         elements: elementsClone,
         boardConfig: configClone
     });
-    
+
     if (undoStack.length > 35) {
         undoStack.shift();
     }
-    
+
     updateUndoRedoButtons();
 }
 
@@ -235,11 +242,11 @@ function applyState(state, message) {
         const elementsCollRef = collection(db, "users", currentUid, "whiteboards", activeBoardId, "elements");
         getDocs(elementsCollRef).then(snap => {
             const batch = writeBatch(db);
-            
+
             snap.forEach(docSnap => {
                 batch.delete(docSnap.ref);
             });
-            
+
             Object.values(elements).forEach(el => {
                 const elDocRef = doc(db, "users", currentUid, "whiteboards", activeBoardId, "elements", el.id);
                 batch.set(elDocRef, el);
@@ -267,7 +274,7 @@ function applyState(state, message) {
             height: boardConfig.height,
             title: boardTitleInput.value
         }));
-        
+
         showSaveStatus("Восстановлено локально");
         renderElements();
         updateCanvasSize();
@@ -414,6 +421,7 @@ async function ensureSpecialFoldersOrganized() {
         }
 
         const matchingVideoBoards = (loadedBoardsList || []).filter(b => {
+            if (b.deleted) return false;
             if (b.videoId) return true;
             if (videoBoardIds.has(b.id)) return true;
             const t = (b.title || '').trim().toLowerCase();
@@ -440,7 +448,7 @@ async function ensureSpecialFoldersOrganized() {
                         setDoc(doc(db, "users", currentUid, "whiteboards", b.id), {
                             folderId: videoFolder.id,
                             updatedAt: Date.now()
-                        }, { merge: true }).catch(() => {});
+                        }, { merge: true }).catch(() => { });
                     }
                 }
             });
@@ -480,6 +488,7 @@ async function ensureSpecialFoldersOrganized() {
         }
 
         const matchingTodoBoards = (loadedBoardsList || []).filter(b => {
+            if (b.deleted) return false;
             if (b.projectId) return true;
             if (todoBoardIds.has(b.id)) return true;
             const t = (b.title || '').trim().toLowerCase();
@@ -505,7 +514,7 @@ async function ensureSpecialFoldersOrganized() {
                         setDoc(doc(db, "users", currentUid, "whiteboards", b.id), {
                             folderId: todoFolder.id,
                             updatedAt: Date.now()
-                        }, { merge: true }).catch(() => {});
+                        }, { merge: true }).catch(() => { });
                     }
                 }
             });
@@ -529,13 +538,28 @@ function setupFirebaseSyncForDashboard() {
     const boardsCollRef = collection(db, "users", currentUid, "whiteboards");
     unsubscribeBoardsList = onSnapshot(boardsCollRef, (snap) => {
         const boardsList = [];
+        const now = Date.now();
         snap.forEach(docSnap => {
-            boardsList.push({ id: docSnap.id, ...docSnap.data() });
+            const data = docSnap.data();
+            // Автоматическое удаление навсегда через 30 дней
+            if (data.deleted === true && (data.deletedAt || data.deletedAtMs)) {
+                try {
+                    const delTime = data.deletedAt ? (data.deletedAt.toDate ? data.deletedAt.toDate().getTime() : (typeof data.deletedAt === 'number' ? data.deletedAt : new Date(data.deletedAt).getTime())) : (data.deletedAtMs || 0);
+                    if (now - delTime > THIRTY_DAYS_MS) {
+                        executePermanentDeleteBoard(docSnap.id);
+                        return; // Пропускаем добавление в локальный список
+                    }
+                } catch (e) {
+                    console.error("Ошибка автоудаления доски из корзины:", e);
+                }
+            }
+            boardsList.push({ id: docSnap.id, ...data });
         });
         loadedBoardsList = boardsList;
         localStorage.setItem('whiteboards_list', JSON.stringify(boardsList));
         ensureSpecialFoldersOrganized();
         renderBoardsGrid();
+        updateTrashBadge();
     });
 
     const foldersCollRef = collection(db, "users", currentUid, "whiteboard_folders");
@@ -552,10 +576,40 @@ function setupFirebaseSyncForDashboard() {
 }
 
 function setupOfflineModeForDashboard() {
-    loadedBoardsList = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+    let localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+    const now = Date.now();
+    let changed = false;
+    localBoards = localBoards.filter(b => {
+        if (b.deleted === true && (b.deletedAt || b.deletedAtMs)) {
+            const delTime = typeof b.deletedAt === 'number' ? b.deletedAt : (b.deletedAtMs || (new Date(b.deletedAt).getTime() || 0));
+            if (now - delTime > THIRTY_DAYS_MS) {
+                localStorage.removeItem(`board_config_${b.id}`);
+                localStorage.removeItem(`board_elements_${b.id}`);
+                changed = true;
+                return false;
+            }
+        }
+        return true;
+    });
+    if (changed) {
+        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+    }
+    loadedBoardsList = localBoards;
     loadedFoldersList = JSON.parse(localStorage.getItem('whiteboard_folders') || '[]');
     ensureSpecialFoldersOrganized();
     renderBoardsGrid();
+    updateTrashBadge();
+}
+
+function updateTrashBadge() {
+    if (!trashBadge) return;
+    const deletedCount = (loadedBoardsList || []).filter(b => b.deleted && !b.parentBoardId).length;
+    if (deletedCount > 0) {
+        trashBadge.textContent = deletedCount;
+        trashBadge.style.display = 'inline-flex';
+    } else {
+        trashBadge.style.display = 'none';
+    }
 }
 
 function renderBoardsGrid(boardsList) {
@@ -567,92 +621,136 @@ function renderBoardsGrid(boardsList) {
         loadedFoldersList = JSON.parse(localStorage.getItem('whiteboard_folders') || '[]');
     }
 
-    // Проверяем, существует ли активная папка
-    if (currentFolderId && !loadedFoldersList.some(f => f.id === currentFolderId)) {
-        currentFolderId = null;
-        sessionStorage.removeItem('whiteboard_active_folder');
+    const isTrash = (window.location.hash === '#trash');
+
+    if (btnTrashView) {
+        if (isTrash) btnTrashView.classList.add('active');
+        else btnTrashView.classList.remove('active');
     }
 
-    // Обновляем заголовок, хлебные крошки и плашку возврата
-    if (currentFolderId) {
-        const activeFolder = loadedFoldersList.find(f => f.id === currentFolderId);
-        const folderTitle = activeFolder ? activeFolder.title : 'Папка';
+    if (trashNoticeBanner) {
+        trashNoticeBanner.style.display = isTrash ? 'flex' : 'none';
+    }
 
+    if (btnCreateFolder) {
+        btnCreateFolder.style.display = isTrash ? 'none' : '';
+    }
+
+    if (btnCreateBoard) {
+        btnCreateBoard.style.display = isTrash ? 'none' : '';
+    }
+
+    // Проверяем, существует ли активная папка
+    if (isTrash) {
+        currentFolderId = null;
+        if (folderReturnBanner) folderReturnBanner.style.display = 'none';
         if (dashboardMainTitle) dashboardMainTitle.style.display = 'none';
         if (dashboardBreadcrumbs) {
             dashboardBreadcrumbs.style.display = 'flex';
             dashboardBreadcrumbs.innerHTML = `
                 <a class="breadcrumb-link" id="breadcrumbRoot">Все доски</a>
                 <span class="breadcrumb-sep">/</span>
-                <span class="breadcrumb-current">${escapeHtml(folderTitle)}</span>
+                <span class="breadcrumb-current">Корзина</span>
             `;
 
             const breadcrumbRoot = document.getElementById('breadcrumbRoot');
             if (breadcrumbRoot) {
                 breadcrumbRoot.addEventListener('click', (e) => {
                     e.preventDefault();
-                    currentFolderId = null;
-                    sessionStorage.removeItem('whiteboard_active_folder');
-                    renderBoardsGrid();
+                    window.location.hash = '';
                 });
+            }
+        }
+        document.title = 'Корзина - Интерактивная доска';
+    } else if (currentFolderId && !loadedFoldersList.some(f => f.id === currentFolderId)) {
+        currentFolderId = null;
+        sessionStorage.removeItem('whiteboard_active_folder');
+    }
 
-                breadcrumbRoot.addEventListener('dragover', (e) => {
+    // Обновляем заголовок, хлебные крошки и плашку возврата (для обычного режима)
+    if (!isTrash) {
+        if (currentFolderId) {
+            const activeFolder = loadedFoldersList.find(f => f.id === currentFolderId);
+            const folderTitle = activeFolder ? activeFolder.title : 'Папка';
+
+            if (dashboardMainTitle) dashboardMainTitle.style.display = 'none';
+            if (dashboardBreadcrumbs) {
+                dashboardBreadcrumbs.style.display = 'flex';
+                dashboardBreadcrumbs.innerHTML = `
+                    <a class="breadcrumb-link" id="breadcrumbRoot">Все доски</a>
+                    <span class="breadcrumb-sep">/</span>
+                    <span class="breadcrumb-current">${escapeHtml(folderTitle)}</span>
+                `;
+
+                const breadcrumbRoot = document.getElementById('breadcrumbRoot');
+                if (breadcrumbRoot) {
+                    breadcrumbRoot.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        currentFolderId = null;
+                        sessionStorage.removeItem('whiteboard_active_folder');
+                        renderBoardsGrid();
+                    });
+
+                    breadcrumbRoot.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                    });
+                    breadcrumbRoot.addEventListener('dragenter', (e) => {
+                        e.preventDefault();
+                        breadcrumbRoot.classList.add('drag-over');
+                    });
+                    breadcrumbRoot.addEventListener('dragleave', () => {
+                        breadcrumbRoot.classList.remove('drag-over');
+                    });
+                    breadcrumbRoot.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        breadcrumbRoot.classList.remove('drag-over');
+                        const boardId = e.dataTransfer.getData('text/plain');
+                        if (boardId) {
+                            moveBoardToFolder(boardId, null);
+                        }
+                    });
+                }
+            }
+
+            if (folderReturnBanner) {
+                folderReturnBanner.style.display = 'flex';
+                if (btnBackToRoot) {
+                    btnBackToRoot.onclick = () => {
+                        currentFolderId = null;
+                        sessionStorage.removeItem('whiteboard_active_folder');
+                        renderBoardsGrid();
+                    };
+                }
+                folderReturnBanner.ondragover = (e) => {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
-                });
-                breadcrumbRoot.addEventListener('dragenter', (e) => {
+                };
+                folderReturnBanner.ondragenter = (e) => {
                     e.preventDefault();
-                    breadcrumbRoot.classList.add('drag-over');
-                });
-                breadcrumbRoot.addEventListener('dragleave', () => {
-                    breadcrumbRoot.classList.remove('drag-over');
-                });
-                breadcrumbRoot.addEventListener('drop', (e) => {
+                    folderReturnBanner.classList.add('drag-over');
+                };
+                folderReturnBanner.ondragleave = (e) => {
+                    if (!folderReturnBanner.contains(e.relatedTarget)) {
+                        folderReturnBanner.classList.remove('drag-over');
+                    }
+                };
+                folderReturnBanner.ondrop = (e) => {
                     e.preventDefault();
-                    breadcrumbRoot.classList.remove('drag-over');
+                    folderReturnBanner.classList.remove('drag-over');
                     const boardId = e.dataTransfer.getData('text/plain');
                     if (boardId) {
                         moveBoardToFolder(boardId, null);
                     }
-                });
-            }
-        }
-
-        if (folderReturnBanner) {
-            folderReturnBanner.style.display = 'flex';
-            if (btnBackToRoot) {
-                btnBackToRoot.onclick = () => {
-                    currentFolderId = null;
-                    sessionStorage.removeItem('whiteboard_active_folder');
-                    renderBoardsGrid();
                 };
             }
-            folderReturnBanner.ondragover = (e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-            };
-            folderReturnBanner.ondragenter = (e) => {
-                e.preventDefault();
-                folderReturnBanner.classList.add('drag-over');
-            };
-            folderReturnBanner.ondragleave = (e) => {
-                if (!folderReturnBanner.contains(e.relatedTarget)) {
-                    folderReturnBanner.classList.remove('drag-over');
-                }
-            };
-            folderReturnBanner.ondrop = (e) => {
-                e.preventDefault();
-                folderReturnBanner.classList.remove('drag-over');
-                const boardId = e.dataTransfer.getData('text/plain');
-                if (boardId) {
-                    moveBoardToFolder(boardId, null);
-                }
-            };
+            document.title = `${folderTitle} - Интерактивная доска`;
+        } else {
+            if (dashboardMainTitle) dashboardMainTitle.style.display = 'block';
+            if (dashboardBreadcrumbs) dashboardBreadcrumbs.style.display = 'none';
+            if (folderReturnBanner) folderReturnBanner.style.display = 'none';
+            document.title = 'Интерактивная доска';
         }
-    } else {
-        if (dashboardMainTitle) dashboardMainTitle.style.display = 'block';
-        if (dashboardBreadcrumbs) dashboardBreadcrumbs.style.display = 'none';
-        if (folderReturnBanner) folderReturnBanner.style.display = 'none';
     }
 
     // Сортировка досок
@@ -686,14 +784,57 @@ function renderBoardsGrid(boardsList) {
 
     boardsGrid.innerHTML = '';
 
+    if (isTrash) {
+        // === РЕЖИМ КОРЗИНЫ ===
+        const deletedBoards = sortedBoards.filter(b => b.deleted && !b.parentBoardId);
+
+        if (deletedBoards.length === 0) {
+            boardsGrid.innerHTML = `
+                <div class="empty-state" style="grid-column: 1/-1;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <h3 class="empty-title">Корзина пуста</h3>
+                    <p class="empty-text">Здесь будут отображаться удаленные доски.</p>
+                </div>
+            `;
+            updateTrashBadge();
+            return;
+        }
+
+        deletedBoards.forEach(board => {
+            const boardCard = createDeletedBoardCard(board);
+            boardsGrid.appendChild(boardCard);
+        });
+
+        // Добавляем футер с количеством элементов в Корзине (по логике todo.html)
+        const footerDiv = document.createElement('div');
+        footerDiv.style.gridColumn = '1/-1';
+        footerDiv.style.textAlign = 'center';
+        footerDiv.style.marginTop = '24px';
+        footerDiv.style.color = 'var(--text-sec)';
+        footerDiv.style.fontSize = '0.9rem';
+        footerDiv.style.fontWeight = '500';
+        footerDiv.textContent = `${deletedBoards.length} в корзине`;
+        boardsGrid.appendChild(footerDiv);
+
+        updateTrashBadge();
+        return;
+    }
+
+    // Для обычного режима фильтруем только активные (неудаленные) доски
+    const activeSortedBoards = sortedBoards.filter(b => !b.deleted);
+
     if (currentFolderId === null) {
         // === ГЛАВНАЯ СТРАНИЦА (КОРЕНЬ) ===
-        const rootBoards = sortedBoards.filter(b => !b.parentBoardId && !b.folderId);
+        const rootBoards = activeSortedBoards.filter(b => !b.parentBoardId && !b.folderId);
 
         if (sortedFolders.length === 0 && rootBoards.length === 0) {
             boardsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-sec); padding: 40px;">
                 У вас пока нет досок и папок. Нажмите "Создать доску" или "Создать папку", чтобы начать!
             </div>`;
+            updateTrashBadge();
             return;
         }
 
@@ -710,7 +851,7 @@ function renderBoardsGrid(boardsList) {
         });
     } else {
         // === ВНУТРИ ПАПКИ ===
-        const folderBoards = sortedBoards.filter(b => !b.parentBoardId && b.folderId === currentFolderId);
+        const folderBoards = activeSortedBoards.filter(b => !b.parentBoardId && b.folderId === currentFolderId);
 
         if (folderBoards.length === 0) {
             boardsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-sec); padding: 50px 20px;">
@@ -718,6 +859,7 @@ function renderBoardsGrid(boardsList) {
                 <div style="font-weight: 600; font-size: 1.05rem; color: var(--text-color); margin-bottom: 6px;">В этой папке пока пусто</div>
                 <div style="font-size: 0.9rem;">Перетащите сюда доски с главной страницы или нажмите «Создать доску».</div>
             </div>`;
+            updateTrashBadge();
             return;
         }
 
@@ -726,6 +868,7 @@ function renderBoardsGrid(boardsList) {
             boardsGrid.appendChild(boardCard);
         });
     }
+    updateTrashBadge();
 }
 
 function createFolderCard(folder) {
@@ -733,7 +876,7 @@ function createFolderCard(folder) {
     card.className = 'board-folder-card';
     card.dataset.folderId = folder.id;
 
-    const boardsCount = loadedBoardsList.filter(b => b.folderId === folder.id && !b.parentBoardId).length;
+    const boardsCount = loadedBoardsList.filter(b => b.folderId === folder.id && !b.parentBoardId && !b.deleted).length;
 
     // Выпадающее меню действий для папки
     const dropdown = document.createElement('div');
@@ -872,6 +1015,166 @@ function createFolderCard(folder) {
     moreBtn.type = 'button';
     moreBtn.className = 'board-card-more';
     moreBtn.title = 'Действия с папкой';
+    moreBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1.5"></circle>
+            <circle cx="12" cy="5" r="1.5"></circle>
+            <circle cx="12" cy="19" r="1.5"></circle>
+        </svg>
+    `;
+    moreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openMenu();
+    });
+    card.appendChild(moreBtn);
+
+    return card;
+}
+
+function createDeletedBoardCard(board) {
+    const card = document.createElement('div');
+    card.className = 'board-card board-card-deleted';
+    card.dataset.boardId = board.id;
+
+    // Меню действий
+    const dropdown = document.createElement('div');
+    dropdown.className = 'board-actions-dropdown';
+    dropdown.style.display = 'none';
+
+    const restoreBtn = document.createElement('button');
+    restoreBtn.type = 'button';
+    restoreBtn.className = 'board-dropdown-item';
+    restoreBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+        </svg>
+        <span>Восстановить</span>
+    `;
+    restoreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.style.display = 'none';
+        restoreBoard(board.id);
+    });
+    dropdown.appendChild(restoreBtn);
+
+    const deletePermBtn = document.createElement('button');
+    deletePermBtn.type = 'button';
+    deletePermBtn.className = 'board-dropdown-item btn-delete';
+    deletePermBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        <span>Удалить навсегда</span>
+    `;
+    deletePermBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.style.display = 'none';
+        showCustomConfirm(
+            "Удалить навсегда?",
+            `Интерактивная доска <strong>${escapeHtml(board.title || 'Без названия')}</strong> со всеми элементами на ней будет удалена безвозвратно. Это действие нельзя отменить.`,
+            "Удалить навсегда",
+            () => {
+                executePermanentDeleteBoard(board.id);
+            }
+        );
+    });
+    dropdown.appendChild(deletePermBtn);
+    card.appendChild(dropdown);
+
+    const openMenu = () => {
+        document.querySelectorAll('.board-actions-dropdown').forEach(dd => {
+            if (dd !== dropdown) dd.style.display = 'none';
+        });
+        const isHidden = dropdown.style.display === 'none';
+        if (isHidden) {
+            dropdown.style.display = 'flex';
+            dropdown.style.position = 'absolute';
+            dropdown.style.left = 'auto';
+            dropdown.style.right = '16px';
+            dropdown.style.top = '48px';
+        } else {
+            dropdown.style.display = 'none';
+        }
+    };
+
+    card.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openMenu();
+    });
+
+    const title = document.createElement('h3');
+    title.className = 'board-card-title';
+    title.innerText = board.title || 'Без названия';
+    card.appendChild(title);
+
+    const delTime = board.deletedAt ? (board.deletedAt.toDate ? board.deletedAt.toDate().getTime() : (typeof board.deletedAt === 'number' ? board.deletedAt : new Date(board.deletedAt).getTime())) : (board.deletedAtMs || board.updatedAt || Date.now());
+    const delDateStr = new Date(delTime).toLocaleDateString('ru-RU');
+    const msLeft = Math.max(0, THIRTY_DAYS_MS - (Date.now() - delTime));
+    const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+
+    let folderInfo = '';
+    if (board.folderId) {
+        const f = loadedFoldersList.find(x => x.id === board.folderId);
+        if (f) folderInfo = `<span style="opacity: 0.75;">Папка: ${escapeHtml(f.title)}</span>`;
+    }
+
+    const date = document.createElement('div');
+    date.className = 'board-card-date';
+    date.style.display = 'flex';
+    date.style.flexDirection = 'column';
+    date.style.gap = '2px';
+    date.innerHTML = `
+        ${folderInfo}
+        <span>Удалено: ${delDateStr} • ${daysLeft} дн. до удаления</span>
+    `;
+    card.appendChild(date);
+
+    // Панель кнопок действий в карточке
+    const actionsRow = document.createElement('div');
+    actionsRow.className = 'board-card-trash-actions';
+    actionsRow.innerHTML = `
+        <button class="btn-trash-action btn-restore" type="button" title="Восстановить доску">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="14" height="14">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            <span>Восстановить</span>
+        </button>
+        <button class="btn-trash-action btn-delete-perm" type="button" title="Удалить навсегда">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="14" height="14">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            <span>Удалить</span>
+        </button>
+    `;
+
+    actionsRow.querySelector('.btn-restore').addEventListener('click', (e) => {
+        e.stopPropagation();
+        restoreBoard(board.id);
+    });
+
+    actionsRow.querySelector('.btn-delete-perm').addEventListener('click', (e) => {
+        e.stopPropagation();
+        showCustomConfirm(
+            "Удалить навсегда?",
+            `Интерактивная доска <strong>${escapeHtml(board.title || 'Без названия')}</strong> со всеми элементами на ней будет удалена безвозвратно. Это действие нельзя отменить.`,
+            "Удалить навсегда",
+            () => {
+                executePermanentDeleteBoard(board.id);
+            }
+        );
+    });
+
+    card.appendChild(actionsRow);
+
+    const moreBtn = document.createElement('button');
+    moreBtn.type = 'button';
+    moreBtn.className = 'board-card-more';
+    moreBtn.title = 'Действия';
     moreBtn.innerHTML = `
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="1.5"></circle>
@@ -1414,13 +1717,41 @@ btnCreateBoard.addEventListener('click', () => {
     }
 });
 
-function showDeleteBoardModal(boardId, boardTitle) {
+if (btnTrashView) {
+    btnTrashView.addEventListener('click', () => {
+        if (window.location.hash === '#trash') {
+            window.location.hash = '';
+        } else {
+            currentFolderId = null;
+            sessionStorage.removeItem('whiteboard_active_folder');
+            window.location.hash = '#trash';
+        }
+    });
+}
+
+if (btnEmptyTrash) {
+    btnEmptyTrash.addEventListener('click', emptyTrash);
+}
+
+window.addEventListener('hashchange', () => {
+    renderBoardsGrid();
+});
+
+function showCustomConfirm(title, desc, actionText, onConfirm, isDanger = true) {
     const modal = document.getElementById('confirmDeleteBoardModal');
-    const titleSpan = document.getElementById('confirmDeleteBoardTitle');
+    if (!modal) return;
+    const titleEl = modal.querySelector('.confirm-modal-title');
+    const descEl = modal.querySelector('.confirm-modal-desc');
     const cancelBtn = document.getElementById('btnConfirmDeleteBoardCancel');
     const confirmBtn = document.getElementById('btnConfirmDeleteBoardConfirm');
 
-    titleSpan.innerText = `«${boardTitle || 'Без названия'}»`;
+    if (titleEl) titleEl.textContent = title;
+    if (descEl) descEl.innerHTML = desc;
+    if (confirmBtn) {
+        confirmBtn.textContent = actionText || "Удалить";
+        confirmBtn.className = isDanger ? "confirm-btn-danger" : "confirm-btn-primary";
+    }
+
     modal.style.display = 'flex';
 
     const newCancel = cancelBtn.cloneNode(true);
@@ -1434,24 +1765,164 @@ function showDeleteBoardModal(boardId, boardTitle) {
 
     newConfirm.addEventListener('click', async () => {
         modal.style.display = 'none';
-        await executeDeleteBoard(boardId);
+        if (typeof onConfirm === 'function') {
+            await onConfirm();
+        }
     });
 }
 
-async function executeDeleteBoard(boardId) {
+function showDeleteBoardModal(boardId, boardTitle) {
+    showCustomConfirm(
+        "Переместить в корзину?",
+        `Интерактивная доска <strong>${escapeHtml(boardTitle || 'Без названия')}</strong> будет перемещена в корзину.`,
+        "Удалить",
+        async () => {
+            await deleteBoardToTrash(boardId);
+        }
+    );
+}
+
+// Перемещение доски в Корзину (soft delete)
+async function deleteBoardToTrash(boardId) {
+    if (!boardId) return;
+    const now = Date.now();
+
+    // 1. Обновляем в локальном массиве
+    const b = loadedBoardsList.find(x => x.id === boardId);
+    if (b) {
+        b.deleted = true;
+        b.deletedAt = now;
+        b.deletedAtMs = now;
+        b.updatedAt = now;
+    }
+
+    // 2. Обновляем в localStorage
+    const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+    const idx = localBoards.findIndex(x => x.id === boardId);
+    if (idx !== -1) {
+        localBoards[idx].deleted = true;
+        localBoards[idx].deletedAt = now;
+        localBoards[idx].deletedAtMs = now;
+        localBoards[idx].updatedAt = now;
+        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+    }
+
+    // 3. Синхронизируем с Firestore
+    if (currentUid && db) {
+        try {
+            const boardDocRef = doc(db, "users", currentUid, "whiteboards", boardId);
+            await setDoc(boardDocRef, {
+                deleted: true,
+                deletedAt: serverTimestamp(),
+                deletedAtMs: now,
+                updatedAt: now
+            }, { merge: true });
+
+            // Каскадное перемещение поддосок в Корзину
+            const elementsCollRef = collection(db, "users", currentUid, "whiteboards", boardId, "elements");
+            const snap = await getDocs(elementsCollRef);
+            for (let docSnap of snap.docs) {
+                const el = docSnap.data();
+                if (el.type === 'board' && el.targetBoardId) {
+                    await deleteBoardToTrash(el.targetBoardId);
+                }
+            }
+        } catch (err) {
+            console.error("Ошибка перемещения доски в корзину:", err);
+        }
+    } else {
+        const elementsKey = `board_elements_${boardId}`;
+        const localElements = JSON.parse(localStorage.getItem(elementsKey) || '{}');
+        for (let el of Object.values(localElements)) {
+            if (el.type === 'board' && el.targetBoardId) {
+                await deleteBoardToTrash(el.targetBoardId);
+            }
+        }
+    }
+
+    renderBoardsGrid();
+    updateTrashBadge();
+}
+
+// Восстановление доски из Корзины
+async function restoreBoard(boardId) {
+    if (!boardId) return;
+    const now = Date.now();
+
+    // 1. Обновляем в локальном массиве
+    const b = loadedBoardsList.find(x => x.id === boardId);
+    if (b) {
+        b.deleted = false;
+        b.deletedAt = null;
+        b.deletedAtMs = null;
+        b.updatedAt = now;
+    }
+
+    // 2. Обновляем в localStorage
+    const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+    const idx = localBoards.findIndex(x => x.id === boardId);
+    if (idx !== -1) {
+        localBoards[idx].deleted = false;
+        localBoards[idx].deletedAt = null;
+        localBoards[idx].deletedAtMs = null;
+        localBoards[idx].updatedAt = now;
+        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+    }
+
+    // 3. Синхронизируем с Firestore
+    if (currentUid && db) {
+        try {
+            const boardDocRef = doc(db, "users", currentUid, "whiteboards", boardId);
+            await setDoc(boardDocRef, {
+                deleted: false,
+                deletedAt: null,
+                deletedAtMs: null,
+                updatedAt: now
+            }, { merge: true });
+
+            // Каскадное восстановление поддосок
+            const elementsCollRef = collection(db, "users", currentUid, "whiteboards", boardId, "elements");
+            const snap = await getDocs(elementsCollRef);
+            for (let docSnap of snap.docs) {
+                const el = docSnap.data();
+                if (el.type === 'board' && el.targetBoardId) {
+                    await restoreBoard(el.targetBoardId);
+                }
+            }
+        } catch (err) {
+            console.error("Ошибка восстановления доски:", err);
+        }
+    } else {
+        const elementsKey = `board_elements_${boardId}`;
+        const localElements = JSON.parse(localStorage.getItem(elementsKey) || '{}');
+        for (let el of Object.values(localElements)) {
+            if (el.type === 'board' && el.targetBoardId) {
+                await restoreBoard(el.targetBoardId);
+            }
+        }
+    }
+
+    renderBoardsGrid();
+    updateTrashBadge();
+}
+
+// Удаление доски навсегда
+async function executePermanentDeleteBoard(boardId) {
+    if (!boardId) return;
+
     if (currentUid && db) {
         try {
             const elementsCollRef = collection(db, "users", currentUid, "whiteboards", boardId, "elements");
             const snap = await getDocs(elementsCollRef);
-            
+
             // Recursively delete sub-boards first
             for (let docSnap of snap.docs) {
                 const el = docSnap.data();
                 if (el.type === 'board' && el.targetBoardId) {
-                    await executeDeleteBoard(el.targetBoardId);
+                    await executePermanentDeleteBoard(el.targetBoardId);
                 }
             }
-            
+
             // Delete all elements of the current board
             const batch = writeBatch(db);
             snap.forEach(docSnap => {
@@ -1468,25 +1939,45 @@ async function executeDeleteBoard(boardId) {
     } else {
         const elementsKey = `board_elements_${boardId}`;
         const localElements = JSON.parse(localStorage.getItem(elementsKey) || '{}');
-        
+
         // Recursively delete sub-boards first
         for (let el of Object.values(localElements)) {
             if (el.type === 'board' && el.targetBoardId) {
-                await executeDeleteBoard(el.targetBoardId);
+                await executePermanentDeleteBoard(el.targetBoardId);
             }
         }
-        
+
         let localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
         localBoards = localBoards.filter(b => b.id !== boardId);
         localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
 
         localStorage.removeItem(`board_config_${boardId}`);
         localStorage.removeItem(elementsKey);
-        
-        if (typeof setupOfflineModeForDashboard === 'function') {
-            setupOfflineModeForDashboard();
-        }
     }
+
+    loadedBoardsList = loadedBoardsList.filter(b => b.id !== boardId);
+
+    renderBoardsGrid();
+    updateTrashBadge();
+}
+
+const executeDeleteBoard = executePermanentDeleteBoard;
+
+// Очистить корзину полностью
+function emptyTrash() {
+    const deletedBoards = (loadedBoardsList || []).filter(b => b.deleted && !b.parentBoardId);
+    if (deletedBoards.length === 0) return;
+
+    showCustomConfirm(
+        "Очистить корзину?",
+        "Все доски в корзине будут удалены безвозвратно. Это действие нельзя отменить.",
+        "Очистить",
+        async () => {
+            for (const board of deletedBoards) {
+                await executePermanentDeleteBoard(board.id);
+            }
+        }
+    );
 }
 
 function showRenameBoardModal(boardId, currentTitle) {
@@ -1549,7 +2040,7 @@ async function executeRenameBoard(boardId, trimmedTitle) {
             localBoards[idx].updatedAt = Date.now();
             localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
         }
-        
+
         const boardConfigLoc = JSON.parse(localStorage.getItem(`board_config_${boardId}`) || '{}');
         boardConfigLoc.title = trimmedTitle;
         localStorage.setItem(`board_config_${boardId}`, JSON.stringify(boardConfigLoc));
@@ -1595,6 +2086,11 @@ function setupFirebaseSyncForBoard() {
     unsubscribeBoard = onSnapshot(boardDocRef, (snap) => {
         if (snap.exists()) {
             const data = snap.data();
+            if (data.deleted) {
+                alert("Эта интерактивная доска находится в корзине.");
+                window.location.href = "whiteboard.html#trash";
+                return;
+            }
             boardConfig.width = data.width || 2400;
             boardConfig.height = data.height || 1600;
             if (data.title) {
@@ -1633,6 +2129,14 @@ function setupFirebaseSyncForBoard() {
 }
 
 function setupOfflineModeForBoard() {
+    const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+    const currentBoard = localBoards.find(x => x.id === activeBoardId);
+    if (currentBoard && currentBoard.deleted) {
+        alert("Эта интерактивная доска находится в корзине.");
+        window.location.href = "whiteboard.html#trash";
+        return;
+    }
+
     showSaveStatus('Черновик (локально)');
 
     const localConfig = localStorage.getItem(`board_config_${activeBoardId}`);
@@ -1675,7 +2179,7 @@ function saveBoardInfo() {
             height: boardConfig.height,
             title: boardTitleInput.value
         }));
-        
+
         const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
         const idx = localBoards.findIndex(b => b.id === activeBoardId);
         if (idx !== -1) {
@@ -1762,7 +2266,7 @@ function centerBoardOnElements() {
     const headerHeight = headerEl ? headerEl.offsetHeight : 64;
     const bannerEl = document.getElementById('mobileReadOnlyBanner');
     const bannerHeight = (bannerEl && bannerEl.style.display !== 'none') ? (bannerEl.offsetHeight || 40) : 0;
-    
+
     const viewportWidth = window.innerWidth;
     const viewportHeight = Math.max(100, window.innerHeight - headerHeight - bannerHeight);
     const isMobileOrTablet = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -1789,7 +2293,7 @@ function centerBoardOnElements() {
             zoom = Math.min(viewportWidth / (contentWidth + 80), viewportHeight / (contentHeight + 80));
             zoom = Math.min(Math.max(zoom, 0.15), 1.2);
         }
-        
+
         panX = viewportWidth / 2 - centerX * zoom;
         panY = (headerHeight + bannerHeight) + viewportHeight / 2 - centerY * zoom;
     } else {
@@ -1808,7 +2312,7 @@ boardViewport.addEventListener('wheel', (e) => {
     const rect = boardViewport.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
-    
+
     const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
     zoomTo(zoom * factor, mouseX, mouseY);
 }, { passive: false });
@@ -1826,7 +2330,7 @@ window.addEventListener('keydown', (e) => {
             return;
         }
         e.preventDefault();
-        
+
         if (activeTool === 'draw') {
             if (localStrokes.length > 0) {
                 const undone = localStrokes.pop();
@@ -1844,7 +2348,7 @@ window.addEventListener('keydown', (e) => {
             return;
         }
         e.preventDefault();
-        
+
         if (activeTool === 'draw') {
             if (localRedoStrokes.length > 0) {
                 const redone = localRedoStrokes.pop();
@@ -1929,7 +2433,7 @@ if (btnRedo) btnRedo.addEventListener('click', redo);
 function updateCanvasSize() {
     boardCanvas.style.width = `${boardConfig.width}px`;
     boardCanvas.style.height = `${boardConfig.height}px`;
-    
+
     // ВАЖНО: Задаем размеры SVG слою рисования
     drawingLayer.setAttribute("width", boardConfig.width);
     drawingLayer.setAttribute("height", boardConfig.height);
@@ -1938,7 +2442,7 @@ function updateCanvasSize() {
 // === ВЫБОР ИНСТРУМЕНТОВ ===
 function setTool(toolName) {
     activeTool = toolName;
-    
+
     // Стилизуем кнопки тулбара
     Object.keys(tools).forEach(name => {
         if (tools[name]) {
@@ -2010,14 +2514,14 @@ document.querySelectorAll('.draw-color-opt').forEach(opt => {
 // Управление активным инструментом в доке PencilKit
 function setLocalDrawingTool(toolName) {
     localDrawingTool = toolName;
-    
+
     // Переключаем активные классы на кнопках инструментов
     if (drawBtnPencil) drawBtnPencil.classList.toggle('active', toolName === 'pencil');
     if (drawBtnSelect) drawBtnSelect.classList.toggle('active', toolName === 'select');
     if (drawBtnHighlighter) drawBtnHighlighter.classList.toggle('active', toolName === 'highlighter');
     if (drawBtnPen) drawBtnPen.classList.toggle('active', toolName === 'pen');
     if (drawBtnEraser) drawBtnEraser.classList.toggle('active', toolName === 'eraser');
-    
+
     // Сбрасываем инлайновые курсоры, мешающие CSS
     if (boardCanvas) boardCanvas.style.cursor = '';
     if (boardViewport) boardViewport.style.cursor = '';
@@ -2056,11 +2560,11 @@ function setLocalDrawingTool(toolName) {
         if (dockSizeSlider) dockSizeSlider.value = settings.width;
         if (dockSizeValue) dockSizeValue.innerText = `${settings.width}px`;
         if (dockSizeBtnLabel) dockSizeBtnLabel.innerText = `${settings.width}px`;
-        
+
         const opacityPct = Math.round(settings.opacity * 100);
         if (dockOpacitySlider) dockOpacitySlider.value = opacityPct;
         if (dockOpacityValue) dockOpacityValue.innerText = `${opacityPct}%`;
-        
+
         if (dockSizePreviewDot) {
             const dotSize = Math.max(4, Math.min(18, settings.width / 2.5));
             dockSizePreviewDot.style.width = `${dotSize}px`;
@@ -2161,7 +2665,7 @@ btnDrawSave.addEventListener('click', () => {
 
 function buildSvgPathAndWidth(points, defaultWidth = 4, toolType = 'pencil') {
     if (!points || points.length === 0) return { d: '', strokeWidth: defaultWidth };
-    
+
     let totalP = 0, countP = 0;
     points.forEach(pt => {
         if (pt.pressure !== undefined && pt.pressure > 0) {
@@ -2169,7 +2673,7 @@ function buildSvgPathAndWidth(points, defaultWidth = 4, toolType = 'pencil') {
             countP++;
         }
     });
-    
+
     let strokeWidth = defaultWidth;
     if (countP > 0) {
         const avgP = totalP / countP;
@@ -2181,14 +2685,14 @@ function buildSvgPathAndWidth(points, defaultWidth = 4, toolType = 'pencil') {
             strokeWidth = Math.max(1.5, Math.min(60, defaultWidth * (0.35 + avgP * 1.3)));
         }
     }
-    
+
     if (points.length === 1) {
         return {
             d: `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)} L ${(points[0].x + 0.1).toFixed(1)} ${(points[0].y + 0.1).toFixed(1)}`,
             strokeWidth
         };
     }
-    
+
     let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
     for (let i = 1; i < points.length - 1; i++) {
         const xc = (points[i].x + points[i + 1].x) / 2;
@@ -2196,7 +2700,7 @@ function buildSvgPathAndWidth(points, defaultWidth = 4, toolType = 'pencil') {
         d += ` Q ${points[i].x.toFixed(1)} ${points[i].y.toFixed(1)} ${xc.toFixed(1)} ${yc.toFixed(1)}`;
     }
     d += ` L ${points[points.length - 1].x.toFixed(1)} ${points[points.length - 1].y.toFixed(1)}`;
-    
+
     return { d, strokeWidth };
 }
 
@@ -2205,7 +2709,7 @@ function editExistingDrawing(elId) {
     if (!el || el.type !== 'drawing') return;
 
     editingDrawingId = elId;
-    
+
     // Переводим точки из локальных координат элемента обратно в глобальные координаты холста
     localStrokes = (el.strokes || []).map(s => {
         return {
@@ -2231,7 +2735,7 @@ function exitDrawingMode(save = false) {
     document.body.classList.remove('drawing-mode-active');
     drawingModePanel.classList.remove('active');
     if (dockSettingsPopover) dockSettingsPopover.style.display = 'none';
-    
+
     if (save) {
         if (localStrokes.length > 0) {
             let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -2365,7 +2869,7 @@ function createNewElement(type, x, y, extra = {}) {
     saveUndoState();
 
     const id = "el_" + Math.random().toString(36).substring(2, 11);
-    
+
     if (x === undefined || y === undefined) {
         const viewportCenterX = window.innerWidth / 2;
         const viewportCenterY = window.innerHeight / 2;
@@ -2375,7 +2879,7 @@ function createNewElement(type, x, y, extra = {}) {
 
     let width = 180;
     let height = 100;
-    
+
     if (type === 'text') {
         width = 320;
         height = 120;
@@ -2566,7 +3070,7 @@ function openImageUploadModal(onUploadSuccess) {
     const fileInput = overlay.querySelector('#modalIconFileInput');
     const selectFileBtn = overlay.querySelector('#btn-select-file');
     const closeBtn = overlay.querySelector('#btn-close-icon-modal');
-    
+
     const tabBtns = overlay.querySelectorAll('.modal-tab');
     const tabPanes = overlay.querySelectorAll('.tab-content-pane');
     const urlInput = overlay.querySelector('#modal-url-input');
@@ -2578,11 +3082,11 @@ function openImageUploadModal(onUploadSuccess) {
             e.stopPropagation();
             tabBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
+
             const targetTab = btn.dataset.tab;
             tabPanes.forEach(pane => pane.style.display = 'none');
             overlay.querySelector(`#tab-content-${targetTab}`).style.display = 'flex';
-            
+
             if (targetTab === 'file') {
                 selectFileBtn.style.display = 'block';
                 loadLinkBtn.style.display = 'none';
@@ -2652,7 +3156,7 @@ function openImageUploadModal(onUploadSuccess) {
             const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(urlVal)}`;
             const img = new Image();
             img.crossOrigin = "anonymous";
-            
+
             img.onload = async () => {
                 const canvas = document.createElement("canvas");
                 canvas.width = img.width;
@@ -2718,7 +3222,7 @@ function openImageUploadModal(onUploadSuccess) {
                 tabsContainer.style.opacity = '0.5';
             }
             dropzone.style.pointerEvents = 'none';
-            
+
             dropzone.querySelector('.dropzone-preview').innerHTML = `
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation: spin 1s linear infinite;">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="8" fill="none" opacity="0.3"></circle>
@@ -2736,7 +3240,7 @@ function openImageUploadModal(onUploadSuccess) {
                 tabsContainer.style.opacity = '1';
             }
             dropzone.style.pointerEvents = 'auto';
-            
+
             dropzone.querySelector('.dropzone-preview').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-icon lucide-upload" style="opacity: 0.6; color: var(--text-sec);"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>`;
             dropzone.querySelector('.dropzone-text').innerText = 'Кликните для выбора файла или перетащите его сюда';
         }
@@ -2803,7 +3307,7 @@ window.addEventListener('mousemove', (e) => {
 
 async function insertImageFileToBoard(file, targetCanvasX, targetCanvasY) {
     if (!file || !file.type || !file.type.startsWith('image/')) return;
-    
+
     showSaveStatus("Вставка изображения...");
 
     const reader = new FileReader();
@@ -2816,7 +3320,7 @@ async function insertImageFileToBoard(file, targetCanvasX, targetCanvasY) {
 
 function insertImageDataUrlToBoard(dataUrl, targetCanvasX, targetCanvasY, originalFile = null) {
     if (!dataUrl) return;
-    
+
     const tempImg = new Image();
     tempImg.onload = async () => {
         const aspect = (tempImg.width && tempImg.height) ? (tempImg.width / tempImg.height) : (4 / 3);
@@ -2999,7 +3503,7 @@ function getBoardIconStrokeColor(bgColor) {
 
 function formatElementsCount(elsArr) {
     if (!elsArr || elsArr.length === 0) return '0 карточек';
-    
+
     let boardCount = 0;
     let cardCount = 0;
     let docCount = 0;
@@ -3052,7 +3556,7 @@ function getSubboardStatsText(targetBoardId) {
             const elsArr = Object.values(els);
             return formatElementsCount(elsArr);
         }
-    } catch(e) {}
+    } catch (e) { }
     return '0 карточек';
 }
 
@@ -3063,7 +3567,7 @@ function renderElements() {
     }
     const activeTextareaId = document.activeElement ? document.activeElement.getAttribute('data-id') : null;
     elementsLayer.innerHTML = '';
-    
+
     // Всегда очищаем SVG-слой перед перерисовкой
     drawingLayer.innerHTML = '';
 
@@ -3090,14 +3594,14 @@ function renderElements() {
         if (selectedElementIds.has(el.id)) {
             elDiv.classList.add('selected');
         }
-        
+
         if (el.parentId) {
             const parentEl = elements[el.parentId];
             if (parentEl && parentEl.type === 'column') {
                 elDiv.classList.add('in-column');
             }
         }
-        
+
         elDiv.style.left = `${el.x}px`;
         elDiv.style.top = `${el.y}px`;
         elDiv.style.width = `${el.width}px`;
@@ -3113,7 +3617,7 @@ function renderElements() {
             elDiv.style.borderRadius = '0px';
         } else if (el.type === 'column' || el.type === 'frame') {
             elDiv.style.backgroundColor = '';
-            
+
             const br = el.borderRadius !== undefined ? el.borderRadius : 12;
             elDiv.style.borderRadius = `${br}px`;
 
@@ -3133,7 +3637,7 @@ function renderElements() {
             }
         } else {
             elDiv.style.backgroundColor = el.color || (el.type === 'sticker' ? '#fef08a' : '#ffffff');
-            
+
             const br = el.borderRadius !== undefined ? el.borderRadius : 8;
             elDiv.style.borderRadius = `${br}px`;
 
@@ -3213,7 +3717,7 @@ function renderElements() {
             textEl.contentEditable = "false"; // По умолчанию выключено редактирование
             textEl.setAttribute('data-id', el.id);
             textEl.innerHTML = el.content || '';
-            
+
             textEl.addEventListener('paste', (e) => {
                 e.preventDefault();
                 const html = e.clipboardData.getData('text/html');
@@ -3221,7 +3725,7 @@ function renderElements() {
                     // Очищаем HTML от стилей, шрифтов и размеров, но сохраняем разметку (заголовки, жирность, списки)
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    
+
                     const cleanNode = (node) => {
                         if (node.nodeType === Node.ELEMENT_NODE) {
                             node.removeAttribute('style');
@@ -3230,7 +3734,7 @@ function renderElements() {
                             node.removeAttribute('face');
                             node.removeAttribute('size');
                             node.removeAttribute('color');
-                            
+
                             if (node.tagName.toLowerCase() === 'font') {
                                 const span = document.createElement('span');
                                 span.innerHTML = node.innerHTML;
@@ -3242,7 +3746,7 @@ function renderElements() {
                             cleanNode(node.childNodes[i]);
                         }
                     };
-                    
+
                     cleanNode(doc.body);
                     document.execCommand('insertHTML', false, doc.body.innerHTML);
                 } else {
@@ -3277,7 +3781,7 @@ function renderElements() {
                     saveElement(el);
                 }
             });
-            
+
             textEl.addEventListener('keydown', (e) => {
                 e.stopPropagation();
             });
@@ -3286,7 +3790,7 @@ function renderElements() {
                 e.stopPropagation();
                 textEl.contentEditable = "true";
                 textEl.focus();
-                
+
                 // Перемещаем курсор в конец текста
                 if (window.getSelection && document.createRange) {
                     const range = document.createRange();
@@ -3308,7 +3812,7 @@ function renderElements() {
                     editingElementId = null;
                 }, 50);
             }
-        } 
+        }
         else if (el.type === 'frame') {
             const frameTitle = document.createElement('div');
             frameTitle.className = 'frame-title';
@@ -3364,7 +3868,7 @@ function renderElements() {
         else if (el.type === 'image') {
             elDiv.style.display = 'flex';
             elDiv.style.flexDirection = 'column';
-            
+
             const img = document.createElement('img');
             img.src = el.imageUrl;
             img.style.flex = '1';
@@ -3373,17 +3877,17 @@ function renderElements() {
             img.style.objectFit = 'cover';
             img.style.pointerEvents = 'none';
             elDiv.appendChild(img);
-            
+
             if (el.hasCaption) {
                 const capContainer = document.createElement('div');
                 capContainer.className = 'image-caption-container';
-                
+
                 const caption = document.createElement('div');
                 caption.className = 'image-caption';
                 caption.contentEditable = 'true';
                 caption.setAttribute('placeholder', 'Описание картинки...');
                 caption.innerHTML = el.caption || '';
-                
+
                 caption.addEventListener('blur', () => {
                     saveUndoState();
                     const cleanHTML = linkifyHTML(caption.innerHTML);
@@ -3391,7 +3895,7 @@ function renderElements() {
                     el.caption = caption.innerHTML;
                     saveElement(el);
                 });
-                
+
                 caption.addEventListener('keydown', (e) => {
                     e.stopPropagation();
                 });
@@ -3401,7 +3905,7 @@ function renderElements() {
                     const text = e.clipboardData.getData('text/plain');
                     document.execCommand('insertText', false, text);
                 });
-                
+
                 capContainer.appendChild(caption);
                 elDiv.appendChild(capContainer);
             }
@@ -3460,7 +3964,7 @@ function renderElements() {
 
             const boardLink = document.createElement('div');
             boardLink.className = 'el-board-link';
-            
+
             const iconDiv = document.createElement('div');
             iconDiv.className = 'board-link-icon';
             const iconBgColor = getBoardIconColor(el);
@@ -3503,7 +4007,7 @@ function renderElements() {
                     const localObj = {};
                     subElsArr.forEach(item => { localObj[item.id] = item; });
                     localStorage.setItem(`board_elements_${el.targetBoardId}`, JSON.stringify(localObj));
-                }).catch(() => {});
+                }).catch(() => { });
             }
 
             boardLink.appendChild(contentDiv);
@@ -3533,7 +4037,7 @@ boardViewport.addEventListener('mousedown', (e) => {
     const clickY = (e.clientY - rect.top) / zoom;
 
     if (target.closest('[contenteditable="true"]') || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-        return; 
+        return;
     }
 
     if (document.activeElement && (document.activeElement.getAttribute('contenteditable') === 'true' || document.activeElement.tagName === 'INPUT')) {
@@ -3578,7 +4082,7 @@ boardViewport.addEventListener('mousedown', (e) => {
                     const dx = pt.x - clickX;
                     const dy = pt.y - clickY;
                     const r = Math.max(25, (stroke.baseWidth || 4) / 2 + 12);
-                    return Math.sqrt(dx*dx + dy*dy) < r;
+                    return Math.sqrt(dx * dx + dy * dy) < r;
                 });
                 return !touched;
             });
@@ -3588,7 +4092,7 @@ boardViewport.addEventListener('mousedown', (e) => {
 
             isDrawing = true;
             activeDrawingPoints = [{ x: clickX, y: clickY, pressure: 0.5 }];
-            
+
             const tool = localDrawingTool;
             const baseW = toolSettings[tool] ? toolSettings[tool].width : 4;
             const opacity = toolSettings[tool] ? toolSettings[tool].opacity : 1.0;
@@ -3643,7 +4147,7 @@ boardViewport.addEventListener('mousedown', (e) => {
     if (target.classList.contains('selection-overlay-handle')) {
         saveUndoState();
         const handleType = target.className.split(' ').find(c => c.startsWith('handle-')).replace('handle-', '');
-        
+
         if (selectedElementIds.size === 1) {
             const singleId = Array.from(selectedElementIds)[0];
             if (elements[singleId] && elements[singleId].type === 'board') {
@@ -3668,10 +4172,10 @@ boardViewport.addEventListener('mousedown', (e) => {
 
     // 3. Выделение, изменение размера и перетаскивание элементов
     const elementDiv = target.closest('.board-element');
-    
+
     if (elementDiv) {
         const elId = elementDiv.getAttribute('data-id');
-        
+
         if (!selectedElementIds.has(elId)) {
             if (!e.shiftKey) {
                 selectedElementIds.clear();
@@ -3683,7 +4187,7 @@ boardViewport.addEventListener('mousedown', (e) => {
 
         const allElementsArray = Object.values(elements);
         const maxZ = allElementsArray.reduce((max, el) => Math.max(max, el.zIndex || 0), 0);
-        
+
         selectedElementIds.forEach(id => {
             if (elements[id] && elements[id].zIndex !== maxZ) {
                 elements[id].zIndex = maxZ + 1;
@@ -3702,7 +4206,7 @@ boardViewport.addEventListener('mousedown', (e) => {
                 startW: elements[elId].width,
                 startH: elements[elId].height
             };
-        } 
+        }
         // Групповое перемещение элементов
         else {
             saveUndoState();
@@ -3751,7 +4255,7 @@ boardViewport.addEventListener('mousedown', (e) => {
             marquee.style.height = '0px';
             boardCanvas.appendChild(marquee);
             dragStartInfo.marqueeEl = marquee;
-            
+
             e.preventDefault();
         }
     }
@@ -3839,7 +4343,7 @@ boardViewport.addEventListener('mousemove', (e) => {
                 const dx = pt.x - curX;
                 const dy = pt.y - curY;
                 const r = Math.max(25, (stroke.baseWidth || 4) / 2 + 12);
-                return Math.sqrt(dx*dx + dy*dy) < r;
+                return Math.sqrt(dx * dx + dy * dy) < r;
             });
             return !touched;
         });
@@ -3851,7 +4355,7 @@ boardViewport.addEventListener('mousemove', (e) => {
 
     if (isDrawing && activeDrawingPathEl) {
         activeDrawingPoints.push({ x: curX, y: curY, pressure: 0.5 });
-        
+
         const tool = localDrawingTool;
         const baseW = toolSettings[tool] ? toolSettings[tool].width : 4;
         const { d, strokeWidth } = buildSvgPathAndWidth(activeDrawingPoints, baseW, tool);
@@ -3872,17 +4376,17 @@ boardViewport.addEventListener('mousemove', (e) => {
         const y = Math.min(dragStartInfo.boardStartY, curY);
         const w = Math.abs(dragStartInfo.boardStartX - curX);
         const h = Math.abs(dragStartInfo.boardStartY - curY);
-        
+
         dragStartInfo.marqueeEl.style.left = `${x}px`;
         dragStartInfo.marqueeEl.style.top = `${y}px`;
         dragStartInfo.marqueeEl.style.width = `${w}px`;
         dragStartInfo.marqueeEl.style.height = `${h}px`;
-        
+
         selectedElementIds.clear();
         Object.values(elements).forEach(el => {
             const overlaps = (el.x < x + w && el.x + el.width > x &&
-                              el.y < y + h && el.y + el.height > y);
-            
+                el.y < y + h && el.y + el.height > y);
+
             const elDiv = document.querySelector(`.board-element[data-id="${el.id}"]`);
             if (overlaps) {
                 selectedElementIds.add(el.id);
@@ -3923,12 +4427,12 @@ boardViewport.addEventListener('mousemove', (e) => {
             const allowedShift = minX !== Infinity ? minX - 30 : Infinity;
             const requestedShift = rawDeltaX / zoom;
             const shift = Math.min(allowedShift, requestedShift);
-            
+
             const newWidth = dragStartInfo.startWidth - shift;
             if (newWidth >= 800) {
                 boardConfig.width = newWidth;
                 panX += shift * zoom;
-                
+
                 Object.values(elements).forEach(el => {
                     el.x -= shift;
                 });
@@ -3944,12 +4448,12 @@ boardViewport.addEventListener('mousemove', (e) => {
             const allowedShift = minY !== Infinity ? minY - 30 : Infinity;
             const requestedShift = rawDeltaY / zoom;
             const shift = Math.min(allowedShift, requestedShift);
-            
+
             const newHeight = dragStartInfo.startHeight - shift;
             if (newHeight >= 600) {
                 boardConfig.height = newHeight;
                 panY += shift * zoom;
-                
+
                 Object.values(elements).forEach(el => {
                     el.y -= shift;
                 });
@@ -3970,10 +4474,10 @@ boardViewport.addEventListener('mousemove', (e) => {
             if (el && startPos) {
                 const prevX = el.x;
                 const prevY = el.y;
-                
+
                 el.x = Math.max(0, Math.min(startPos.x + deltaX, boardConfig.width - el.width));
                 el.y = Math.max(0, Math.min(startPos.y + deltaY, boardConfig.height - el.height));
-                
+
                 if (el.type === 'frame' || el.type === 'column') {
                     const dX = el.x - prevX;
                     const dY = el.y - prevY;
@@ -3981,7 +4485,7 @@ boardViewport.addEventListener('mousemove', (e) => {
                         if (child.parentId === el.id) {
                             child.x += dX;
                             child.y += dY;
-                            
+
                             const childDiv = document.querySelector(`.board-element[data-id="${child.id}"]`);
                             if (childDiv) {
                                 childDiv.style.left = `${child.x}px`;
@@ -4004,7 +4508,7 @@ boardViewport.addEventListener('mousemove', (e) => {
     else if (dragStartInfo.type === 'resize') {
         const el = elements[dragStartInfo.id];
         const handle = dragStartInfo.handle;
-        
+
         let minW = 60;
         let minH = 40;
         if (el.type === 'text') {
@@ -4014,12 +4518,12 @@ boardViewport.addEventListener('mousemove', (e) => {
             minW = 80;
             minH = 80;
         }
-        
+
         let newWidth = el.width;
         let newHeight = el.height;
         let newX = el.x;
         let newY = el.y;
-        
+
         const lockAspectRatio = (el.type === 'drawing' || el.type === 'image');
         let ratio;
         if (el.type === 'image' && el.hasCaption) {
@@ -4027,7 +4531,7 @@ boardViewport.addEventListener('mousemove', (e) => {
         } else {
             ratio = dragStartInfo.startW / dragStartInfo.startH;
         }
-        
+
         if (lockAspectRatio) {
             let targetWidth = dragStartInfo.startW;
             if (handle === 'br' || handle === 'tr') {
@@ -4035,14 +4539,14 @@ boardViewport.addEventListener('mousemove', (e) => {
             } else {
                 targetWidth = dragStartInfo.startW - deltaX;
             }
-            
+
             let targetHeight;
             if (el.type === 'image' && el.hasCaption) {
                 targetHeight = (targetWidth / ratio) + 48;
             } else {
                 targetHeight = targetWidth / ratio;
             }
-            
+
             if (targetWidth < minW) {
                 targetWidth = minW;
                 if (el.type === 'image' && el.hasCaption) {
@@ -4051,7 +4555,7 @@ boardViewport.addEventListener('mousemove', (e) => {
                     targetHeight = targetWidth / ratio;
                 }
             }
-            
+
             const minHeightLimit = el.type === 'image' && el.hasCaption ? (minH + 48) : minH;
             if (targetHeight < minHeightLimit) {
                 targetHeight = minHeightLimit;
@@ -4061,10 +4565,10 @@ boardViewport.addEventListener('mousemove', (e) => {
                     targetWidth = targetHeight * ratio;
                 }
             }
-            
+
             newWidth = targetWidth;
             newHeight = targetHeight;
-            
+
             if (handle === 'bl' || handle === 'tl') {
                 newX = dragStartInfo.startXPos + (dragStartInfo.startW - newWidth);
             }
@@ -4098,7 +4602,7 @@ boardViewport.addEventListener('mousemove', (e) => {
                 }
             }
         }
-        
+
         el.width = newWidth;
         el.height = newHeight;
         el.x = newX;
@@ -4112,7 +4616,7 @@ boardViewport.addEventListener('mousemove', (e) => {
             elDiv.style.top = `${el.y}px`;
         }
     }
-    
+
     if (typeof updateElementOptionsPanel === 'function') {
         updateElementOptionsPanel();
     }
@@ -4224,7 +4728,7 @@ boardViewport.addEventListener('mouseup', (e) => {
         if (typeof layoutColumns === 'function') {
             layoutColumns(true);
         }
-    } 
+    }
     else if (dragStartInfo.type === 'resize') {
         saveElement(elements[dragStartInfo.id]);
     }
@@ -4284,7 +4788,7 @@ let isTouchOnAlreadySelected = false;
 
 boardViewport.addEventListener('touchstart', (e) => {
     if (e.target.closest('a') || e.target.closest('button') || e.target.closest('[contenteditable="true"]') || e.target.closest('input') || e.target.closest('.pencilkit-dock') || e.target.closest('.element-options-panel')) {
-        return; 
+        return;
     }
 
     if (e.touches.length === 1) {
@@ -4348,7 +4852,7 @@ boardViewport.addEventListener('touchstart', (e) => {
             } else {
                 isDrawing = true;
                 activeDrawingPoints = [{ x: clickX, y: clickY, pressure: 0.5 }];
-                
+
                 const tool = localDrawingTool;
                 const baseW = toolSettings[tool] ? toolSettings[tool].width : 4;
                 const opacity = toolSettings[tool] ? toolSettings[tool].opacity : 1.0;
@@ -4385,7 +4889,7 @@ boardViewport.addEventListener('touchstart', (e) => {
             isTouchPanning = false;
             saveUndoState();
             const handleType = handleEl.className.split(' ').find(c => c.startsWith('handle-')) ? handleEl.className.split(' ').find(c => c.startsWith('handle-')).replace('handle-', '') : 'br';
-            
+
             let singleId = touchedElement ? touchedElement.getAttribute('data-id') : (selectedElementIds.size === 1 ? Array.from(selectedElementIds)[0] : null);
             if (singleId && elements[singleId]) {
                 dragStartInfo = {
@@ -4554,10 +5058,10 @@ boardViewport.addEventListener('touchmove', (e) => {
                     if (el && startPos) {
                         const prevX = el.x;
                         const prevY = el.y;
-                        
+
                         el.x = Math.max(0, Math.min(startPos.x + deltaX, boardConfig.width - el.width));
                         el.y = Math.max(0, Math.min(startPos.y + deltaY, boardConfig.height - el.height));
-                        
+
                         if (el.type === 'frame' || el.type === 'column') {
                             const dX = el.x - prevX;
                             const dY = el.y - prevY;
@@ -4635,15 +5139,15 @@ boardViewport.addEventListener('touchmove', (e) => {
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        
+
         const factor = dist / Math.max(1, startTouchDist);
         const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
         const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-        
+
         const rect = boardViewport.getBoundingClientRect();
         const mouseX = centerX - rect.left;
         const mouseY = centerY - rect.top;
-        
+
         zoomTo(startTouchZoom * factor, mouseX, mouseY);
     }
 }, { passive: false });
@@ -4795,7 +5299,7 @@ boardViewport.addEventListener('pointerdown', (e) => {
     } else {
         isDrawing = true;
         activeDrawingPoints = [{ x: clickX, y: clickY, pressure: pressure }];
-        
+
         const tool = localDrawingTool;
         const baseW = toolSettings[tool] ? toolSettings[tool].width : 4;
         const opacity = toolSettings[tool] ? toolSettings[tool].opacity : 1.0;
@@ -4919,7 +5423,7 @@ boardViewport.addEventListener('pointermove', (e) => {
 
 const endPenDrawing = (e) => {
     if (e.pointerType !== 'pen' || activePenPointerId !== e.pointerId) return;
-    
+
     isPenDrawing = false;
     activePenPointerId = null;
 
@@ -4963,11 +5467,11 @@ function updateElementOptionsPanel() {
     const panel = document.getElementById('elementOptionsPanel');
     const popup = document.getElementById('elementSettingsPopup');
     const btnColor = document.getElementById('btnOptColor');
-    
+
     if (selectedElementIds.size >= 1 && activeTool === 'select') {
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         let hasValidElement = false;
-        
+
         selectedElementIds.forEach(id => {
             const el = elements[id];
             if (el) {
@@ -4978,16 +5482,16 @@ function updateElementOptionsPanel() {
                 maxY = Math.max(maxY, el.y + el.height);
             }
         });
-        
+
         if (hasValidElement) {
             panel.style.display = 'flex';
-            
+
             const isMultiSelect = selectedElementIds.size > 1;
             let singleEl = null;
             if (!isMultiSelect) {
                 singleEl = elements[Array.from(selectedElementIds)[0]];
             }
-            
+
             const btnAddText = document.getElementById('btnOptAddText');
             const btnEditImage = document.getElementById('btnOptEditImage');
             const btnEditDrawing = document.getElementById('btnOptEditDrawing');
@@ -5012,16 +5516,16 @@ function updateElementOptionsPanel() {
                 if (btnAddText) btnAddText.style.display = 'none';
                 if (btnEditImage) btnEditImage.style.display = 'none';
             }
-            
+
             const canvasRect = boardCanvas.getBoundingClientRect();
             const viewportRect = boardViewport.getBoundingClientRect();
-            
+
             const left = canvasRect.left - viewportRect.left + minX * zoom + ((maxX - minX) * zoom - panel.offsetWidth) / 2;
             const top = canvasRect.top - viewportRect.top + minY * zoom - 48;
-            
+
             panel.style.top = `${Math.max(10, top)}px`;
             panel.style.left = `${Math.max(10, left)}px`;
-            
+
             if (!isMultiSelect && singleEl && singleEl.type !== 'drawing' && singleEl.type !== 'image') {
                 // Синхронизируем цвета
                 const currentColor = singleEl.type === 'board' ? getBoardIconColor(singleEl) : singleEl.color;
@@ -5032,7 +5536,7 @@ function updateElementOptionsPanel() {
                         opt.classList.remove('active');
                     }
                 });
-                
+
                 // Синхронизируем тени
                 popup.querySelectorAll('.shadow-opt-btn').forEach(btn => {
                     if (btn.getAttribute('data-shadow') === (singleEl.shadowType || 'box')) {
@@ -5041,7 +5545,7 @@ function updateElementOptionsPanel() {
                         btn.classList.remove('active');
                     }
                 });
-                
+
                 // Синхронизируем скругление
                 const brSlider = document.getElementById('sliderCornerRadius');
                 const brLabel = document.getElementById('lblCornerRadiusValue');
@@ -5049,11 +5553,11 @@ function updateElementOptionsPanel() {
                 brSlider.value = currentBr;
                 brLabel.innerText = `${currentBr}px`;
             }
-            
+
             return;
         }
     }
-    
+
     panel.style.display = 'none';
     popup.classList.remove('active');
 }
@@ -5150,15 +5654,15 @@ function initElementOptionsPanel() {
             }
         });
     }
-    
+
     // Закрытие попапа и сброс выделения при клике вне элементов
     document.addEventListener('mousedown', (e) => {
         if (activeTool === 'draw') return; // Не сбрасываем выделение в процессе рисования
-        
-        if (!e.target.closest('#elementOptionsPanel') && 
-            !e.target.closest('#textFormatToolbar') && 
-            !e.target.closest('.board-element') && 
-            !e.target.closest('.board-toolbar') && 
+
+        if (!e.target.closest('#elementOptionsPanel') &&
+            !e.target.closest('#textFormatToolbar') &&
+            !e.target.closest('.board-element') &&
+            !e.target.closest('.board-toolbar') &&
             !e.target.closest('.board-header') &&
             !e.target.closest('.selection-overlay-box') &&
             !e.target.closest('.selection-overlay-handle')) {
@@ -5180,7 +5684,7 @@ function initElementOptionsPanel() {
                 elements[id].color = color;
                 saveElement(elements[id]);
                 renderElements();
-                
+
                 popup.querySelectorAll('.popup-color-opt').forEach(o => o.classList.remove('active'));
                 opt.classList.add('active');
             }
@@ -5210,7 +5714,7 @@ function initElementOptionsPanel() {
                 saveUndoState();
                 elements[id].shadowType = shadow;
                 saveElement(elements[id]);
-                
+
                 popup.querySelectorAll('.shadow-opt-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
             }
@@ -5236,18 +5740,18 @@ function initElementOptionsPanel() {
 function updateTextFormatToolbarPosition() {
     const toolbar = document.getElementById('textFormatToolbar');
     if (!toolbar || toolbar.style.display === 'none') return;
-    
+
     const selection = window.getSelection();
     const activeEl = document.activeElement;
-    
+
     if (activeEl && activeEl.closest('.el-text-content') && !selection.isCollapsed && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
         const viewportRect = boardViewport.getBoundingClientRect();
-        
+
         const top = rect.top - viewportRect.top - 46;
         const left = rect.left - viewportRect.left + (rect.width - toolbar.offsetWidth) / 2;
-        
+
         toolbar.style.top = `${Math.max(10, top)}px`;
         toolbar.style.left = `${Math.max(10, left)}px`;
     } else {
@@ -5268,7 +5772,7 @@ function initTextFormatToolbar() {
     const btnStrike = document.getElementById('btnFmtStrike');
     const btnHighlight = document.getElementById('btnFmtHighlight');
     const highlightPopup = document.getElementById('formatHighlightPopup');
-    
+
     const btnType = document.getElementById('btnFmtType');
     const typePopup = document.getElementById('formatTypePopup');
     const btnInsertTodo = document.getElementById('btnInsertTodo');
@@ -5345,24 +5849,24 @@ function initTextFormatToolbar() {
     document.addEventListener('selectionchange', () => {
         const selection = window.getSelection();
         const activeEl = document.activeElement;
-        
+
         if (activeEl && activeEl.closest('.el-text-content') && !selection.isCollapsed && selection.rangeCount > 0) {
             const range = selection.getRangeAt(0);
             const rect = range.getBoundingClientRect();
             const viewportRect = boardViewport.getBoundingClientRect();
-            
+
             toolbar.style.display = 'flex';
-            
+
             const top = rect.top - viewportRect.top - 46;
             const left = rect.left - viewportRect.left + (rect.width - toolbar.offsetWidth) / 2;
-            
+
             toolbar.style.top = `${Math.max(10, top)}px`;
             toolbar.style.left = `${Math.max(10, left)}px`;
         } else {
             // Не прячем тулбар, если пользователь кликает или выбирает цвет
-            const isInteractingWithToolbar = document.activeElement && 
+            const isInteractingWithToolbar = document.activeElement &&
                 document.activeElement.closest('#textFormatToolbar');
-            
+
             if (!isInteractingWithToolbar) {
                 toolbar.style.display = 'none';
                 highlightPopup.classList.remove('active');
@@ -5381,26 +5885,26 @@ function updateSelectionOverlay() {
         overlay = document.createElement('div');
         overlay.id = 'selectionOverlay';
         overlay.className = 'selection-overlay-box';
-        
+
         const handles = ['tl', 'tr', 'bl', 'br'];
         handles.forEach(h => {
             const handleEl = document.createElement('div');
             handleEl.className = `selection-overlay-handle handle-${h}`;
             overlay.appendChild(handleEl);
         });
-        
+
         boardCanvas.appendChild(overlay);
     }
-    
+
     if (activeTool === 'draw' || selectedElementIds.size === 0) {
         overlay.style.display = 'none';
         return;
     }
 
-    
+
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     let hasValidElement = false;
-    
+
     selectedElementIds.forEach(id => {
         const el = elements[id];
         if (el) {
@@ -5411,12 +5915,12 @@ function updateSelectionOverlay() {
             maxY = Math.max(maxY, el.y + el.height);
         }
     });
-    
+
     if (!hasValidElement) {
         overlay.style.display = 'none';
         return;
     }
-    
+
     overlay.style.display = 'block';
     overlay.style.left = `${minX}px`;
     overlay.style.top = `${minY}px`;
@@ -5441,9 +5945,9 @@ function linkifyHTML(html) {
     if (!html) return '';
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
-    
+
     const walk = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT, {
-        acceptNode: function(node) {
+        acceptNode: function (node) {
             let parent = node.parentNode;
             while (parent && parent !== tempDiv) {
                 if (parent.tagName === 'A') {
@@ -5457,7 +5961,7 @@ function linkifyHTML(html) {
 
     const urlRegex = /(https?:\/\/[^\s<]+)/gi;
     const nodesToReplace = [];
-    
+
     let textNode;
     while (textNode = walk.nextNode()) {
         if (urlRegex.test(textNode.nodeValue)) {
@@ -5470,7 +5974,7 @@ function linkifyHTML(html) {
         const text = node.nodeValue;
         const fragment = document.createDocumentFragment();
         let lastIndex = 0;
-        
+
         text.replace(urlRegex, (url, index) => {
             if (index > lastIndex) {
                 fragment.appendChild(document.createTextNode(text.substring(lastIndex, index)));
@@ -5484,16 +5988,16 @@ function linkifyHTML(html) {
             lastIndex = index + url.length;
             return url;
         });
-        
+
         if (lastIndex < text.length) {
             fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
         }
-        
+
         if (node.parentNode) {
             node.parentNode.replaceChild(fragment, node);
         }
     });
-    
+
     return tempDiv.innerHTML;
 }
 
@@ -5546,12 +6050,12 @@ async function renderBreadcrumbs() {
 
     const parentChain = [];
     let currentId = activeBoardId;
-    
+
     try {
         while (currentId) {
             const boardInfo = await getBoardTitleAndParent(currentId);
             if (!boardInfo) break;
-            
+
             if (currentId !== activeBoardId) {
                 parentChain.unshift({
                     id: currentId,
@@ -5628,15 +6132,15 @@ async function updateParentBoardElementTitle(newTitle) {
 function layoutColumns(shouldSave = false) {
     const allElements = Object.values(elements);
     const columns = allElements.filter(el => el.type === 'column');
-    
+
     columns.forEach(col => {
         const children = allElements.filter(el => el.parentId === col.id);
-        
+
         children.sort((a, b) => a.y - b.y);
-        
+
         const colWidth = col.width || 240;
         let currentY = col.y + 72;
-        
+
         children.forEach(child => {
             const targetX = col.x + 12;
             const targetY = currentY;
@@ -5645,7 +6149,7 @@ function layoutColumns(shouldSave = false) {
             if (child.type === 'board') {
                 targetHeight = Math.max(84, child.height);
             }
-            
+
             if (child.x !== targetX || child.y !== targetY || child.width !== targetWidth || (child.type === 'board' && child.height !== targetHeight)) {
                 child.x = targetX;
                 child.y = targetY;
@@ -5657,7 +6161,7 @@ function layoutColumns(shouldSave = false) {
             }
             currentY += targetHeight + 12;
         });
-        
+
         const targetHeight = Math.max(120, currentY - col.y + 12);
         if (col.height !== targetHeight) {
             col.height = targetHeight;

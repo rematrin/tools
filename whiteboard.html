@@ -1,36 +1,41 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Интерактивная доска</title>
-    
+
     <link rel="icon" type="image/png" href="img/favicon.png">
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- CSS Стили -->
     <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="auth-widget.css">
-    <link rel="stylesheet" href="whiteboard.css?v=1.0.1">
+    <link rel="stylesheet" href="whiteboard.css?v=1.0.2">
     <script src="theme-loader.js"></script>
     <style>
         body {
             padding-top: 0 !important;
         }
+
         :root {
             --bg: #fefefe;
         }
+
         body.dark {
             --bg: #0f1115;
         }
+
         /* Стили для встраивания в модальное окно */
         html.is-embed body {
             overflow: hidden;
         }
+
         body.is-embed .btn-back {
             display: none !important;
         }
@@ -44,13 +49,15 @@
         }
     </script>
 </head>
+
 <body>
 
     <!-- Модальное окно подтверждения удаления доски -->
     <div class="confirm-modal-overlay" id="confirmDeleteBoardModal" style="display: none;">
         <div class="confirm-modal-card">
             <h3 class="confirm-modal-title">Удалить интерактивную доску?</h3>
-            <p class="confirm-modal-desc">Интерактивная доска <strong id="confirmDeleteBoardTitle"></strong> со всеми элементами на ней будет удалена безвозвратно.</p>
+            <p class="confirm-modal-desc">Интерактивная доска <strong id="confirmDeleteBoardTitle"></strong> со всеми
+                элементами на ней будет удалена безвозвратно.</p>
             <div class="confirm-modal-actions">
                 <button class="confirm-btn-cancel" id="btnConfirmDeleteBoardCancel">Отмена</button>
                 <button class="confirm-btn-danger" id="btnConfirmDeleteBoardConfirm">Удалить</button>
@@ -62,7 +69,8 @@
     <div class="confirm-modal-overlay" id="renameBoardModal" style="display: none;">
         <div class="confirm-modal-card">
             <h3 class="confirm-modal-title">Переименовать доску</h3>
-            <input type="text" id="renameBoardInput" placeholder="Название доски" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--canvas-bg); color: var(--text-color); font-size: 1rem; outline: none; margin-top: 8px;">
+            <input type="text" id="renameBoardInput" placeholder="Название доски"
+                style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--canvas-bg); color: var(--text-color); font-size: 1rem; outline: none; margin-top: 8px;">
             <div class="confirm-modal-actions">
                 <button class="confirm-btn-cancel" id="btnRenameBoardCancel">Отмена</button>
                 <button class="confirm-btn-primary" id="btnRenameBoardConfirm">Сохранить</button>
@@ -74,7 +82,8 @@
     <div class="confirm-modal-overlay" id="createFolderModal" style="display: none;">
         <div class="confirm-modal-card">
             <h3 class="confirm-modal-title">Создать папку</h3>
-            <input type="text" id="createFolderInput" placeholder="Название папки" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--canvas-bg); color: var(--text-color); font-size: 1rem; outline: none; margin-top: 8px;">
+            <input type="text" id="createFolderInput" placeholder="Название папки"
+                style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--canvas-bg); color: var(--text-color); font-size: 1rem; outline: none; margin-top: 8px;">
             <div class="confirm-modal-actions">
                 <button class="confirm-btn-cancel" id="btnCreateFolderCancel">Отмена</button>
                 <button class="confirm-btn-primary" id="btnCreateFolderConfirm">Создать</button>
@@ -86,7 +95,8 @@
     <div class="confirm-modal-overlay" id="renameFolderModal" style="display: none;">
         <div class="confirm-modal-card">
             <h3 class="confirm-modal-title">Переименовать папку</h3>
-            <input type="text" id="renameFolderInput" placeholder="Название папки" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--canvas-bg); color: var(--text-color); font-size: 1rem; outline: none; margin-top: 8px;">
+            <input type="text" id="renameFolderInput" placeholder="Название папки"
+                style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--canvas-bg); color: var(--text-color); font-size: 1rem; outline: none; margin-top: 8px;">
             <div class="confirm-modal-actions">
                 <button class="confirm-btn-cancel" id="btnRenameFolderCancel">Отмена</button>
                 <button class="confirm-btn-primary" id="btnRenameFolderConfirm">Сохранить</button>
@@ -98,7 +108,8 @@
     <div class="confirm-modal-overlay" id="deleteFolderModal" style="display: none;">
         <div class="confirm-modal-card">
             <h3 class="confirm-modal-title">Удалить папку?</h3>
-            <p class="confirm-modal-desc">Папка <strong id="deleteFolderTitle"></strong> будет удалена. Все доски из этой папки вернутся на главную страницу.</p>
+            <p class="confirm-modal-desc">Папка <strong id="deleteFolderTitle"></strong> будет удалена. Все доски из
+                этой папки вернутся на главную страницу.</p>
             <div class="confirm-modal-actions">
                 <button class="confirm-btn-cancel" id="btnDeleteFolderCancel">Отмена</button>
                 <button class="confirm-btn-danger" id="btnDeleteFolderConfirm">Удалить папку</button>
@@ -111,7 +122,8 @@
         <div class="confirm-modal-card">
             <h3 class="confirm-modal-title">Переместить доску</h3>
             <p class="confirm-modal-desc">Выберите папку для доски <strong id="moveBoardTargetTitle"></strong>:</p>
-            <div id="moveBoardFolderList" class="move-board-folder-list" style="max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin: 8px 0;">
+            <div id="moveBoardFolderList" class="move-board-folder-list"
+                style="max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin: 8px 0;">
                 <!-- Список папок генерируется через JS -->
             </div>
             <div class="confirm-modal-actions">
@@ -140,8 +152,18 @@
                         <option value="alphabeticalDesc">По алфавиту (Я-А)</option>
                     </select>
                 </div>
+                <button id="btnTrashView" class="btn-secondary-action btn-trash-nav" type="button" title="Корзина">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        style="margin-right: 6px; vertical-align: middle;">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <span>Корзина</span>
+                    <span id="trashBadge" class="trash-badge" style="display: none;">0</span>
+                </button>
                 <button id="btnCreateFolder" class="btn-secondary-action" type="button" title="Создать новую папку">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        style="margin-right: 6px; vertical-align: middle;">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                         <line x1="12" y1="11" x2="12" y2="17"></line>
                         <line x1="9" y1="14" x2="15" y2="14"></line>
@@ -149,7 +171,8 @@
                     Создать папку
                 </button>
                 <button id="btnCreateBoard" class="btn-primary-action" type="button">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        style="margin-right: 6px; vertical-align: middle;">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
@@ -158,6 +181,19 @@
             </div>
         </header>
         <div class="dashboard-content">
+            <!-- Баннер Корзины -->
+            <div class="trash-notice-banner" id="trashNoticeBanner" style="display: none;">
+                <span>Объекты в корзине хранятся 30 дней — потом удаляются навсегда.</span>
+                <button class="btn-empty-trash" id="btnEmptyTrash" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"
+                        style="vertical-align: middle; margin-right: 4px;">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                        </path>
+                    </svg>
+                    Очистить корзину
+                </button>
+            </div>
             <!-- Зона возврата на главную (видна только внутри папки) -->
             <div id="folderReturnBanner" class="folder-return-banner" style="display: none;">
                 <button id="btnBackToRoot" class="folder-return-btn" type="button">
@@ -167,7 +203,8 @@
                     </svg>
                     <span>Ко всем доскам</span>
                 </button>
-                <span class="folder-drop-hint">💡 Перетащите доску сюда или на «Все доски», чтобы вернуть на главную</span>
+                <span class="folder-drop-hint">💡 Перетащите доску сюда или на «Все доски», чтобы вернуть на
+                    главную</span>
             </div>
             <div class="boards-grid" id="boardsGrid">
                 <!-- Карточки досок будут генерироваться динамически -->
@@ -179,7 +216,8 @@
     <div id="boardActiveView" class="board-app-view" style="display: none;">
         <!-- Предупреждение для мобильных устройств -->
         <div id="mobileReadOnlyBanner" class="mobile-readonly-banner" style="display: none;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; flex-shrink: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                style="margin-right: 8px; flex-shrink: 0;">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -189,434 +227,496 @@
 
         <!-- Шапка приложения -->
         <header class="board-header">
-        <div class="header-left">
-            <a href="whiteboard.html" class="btn-back" title="Все доски" style="display: inline-flex; align-items: center; margin-right: 10px; color: var(--text-color); text-decoration: none;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-            </a>
-            <div id="boardBreadcrumbs" class="board-breadcrumbs"></div>
-            <input type="text" id="boardTitleInput" value="Моя доска идей" class="board-title-input" title="Название доски">
-            <span id="saveStatus" class="save-status">Сохранено</span>
-        </div>
-
-        <div class="header-center">
-            <div class="zoom-controls">
-                <button id="btnZoomOut" class="btn-zoom" title="Отдалить">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                </button>
-                <span id="zoomPercent" class="zoom-percent">100%</span>
-                <button id="btnZoomIn" class="btn-zoom" title="Приблизить">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                </button>
-                <button id="btnZoomReset" class="btn-zoom-reset" title="Сбросить масштаб">Сбросить</button>
-            </div>
-        </div>
-
-        <div class="header-right">
-            <div class="board-actions">
-                <button id="btnToggleGrid" class="btn-action active" title="Сетка">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="9" y1="3" x2="9" y2="21"></line>
-                        <line x1="15" y1="3" x2="15" y2="21"></line>
-                        <line x1="3" y1="9" x2="21" y2="9"></line>
-                        <line x1="3" y1="15" x2="21" y2="15"></line>
+            <div class="header-left">
+                <a href="whiteboard.html" class="btn-back" title="Все доски"
+                    style="display: inline-flex; align-items: center; margin-right: 10px; color: var(--text-color); text-decoration: none;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
-                </button>
+                </a>
+                <div id="boardBreadcrumbs" class="board-breadcrumbs"></div>
+                <input type="text" id="boardTitleInput" value="Моя доска идей" class="board-title-input"
+                    title="Название доски">
+                <span id="saveStatus" class="save-status">Сохранено</span>
             </div>
-        </div>
-    </header>
 
-    <!-- Основное рабочее пространство -->
-    <main class="board-container" id="boardViewport">
-        <!-- Холст, который можно двигать и масштабировать -->
-        <div class="board-canvas-holder" id="canvasHolder">
-            <div class="board-canvas" id="boardCanvas">
-                
-                <!-- Ресайзеры границ холста -->
-                <div class="canvas-resize-handle edge-top" data-edge="top"></div>
-                <div class="canvas-resize-handle edge-right" data-edge="right"></div>
-                <div class="canvas-resize-handle edge-bottom" data-edge="bottom"></div>
-                <div class="canvas-resize-handle edge-left" data-edge="left"></div>
-
-                <!-- Контейнер для SVG путей (рисование) -->
-                <svg class="drawing-layer" id="drawingLayer"></svg>
-
-                <!-- Контейнер для интерактивных элементов -->
-                <div class="elements-layer" id="elementsLayer"></div>
+            <div class="header-center">
+                <div class="zoom-controls">
+                    <button id="btnZoomOut" class="btn-zoom" title="Отдалить">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
+                    <span id="zoomPercent" class="zoom-percent">100%</span>
+                    <button id="btnZoomIn" class="btn-zoom" title="Приблизить">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
+                    <button id="btnZoomReset" class="btn-zoom-reset" title="Сбросить масштаб">Сбросить</button>
+                </div>
             </div>
-        </div>
-    </main>
 
-    <!-- Боковая панель инструментов -->
-    <aside class="board-toolbar">
-        <button class="tool-btn active" id="toolSelect" title="Выбор и перемещение">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="5 3 19 12 12 13 17 21 14 22 9 14 5 17 5 3"></polygon>
-            </svg>
-        </button>
-        
-        <div class="toolbar-divider"></div>
-
-        <button class="tool-btn" id="toolText" title="Текстовый блок">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="4 7 4 4 20 4 20 7"></polyline>
-                <line x1="9" y1="20" x2="15" y2="20"></line>
-                <line x1="12" y1="4" x2="12" y2="20"></line>
-            </svg>
-        </button>
-
-        <button class="tool-btn" id="toolLink" title="Ссылка">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-            </svg>
-        </button>
-
-        <button class="tool-btn" id="toolImage" title="Изображение">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21 15 16 10 5 21"></polyline>
-            </svg>
-        </button>
-
-        <button class="tool-btn" id="toolBoard" title="Встроенная доска">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="9" y1="3" x2="9" y2="21"></line>
-                <line x1="15" y1="3" x2="15" y2="21"></line>
-                <line x1="3" y1="9" x2="21" y2="9"></line>
-                <line x1="3" y1="15" x2="21" y2="15"></line>
-            </svg>
-        </button>
-
-        <button class="tool-btn" id="toolColumn" title="Столбец">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="18" rx="1"></rect>
-                <rect x="14" y="3" width="7" height="10" rx="1"></rect>
-            </svg>
-        </button>
-
-        <button class="tool-btn" id="toolDraw" title="Карандаш">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 20h9"></path>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-            </svg>
-        </button>
-
-        <button class="tool-btn" id="toolEraser" title="Ластик">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 20H7L3 16C2 15 2 13 3 12L13 2C14 1 16 1 17 2L21 6C22 7 22 9 21 10L12 19L20 20Z"></path>
-                <line x1="17" y1="17" x2="17" y2="17"></line>
-            </svg>
-        </button>
-
-        <div class="toolbar-divider"></div>
-
-        <button class="tool-btn" id="btnUndo" title="Шаг назад (Ctrl+Z)" disabled>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 7v6h6"></path>
-                <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
-            </svg>
-        </button>
-
-        <button class="tool-btn" id="btnRedo" title="Шаг вперед (Ctrl+Y)" disabled>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 7v6h-6"></path>
-                <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path>
-            </svg>
-        </button>
-    </aside>
-
-
-
-    <!-- Инпут для добавления ссылок -->
-    <div class="url-input-modal" id="urlInputModal">
-        <div class="url-modal-content">
-            <h3>Вставьте ссылку</h3>
-            <input type="url" id="bookmarkUrlInput" placeholder="https://example.com" class="modal-input">
-            <div class="modal-buttons">
-                <button class="btn-modal-cancel" id="btnUrlCancel">Отмена</button>
-                <button class="btn-modal-confirm" id="btnUrlConfirm">Добавить</button>
+            <div class="header-right">
+                <div class="board-actions">
+                    <button id="btnToggleGrid" class="btn-action active" title="Сетка">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="9" y1="3" x2="9" y2="21"></line>
+                            <line x1="15" y1="3" x2="15" y2="21"></line>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="3" y1="15" x2="21" y2="15"></line>
+                        </svg>
+                    </button>
+                </div>
             </div>
-        </div>
-    </div>
+        </header>
 
-    <!-- Скрытый инпут загрузки картинок -->
-    <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
+        <!-- Основное рабочее пространство -->
+        <main class="board-container" id="boardViewport">
+            <!-- Холст, который можно двигать и масштабировать -->
+            <div class="board-canvas-holder" id="canvasHolder">
+                <div class="board-canvas" id="boardCanvas">
 
-    <!-- Панель режима рисования в стиле iOS PencilKit -->
-    <div class="drawing-mode-panel pencilkit-dock" id="drawingModePanel">
-        <!-- Кнопки шага назад/вперед прямо на доке -->
-        <div class="pencilkit-action-group">
-            <button class="pencilkit-btn-icon" id="dockBtnUndo" title="Шаг назад (Ctrl+Z)">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <!-- Ресайзеры границ холста -->
+                    <div class="canvas-resize-handle edge-top" data-edge="top"></div>
+                    <div class="canvas-resize-handle edge-right" data-edge="right"></div>
+                    <div class="canvas-resize-handle edge-bottom" data-edge="bottom"></div>
+                    <div class="canvas-resize-handle edge-left" data-edge="left"></div>
+
+                    <!-- Контейнер для SVG путей (рисование) -->
+                    <svg class="drawing-layer" id="drawingLayer"></svg>
+
+                    <!-- Контейнер для интерактивных элементов -->
+                    <div class="elements-layer" id="elementsLayer"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Боковая панель инструментов -->
+        <aside class="board-toolbar">
+            <button class="tool-btn active" id="toolSelect" title="Выбор и перемещение">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 12 13 17 21 14 22 9 14 5 17 5 3"></polygon>
+                </svg>
+            </button>
+
+            <div class="toolbar-divider"></div>
+
+            <button class="tool-btn" id="toolText" title="Текстовый блок">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                    <line x1="9" y1="20" x2="15" y2="20"></line>
+                    <line x1="12" y1="4" x2="12" y2="20"></line>
+                </svg>
+            </button>
+
+            <button class="tool-btn" id="toolLink" title="Ссылка">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+            </button>
+
+            <button class="tool-btn" id="toolImage" title="Изображение">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+            </button>
+
+            <button class="tool-btn" id="toolBoard" title="Встроенная доска">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                    <line x1="15" y1="3" x2="15" y2="21"></line>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="3" y1="15" x2="21" y2="15"></line>
+                </svg>
+            </button>
+
+            <button class="tool-btn" id="toolColumn" title="Столбец">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="18" rx="1"></rect>
+                    <rect x="14" y="3" width="7" height="10" rx="1"></rect>
+                </svg>
+            </button>
+
+            <button class="tool-btn" id="toolDraw" title="Карандаш">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+            </button>
+
+            <button class="tool-btn" id="toolEraser" title="Ластик">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 20H7L3 16C2 15 2 13 3 12L13 2C14 1 16 1 17 2L21 6C22 7 22 9 21 10L12 19L20 20Z"></path>
+                    <line x1="17" y1="17" x2="17" y2="17"></line>
+                </svg>
+            </button>
+
+            <div class="toolbar-divider"></div>
+
+            <button class="tool-btn" id="btnUndo" title="Шаг назад (Ctrl+Z)" disabled>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 7v6h6"></path>
                     <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
                 </svg>
             </button>
-            <button class="pencilkit-btn-icon" id="dockBtnRedo" title="Шаг вперед (Ctrl+Y)">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+            <button class="tool-btn" id="btnRedo" title="Шаг вперед (Ctrl+Y)" disabled>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 7v6h-6"></path>
                     <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path>
                 </svg>
             </button>
+        </aside>
+
+
+
+        <!-- Инпут для добавления ссылок -->
+        <div class="url-input-modal" id="urlInputModal">
+            <div class="url-modal-content">
+                <h3>Вставьте ссылку</h3>
+                <input type="url" id="bookmarkUrlInput" placeholder="https://example.com" class="modal-input">
+                <div class="modal-buttons">
+                    <button class="btn-modal-cancel" id="btnUrlCancel">Отмена</button>
+                    <button class="btn-modal-confirm" id="btnUrlConfirm">Добавить</button>
+                </div>
+            </div>
         </div>
 
-        <div class="drawing-panel-divider"></div>
+        <!-- Скрытый инпут загрузки картинок -->
+        <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
 
-        <!-- Выбор инструментов: Карандаш, Маркер, Перо, Ластик -->
-        <div class="drawing-tools-group">
-            <!-- Карандаш -->
-            <button class="drawing-panel-btn tool-pencil active" id="drawBtnPencil" title="Карандаш">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                </svg>
-                <span class="tool-label">Карандаш</span>
+        <!-- Панель режима рисования в стиле iOS PencilKit -->
+        <div class="drawing-mode-panel pencilkit-dock" id="drawingModePanel">
+            <!-- Кнопки шага назад/вперед прямо на доке -->
+            <div class="pencilkit-action-group">
+                <button class="pencilkit-btn-icon" id="dockBtnUndo" title="Шаг назад (Ctrl+Z)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 7v6h6"></path>
+                        <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+                    </svg>
+                </button>
+                <button class="pencilkit-btn-icon" id="dockBtnRedo" title="Шаг вперед (Ctrl+Y)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 7v6h-6"></path>
+                        <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="drawing-panel-divider"></div>
+
+            <!-- Выбор инструментов: Карандаш, Маркер, Перо, Ластик -->
+            <div class="drawing-tools-group">
+                <!-- Карандаш -->
+                <button class="drawing-panel-btn tool-pencil active" id="drawBtnPencil" title="Карандаш">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                    </svg>
+                    <span class="tool-label">Карандаш</span>
+                </button>
+
+                <!-- Курсор / Выделение и перемещение -->
+                <button class="drawing-panel-btn tool-select" id="drawBtnSelect"
+                    title="Курсор / Выделение и перемещение">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
+                        <path d="m13 13 6 6"></path>
+                    </svg>
+                    <span class="tool-label">Выбор</span>
+                </button>
+
+
+                <!-- Маркер / Выделитель -->
+                <button class="drawing-panel-btn tool-highlighter" id="drawBtnHighlighter" title="Маркер-выделитель">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"></path>
+                        <path d="m16.5 3.5 4 4L7 20 2 20l0-5L16.5 3.5z"></path>
+                        <line x1="13.5" y1="6.5" x2="17.5" y2="10.5"></line>
+                    </svg>
+                    <span class="tool-label">Маркер</span>
+                </button>
+
+                <!-- Перо / Линер -->
+                <button class="drawing-panel-btn tool-pen" id="drawBtnPen" title="Перо / Линер">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m12 19 7-7 3 3-7 7-3-3z"></path>
+                        <path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                    </svg>
+                    <span class="tool-label">Перо</span>
+                </button>
+
+                <!-- Ластик -->
+                <button class="drawing-panel-btn tool-eraser" id="drawBtnEraser" title="Ластик">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 20H7L3 16C2 15 2 13 3 12L13 2C14 1 16 1 17 2L21 6C22 7 22 9 21 10L12 19L20 20Z">
+                        </path>
+                    </svg>
+                    <span class="tool-label">Ластик</span>
+                </button>
+            </div>
+
+            <div class="drawing-panel-divider"></div>
+
+            <!-- Настройка размера и прозрачности активного инструмента -->
+            <button class="pencilkit-size-btn" id="dockToolSettingsBtn" title="Толщина и прозрачность инструмента">
+                <span class="size-preview-dot" id="dockSizePreviewDot"></span>
+                <span class="size-val-text" id="dockSizeBtnLabel">4px</span>
             </button>
 
-            <!-- Курсор / Выделение и перемещение -->
-            <button class="drawing-panel-btn tool-select" id="drawBtnSelect" title="Курсор / Выделение и перемещение">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
-                    <path d="m13 13 6 6"></path>
+            <div class="drawing-panel-divider"></div>
+
+            <!-- Палитра цветов (7 пресетов + свой цвет) -->
+            <div class="drawing-colors-group">
+                <div class="draw-color-opt active" style="background-color: #111827;" data-color="#111827"
+                    title="Черный"></div>
+                <div class="draw-color-opt" style="background-color: #3b82f6;" data-color="#3b82f6" title="Синий"></div>
+                <div class="draw-color-opt" style="background-color: #ef4444;" data-color="#ef4444" title="Красный">
+                </div>
+                <div class="draw-color-opt" style="background-color: #10b981;" data-color="#10b981" title="Зеленый">
+                </div>
+                <div class="draw-color-opt" style="background-color: #f59e0b;" data-color="#f59e0b" title="Желтый">
+                </div>
+                <div class="draw-color-opt" style="background-color: #8b5cf6;" data-color="#8b5cf6" title="Фиолетовый">
+                </div>
+                <div class="draw-color-opt" style="background-color: #ec4899;" data-color="#ec4899" title="Розовый">
+                </div>
+                <div class="draw-color-opt color-picker-trigger" id="dockCustomColorTrigger" title="Свой цвет">
+                    <input type="color" id="dockCustomColorInput" value="#8b5cf6"
+                        style="opacity: 0; width: 100%; height: 100%; cursor: pointer;">
+                </div>
+            </div>
+
+            <div class="drawing-panel-divider"></div>
+
+            <div class="drawing-action-buttons">
+                <button class="btn-draw-discard" id="btnDrawDiscard">Отмена</button>
+                <button class="btn-draw-save" id="btnDrawSave">Сохранить</button>
+            </div>
+
+            <!-- Всплывающий поповер регулировки толщины и прозрачности -->
+            <div class="pencilkit-popover" id="dockSettingsPopover" style="display: none;">
+                <div class="popover-row">
+                    <span class="popover-label">Толщина:</span>
+                    <span class="popover-value" id="dockSizeValue">4px</span>
+                </div>
+                <input type="range" id="dockSizeSlider" min="1" max="60" value="4" class="pencilkit-slider">
+                <div class="pencilkit-slider-ticks">
+                    <span>1px</span>
+                    <span>30px</span>
+                    <span>60px</span>
+                </div>
+
+                <div class="popover-row" style="margin-top: 12px;">
+                    <span class="popover-label">Прозрачность:</span>
+                    <span class="popover-value" id="dockOpacityValue">100%</span>
+                </div>
+                <input type="range" id="dockOpacitySlider" min="10" max="100" value="100" class="pencilkit-slider">
+            </div>
+        </div>
+
+        <div class="element-options-panel" id="elementOptionsPanel" style="display: none;">
+            <button class="options-panel-btn" id="btnOptColor" title="Цвет и эффекты">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M12 2C6.5 2 2 6.5 2 12a10 10 0 0 0 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z">
+                    </path>
+                    <circle cx="8.5" cy="7.5" r="1.5" fill="currentColor"></circle>
+                    <circle cx="13.5" cy="6.5" r="1.5" fill="currentColor"></circle>
+                    <circle cx="17.5" cy="10.5" r="1.5" fill="currentColor"></circle>
+                    <circle cx="6.5" cy="12.5" r="1.5" fill="currentColor"></circle>
                 </svg>
-                <span class="tool-label">Выбор</span>
             </button>
-
-
-            <!-- Маркер / Выделитель -->
-            <button class="drawing-panel-btn tool-highlighter" id="drawBtnHighlighter" title="Маркер-выделитель">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="options-panel-btn" id="btnOptEditDrawing" title="Редактировать рисунок"
+                style="display: none; margin-right: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 20h9"></path>
-                    <path d="m16.5 3.5 4 4L7 20 2 20l0-5L16.5 3.5z"></path>
-                    <line x1="13.5" y1="6.5" x2="17.5" y2="10.5"></line>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                 </svg>
-                <span class="tool-label">Маркер</span>
+            </button>
+            <button class="options-panel-btn" id="btnOptAddText" title="Добавить описание"
+                style="display: none; margin-right: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 15h11M4 20h7M4 10h16M4 5h16"></path>
+                </svg>
+            </button>
+            <button class="options-panel-btn" id="btnOptEditImage" title="Заменить картинку"
+                style="display: none; margin-right: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </button>
+            <button class="options-panel-btn" id="btnOptDelete" title="Удалить"
+                style="color: #ef4444; margin-left: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
             </button>
 
-            <!-- Перо / Линер -->
-            <button class="drawing-panel-btn tool-pen" id="drawBtnPen" title="Перо / Линер">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="m12 19 7-7 3 3-7 7-3-3z"></path>
-                    <path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
-                </svg>
-                <span class="tool-label">Перо</span>
-            </button>
-
-            <!-- Ластик -->
-            <button class="drawing-panel-btn tool-eraser" id="drawBtnEraser" title="Ластик">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20 20H7L3 16C2 15 2 13 3 12L13 2C14 1 16 1 17 2L21 6C22 7 22 9 21 10L12 19L20 20Z"></path>
-                </svg>
-                <span class="tool-label">Ластик</span>
-            </button>
-        </div>
-
-        <div class="drawing-panel-divider"></div>
-
-        <!-- Настройка размера и прозрачности активного инструмента -->
-        <button class="pencilkit-size-btn" id="dockToolSettingsBtn" title="Толщина и прозрачность инструмента">
-            <span class="size-preview-dot" id="dockSizePreviewDot"></span>
-            <span class="size-val-text" id="dockSizeBtnLabel">4px</span>
-        </button>
-
-        <div class="drawing-panel-divider"></div>
-
-        <!-- Палитра цветов (7 пресетов + свой цвет) -->
-        <div class="drawing-colors-group">
-            <div class="draw-color-opt active" style="background-color: #111827;" data-color="#111827" title="Черный"></div>
-            <div class="draw-color-opt" style="background-color: #3b82f6;" data-color="#3b82f6" title="Синий"></div>
-            <div class="draw-color-opt" style="background-color: #ef4444;" data-color="#ef4444" title="Красный"></div>
-            <div class="draw-color-opt" style="background-color: #10b981;" data-color="#10b981" title="Зеленый"></div>
-            <div class="draw-color-opt" style="background-color: #f59e0b;" data-color="#f59e0b" title="Желтый"></div>
-            <div class="draw-color-opt" style="background-color: #8b5cf6;" data-color="#8b5cf6" title="Фиолетовый"></div>
-            <div class="draw-color-opt" style="background-color: #ec4899;" data-color="#ec4899" title="Розовый"></div>
-            <div class="draw-color-opt color-picker-trigger" id="dockCustomColorTrigger" title="Свой цвет">
-                <input type="color" id="dockCustomColorInput" value="#8b5cf6" style="opacity: 0; width: 100%; height: 100%; cursor: pointer;">
-            </div>
-        </div>
-
-        <div class="drawing-panel-divider"></div>
-
-        <div class="drawing-action-buttons">
-            <button class="btn-draw-discard" id="btnDrawDiscard">Отмена</button>
-            <button class="btn-draw-save" id="btnDrawSave">Сохранить</button>
-        </div>
-
-        <!-- Всплывающий поповер регулировки толщины и прозрачности -->
-        <div class="pencilkit-popover" id="dockSettingsPopover" style="display: none;">
-            <div class="popover-row">
-                <span class="popover-label">Толщина:</span>
-                <span class="popover-value" id="dockSizeValue">4px</span>
-            </div>
-            <input type="range" id="dockSizeSlider" min="1" max="60" value="4" class="pencilkit-slider">
-            <div class="pencilkit-slider-ticks">
-                <span>1px</span>
-                <span>30px</span>
-                <span>60px</span>
-            </div>
-
-            <div class="popover-row" style="margin-top: 12px;">
-                <span class="popover-label">Прозрачность:</span>
-                <span class="popover-value" id="dockOpacityValue">100%</span>
-            </div>
-            <input type="range" id="dockOpacitySlider" min="10" max="100" value="100" class="pencilkit-slider">
-        </div>
-    </div>
-
-    <div class="element-options-panel" id="elementOptionsPanel" style="display: none;">
-        <button class="options-panel-btn" id="btnOptColor" title="Цвет и эффекты">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2C6.5 2 2 6.5 2 12a10 10 0 0 0 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
-                <circle cx="8.5" cy="7.5" r="1.5" fill="currentColor"></circle>
-                <circle cx="13.5" cy="6.5" r="1.5" fill="currentColor"></circle>
-                <circle cx="17.5" cy="10.5" r="1.5" fill="currentColor"></circle>
-                <circle cx="6.5" cy="12.5" r="1.5" fill="currentColor"></circle>
-            </svg>
-        </button>
-        <button class="options-panel-btn" id="btnOptEditDrawing" title="Редактировать рисунок" style="display: none; margin-right: 6px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 20h9"></path>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-            </svg>
-        </button>
-        <button class="options-panel-btn" id="btnOptAddText" title="Добавить описание" style="display: none; margin-right: 6px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 15h11M4 20h7M4 10h16M4 5h16"></path>
-            </svg>
-        </button>
-        <button class="options-panel-btn" id="btnOptEditImage" title="Заменить картинку" style="display: none; margin-right: 6px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-        </button>
-        <button class="options-panel-btn" id="btnOptDelete" title="Удалить" style="color: #ef4444; margin-left: 6px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-            </svg>
-        </button>
-
-        <!-- Всплывающее меню настроек цвета, тени и скругления -->
-        <div class="element-settings-popup" id="elementSettingsPopup">
-            <div class="popup-section">
-                <span class="popup-section-title">Fill color</span>
-                <div class="popup-colors-grid">
-                    <div class="popup-color-opt" style="background-color: #fca5a5;" data-color="#fca5a5" title="Красный"></div>
-                    <div class="popup-color-opt" style="background-color: #fdba74;" data-color="#fdba74" title="Оранжевый"></div>
-                    <div class="popup-color-opt" style="background-color: #fef08a;" data-color="#fef08a" title="Желтый"></div>
-                    <div class="popup-color-opt" style="background-color: #86efac;" data-color="#86efac" title="Зеленый"></div>
-                    <div class="popup-color-opt" style="background-color: #93c5fd;" data-color="#93c5fd" title="Синий"></div>
-                    <div class="popup-color-opt" style="background-color: #c084fc;" data-color="#c084fc" title="Фиолетовый"></div>
-                    <div class="popup-color-opt" style="background-color: #f472b6;" data-color="#f472b6" title="Розовый"></div>
-                    <div class="popup-color-opt" style="background-color: #ffffff; border: 1px solid #cbd5e1;" data-color="#ffffff" title="Белый"></div>
-                    <div class="popup-color-opt color-transparent" data-color="transparent" title="Прозрачный"></div>
-                    <div class="popup-color-opt color-custom" id="btnCustomColorPicker" title="Кастомный">
-                        <input type="color" id="optCustomColorInput" style="opacity: 0; width: 100%; height: 100%; cursor: pointer;">
+            <!-- Всплывающее меню настроек цвета, тени и скругления -->
+            <div class="element-settings-popup" id="elementSettingsPopup">
+                <div class="popup-section">
+                    <span class="popup-section-title">Fill color</span>
+                    <div class="popup-colors-grid">
+                        <div class="popup-color-opt" style="background-color: #fca5a5;" data-color="#fca5a5"
+                            title="Красный"></div>
+                        <div class="popup-color-opt" style="background-color: #fdba74;" data-color="#fdba74"
+                            title="Оранжевый"></div>
+                        <div class="popup-color-opt" style="background-color: #fef08a;" data-color="#fef08a"
+                            title="Желтый"></div>
+                        <div class="popup-color-opt" style="background-color: #86efac;" data-color="#86efac"
+                            title="Зеленый"></div>
+                        <div class="popup-color-opt" style="background-color: #93c5fd;" data-color="#93c5fd"
+                            title="Синий"></div>
+                        <div class="popup-color-opt" style="background-color: #c084fc;" data-color="#c084fc"
+                            title="Фиолетовый"></div>
+                        <div class="popup-color-opt" style="background-color: #f472b6;" data-color="#f472b6"
+                            title="Розовый"></div>
+                        <div class="popup-color-opt" style="background-color: #ffffff; border: 1px solid #cbd5e1;"
+                            data-color="#ffffff" title="Белый"></div>
+                        <div class="popup-color-opt color-transparent" data-color="transparent" title="Прозрачный">
+                        </div>
+                        <div class="popup-color-opt color-custom" id="btnCustomColorPicker" title="Кастомный">
+                            <input type="color" id="optCustomColorInput"
+                                style="opacity: 0; width: 100%; height: 100%; cursor: pointer;">
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="popup-section">
-                <span class="popup-section-title">Shadow</span>
-                <div class="popup-shadows-list">
-                    <button class="shadow-opt-btn" data-shadow="none" title="No shadow">
-                        <div class="shadow-preview sh-none"></div>
-                    </button>
-                    <button class="shadow-opt-btn" data-shadow="box" title="Box shadow">
-                        <div class="shadow-preview sh-box"></div>
-                    </button>
-                    <button class="shadow-opt-btn" data-shadow="sticker" title="Sticker shadow">
-                        <div class="shadow-preview sh-sticker"></div>
-                    </button>
-                    <button class="shadow-opt-btn" data-shadow="paper" title="Paper shadow">
-                        <div class="shadow-preview sh-paper"></div>
-                    </button>
-                    <button class="shadow-opt-btn" data-shadow="film" title="Film shadow">
-                        <div class="shadow-preview sh-film"></div>
-                    </button>
+
+                <div class="popup-section">
+                    <span class="popup-section-title">Shadow</span>
+                    <div class="popup-shadows-list">
+                        <button class="shadow-opt-btn" data-shadow="none" title="No shadow">
+                            <div class="shadow-preview sh-none"></div>
+                        </button>
+                        <button class="shadow-opt-btn" data-shadow="box" title="Box shadow">
+                            <div class="shadow-preview sh-box"></div>
+                        </button>
+                        <button class="shadow-opt-btn" data-shadow="sticker" title="Sticker shadow">
+                            <div class="shadow-preview sh-sticker"></div>
+                        </button>
+                        <button class="shadow-opt-btn" data-shadow="paper" title="Paper shadow">
+                            <div class="shadow-preview sh-paper"></div>
+                        </button>
+                        <button class="shadow-opt-btn" data-shadow="film" title="Film shadow">
+                            <div class="shadow-preview sh-film"></div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="popup-section">
+                    <div class="popup-section-row">
+                        <span class="popup-section-title">Corner Radius</span>
+                        <span id="lblCornerRadiusValue" class="popup-value-label">8px</span>
+                    </div>
+                    <input type="range" id="sliderCornerRadius" min="0" max="32" value="8" class="popup-slider">
                 </div>
             </div>
-            
-            <div class="popup-section">
-                <div class="popup-section-row">
-                    <span class="popup-section-title">Corner Radius</span>
-                    <span id="lblCornerRadiusValue" class="popup-value-label">8px</span>
-                </div>
-                <input type="range" id="sliderCornerRadius" min="0" max="32" value="8" class="popup-slider">
+        </div>
+
+        <!-- Всплывающая панель форматирования выделенного текста -->
+        <div class="text-format-toolbar" id="textFormatToolbar" style="display: none;">
+            <button class="format-btn" id="btnFmtType" title="Тип текста">
+                <span style="font-weight: 600;">T</span>
+                <span style="font-size: 7px; margin-left: 2px;">▼</span>
+            </button>
+            <div class="format-divider"></div>
+
+            <button class="format-btn" id="btnFmtBold" title="Жирный"><b>B</b></button>
+            <button class="format-btn" id="btnFmtItalic" title="Курсив"><i>I</i></button>
+            <button class="format-btn" id="btnFmtUnderline" title="Подчеркнутый"><u>U</u></button>
+            <button class="format-btn" id="btnFmtStrike" title="Зачеркнутый"><s>S</s></button>
+
+            <div class="format-divider"></div>
+
+            <!-- Выпадающий список типов текста -->
+            <div class="format-type-popup" id="formatTypePopup">
+                <button class="type-opt" data-command="formatBlock" data-val="div"><span class="type-icon"
+                        style="font-weight:bold;">T</span> Text</button>
+                <button class="type-opt" data-command="formatBlock" data-val="h1"><span class="type-icon">H1</span>
+                    Heading 1</button>
+                <button class="type-opt" data-command="formatBlock" data-val="h2"><span class="type-icon">H2</span>
+                    Heading 2</button>
+                <button class="type-opt" data-command="formatBlock" data-val="h3"><span class="type-icon">H3</span>
+                    Heading 3</button>
+                <button class="type-opt" data-command="formatBlock" data-val="h4"><span class="type-icon">H4</span>
+                    Heading 4</button>
+                <button class="type-opt" data-command="formatBlock" data-val="h5"><span class="type-icon">H5</span>
+                    Heading 5</button>
+                <button class="type-opt" data-command="formatBlock" data-val="h6"><span class="type-icon">H6</span>
+                    Heading 6</button>
+                <button class="type-opt" data-command="insertUnorderedList"><span class="type-icon">•</span> Bulleted
+                    List</button>
+                <button class="type-opt" data-command="insertOrderedList"><span class="type-icon">1.</span> Numbered
+                    List</button>
+                <button class="type-opt" id="btnInsertTodo"><span class="type-icon">☑</span> To-do List</button>
             </div>
-        </div>
-    </div>
 
-    <!-- Всплывающая панель форматирования выделенного текста -->
-    <div class="text-format-toolbar" id="textFormatToolbar" style="display: none;">
-        <button class="format-btn" id="btnFmtType" title="Тип текста">
-            <span style="font-weight: 600;">T</span>
-            <span style="font-size: 7px; margin-left: 2px;">▼</span>
-        </button>
-        <div class="format-divider"></div>
+            <button class="format-btn" id="btnFmtHighlight" title="Цвет и фон">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 14.7255 3.09032 17.1962 4.85857 19C5.03457 19.176 5.09343 19.434 5.00643 19.67C4.69843 20.505 4.5 21.43 4.5 22C4.5 22 7 22 8 20.5C8.214 20.4 8.473 20.459 8.65 20.635C10.1962 21.5097 12 22 12 22Z">
+                    </path>
+                </svg>
+                <span style="font-size: 8px; margin-left: 2px;">▼</span>
+            </button>
 
-        <button class="format-btn" id="btnFmtBold" title="Жирный"><b>B</b></button>
-        <button class="format-btn" id="btnFmtItalic" title="Курсив"><i>I</i></button>
-        <button class="format-btn" id="btnFmtUnderline" title="Подчеркнутый"><u>U</u></button>
-        <button class="format-btn" id="btnFmtStrike" title="Зачеркнутый"><s>S</s></button>
-        
-        <div class="format-divider"></div>
+            <!-- Выпадающий список цветов Fore/Back -->
+            <div class="format-highlight-popup" id="formatHighlightPopup">
+                <div class="highlight-group-title">Color</div>
+                <button class="highlight-opt" data-type="fore" data-color="inherit">Default Color</button>
+                <button class="highlight-opt" data-type="fore" data-color="#ef4444" style="color: #ef4444;">Red</button>
+                <button class="highlight-opt" data-type="fore" data-color="#f97316"
+                    style="color: #f97316;">Orange</button>
+                <button class="highlight-opt" data-type="fore" data-color="#eab308"
+                    style="color: #eab308;">Yellow</button>
+                <button class="highlight-opt" data-type="fore" data-color="#22c55e"
+                    style="color: #22c55e;">Green</button>
+                <button class="highlight-opt" data-type="fore" data-color="#14b8a6"
+                    style="color: #14b8a6;">Teal</button>
+                <button class="highlight-opt" data-type="fore" data-color="#3b82f6"
+                    style="color: #3b82f6;">Blue</button>
+                <button class="highlight-opt" data-type="fore" data-color="#a855f7"
+                    style="color: #a855f7;">Purple</button>
+                <button class="highlight-opt" data-type="fore" data-color="#6b7280"
+                    style="color: #6b7280;">Grey</button>
 
-        <!-- Выпадающий список типов текста -->
-        <div class="format-type-popup" id="formatTypePopup">
-            <button class="type-opt" data-command="formatBlock" data-val="div"><span class="type-icon" style="font-weight:bold;">T</span> Text</button>
-            <button class="type-opt" data-command="formatBlock" data-val="h1"><span class="type-icon">H1</span> Heading 1</button>
-            <button class="type-opt" data-command="formatBlock" data-val="h2"><span class="type-icon">H2</span> Heading 2</button>
-            <button class="type-opt" data-command="formatBlock" data-val="h3"><span class="type-icon">H3</span> Heading 3</button>
-            <button class="type-opt" data-command="formatBlock" data-val="h4"><span class="type-icon">H4</span> Heading 4</button>
-            <button class="type-opt" data-command="formatBlock" data-val="h5"><span class="type-icon">H5</span> Heading 5</button>
-            <button class="type-opt" data-command="formatBlock" data-val="h6"><span class="type-icon">H6</span> Heading 6</button>
-            <button class="type-opt" data-command="insertUnorderedList"><span class="type-icon">•</span> Bulleted List</button>
-            <button class="type-opt" data-command="insertOrderedList"><span class="type-icon">1.</span> Numbered List</button>
-            <button class="type-opt" id="btnInsertTodo"><span class="type-icon">☑</span> To-do List</button>
-        </div>
-        
-        <button class="format-btn" id="btnFmtHighlight" title="Цвет и фон">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 14.7255 3.09032 17.1962 4.85857 19C5.03457 19.176 5.09343 19.434 5.00643 19.67C4.69843 20.505 4.5 21.43 4.5 22C4.5 22 7 22 8 20.5C8.214 20.4 8.473 20.459 8.65 20.635C10.1962 21.5097 12 22 12 22Z"></path>
-            </svg>
-            <span style="font-size: 8px; margin-left: 2px;">▼</span>
-        </button>
-
-        <!-- Выпадающий список цветов Fore/Back -->
-        <div class="format-highlight-popup" id="formatHighlightPopup">
-            <div class="highlight-group-title">Color</div>
-            <button class="highlight-opt" data-type="fore" data-color="inherit">Default Color</button>
-            <button class="highlight-opt" data-type="fore" data-color="#ef4444" style="color: #ef4444;">Red</button>
-            <button class="highlight-opt" data-type="fore" data-color="#f97316" style="color: #f97316;">Orange</button>
-            <button class="highlight-opt" data-type="fore" data-color="#eab308" style="color: #eab308;">Yellow</button>
-            <button class="highlight-opt" data-type="fore" data-color="#22c55e" style="color: #22c55e;">Green</button>
-            <button class="highlight-opt" data-type="fore" data-color="#14b8a6" style="color: #14b8a6;">Teal</button>
-            <button class="highlight-opt" data-type="fore" data-color="#3b82f6" style="color: #3b82f6;">Blue</button>
-            <button class="highlight-opt" data-type="fore" data-color="#a855f7" style="color: #a855f7;">Purple</button>
-            <button class="highlight-opt" data-type="fore" data-color="#6b7280" style="color: #6b7280;">Grey</button>
-            
-            <div class="highlight-group-title">Background</div>
-            <button class="highlight-opt" data-type="back" data-color="transparent">Default Background</button>
-            <button class="highlight-opt" data-type="back" data-color="#fee2e2" style="background-color: #fee2e2; color: #111827;">Red</button>
-            <button class="highlight-opt" data-type="back" data-color="#ffedd5" style="background-color: #ffedd5; color: #111827;">Orange</button>
-            <button class="highlight-opt" data-type="back" data-color="#fef9c3" style="background-color: #fef9c3; color: #111827;">Yellow</button>
-            <button class="highlight-opt" data-type="back" data-color="#dcfce7" style="background-color: #dcfce7; color: #111827;">Green</button>
-            <button class="highlight-opt" data-type="back" data-color="#ccfbf1" style="background-color: #ccfbf1; color: #111827;">Teal</button>
-            <button class="highlight-opt" data-type="back" data-color="#dbeafe" style="background-color: #dbeafe; color: #111827;">Blue</button>
-            <button class="highlight-opt" data-type="back" data-color="#f3e8ff" style="background-color: #f3e8ff; color: #111827;">Purple</button>
-        </div>
-    </div>    <!-- Скрипты -->
-    <script type="module" src="nav-widget.js"></script>
-    <script type="module" src="auth-widget.js"></script>
-    <script type="module" src="whiteboard.js?v=1.0.3"></script>
+                <div class="highlight-group-title">Background</div>
+                <button class="highlight-opt" data-type="back" data-color="transparent">Default Background</button>
+                <button class="highlight-opt" data-type="back" data-color="#fee2e2"
+                    style="background-color: #fee2e2; color: #111827;">Red</button>
+                <button class="highlight-opt" data-type="back" data-color="#ffedd5"
+                    style="background-color: #ffedd5; color: #111827;">Orange</button>
+                <button class="highlight-opt" data-type="back" data-color="#fef9c3"
+                    style="background-color: #fef9c3; color: #111827;">Yellow</button>
+                <button class="highlight-opt" data-type="back" data-color="#dcfce7"
+                    style="background-color: #dcfce7; color: #111827;">Green</button>
+                <button class="highlight-opt" data-type="back" data-color="#ccfbf1"
+                    style="background-color: #ccfbf1; color: #111827;">Teal</button>
+                <button class="highlight-opt" data-type="back" data-color="#dbeafe"
+                    style="background-color: #dbeafe; color: #111827;">Blue</button>
+                <button class="highlight-opt" data-type="back" data-color="#f3e8ff"
+                    style="background-color: #f3e8ff; color: #111827;">Purple</button>
+            </div>
+        </div> <!-- Скрипты -->
+        <script type="module" src="nav-widget.js"></script>
+        <script type="module" src="auth-widget.js"></script>
+        <script type="module" src="whiteboard.js?v=1.0.4"></script>
 </body>
+
 </html>

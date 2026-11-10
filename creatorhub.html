@@ -435,7 +435,7 @@
 
                 <!-- Заголовок -->
                 <div class="detail-title-block"
-                    style="padding: 12px 24px 8px 24px; border-bottom: none; flex-shrink: 0; margin-bottom: 4px;">
+                    style="padding: 12px 24px 2px 24px; border-bottom: none; flex-shrink: 0; margin-bottom: 2px;">
                     <div style="display: block; width: 100%;">
                         <h3 id="detailTitle"
                             style="font-size: 1.25rem; font-weight: 750; line-height: 1.35; color: var(--ch-text-dark); margin: 0; letter-spacing: -0.2px; display: block; max-width: 100%;">
@@ -445,7 +445,7 @@
 
                 <!-- Metadata Row with Publish Date, Created Date and Tags -->
                 <div class="detail-meta-row"
-                    style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; font-size: 0.8rem; color: var(--ch-text-gray); padding: 0 24px; box-sizing: border-box;">
+                    style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; font-size: 0.8rem; color: var(--ch-text-gray); padding: 0 24px; box-sizing: border-box;">
                     <div style="display: flex; align-items: center; gap: 4px; cursor: default;"
                         data-tip="Дата публикации">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -479,9 +479,9 @@
                 </div>
 
                 <!-- Video Link Buttons Grid -->
-                <div class="video-links-grid-wrapper" style="margin-bottom: 20px; width: 100%;">
+                <div class="video-links-grid-wrapper" style="margin-bottom: 8px; width: 100%;">
                     <div class="video-links-header"
-                        style="display: flex; align-items: center; gap: 8px; padding: 0 24px; margin-bottom: 8px;">
+                        style="display: flex; align-items: center; gap: 8px; padding: 0 24px; margin-bottom: 4px;">
                         <span class="info-label" style="font-weight: 700; margin-bottom: 0;">Кнопки</span>
                         <button id="btnOpenGlobalButtonsHeader" type="button" class="btn-gear-settings"
                             style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 4px; display: flex; align-items: center; transition: color 0.2s;"
@@ -500,127 +500,23 @@
                     </div>
                 </div>
 
-                <div style="height: 1px; background-color: var(--ch-border); margin: 0 0 16px 0;"></div>
-
-                <!-- Вкладки деталей -->
-                <!-- Вкладки деталей -->
-                <div class="detail-tabs">
-                    <button class="detail-tab-btn active" data-tab="references">
-                        <svg class="detail-tab-icon" viewBox="0 0 24 24" stroke-width="2.5">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg>
-                        <span>Описание</span>
-                    </button>
-                    <button class="detail-tab-btn" data-tab="settings">
-                        <svg class="detail-tab-icon" viewBox="0 0 24 24" stroke-width="2.5">
+                <!-- Заголовок Описание + Кнопка Свойства видео -->
+                <div class="video-description-header"
+                    style="display: flex; align-items: center; justify-content: space-between; padding: 0 20px; margin-bottom: 12px;">
+                    <span class="info-label" style="font-weight: 700; margin-bottom: 0;">Описание</span>
+                    <button id="btnOpenVideoPropertiesModal" type="button" class="btn-properties-trigger">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3"></circle>
-                            <path
-                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
-                            </path>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                         </svg>
-                        <span>Свойства</span>
+                        <span>Свойства видео</span>
                     </button>
                 </div>
 
-                <!-- Контент вкладок -->
-                <div class="detail-tabs-content">
-                    <!-- Вкладка: Описание -->
-                    <div class="tab-pane active" id="pane-references">
-                        <div id="referencesContent" class="references-editor" contenteditable="true"
-                            placeholder="Вставьте ссылки или изображения из буфера обмена..."></div>
-                    </div>
-
-                    <!-- Вкладка: Настройки -->
-                    <div class="tab-pane" id="pane-settings">
-                        <div class="detail-card">
-                            <label class="info-label" style="margin-bottom: 16px; font-weight: 700;">Настройки
-                                видео</label>
-
-                            <div class="settings-row" id="settingChannelRow" style="margin-bottom: 14px;">
-                                <div class="settings-row-left">
-                                    <span class="settings-row-label">Канал</span>
-                                </div>
-                                <select id="settingVideoChannel" class="settings-row-input"
-                                    style="background: var(--ch-bg); color: var(--ch-text-dark); border: 1px solid var(--ch-border); border-radius: 8px; padding: 6px 10px; font-family: inherit; font-size: 0.9rem; cursor: pointer; outline: none; transition: border-color 0.2s; width: 100%; box-sizing: border-box;">
-                                    <!-- Опции генерируются через JS -->
-                                </select>
-                            </div>
-
-                            <div class="settings-row">
-                                <div class="settings-row-left">
-                                    <span class="settings-row-label">Ссылка на видео</span>
-                                </div>
-                                <input type="text" id="settingVideoLink" class="settings-row-input"
-                                    placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
-                            </div>
-
-
-
-                            <div class="settings-row"
-                                style="position: relative; align-items: flex-start; margin-top: 16px; border-top: 1px solid var(--ch-border); padding-top: 16px;">
-                                <div class="settings-row-left">
-                                    <span class="settings-row-label">Дата публикации</span>
-                                </div>
-                                <div class="due-date-wrapper"
-                                    style="position: relative; display: flex; align-items: center; gap: 8px;">
-                                    <button class="btn-due-date" id="btnDueDate" type="button"
-                                        style="display: flex; align-items: center; gap: 8px; background: var(--ch-card-bg); border: 1px solid var(--ch-border); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-size: 0.9rem; color: var(--ch-text-dark); cursor: pointer; transition: border-color 0.2s;">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2">
-                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                                        </svg>
-                                        <span id="dueDateBtnText">Выбрать дату</span>
-                                    </button>
-                                    <button class="btn-clear-date" id="btnClearDueDate" type="button"
-                                        title="Очистить дату"
-                                        style="display: none; background: transparent; border: none; color: var(--ch-text-gray); cursor: pointer; padding: 6px; border-radius: 6px; transition: color 0.15s, background-color 0.15s; align-items: center; justify-content: center;">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2.5">
-                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                    </button>
-                                    <!-- Выпадающее меню календаря -->
-                                    <div class="due-date-dropdown" id="dueDateDropdown"
-                                        style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background-color: var(--ch-card-bg); border: 1px solid var(--ch-border); border-radius: 12px; width: 280px; box-shadow: var(--ch-shadow); padding: 12px; z-index: 1000; box-sizing: border-box;">
-                                        <div class="due-calendar-picker"
-                                            style="display: flex; flex-direction: column; gap: 10px;">
-                                            <div class="calendar-header"
-                                                style="display: flex; align-items: center; justify-content: space-between;">
-                                                <span class="calendar-month-year" id="calendarMonthYear"
-                                                    style="font-size: 0.95rem; font-weight: 700; color: var(--ch-text-dark); text-transform: capitalize;">июнь
-                                                    2026</span>
-                                                <div class="calendar-nav" style="display: flex; gap: 4px;">
-                                                    <button class="cal-nav-btn" id="calPrevMonth" type="button"
-                                                        style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">&lt;</button>
-                                                    <button class="cal-nav-btn" id="calCurrentMonth" type="button"
-                                                        style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">●</button>
-                                                    <button class="cal-nav-btn" id="calNextMonth" type="button"
-                                                        style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">&gt;</button>
-                                                </div>
-                                            </div>
-                                            <div class="calendar-weekdays"
-                                                style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--ch-text-gray); opacity: 0.7;">
-                                                <span>ПН</span><span>ВТ</span><span>СР</span><span>ЧТ</span><span>ПТ</span><span>СБ</span><span>ВС</span>
-                                            </div>
-                                            <div class="calendar-days" id="calendarDaysGrid"
-                                                style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-
+                <!-- Контент Описания -->
+                <div class="detail-tabs-content" id="pane-references" style="padding: 0 20px 30px 20px; flex: 1; display: flex; flex-direction: column; box-sizing: border-box; width: 100%;">
+                    <div id="referencesContent" class="references-editor" contenteditable="true"
+                        placeholder="Вставьте ссылки или изображения из буфера обмена..."></div>
                 </div>
             </div>
     </div> <!-- /detail-sidebar-content-wrapper -->
@@ -835,6 +731,61 @@
                 <!-- Выпадающее меню действий кнопки базы -->
                 <div class="video-actions-dropdown" id="globalButtonActionsDropdown"
                     style="display: none; position: fixed; z-index: 30000; width: 180px; box-shadow: 0 10px 30px rgba(0,0,0,0.18);">
+                </div>
+
+                <!-- Модальное окно: Свойства видео -->
+                <div class="confirm-modal-overlay" id="videoPropertiesModal" style="display: none; z-index: 2150;">
+                    <div class="confirm-modal-card" style="max-width: 460px; width: 95%; padding: 24px 28px; border-radius: 20px; box-sizing: border-box; background: var(--ch-card-bg);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                            <h3 class="confirm-modal-title" style="font-size: 1.25rem; font-weight: 700; margin: 0; color: var(--ch-text-dark);">Свойства видео</h3>
+                            <button type="button" id="btnVideoPropertiesCloseX" style="background: none; border: none; font-size: 1.6rem; cursor: pointer; color: var(--ch-text-gray); line-height: 1; padding: 0 4px; transition: color 0.15s;" title="Закрыть">&times;</button>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 18px;">
+                            <!-- 1. Канал -->
+                            <div>
+                                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--ch-text-gray); margin-bottom: 6px;">Канал</label>
+                                <select id="settingVideoChannel" style="width: 100%; background: var(--ch-bg); color: var(--ch-text-dark); border: 1px solid var(--ch-border); border-radius: 10px; padding: 9px 12px; font-family: inherit; font-size: 0.92rem; cursor: pointer; outline: none; transition: border-color 0.2s; box-sizing: border-box;"></select>
+                            </div>
+                            <!-- 2. Ссылка на видео -->
+                            <div>
+                                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--ch-text-gray); margin-bottom: 6px;">Ссылка на видео</label>
+                                <input type="text" id="settingVideoLink" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" style="width: 100%; border: 1px solid var(--ch-border); border-radius: 10px; padding: 9px 12px; background: var(--ch-bg); color: var(--ch-text-dark); font-family: inherit; font-size: 0.92rem; outline: none; box-sizing: border-box; transition: border-color 0.2s;">
+                            </div>
+                            <!-- 3. Дата публикации -->
+                            <div>
+                                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--ch-text-gray); margin-bottom: 6px;">Дата публикации</label>
+                                <div class="due-date-wrapper" style="position: relative; display: flex; align-items: center; gap: 8px;">
+                                    <button class="btn-due-date" id="btnDueDate" type="button" style="flex: 1; display: flex; align-items: center; gap: 8px; background: var(--ch-bg); border: 1px solid var(--ch-border); padding: 9px 12px; border-radius: 10px; font-family: inherit; font-size: 0.92rem; color: var(--ch-text-dark); cursor: pointer; transition: border-color 0.2s;">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                        <span id="dueDateBtnText">Выбрать дату</span>
+                                    </button>
+                                    <button class="btn-clear-date" id="btnClearDueDate" type="button" title="Очистить дату" style="display: none; background: transparent; border: none; color: var(--ch-text-gray); cursor: pointer; padding: 6px; border-radius: 6px; transition: color 0.15s, background-color 0.15s; align-items: center; justify-content: center;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </button>
+                                    <!-- Выпадающее меню календаря -->
+                                    <div class="due-date-dropdown" id="dueDateDropdown" style="display: none; position: absolute; top: calc(100% + 6px); left: 0; background-color: var(--ch-card-bg); border: 1px solid var(--ch-border); border-radius: 12px; width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.18); padding: 12px; z-index: 3000; box-sizing: border-box;">
+                                        <div class="due-calendar-picker" style="display: flex; flex-direction: column; gap: 10px;">
+                                            <div class="calendar-header" style="display: flex; align-items: center; justify-content: space-between;">
+                                                <span class="calendar-month-year" id="calendarMonthYear" style="font-size: 0.95rem; font-weight: 700; color: var(--ch-text-dark); text-transform: capitalize;">июнь 2026</span>
+                                                <div class="calendar-nav" style="display: flex; gap: 4px;">
+                                                    <button class="cal-nav-btn" id="calPrevMonth" type="button" style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">&lt;</button>
+                                                    <button class="cal-nav-btn" id="calCurrentMonth" type="button" style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">●</button>
+                                                    <button class="cal-nav-btn" id="calNextMonth" type="button" style="background: transparent; border: none; color: var(--ch-text-gray); width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">&gt;</button>
+                                                </div>
+                                            </div>
+                                            <div class="calendar-weekdays" style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--ch-text-gray); opacity: 0.7;">
+                                                <span>ПН</span><span>ВТ</span><span>СР</span><span>ЧТ</span><span>ПТ</span><span>СБ</span><span>ВС</span>
+                                            </div>
+                                            <div class="calendar-days" id="calendarDaysGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+                            <button type="button" id="btnVideoPropertiesDone" style="background: var(--ch-purple); color: white; border: none; border-radius: 8px; padding: 8px 20px; font-size: 0.88rem; font-weight: 500; cursor: pointer; transition: all 0.2s;">Закрыть</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Модальное окно настроек -->

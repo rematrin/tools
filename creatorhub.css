@@ -6695,3 +6695,55 @@ body.dark .video-whiteboard-loader {
         max-width: 180px;
     }
 }
+
+/* Кнопка "Свойства" возле заголовка "Описание" */
+.btn-properties-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--ch-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--ch-text-gray);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-properties-trigger:hover {
+    background: var(--ch-card-bg);
+    border-color: var(--ch-purple);
+    color: var(--ch-purple);
+}
+
+body.dark .btn-properties-trigger:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Кнопка "Свойства" возле заголовка "Описание" */
+.btn-properties-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--ch-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--ch-text-gray);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-properties-trigger:hover {
+    background: var(--ch-card-bg);
+    border-color: var(--ch-purple);
+    color: var(--ch-purple);
+}
+
+body.dark .btn-properties-trigger:hover {
+    background: rgba(255, 255, 255, 0.05);
+}

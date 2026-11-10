@@ -358,6 +358,12 @@ const btnSelectButtonToAdd = document.getElementById("btnSelectButtonToAdd");
 const dropdownAddButtonOptions = document.getElementById("dropdownAddButtonOptions");
 const selectedVideoButtonsContainer = document.getElementById("selectedVideoButtonsContainer");
 
+// Элементы модального окна свойств видео
+const btnOpenVideoPropertiesModal = document.getElementById("btnOpenVideoPropertiesModal");
+const videoPropertiesModal = document.getElementById("videoPropertiesModal");
+const btnVideoPropertiesCloseX = document.getElementById("btnVideoPropertiesCloseX");
+const btnVideoPropertiesDone = document.getElementById("btnVideoPropertiesDone");
+
 // Элементы модального окна удаления ссылки из описания
 const confirmDeleteLinkModal = document.getElementById("confirmDeleteLinkModal");
 const btnConfirmDeleteLinkCancel = document.getElementById("btnConfirmDeleteLinkCancel");
@@ -4913,6 +4919,63 @@ const closeGlobalButtonsModal = () => {
 };
 if (btnGlobalButtonsCloseX) btnGlobalButtonsCloseX.addEventListener("click", closeGlobalButtonsModal);
 if (btnGlobalButtonsClose) btnGlobalButtonsClose.addEventListener("click", closeGlobalButtonsModal);
+
+// Модальное окно свойств видео
+const openVideoPropertiesModalHandler = () => {
+    if (!selectedVideo) return;
+    // Обновляем значения полей
+    if (settingVideoLink && document.activeElement !== settingVideoLink) {
+        settingVideoLink.value = selectedVideo.videoLink || "";
+    }
+    const settingVideoChannel = document.getElementById("settingVideoChannel");
+    if (settingVideoChannel) {
+        settingVideoChannel.innerHTML = "";
+        const defaultOpt = document.createElement("option");
+        defaultOpt.value = "";
+        defaultOpt.textContent = "Без канала";
+        settingVideoChannel.appendChild(defaultOpt);
+        if (channels && channels.length > 0) {
+            channels.forEach(ch => {
+                const opt = document.createElement("option");
+                opt.value = ch.id;
+                opt.textContent = ch.name;
+                settingVideoChannel.appendChild(opt);
+            });
+        }
+        settingVideoChannel.value = selectedVideo.channelId || "";
+    }
+    const pubDateFormatted = formatDateToRussian(selectedVideo.publishDate);
+    if (dueDateBtnText) {
+        dueDateBtnText.textContent = pubDateFormatted !== "не запланировано" ? pubDateFormatted : "Выбрать дату";
+    }
+    const btnClearDueDate = document.getElementById("btnClearDueDate");
+    if (btnClearDueDate) {
+        btnClearDueDate.style.display = selectedVideo.publishDate ? "flex" : "none";
+    }
+    if (videoPropertiesModal) videoPropertiesModal.style.display = "flex";
+};
+
+const closeVideoPropertiesModal = () => {
+    if (videoPropertiesModal) videoPropertiesModal.style.display = "none";
+    if (dueDateDropdown) dueDateDropdown.style.display = "none";
+};
+
+if (btnOpenVideoPropertiesModal) {
+    btnOpenVideoPropertiesModal.addEventListener("click", openVideoPropertiesModalHandler);
+}
+if (btnVideoPropertiesCloseX) {
+    btnVideoPropertiesCloseX.addEventListener("click", closeVideoPropertiesModal);
+}
+if (btnVideoPropertiesDone) {
+    btnVideoPropertiesDone.addEventListener("click", closeVideoPropertiesModal);
+}
+if (videoPropertiesModal) {
+    videoPropertiesModal.addEventListener("click", (e) => {
+        if (e.target === videoPropertiesModal) {
+            closeVideoPropertiesModal();
+        }
+    });
+}
 
 if (btnCreateGlobalButton) {
     btnCreateGlobalButton.addEventListener("click", () => {

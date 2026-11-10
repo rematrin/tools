@@ -1916,9 +1916,9 @@ body.dark .settings-modal-sidebar {
 
 .settings-modal-content {
     flex: 1;
-    padding: 40px 48px;
+    padding: 36px 44px 30px 44px;
     position: relative;
-    overflow-y: auto;
+    overflow: hidden;
     background: #ffffff;
     display: flex;
     flex-direction: column;
@@ -4963,6 +4963,216 @@ body.dark .global-button-item:hover {
     opacity: 1;
 }
 
+.global-button-item .global-btn-icon-box {
+    cursor: default;
+    border-style: solid;
+}
+
+.global-button-item .global-btn-icon-box:hover {
+    border-color: var(--ch-border);
+}
+
+.global-button-item .global-btn-icon-hover-overlay {
+    display: none !important;
+}
+
+.btn-global-btn-more {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ch-text-gray);
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.btn-global-btn-more:hover {
+    color: var(--ch-purple);
+    background: rgba(139, 92, 246, 0.08);
+}
+
+/* Кнопка переключения добавления кнопки в видео (+ / ✓) */
+.btn-global-btn-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ch-text-gray);
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-global-btn-toggle:hover {
+    color: var(--ch-purple);
+    background: rgba(139, 92, 246, 0.08);
+}
+
+.btn-global-btn-toggle.is-added {
+    color: var(--ch-text-dark);
+}
+
+.btn-global-btn-toggle.is-added:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+}
+
+/* Единое модальное окно кнопок */
+#globalButtonsModal .confirm-modal-card {
+    max-width: 960px;
+    width: 95%;
+    max-height: 88vh;
+    padding: 24px 28px;
+    border-radius: 20px;
+    gap: 16px;
+    box-sizing: border-box;
+}
+
+.unified-buttons-grid {
+    display: grid;
+    grid-template-columns: minmax(300px, 1fr) minmax(360px, 1.35fr);
+    gap: 24px;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+@media (max-width: 820px) {
+    .unified-buttons-grid {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+        max-height: 70vh;
+    }
+}
+
+.unified-buttons-left-card {
+    border: 1px solid var(--ch-border);
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--ch-card-bg);
+}
+
+.video-modal-button-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: var(--ch-bg);
+    border: 1px solid var(--ch-border);
+    border-radius: 10px;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.video-modal-button-item:hover {
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.video-modal-button-icon-box {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: var(--ch-card-bg);
+    border: 1px solid var(--ch-border);
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.video-modal-button-icon-box img {
+    max-width: 20px;
+    max-height: 20px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.video-modal-button-icon-box svg {
+    max-width: 16px;
+    max-height: 16px;
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
+.video-modal-button-icon-box .video-btn-letter-stub {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
+
+.video-grid-btn-icon-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.video-modal-button-url-input {
+    flex: 1;
+    border: 1px solid var(--ch-border);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    background: var(--ch-card-bg);
+    color: var(--ch-text-dark);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    min-width: 0;
+}
+
+.video-modal-button-url-input:focus {
+    border-color: var(--ch-purple);
+    box-shadow: 0 0 0 2px var(--ch-purple-light);
+}
+
+.video-modal-button-badge {
+    flex: 1;
+    border: 1px solid var(--ch-border);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 0.84rem;
+    color: var(--ch-text-gray);
+    background: var(--ch-card-bg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.video-modal-button-remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ch-text-gray);
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.video-modal-button-remove-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+}
+
 .global-btn-icon-box.is-loading {
     pointer-events: none;
     opacity: 0.6;
@@ -5410,12 +5620,42 @@ body.dark .video-grid-btn:hover {
 
 /* Стили каналов в настройках */
 .channel-settings-item {
-    transition: border-color 0.2s, box-shadow 0.2s;
     transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s;
 }
 
 .channel-settings-item:hover {
     border-color: var(--ch-purple) !important;
+}
+
+.channel-settings-item.dragging {
+    opacity: 0.45;
+    background: var(--ch-purple-light, rgba(139, 92, 246, 0.08)) !important;
+    border: 1.5px dashed var(--ch-purple, #8b5cf6) !important;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+    cursor: grabbing !important;
+}
+
+.channel-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ch-text-gray, #9ca3af);
+    cursor: grab;
+    padding: 6px 4px;
+    border-radius: 6px;
+    transition: color 0.2s, background-color 0.2s;
+    user-select: none;
+    touch-action: none;
+    flex-shrink: 0;
+}
+
+.channel-drag-handle:hover {
+    color: var(--ch-purple, #8b5cf6);
+    background: rgba(139, 92, 246, 0.08);
+}
+
+.channel-drag-handle:active {
+    cursor: grabbing;
 }
 
 .channel-settings-item.is-hidden {

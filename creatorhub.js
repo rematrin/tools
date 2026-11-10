@@ -348,6 +348,7 @@ const btnOpenStudio = document.getElementById("btnOpenStudio");
 
 // Новые динамические элементы кнопок
 const btnOpenGlobalButtons = document.getElementById("btnOpenGlobalButtons");
+const btnOpenGlobalButtonsHeader = document.getElementById("btnOpenGlobalButtonsHeader");
 const globalButtonsModal = document.getElementById("globalButtonsModal");
 const btnGlobalButtonsCloseX = document.getElementById("btnGlobalButtonsCloseX");
 const btnGlobalButtonsClose = document.getElementById("btnGlobalButtonsClose");
@@ -2416,7 +2417,7 @@ function handleHashRoute() {
     if (rawHash.startsWith("channel/") || rawHash.startsWith("channel_") || rawHash.startsWith("channel-")) {
         const chId = rawHash.replace(/^channel[\/_ -]/, "");
         if (chId && !chId.includes("/")) {
-            openChannelPage(chId, false);
+            openChannelWhiteboardModal(chId);
             return;
         }
     }
@@ -4758,19 +4759,23 @@ function migrateVideosData(videosList) {
 }
 
 
-// Render dynamic buttons for the selected video inside Settings
+// Render dynamic buttons for the selected video inside Unified Buttons Modal (Right Column)
 function renderSelectedVideoButtons() {
     if (!selectedVideoButtonsContainer) return;
 
     if (!selectedVideo) {
-        selectedVideoButtonsContainer.innerHTML = "";
+        selectedVideoButtonsContainer.innerHTML = `
+            <div style="text-align: center; padding: 48px 16px; color: var(--ch-text-gray); font-size: 0.88rem;">
+                <p style="margin: 0;">Выберите видео, чтобы настроить кнопки</p>
+            </div>
+        `;
         return;
     }
 
     // Guard: if user is currently typing in one of these inputs, do not re-render and lose focus
     const activeEl = document.activeElement;
-    if (activeEl && activeEl.classList.contains("video-button-url-input") && selectedVideoButtonsContainer.contains(activeEl)) {
-        const row = activeEl.closest(".video-button-row");
+    if (activeEl && activeEl.classList.contains("video-modal-button-url-input") && selectedVideoButtonsContainer.contains(activeEl)) {
+        const row = activeEl.closest(".video-modal-button-item");
         if (row && selectedVideo && selectedVideo.buttons) {
             const buttonId = row.dataset.buttonId;
             const currentVidBtn = selectedVideo.buttons.find(b => b.buttonId === buttonId);
@@ -4787,26 +4792,45 @@ function renderSelectedVideoButtons() {
         selectedVideo.buttons = [];
     }
 
-    selectedVideo.buttons.forEach((vidBtn, idx) => {
+    const validVideoButtons = selectedVideo.buttons.filter(vidBtn => {
+        return globalButtons.some(b => b.id === vidBtn.buttonId);
+    });
+
+    if (validVideoButtons.length === 0) {
+        selectedVideoButtonsContainer.innerHTML = `
+            <div style="text-align: center; padding: 48px 16px; color: var(--ch-text-gray); font-size: 0.88rem; border: 1.5px dashed var(--ch-border); border-radius: 12px; margin-top: 4px;">
+                <p style="margin: 0 0 6px 0; font-weight: 600; color: var(--ch-text-dark);">Нет добавленных кнопок</p>
+                <p style="margin: 0; font-size: 0.82rem; opacity: 0.85;">Нажмите «+» в базе кнопок слева, чтобы привязать кнопку к этому видео</p>
+            </div>
+        `;
+        return;
+    }
+
+    validVideoButtons.forEach(vidBtn => {
         const globalBtn = globalButtons.find(b => b.id === vidBtn.buttonId);
-        if (!globalBtn) return; // Skip if button was deleted globally
+        if (!globalBtn) return;
 
         const row = document.createElement("div");
-        row.className = "video-button-row";
-        row.style.marginTop = idx > 0 ? "8px" : "0";
+        row.className = "video-modal-button-item";
         row.dataset.buttonId = vidBtn.buttonId;
+
+        const iconHtml = getButtonIconHtml(globalBtn);
 
         if (vidBtn.buttonId === "gb_whiteboard") {
             row.innerHTML = `
-                <div class="video-button-name-label" title="${escapeHtml(globalBtn.name)}">
-                    <span class="video-button-name-icon">${getButtonIconHtml(globalBtn)}</span>
-                    <span>${escapeHtml(globalBtn.name)}</span>
+                <div style="display: flex; align-items: center; gap: 10px; min-width: 90px; max-width: 140px; flex-shrink: 0;">
+                    <div class="video-modal-button-icon-box">
+                        ${iconHtml}
+                    </div>
+                    <span style="font-size: 0.9rem; font-weight: 600; color: var(--ch-text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(globalBtn.name)}">
+                        ${escapeHtml(globalBtn.name)}
+                    </span>
                 </div>
-                <div style="flex-grow: 1; display: flex; align-items: center; background: var(--ch-bg); border: 1px solid var(--ch-border); border-radius: 8px; padding: 6px 12px; font-size: 0.85rem;">
-                    <span style="color: var(--ch-text-gray); font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Интерактивная доска привязана к видео</span>
+                <div class="video-modal-button-badge">
+                    Интерактивная доска привязана к видео
                 </div>
-                <button class="video-button-remove-btn" type="button" title="Убрать из видео">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="video-modal-button-remove-btn" type="button" title="Убрать из видео">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     </svg>
@@ -4814,41 +4838,47 @@ function renderSelectedVideoButtons() {
             `;
         } else {
             row.innerHTML = `
-                <div class="video-button-name-label" title="${escapeHtml(globalBtn.name)}">
-                    <span class="video-button-name-icon">${getButtonIconHtml(globalBtn)}</span>
-                    <span>${escapeHtml(globalBtn.name)}</span>
+                <div style="display: flex; align-items: center; gap: 10px; min-width: 90px; max-width: 140px; flex-shrink: 0;">
+                    <div class="video-modal-button-icon-box">
+                        ${iconHtml}
+                    </div>
+                    <span style="font-size: 0.9rem; font-weight: 600; color: var(--ch-text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(globalBtn.name)}">
+                        ${escapeHtml(globalBtn.name)}
+                    </span>
                 </div>
-                <input type="text" class="video-button-url-input" placeholder="Введите ссылку для ${escapeHtml(globalBtn.name)}..." value="${escapeHtml(vidBtn.url || '')}" autocomplete="off">
-                <button class="video-button-remove-btn" type="button" title="Убрать из видео">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <input type="text" class="video-modal-button-url-input" placeholder="https://..." value="${escapeHtml(vidBtn.url || '')}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true">
+                <button class="video-modal-button-remove-btn" type="button" title="Убрать из видео">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     </svg>
                 </button>
             `;
 
-            const urlInput = row.querySelector(".video-button-url-input");
+            const urlInput = row.querySelector(".video-modal-button-url-input");
             if (urlInput) {
                 urlInput.addEventListener("input", (e) => {
                     if (selectedVideo && selectedVideo.buttons) {
                         const currentVidBtn = selectedVideo.buttons.find(b => b.buttonId === vidBtn.buttonId);
                         if (currentVidBtn) {
-                            currentVidBtn.url = e.target.value;
+                            currentVidBtn.url = e.target.value.trim();
                         }
                         saveVideoData("buttons", selectedVideo.buttons);
                     }
-                    updateNotionButtonState(); // Update Info tab links
+                    updateNotionButtonState();
                 });
             }
         }
 
-        const removeBtn = row.querySelector(".video-button-remove-btn");
+        const removeBtn = row.querySelector(".video-modal-button-remove-btn");
         if (removeBtn) {
             removeBtn.addEventListener("click", () => {
+                if (!selectedVideo || !selectedVideo.buttons) return;
                 selectedVideo.buttons = selectedVideo.buttons.filter(b => b.buttonId !== vidBtn.buttonId);
                 saveVideoData("buttons", selectedVideo.buttons);
                 renderSelectedVideoButtons();
-                updateNotionButtonState(); // Update Info tab links
+                renderGlobalButtonsList();
+                updateNotionButtonState();
             });
         }
 
@@ -4856,186 +4886,131 @@ function renderSelectedVideoButtons() {
     });
 }
 
-// Render dynamic dropdown options to add buttons to current video
-function renderAddButtonDropdown() {
-    if (!dropdownAddButtonOptions) return;
-    dropdownAddButtonOptions.innerHTML = "";
+// Setup Event Listeners for Unified Buttons Modal
+const openGlobalButtonsModalHandler = () => {
+    loadGlobalButtons();
+    renderGlobalButtonsList();
+    renderSelectedVideoButtons();
+    if (globalButtonsModal) globalButtonsModal.style.display = "flex";
+};
+if (btnOpenGlobalButtons) {
+    btnOpenGlobalButtons.addEventListener("click", openGlobalButtonsModalHandler);
+}
+if (btnOpenGlobalButtonsHeader) {
+    btnOpenGlobalButtonsHeader.addEventListener("click", openGlobalButtonsModalHandler);
+}
 
-    if (!selectedVideo) return;
-    if (!selectedVideo.buttons) selectedVideo.buttons = [];
-
-    const availableButtons = globalButtons.filter(gb => {
-        return gb.id !== "gb_youtube_studio" && !selectedVideo.buttons.some(vb => vb.buttonId === gb.id);
-    });
-
-    if (availableButtons.length === 0) {
-        dropdownAddButtonOptions.innerHTML = `<div style="padding: 8px 12px; font-size: 0.82rem; color: var(--ch-text-gray); text-align: center;">Нет доступных кнопок</div>`;
-        return;
-    }
-
-    availableButtons.forEach(btn => {
-        const item = document.createElement("button");
-        item.type = "button";
-        item.className = "add-button-dropdown-item";
-        item.style.display = "flex";
-        item.style.alignItems = "center";
-        item.style.gap = "8px";
-        item.innerHTML = `
-            <span style="width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; flex-shrink: 0;">
-                ${getButtonIconHtml(btn)}
-            </span>
-            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(btn.name)}</span>
-        `;
-
-        item.addEventListener("click", async () => {
-            selectedVideo.buttons.push({
-                buttonId: btn.id,
-                url: ""
-            });
-            if (btn.id === "gb_whiteboard") {
-                await getOrCreateVideoWhiteboard(selectedVideo.id);
-            }
-            saveVideoData("buttons", selectedVideo.buttons);
-            renderSelectedVideoButtons();
-            dropdownAddButtonOptions.style.display = "none";
-            updateNotionButtonState();
-        });
-
-        dropdownAddButtonOptions.appendChild(item);
+if (globalButtonsModal) {
+    globalButtonsModal.addEventListener("click", (e) => {
+        if (e.target === globalButtonsModal) closeGlobalButtonsModal();
     });
 }
 
-// Setup Event Listeners for Add Button Dropdown
-if (btnSelectButtonToAdd) {
-        btnSelectButtonToAdd.addEventListener("click", (e) => {
-            e.stopPropagation();
-            if (dropdownAddButtonOptions.style.display === "flex") {
-                dropdownAddButtonOptions.style.display = "none";
-            } else {
-                renderAddButtonDropdown();
-                dropdownAddButtonOptions.style.display = "flex";
-            }
-        });
-    }
+const closeGlobalButtonsModal = () => {
+    if (globalButtonsModal) globalButtonsModal.style.display = "none";
+    const dropdown = document.getElementById("globalButtonActionsDropdown");
+    if (dropdown) dropdown.style.display = "none";
+};
+if (btnGlobalButtonsCloseX) btnGlobalButtonsCloseX.addEventListener("click", closeGlobalButtonsModal);
+if (btnGlobalButtonsClose) btnGlobalButtonsClose.addEventListener("click", closeGlobalButtonsModal);
 
-    document.addEventListener("click", (e) => {
-        if (dropdownAddButtonOptions && !dropdownAddButtonOptions.contains(e.target) && e.target !== btnSelectButtonToAdd) {
-            dropdownAddButtonOptions.style.display = "none";
+if (btnCreateGlobalButton) {
+    btnCreateGlobalButton.addEventListener("click", () => {
+        const createRow = document.getElementById("createGlobalButtonRow");
+        if (createRow) {
+            createRow.style.display = "flex";
+            const input = createRow.querySelector("#inputNewGlobalButtonName");
+            if (input) input.focus();
         }
     });
+}
 
-    // Setup Event Listeners for Global Buttons Modal
-    if (btnOpenGlobalButtons) {
-        btnOpenGlobalButtons.addEventListener("click", () => {
-            loadGlobalButtons();
-            renderGlobalButtonsList();
-            if (globalButtonsModal) globalButtonsModal.style.display = "flex";
-        });
-    }
-
-    const closeGlobalButtonsModal = () => {
-        if (globalButtonsModal) globalButtonsModal.style.display = "none";
-    };
-    if (btnGlobalButtonsCloseX) btnGlobalButtonsCloseX.addEventListener("click", closeGlobalButtonsModal);
-    if (btnGlobalButtonsClose) btnGlobalButtonsClose.addEventListener("click", closeGlobalButtonsModal);
-
-    if (btnCreateGlobalButton) {
-        btnCreateGlobalButton.addEventListener("click", () => {
-            const createRow = document.getElementById("createGlobalButtonRow");
-            if (createRow) {
-                createRow.style.display = "flex";
-                const input = createRow.querySelector("#inputNewGlobalButtonName");
-                if (input) input.focus();
-            }
-        });
-    }
-
-    // Helper to resize image to max dimension (e.g. 256x256) using an off-screen canvas
-    function resizeImageToMaxDimension(file, maxDimension = 256) {
-        return new Promise((resolve, reject) => {
-            if (!file || !file.type.startsWith("image/")) {
-                return reject(new Error("Файл не является изображением"));
-            }
-            const reader = new FileReader();
-            reader.onerror = () => reject(new Error("Ошибка чтения файла"));
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onerror = () => reject(new Error("Ошибка декодирования изображения"));
-                img.onload = () => {
-                    let width = img.width;
-                    let height = img.height;
-                    if (width > maxDimension || height > maxDimension) {
-                        if (width > height) {
-                            height = Math.round((height * maxDimension) / width);
-                            width = maxDimension;
-                        } else {
-                            width = Math.round((width * maxDimension) / height);
-                            height = maxDimension;
-                        }
-                    }
-                    const canvas = document.createElement("canvas");
-                    canvas.width = Math.max(1, width);
-                    canvas.height = Math.max(1, height);
-                    const ctx = canvas.getContext("2d");
-                    ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = "high";
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    resolve(canvas.toDataURL("image/png"));
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    // Get icon HTML for a button: uploaded icon or first letter on solid black background
-    function getButtonIconHtml(btn) {
-        if (btn && btn.iconUrl) {
-            return `<img src="${escapeHtml(btn.iconUrl)}" alt="" class="video-grid-btn-icon-img" onerror="this.style.display='none'">`;
+// Helper to resize image to max dimension (e.g. 256x256) using an off-screen canvas
+function resizeImageToMaxDimension(file, maxDimension = 256) {
+    return new Promise((resolve, reject) => {
+        if (!file || !file.type.startsWith("image/")) {
+            return reject(new Error("Файл не является изображением"));
         }
-        if (btn && btn.id === "gb_whiteboard") {
-            return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--ch-purple, #6366f1); flex-shrink: 0;">
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Ошибка чтения файла"));
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onerror = () => reject(new Error("Ошибка декодирования изображения"));
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+                if (width > maxDimension || height > maxDimension) {
+                    if (width > height) {
+                        height = Math.round((height * maxDimension) / width);
+                        width = maxDimension;
+                    } else {
+                        width = Math.round((width * maxDimension) / height);
+                        height = maxDimension;
+                    }
+                }
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.max(1, width);
+                canvas.height = Math.max(1, height);
+                const ctx = canvas.getContext("2d");
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = "high";
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL("image/png"));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Get icon HTML for a button: uploaded icon or first letter on solid black background
+function getButtonIconHtml(btn) {
+    if (btn && btn.iconUrl) {
+        return `<img src="${escapeHtml(btn.iconUrl)}" alt="" class="video-grid-btn-icon-img" onerror="this.style.display='none'">`;
+    }
+    if (btn && btn.id === "gb_whiteboard") {
+        return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--ch-purple, #6366f1); flex-shrink: 0;">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
             <line x1="3" y1="9" x2="21" y2="9"></line>
             <line x1="9" y1="21" x2="9" y2="9"></line>
         </svg>`;
+    }
+    const name = (btn && btn.name ? btn.name.trim() : "").trim();
+    const firstChar = name ? Array.from(name)[0].toUpperCase() : "";
+    return `<span class="video-btn-letter-stub">${escapeHtml(firstChar)}</span>`;
+}
+
+// Modal for choosing/uploading button icon (identical UI to thumbnail modal with tabs "Из файла" / "По ссылке")
+function openButtonIconModal({ currentIconUrl, title = "Иконка кнопки", onSelect, onDelete }) {
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-confirm-overlay';
+    overlay.style.zIndex = '10005';
+
+    // Collect all existing uploaded icons from database and videos
+    const existingIcons = [];
+    const seenUrls = new Set();
+    const collectBtnIcon = (name, iconUrl) => {
+        if (!iconUrl || typeof iconUrl !== "string") return;
+        const cleanUrl = iconUrl.trim();
+        if (!cleanUrl) return;
+        if (!seenUrls.has(cleanUrl)) {
+            seenUrls.add(cleanUrl);
+            existingIcons.push({ url: cleanUrl, name: name || "Иконка" });
         }
-        const name = (btn && btn.name ? btn.name.trim() : "").trim();
-        const firstChar = name ? Array.from(name)[0].toUpperCase() : "";
-        return `<span class="video-btn-letter-stub">${escapeHtml(firstChar)}</span>`;
+    };
+
+    if (Array.isArray(globalButtons)) {
+        globalButtons.forEach(b => collectBtnIcon(b.name, b.iconUrl));
+    }
+    if (Array.isArray(videos)) {
+        videos.forEach(v => {
+            if (Array.isArray(v.buttons)) {
+                v.buttons.forEach(vb => collectBtnIcon(vb.name, vb.iconUrl));
+            }
+        });
     }
 
-    // Modal for choosing/uploading button icon (identical UI to thumbnail modal with tabs "Из файла" / "По ссылке")
-    function openButtonIconModal({ currentIconUrl, title = "Иконка кнопки", onSelect, onDelete }) {
-        const overlay = document.createElement('div');
-        overlay.className = 'custom-confirm-overlay';
-        overlay.style.zIndex = '10005';
-
-        // Collect all existing uploaded icons from database and videos
-        const existingIcons = [];
-        const seenUrls = new Set();
-        const collectBtnIcon = (name, iconUrl) => {
-            if (!iconUrl || typeof iconUrl !== "string") return;
-            const cleanUrl = iconUrl.trim();
-            if (!cleanUrl) return;
-            if (!seenUrls.has(cleanUrl)) {
-                seenUrls.add(cleanUrl);
-                existingIcons.push({ url: cleanUrl, name: name || "Иконка" });
-            }
-        };
-
-        if (Array.isArray(globalButtons)) {
-            globalButtons.forEach(b => collectBtnIcon(b.name, b.iconUrl));
-        }
-        if (Array.isArray(videos)) {
-            videos.forEach(v => {
-                if (Array.isArray(v.buttons)) {
-                    v.buttons.forEach(vb => collectBtnIcon(vb.name, vb.iconUrl));
-                }
-            });
-        }
-
-        const existingIconsHtml = existingIcons.length > 0 ? `
+    const existingIconsHtml = existingIcons.length > 0 ? `
         <div class="existing-icons-section">
             <div class="existing-icons-title">Использовать уже загруженную иконку:</div>
             <div class="existing-icons-grid">
@@ -5048,7 +5023,7 @@ if (btnSelectButtonToAdd) {
         </div>
     ` : '';
 
-        overlay.innerHTML = `
+    overlay.innerHTML = `
         <div class="confirm-box thumbnail-confirm-box button-icon-confirm-box" style="padding: 24px;">
             <div class="confirm-title" style="font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
@@ -5097,410 +5072,535 @@ if (btnSelectButtonToAdd) {
                 <button class="confirm-btn-primary" id="btn-load-link" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%; display: none;">Сохранить</button>
                 
                 ${currentIconUrl ?
-                `<button class="confirm-btn-delete" id="btn-delete-icon" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Удалить картинку</button>` :
-                ''
-            }
+            `<button class="confirm-btn-delete" id="btn-delete-icon" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Удалить картинку</button>` :
+            ''
+        }
                 
                 <button class="confirm-btn-secondary" id="btn-close-icon-modal" style="margin: 0; padding: 10px; border-radius: 8px; width: 100%;">Отмена</button>
             </div>
         </div>
     `;
 
-        document.body.appendChild(overlay);
+    document.body.appendChild(overlay);
 
-        const dropzone = overlay.querySelector('#icon-dropzone');
-        const fileInput = overlay.querySelector('#modalButtonIconFileInput');
-        const selectFileBtn = overlay.querySelector('#btn-select-file');
-        const deleteIconBtn = overlay.querySelector('#btn-delete-icon');
-        const closeBtn = overlay.querySelector('#btn-close-icon-modal');
+    const dropzone = overlay.querySelector('#icon-dropzone');
+    const fileInput = overlay.querySelector('#modalButtonIconFileInput');
+    const selectFileBtn = overlay.querySelector('#btn-select-file');
+    const deleteIconBtn = overlay.querySelector('#btn-delete-icon');
+    const closeBtn = overlay.querySelector('#btn-close-icon-modal');
 
-        const tabBtns = overlay.querySelectorAll('.modal-tab');
-        const tabPanes = overlay.querySelectorAll('.tab-content-pane');
-        const urlInput = overlay.querySelector('#modal-url-input');
-        const loadLinkBtn = overlay.querySelector('#btn-load-link');
+    const tabBtns = overlay.querySelectorAll('.modal-tab');
+    const tabPanes = overlay.querySelectorAll('.tab-content-pane');
+    const urlInput = overlay.querySelector('#modal-url-input');
+    const loadLinkBtn = overlay.querySelector('#btn-load-link');
 
-        // Переключение вкладок
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                tabBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
+    // Переключение вкладок
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
 
-                const targetTab = btn.dataset.tab;
-                tabPanes.forEach(pane => pane.style.display = 'none');
-                overlay.querySelector(`#tab-content-${targetTab}`).style.display = 'flex';
+            const targetTab = btn.dataset.tab;
+            tabPanes.forEach(pane => pane.style.display = 'none');
+            overlay.querySelector(`#tab-content-${targetTab}`).style.display = 'flex';
 
-                if (targetTab === 'file') {
-                    selectFileBtn.style.display = 'block';
-                    loadLinkBtn.style.display = 'none';
-                } else if (targetTab === 'url') {
-                    selectFileBtn.style.display = 'none';
-                    loadLinkBtn.style.display = 'block';
-                    if (urlInput) {
-                        setTimeout(() => urlInput.focus(), 100);
-                    }
+            if (targetTab === 'file') {
+                selectFileBtn.style.display = 'block';
+                loadLinkBtn.style.display = 'none';
+            } else if (targetTab === 'url') {
+                selectFileBtn.style.display = 'none';
+                loadLinkBtn.style.display = 'block';
+                if (urlInput) {
+                    setTimeout(() => urlInput.focus(), 100);
                 }
-            });
+            }
         });
+    });
 
-        // 1. Paste handler (Ctrl + V)
-        async function handlePaste(e) {
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            for (const item of items) {
-                if (item.type.indexOf("image") === 0) {
-                    const file = item.getAsFile();
-                    await processAndUploadFile(file);
-                    break;
-                }
+    // 1. Paste handler (Ctrl + V)
+    async function handlePaste(e) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (const item of items) {
+            if (item.type.indexOf("image") === 0) {
+                const file = item.getAsFile();
+                await processAndUploadFile(file);
+                break;
             }
         }
-        document.addEventListener('paste', handlePaste);
+    }
+    document.addEventListener('paste', handlePaste);
 
-        // 2. Drag & Drop handler
-        dropzone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropzone.style.borderColor = '#1070e5';
-            dropzone.style.background = 'rgba(16, 112, 229, 0.05)';
-        });
+    // 2. Drag & Drop handler
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#1070e5';
+        dropzone.style.background = 'rgba(16, 112, 229, 0.05)';
+    });
 
-        dropzone.addEventListener('dragleave', () => {
-            dropzone.style.borderColor = '';
-            dropzone.style.background = '';
-        });
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.borderColor = '';
+        dropzone.style.background = '';
+    });
 
-        dropzone.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            dropzone.style.borderColor = '';
-            dropzone.style.background = '';
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                await processAndUploadFile(file);
-            }
-        });
+    dropzone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '';
+        dropzone.style.background = '';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            await processAndUploadFile(file);
+        }
+    });
 
-        // 3. Selection
-        dropzone.addEventListener('click', () => fileInput.click());
-        selectFileBtn.addEventListener('click', () => fileInput.click());
+    // 3. Selection
+    dropzone.addEventListener('click', () => fileInput.click());
+    selectFileBtn.addEventListener('click', () => fileInput.click());
 
-        fileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) await processAndUploadFile(file);
-        });
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) await processAndUploadFile(file);
+    });
 
-        // 3.5. Existing Icon Quick Selection
-        overlay.querySelectorAll('.existing-icon-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const url = btn.dataset.url;
-                if (url && onSelect) {
-                    await onSelect(url);
-                    cleanup();
-                }
-            });
-        });
-
-        // 4. Link Upload
-        loadLinkBtn.addEventListener('click', async (e) => {
+    // 3.5. Existing Icon Quick Selection
+    overlay.querySelectorAll('.existing-icon-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            const urlVal = urlInput.value.trim();
-            if (!urlVal) return;
-
-            try {
-                setLoadingState(true);
-                const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(urlVal)}`;
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-
-                const handleImgLoaded = async (loadedImg) => {
-                    const maxDim = 256;
-                    let width = loadedImg.width;
-                    let height = loadedImg.height;
-                    if (width > maxDim || height > maxDim) {
-                        if (width > height) {
-                            height = Math.round((height * maxDim) / width);
-                            width = maxDim;
-                        } else {
-                            width = Math.round((width * maxDim) / height);
-                            height = maxDim;
-                        }
-                    }
-                    const canvas = document.createElement("canvas");
-                    canvas.width = Math.max(1, width);
-                    canvas.height = Math.max(1, height);
-                    const ctx = canvas.getContext("2d");
-                    ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = "high";
-                    ctx.drawImage(loadedImg, 0, 0, canvas.width, canvas.height);
-                    const dataUrl = canvas.toDataURL("image/png");
-                    try {
-                        const hostedUrl = await uploadToImgBB(dataUrl);
-                        if (onSelect) await onSelect(hostedUrl);
-                        cleanup();
-                    } catch (e) {
-                        console.error(e);
-                        alert("Не удалось сохранить изображение.");
-                        setLoadingState(false);
-                    }
-                };
-
-                img.onload = () => handleImgLoaded(img);
-                img.onerror = () => {
-                    const directImg = new Image();
-                    directImg.crossOrigin = "anonymous";
-                    directImg.onload = () => handleImgLoaded(directImg);
-                    directImg.onerror = () => {
-                        alert("Не удалось загрузить изображение по указанной ссылке.");
-                        setLoadingState(false);
-                    };
-                    directImg.src = urlVal;
-                };
-
-                img.src = proxyUrl;
-            } catch (err) {
-                console.error(err);
-                alert("Ошибка загрузки.");
-                setLoadingState(false);
+            const url = btn.dataset.url;
+            if (url && onSelect) {
+                await onSelect(url);
+                cleanup();
             }
         });
+    });
 
-        function setLoadingState(loading) {
-            const tabsContainer = overlay.querySelector('.modal-tabs');
-            const existingIconsSec = overlay.querySelector('.existing-icons-section');
-            if (loading) {
-                loadLinkBtn.disabled = true;
-                loadLinkBtn.innerText = 'Загрузка...';
-                selectFileBtn.disabled = true;
-                selectFileBtn.innerText = 'Загрузка...';
-                if (tabsContainer) {
-                    tabsContainer.style.pointerEvents = 'none';
-                    tabsContainer.style.opacity = '0.5';
-                }
-                if (existingIconsSec) {
-                    existingIconsSec.style.pointerEvents = 'none';
-                    existingIconsSec.style.opacity = '0.5';
-                }
-                if (deleteIconBtn) deleteIconBtn.style.display = 'none';
-                dropzone.style.pointerEvents = 'none';
+    // 4. Link Upload
+    loadLinkBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const urlVal = urlInput.value.trim();
+        if (!urlVal) return;
 
-                dropzone.querySelector('.dropzone-preview').innerHTML = `
+        try {
+            setLoadingState(true);
+            const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(urlVal)}`;
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+
+            const handleImgLoaded = async (loadedImg) => {
+                const maxDim = 256;
+                let width = loadedImg.width;
+                let height = loadedImg.height;
+                if (width > maxDim || height > maxDim) {
+                    if (width > height) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    } else {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+                }
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.max(1, width);
+                canvas.height = Math.max(1, height);
+                const ctx = canvas.getContext("2d");
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = "high";
+                ctx.drawImage(loadedImg, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL("image/png");
+                try {
+                    const hostedUrl = await uploadToImgBB(dataUrl);
+                    if (onSelect) await onSelect(hostedUrl);
+                    cleanup();
+                } catch (e) {
+                    console.error(e);
+                    alert("Не удалось сохранить изображение.");
+                    setLoadingState(false);
+                }
+            };
+
+            img.onload = () => handleImgLoaded(img);
+            img.onerror = () => {
+                const directImg = new Image();
+                directImg.crossOrigin = "anonymous";
+                directImg.onload = () => handleImgLoaded(directImg);
+                directImg.onerror = () => {
+                    alert("Не удалось загрузить изображение по указанной ссылке.");
+                    setLoadingState(false);
+                };
+                directImg.src = urlVal;
+            };
+
+            img.src = proxyUrl;
+        } catch (err) {
+            console.error(err);
+            alert("Ошибка загрузки.");
+            setLoadingState(false);
+        }
+    });
+
+    function setLoadingState(loading) {
+        const tabsContainer = overlay.querySelector('.modal-tabs');
+        const existingIconsSec = overlay.querySelector('.existing-icons-section');
+        if (loading) {
+            loadLinkBtn.disabled = true;
+            loadLinkBtn.innerText = 'Загрузка...';
+            selectFileBtn.disabled = true;
+            selectFileBtn.innerText = 'Загрузка...';
+            if (tabsContainer) {
+                tabsContainer.style.pointerEvents = 'none';
+                tabsContainer.style.opacity = '0.5';
+            }
+            if (existingIconsSec) {
+                existingIconsSec.style.pointerEvents = 'none';
+                existingIconsSec.style.opacity = '0.5';
+            }
+            if (deleteIconBtn) deleteIconBtn.style.display = 'none';
+            dropzone.style.pointerEvents = 'none';
+
+            dropzone.querySelector('.dropzone-preview').innerHTML = `
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation: spin 1s linear infinite;">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="8" fill="none" opacity="0.3"></circle>
                     <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
                 </svg>
             `;
-                dropzone.querySelector('.dropzone-text').innerText = 'Загрузка и сжатие...';
-            } else {
-                loadLinkBtn.disabled = false;
-                loadLinkBtn.innerText = 'Сохранить';
-                selectFileBtn.disabled = false;
-                selectFileBtn.innerText = 'Выбрать файл...';
-                if (tabsContainer) {
-                    tabsContainer.style.pointerEvents = 'auto';
-                    tabsContainer.style.opacity = '1';
-                }
-                if (existingIconsSec) {
-                    existingIconsSec.style.pointerEvents = 'auto';
-                    existingIconsSec.style.opacity = '1';
-                }
-                if (deleteIconBtn) deleteIconBtn.style.display = 'block';
-                dropzone.style.pointerEvents = 'auto';
-
-                dropzone.querySelector('.dropzone-preview').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-icon lucide-upload" style="opacity: 0.6; color: var(--ch-text-gray);"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>`;
-                dropzone.querySelector('.dropzone-text').innerText = 'Кликните для выбора файла или перетащите его сюда';
+            dropzone.querySelector('.dropzone-text').innerText = 'Загрузка и сжатие...';
+        } else {
+            loadLinkBtn.disabled = false;
+            loadLinkBtn.innerText = 'Сохранить';
+            selectFileBtn.disabled = false;
+            selectFileBtn.innerText = 'Выбрать файл...';
+            if (tabsContainer) {
+                tabsContainer.style.pointerEvents = 'auto';
+                tabsContainer.style.opacity = '1';
             }
-        }
-
-        function cleanup() {
-            overlay.remove();
-            document.removeEventListener('paste', handlePaste);
-        }
-
-        // 5. Delete Cover
-        if (deleteIconBtn) {
-            deleteIconBtn.addEventListener('click', async () => {
-                if (onDelete) await onDelete();
-                cleanup();
-            });
-        }
-
-        // 6. Cancel / Close
-        closeBtn.addEventListener('click', cleanup);
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                cleanup();
+            if (existingIconsSec) {
+                existingIconsSec.style.pointerEvents = 'auto';
+                existingIconsSec.style.opacity = '1';
             }
-        });
+            if (deleteIconBtn) deleteIconBtn.style.display = 'block';
+            dropzone.style.pointerEvents = 'auto';
 
-        // Upload & Process File
-        async function processAndUploadFile(file) {
-            setLoadingState(true);
-            try {
-                const compressed = await resizeImageToMaxDimension(file, 256);
-                const hostedUrl = await uploadToImgBB(compressed);
-                if (onSelect) await onSelect(hostedUrl);
-                cleanup();
-            } catch (err) {
-                console.error(err);
-                alert("Не удалось загрузить изображение.");
-                setLoadingState(false);
-            }
+            dropzone.querySelector('.dropzone-preview').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-icon lucide-upload" style="opacity: 0.6; color: var(--ch-text-gray);"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>`;
+            dropzone.querySelector('.dropzone-text').innerText = 'Кликните для выбора файла или перетащите его сюда';
         }
     }
 
-    // Render Global Buttons list inside the database manager modal
-    function renderGlobalButtonsList() {
-        if (!globalButtonsListContainer) return;
-        globalButtonsListContainer.innerHTML = "";
+    function cleanup() {
+        overlay.remove();
+        document.removeEventListener('paste', handlePaste);
+    }
 
-        // Add Creation Row first (hidden by default)
-        const createRow = document.createElement("div");
-        createRow.id = "createGlobalButtonRow";
-        createRow.style.display = "none";
-        createRow.style.padding = "12px 16px";
-        createRow.style.borderBottom = "1px solid var(--ch-border)";
-        createRow.style.alignItems = "center";
-        createRow.style.gap = "10px";
-        createRow.style.background = "var(--ch-bg)";
-        createRow.innerHTML = `
-        <div class="global-btn-icon-box" id="newButtonIconBox" title="Выбрать иконку">
-            <div class="global-btn-icon-preview" id="newButtonIconPreview">
-                <span class="video-btn-letter-stub">+</span>
+    // 5. Delete Cover
+    if (deleteIconBtn) {
+        deleteIconBtn.addEventListener('click', async () => {
+            if (onDelete) await onDelete();
+            cleanup();
+        });
+    }
+
+    // 6. Cancel / Close
+    closeBtn.addEventListener('click', cleanup);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            cleanup();
+        }
+    });
+
+    // Upload & Process File
+    async function processAndUploadFile(file) {
+        setLoadingState(true);
+        try {
+            const compressed = await resizeImageToMaxDimension(file, 256);
+            const hostedUrl = await uploadToImgBB(compressed);
+            if (onSelect) await onSelect(hostedUrl);
+            cleanup();
+        } catch (err) {
+            console.error(err);
+            alert("Не удалось загрузить изображение.");
+            setLoadingState(false);
+        }
+    }
+}
+
+// Открытие меню действий кнопки в базе
+let activeGlobalButtonAnchor = null;
+
+function openGlobalButtonActionsMenu(btn, anchorEl, actions) {
+    const dropdown = document.getElementById("globalButtonActionsDropdown");
+    if (!dropdown) return;
+
+    if (dropdown.style.display === "flex" && activeGlobalButtonAnchor === anchorEl) {
+        dropdown.style.display = "none";
+        activeGlobalButtonAnchor = null;
+        return;
+    }
+    activeGlobalButtonAnchor = anchorEl;
+
+    dropdown.innerHTML = "";
+
+    const isSystem = btn.id === "gb_youtube_studio" || btn.id === "gb_whiteboard" || Boolean(btn.isSystem);
+
+    // 1. Изменить иконку
+    const itemUpload = document.createElement("button");
+    itemUpload.type = "button";
+    itemUpload.className = "dropdown-item";
+    itemUpload.innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>Изменить иконку</span>
+    `;
+    itemUpload.addEventListener("click", () => {
+        dropdown.style.display = "none";
+        activeGlobalButtonAnchor = null;
+        if (actions.triggerUpload) actions.triggerUpload();
+    });
+    dropdown.appendChild(itemUpload);
+
+    // 2. Сбросить иконку (если загружена кастомная)
+    if (btn.iconUrl) {
+        const itemReset = document.createElement("button");
+        itemReset.type = "button";
+        itemReset.className = "dropdown-item";
+        itemReset.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            <span>Сбросить иконку</span>
+        `;
+        itemReset.addEventListener("click", () => {
+            dropdown.style.display = "none";
+            activeGlobalButtonAnchor = null;
+            if (actions.onResetIcon) actions.onResetIcon();
+        });
+        dropdown.appendChild(itemReset);
+    }
+
+    // 3. Действия для пользовательских кнопок
+    if (!isSystem) {
+        const divider = document.createElement("div");
+        divider.className = "dropdown-divider";
+        divider.style.height = "1px";
+        divider.style.background = "var(--ch-border)";
+        divider.style.margin = "4px 0";
+        dropdown.appendChild(divider);
+
+        const itemRename = document.createElement("button");
+        itemRename.type = "button";
+        itemRename.className = "dropdown-item";
+        itemRename.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Переименовать</span>
+        `;
+        itemRename.addEventListener("click", () => {
+            dropdown.style.display = "none";
+            activeGlobalButtonAnchor = null;
+            if (actions.onRename) actions.onRename();
+        });
+        dropdown.appendChild(itemRename);
+
+        const itemDelete = document.createElement("button");
+        itemDelete.type = "button";
+        itemDelete.className = "dropdown-item btn-delete";
+        itemDelete.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Удалить</span>
+        `;
+        itemDelete.addEventListener("click", () => {
+            dropdown.style.display = "none";
+            activeGlobalButtonAnchor = null;
+            if (actions.onDelete) actions.onDelete();
+        });
+        dropdown.appendChild(itemDelete);
+    }
+
+    const rect = anchorEl.getBoundingClientRect();
+    dropdown.style.display = "flex";
+    dropdown.style.position = "fixed";
+    const menuWidth = 175;
+    dropdown.style.top = `${rect.bottom + 4}px`;
+    dropdown.style.left = `${Math.max(10, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 10))}px`;
+}
+
+// Закрытие меню действий кнопки при клике вне меню
+document.addEventListener("click", (e) => {
+    const dropdown = document.getElementById("globalButtonActionsDropdown");
+    if (dropdown && !e.target.closest(".btn-global-btn-more") && !dropdown.contains(e.target)) {
+        dropdown.style.display = "none";
+        activeGlobalButtonAnchor = null;
+    }
+});
+
+if (globalButtonsListContainer) {
+    globalButtonsListContainer.addEventListener("scroll", () => {
+        const dropdown = document.getElementById("globalButtonActionsDropdown");
+        if (dropdown) dropdown.style.display = "none";
+        activeGlobalButtonAnchor = null;
+    }, { passive: true });
+}
+
+// Render Global Buttons list inside the database manager modal
+function renderGlobalButtonsList() {
+    if (!globalButtonsListContainer) return;
+    globalButtonsListContainer.innerHTML = "";
+
+    // Add Creation Row first (hidden by default)
+    const createRow = document.createElement("div");
+    createRow.id = "createGlobalButtonRow";
+    createRow.style.display = "none";
+    createRow.style.flexDirection = "column";
+    createRow.style.padding = "12px 14px";
+    createRow.style.borderBottom = "1px solid var(--ch-border)";
+    createRow.style.gap = "10px";
+    createRow.style.background = "var(--ch-bg)";
+    createRow.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+            <div class="global-btn-icon-box" id="newButtonIconBox" title="Выбрать иконку">
+                <div class="global-btn-icon-preview" id="newButtonIconPreview">
+                    <span class="video-btn-letter-stub">+</span>
+                </div>
+                <div class="global-btn-icon-hover-overlay" title="Выбрать иконку">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                </div>
             </div>
-            <div class="global-btn-icon-hover-overlay" title="Выбрать иконку">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-            </div>
+            <input type="text" id="inputNewGlobalButtonName" placeholder="Название кнопки" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" style="flex: 1; min-width: 0; border: 1px solid var(--ch-border); border-radius: 8px; padding: 7px 12px; font-family: inherit; font-size: 0.9rem; background: var(--ch-card-bg); color: var(--ch-text-dark); outline: none;">
         </div>
-        <input type="text" id="inputNewGlobalButtonName" placeholder="Название кнопки (например, Figma)..." style="flex-grow: 1; border: 1px solid var(--ch-border); border-radius: 8px; padding: 6px 12px; font-family: inherit; font-size: 0.9rem; background: var(--ch-card-bg); color: var(--ch-text-dark); outline: none;">
-        <button id="btnSaveNewGlobalButton" style="background: var(--ch-purple); color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">Сохранить</button>
-        <button id="btnCancelNewGlobalButton" style="background: none; border: 1px solid var(--ch-border); color: var(--ch-text-dark); border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; cursor: pointer;">Отмена</button>
+        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; width: 100%;">
+            <button id="btnCancelNewGlobalButton" type="button" style="background: none; border: 1px solid var(--ch-border); color: var(--ch-text-dark); border-radius: 6px; padding: 5px 12px; font-size: 0.84rem; font-weight: 500; cursor: pointer; transition: all 0.15s;">Отмена</button>
+            <button id="btnSaveNewGlobalButton" type="button" style="background: var(--ch-purple); color: white; border: none; border-radius: 6px; padding: 5px 14px; font-size: 0.84rem; font-weight: 500; cursor: pointer; transition: all 0.15s;">Сохранить</button>
+        </div>
     `;
 
-        let newButtonUploadedIconUrl = null;
-        const newIconBox = createRow.querySelector("#newButtonIconBox");
-        const newIconPreview = createRow.querySelector("#newButtonIconPreview");
-        const newNameInput = createRow.querySelector("#inputNewGlobalButtonName");
-        const saveNewBtn = createRow.querySelector("#btnSaveNewGlobalButton");
-        const cancelNewBtn = createRow.querySelector("#btnCancelNewGlobalButton");
+    let newButtonUploadedIconUrl = null;
+    const newIconBox = createRow.querySelector("#newButtonIconBox");
+    const newIconPreview = createRow.querySelector("#newButtonIconPreview");
+    const newNameInput = createRow.querySelector("#inputNewGlobalButtonName");
+    const saveNewBtn = createRow.querySelector("#btnSaveNewGlobalButton");
+    const cancelNewBtn = createRow.querySelector("#btnCancelNewGlobalButton");
 
-        newIconBox.addEventListener("click", () => {
-            openButtonIconModal({
-                currentIconUrl: newButtonUploadedIconUrl,
-                title: "Иконка кнопки",
-                onSelect: (url) => {
-                    newButtonUploadedIconUrl = url;
-                    newIconPreview.innerHTML = `<img src="${url}" alt="">`;
-                },
-                onDelete: () => {
-                    newButtonUploadedIconUrl = null;
-                    newIconPreview.innerHTML = `<span class="video-btn-letter-stub">+</span>`;
-                }
-            });
+    newIconBox.addEventListener("click", () => {
+        openButtonIconModal({
+            currentIconUrl: newButtonUploadedIconUrl,
+            title: "Иконка кнопки",
+            onSelect: (url) => {
+                newButtonUploadedIconUrl = url;
+                newIconPreview.innerHTML = `<img src="${url}" alt="">`;
+            },
+            onDelete: () => {
+                newButtonUploadedIconUrl = null;
+                newIconPreview.innerHTML = `<span class="video-btn-letter-stub">+</span>`;
+            }
         });
+    });
 
-        const saveAction = () => {
-            const nameVal = newNameInput.value.trim();
-            if (!nameVal) return;
+    const saveAction = () => {
+        const nameVal = newNameInput.value.trim();
+        if (!nameVal) return;
 
-            if (nameVal.toLowerCase() === "youtube studio" || globalButtons.some(b => b.name.toLowerCase() === nameVal.toLowerCase())) {
-                alert("Кнопка с таким названием уже существует!");
-                return;
-            }
+        if (nameVal.toLowerCase() === "youtube studio" || globalButtons.some(b => b.name.toLowerCase() === nameVal.toLowerCase())) {
+            alert("Кнопка с таким названием уже существует!");
+            return;
+        }
 
-            const newBtn = {
-                id: "gb_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9),
-                name: nameVal
-            };
-            if (newButtonUploadedIconUrl) {
-                newBtn.iconUrl = newButtonUploadedIconUrl;
-            }
-
-            globalButtons.push(newBtn);
-            saveGlobalButtons();
-            renderGlobalButtonsList();
-            renderSelectedVideoButtons();
-            updateNotionButtonState();
+        const newBtn = {
+            id: "gb_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9),
+            name: nameVal
         };
-
-        saveNewBtn.addEventListener("click", saveAction);
-        newNameInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") saveAction();
-        });
-
-        cancelNewBtn.addEventListener("click", () => {
-            createRow.style.display = "none";
-            newNameInput.value = "";
-            newButtonUploadedIconUrl = null;
-            newIconPreview.innerHTML = `<span class="video-btn-letter-stub">+</span>`;
-        });
-
-        globalButtonsListContainer.appendChild(createRow);
-
-        // Ensure YouTube Studio system button exists
-        // Ensure Whiteboard and YouTube Studio system buttons exist
-        if (!globalButtons.some(b => b.id === "gb_whiteboard")) {
-            globalButtons.push({
-                id: "gb_whiteboard",
-                name: "Доска",
-                isSystem: true
-            });
-            saveGlobalButtons();
-        }
-        if (!globalButtons.some(b => b.id === "gb_youtube_studio")) {
-            globalButtons.push({
-                id: "gb_youtube_studio",
-                name: "YouTube Studio",
-                isSystem: true
-            });
-            saveGlobalButtons();
+        if (newButtonUploadedIconUrl) {
+            newBtn.iconUrl = newButtonUploadedIconUrl;
         }
 
-        // Always sort user-created buttons first, and system buttons at the very bottom
-        const sortedButtons = [
-            ...globalButtons.filter(b => b.id !== "gb_whiteboard" && b.id !== "gb_youtube_studio"),
-            ...globalButtons.filter(b => b.id === "gb_whiteboard"),
-            ...globalButtons.filter(b => b.id === "gb_youtube_studio")
-        ];
+        globalButtons.push(newBtn);
+        saveGlobalButtons();
+        renderGlobalButtonsList();
+        renderSelectedVideoButtons();
+        updateNotionButtonState();
+    };
 
-        sortedButtons.forEach(btn => {
-            const isSystem = btn.id === "gb_youtube_studio" || btn.id === "gb_whiteboard" || Boolean(btn.isSystem);
-            let countText = "";
-            if (btn.id === "gb_youtube_studio") {
-                const count = videos.filter(v => v.videoLink && getYouTubeId(v.videoLink)).length;
-                countText = `Системная кнопка • видео с YouTube: ${count}`;
-            } else if (btn.id === "gb_whiteboard") {
-                const count = videos.reduce((acc, v) => {
-                    if (v.buttons && v.buttons.some(vb => vb.buttonId === "gb_whiteboard")) {
-                        return acc + 1;
-                    }
-                    return acc;
-                }, 0);
-                countText = `Системная кнопка • используется в ${count} видео`;
-            } else {
-                const count = videos.reduce((acc, v) => {
-                    if (v.buttons && v.buttons.some(vb => vb.buttonId === btn.id)) {
-                        return acc + 1;
-                    }
-                    return acc;
-                }, 0);
-                countText = `использовано в ${count} видео`;
-            }
+    saveNewBtn.addEventListener("click", saveAction);
+    newNameInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") saveAction();
+    });
 
-                const item = document.createElement("div");
-                item.className = "global-button-item";
-                item.dataset.id = btn.id;
+    cancelNewBtn.addEventListener("click", () => {
+        createRow.style.display = "none";
+        newNameInput.value = "";
+        newButtonUploadedIconUrl = null;
+        newIconPreview.innerHTML = `<span class="video-btn-letter-stub">+</span>`;
+    });
 
-                item.innerHTML = `
+    globalButtonsListContainer.appendChild(createRow);
+
+    // Ensure YouTube Studio system button exists
+    // Ensure Whiteboard and YouTube Studio system buttons exist
+    if (!globalButtons.some(b => b.id === "gb_whiteboard")) {
+        globalButtons.push({
+            id: "gb_whiteboard",
+            name: "Доска",
+            isSystem: true
+        });
+        saveGlobalButtons();
+    }
+    if (!globalButtons.some(b => b.id === "gb_youtube_studio")) {
+        globalButtons.push({
+            id: "gb_youtube_studio",
+            name: "YouTube Studio",
+            isSystem: true
+        });
+        saveGlobalButtons();
+    }
+
+    // Always sort user-created buttons first, and system buttons at the very bottom
+    const sortedButtons = [
+        ...globalButtons.filter(b => b.id !== "gb_whiteboard" && b.id !== "gb_youtube_studio"),
+        ...globalButtons.filter(b => b.id === "gb_whiteboard"),
+        ...globalButtons.filter(b => b.id === "gb_youtube_studio")
+    ];
+
+    sortedButtons.forEach(btn => {
+        const isSystem = btn.id === "gb_youtube_studio" || btn.id === "gb_whiteboard" || Boolean(btn.isSystem);
+        const isAdded = Boolean(selectedVideo && selectedVideo.buttons && selectedVideo.buttons.some(vb => vb.buttonId === btn.id));
+        let countText = "";
+        if (btn.id === "gb_youtube_studio") {
+            const count = videos.filter(v => v.videoLink && getYouTubeId(v.videoLink)).length;
+            countText = `Системная кнопка • видео с YouTube: ${count}`;
+        } else if (btn.id === "gb_whiteboard") {
+            const count = videos.reduce((acc, v) => {
+                if (v.buttons && v.buttons.some(vb => vb.buttonId === "gb_whiteboard")) {
+                    return acc + 1;
+                }
+                return acc;
+            }, 0);
+            countText = `Системная кнопка • используется в ${count} видео`;
+        } else {
+            const count = videos.reduce((acc, v) => {
+                if (v.buttons && v.buttons.some(vb => vb.buttonId === btn.id)) {
+                    return acc + 1;
+                }
+                return acc;
+            }, 0);
+            countText = `использовано в ${count} видео`;
+        }
+
+        const item = document.createElement("div");
+        item.className = "global-button-item";
+        item.dataset.id = btn.id;
+
+        item.innerHTML = `
             <div class="button-item-view-mode" style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px;">
                 <div style="display: flex; align-items: center; gap: 10px; flex-grow: 1; min-width: 0;">
-                    <div class="global-btn-icon-box" title="Выбрать иконку">
+                    <div class="global-btn-icon-box" style="cursor: default;">
                         <div class="global-btn-icon-preview">
                             ${getButtonIconHtml(btn)}
-                        </div>
-                        <div class="global-btn-icon-hover-overlay" title="Выбрать иконку">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                                <circle cx="12" cy="13" r="4"></circle>
-                            </svg>
                         </div>
                     </div>
                     <div style="flex-grow: 1; min-width: 0;">
@@ -5516,232 +5616,248 @@ if (btnSelectButtonToAdd) {
                     </div>
                 </div>
                 <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
-                    <button class="btn-upload-icon-trigger" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 6px; display: flex; align-items: center; justify-content: center; transition: color 0.2s;" title="Выбрать иконку">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                            <polyline points="21 15 16 10 5 21"></polyline>
+                    <button class="btn-global-btn-more" type="button" title="Действия">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="1.5"></circle>
+                            <circle cx="12" cy="5" r="1.5"></circle>
+                            <circle cx="12" cy="19" r="1.5"></circle>
                         </svg>
                     </button>
-                    ${btn.iconUrl ? `
-                    <button class="btn-remove-icon-trigger" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 6px; display: flex; align-items: center; justify-content: center; transition: color 0.2s;" title="Сбросить загруженную иконку">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
+                    ${btn.id !== "gb_youtube_studio" ? `
+                    <button class="btn-global-btn-toggle ${isAdded ? 'is-added' : ''}" type="button" title="${isAdded ? 'Убрать из этого видео' : 'Добавить в это видео'}">
+                        ${isAdded ? `
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        ` : `
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        `}
                     </button>
-                    ` : ""}
-                    ${!isSystem ? `
-                    <button class="btn-edit-global-button" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 6px; display: flex; align-items: center; justify-content: center; transition: color 0.2s;" title="Редактировать">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                    </button>
-                    <button class="btn-delete-global-button" style="background: none; border: none; cursor: pointer; color: var(--ch-text-gray); padding: 6px; display: flex; align-items: center; justify-content: center; transition: color 0.2s;" title="Удалить">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                    </button>
-                    ` : ""}
+                    ` : ''}
                 </div>
             </div>
             ${!isSystem ? `
-            <div class="button-item-edit-mode" style="display: none; align-items: center; gap: 10px; width: 100%;">
-                <input type="text" class="input-edit-global-button-name" value="${escapeHtml(btn.name)}" style="flex-grow: 1; border: 1px solid var(--ch-border); border-radius: 8px; padding: 6px 12px; font-family: inherit; font-size: 0.9rem; background: var(--ch-bg); color: var(--ch-text-dark); outline: none;">
-                <button class="btn-save-edit-global-button" style="background: var(--ch-purple); color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; font-weight: 500; cursor: pointer;">Сохранить</button>
-                <button class="btn-cancel-edit-global-button" style="background: none; border: 1px solid var(--ch-border); color: var(--ch-text-dark); border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; cursor: pointer;">Отмена</button>
+            <div class="button-item-edit-mode" style="display: none; flex-direction: column; gap: 8px; width: 100%; padding: 4px 0;">
+                <input type="text" class="input-edit-global-button-name" value="${escapeHtml(btn.name)}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" style="width: 100%; box-sizing: border-box; border: 1px solid var(--ch-border); border-radius: 8px; padding: 7px 12px; font-family: inherit; font-size: 0.9rem; background: var(--ch-bg); color: var(--ch-text-dark); outline: none;">
+                <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; width: 100%;">
+                    <button class="btn-cancel-edit-global-button" style="background: none; border: 1px solid var(--ch-border); color: var(--ch-text-dark); border-radius: 6px; padding: 5px 12px; font-size: 0.84rem; cursor: pointer;">Отмена</button>
+                    <button class="btn-save-edit-global-button" style="background: var(--ch-purple); color: white; border: none; border-radius: 6px; padding: 5px 14px; font-size: 0.84rem; font-weight: 500; cursor: pointer;">Сохранить</button>
+                </div>
             </div>
             ` : ""}
         `;
 
-                const viewModeDiv = item.querySelector(".button-item-view-mode");
-                const editModeDiv = item.querySelector(".button-item-edit-mode");
-                const editInput = item.querySelector(".input-edit-global-button-name");
-                const iconBox = item.querySelector(".global-btn-icon-box");
-                const uploadIconBtn = item.querySelector(".btn-upload-icon-trigger");
-                const removeIconBtn = item.querySelector(".btn-remove-icon-trigger");
+        const viewModeDiv = item.querySelector(".button-item-view-mode");
+        const editModeDiv = item.querySelector(".button-item-edit-mode");
+        const editInput = item.querySelector(".input-edit-global-button-name");
+        const moreBtn = item.querySelector(".btn-global-btn-more");
+        const toggleBtn = item.querySelector(".btn-global-btn-toggle");
 
-                const triggerUpload = () => {
-                    openButtonIconModal({
-                        currentIconUrl: btn.iconUrl,
-                        title: `Иконка для "${btn.name}"`,
-                        onSelect: async (url) => {
-                            btn.iconUrl = url;
-                            saveGlobalButtons();
-                            renderGlobalButtonsList();
-                            renderSelectedVideoButtons();
-                            updateNotionButtonState();
-                        },
-                        onDelete: async () => {
-                            delete btn.iconUrl;
-                            saveGlobalButtons();
-                            renderGlobalButtonsList();
-                            renderSelectedVideoButtons();
-                            updateNotionButtonState();
-                        }
+        if (toggleBtn) {
+            toggleBtn.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                if (!selectedVideo) {
+                    alert("Сначала выберите видео");
+                    return;
+                }
+                if (!selectedVideo.buttons) selectedVideo.buttons = [];
+
+                const idx = selectedVideo.buttons.findIndex(vb => vb.buttonId === btn.id);
+                if (idx !== -1) {
+                    selectedVideo.buttons.splice(idx, 1);
+                } else {
+                    selectedVideo.buttons.push({
+                        buttonId: btn.id,
+                        url: ""
                     });
-                };
-
-                iconBox.addEventListener("click", triggerUpload);
-                if (uploadIconBtn) {
-                    uploadIconBtn.addEventListener("click", triggerUpload);
+                    if (btn.id === "gb_whiteboard") {
+                        await getOrCreateVideoWhiteboard(selectedVideo.id);
+                    }
                 }
 
-                if (removeIconBtn) {
-                    removeIconBtn.addEventListener("click", (e) => {
-                        e.stopPropagation();
+                saveVideoData("buttons", selectedVideo.buttons);
+                renderGlobalButtonsList();
+                renderSelectedVideoButtons();
+                updateNotionButtonState();
+            });
+        }
+
+        const triggerUpload = () => {
+            openButtonIconModal({
+                currentIconUrl: btn.iconUrl,
+                title: `Иконка для "${btn.name}"`,
+                onSelect: async (url) => {
+                    btn.iconUrl = url;
+                    saveGlobalButtons();
+                    renderGlobalButtonsList();
+                    renderSelectedVideoButtons();
+                    updateNotionButtonState();
+                },
+                onDelete: async () => {
+                    delete btn.iconUrl;
+                    saveGlobalButtons();
+                    renderGlobalButtonsList();
+                    renderSelectedVideoButtons();
+                    updateNotionButtonState();
+                }
+            });
+        };
+
+        if (moreBtn) {
+            moreBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                openGlobalButtonActionsMenu(btn, moreBtn, {
+                    triggerUpload,
+                    onResetIcon: () => {
                         delete btn.iconUrl;
                         saveGlobalButtons();
                         renderGlobalButtonsList();
                         renderSelectedVideoButtons();
                         updateNotionButtonState();
-                    });
-                }
-
-                if (!isSystem) {
-                    const editBtn = item.querySelector(".btn-edit-global-button");
-                    if (editBtn) {
-                        editBtn.addEventListener("click", () => {
+                    },
+                    onRename: () => {
+                        if (viewModeDiv && editModeDiv && editInput) {
                             viewModeDiv.style.display = "none";
                             editModeDiv.style.display = "flex";
                             editInput.focus();
-                        });
-                    }
-
-                    const cancelBtn = item.querySelector(".btn-cancel-edit-global-button");
-                    if (cancelBtn) {
-                        cancelBtn.addEventListener("click", () => {
-                            viewModeDiv.style.display = "flex";
-                            editModeDiv.style.display = "none";
-                            editInput.value = btn.name;
-                        });
-                    }
-
-                    const saveEditAction = () => {
-                        const newName = editInput.value.trim();
-                        if (!newName) return;
-                        if (newName.toLowerCase() !== btn.name.toLowerCase() && globalButtons.some(b => b.name.toLowerCase() === newName.toLowerCase())) {
-                            alert("Кнопка с таким названием уже существует!");
-                            return;
                         }
+                    },
+                    onDelete: () => {
+                        if (confirm(`Удалить кнопку "${btn.name}" из глобальной базы? Она также исчезнет из настроек и вкладок "Описание" во всех видео.`)) {
+                            globalButtons = globalButtons.filter(b => b.id !== btn.id);
+                            saveGlobalButtons();
 
-                        btn.name = newName;
-                        saveGlobalButtons();
-
-                        renderGlobalButtonsList();
-                        renderSelectedVideoButtons();
-                        updateNotionButtonState();
-                    };
-
-                    const saveBtn = item.querySelector(".btn-save-edit-global-button");
-                    if (saveBtn) saveBtn.addEventListener("click", saveEditAction);
-                    if (editInput) {
-                        editInput.addEventListener("keydown", (e) => {
-                            if (e.key === "Enter") saveEditAction();
-                        });
-                    }
-
-                    const deleteBtn = item.querySelector(".btn-delete-global-button");
-                    if (deleteBtn) {
-                        deleteBtn.addEventListener("click", () => {
-                            if (confirm(`Удалить кнопку "${btn.name}" из глобальной базы? Она также исчезнет из настроек и вкладок "Описание" во всех видео.`)) {
-                                globalButtons = globalButtons.filter(b => b.id !== btn.id);
-                                saveGlobalButtons();
-
-                                videos.forEach(v => {
-                                    if (v.buttons) {
-                                        const origLen = v.buttons.length;
-                                        v.buttons = v.buttons.filter(vb => vb.buttonId !== btn.id);
-                                        if (v.buttons.length !== origLen) {
-                                            if (currentUid) {
-                                                try {
-                                                    updateDoc(doc(db, "users", currentUid, "videos", v.id), {
-                                                        buttons: v.buttons
-                                                    });
-                                                } catch (e) {
-                                                    console.error("Firestore sync error", e);
-                                                }
+                            videos.forEach(v => {
+                                if (v.buttons) {
+                                    const origLen = v.buttons.length;
+                                    v.buttons = v.buttons.filter(vb => vb.buttonId !== btn.id);
+                                    if (v.buttons.length !== origLen) {
+                                        if (currentUid) {
+                                            try {
+                                                updateDoc(doc(db, "users", currentUid, "videos", v.id), {
+                                                    buttons: v.buttons
+                                                });
+                                            } catch (e) {
+                                                console.error("Firestore sync error", e);
                                             }
                                         }
                                     }
-                                });
-
-                                if (!currentUid) {
-                                    localStorage.setItem("local_videos", JSON.stringify(videos));
                                 }
+                            });
 
-                                renderGlobalButtonsList();
-                                renderSelectedVideoButtons();
-                                updateNotionButtonState();
+                            if (!currentUid) {
+                                localStorage.setItem("local_videos", JSON.stringify(videos));
                             }
-                        });
+
+                            renderGlobalButtonsList();
+                            renderSelectedVideoButtons();
+                            updateNotionButtonState();
+                        }
                     }
-                }
-
-                globalButtonsListContainer.appendChild(item);
+                });
             });
-    }
-
-    // Helper to update status pill badge on the sidebar header
-    function updateSidebarStatusPill(status) {
-        const btn = document.getElementById("btnSidebarStatus");
-        const dot = document.getElementById("detailStatusDot");
-        const text = document.getElementById("detailStatusText");
-        if (!btn) return;
-
-        let bgColor = "rgba(99, 102, 241, 0.08)";
-        let textColor = "var(--ch-purple)";
-        let dotColor = "var(--ch-purple)";
-        let textLabel = "Идея";
-
-        if (status === "in_progress") {
-            bgColor = "rgba(245, 158, 11, 0.08)";
-            textColor = "#d97706";
-            dotColor = "#f59e0b";
-            textLabel = "Черновик";
-        } else if (status === "editing") {
-            bgColor = "rgba(59, 130, 246, 0.08)";
-            textColor = "#2563eb";
-            dotColor = "#3b82f6";
-            textLabel = "В процессе";
-        } else if (status === "published") {
-            bgColor = "rgba(16, 185, 129, 0.08)";
-            textColor = "#059669";
-            dotColor = "#10b981";
-            textLabel = "Опубликовано";
         }
 
-        btn.style.backgroundColor = bgColor;
-        btn.style.color = textColor;
-        if (dot) dot.style.backgroundColor = dotColor;
-        if (text) text.textContent = textLabel;
+        if (!isSystem) {
+            const cancelBtn = item.querySelector(".btn-cancel-edit-global-button");
+            if (cancelBtn) {
+                cancelBtn.addEventListener("click", () => {
+                    viewModeDiv.style.display = "flex";
+                    editModeDiv.style.display = "none";
+                    editInput.value = btn.name;
+                });
+            }
+
+            const saveEditAction = () => {
+                const newName = editInput.value.trim();
+                if (!newName) return;
+                if (newName.toLowerCase() !== btn.name.toLowerCase() && globalButtons.some(b => b.name.toLowerCase() === newName.toLowerCase())) {
+                    alert("Кнопка с таким названием уже существует!");
+                    return;
+                }
+
+                btn.name = newName;
+                saveGlobalButtons();
+
+                renderGlobalButtonsList();
+                renderSelectedVideoButtons();
+                updateNotionButtonState();
+            };
+
+            const saveBtn = item.querySelector(".btn-save-edit-global-button");
+            if (saveBtn) saveBtn.addEventListener("click", saveEditAction);
+            if (editInput) {
+                editInput.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") saveEditAction();
+                });
+            }
+        }
+
+        globalButtonsListContainer.appendChild(item);
+    });
+}
+
+// Helper to update status pill badge on the sidebar header
+function updateSidebarStatusPill(status) {
+    const btn = document.getElementById("btnSidebarStatus");
+    const dot = document.getElementById("detailStatusDot");
+    const text = document.getElementById("detailStatusText");
+    if (!btn) return;
+
+    let bgColor = "rgba(99, 102, 241, 0.08)";
+    let textColor = "var(--ch-purple)";
+    let dotColor = "var(--ch-purple)";
+    let textLabel = "Идея";
+
+    if (status === "in_progress") {
+        bgColor = "rgba(245, 158, 11, 0.08)";
+        textColor = "#d97706";
+        dotColor = "#f59e0b";
+        textLabel = "Черновик";
+    } else if (status === "editing") {
+        bgColor = "rgba(59, 130, 246, 0.08)";
+        textColor = "#2563eb";
+        dotColor = "#3b82f6";
+        textLabel = "В процессе";
+    } else if (status === "published") {
+        bgColor = "rgba(16, 185, 129, 0.08)";
+        textColor = "#059669";
+        dotColor = "#10b981";
+        textLabel = "Опубликовано";
     }
 
-    // Backward compatibility stub for carousel arrows
-    function updateCarouselScrollArrows() {
-        // No-op for responsive grid layout
-    }
+    btn.style.backgroundColor = bgColor;
+    btn.style.color = textColor;
+    if (dot) dot.style.backgroundColor = dotColor;
+    if (text) text.textContent = textLabel;
+}
 
-    // Render dynamic links in the header links grid (Screenshot 2 style)
-    function updateNotionButtonState() {
-        if (!videoButtonsContainer) return;
-        videoButtonsContainer.innerHTML = "";
+// Backward compatibility stub for carousel arrows
+function updateCarouselScrollArrows() {
+    // No-op for responsive grid layout
+}
 
-        const activeButtons = [];
+// Render dynamic links in the header links grid (Screenshot 2 style)
+function updateNotionButtonState() {
+    if (!videoButtonsContainer) return;
+    videoButtonsContainer.innerHTML = "";
 
-        if (selectedVideo) {
-            if (selectedVideo.buttons) {
-                selectedVideo.buttons.forEach(vidBtn => {
-                    if (vidBtn.buttonId === "gb_whiteboard") {
-                        const globalBtn = globalButtons.find(b => b.id === "gb_whiteboard") || { name: "Доска" };
-                        const boardBtn = document.createElement("button");
-                        boardBtn.type = "button";
-                        boardBtn.className = "video-grid-btn";
-                        boardBtn.title = globalBtn.name || "Доска";
-                        boardBtn.style.cursor = "pointer";
-                        boardBtn.innerHTML = `
+    const activeButtons = [];
+
+    if (selectedVideo) {
+        if (selectedVideo.buttons) {
+            selectedVideo.buttons.forEach(vidBtn => {
+                if (vidBtn.buttonId === "gb_whiteboard") {
+                    const globalBtn = globalButtons.find(b => b.id === "gb_whiteboard") || { name: "Доска" };
+                    const boardBtn = document.createElement("button");
+                    boardBtn.type = "button";
+                    boardBtn.className = "video-grid-btn";
+                    boardBtn.title = globalBtn.name || "Доска";
+                    boardBtn.style.cursor = "pointer";
+                    boardBtn.innerHTML = `
                         <span class="video-grid-btn-icon-wrap">${getButtonIconHtml(globalBtn)}</span>
                         <span class="video-grid-btn-label">${escapeHtml(globalBtn.name || "Доска")}</span>
                         <svg class="video-grid-btn-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -5750,21 +5866,21 @@ if (btnSelectButtonToAdd) {
                             <line x1="10" y1="14" x2="21" y2="3"></line>
                         </svg>
                     `;
-                        boardBtn.addEventListener("click", (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            openVideoWhiteboardModal(selectedVideo.id);
-                        });
-                        activeButtons.push(boardBtn);
-                    } else if (vidBtn.url && vidBtn.url.trim() !== "") {
-                        const globalBtn = globalButtons.find(b => b.id === vidBtn.buttonId);
-                        if (globalBtn) {
-                            const linkEl = document.createElement("a");
-                            linkEl.href = vidBtn.url.trim();
-                            linkEl.target = "_blank";
-                            linkEl.className = "video-grid-btn";
-                            linkEl.title = globalBtn.name;
-                            linkEl.innerHTML = `
+                    boardBtn.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openVideoWhiteboardModal(selectedVideo.id);
+                    });
+                    activeButtons.push(boardBtn);
+                } else if (vidBtn.url && vidBtn.url.trim() !== "") {
+                    const globalBtn = globalButtons.find(b => b.id === vidBtn.buttonId);
+                    if (globalBtn) {
+                        const linkEl = document.createElement("a");
+                        linkEl.href = vidBtn.url.trim();
+                        linkEl.target = "_blank";
+                        linkEl.className = "video-grid-btn";
+                        linkEl.title = globalBtn.name;
+                        linkEl.innerHTML = `
                             <span class="video-grid-btn-icon-wrap">${getButtonIconHtml(globalBtn)}</span>
                             <span class="video-grid-btn-label">${escapeHtml(globalBtn.name)}</span>
                             <svg class="video-grid-btn-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -5773,22 +5889,22 @@ if (btnSelectButtonToAdd) {
                                 <line x1="10" y1="14" x2="21" y2="3"></line>
                             </svg>
                         `;
-                            activeButtons.push(linkEl);
-                        }
+                        activeButtons.push(linkEl);
                     }
-                });
-            }
+                }
+            });
+        }
 
-            if (selectedVideo.videoLink && selectedVideo.videoLink.trim() !== "") {
-                const ytid = getYouTubeId(selectedVideo.videoLink);
-                if (ytid) {
-                    const ytBtnObj = globalButtons.find(b => b.id === "gb_youtube_studio") || { name: "YouTube Studio" };
-                    const studioEl = document.createElement("a");
-                    studioEl.href = `https://studio.youtube.com/video/${ytid}/analytics/`;
-                    studioEl.target = "_blank";
-                    studioEl.className = "video-grid-btn";
-                    studioEl.title = "YouTube Studio";
-                    studioEl.innerHTML = `
+        if (selectedVideo.videoLink && selectedVideo.videoLink.trim() !== "") {
+            const ytid = getYouTubeId(selectedVideo.videoLink);
+            if (ytid) {
+                const ytBtnObj = globalButtons.find(b => b.id === "gb_youtube_studio") || { name: "YouTube Studio" };
+                const studioEl = document.createElement("a");
+                studioEl.href = `https://studio.youtube.com/video/${ytid}/analytics/`;
+                studioEl.target = "_blank";
+                studioEl.className = "video-grid-btn";
+                studioEl.title = "YouTube Studio";
+                studioEl.innerHTML = `
                     <span class="video-grid-btn-icon-wrap">${getButtonIconHtml(ytBtnObj)}</span>
                     <span class="video-grid-btn-label">YouTube Studio</span>
                     <svg class="video-grid-btn-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -5797,763 +5913,763 @@ if (btnSelectButtonToAdd) {
                         <line x1="10" y1="14" x2="21" y2="3"></line>
                     </svg>
                 `;
-                    activeButtons.push(studioEl);
-                }
-            }
-        }
-
-        activeButtons.forEach(btn => {
-            videoButtonsContainer.appendChild(btn);
-        });
-
-        const wrapper = document.querySelector(".video-links-grid-wrapper") || document.querySelector(".video-links-carousel-wrapper");
-        if (wrapper) {
-            wrapper.style.display = activeButtons.length > 0 ? "block" : "none";
-        }
-    }
-
-    function openImageLightbox(src) {
-        const overlay = document.createElement("div");
-        overlay.className = "image-lightbox-overlay";
-        overlay.innerHTML = `<img src="${src}" class="image-lightbox-img">`;
-        document.body.appendChild(overlay);
-
-        overlay.offsetWidth; // trigger reflow
-        overlay.classList.add("active");
-
-        const close = () => {
-            overlay.classList.remove("active");
-            setTimeout(() => overlay.remove(), 200);
-        };
-
-        overlay.addEventListener("click", close);
-        overlay.querySelector(".image-lightbox-img").addEventListener("click", (e) => {
-            e.stopPropagation();
-        });
-    }
-
-
-
-    // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ И DRAG-AND-DROP ===
-
-    function formatDateToRussian(dateString) {
-        if (!dateString || dateString === "Без даты" || dateString === "не запланировано") return "не запланировано";
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return "не запланировано";
-
-        const months = [
-            "января", "февраля", "марта", "апреля", "мая", "июня",
-            "июля", "августа", "сентября", "октября", "ноября", "декабря"
-        ];
-
-        const day = date.getDate();
-        const month = months[date.getMonth()];
-        const year = date.getFullYear();
-
-        return `${day} ${month} ${year}`;
-    }
-
-    function formatCreatedDate(timestamp) {
-        if (!timestamp) return "--";
-        const date = new Date(timestamp);
-        if (isNaN(date.getTime())) return "--";
-
-        const today = new Date();
-        const yesterday = new Date();
-        yesterday.setDate(today.getDate() - 1);
-
-        const isSameDay = (d1, d2) =>
-            d1.getFullYear() === d2.getFullYear() &&
-            d1.getMonth() === d2.getMonth() &&
-            d1.getDate() === d2.getDate();
-
-        if (isSameDay(date, today)) {
-            return "сегодня";
-        } else if (isSameDay(date, yesterday)) {
-            return "вчера";
-        } else {
-            return formatDateToRussian(date);
-        }
-    }
-
-    // Рендеринг календарной сетки в настройках
-    function renderCalendarGrid() {
-        const monthsRu = [
-            'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
-            'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'
-        ];
-        if (calendarMonthYear) {
-            calendarMonthYear.textContent = `${monthsRu[calendarMonth]} ${calendarYear}`;
-        }
-
-        const firstDay = new Date(calendarYear, calendarMonth, 1);
-        let startDayOfWeek = firstDay.getDay() - 1;
-        if (startDayOfWeek < 0) startDayOfWeek = 6; // Воскресенье -> 6
-
-        const totalDays = new Date(calendarYear, calendarMonth + 1, 0).getDate();
-        const prevMonthTotalDays = new Date(calendarYear, calendarMonth, 0).getDate();
-
-        if (calendarDaysGrid) {
-            calendarDaysGrid.innerHTML = '';
-
-            // Предыдущий месяц
-            for (let i = startDayOfWeek - 1; i >= 0; i--) {
-                const dayNum = prevMonthTotalDays - i;
-                const cell = createCalendarCell(dayNum, false, calendarMonth - 1, calendarYear);
-                calendarDaysGrid.appendChild(cell);
-            }
-
-            // Текущий месяц
-            for (let i = 1; i <= totalDays; i++) {
-                const cell = createCalendarCell(i, true, calendarMonth, calendarYear);
-                calendarDaysGrid.appendChild(cell);
-            }
-
-            // Следующий месяц
-            const totalCells = startDayOfWeek + totalDays;
-            const remainingCells = 42 - totalCells;
-            for (let i = 1; i <= remainingCells; i++) {
-                const cell = createCalendarCell(i, false, calendarMonth + 1, calendarYear);
-                calendarDaysGrid.appendChild(cell);
+                activeButtons.push(studioEl);
             }
         }
     }
 
-    function createCalendarCell(dayNum, isCurrentMonth, month, year) {
-        let cellMonth = month;
-        let cellYear = year;
+    activeButtons.forEach(btn => {
+        videoButtonsContainer.appendChild(btn);
+    });
 
-        if (cellMonth < 0) {
-            cellMonth = 11;
-            cellYear--;
-        } else if (cellMonth > 11) {
-            cellMonth = 0;
-            cellYear++;
-        }
+    const wrapper = document.querySelector(".video-links-grid-wrapper") || document.querySelector(".video-links-carousel-wrapper");
+    if (wrapper) {
+        wrapper.style.display = activeButtons.length > 0 ? "block" : "none";
+    }
+}
 
-        const cell = document.createElement('span');
-        cell.className = 'calendar-day-cell';
-        cell.textContent = dayNum;
+function openImageLightbox(src) {
+    const overlay = document.createElement("div");
+    overlay.className = "image-lightbox-overlay";
+    overlay.innerHTML = `<img src="${src}" class="image-lightbox-img">`;
+    document.body.appendChild(overlay);
 
-        if (!isCurrentMonth) {
-            cell.classList.add('other-month');
-        }
+    overlay.offsetWidth; // trigger reflow
+    overlay.classList.add("active");
 
-        const dateStr = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+    const close = () => {
+        overlay.classList.remove("active");
+        setTimeout(() => overlay.remove(), 200);
+    };
 
-        if (selectedDueDate === dateStr) {
-            cell.classList.add('selected');
-        }
+    overlay.addEventListener("click", close);
+    overlay.querySelector(".image-lightbox-img").addEventListener("click", (e) => {
+        e.stopPropagation();
+    });
+}
 
-        const today = new Date();
-        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        if (todayStr === dateStr) {
-            cell.classList.add('today');
-        }
 
-        cell.addEventListener('click', (e) => {
-            e.stopPropagation();
-            setDueDate(dateStr);
-            renderCalendarGrid();
-        });
 
-        return cell;
+// === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ И DRAG-AND-DROP ===
+
+function formatDateToRussian(dateString) {
+    if (!dateString || dateString === "Без даты" || dateString === "не запланировано") return "не запланировано";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "не запланировано";
+
+    const months = [
+        "января", "февраля", "марта", "апреля", "мая", "июня",
+        "июля", "августа", "сентября", "октября", "ноября", "декабря"
+    ];
+
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+
+    return `${day} ${month} ${year}`;
+}
+
+function formatCreatedDate(timestamp) {
+    if (!timestamp) return "--";
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return "--";
+
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const isSameDay = (d1, d2) =>
+        d1.getFullYear() === d2.getFullYear() &&
+        d1.getMonth() === d2.getMonth() &&
+        d1.getDate() === d2.getDate();
+
+    if (isSameDay(date, today)) {
+        return "сегодня";
+    } else if (isSameDay(date, yesterday)) {
+        return "вчера";
+    } else {
+        return formatDateToRussian(date);
+    }
+}
+
+// Рендеринг календарной сетки в настройках
+function renderCalendarGrid() {
+    const monthsRu = [
+        'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+        'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'
+    ];
+    if (calendarMonthYear) {
+        calendarMonthYear.textContent = `${monthsRu[calendarMonth]} ${calendarYear}`;
     }
 
-    async function setDueDate(dateStr) {
-        if (!selectedVideo) return;
+    const firstDay = new Date(calendarYear, calendarMonth, 1);
+    let startDayOfWeek = firstDay.getDay() - 1;
+    if (startDayOfWeek < 0) startDayOfWeek = 6; // Воскресенье -> 6
 
-        selectedDueDate = dateStr;
-        selectedVideo.publishDate = dateStr;
+    const totalDays = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+    const prevMonthTotalDays = new Date(calendarYear, calendarMonth, 0).getDate();
 
-        const formattedDate = formatDateToRussian(dateStr);
-        selectedVideo.date = formattedDate;
-        selectedVideo.dateLabel = formattedDate;
+    if (calendarDaysGrid) {
+        calendarDaysGrid.innerHTML = '';
 
-        // Обновляем текст на кнопке настроек
-        if (dueDateBtnText) {
-            dueDateBtnText.textContent = formattedDate;
-        }
-        // Обновляем кнопку очистки
-        const btnClearDueDate = document.getElementById("btnClearDueDate");
-        if (btnClearDueDate) {
-            btnClearDueDate.style.display = dateStr ? "flex" : "none";
-        }
-        // Обновляем статичный текст на вкладке Информация
-        if (infoDate) {
-            infoDate.textContent = formattedDate;
+        // Предыдущий месяц
+        for (let i = startDayOfWeek - 1; i >= 0; i--) {
+            const dayNum = prevMonthTotalDays - i;
+            const cell = createCalendarCell(dayNum, false, calendarMonth - 1, calendarYear);
+            calendarDaysGrid.appendChild(cell);
         }
 
-        if (currentUid) {
-            try {
-                await updateDoc(doc(db, "users", currentUid, "videos", selectedVideo.id), {
-                    publishDate: dateStr,
-                    date: formattedDate,
-                    dateLabel: formattedDate
-                });
-            } catch (err) {
-                console.error("Ошибка при сохранении даты публикации в Firestore:", err);
-            }
-        } else {
-            localStorage.setItem("local_videos", JSON.stringify(videos));
+        // Текущий месяц
+        for (let i = 1; i <= totalDays; i++) {
+            const cell = createCalendarCell(i, true, calendarMonth, calendarYear);
+            calendarDaysGrid.appendChild(cell);
         }
 
-        renderVideosList();
-
-        if (dueDateDropdown) {
-            dueDateDropdown.style.display = "none";
+        // Следующий месяц
+        const totalCells = startDayOfWeek + totalDays;
+        const remainingCells = 42 - totalCells;
+        for (let i = 1; i <= remainingCells; i++) {
+            const cell = createCalendarCell(i, false, calendarMonth + 1, calendarYear);
+            calendarDaysGrid.appendChild(cell);
         }
     }
+}
 
-    async function clearDueDate() {
-        if (!selectedVideo) return;
+function createCalendarCell(dayNum, isCurrentMonth, month, year) {
+    let cellMonth = month;
+    let cellYear = year;
 
-        selectedDueDate = "";
-        selectedVideo.publishDate = "";
-
-        const formattedDate = "не запланировано";
-        selectedVideo.date = formattedDate;
-        selectedVideo.dateLabel = formattedDate;
-
-        if (dueDateBtnText) {
-            dueDateBtnText.textContent = "Выбрать дату";
-        }
-        if (infoDate) {
-            infoDate.textContent = formattedDate;
-        }
-
-        const btnClearDueDate = document.getElementById("btnClearDueDate");
-        if (btnClearDueDate) {
-            btnClearDueDate.style.display = "none";
-        }
-
-        if (currentUid) {
-            try {
-                await updateDoc(doc(db, "users", currentUid, "videos", selectedVideo.id), {
-                    publishDate: "",
-                    date: formattedDate,
-                    dateLabel: formattedDate
-                });
-            } catch (err) {
-                console.error("Ошибка при сохранении даты публикации в Firestore:", err);
-            }
-        } else {
-            localStorage.setItem("local_videos", JSON.stringify(videos));
-        }
-
-        renderVideosList();
+    if (cellMonth < 0) {
+        cellMonth = 11;
+        cellYear--;
+    } else if (cellMonth > 11) {
+        cellMonth = 0;
+        cellYear++;
     }
 
-    function updateDescriptionViewer(text) {
-        if (!infoDescriptionViewer) return;
-        if (!text) {
-            infoDescriptionViewer.innerHTML = `<span style="color: var(--ch-text-gray); font-style: italic;">Нажмите, чтобы добавить описание...</span>`;
+    const cell = document.createElement('span');
+    cell.className = 'calendar-day-cell';
+    cell.textContent = dayNum;
+
+    if (!isCurrentMonth) {
+        cell.classList.add('other-month');
+    }
+
+    const dateStr = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+
+    if (selectedDueDate === dateStr) {
+        cell.classList.add('selected');
+    }
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    if (todayStr === dateStr) {
+        cell.classList.add('today');
+    }
+
+    cell.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setDueDate(dateStr);
+        renderCalendarGrid();
+    });
+
+    return cell;
+}
+
+async function setDueDate(dateStr) {
+    if (!selectedVideo) return;
+
+    selectedDueDate = dateStr;
+    selectedVideo.publishDate = dateStr;
+
+    const formattedDate = formatDateToRussian(dateStr);
+    selectedVideo.date = formattedDate;
+    selectedVideo.dateLabel = formattedDate;
+
+    // Обновляем текст на кнопке настроек
+    if (dueDateBtnText) {
+        dueDateBtnText.textContent = formattedDate;
+    }
+    // Обновляем кнопку очистки
+    const btnClearDueDate = document.getElementById("btnClearDueDate");
+    if (btnClearDueDate) {
+        btnClearDueDate.style.display = dateStr ? "flex" : "none";
+    }
+    // Обновляем статичный текст на вкладке Информация
+    if (infoDate) {
+        infoDate.textContent = formattedDate;
+    }
+
+    if (currentUid) {
+        try {
+            await updateDoc(doc(db, "users", currentUid, "videos", selectedVideo.id), {
+                publishDate: dateStr,
+                date: formattedDate,
+                dateLabel: formattedDate
+            });
+        } catch (err) {
+            console.error("Ошибка при сохранении даты публикации в Firestore:", err);
+        }
+    } else {
+        localStorage.setItem("local_videos", JSON.stringify(videos));
+    }
+
+    renderVideosList();
+
+    if (dueDateDropdown) {
+        dueDateDropdown.style.display = "none";
+    }
+}
+
+async function clearDueDate() {
+    if (!selectedVideo) return;
+
+    selectedDueDate = "";
+    selectedVideo.publishDate = "";
+
+    const formattedDate = "не запланировано";
+    selectedVideo.date = formattedDate;
+    selectedVideo.dateLabel = formattedDate;
+
+    if (dueDateBtnText) {
+        dueDateBtnText.textContent = "Выбрать дату";
+    }
+    if (infoDate) {
+        infoDate.textContent = formattedDate;
+    }
+
+    const btnClearDueDate = document.getElementById("btnClearDueDate");
+    if (btnClearDueDate) {
+        btnClearDueDate.style.display = "none";
+    }
+
+    if (currentUid) {
+        try {
+            await updateDoc(doc(db, "users", currentUid, "videos", selectedVideo.id), {
+                publishDate: "",
+                date: formattedDate,
+                dateLabel: formattedDate
+            });
+        } catch (err) {
+            console.error("Ошибка при сохранении даты публикации в Firestore:", err);
+        }
+    } else {
+        localStorage.setItem("local_videos", JSON.stringify(videos));
+    }
+
+    renderVideosList();
+}
+
+function updateDescriptionViewer(text) {
+    if (!infoDescriptionViewer) return;
+    if (!text) {
+        infoDescriptionViewer.innerHTML = `<span style="color: var(--ch-text-gray); font-style: italic;">Нажмите, чтобы добавить описание...</span>`;
+        return;
+    }
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    html = html.replace(urlRegex, (url) => {
+        return `<a href="${url}" target="_blank" style="color: var(--ch-purple); text-decoration: underline; font-weight: 500;">${url}</a>`;
+    });
+    infoDescriptionViewer.innerHTML = html;
+}
+
+function initDragAndDrop() {
+    let draggingElement = null;
+    let placeholder = null;
+
+    videosListContainer.addEventListener('dragstart', (e) => {
+        const card = e.target.closest('.video-card');
+        if (currentSort !== "manual" || !card || card.classList.contains('editing') || card.querySelector('.btn-restore')) {
+            e.preventDefault();
             return;
         }
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
-        let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        html = html.replace(urlRegex, (url) => {
-            return `<a href="${url}" target="_blank" style="color: var(--ch-purple); text-decoration: underline; font-weight: 500;">${url}</a>`;
-        });
-        infoDescriptionViewer.innerHTML = html;
-    }
+        draggingElement = card;
+        card.classList.add('dragging');
 
-    function initDragAndDrop() {
-        let draggingElement = null;
-        let placeholder = null;
+        placeholder = document.createElement('div');
+        placeholder.className = 'video-drag-placeholder';
+        placeholder.style.height = `${draggingElement.offsetHeight}px`;
 
-        videosListContainer.addEventListener('dragstart', (e) => {
-            const card = e.target.closest('.video-card');
-            if (currentSort !== "manual" || !card || card.classList.contains('editing') || card.querySelector('.btn-restore')) {
-                e.preventDefault();
-                return;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', card.getAttribute('data-id'));
+
+        setTimeout(() => {
+            if (draggingElement) {
+                draggingElement.style.display = 'none';
             }
-            draggingElement = card;
-            card.classList.add('dragging');
+        }, 0);
+    });
 
+    videosListContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (!draggingElement || !placeholder) return;
+
+        const afterElement = getDragAfterVideo(videosListContainer, e.clientX, e.clientY);
+        if (afterElement) {
+            videosListContainer.insertBefore(placeholder, afterElement);
+        } else {
+            videosListContainer.appendChild(placeholder);
+        }
+    });
+
+    videosListContainer.addEventListener('dragend', (e) => {
+        if (draggingElement) {
+            draggingElement.style.display = '';
+            draggingElement.classList.remove('dragging');
+            draggingElement.removeAttribute('draggable');
+        }
+        if (placeholder && placeholder.parentNode) {
+            placeholder.remove();
+        }
+        placeholder = null;
+        draggingElement = null;
+    });
+
+    videosListContainer.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        if (!draggingElement || !placeholder) return;
+
+        const prevElement = placeholder.previousElementSibling;
+        const nextElement = placeholder.nextElementSibling;
+
+        placeholder.remove();
+        placeholder = null;
+
+        if (draggingElement) {
+            draggingElement.style.display = '';
+            draggingElement.classList.remove('dragging');
+        }
+
+        const videoId = draggingElement.getAttribute('data-id');
+        const video = videos.find(v => v.id === videoId);
+        if (!video) {
+            draggingElement = null;
+            return;
+        }
+
+        const prevVideoId = prevElement ? prevElement.getAttribute('data-id') : null;
+        const nextVideoId = nextElement ? nextElement.getAttribute('data-id') : null;
+
+        const prevVideo = videos.find(v => v.id === prevVideoId);
+        const nextVideo = videos.find(v => v.id === nextVideoId);
+
+        let newOrder = 0;
+        if (!prevVideo && !nextVideo) {
+            newOrder = 0;
+        } else if (!prevVideo) {
+            newOrder = (nextVideo.order !== undefined ? nextVideo.order : 0) - 1000;
+        } else if (!nextVideo) {
+            newOrder = (prevVideo.order !== undefined ? prevVideo.order : 0) + 1000;
+        } else {
+            const prevOrder = prevVideo.order !== undefined ? prevVideo.order : 0;
+            const nextOrder = nextVideo.order !== undefined ? nextVideo.order : 0;
+            newOrder = (prevOrder + nextOrder) / 2;
+        }
+
+        video.order = newOrder;
+
+        if (currentUid && videoId) {
+            try {
+                await updateDoc(doc(db, "users", currentUid, "videos", videoId), {
+                    order: newOrder
+                });
+            } catch (err) {
+                console.error("Ошибка при переупорядочивании видео:", err);
+            }
+        } else {
+            localStorage.setItem("local_videos", JSON.stringify(videos));
+            renderVideosList();
+        }
+        draggingElement = null;
+    });
+}
+
+function getDragAfterVideo(container, x, y) {
+    const dragElements = [...container.querySelectorAll('.video-card:not(.dragging):not(.video-drag-placeholder)')];
+    if (dragElements.length === 0) return null;
+
+    let closest = null;
+    let minDistance = Infinity;
+
+    dragElements.forEach(child => {
+        const box = child.getBoundingClientRect();
+        const centerX = box.left + box.width / 2;
+        const centerY = box.top + box.height / 2;
+        const distance = Math.hypot(x - centerX, y - centerY);
+
+        if (distance < minDistance) {
+            minDistance = distance;
+            closest = { element: child, box: box, centerX: centerX, centerY: centerY };
+        }
+    });
+
+    if (!closest) return null;
+
+    const box = closest.box;
+    if (y < box.top) {
+        return closest.element;
+    } else if (y > box.bottom) {
+        return closest.element.nextElementSibling;
+    } else {
+        if (x < closest.centerX) {
+            return closest.element;
+        } else {
+            return closest.element.nextElementSibling;
+        }
+    }
+}
+
+
+function initTouchDragAndDrop() {
+    let touchStartTimer = null;
+    let touchDraggingElement = null;
+    let startY = 0;
+    let startX = 0;
+    let placeholder = null;
+
+    const removePassiveListeners = () => {
+        window.removeEventListener('touchmove', handleTouchMovePassive);
+        window.removeEventListener('touchend', handleTouchEndPassive);
+        window.removeEventListener('touchcancel', handleTouchEndPassive);
+    };
+
+    const handleTouchMovePassive = (e) => {
+        const touch = e.touches[0];
+        if (Math.abs(touch.clientY - startY) > 10 || Math.abs(touch.clientX - startX) > 10) {
+            if (touchStartTimer) {
+                clearTimeout(touchStartTimer);
+                touchStartTimer = null;
+            }
+            removePassiveListeners();
+        }
+    };
+
+    const handleTouchEndPassive = () => {
+        if (touchStartTimer) {
+            clearTimeout(touchStartTimer);
+            touchStartTimer = null;
+        }
+        removePassiveListeners();
+    };
+
+    const resetTouchState = () => {
+        if (touchStartTimer) {
+            clearTimeout(touchStartTimer);
+            touchStartTimer = null;
+        }
+        removePassiveListeners();
+        window.removeEventListener('touchmove', handleTouchMoveActive);
+        window.removeEventListener('touchend', handleTouchEndActive);
+        window.removeEventListener('touchcancel', resetTouchState);
+
+        if (touchDraggingElement) {
+            touchDraggingElement.classList.remove('dragging');
+            touchDraggingElement.removeAttribute('draggable');
+            if (touchDraggingElement._preventSelection) {
+                window.removeEventListener('selectstart', touchDraggingElement._preventSelection, { capture: true });
+                window.removeEventListener('contextmenu', touchDraggingElement._preventSelection, { capture: true });
+                delete touchDraggingElement._preventSelection;
+            }
+        }
+        if (placeholder && placeholder.parentNode) {
+            placeholder.remove();
+        }
+        placeholder = null;
+        touchDraggingElement = null;
+    };
+
+    const handleTouchStart = (e) => {
+        if (e.touches.length > 1) return;
+        if (currentSort !== "manual") return;
+
+        // Предотвращаем срабатывание драга, если кликнули на селект статуса или другие интерактивные элементы
+        if (e.target.closest('button, input, textarea, a, select')) {
+            return;
+        }
+
+        const touch = e.touches[0];
+        startY = touch.clientY;
+        startX = touch.clientX;
+
+        const card = e.target.closest('.video-card');
+        if (!card || card.classList.contains('editing') || card.querySelector('.btn-restore')) return;
+
+        const preventSelection = (evt) => {
+            evt.preventDefault();
+        };
+
+        window.addEventListener('touchmove', handleTouchMovePassive, { passive: true });
+        window.addEventListener('touchend', handleTouchEndPassive, { passive: true });
+        window.addEventListener('touchcancel', handleTouchEndPassive, { passive: true });
+
+        touchStartTimer = setTimeout(() => {
+            removePassiveListeners();
+
+            touchDraggingElement = card;
+            touchDraggingElement.classList.add('dragging');
+            touchDraggingElement.setAttribute('draggable', 'true');
+
+            window.addEventListener('selectstart', preventSelection, { capture: true });
+            window.addEventListener('contextmenu', preventSelection, { capture: true });
+            touchDraggingElement._preventSelection = preventSelection;
+
+            window.addEventListener('touchmove', handleTouchMoveActive, { passive: false });
+            window.addEventListener('touchend', handleTouchEndActive, { passive: true });
+            window.addEventListener('touchcancel', resetTouchState, { passive: true });
+
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }, 300);
+    };
+
+    const handleTouchMoveActive = (e) => {
+        if (!touchDraggingElement) return;
+        e.preventDefault();
+
+        const touch = e.touches[0];
+
+        if (!placeholder) {
             placeholder = document.createElement('div');
             placeholder.className = 'video-drag-placeholder';
-            placeholder.style.height = `${draggingElement.offsetHeight}px`;
+            placeholder.style.height = `${touchDraggingElement.offsetHeight}px`;
+        }
 
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', card.getAttribute('data-id'));
-
-            setTimeout(() => {
-                if (draggingElement) {
-                    draggingElement.style.display = 'none';
-                }
-            }, 0);
-        });
-
-        videosListContainer.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            if (!draggingElement || !placeholder) return;
-
-            const afterElement = getDragAfterVideo(videosListContainer, e.clientX, e.clientY);
-            if (afterElement) {
-                videosListContainer.insertBefore(placeholder, afterElement);
-            } else {
-                videosListContainer.appendChild(placeholder);
-            }
-        });
-
-        videosListContainer.addEventListener('dragend', (e) => {
-            if (draggingElement) {
-                draggingElement.style.display = '';
-                draggingElement.classList.remove('dragging');
-                draggingElement.removeAttribute('draggable');
-            }
-            if (placeholder && placeholder.parentNode) {
-                placeholder.remove();
-            }
-            placeholder = null;
-            draggingElement = null;
-        });
-
-        videosListContainer.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            if (!draggingElement || !placeholder) return;
-
-            const prevElement = placeholder.previousElementSibling;
-            const nextElement = placeholder.nextElementSibling;
-
-            placeholder.remove();
-            placeholder = null;
-
-            if (draggingElement) {
-                draggingElement.style.display = '';
-                draggingElement.classList.remove('dragging');
-            }
-
-            const videoId = draggingElement.getAttribute('data-id');
-            const video = videos.find(v => v.id === videoId);
-            if (!video) {
-                draggingElement = null;
-                return;
-            }
-
-            const prevVideoId = prevElement ? prevElement.getAttribute('data-id') : null;
-            const nextVideoId = nextElement ? nextElement.getAttribute('data-id') : null;
-
-            const prevVideo = videos.find(v => v.id === prevVideoId);
-            const nextVideo = videos.find(v => v.id === nextVideoId);
-
-            let newOrder = 0;
-            if (!prevVideo && !nextVideo) {
-                newOrder = 0;
-            } else if (!prevVideo) {
-                newOrder = (nextVideo.order !== undefined ? nextVideo.order : 0) - 1000;
-            } else if (!nextVideo) {
-                newOrder = (prevVideo.order !== undefined ? prevVideo.order : 0) + 1000;
-            } else {
-                const prevOrder = prevVideo.order !== undefined ? prevVideo.order : 0;
-                const nextOrder = nextVideo.order !== undefined ? nextVideo.order : 0;
-                newOrder = (prevOrder + nextOrder) / 2;
-            }
-
-            video.order = newOrder;
-
-            if (currentUid && videoId) {
-                try {
-                    await updateDoc(doc(db, "users", currentUid, "videos", videoId), {
-                        order: newOrder
-                    });
-                } catch (err) {
-                    console.error("Ошибка при переупорядочивании видео:", err);
-                }
-            } else {
-                localStorage.setItem("local_videos", JSON.stringify(videos));
-                renderVideosList();
-            }
-            draggingElement = null;
-        });
-    }
-
-    function getDragAfterVideo(container, x, y) {
-        const dragElements = [...container.querySelectorAll('.video-card:not(.dragging):not(.video-drag-placeholder)')];
-        if (dragElements.length === 0) return null;
-
-        let closest = null;
-        let minDistance = Infinity;
-
-        dragElements.forEach(child => {
-            const box = child.getBoundingClientRect();
-            const centerX = box.left + box.width / 2;
-            const centerY = box.top + box.height / 2;
-            const distance = Math.hypot(x - centerX, y - centerY);
-
-            if (distance < minDistance) {
-                minDistance = distance;
-                closest = { element: child, box: box, centerX: centerX, centerY: centerY };
-            }
-        });
-
-        if (!closest) return null;
-
-        const box = closest.box;
-        if (y < box.top) {
-            return closest.element;
-        } else if (y > box.bottom) {
-            return closest.element.nextElementSibling;
+        const afterElement = getDragAfterVideo(videosListContainer, touch.clientX, touch.clientY);
+        if (afterElement) {
+            videosListContainer.insertBefore(placeholder, afterElement);
         } else {
-            if (x < closest.centerX) {
-                return closest.element;
-            } else {
-                return closest.element.nextElementSibling;
-            }
+            videosListContainer.appendChild(placeholder);
         }
-    }
+    };
 
+    const handleTouchEndActive = async (e) => {
+        if (touchStartTimer) {
+            clearTimeout(touchStartTimer);
+            touchStartTimer = null;
+        }
 
-    function initTouchDragAndDrop() {
-        let touchStartTimer = null;
-        let touchDraggingElement = null;
-        let startY = 0;
-        let startX = 0;
-        let placeholder = null;
-
-        const removePassiveListeners = () => {
-            window.removeEventListener('touchmove', handleTouchMovePassive);
-            window.removeEventListener('touchend', handleTouchEndPassive);
-            window.removeEventListener('touchcancel', handleTouchEndPassive);
-        };
-
-        const handleTouchMovePassive = (e) => {
-            const touch = e.touches[0];
-            if (Math.abs(touch.clientY - startY) > 10 || Math.abs(touch.clientX - startX) > 10) {
-                if (touchStartTimer) {
-                    clearTimeout(touchStartTimer);
-                    touchStartTimer = null;
-                }
-                removePassiveListeners();
-            }
-        };
-
-        const handleTouchEndPassive = () => {
-            if (touchStartTimer) {
-                clearTimeout(touchStartTimer);
-                touchStartTimer = null;
-            }
-            removePassiveListeners();
-        };
-
-        const resetTouchState = () => {
-            if (touchStartTimer) {
-                clearTimeout(touchStartTimer);
-                touchStartTimer = null;
-            }
-            removePassiveListeners();
-            window.removeEventListener('touchmove', handleTouchMoveActive);
-            window.removeEventListener('touchend', handleTouchEndActive);
-            window.removeEventListener('touchcancel', resetTouchState);
-
-            if (touchDraggingElement) {
-                touchDraggingElement.classList.remove('dragging');
-                touchDraggingElement.removeAttribute('draggable');
-                if (touchDraggingElement._preventSelection) {
-                    window.removeEventListener('selectstart', touchDraggingElement._preventSelection, { capture: true });
-                    window.removeEventListener('contextmenu', touchDraggingElement._preventSelection, { capture: true });
-                    delete touchDraggingElement._preventSelection;
-                }
-            }
-            if (placeholder && placeholder.parentNode) {
-                placeholder.remove();
-            }
-            placeholder = null;
-            touchDraggingElement = null;
-        };
-
-        const handleTouchStart = (e) => {
-            if (e.touches.length > 1) return;
-            if (currentSort !== "manual") return;
-
-            // Предотвращаем срабатывание драга, если кликнули на селект статуса или другие интерактивные элементы
-            if (e.target.closest('button, input, textarea, a, select')) {
-                return;
-            }
-
-            const touch = e.touches[0];
-            startY = touch.clientY;
-            startX = touch.clientX;
-
-            const card = e.target.closest('.video-card');
-            if (!card || card.classList.contains('editing') || card.querySelector('.btn-restore')) return;
-
-            const preventSelection = (evt) => {
-                evt.preventDefault();
-            };
-
-            window.addEventListener('touchmove', handleTouchMovePassive, { passive: true });
-            window.addEventListener('touchend', handleTouchEndPassive, { passive: true });
-            window.addEventListener('touchcancel', handleTouchEndPassive, { passive: true });
-
-            touchStartTimer = setTimeout(() => {
-                removePassiveListeners();
-
-                touchDraggingElement = card;
-                touchDraggingElement.classList.add('dragging');
-                touchDraggingElement.setAttribute('draggable', 'true');
-
-                window.addEventListener('selectstart', preventSelection, { capture: true });
-                window.addEventListener('contextmenu', preventSelection, { capture: true });
-                touchDraggingElement._preventSelection = preventSelection;
-
-                window.addEventListener('touchmove', handleTouchMoveActive, { passive: false });
-                window.addEventListener('touchend', handleTouchEndActive, { passive: true });
-                window.addEventListener('touchcancel', resetTouchState, { passive: true });
-
-                if (navigator.vibrate) {
-                    navigator.vibrate(50);
-                }
-            }, 300);
-        };
-
-        const handleTouchMoveActive = (e) => {
-            if (!touchDraggingElement) return;
-            e.preventDefault();
-
-            const touch = e.touches[0];
-
-            if (!placeholder) {
-                placeholder = document.createElement('div');
-                placeholder.className = 'video-drag-placeholder';
-                placeholder.style.height = `${touchDraggingElement.offsetHeight}px`;
-            }
-
-            const afterElement = getDragAfterVideo(videosListContainer, touch.clientX, touch.clientY);
-            if (afterElement) {
-                videosListContainer.insertBefore(placeholder, afterElement);
-            } else {
-                videosListContainer.appendChild(placeholder);
-            }
-        };
-
-        const handleTouchEndActive = async (e) => {
-            if (touchStartTimer) {
-                clearTimeout(touchStartTimer);
-                touchStartTimer = null;
-            }
-
-            if (!touchDraggingElement || !placeholder) {
-                resetTouchState();
-                return;
-            }
-
-            const prevElement = placeholder.previousElementSibling;
-            const nextElement = placeholder.nextElementSibling;
-            const draggingEl = touchDraggingElement;
-
+        if (!touchDraggingElement || !placeholder) {
             resetTouchState();
-
-            const videoId = draggingEl.getAttribute('data-id');
-            const video = videos.find(v => v.id === videoId);
-            if (!video) return;
-
-            const prevVideoId = prevElement ? prevElement.getAttribute('data-id') : null;
-            const nextVideoId = nextElement ? nextElement.getAttribute('data-id') : null;
-
-            const prevVideo = videos.find(v => v.id === prevVideoId);
-            const nextVideo = videos.find(v => v.id === nextVideoId);
-
-            let newOrder = 0;
-            if (!prevVideo && !nextVideo) {
-                newOrder = 0;
-            } else if (!prevVideo) {
-                newOrder = (nextVideo.order !== undefined ? nextVideo.order : 0) - 1000;
-            } else if (!nextVideo) {
-                newOrder = (prevVideo.order !== undefined ? prevVideo.order : 0) + 1000;
-            } else {
-                const prevOrder = prevVideo.order !== undefined ? prevVideo.order : 0;
-                const nextOrder = nextVideo.order !== undefined ? nextVideo.order : 0;
-                newOrder = (prevOrder + nextOrder) / 2;
-            }
-
-            video.order = newOrder;
-
-            if (currentUid && videoId) {
-                try {
-                    await updateDoc(doc(db, "users", currentUid, "videos", videoId), {
-                        order: newOrder
-                    });
-                } catch (err) {
-                    console.error("Ошибка при touch-перетаскивании видео:", err);
-                }
-            } else {
-                localStorage.setItem("local_videos", JSON.stringify(videos));
-                renderVideosList();
-            }
-        };
-
-        videosListContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
-    }
-
-    function updateTabCounts() {
-        let activeVideos = videos.filter(v => !v.deleted);
-        if (channels && channels.length > 0 && currentChannelId) {
-            if (currentChannelId === "no_channel") {
-                activeVideos = activeVideos.filter(v => !v.channelId || !channels.some(ch => ch.id === v.channelId));
-            } else {
-                activeVideos = activeVideos.filter(v => v.channelId === currentChannelId);
-            }
-        }
-
-        const countMap = {
-            idea: activeVideos.filter(v => v.status === "idea").length,
-            in_progress: activeVideos.filter(v => v.status === "in_progress").length,
-            editing: activeVideos.filter(v => v.status === "editing").length,
-            published: activeVideos.filter(v => v.status === "published").length
-        };
-
-        const tabLabels = {
-            idea: "Идеи",
-            in_progress: "Черновик",
-            editing: "В процессе",
-            published: "Опубликовано"
-        };
-
-        const tabIcons = {
-            idea: `<svg class="tab-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M16,7a8.36,8.36,0,0,0-8,8,8.4,8.4,0,0,0,2.29,5.7A4.56,4.56,0,0,1,12,24a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1,4.46,4.46,0,0,1,1.69-3.28A7.87,7.87,0,0,0,24,15a8.17,8.17,0,0,0-2.44-5.83A7.67,7.67,0,0,0,16,7Zm4.34,12.28A6.87,6.87,0,0,0,18.09,23H13.91a7,7,0,0,0-2.2-3.71A6.41,6.41,0,0,1,10,15a6.29,6.29,0,0,1,6-6,5.63,5.63,0,0,1,4.13,1.6A6.16,6.16,0,0,1,22,15,5.93,5.93,0,0,1,20.31,19.28Z"></path><path d="M19,26H13a1,1,0,0,0,0,2h6a1,1,0,0,0,0-2Z"></path><path d="M18,29H14a1,1,0,0,0,0,2h4a1,1,0,0,0,0-2Z"></path><path d="M16,5a1,1,0,0,0,1-1V2a1,1,0,0,0-2,0V4A1,1,0,0,0,16,5Z"></path><path d="M5,14H3a1,1,0,0,0,0,2H5a1,1,0,0,0,0-2Z"></path><path d="M29,14H27a1,1,0,0,0,0,2h2a1,1,0,0,0,0-2Z"></path><path d="M25.9,5.1a1,1,0,0,0-1.41,0L23.07,6.51a1,1,0,0,0,0,1.42,1,1,0,0,0,.71.29,1,1,0,0,0,.71-.29L25.9,6.51A1,1,0,0,0,25.9,5.1Z"></path><path d="M8.93,7.93a1,1,0,0,0,0-1.42L7.51,5.1A1,1,0,0,0,6.1,6.51L7.51,7.93a1,1,0,0,0,.71.29A1,1,0,0,0,8.93,7.93Z"></path></svg>`,
-            in_progress: `<svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`,
-            editing: `<svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.296 3.464 3.02 3.956"></path><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"></path><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="m6.18 5.276 3.1 3.899"></path></svg>`,
-            published: `<svg class="tab-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" /><path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05" /></svg>`
-        };
-
-        const tabBtns = document.querySelectorAll(".filters-tabs .tab-btn");
-        tabBtns.forEach(btn => {
-            const filterVal = btn.dataset.filter;
-            if (tabLabels[filterVal] !== undefined) {
-                const iconHtml = tabIcons[filterVal] || "";
-                btn.innerHTML = `${iconHtml}<span>${tabLabels[filterVal]}</span> <span class="tab-count">${countMap[filterVal]}</span>`;
-            }
-        });
-    }
-
-    function renderTags() {
-        if (!selectedVideo) {
-            if (infoTags) infoTags.innerHTML = "";
             return;
         }
-        const tagsList = selectedVideo.tags || [];
-        infoTags.innerHTML = tagsList.map(tag => {
-            const displayTag = tag.startsWith("#") ? tag.substring(1) : tag;
-            return `
+
+        const prevElement = placeholder.previousElementSibling;
+        const nextElement = placeholder.nextElementSibling;
+        const draggingEl = touchDraggingElement;
+
+        resetTouchState();
+
+        const videoId = draggingEl.getAttribute('data-id');
+        const video = videos.find(v => v.id === videoId);
+        if (!video) return;
+
+        const prevVideoId = prevElement ? prevElement.getAttribute('data-id') : null;
+        const nextVideoId = nextElement ? nextElement.getAttribute('data-id') : null;
+
+        const prevVideo = videos.find(v => v.id === prevVideoId);
+        const nextVideo = videos.find(v => v.id === nextVideoId);
+
+        let newOrder = 0;
+        if (!prevVideo && !nextVideo) {
+            newOrder = 0;
+        } else if (!prevVideo) {
+            newOrder = (nextVideo.order !== undefined ? nextVideo.order : 0) - 1000;
+        } else if (!nextVideo) {
+            newOrder = (prevVideo.order !== undefined ? prevVideo.order : 0) + 1000;
+        } else {
+            const prevOrder = prevVideo.order !== undefined ? prevVideo.order : 0;
+            const nextOrder = nextVideo.order !== undefined ? nextVideo.order : 0;
+            newOrder = (prevOrder + nextOrder) / 2;
+        }
+
+        video.order = newOrder;
+
+        if (currentUid && videoId) {
+            try {
+                await updateDoc(doc(db, "users", currentUid, "videos", videoId), {
+                    order: newOrder
+                });
+            } catch (err) {
+                console.error("Ошибка при touch-перетаскивании видео:", err);
+            }
+        } else {
+            localStorage.setItem("local_videos", JSON.stringify(videos));
+            renderVideosList();
+        }
+    };
+
+    videosListContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
+}
+
+function updateTabCounts() {
+    let activeVideos = videos.filter(v => !v.deleted);
+    if (channels && channels.length > 0 && currentChannelId) {
+        if (currentChannelId === "no_channel") {
+            activeVideos = activeVideos.filter(v => !v.channelId || !channels.some(ch => ch.id === v.channelId));
+        } else {
+            activeVideos = activeVideos.filter(v => v.channelId === currentChannelId);
+        }
+    }
+
+    const countMap = {
+        idea: activeVideos.filter(v => v.status === "idea").length,
+        in_progress: activeVideos.filter(v => v.status === "in_progress").length,
+        editing: activeVideos.filter(v => v.status === "editing").length,
+        published: activeVideos.filter(v => v.status === "published").length
+    };
+
+    const tabLabels = {
+        idea: "Идеи",
+        in_progress: "Черновик",
+        editing: "В процессе",
+        published: "Опубликовано"
+    };
+
+    const tabIcons = {
+        idea: `<svg class="tab-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M16,7a8.36,8.36,0,0,0-8,8,8.4,8.4,0,0,0,2.29,5.7A4.56,4.56,0,0,1,12,24a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1,4.46,4.46,0,0,1,1.69-3.28A7.87,7.87,0,0,0,24,15a8.17,8.17,0,0,0-2.44-5.83A7.67,7.67,0,0,0,16,7Zm4.34,12.28A6.87,6.87,0,0,0,18.09,23H13.91a7,7,0,0,0-2.2-3.71A6.41,6.41,0,0,1,10,15a6.29,6.29,0,0,1,6-6,5.63,5.63,0,0,1,4.13,1.6A6.16,6.16,0,0,1,22,15,5.93,5.93,0,0,1,20.31,19.28Z"></path><path d="M19,26H13a1,1,0,0,0,0,2h6a1,1,0,0,0,0-2Z"></path><path d="M18,29H14a1,1,0,0,0,0,2h4a1,1,0,0,0,0-2Z"></path><path d="M16,5a1,1,0,0,0,1-1V2a1,1,0,0,0-2,0V4A1,1,0,0,0,16,5Z"></path><path d="M5,14H3a1,1,0,0,0,0,2H5a1,1,0,0,0,0-2Z"></path><path d="M29,14H27a1,1,0,0,0,0,2h2a1,1,0,0,0,0-2Z"></path><path d="M25.9,5.1a1,1,0,0,0-1.41,0L23.07,6.51a1,1,0,0,0,0,1.42,1,1,0,0,0,.71.29,1,1,0,0,0,.71-.29L25.9,6.51A1,1,0,0,0,25.9,5.1Z"></path><path d="M8.93,7.93a1,1,0,0,0,0-1.42L7.51,5.1A1,1,0,0,0,6.1,6.51L7.51,7.93a1,1,0,0,0,.71.29A1,1,0,0,0,8.93,7.93Z"></path></svg>`,
+        in_progress: `<svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`,
+        editing: `<svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.296 3.464 3.02 3.956"></path><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"></path><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="m6.18 5.276 3.1 3.899"></path></svg>`,
+        published: `<svg class="tab-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" /><path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05" /></svg>`
+    };
+
+    const tabBtns = document.querySelectorAll(".filters-tabs .tab-btn");
+    tabBtns.forEach(btn => {
+        const filterVal = btn.dataset.filter;
+        if (tabLabels[filterVal] !== undefined) {
+            const iconHtml = tabIcons[filterVal] || "";
+            btn.innerHTML = `${iconHtml}<span>${tabLabels[filterVal]}</span> <span class="tab-count">${countMap[filterVal]}</span>`;
+        }
+    });
+}
+
+function renderTags() {
+    if (!selectedVideo) {
+        if (infoTags) infoTags.innerHTML = "";
+        return;
+    }
+    const tagsList = selectedVideo.tags || [];
+    infoTags.innerHTML = tagsList.map(tag => {
+        const displayTag = tag.startsWith("#") ? tag.substring(1) : tag;
+        return `
             <span class="tag-badge ${getTagColorClass(tag)}" data-tag="${tag}">${displayTag}<span class="btn-remove-tag" data-tag="${tag}">&times;</span></span>
         `;
-        }).join('') + `<button class="btn-add-tag" id="btnAddTag" data-tip="Добавить теги">+</button>`;
+    }).join('') + `<button class="btn-add-tag" id="btnAddTag" data-tip="Добавить теги">+</button>`;
 
-        // Add event listeners to delete buttons
-        infoTags.querySelectorAll(".btn-remove-tag").forEach(btn => {
-            btn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                const tagToRemove = btn.dataset.tag;
-                removeTagFromVideo(tagToRemove);
-            });
+    // Add event listeners to delete buttons
+    infoTags.querySelectorAll(".btn-remove-tag").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const tagToRemove = btn.dataset.tag;
+            removeTagFromVideo(tagToRemove);
         });
+    });
 
-        // Add event listener to plus button
-        const btnAddTag = document.getElementById("btnAddTag");
-        if (btnAddTag) {
-            btnAddTag.addEventListener("click", (e) => {
-                e.stopPropagation();
-                toggleTagsDropdown(e);
+    // Add event listener to plus button
+    const btnAddTag = document.getElementById("btnAddTag");
+    if (btnAddTag) {
+        btnAddTag.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleTagsDropdown(e);
+        });
+    }
+
+    // Инициализируем кастомную подсказку для новых динамических элементов
+    if (typeof initTooltips === "function") {
+        initTooltips();
+    }
+}
+
+function removeTagFromVideo(tagToRemove) {
+    if (!selectedVideo) return;
+    const currentTags = selectedVideo.tags || [];
+    const newTags = currentTags.filter(t => t !== tagToRemove);
+    updateTagsState(newTags);
+}
+
+async function updateTagsState(newTags) {
+    if (!selectedVideo) return;
+    selectedVideo.tags = newTags;
+    await saveVideoData("tags", newTags);
+    renderVideosList();
+    renderTags();
+    renderFilterDropdown();
+}
+
+function getAllUniqueTags() {
+    const allTagsSet = new Set();
+    videos.forEach(v => {
+        if (v.tags && Array.isArray(v.tags)) {
+            v.tags.forEach(tag => {
+                if (tag && tag.trim() !== "") {
+                    allTagsSet.add(tag.trim());
+                }
             });
         }
+    });
+    return Array.from(allTagsSet);
+}
 
-        // Инициализируем кастомную подсказку для новых динамических элементов
-        if (typeof initTooltips === "function") {
-            initTooltips();
+let tagConfigs = {};
+let activeTagEdit = null;
+const tagColorsList = ["purple", "blue", "green", "yellow", "orange", "red", "pink", "teal", "indigo", "gray"];
+
+function loadTagConfigs() {
+    try {
+        const stored = localStorage.getItem("creatorhub_tag_configs");
+        if (stored) {
+            tagConfigs = JSON.parse(stored);
         }
+    } catch (e) {
+        console.error("Error loading tag configs", e);
     }
+}
 
-    function removeTagFromVideo(tagToRemove) {
-        if (!selectedVideo) return;
-        const currentTags = selectedVideo.tags || [];
-        const newTags = currentTags.filter(t => t !== tagToRemove);
-        updateTagsState(newTags);
+function saveTagConfigs() {
+    try {
+        localStorage.setItem("creatorhub_tag_configs", JSON.stringify(tagConfigs));
+    } catch (e) {
+        console.error("Error saving tag configs", e);
     }
+}
 
-    async function updateTagsState(newTags) {
-        if (!selectedVideo) return;
-        selectedVideo.tags = newTags;
-        await saveVideoData("tags", newTags);
-        renderVideosList();
-        renderTags();
-        renderFilterDropdown();
+function getTagColorClass(tag) {
+    if (tagConfigs[tag] && tagConfigs[tag].color) {
+        return `tag-color-${tagConfigs[tag].color}`;
     }
-
-    function getAllUniqueTags() {
-        const allTagsSet = new Set();
-        videos.forEach(v => {
-            if (v.tags && Array.isArray(v.tags)) {
-                v.tags.forEach(tag => {
-                    if (tag && tag.trim() !== "") {
-                        allTagsSet.add(tag.trim());
-                    }
-                });
-            }
-        });
-        return Array.from(allTagsSet);
-    }
-
-    let tagConfigs = {};
-    let activeTagEdit = null;
-    const tagColorsList = ["purple", "blue", "green", "yellow", "orange", "red", "pink", "teal", "indigo", "gray"];
-
-    function loadTagConfigs() {
-        try {
-            const stored = localStorage.getItem("creatorhub_tag_configs");
-            if (stored) {
-                tagConfigs = JSON.parse(stored);
-            }
-        } catch (e) {
-            console.error("Error loading tag configs", e);
+    if (tag) {
+        let hash = 0;
+        const tagStr = String(tag);
+        for (let i = 0; i < tagStr.length; i++) {
+            hash = tagStr.charCodeAt(i) + ((hash << 5) - hash);
         }
+        const index = Math.abs(hash) % tagColorsList.length;
+        return `tag-color-${tagColorsList[index]}`;
+    }
+    return "tag-color-purple";
+}
+
+function toggleTagsDropdown(event) {
+    let dropdown = infoTags.querySelector(".tag-dropdown");
+    if (dropdown) {
+        if (dropdown.style.display === "flex") {
+            dropdown.style.display = "none";
+        } else {
+            dropdown.style.display = "flex";
+            dropdown.querySelector(".tag-dropdown-search").value = "";
+            dropdown.querySelector(".tag-dropdown-search").focus();
+            activeTagEdit = null;
+            renderDropdownList(dropdown);
+        }
+        return;
     }
 
-    function saveTagConfigs() {
-        try {
-            localStorage.setItem("creatorhub_tag_configs", JSON.stringify(tagConfigs));
-        } catch (e) {
-            console.error("Error saving tag configs", e);
-        }
-    }
+    dropdown = document.createElement("div");
+    dropdown.className = "tag-dropdown";
+    dropdown.style.display = "flex";
 
-    function getTagColorClass(tag) {
-        if (tagConfigs[tag] && tagConfigs[tag].color) {
-            return `tag-color-${tagConfigs[tag].color}`;
-        }
-        if (tag) {
-            let hash = 0;
-            const tagStr = String(tag);
-            for (let i = 0; i < tagStr.length; i++) {
-                hash = tagStr.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const index = Math.abs(hash) % tagColorsList.length;
-            return `tag-color-${tagColorsList[index]}`;
-        }
-        return "tag-color-purple";
-    }
-
-    function toggleTagsDropdown(event) {
-        let dropdown = infoTags.querySelector(".tag-dropdown");
-        if (dropdown) {
-            if (dropdown.style.display === "flex") {
-                dropdown.style.display = "none";
-            } else {
-                dropdown.style.display = "flex";
-                dropdown.querySelector(".tag-dropdown-search").value = "";
-                dropdown.querySelector(".tag-dropdown-search").focus();
-                activeTagEdit = null;
-                renderDropdownList(dropdown);
-            }
-            return;
-        }
-
-        dropdown = document.createElement("div");
-        dropdown.className = "tag-dropdown";
-        dropdown.style.display = "flex";
-
-        dropdown.innerHTML = `
+    dropdown.innerHTML = `
         <input type="text" class="tag-dropdown-search" placeholder="Поиск или новый тег..." autocomplete="off">
         <div class="tag-dropdown-list"></div>
         <div class="tag-dropdown-create" style="display: none;">
@@ -6561,60 +6677,60 @@ if (btnSelectButtonToAdd) {
         </div>
     `;
 
-        infoTags.appendChild(dropdown);
+    infoTags.appendChild(dropdown);
 
-        dropdown.addEventListener("click", (e) => {
-            e.stopPropagation();
-        });
+    dropdown.addEventListener("click", (e) => {
+        e.stopPropagation();
+    });
 
-        const searchInput = dropdown.querySelector(".tag-dropdown-search");
-        searchInput.focus();
+    const searchInput = dropdown.querySelector(".tag-dropdown-search");
+    searchInput.focus();
 
-        searchInput.addEventListener("input", () => {
-            renderDropdownList(dropdown);
-        });
-
-        searchInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                const val = searchInput.value.trim();
-                if (val) {
-                    const currentTags = selectedVideo.tags || [];
-                    if (!currentTags.includes(val)) {
-                        updateTagsState([...currentTags, val]);
-                    }
-                    searchInput.value = "";
-                    renderDropdownList(dropdown);
-                }
-            }
-        });
-
+    searchInput.addEventListener("input", () => {
         renderDropdownList(dropdown);
-    }
+    });
 
-    function renderDropdownList(dropdown) {
-        const searchInput = dropdown.querySelector(".tag-dropdown-search");
-        const query = searchInput.value.trim().toLowerCase();
-        const listContainer = dropdown.querySelector(".tag-dropdown-list");
-        const createContainer = dropdown.querySelector(".tag-dropdown-create");
-        const createBtn = dropdown.querySelector(".btn-create-tag");
+    searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            const val = searchInput.value.trim();
+            if (val) {
+                const currentTags = selectedVideo.tags || [];
+                if (!currentTags.includes(val)) {
+                    updateTagsState([...currentTags, val]);
+                }
+                searchInput.value = "";
+                renderDropdownList(dropdown);
+            }
+        }
+    });
 
-        listContainer.innerHTML = "";
+    renderDropdownList(dropdown);
+}
 
-        const uniqueTags = getAllUniqueTags();
-        const currentTags = selectedVideo.tags || [];
+function renderDropdownList(dropdown) {
+    const searchInput = dropdown.querySelector(".tag-dropdown-search");
+    const query = searchInput.value.trim().toLowerCase();
+    const listContainer = dropdown.querySelector(".tag-dropdown-list");
+    const createContainer = dropdown.querySelector(".tag-dropdown-create");
+    const createBtn = dropdown.querySelector(".btn-create-tag");
 
-        const filteredTags = uniqueTags.filter(tag => tag.toLowerCase().includes(query));
+    listContainer.innerHTML = "";
 
-        filteredTags.forEach(tag => {
-            const isSelected = currentTags.includes(tag);
-            const itemWrapper = document.createElement("div");
-            itemWrapper.className = "tag-dropdown-item-wrapper";
+    const uniqueTags = getAllUniqueTags();
+    const currentTags = selectedVideo.tags || [];
 
-            const isEditingThis = activeTagEdit === tag;
+    const filteredTags = uniqueTags.filter(tag => tag.toLowerCase().includes(query));
 
-            const item = document.createElement("div");
-            item.className = `tag-dropdown-item${isSelected ? ' selected' : ''}`;
-            item.innerHTML = `
+    filteredTags.forEach(tag => {
+        const isSelected = currentTags.includes(tag);
+        const itemWrapper = document.createElement("div");
+        itemWrapper.className = "tag-dropdown-item-wrapper";
+
+        const isEditingThis = activeTagEdit === tag;
+
+        const item = document.createElement("div");
+        item.className = `tag-dropdown-item${isSelected ? ' selected' : ''}`;
+        item.innerHTML = `
             <span style="display: flex; align-items: center; gap: 6px;">
                 <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%;" class="${getTagColorClass(tag)}"></span>
                 <span>${tag}</span>
@@ -6630,31 +6746,31 @@ if (btnSelectButtonToAdd) {
             </span>
         `;
 
-            const btnEdit = item.querySelector(".btn-edit-tag-inline");
-            btnEdit.addEventListener("click", (e) => {
-                e.stopPropagation();
-                activeTagEdit = isEditingThis ? null : tag;
-                renderDropdownList(dropdown);
-            });
+        const btnEdit = item.querySelector(".btn-edit-tag-inline");
+        btnEdit.addEventListener("click", (e) => {
+            e.stopPropagation();
+            activeTagEdit = isEditingThis ? null : tag;
+            renderDropdownList(dropdown);
+        });
 
-            item.addEventListener("click", () => {
-                if (isSelected) {
-                    updateTagsState(currentTags.filter(t => t !== tag));
-                } else {
-                    updateTagsState([...currentTags, tag]);
-                }
-                searchInput.focus();
-            });
+        item.addEventListener("click", () => {
+            if (isSelected) {
+                updateTagsState(currentTags.filter(t => t !== tag));
+            } else {
+                updateTagsState([...currentTags, tag]);
+            }
+            searchInput.focus();
+        });
 
-            itemWrapper.appendChild(item);
+        itemWrapper.appendChild(item);
 
-            if (isEditingThis) {
-                const editPanel = document.createElement("div");
-                editPanel.className = "tag-edit-panel";
+        if (isEditingThis) {
+            const editPanel = document.createElement("div");
+            editPanel.className = "tag-edit-panel";
 
-                const currentColor = tagConfigs[tag]?.color || "purple";
+            const currentColor = tagConfigs[tag]?.color || "purple";
 
-                editPanel.innerHTML = `
+            editPanel.innerHTML = `
                 <div class="tag-edit-title">Параметры тега</div>
                 <input type="text" class="tag-edit-input" value="${tag}" placeholder="Название тега...">
                 <div class="tag-color-picker">
@@ -6677,552 +6793,552 @@ if (btnSelectButtonToAdd) {
                 </div>
             `;
 
-                const bubbles = editPanel.querySelectorAll(".color-bubble");
-                bubbles.forEach(b => {
-                    b.addEventListener("click", (e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        bubbles.forEach(x => x.classList.remove("selected"));
-                        b.classList.add("selected");
-                    });
+            const bubbles = editPanel.querySelectorAll(".color-bubble");
+            bubbles.forEach(b => {
+                b.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    bubbles.forEach(x => x.classList.remove("selected"));
+                    b.classList.add("selected");
                 });
+            });
 
-                editPanel.querySelector(".btn-tag-edit-cancel").addEventListener("click", () => {
-                    activeTagEdit = null;
-                    renderDropdownList(dropdown);
-                });
-
-                editPanel.querySelector(".btn-tag-edit-delete").addEventListener("click", async () => {
-                    if (confirm(`Удалить тег "${tag}" у всех видео?`)) {
-                        activeTagEdit = null;
-                        await deleteTagGlobally(tag);
-                        renderDropdownList(dropdown);
-                    }
-                });
-
-                editPanel.querySelector(".btn-tag-edit-save").addEventListener("click", async () => {
-                    const newName = editPanel.querySelector(".tag-edit-input").value.trim();
-                    const selectedBubble = editPanel.querySelector(".color-bubble.selected");
-                    const newColor = selectedBubble ? selectedBubble.dataset.color : "purple";
-
-                    if (newName) {
-                        activeTagEdit = null;
-                        await renameAndColorTag(tag, newName, newColor);
-                        renderDropdownList(dropdown);
-                    }
-                });
-
-                itemWrapper.appendChild(editPanel);
-            }
-
-            listContainer.appendChild(itemWrapper);
-        });
-
-        const inputVal = searchInput.value.trim();
-        if (inputVal && !uniqueTags.some(t => t.toLowerCase() === inputVal.toLowerCase())) {
-            createContainer.style.display = "flex";
-            createBtn.textContent = `+ Создать тег "${inputVal}"`;
-            const newBtn = createBtn.cloneNode(true);
-            createBtn.parentNode.replaceChild(newBtn, createBtn);
-            newBtn.addEventListener("click", () => {
-                const currentTags = selectedVideo.tags || [];
-                updateTagsState([...currentTags, inputVal]);
-                searchInput.value = "";
+            editPanel.querySelector(".btn-tag-edit-cancel").addEventListener("click", () => {
+                activeTagEdit = null;
                 renderDropdownList(dropdown);
             });
-        } else {
-            createContainer.style.display = "none";
-        }
-    }
 
-    async function renameAndColorTag(oldTag, newName, color) {
-        if (!newName) return;
-        delete tagConfigs[oldTag];
-        tagConfigs[newName] = { color: color };
-        saveTagConfigs();
-
-        videos.forEach(v => {
-            if (v.tags && Array.isArray(v.tags)) {
-                const mapped = v.tags.map(t => t === oldTag ? newName : t);
-                v.tags = Array.from(new Set(mapped));
-            }
-        });
-
-        if (currentUid) {
-            const promises = videos.map(async (v) => {
-                try {
-                    await updateDoc(doc(db, "users", currentUid, "videos", v.id), {
-                        tags: v.tags
-                    });
-                } catch (err) {
-                    console.error("Error updating tag on video:", v.id, err);
+            editPanel.querySelector(".btn-tag-edit-delete").addEventListener("click", async () => {
+                if (confirm(`Удалить тег "${tag}" у всех видео?`)) {
+                    activeTagEdit = null;
+                    await deleteTagGlobally(tag);
+                    renderDropdownList(dropdown);
                 }
             });
-            await Promise.all(promises);
-        } else {
-            localStorage.setItem("local_videos", JSON.stringify(videos));
-        }
-        renderVideosList();
-        renderTags();
-    }
 
-    async function deleteTagGlobally(oldTag) {
-        delete tagConfigs[oldTag];
-        saveTagConfigs();
+            editPanel.querySelector(".btn-tag-edit-save").addEventListener("click", async () => {
+                const newName = editPanel.querySelector(".tag-edit-input").value.trim();
+                const selectedBubble = editPanel.querySelector(".color-bubble.selected");
+                const newColor = selectedBubble ? selectedBubble.dataset.color : "purple";
 
-        videos.forEach(v => {
-            if (v.tags && Array.isArray(v.tags)) {
-                v.tags = v.tags.filter(t => t !== oldTag);
-            }
-        });
-
-        if (currentUid) {
-            const promises = videos.map(async (v) => {
-                try {
-                    await updateDoc(doc(db, "users", currentUid, "videos", v.id), {
-                        tags: v.tags
-                    });
-                } catch (err) {
-                    console.error("Error deleting tag from video:", v.id, err);
+                if (newName) {
+                    activeTagEdit = null;
+                    await renameAndColorTag(tag, newName, newColor);
+                    renderDropdownList(dropdown);
                 }
             });
-            await Promise.all(promises);
-        } else {
-            localStorage.setItem("local_videos", JSON.stringify(videos));
+
+            itemWrapper.appendChild(editPanel);
         }
-        renderVideosList();
-        renderTags();
+
+        listContainer.appendChild(itemWrapper);
+    });
+
+    const inputVal = searchInput.value.trim();
+    if (inputVal && !uniqueTags.some(t => t.toLowerCase() === inputVal.toLowerCase())) {
+        createContainer.style.display = "flex";
+        createBtn.textContent = `+ Создать тег "${inputVal}"`;
+        const newBtn = createBtn.cloneNode(true);
+        createBtn.parentNode.replaceChild(newBtn, createBtn);
+        newBtn.addEventListener("click", () => {
+            const currentTags = selectedVideo.tags || [];
+            updateTagsState([...currentTags, inputVal]);
+            searchInput.value = "";
+            renderDropdownList(dropdown);
+        });
+    } else {
+        createContainer.style.display = "none";
     }
+}
 
-    function setViewMode(mode) {
-        currentViewMode = mode;
-        localStorage.setItem("creatorhub_view_mode", mode);
-        if (typeof currentFilter !== "undefined") {
-            localStorage.setItem(`creatorhub_view_mode_${currentFilter}`, mode);
+async function renameAndColorTag(oldTag, newName, color) {
+    if (!newName) return;
+    delete tagConfigs[oldTag];
+    tagConfigs[newName] = { color: color };
+    saveTagConfigs();
+
+    videos.forEach(v => {
+        if (v.tags && Array.isArray(v.tags)) {
+            const mapped = v.tags.map(t => t === oldTag ? newName : t);
+            v.tags = Array.from(new Set(mapped));
         }
+    });
 
-        const container = document.getElementById("videosListContainer");
-        const btnList = document.getElementById("btnListView");
-        const btnGrid = document.getElementById("btnGridView");
-
-        if (mode === "grid") {
-            if (container) container.classList.add("grid-view");
-            if (btnGrid) btnGrid.classList.add("active");
-            if (btnList) btnList.classList.remove("active");
-        } else {
-            if (container) container.classList.remove("grid-view");
-            if (btnList) btnList.classList.add("active");
-            if (btnGrid) btnGrid.classList.remove("active");
-        }
-    }
-
-    /* ================= TOOLTIPS SYSTEM ================= */
-    const tooltipEl = document.getElementById('customTooltip');
-    function initTooltips() {
-        const elements = document.querySelectorAll('[data-tip]');
-        elements.forEach(el => {
-            if (!el.dataset.tooltipAttached) {
-                el.dataset.tooltipAttached = "true";
-                el.addEventListener('mouseenter', showTip);
-                el.addEventListener('mouseleave', hideTip);
-                el.addEventListener('click', hideTip);
+    if (currentUid) {
+        const promises = videos.map(async (v) => {
+            try {
+                await updateDoc(doc(db, "users", currentUid, "videos", v.id), {
+                    tags: v.tags
+                });
+            } catch (err) {
+                console.error("Error updating tag on video:", v.id, err);
             }
         });
+        await Promise.all(promises);
+    } else {
+        localStorage.setItem("local_videos", JSON.stringify(videos));
     }
+    renderVideosList();
+    renderTags();
+}
 
-    function showTip(e) {
-        if (!tooltipEl) return;
-        const el = e.currentTarget;
-        const text = el.getAttribute('data-tip');
-        if (!text) return;
+async function deleteTagGlobally(oldTag) {
+    delete tagConfigs[oldTag];
+    saveTagConfigs();
 
-        tooltipEl.textContent = text;
-        tooltipEl.classList.add('visible');
-
-        const rect = el.getBoundingClientRect();
-
-        // Position tooltip ABOVE the button
-        let top = rect.top - tooltipEl.offsetHeight - 8;
-
-        // Fallback to below if no space above
-        if (top < 0) {
-            top = rect.bottom + 8;
+    videos.forEach(v => {
+        if (v.tags && Array.isArray(v.tags)) {
+            v.tags = v.tags.filter(t => t !== oldTag);
         }
+    });
 
-        let left = rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
-        if (left < 10) left = 10;
-        if (left + tooltipEl.offsetWidth > window.innerWidth) {
-            left = window.innerWidth - tooltipEl.offsetWidth - 10;
-        }
-
-        tooltipEl.style.top = `${top}px`;
-        tooltipEl.style.left = `${left}px`;
-    }
-
-    function hideTip() {
-        if (tooltipEl) tooltipEl.classList.remove('visible');
-    }
-
-    // === MOBILE BOTTOM SHEET FOR VIDEO DETAILS ===
-    function openDetailSidebarMobile() {
-        const overlay = document.getElementById("detailSidebarOverlay");
-        if (!detailSidebar || !overlay) return;
-
-        overlay.style.display = "block";
-        detailSidebar.style.display = "flex";
-
-        detailSidebar.classList.remove("collapsed");
-        detailSidebar.classList.add("expanded");
-        detailSidebar.style.transform = "";
-
-        // Force reflow
-        detailSidebar.offsetHeight;
-
-        overlay.classList.add("active");
-        detailSidebar.classList.add("active");
-    }
-
-    function closeDetailSidebarMobile() {
-        const overlay = document.getElementById("detailSidebarOverlay");
-        if (!detailSidebar || !overlay) return;
-
-        overlay.classList.remove("active");
-        detailSidebar.classList.remove("active", "expanded", "collapsed");
-        detailSidebar.style.transform = "";
-
-        setTimeout(() => {
-            if (!detailSidebar.classList.contains("active")) {
-                overlay.style.display = "none";
-                detailSidebar.style.display = "none";
-            }
-        }, 300);
-    }
-
-    function initVideoDetailMobileBottomSheet() {
-        const overlay = document.getElementById("detailSidebarOverlay");
-        if (!detailSidebar || !overlay) return;
-
-        const dragHandleContainer = detailSidebar.querySelector(".detail-sidebar-drag-handle-container");
-
-        overlay.addEventListener("click", () => {
-            if (window.innerWidth <= 900) {
-                closeDetailSidebarMobile();
+    if (currentUid) {
+        const promises = videos.map(async (v) => {
+            try {
+                await updateDoc(doc(db, "users", currentUid, "videos", v.id), {
+                    tags: v.tags
+                });
+            } catch (err) {
+                console.error("Error deleting tag from video:", v.id, err);
             }
         });
+        await Promise.all(promises);
+    } else {
+        localStorage.setItem("local_videos", JSON.stringify(videos));
+    }
+    renderVideosList();
+    renderTags();
+}
 
-        if (!dragHandleContainer) return;
+function setViewMode(mode) {
+    currentViewMode = mode;
+    localStorage.setItem("creatorhub_view_mode", mode);
+    if (typeof currentFilter !== "undefined") {
+        localStorage.setItem(`creatorhub_view_mode_${currentFilter}`, mode);
+    }
 
-        let startY = 0;
-        let currentY = 0;
-        let startTranslateY = 0;
-        let isDragging = false;
+    const container = document.getElementById("videosListContainer");
+    const btnList = document.getElementById("btnListView");
+    const btnGrid = document.getElementById("btnGridView");
 
-        function onTouchStart(e) {
-            if (window.innerWidth > 900) return; // Only mobile
+    if (mode === "grid") {
+        if (container) container.classList.add("grid-view");
+        if (btnGrid) btnGrid.classList.add("active");
+        if (btnList) btnList.classList.remove("active");
+    } else {
+        if (container) container.classList.remove("grid-view");
+        if (btnList) btnList.classList.add("active");
+        if (btnGrid) btnGrid.classList.remove("active");
+    }
+}
 
-            const isHandle = e.target.closest(".detail-sidebar-drag-handle-container") || e.target.closest(".detail-title-block");
+/* ================= TOOLTIPS SYSTEM ================= */
+const tooltipEl = document.getElementById('customTooltip');
+function initTooltips() {
+    const elements = document.querySelectorAll('[data-tip]');
+    elements.forEach(el => {
+        if (!el.dataset.tooltipAttached) {
+            el.dataset.tooltipAttached = "true";
+            el.addEventListener('mouseenter', showTip);
+            el.addEventListener('mouseleave', hideTip);
+            el.addEventListener('click', hideTip);
+        }
+    });
+}
 
-            if (!isHandle && detailSidebar.scrollTop > 0) {
-                return;
-            }
+function showTip(e) {
+    if (!tooltipEl) return;
+    const el = e.currentTarget;
+    const text = el.getAttribute('data-tip');
+    if (!text) return;
 
-            startY = e.touches[0].clientY;
-            currentY = startY;
+    tooltipEl.textContent = text;
+    tooltipEl.classList.add('visible');
 
-            if (detailSidebar.classList.contains("expanded")) {
-                startTranslateY = 0;
-            } else {
-                startTranslateY = window.innerHeight * 0.40;
-            }
+    const rect = el.getBoundingClientRect();
 
-            isDragging = true;
-            detailSidebar.style.transition = "none";
+    // Position tooltip ABOVE the button
+    let top = rect.top - tooltipEl.offsetHeight - 8;
+
+    // Fallback to below if no space above
+    if (top < 0) {
+        top = rect.bottom + 8;
+    }
+
+    let left = rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
+    if (left < 10) left = 10;
+    if (left + tooltipEl.offsetWidth > window.innerWidth) {
+        left = window.innerWidth - tooltipEl.offsetWidth - 10;
+    }
+
+    tooltipEl.style.top = `${top}px`;
+    tooltipEl.style.left = `${left}px`;
+}
+
+function hideTip() {
+    if (tooltipEl) tooltipEl.classList.remove('visible');
+}
+
+// === MOBILE BOTTOM SHEET FOR VIDEO DETAILS ===
+function openDetailSidebarMobile() {
+    const overlay = document.getElementById("detailSidebarOverlay");
+    if (!detailSidebar || !overlay) return;
+
+    overlay.style.display = "block";
+    detailSidebar.style.display = "flex";
+
+    detailSidebar.classList.remove("collapsed");
+    detailSidebar.classList.add("expanded");
+    detailSidebar.style.transform = "";
+
+    // Force reflow
+    detailSidebar.offsetHeight;
+
+    overlay.classList.add("active");
+    detailSidebar.classList.add("active");
+}
+
+function closeDetailSidebarMobile() {
+    const overlay = document.getElementById("detailSidebarOverlay");
+    if (!detailSidebar || !overlay) return;
+
+    overlay.classList.remove("active");
+    detailSidebar.classList.remove("active", "expanded", "collapsed");
+    detailSidebar.style.transform = "";
+
+    setTimeout(() => {
+        if (!detailSidebar.classList.contains("active")) {
+            overlay.style.display = "none";
+            detailSidebar.style.display = "none";
+        }
+    }, 300);
+}
+
+function initVideoDetailMobileBottomSheet() {
+    const overlay = document.getElementById("detailSidebarOverlay");
+    if (!detailSidebar || !overlay) return;
+
+    const dragHandleContainer = detailSidebar.querySelector(".detail-sidebar-drag-handle-container");
+
+    overlay.addEventListener("click", () => {
+        if (window.innerWidth <= 900) {
+            closeDetailSidebarMobile();
+        }
+    });
+
+    if (!dragHandleContainer) return;
+
+    let startY = 0;
+    let currentY = 0;
+    let startTranslateY = 0;
+    let isDragging = false;
+
+    function onTouchStart(e) {
+        if (window.innerWidth > 900) return; // Only mobile
+
+        const isHandle = e.target.closest(".detail-sidebar-drag-handle-container") || e.target.closest(".detail-title-block");
+
+        if (!isHandle && detailSidebar.scrollTop > 0) {
+            return;
         }
 
-        function onTouchMove(e) {
-            if (!isDragging) return;
+        startY = e.touches[0].clientY;
+        currentY = startY;
 
-            currentY = e.touches[0].clientY;
-            const deltaY = currentY - startY;
-
-            let newTranslateY = startTranslateY + deltaY;
-
-            if (newTranslateY < 0) {
-                newTranslateY = newTranslateY * 0.3; // Rubber-band
-            }
-
-            detailSidebar.style.transform = `translateY(${newTranslateY}px)`;
-
-            if (newTranslateY > window.innerHeight * 0.40) {
-                const progress = Math.max(0, Math.min(1, (newTranslateY - window.innerHeight * 0.40) / (window.innerHeight * 0.52)));
-                overlay.style.backgroundColor = `rgba(0, 0, 0, ${0.45 * (1 - progress)})`;
-            }
+        if (detailSidebar.classList.contains("expanded")) {
+            startTranslateY = 0;
+        } else {
+            startTranslateY = window.innerHeight * 0.40;
         }
 
-        function onTouchEnd(e) {
-            if (!isDragging) return;
-            isDragging = false;
+        isDragging = true;
+        detailSidebar.style.transition = "none";
+    }
 
-            detailSidebar.style.transition = "";
-            overlay.style.backgroundColor = "";
+    function onTouchMove(e) {
+        if (!isDragging) return;
 
-            const deltaY = currentY - startY;
-            const viewportHeight = window.innerHeight;
+        currentY = e.touches[0].clientY;
+        const deltaY = currentY - startY;
 
-            if (startTranslateY === 0) {
-                if (deltaY > 100) {
-                    if (deltaY > viewportHeight * 0.35) {
-                        closeDetailSidebarMobile();
-                    } else {
-                        detailSidebar.classList.remove("expanded");
-                        detailSidebar.classList.add("collapsed");
-                        detailSidebar.style.transform = "";
-                    }
-                } else {
-                    detailSidebar.classList.add("expanded");
-                    detailSidebar.classList.remove("collapsed");
-                    detailSidebar.style.transform = "";
-                }
-            } else {
-                if (deltaY < -60) {
-                    detailSidebar.classList.add("expanded");
-                    detailSidebar.classList.remove("collapsed");
-                    detailSidebar.style.transform = "";
-                } else if (deltaY > 100) {
+        let newTranslateY = startTranslateY + deltaY;
+
+        if (newTranslateY < 0) {
+            newTranslateY = newTranslateY * 0.3; // Rubber-band
+        }
+
+        detailSidebar.style.transform = `translateY(${newTranslateY}px)`;
+
+        if (newTranslateY > window.innerHeight * 0.40) {
+            const progress = Math.max(0, Math.min(1, (newTranslateY - window.innerHeight * 0.40) / (window.innerHeight * 0.52)));
+            overlay.style.backgroundColor = `rgba(0, 0, 0, ${0.45 * (1 - progress)})`;
+        }
+    }
+
+    function onTouchEnd(e) {
+        if (!isDragging) return;
+        isDragging = false;
+
+        detailSidebar.style.transition = "";
+        overlay.style.backgroundColor = "";
+
+        const deltaY = currentY - startY;
+        const viewportHeight = window.innerHeight;
+
+        if (startTranslateY === 0) {
+            if (deltaY > 100) {
+                if (deltaY > viewportHeight * 0.35) {
                     closeDetailSidebarMobile();
                 } else {
                     detailSidebar.classList.remove("expanded");
                     detailSidebar.classList.add("collapsed");
                     detailSidebar.style.transform = "";
                 }
+            } else {
+                detailSidebar.classList.add("expanded");
+                detailSidebar.classList.remove("collapsed");
+                detailSidebar.style.transform = "";
             }
-        }
-
-        dragHandleContainer.addEventListener("touchstart", onTouchStart, { passive: true });
-        dragHandleContainer.addEventListener("touchmove", onTouchMove, { passive: true });
-        dragHandleContainer.addEventListener("touchend", onTouchEnd);
-
-        const titleBlock = detailSidebar.querySelector(".detail-title-block");
-        if (titleBlock) {
-            titleBlock.addEventListener("touchstart", onTouchStart, { passive: true });
-            titleBlock.addEventListener("touchmove", onTouchMove, { passive: true });
-            titleBlock.addEventListener("touchend", onTouchEnd);
+        } else {
+            if (deltaY < -60) {
+                detailSidebar.classList.add("expanded");
+                detailSidebar.classList.remove("collapsed");
+                detailSidebar.style.transform = "";
+            } else if (deltaY > 100) {
+                closeDetailSidebarMobile();
+            } else {
+                detailSidebar.classList.remove("expanded");
+                detailSidebar.classList.add("collapsed");
+                detailSidebar.style.transform = "";
+            }
         }
     }
 
-    // === Управление каналами ===
+    dragHandleContainer.addEventListener("touchstart", onTouchStart, { passive: true });
+    dragHandleContainer.addEventListener("touchmove", onTouchMove, { passive: true });
+    dragHandleContainer.addEventListener("touchend", onTouchEnd);
 
-    // === Переменные для модального окна выбора иконки ===
-    let onIconPickerSelectedCallback = null;
-    let currentIconPickerValue = "📁";
-    let activeEditingPipelineIndex = null;
-    let activeEditingMonetizationIndex = null;
+    const titleBlock = detailSidebar.querySelector(".detail-title-block");
+    if (titleBlock) {
+        titleBlock.addEventListener("touchstart", onTouchStart, { passive: true });
+        titleBlock.addEventListener("touchmove", onTouchMove, { passive: true });
+        titleBlock.addEventListener("touchend", onTouchEnd);
+    }
+}
 
-    function showIconPickerModal(initialValue, onSelected) {
-        currentIconPickerValue = initialValue || "📁";
-        onIconPickerSelectedCallback = onSelected;
+// === Управление каналами ===
 
-        const modal = document.getElementById("chIconPickerModal");
-        const preview = document.getElementById("iconPickerPreview");
-        const emojiInput = document.getElementById("iconPickerEmojiInput");
-        if (!modal) return;
+// === Переменные для модального окна выбора иконки ===
+let onIconPickerSelectedCallback = null;
+let currentIconPickerValue = "📁";
+let activeEditingPipelineIndex = null;
+let activeEditingMonetizationIndex = null;
 
-        function updatePreview(val) {
-            if (!preview) return;
-            if (val.startsWith("http") || val.startsWith("data:")) {
-                preview.innerHTML = `<img src="${val}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">`;
-            } else {
-                preview.innerHTML = `<span style="font-size: 2rem;">${val}</span>`;
+function showIconPickerModal(initialValue, onSelected) {
+    currentIconPickerValue = initialValue || "📁";
+    onIconPickerSelectedCallback = onSelected;
+
+    const modal = document.getElementById("chIconPickerModal");
+    const preview = document.getElementById("iconPickerPreview");
+    const emojiInput = document.getElementById("iconPickerEmojiInput");
+    if (!modal) return;
+
+    function updatePreview(val) {
+        if (!preview) return;
+        if (val.startsWith("http") || val.startsWith("data:")) {
+            preview.innerHTML = `<img src="${val}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">`;
+        } else {
+            preview.innerHTML = `<span style="font-size: 2rem;">${val}</span>`;
+        }
+    }
+
+    updatePreview(currentIconPickerValue);
+    if (emojiInput) {
+        emojiInput.value = (currentIconPickerValue.startsWith("http") || currentIconPickerValue.startsWith("data:")) ? "" : currentIconPickerValue;
+        emojiInput.oninput = () => {
+            const v = emojiInput.value.trim();
+            if (v) {
+                currentIconPickerValue = v;
+                updatePreview(v);
             }
-        }
+        };
+    }
 
-        updatePreview(currentIconPickerValue);
-        if (emojiInput) {
-            emojiInput.value = (currentIconPickerValue.startsWith("http") || currentIconPickerValue.startsWith("data:")) ? "" : currentIconPickerValue;
-            emojiInput.oninput = () => {
-                const v = emojiInput.value.trim();
-                if (v) {
-                    currentIconPickerValue = v;
-                    updatePreview(v);
-                }
+    // Быстрые эмодзи
+    const quickList = document.getElementById("iconPickerQuickEmojis");
+    if (quickList) {
+        quickList.querySelectorAll(".quick-emoji-opt").forEach(opt => {
+            opt.onclick = () => {
+                currentIconPickerValue = opt.textContent.trim();
+                if (emojiInput) emojiInput.value = currentIconPickerValue;
+                updatePreview(currentIconPickerValue);
             };
-        }
-
-        // Быстрые эмодзи
-        const quickList = document.getElementById("iconPickerQuickEmojis");
-        if (quickList) {
-            quickList.querySelectorAll(".quick-emoji-opt").forEach(opt => {
-                opt.onclick = () => {
-                    currentIconPickerValue = opt.textContent.trim();
-                    if (emojiInput) emojiInput.value = currentIconPickerValue;
-                    updatePreview(currentIconPickerValue);
-                };
-            });
-        }
-
-        // Загрузка файла
-        const uploadBtn = document.getElementById("btnIconPickerUploadFile");
-        const fileInput = document.getElementById("iconPickerFileInput");
-        if (uploadBtn && fileInput) {
-            uploadBtn.onclick = () => fileInput.click();
-            fileInput.onchange = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = async (evt) => {
-                    try {
-                        const compressed = await resizeAndCompressImage(evt.target.result, 64, 64);
-                        const imgUrl = await uploadToImgBB(compressed);
-                        currentIconPickerValue = imgUrl;
-                        updatePreview(currentIconPickerValue);
-                    } catch (err) {
-                        console.error("Error loading icon:", err);
-                        alert("Не удалось загрузить картинку.");
-                    }
-                };
-                reader.readAsDataURL(file);
-            };
-        }
-
-        const btnConfirm = document.getElementById("btnIconPickerConfirm");
-        if (btnConfirm) {
-            btnConfirm.onclick = () => {
-                modal.style.display = "none";
-                if (onIconPickerSelectedCallback) {
-                    onIconPickerSelectedCallback(currentIconPickerValue);
-                }
-            };
-        }
-
-        const btnClose = document.getElementById("btnIconPickerClose");
-        const btnCancel = document.getElementById("btnIconPickerCancel");
-        [btnClose, btnCancel].forEach(b => {
-            if (b) b.onclick = () => { modal.style.display = "none"; };
         });
-
-        modal.style.display = "flex";
     }
 
-    // === Контекстное меню ПКМ для элементов страницы канала (пайплайны, монетизация, цели) ===
-    let currentChannelContextMenuTarget = null;
-
-    function showChannelItemContextMenu(e, type, channelId, itemIndex) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        currentChannelContextMenuTarget = { type, channelId, index: itemIndex };
-
-        const menu = document.getElementById("channelItemContextMenu");
-        if (!menu) return;
-
-        menu.style.display = "flex";
-
-        const x = e.clientX;
-        const y = e.clientY;
-        const menuWidth = 170;
-        const menuHeight = 90;
-
-        const posX = (x + menuWidth > window.innerWidth) ? (window.innerWidth - menuWidth - 10) : x;
-        const posY = (y + menuHeight > window.innerHeight) ? (window.innerHeight - menuHeight - 10) : y;
-
-        menu.style.left = `${posX}px`;
-        menu.style.top = `${posY}px`;
-    }
-
-    function hideChannelItemContextMenu() {
-        const menu = document.getElementById("channelItemContextMenu");
-        if (menu) menu.style.display = "none";
-        currentChannelContextMenuTarget = null;
-    }
-
-    document.addEventListener("click", (e) => {
-        const menu = document.getElementById("channelItemContextMenu");
-        if (menu && menu.style.display !== "none" && !menu.contains(e.target)) {
-            hideChannelItemContextMenu();
-        }
-    });
-
-    document.addEventListener("DOMContentLoaded", () => {
-        const btnEdit = document.getElementById("btnChannelItemEdit");
-        const btnDelete = document.getElementById("btnChannelItemDelete");
-
-        if (btnEdit) {
-            btnEdit.addEventListener("click", () => {
-                if (!currentChannelContextMenuTarget) return;
-                const { type, channelId, index } = currentChannelContextMenuTarget;
-                hideChannelItemContextMenu();
-
-                if (type === "pipeline") {
-                    openPipelineEditModal(channelId, index);
-                } else if (type === "monetization") {
-                    openMonetizationEditModal(channelId, index);
-                } else if (type === "goal") {
-                    openGoalEditModal(channelId, index);
+    // Загрузка файла
+    const uploadBtn = document.getElementById("btnIconPickerUploadFile");
+    const fileInput = document.getElementById("iconPickerFileInput");
+    if (uploadBtn && fileInput) {
+        uploadBtn.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                try {
+                    const compressed = await resizeAndCompressImage(evt.target.result, 64, 64);
+                    const imgUrl = await uploadToImgBB(compressed);
+                    currentIconPickerValue = imgUrl;
+                    updatePreview(currentIconPickerValue);
+                } catch (err) {
+                    console.error("Error loading icon:", err);
+                    alert("Не удалось загрузить картинку.");
                 }
-            });
-        }
+            };
+            reader.readAsDataURL(file);
+        };
+    }
 
-        if (btnDelete) {
-            btnDelete.addEventListener("click", async () => {
-                if (!currentChannelContextMenuTarget) return;
-                const { type, channelId, index } = currentChannelContextMenuTarget;
-                hideChannelItemContextMenu();
-
-                const ch = channels.find(c => c.id === channelId);
-                if (!ch) return;
-
-                if (type === "pipeline") {
-                    const item = ch.pipelines ? ch.pipelines[index] : null;
-                    const confirmRes = await showCustomConfirm("Удалить пайплайн?", `Удалить пайплайн "${item ? item.name : ''}"?`);
-                    if (confirmRes) {
-                        ch.pipelines.splice(index, 1);
-                        saveChannels();
-                        renderChannelPipelines(ch);
-                    }
-                } else if (type === "monetization") {
-                    const item = ch.monetization ? ch.monetization[index] : null;
-                    const confirmRes = await showCustomConfirm("Удалить источник?", `Удалить источник монетизации "${item ? item.name : ''}"?`);
-                    if (confirmRes) {
-                        ch.monetization.splice(index, 1);
-                        saveChannels();
-                        renderChannelMonetization(ch);
-                    }
-                } else if (type === "goal") {
-                    const item = ch.goals ? ch.goals[index] : null;
-                    const confirmRes = await showCustomConfirm("Удалить цель?", `Удалить цель "${item ? item.title : ''}"?`);
-                    if (confirmRes) {
-                        ch.goals.splice(index, 1);
-                        saveChannels();
-                        renderChannelGoals(ch);
-                    }
-                }
-            });
-        }
-    });
-
-    function renderChannelPipelines(ch) {
-        const container = document.getElementById("channelPagePipelinesList");
-        if (!container) return;
-        container.innerHTML = "";
-
-        const pipelines = ch.pipelines || [];
-        if (pipelines.length === 0) {
-            container.innerHTML = `<div style="font-size: 0.85rem; color: var(--ch-text-gray); padding: 12px 0; text-align: center;">Пайплайны пока не созданы. Нажмите +, чтобы добавить шаблон или ссылку на Notion.</div>`;
-            return;
-        }
-
-        pipelines.forEach((p, idx) => {
-            const item = document.createElement("div");
-            item.className = "channel-pipeline-item";
-
-            let iconHtml = "";
-            if (p.icon && (p.icon.startsWith("http") || p.icon.startsWith("data:"))) {
-                iconHtml = `<img src="${p.icon}" alt="icon">`;
-            } else {
-                iconHtml = `<span>${p.icon || "📁"}</span>`;
+    const btnConfirm = document.getElementById("btnIconPickerConfirm");
+    if (btnConfirm) {
+        btnConfirm.onclick = () => {
+            modal.style.display = "none";
+            if (onIconPickerSelectedCallback) {
+                onIconPickerSelectedCallback(currentIconPickerValue);
             }
+        };
+    }
 
-            item.innerHTML = `
+    const btnClose = document.getElementById("btnIconPickerClose");
+    const btnCancel = document.getElementById("btnIconPickerCancel");
+    [btnClose, btnCancel].forEach(b => {
+        if (b) b.onclick = () => { modal.style.display = "none"; };
+    });
+
+    modal.style.display = "flex";
+}
+
+// === Контекстное меню ПКМ для элементов страницы канала (пайплайны, монетизация, цели) ===
+let currentChannelContextMenuTarget = null;
+
+function showChannelItemContextMenu(e, type, channelId, itemIndex) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    currentChannelContextMenuTarget = { type, channelId, index: itemIndex };
+
+    const menu = document.getElementById("channelItemContextMenu");
+    if (!menu) return;
+
+    menu.style.display = "flex";
+
+    const x = e.clientX;
+    const y = e.clientY;
+    const menuWidth = 170;
+    const menuHeight = 90;
+
+    const posX = (x + menuWidth > window.innerWidth) ? (window.innerWidth - menuWidth - 10) : x;
+    const posY = (y + menuHeight > window.innerHeight) ? (window.innerHeight - menuHeight - 10) : y;
+
+    menu.style.left = `${posX}px`;
+    menu.style.top = `${posY}px`;
+}
+
+function hideChannelItemContextMenu() {
+    const menu = document.getElementById("channelItemContextMenu");
+    if (menu) menu.style.display = "none";
+    currentChannelContextMenuTarget = null;
+}
+
+document.addEventListener("click", (e) => {
+    const menu = document.getElementById("channelItemContextMenu");
+    if (menu && menu.style.display !== "none" && !menu.contains(e.target)) {
+        hideChannelItemContextMenu();
+    }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    const btnEdit = document.getElementById("btnChannelItemEdit");
+    const btnDelete = document.getElementById("btnChannelItemDelete");
+
+    if (btnEdit) {
+        btnEdit.addEventListener("click", () => {
+            if (!currentChannelContextMenuTarget) return;
+            const { type, channelId, index } = currentChannelContextMenuTarget;
+            hideChannelItemContextMenu();
+
+            if (type === "pipeline") {
+                openPipelineEditModal(channelId, index);
+            } else if (type === "monetization") {
+                openMonetizationEditModal(channelId, index);
+            } else if (type === "goal") {
+                openGoalEditModal(channelId, index);
+            }
+        });
+    }
+
+    if (btnDelete) {
+        btnDelete.addEventListener("click", async () => {
+            if (!currentChannelContextMenuTarget) return;
+            const { type, channelId, index } = currentChannelContextMenuTarget;
+            hideChannelItemContextMenu();
+
+            const ch = channels.find(c => c.id === channelId);
+            if (!ch) return;
+
+            if (type === "pipeline") {
+                const item = ch.pipelines ? ch.pipelines[index] : null;
+                const confirmRes = await showCustomConfirm("Удалить пайплайн?", `Удалить пайплайн "${item ? item.name : ''}"?`);
+                if (confirmRes) {
+                    ch.pipelines.splice(index, 1);
+                    saveChannels();
+                    renderChannelPipelines(ch);
+                }
+            } else if (type === "monetization") {
+                const item = ch.monetization ? ch.monetization[index] : null;
+                const confirmRes = await showCustomConfirm("Удалить источник?", `Удалить источник монетизации "${item ? item.name : ''}"?`);
+                if (confirmRes) {
+                    ch.monetization.splice(index, 1);
+                    saveChannels();
+                    renderChannelMonetization(ch);
+                }
+            } else if (type === "goal") {
+                const item = ch.goals ? ch.goals[index] : null;
+                const confirmRes = await showCustomConfirm("Удалить цель?", `Удалить цель "${item ? item.title : ''}"?`);
+                if (confirmRes) {
+                    ch.goals.splice(index, 1);
+                    saveChannels();
+                    renderChannelGoals(ch);
+                }
+            }
+        });
+    }
+});
+
+function renderChannelPipelines(ch) {
+    const container = document.getElementById("channelPagePipelinesList");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const pipelines = ch.pipelines || [];
+    if (pipelines.length === 0) {
+        container.innerHTML = `<div style="font-size: 0.85rem; color: var(--ch-text-gray); padding: 12px 0; text-align: center;">Пайплайны пока не созданы. Нажмите +, чтобы добавить шаблон или ссылку на Notion.</div>`;
+        return;
+    }
+
+    pipelines.forEach((p, idx) => {
+        const item = document.createElement("div");
+        item.className = "channel-pipeline-item";
+
+        let iconHtml = "";
+        if (p.icon && (p.icon.startsWith("http") || p.icon.startsWith("data:"))) {
+            iconHtml = `<img src="${p.icon}" alt="icon">`;
+        } else {
+            iconHtml = `<span>${p.icon || "📁"}</span>`;
+        }
+
+        item.innerHTML = `
             <div class="channel-pipeline-left">
                 <div class="channel-pipeline-icon">${iconHtml}</div>
                 <span>${escapeHtml(p.name)}</span>
@@ -7234,53 +7350,53 @@ if (btnSelectButtonToAdd) {
             </div>
         `;
 
-            item.addEventListener("click", () => {
-                if (p.url && p.url.trim()) {
-                    window.open(p.url.trim(), "_blank");
-                } else {
-                    openPipelineEditModal(ch.id, idx);
-                }
-            });
-
-            item.addEventListener("contextmenu", (e) => {
-                showChannelItemContextMenu(e, "pipeline", ch.id, idx);
-            });
-
-            container.appendChild(item);
+        item.addEventListener("click", () => {
+            if (p.url && p.url.trim()) {
+                window.open(p.url.trim(), "_blank");
+            } else {
+                openPipelineEditModal(ch.id, idx);
+            }
         });
+
+        item.addEventListener("contextmenu", (e) => {
+            showChannelItemContextMenu(e, "pipeline", ch.id, idx);
+        });
+
+        container.appendChild(item);
+    });
+}
+
+function renderChannelMonetization(ch) {
+    const container = document.getElementById("channelPageMonetizationList");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const monetization = ch.monetization || [];
+    if (monetization.length === 0) {
+        container.innerHTML = `<div style="font-size: 0.85rem; color: var(--ch-text-gray); padding: 12px 0; text-align: center;">Источники монетизации пока не добавлены. Нажмите +, чтобы создать.</div>`;
+        return;
     }
 
-    function renderChannelMonetization(ch) {
-        const container = document.getElementById("channelPageMonetizationList");
-        if (!container) return;
-        container.innerHTML = "";
+    monetization.forEach((m, idx) => {
+        const item = document.createElement("div");
+        item.className = "channel-monetization-item";
 
-        const monetization = ch.monetization || [];
-        if (monetization.length === 0) {
-            container.innerHTML = `<div style="font-size: 0.85rem; color: var(--ch-text-gray); padding: 12px 0; text-align: center;">Источники монетизации пока не добавлены. Нажмите +, чтобы создать.</div>`;
-            return;
+        let iconHtml = "";
+        if (m.icon && (m.icon.startsWith("http") || m.icon.startsWith("data:"))) {
+            iconHtml = `<img src="${m.icon}" style="width: 24px; height: 24px; object-fit: contain; border-radius: 6px;">`;
+        } else {
+            iconHtml = `<span style="font-size: 1.3rem;">${m.icon || "💰"}</span>`;
         }
 
-        monetization.forEach((m, idx) => {
-            const item = document.createElement("div");
-            item.className = "channel-monetization-item";
+        const statusLabels = {
+            active: "Активно",
+            planned: "Планирую",
+            inactive: "Пока нет"
+        };
+        const statusClass = m.status || "active";
+        const statusText = statusLabels[statusClass] || "Активно";
 
-            let iconHtml = "";
-            if (m.icon && (m.icon.startsWith("http") || m.icon.startsWith("data:"))) {
-                iconHtml = `<img src="${m.icon}" style="width: 24px; height: 24px; object-fit: contain; border-radius: 6px;">`;
-            } else {
-                iconHtml = `<span style="font-size: 1.3rem;">${m.icon || "💰"}</span>`;
-            }
-
-            const statusLabels = {
-                active: "Активно",
-                planned: "Планирую",
-                inactive: "Пока нет"
-            };
-            const statusClass = m.status || "active";
-            const statusText = statusLabels[statusClass] || "Активно";
-
-            item.innerHTML = `
+        item.innerHTML = `
             <div class="channel-monetization-left">
                 ${iconHtml}
                 <div class="channel-monetization-info">
@@ -7293,35 +7409,35 @@ if (btnSelectButtonToAdd) {
             </div>
         `;
 
-            item.style.cursor = "pointer";
-            item.addEventListener("click", () => {
-                openMonetizationEditModal(ch.id, idx);
-            });
-
-            item.addEventListener("contextmenu", (e) => {
-                showChannelItemContextMenu(e, "monetization", ch.id, idx);
-            });
-
-            container.appendChild(item);
+        item.style.cursor = "pointer";
+        item.addEventListener("click", () => {
+            openMonetizationEditModal(ch.id, idx);
         });
+
+        item.addEventListener("contextmenu", (e) => {
+            showChannelItemContextMenu(e, "monetization", ch.id, idx);
+        });
+
+        container.appendChild(item);
+    });
+}
+
+function renderChannelGoals(ch) {
+    const container = document.getElementById("channelPageGoalsList");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const goals = ch.goals || [];
+    if (goals.length === 0) {
+        container.innerHTML = `<div style="font-size: 0.85rem; color: var(--ch-text-gray); padding: 8px 0; text-align: center;">Ключевые цели не добавлены. Нажмите +, чтобы создать цель.</div>`;
+        return;
     }
 
-    function renderChannelGoals(ch) {
-        const container = document.getElementById("channelPageGoalsList");
-        if (!container) return;
-        container.innerHTML = "";
+    goals.forEach((g, idx) => {
+        const item = document.createElement("div");
+        item.className = "channel-goal-item";
 
-        const goals = ch.goals || [];
-        if (goals.length === 0) {
-            container.innerHTML = `<div style="font-size: 0.85rem; color: var(--ch-text-gray); padding: 8px 0; text-align: center;">Ключевые цели не добавлены. Нажмите +, чтобы создать цель.</div>`;
-            return;
-        }
-
-        goals.forEach((g, idx) => {
-            const item = document.createElement("div");
-            item.className = "channel-goal-item";
-
-            item.innerHTML = `
+        item.innerHTML = `
             <div class="channel-goal-left">
                 <span class="channel-goal-circle ${g.done ? "done" : ""}"></span>
                 <span>${escapeHtml(g.title)}</span>
@@ -7331,1440 +7447,1341 @@ if (btnSelectButtonToAdd) {
             </div>
         `;
 
-            item.style.cursor = "pointer";
-            item.addEventListener("click", () => {
-                g.done = !g.done;
-                saveChannels();
-                renderChannelGoals(ch);
+        item.style.cursor = "pointer";
+        item.addEventListener("click", () => {
+            g.done = !g.done;
+            saveChannels();
+            renderChannelGoals(ch);
+        });
+
+        item.addEventListener("contextmenu", (e) => {
+            showChannelItemContextMenu(e, "goal", ch.id, idx);
+        });
+
+        container.appendChild(item);
+    });
+}
+
+function openPipelineEditModal(channelId, index = null) {
+    const ch = channels.find(c => c.id === channelId);
+    if (!ch) return;
+    if (!ch.pipelines) ch.pipelines = [];
+
+    activeEditingPipelineIndex = index;
+    const isEdit = (index !== null && ch.pipelines[index]);
+    const item = isEdit ? ch.pipelines[index] : { name: "", icon: "📁", url: "" };
+
+    const modal = document.getElementById("chPipelineModal");
+    const modalTitle = document.getElementById("chPipelineModalTitle");
+    const nameInput = document.getElementById("pipelineNameInput");
+    const urlInput = document.getElementById("pipelineUrlInput");
+    const iconBtn = document.getElementById("btnPipelineIconSelect");
+    const deleteBtn = document.getElementById("btnPipelineDelete");
+
+    if (!modal) return;
+
+    if (modalTitle) modalTitle.textContent = isEdit ? "Редактировать пайплайн" : "Новый пайплайн";
+    if (nameInput) nameInput.value = item.name || "";
+    if (urlInput) urlInput.value = item.url || "";
+
+    let selectedIcon = item.icon || "📁";
+    function updateIconBtn() {
+        if (!iconBtn) return;
+        if (selectedIcon.startsWith("http") || selectedIcon.startsWith("data:")) {
+            iconBtn.innerHTML = `<img src="${selectedIcon}" style="width: 24px; height: 24px; object-fit: contain;">`;
+        } else {
+            iconBtn.innerHTML = `<span>${selectedIcon}</span>`;
+        }
+    }
+    updateIconBtn();
+
+    if (iconBtn) {
+        iconBtn.onclick = () => {
+            showIconPickerModal(selectedIcon, (newIcon) => {
+                selectedIcon = newIcon;
+                updateIconBtn();
             });
-
-            item.addEventListener("contextmenu", (e) => {
-                showChannelItemContextMenu(e, "goal", ch.id, idx);
-            });
-
-            container.appendChild(item);
-        });
-    }
-
-    function openPipelineEditModal(channelId, index = null) {
-        const ch = channels.find(c => c.id === channelId);
-        if (!ch) return;
-        if (!ch.pipelines) ch.pipelines = [];
-
-        activeEditingPipelineIndex = index;
-        const isEdit = (index !== null && ch.pipelines[index]);
-        const item = isEdit ? ch.pipelines[index] : { name: "", icon: "📁", url: "" };
-
-        const modal = document.getElementById("chPipelineModal");
-        const modalTitle = document.getElementById("chPipelineModalTitle");
-        const nameInput = document.getElementById("pipelineNameInput");
-        const urlInput = document.getElementById("pipelineUrlInput");
-        const iconBtn = document.getElementById("btnPipelineIconSelect");
-        const deleteBtn = document.getElementById("btnPipelineDelete");
-
-        if (!modal) return;
-
-        if (modalTitle) modalTitle.textContent = isEdit ? "Редактировать пайплайн" : "Новый пайплайн";
-        if (nameInput) nameInput.value = item.name || "";
-        if (urlInput) urlInput.value = item.url || "";
-
-        let selectedIcon = item.icon || "📁";
-        function updateIconBtn() {
-            if (!iconBtn) return;
-            if (selectedIcon.startsWith("http") || selectedIcon.startsWith("data:")) {
-                iconBtn.innerHTML = `<img src="${selectedIcon}" style="width: 24px; height: 24px; object-fit: contain;">`;
-            } else {
-                iconBtn.innerHTML = `<span>${selectedIcon}</span>`;
-            }
-        }
-        updateIconBtn();
-
-        if (iconBtn) {
-            iconBtn.onclick = () => {
-                showIconPickerModal(selectedIcon, (newIcon) => {
-                    selectedIcon = newIcon;
-                    updateIconBtn();
-                });
-            };
-        }
-
-        if (deleteBtn) {
-            deleteBtn.style.display = isEdit ? "block" : "none";
-            deleteBtn.onclick = () => {
-                ch.pipelines.splice(index, 1);
-                saveChannels();
-                renderChannelPipelines(ch);
-                modal.style.display = "none";
-            };
-        }
-
-        const saveBtn = document.getElementById("btnPipelineSave");
-        if (saveBtn) {
-            saveBtn.onclick = () => {
-                const nameVal = nameInput.value.trim();
-                if (!nameVal) {
-                    alert("Пожалуйста, введите название пайплайна.");
-                    return;
-                }
-                const newItem = {
-                    name: nameVal,
-                    icon: selectedIcon,
-                    url: urlInput ? urlInput.value.trim() : ""
-                };
-
-                if (isEdit) {
-                    ch.pipelines[index] = newItem;
-                } else {
-                    ch.pipelines.push(newItem);
-                }
-
-                saveChannels();
-                renderChannelPipelines(ch);
-                modal.style.display = "none";
-            };
-        }
-
-        const closeBtn = document.getElementById("btnPipelineModalClose");
-        const cancelBtn = document.getElementById("btnPipelineCancel");
-        [closeBtn, cancelBtn].forEach(b => {
-            if (b) b.onclick = () => { modal.style.display = "none"; };
-        });
-
-        modal.style.display = "flex";
-        if (nameInput) nameInput.focus();
-    }
-
-    function openMonetizationEditModal(channelId, index = null) {
-        const ch = channels.find(c => c.id === channelId);
-        if (!ch) return;
-        if (!ch.monetization) ch.monetization = [];
-
-        activeEditingMonetizationIndex = index;
-        const isEdit = (index !== null && ch.monetization[index]);
-        const item = isEdit ? ch.monetization[index] : { name: "", icon: "💰", desc: "", status: "active" };
-
-        const modal = document.getElementById("chMonetizationModal");
-        const modalTitle = document.getElementById("chMonetizationModalTitle");
-        const nameInput = document.getElementById("monetizationNameInput");
-        const descInput = document.getElementById("monetizationDescInput");
-        const statusSelect = document.getElementById("monetizationStatusSelect");
-        const iconBtn = document.getElementById("btnMonetizationIconSelect");
-        const deleteBtn = document.getElementById("btnMonetizationDelete");
-
-        if (!modal) return;
-
-        if (modalTitle) modalTitle.textContent = isEdit ? "Редактировать источник" : "Новый источник монетизации";
-        if (nameInput) nameInput.value = item.name || "";
-        if (descInput) descInput.value = item.desc || "";
-        if (statusSelect) statusSelect.value = item.status || "active";
-
-        let selectedIcon = item.icon || "💰";
-        function updateIconBtn() {
-            if (!iconBtn) return;
-            if (selectedIcon.startsWith("http") || selectedIcon.startsWith("data:")) {
-                iconBtn.innerHTML = `<img src="${selectedIcon}" style="width: 24px; height: 24px; object-fit: contain;">`;
-            } else {
-                iconBtn.innerHTML = `<span>${selectedIcon}</span>`;
-            }
-        }
-        updateIconBtn();
-
-        if (iconBtn) {
-            iconBtn.onclick = () => {
-                showIconPickerModal(selectedIcon, (newIcon) => {
-                    selectedIcon = newIcon;
-                    updateIconBtn();
-                });
-            };
-        }
-
-        if (deleteBtn) {
-            deleteBtn.style.display = isEdit ? "block" : "none";
-            deleteBtn.onclick = () => {
-                ch.monetization.splice(index, 1);
-                saveChannels();
-                renderChannelMonetization(ch);
-                modal.style.display = "none";
-            };
-        }
-
-        const saveBtn = document.getElementById("btnMonetizationSave");
-        if (saveBtn) {
-            saveBtn.onclick = () => {
-                const nameVal = nameInput.value.trim();
-                if (!nameVal) {
-                    alert("Пожалуйста, введите название источника монетизации.");
-                    return;
-                }
-                const newItem = {
-                    name: nameVal,
-                    icon: selectedIcon,
-                    desc: descInput ? descInput.value.trim() : "",
-                    status: statusSelect ? statusSelect.value : "active"
-                };
-
-                if (isEdit) {
-                    ch.monetization[index] = newItem;
-                } else {
-                    ch.monetization.push(newItem);
-                }
-
-                saveChannels();
-                renderChannelMonetization(ch);
-                modal.style.display = "none";
-            };
-        }
-
-        const closeBtn = document.getElementById("btnMonetizationModalClose");
-        const cancelBtn = document.getElementById("btnMonetizationCancel");
-        [closeBtn, cancelBtn].forEach(b => {
-            if (b) b.onclick = () => { modal.style.display = "none"; };
-        });
-
-        modal.style.display = "flex";
-        if (nameInput) nameInput.focus();
-    }
-
-    function openGoalEditModal(channelId, index = null) {
-        const ch = channels.find(c => c.id === channelId);
-        if (!ch) return;
-        if (!ch.goals) ch.goals = [];
-
-        const isEdit = (index !== null && ch.goals[index]);
-        const item = isEdit ? ch.goals[index] : { title: "", metric: "", done: false };
-
-        const modal = document.getElementById("chGoalModal");
-        const modalTitle = document.getElementById("chGoalModalTitle");
-        const titleInput = document.getElementById("goalTitleInput");
-        const metricInput = document.getElementById("goalMetricInput");
-        const deleteBtn = document.getElementById("btnGoalDelete");
-        const saveBtn = document.getElementById("btnGoalSave");
-        const cancelBtn = document.getElementById("btnGoalCancel");
-        const closeBtn = document.getElementById("btnGoalModalClose");
-
-        if (!modal) return;
-
-        if (modalTitle) modalTitle.textContent = isEdit ? "Редактировать цель" : "Новая цель";
-        if (titleInput) titleInput.value = item.title || "";
-        if (metricInput) metricInput.value = item.metric || "";
-
-        if (deleteBtn) {
-            deleteBtn.style.display = isEdit ? "block" : "none";
-            deleteBtn.onclick = () => {
-                ch.goals.splice(index, 1);
-                saveChannels();
-                renderChannelGoals(ch);
-                modal.style.display = "none";
-            };
-        }
-
-        if (saveBtn) {
-            saveBtn.onclick = () => {
-                const titleVal = titleInput ? titleInput.value.trim() : "";
-                if (!titleVal) {
-                    alert("Пожалуйста, введите название цели.");
-                    return;
-                }
-                const newItem = {
-                    title: titleVal,
-                    metric: metricInput ? metricInput.value.trim() : "",
-                    done: isEdit ? item.done : false
-                };
-
-                if (isEdit) {
-                    ch.goals[index] = newItem;
-                } else {
-                    ch.goals.push(newItem);
-                }
-
-                saveChannels();
-                renderChannelGoals(ch);
-                modal.style.display = "none";
-            };
-        }
-
-        const closeModal = () => { modal.style.display = "none"; };
-        if (closeBtn) closeBtn.onclick = closeModal;
-        if (cancelBtn) cancelBtn.onclick = closeModal;
-
-        modal.style.display = "flex";
-        if (titleInput) titleInput.focus();
-    }
-
-    function openChannelSpecificSettingsModal(channelId) {
-        const ch = channels.find(c => c.id === channelId);
-        if (!ch) return;
-
-        const modal = document.getElementById("chChannelSettingsModal");
-        const bannerPreview = document.getElementById("channelSettingsBannerPreview");
-        const bannerPlaceholder = document.getElementById("channelSettingsBannerPlaceholder");
-        const bannerFile = document.getElementById("channelSettingsBannerFile");
-        const btnRemoveBanner = document.getElementById("btnRemoveChannelBanner");
-
-        const avatarImg = document.getElementById("channelSettingsAvatarImg");
-        const avatarPlaceholder = document.getElementById("channelSettingsAvatarPlaceholder");
-        const avatarWrapper = document.getElementById("channelSettingsAvatarWrapper");
-        const avatarFile = document.getElementById("channelSettingsAvatarFile");
-
-        const nameInput = document.getElementById("channelSettingsNameInput");
-        const notionUrlInput = document.getElementById("channelSettingsNotionUrlInput");
-        const saveBtn = document.getElementById("btnChannelSettingsSave");
-        const cancelBtn = document.getElementById("btnChannelSettingsCancel");
-        const closeBtn = document.getElementById("btnChannelSettingsModalClose");
-
-        if (!modal) return;
-
-        let currentBanner = ch.bannerUrl || "";
-        let currentAvatar = ch.avatarUrl || "";
-
-        function updateBannerUI() {
-            if (currentBanner) {
-                bannerPreview.style.backgroundImage = `url(${currentBanner})`;
-                bannerPlaceholder.style.display = "none";
-                btnRemoveBanner.style.display = "inline-block";
-            } else {
-                bannerPreview.style.backgroundImage = "none";
-                bannerPlaceholder.style.display = "block";
-                btnRemoveBanner.style.display = "none";
-            }
-        }
-
-        function updateAvatarUI() {
-            if (currentAvatar) {
-                avatarImg.src = currentAvatar;
-                avatarImg.style.display = "block";
-                avatarPlaceholder.style.display = "none";
-            } else {
-                avatarImg.style.display = "none";
-                avatarPlaceholder.style.display = "block";
-                const nameVal = nameInput ? nameInput.value.trim() : (ch.name || "");
-                avatarPlaceholder.textContent = nameVal ? nameVal.charAt(0).toUpperCase() : "?";
-            }
-        }
-
-        if (nameInput) {
-            nameInput.value = ch.name || "";
-            nameInput.oninput = () => {
-                if (!currentAvatar) {
-                    const nameVal = nameInput.value.trim();
-                    avatarPlaceholder.textContent = nameVal ? nameVal.charAt(0).toUpperCase() : "?";
-                }
-            };
-        }
-
-        if (notionUrlInput) {
-            notionUrlInput.value = ch.notionUrl || "";
-        }
-
-        updateBannerUI();
-        updateAvatarUI();
-
-        bannerPreview.onclick = () => {
-            if (bannerFile) bannerFile.click();
         };
+    }
 
-        if (bannerFile) {
-            bannerFile.value = "";
-            bannerFile.onchange = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = async (evt) => {
-                    try {
-                        bannerPlaceholder.textContent = "Загрузка...";
-                        bannerPlaceholder.style.display = "block";
-                        // Сжимаем баннер под формат 1200x320
-                        const compressed = await resizeAndCompressImage(evt.target.result, 1200, 320);
-                        const uploadedUrl = await uploadToImgBB(compressed);
-                        currentBanner = uploadedUrl;
-                        updateBannerUI();
-                    } catch (err) {
-                        console.error("Ошибка загрузки баннера:", err);
-                        alert("Не удалось загрузить баннер. Попробуйте еще раз.");
-                    } finally {
-                        bannerPlaceholder.textContent = "Нажмите для загрузки баннера";
-                    }
-                };
-                reader.readAsDataURL(file);
-            };
-        }
-
-        if (btnRemoveBanner) {
-            btnRemoveBanner.onclick = (e) => {
-                e.stopPropagation();
-                currentBanner = "";
-                updateBannerUI();
-            };
-        }
-
-        avatarWrapper.onclick = () => {
-            if (avatarFile) avatarFile.click();
-        };
-
-        if (avatarFile) {
-            avatarFile.value = "";
-            avatarFile.onchange = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = async (evt) => {
-                    try {
-                        avatarPlaceholder.textContent = "...";
-                        // Сжимаем аватар до 128x128
-                        const compressed = await resizeAndCompressImage(evt.target.result, 128, 128);
-                        const uploadedUrl = await uploadToImgBB(compressed);
-                        currentAvatar = uploadedUrl;
-                        updateAvatarUI();
-                    } catch (err) {
-                        console.error("Ошибка загрузки аватара:", err);
-                        alert("Не удалось загрузить аватарку. Попробуйте еще раз.");
-                    }
-                };
-                reader.readAsDataURL(file);
-            };
-        }
-
-        const closeModal = () => {
+    if (deleteBtn) {
+        deleteBtn.style.display = isEdit ? "block" : "none";
+        deleteBtn.onclick = () => {
+            ch.pipelines.splice(index, 1);
+            saveChannels();
+            renderChannelPipelines(ch);
             modal.style.display = "none";
         };
-
-        if (closeBtn) closeBtn.onclick = closeModal;
-        if (cancelBtn) cancelBtn.onclick = closeModal;
-
-        if (saveBtn) {
-            saveBtn.onclick = () => {
-                const newName = nameInput ? nameInput.value.trim() : "";
-                if (!newName) {
-                    alert("Пожалуйста, введите название канала.");
-                    return;
-                }
-
-                ch.name = newName;
-                ch.bannerUrl = currentBanner;
-                ch.avatarUrl = currentAvatar;
-                ch.notionUrl = notionUrlInput ? notionUrlInput.value.trim() : "";
-                if (ch.whiteboardId) {
-                    syncChannelWhiteboardTitle(ch.id, `Доска: ${ch.name}`);
-                }
-
-                saveChannels();
-                renderChannelSwitcher();
-                renderSettingsChannels();
-                openChannelPage(ch.id, false);
-
-                closeModal();
-            };
-        }
-
-        modal.style.display = "flex";
-        if (nameInput) nameInput.focus();
     }
 
-    function openChannelPage(channelId, updateHash = true) {
-        const ch = channels.find(c => c.id === channelId);
-        if (!ch) return;
+    const saveBtn = document.getElementById("btnPipelineSave");
+    if (saveBtn) {
+        saveBtn.onclick = () => {
+            const nameVal = nameInput.value.trim();
+            if (!nameVal) {
+                alert("Пожалуйста, введите название пайплайна.");
+                return;
+            }
+            const newItem = {
+                name: nameVal,
+                icon: selectedIcon,
+                url: urlInput ? urlInput.value.trim() : ""
+            };
 
-        // Переключаем активный канал, чтобы контекст синхронизировался
-        currentChannelId = ch.id;
-        localStorage.setItem("creatorhub_current_channel_id", ch.id);
-        const row = document.getElementById("channelsSwitcherRow");
-        if (row) {
-            row.querySelectorAll(".channel-pill-btn").forEach(b => {
-                b.classList.toggle("active", b.getAttribute("data-channel-id") === ch.id);
+            if (isEdit) {
+                ch.pipelines[index] = newItem;
+            } else {
+                ch.pipelines.push(newItem);
+            }
+
+            saveChannels();
+            renderChannelPipelines(ch);
+            modal.style.display = "none";
+        };
+    }
+
+    const closeBtn = document.getElementById("btnPipelineModalClose");
+    const cancelBtn = document.getElementById("btnPipelineCancel");
+    [closeBtn, cancelBtn].forEach(b => {
+        if (b) b.onclick = () => { modal.style.display = "none"; };
+    });
+
+    modal.style.display = "flex";
+    if (nameInput) nameInput.focus();
+}
+
+function openMonetizationEditModal(channelId, index = null) {
+    const ch = channels.find(c => c.id === channelId);
+    if (!ch) return;
+    if (!ch.monetization) ch.monetization = [];
+
+    activeEditingMonetizationIndex = index;
+    const isEdit = (index !== null && ch.monetization[index]);
+    const item = isEdit ? ch.monetization[index] : { name: "", icon: "💰", desc: "", status: "active" };
+
+    const modal = document.getElementById("chMonetizationModal");
+    const modalTitle = document.getElementById("chMonetizationModalTitle");
+    const nameInput = document.getElementById("monetizationNameInput");
+    const descInput = document.getElementById("monetizationDescInput");
+    const statusSelect = document.getElementById("monetizationStatusSelect");
+    const iconBtn = document.getElementById("btnMonetizationIconSelect");
+    const deleteBtn = document.getElementById("btnMonetizationDelete");
+
+    if (!modal) return;
+
+    if (modalTitle) modalTitle.textContent = isEdit ? "Редактировать источник" : "Новый источник монетизации";
+    if (nameInput) nameInput.value = item.name || "";
+    if (descInput) descInput.value = item.desc || "";
+    if (statusSelect) statusSelect.value = item.status || "active";
+
+    let selectedIcon = item.icon || "💰";
+    function updateIconBtn() {
+        if (!iconBtn) return;
+        if (selectedIcon.startsWith("http") || selectedIcon.startsWith("data:")) {
+            iconBtn.innerHTML = `<img src="${selectedIcon}" style="width: 24px; height: 24px; object-fit: contain;">`;
+        } else {
+            iconBtn.innerHTML = `<span>${selectedIcon}</span>`;
+        }
+    }
+    updateIconBtn();
+
+    if (iconBtn) {
+        iconBtn.onclick = () => {
+            showIconPickerModal(selectedIcon, (newIcon) => {
+                selectedIcon = newIcon;
+                updateIconBtn();
             });
-        }
-
-        const page = document.getElementById("channelPageContainer");
-        const avatarWrap = document.getElementById("channelPageAvatarWrap");
-        const titleEl = document.getElementById("channelPageTitle");
-        const videosCountEl = document.getElementById("channelPageVideosCount");
-        const bannerBg = document.getElementById("channelPageBannerBg");
-
-        if (titleEl) {
-            titleEl.textContent = ch.name || "Канал";
-        }
-
-        // Количество опубликованных видео канала
-        const publishedCount = videos.filter(v => !v.deleted && v.channelId === ch.id && v.status === "published").length;
-        if (videosCountEl) {
-            videosCountEl.textContent = `${publishedCount} видео`;
-        }
-
-        // Баннер: если у канала задан баннер, показываем его; иначе нейтральный фон
-        if (bannerBg) {
-            if (ch.bannerUrl) {
-                bannerBg.style.backgroundImage = `url(${ch.bannerUrl})`;
-            } else {
-                bannerBg.style.backgroundImage = "none";
-            }
-        }
-
-        // Аватарка
-        if (avatarWrap) {
-            avatarWrap.innerHTML = "";
-            if (ch.avatarUrl) {
-                const img = document.createElement("img");
-                img.src = ch.avatarUrl;
-                img.alt = ch.name;
-                img.className = "channel-page-avatar-img";
-                avatarWrap.appendChild(img);
-            } else {
-                const placeholder = document.createElement("div");
-                placeholder.className = "channel-page-avatar-placeholder";
-                placeholder.textContent = ch.name ? ch.name.charAt(0) : "?";
-                avatarWrap.appendChild(placeholder);
-            }
-        }
-
-        // Настройка кнопки перехода в Notion
-        const btnOpenNotion = document.getElementById("btnChannelOpenNotion");
-        const noticeNotion = document.getElementById("channelPageNotionNotice");
-
-        if (btnOpenNotion) {
-            if (ch.notionUrl && ch.notionUrl.trim()) {
-                btnOpenNotion.href = ch.notionUrl.trim();
-                btnOpenNotion.target = "_blank";
-                btnOpenNotion.onclick = null;
-                if (noticeNotion) noticeNotion.style.display = "none";
-            } else {
-                btnOpenNotion.href = "javascript:void(0)";
-                btnOpenNotion.onclick = (e) => {
-                    e.preventDefault();
-                    openChannelSpecificSettingsModal(ch.id);
-                };
-                if (noticeNotion) noticeNotion.style.display = "block";
-            }
-        }
-
-        // Настройка кнопки открытия интерактивной доски канала
-        const btnOpenWhiteboard = document.getElementById("btnChannelOpenWhiteboard");
-        if (btnOpenWhiteboard) {
-            btnOpenWhiteboard.onclick = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                openChannelWhiteboardModal(ch.id);
-            };
-        }
-
-        // Кнопка закрытия/назад на баннере
-        const btnBack = document.getElementById("btnChannelPageBack");
-        if (btnBack) {
-            btnBack.onclick = () => closeChannelPage();
-        }
-
-        // Кнопка настроек в шапке канала — открывает настройки именно этого канала
-        const btnHeaderEdit = document.getElementById("btnChannelEditHeader");
-        if (btnHeaderEdit) {
-            btnHeaderEdit.onclick = () => {
-                openChannelSpecificSettingsModal(ch.id);
-            };
-        }
-
-        if (page) {
-            page.style.display = "flex";
-            page.onclick = (e) => {
-                if (e.target === page) {
-                    closeChannelPage();
-                }
-            };
-        }
-
-        if (updateHash) {
-            window.location.hash = "channel/" + ch.id;
-        }
+        };
     }
 
-    function closeChannelPage(updateHash = true) {
-        const page = document.getElementById("channelPageContainer");
-        if (page) {
-            page.style.display = "none";
-            page.onclick = null;
-        }
-
-        if (updateHash) {
-            updateHashRoute(currentFilter || "idea", currentChannelId);
-        }
+    if (deleteBtn) {
+        deleteBtn.style.display = isEdit ? "block" : "none";
+        deleteBtn.onclick = () => {
+            ch.monetization.splice(index, 1);
+            saveChannels();
+            renderChannelMonetization(ch);
+            modal.style.display = "none";
+        };
     }
 
-    function renderChannelSwitcher() {
-        const row = document.getElementById("channelsSwitcherRow");
-        if (!row) return;
-        row.innerHTML = "";
-
-        const visibleChannels = (channels || []).filter(ch => !ch.hidden);
-        const hasVideosWithoutChannel = videos.some(v => !v.deleted && (!v.channelId || !channels.some(ch => ch.id === v.channelId)));
-
-        if (visibleChannels.length === 0 && !hasVideosWithoutChannel) {
-            row.style.display = "none";
-            return;
-        }
-        row.style.display = "flex";
-
-        // Если текущий выбранный канал стал скрытым или не найден среди видимых
-        if (currentChannelId && currentChannelId !== "no_channel") {
-            const isCurrentVisible = visibleChannels.some(ch => ch.id === currentChannelId);
-            if (!isCurrentVisible) {
-                currentChannelId = visibleChannels[0] ? visibleChannels[0].id : (hasVideosWithoutChannel ? "no_channel" : null);
-                localStorage.setItem("creatorhub_current_channel_id", currentChannelId || "");
-                updateHashRoute(currentFilter, currentChannelId);
+    const saveBtn = document.getElementById("btnMonetizationSave");
+    if (saveBtn) {
+        saveBtn.onclick = () => {
+            const nameVal = nameInput.value.trim();
+            if (!nameVal) {
+                alert("Пожалуйста, введите название источника монетизации.");
+                return;
             }
-        } else if (!currentChannelId && visibleChannels.length > 0) {
-            currentChannelId = visibleChannels[0].id;
-            localStorage.setItem("creatorhub_current_channel_id", currentChannelId);
+            const newItem = {
+                name: nameVal,
+                icon: selectedIcon,
+                desc: descInput ? descInput.value.trim() : "",
+                status: statusSelect ? statusSelect.value : "active"
+            };
+
+            if (isEdit) {
+                ch.monetization[index] = newItem;
+            } else {
+                ch.monetization.push(newItem);
+            }
+
+            saveChannels();
+            renderChannelMonetization(ch);
+            modal.style.display = "none";
+        };
+    }
+
+    const closeBtn = document.getElementById("btnMonetizationModalClose");
+    const cancelBtn = document.getElementById("btnMonetizationCancel");
+    [closeBtn, cancelBtn].forEach(b => {
+        if (b) b.onclick = () => { modal.style.display = "none"; };
+    });
+
+    modal.style.display = "flex";
+    if (nameInput) nameInput.focus();
+}
+
+function openGoalEditModal(channelId, index = null) {
+    const ch = channels.find(c => c.id === channelId);
+    if (!ch) return;
+    if (!ch.goals) ch.goals = [];
+
+    const isEdit = (index !== null && ch.goals[index]);
+    const item = isEdit ? ch.goals[index] : { title: "", metric: "", done: false };
+
+    const modal = document.getElementById("chGoalModal");
+    const modalTitle = document.getElementById("chGoalModalTitle");
+    const titleInput = document.getElementById("goalTitleInput");
+    const metricInput = document.getElementById("goalMetricInput");
+    const deleteBtn = document.getElementById("btnGoalDelete");
+    const saveBtn = document.getElementById("btnGoalSave");
+    const cancelBtn = document.getElementById("btnGoalCancel");
+    const closeBtn = document.getElementById("btnGoalModalClose");
+
+    if (!modal) return;
+
+    if (modalTitle) modalTitle.textContent = isEdit ? "Редактировать цель" : "Новая цель";
+    if (titleInput) titleInput.value = item.title || "";
+    if (metricInput) metricInput.value = item.metric || "";
+
+    if (deleteBtn) {
+        deleteBtn.style.display = isEdit ? "block" : "none";
+        deleteBtn.onclick = () => {
+            ch.goals.splice(index, 1);
+            saveChannels();
+            renderChannelGoals(ch);
+            modal.style.display = "none";
+        };
+    }
+
+    if (saveBtn) {
+        saveBtn.onclick = () => {
+            const titleVal = titleInput ? titleInput.value.trim() : "";
+            if (!titleVal) {
+                alert("Пожалуйста, введите название цели.");
+                return;
+            }
+            const newItem = {
+                title: titleVal,
+                metric: metricInput ? metricInput.value.trim() : "",
+                done: isEdit ? item.done : false
+            };
+
+            if (isEdit) {
+                ch.goals[index] = newItem;
+            } else {
+                ch.goals.push(newItem);
+            }
+
+            saveChannels();
+            renderChannelGoals(ch);
+            modal.style.display = "none";
+        };
+    }
+
+    const closeModal = () => { modal.style.display = "none"; };
+    if (closeBtn) closeBtn.onclick = closeModal;
+    if (cancelBtn) cancelBtn.onclick = closeModal;
+
+    modal.style.display = "flex";
+    if (titleInput) titleInput.focus();
+}
+
+function openChannelSpecificSettingsModal(channelId) {
+    // Модальное окно настроек канала удалено — сразу открываем доску канала
+    openChannelWhiteboardModal(channelId);
+}
+
+function openChannelPage(channelId, updateHash = false) {
+    // Вместо модального окна канала с баннером сразу открываем доску канала
+    openChannelWhiteboardModal(channelId);
+}
+
+function closeChannelPage(updateHash = true) {
+    // Страница канала больше не используется
+}
+
+function renderChannelSwitcher() {
+    const row = document.getElementById("channelsSwitcherRow");
+    if (!row) return;
+    row.innerHTML = "";
+
+    const visibleChannels = (channels || []).filter(ch => !ch.hidden);
+    const hasVideosWithoutChannel = videos.some(v => !v.deleted && (!v.channelId || !channels.some(ch => ch.id === v.channelId)));
+
+    if (visibleChannels.length === 0 && !hasVideosWithoutChannel) {
+        row.style.display = "none";
+        return;
+    }
+    row.style.display = "flex";
+
+    // Если текущий выбранный канал стал скрытым или не найден среди видимых
+    if (currentChannelId && currentChannelId !== "no_channel") {
+        const isCurrentVisible = visibleChannels.some(ch => ch.id === currentChannelId);
+        if (!isCurrentVisible) {
+            currentChannelId = visibleChannels[0] ? visibleChannels[0].id : (hasVideosWithoutChannel ? "no_channel" : null);
+            localStorage.setItem("creatorhub_current_channel_id", currentChannelId || "");
             updateHashRoute(currentFilter, currentChannelId);
         }
+    } else if (!currentChannelId && visibleChannels.length > 0) {
+        currentChannelId = visibleChannels[0].id;
+        localStorage.setItem("creatorhub_current_channel_id", currentChannelId);
+        updateHashRoute(currentFilter, currentChannelId);
+    }
 
-        visibleChannels.forEach(ch => {
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "channel-pill-btn" + (ch.id === currentChannelId ? " active" : "");
-            btn.setAttribute("data-channel-id", ch.id);
+    visibleChannels.forEach(ch => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "channel-pill-btn" + (ch.id === currentChannelId ? " active" : "");
+        btn.setAttribute("data-channel-id", ch.id);
 
-            // Обертка для аватарки канала, клик по которой открывает отдельную страницу канала
-            const avatarWrap = document.createElement("span");
-            avatarWrap.className = "channel-pill-avatar-wrap";
-            avatarWrap.title = `Открыть пространство ${ch.name}`;
+        // Обертка для аватарки канала, клик по которой сразу открывает доску канала
+        const avatarWrap = document.createElement("span");
+        avatarWrap.className = "channel-pill-avatar-wrap";
+        avatarWrap.title = `Открыть доску: ${ch.name}`;
 
-            if (ch.avatarUrl) {
-                const img = document.createElement("img");
-                img.src = ch.avatarUrl;
-                img.className = "channel-pill-avatar";
-                avatarWrap.appendChild(img);
-            } else {
-                const placeholder = document.createElement("div");
-                placeholder.className = "channel-pill-avatar-placeholder";
-                placeholder.textContent = ch.name ? ch.name.charAt(0) : "?";
-                avatarWrap.appendChild(placeholder);
-            }
+        if (ch.avatarUrl) {
+            const img = document.createElement("img");
+            img.src = ch.avatarUrl;
+            img.className = "channel-pill-avatar";
+            avatarWrap.appendChild(img);
+        } else {
+            const placeholder = document.createElement("div");
+            placeholder.className = "channel-pill-avatar-placeholder";
+            placeholder.textContent = ch.name ? ch.name.charAt(0) : "?";
+            avatarWrap.appendChild(placeholder);
+        }
 
-            // Оверлей стрелки ↗ при наведении на аватар
-            const hoverOverlay = document.createElement("span");
-            hoverOverlay.className = "channel-pill-avatar-hover-overlay";
-            hoverOverlay.innerHTML = `
+        // Оверлей стрелки ↗ при наведении на аватар
+        const hoverOverlay = document.createElement("span");
+        hoverOverlay.className = "channel-pill-avatar-hover-overlay";
+        hoverOverlay.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
                 <line x1="7" y1="17" x2="17" y2="7"></line>
                 <polyline points="7 7 17 7 17 17"></polyline>
             </svg>
         `;
-            avatarWrap.appendChild(hoverOverlay);
+        avatarWrap.appendChild(hoverOverlay);
 
-            avatarWrap.addEventListener("click", (e) => {
-                e.stopPropagation();
-                openChannelPage(ch.id);
-            });
-
-            btn.appendChild(avatarWrap);
-
-            const nameSpan = document.createElement("span");
-            nameSpan.textContent = ch.name;
-            btn.appendChild(nameSpan);
-
-            // Расчет количества видео в канале
-            const count = videos.filter(v => !v.deleted && v.channelId === ch.id).length;
-
-            const countSpan = document.createElement("span");
-            countSpan.className = "channel-pill-count";
-            countSpan.textContent = count;
-            btn.appendChild(countSpan);
-
-            btn.addEventListener("click", () => {
-                currentChannelId = ch.id;
-                localStorage.setItem("creatorhub_current_channel_id", ch.id);
-                updateHashRoute(currentFilter, ch.id);
-
-                row.querySelectorAll(".channel-pill-btn").forEach(b => {
-                    b.classList.toggle("active", b.getAttribute("data-channel-id") === ch.id);
-                });
-
-                renderVideosList();
-                updateStatsCounters();
-            });
-
-            row.appendChild(btn);
+        avatarWrap.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openChannelWhiteboardModal(ch.id);
         });
 
-        // Добавляем вкладку "Без канала", только если есть видео без привязанного канала
-        if (hasVideosWithoutChannel) {
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "channel-pill-btn" + (currentChannelId === "no_channel" ? " active" : "");
-            btn.setAttribute("data-channel-id", "no_channel");
+        btn.appendChild(avatarWrap);
 
-            const placeholder = document.createElement("div");
-            placeholder.className = "channel-pill-avatar-placeholder";
-            placeholder.textContent = "?";
-            btn.appendChild(placeholder);
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = ch.name;
+        btn.appendChild(nameSpan);
 
-            const nameSpan = document.createElement("span");
-            nameSpan.textContent = "Без канала";
-            btn.appendChild(nameSpan);
+        // Расчет количества видео в канале
+        const count = videos.filter(v => !v.deleted && v.channelId === ch.id).length;
 
-            // Расчет количества видео без канала
-            const count = videos.filter(v => !v.deleted && (!v.channelId || !channels.some(ch => ch.id === v.channelId))).length;
-            const countSpan = document.createElement("span");
-            countSpan.className = "channel-pill-count";
-            countSpan.textContent = count;
-            btn.appendChild(countSpan);
+        const countSpan = document.createElement("span");
+        countSpan.className = "channel-pill-count";
+        countSpan.textContent = count;
+        btn.appendChild(countSpan);
 
-            btn.addEventListener("click", () => {
-                currentChannelId = "no_channel";
-                localStorage.setItem("creatorhub_current_channel_id", "no_channel");
-                updateHashRoute(currentFilter, "no_channel");
+        btn.addEventListener("click", () => {
+            currentChannelId = ch.id;
+            localStorage.setItem("creatorhub_current_channel_id", ch.id);
+            updateHashRoute(currentFilter, ch.id);
 
-                row.querySelectorAll(".channel-pill-btn").forEach(b => {
-                    b.classList.toggle("active", b.getAttribute("data-channel-id") === "no_channel");
-                });
-
-                renderVideosList();
-                updateStatsCounters();
+            row.querySelectorAll(".channel-pill-btn").forEach(b => {
+                b.classList.toggle("active", b.getAttribute("data-channel-id") === ch.id);
             });
 
-            row.appendChild(btn);
+            renderVideosList();
+            updateStatsCounters();
+        });
+
+        row.appendChild(btn);
+    });
+
+    // Добавляем вкладку "Без канала", только если есть видео без привязанного канала
+    if (hasVideosWithoutChannel) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "channel-pill-btn" + (currentChannelId === "no_channel" ? " active" : "");
+        btn.setAttribute("data-channel-id", "no_channel");
+
+        const placeholder = document.createElement("div");
+        placeholder.className = "channel-pill-avatar-placeholder";
+        placeholder.textContent = "?";
+        btn.appendChild(placeholder);
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = "Без канала";
+        btn.appendChild(nameSpan);
+
+        // Расчет количества видео без канала
+        const count = videos.filter(v => !v.deleted && (!v.channelId || !channels.some(ch => ch.id === v.channelId))).length;
+        const countSpan = document.createElement("span");
+        countSpan.className = "channel-pill-count";
+        countSpan.textContent = count;
+        btn.appendChild(countSpan);
+
+        btn.addEventListener("click", () => {
+            currentChannelId = "no_channel";
+            localStorage.setItem("creatorhub_current_channel_id", "no_channel");
+            updateHashRoute(currentFilter, "no_channel");
+
+            row.querySelectorAll(".channel-pill-btn").forEach(b => {
+                b.classList.toggle("active", b.getAttribute("data-channel-id") === "no_channel");
+            });
+
+            renderVideosList();
+            updateStatsCounters();
+        });
+
+        row.appendChild(btn);
+    }
+}
+
+let draggedChannelItem = null;
+let touchDraggedChannelItem = null;
+
+function getDragAfterChannelElement(container, y) {
+    const draggableElements = [
+        ...container.querySelectorAll(".channel-settings-item:not(.dragging), #channelsHiddenDivider, #channelsHiddenEmptyDropzone")
+    ];
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function applyNewChannelsOrder() {
+    const container = document.getElementById("settingsChannelsList");
+    if (!container) return;
+
+    let isBelowDivider = false;
+    const newOrderedChannels = [];
+    let stateChanged = false;
+
+    for (const child of container.children) {
+        if (child.id === "channelsHiddenDivider") {
+            isBelowDivider = true;
+        } else if (child.classList && child.classList.contains("channel-settings-item")) {
+            const chId = child.getAttribute("data-channel-id");
+            const ch = channels.find(c => c.id === chId);
+            if (ch) {
+                if (Boolean(ch.hidden) !== isBelowDivider) {
+                    ch.hidden = isBelowDivider;
+                    stateChanged = true;
+                }
+                newOrderedChannels.push(ch);
+            }
         }
     }
 
-    function renderSettingsChannels() {
-        const container = document.getElementById("settingsChannelsList");
-        if (!container) return;
-        container.innerHTML = "";
-
-        channels.forEach((ch, idx) => {
-            const item = document.createElement("div");
-            item.className = "channel-settings-item" + (ch.hidden ? " is-hidden" : "");
-            item.style.display = "flex";
-            item.style.alignItems = "center";
-            item.style.justifyContent = "space-between";
-            item.style.padding = "10px";
-            item.style.border = "1px solid var(--ch-border)";
-            item.style.borderRadius = "12px";
-            item.style.backgroundColor = "var(--ch-bg)";
-
-            const avatarWrapper = document.createElement("div");
-            avatarWrapper.className = "channel-avatar-edit-wrapper";
-            avatarWrapper.style.position = "relative";
-            avatarWrapper.style.width = "40px";
-            avatarWrapper.style.height = "40px";
-            avatarWrapper.style.borderRadius = "50%";
-            avatarWrapper.style.overflow = "hidden";
-            avatarWrapper.style.cursor = "pointer";
-            avatarWrapper.style.border = "1px solid var(--ch-border)";
-            avatarWrapper.style.flexShrink = "0";
-
-            if (ch.avatarUrl) {
-                const img = document.createElement("img");
-                img.src = ch.avatarUrl;
-                img.style.width = "100%";
-                img.style.height = "100%";
-                img.style.objectFit = "cover";
-                avatarWrapper.appendChild(img);
-            } else {
-                const placeholder = document.createElement("div");
-                placeholder.className = "channel-pill-avatar-placeholder";
-                placeholder.style.width = "100%";
-                placeholder.style.height = "100%";
-                placeholder.style.display = "flex";
-                placeholder.style.alignItems = "center";
-                placeholder.style.justifyContent = "center";
-                placeholder.style.fontSize = "0.9rem";
-                placeholder.textContent = ch.name ? ch.name.charAt(0) : "?";
-                avatarWrapper.appendChild(placeholder);
-            }
-
-            const overlay = document.createElement("div");
-            overlay.className = "channel-avatar-overlay";
-            overlay.style.position = "absolute";
-            overlay.style.inset = "0";
-            overlay.style.background = "rgba(0,0,0,0.5)";
-            overlay.style.display = "flex";
-            overlay.style.alignItems = "center";
-            overlay.style.justifyContent = "center";
-            overlay.style.opacity = "0";
-            overlay.style.transition = "opacity 0.2s";
-            overlay.style.color = "#ffffff";
-            overlay.style.fontSize = "0.68rem";
-            overlay.style.fontWeight = "600";
-            overlay.textContent = "Изменить";
-            avatarWrapper.appendChild(overlay);
-
-            const fileInput = document.createElement("input");
-            fileInput.type = "file";
-            fileInput.accept = "image/*";
-            fileInput.style.display = "none";
-            avatarWrapper.appendChild(fileInput);
-
-            avatarWrapper.addEventListener("click", () => {
-                fileInput.click();
-            });
-
-            fileInput.addEventListener("change", (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = async function (evt) {
-                    try {
-                        overlay.style.opacity = "1";
-                        overlay.textContent = "Загрузка...";
-
-                        // 1. Сжатие и кроп до 128x128
-                        const compressedBase64 = await resizeAndCompressImage(evt.target.result, 128, 128);
-
-                        // 2. Загрузка на ImgBB
-                        const imgUrl = await uploadToImgBB(compressedBase64);
-
-                        ch.avatarUrl = imgUrl;
-                        saveChannels();
-                        renderSettingsChannels();
-                        renderChannelSwitcher();
-                        renderVideosList();
-                    } catch (err) {
-                        console.error("Ошибка загрузки аватара:", err);
-                        alert("Не удалось загрузить аватарку. Попробуйте еще раз.");
-                    } finally {
-                        overlay.style.opacity = "";
-                        overlay.textContent = "Изменить";
-                    }
-                };
-                reader.readAsDataURL(file);
-            });
-
-            const leftWrap = document.createElement("div");
-            leftWrap.style.display = "flex";
-            leftWrap.style.alignItems = "center";
-            leftWrap.style.gap = "12px";
-            leftWrap.style.flexGrow = "1";
-            leftWrap.style.marginRight = "12px";
-
-            leftWrap.appendChild(avatarWrapper);
-
-            const nameInput = document.createElement("input");
-            nameInput.type = "text";
-            nameInput.className = "channel-item-name-input";
-            nameInput.value = ch.name;
-            nameInput.placeholder = "Название канала";
-            nameInput.style.border = "1px solid transparent";
-            nameInput.style.background = "transparent";
-            nameInput.style.fontFamily = "inherit";
-            nameInput.style.fontSize = "0.95rem";
-            nameInput.style.fontWeight = "600";
-            nameInput.style.color = "var(--ch-text-dark)";
-            nameInput.style.padding = "6px 10px";
-            nameInput.style.borderRadius = "8px";
-            nameInput.style.flexGrow = "1";
-            nameInput.style.transition = "all 0.2s";
-
-            leftWrap.appendChild(nameInput);
-
-            if (ch.hidden) {
-                const hiddenBadge = document.createElement("span");
-                hiddenBadge.className = "channel-hidden-badge";
-                hiddenBadge.textContent = "Скрыт";
-                hiddenBadge.style.fontSize = "0.72rem";
-                hiddenBadge.style.fontWeight = "600";
-                hiddenBadge.style.padding = "2px 8px";
-                hiddenBadge.style.borderRadius = "6px";
-                hiddenBadge.style.backgroundColor = "rgba(148, 163, 184, 0.15)";
-                hiddenBadge.style.color = "var(--ch-text-gray)";
-                hiddenBadge.style.marginLeft = "4px";
-                hiddenBadge.style.flexShrink = "0";
-                leftWrap.appendChild(hiddenBadge);
-            }
-
-            item.appendChild(leftWrap);
-
-            const actionsWrap = document.createElement("div");
-            actionsWrap.style.display = "flex";
-            actionsWrap.style.alignItems = "center";
-            actionsWrap.style.gap = "6px";
-
-            const saveBtn = document.createElement("button");
-            saveBtn.type = "button";
-            saveBtn.className = "btn-save-channel-name";
-            saveBtn.textContent = "Сохранить";
-            saveBtn.style.display = "none";
-            saveBtn.style.background = "var(--ch-purple)";
-            saveBtn.style.color = "#ffffff";
-            saveBtn.style.border = "none";
-            saveBtn.style.padding = "6px 12px";
-            saveBtn.style.borderRadius = "8px";
-            saveBtn.style.fontSize = "0.82rem";
-            saveBtn.style.fontWeight = "600";
-            saveBtn.style.cursor = "pointer";
-            actionsWrap.appendChild(saveBtn);
-
-            nameInput.addEventListener("input", () => {
-                saveBtn.style.display = "inline-block";
-            });
-
-            saveBtn.addEventListener("click", () => {
-                ch.name = nameInput.value.trim() || "Без названия";
-                if (ch.whiteboardId) {
-                    syncChannelWhiteboardTitle(ch.id, `Доска: ${ch.name}`);
+    if (newOrderedChannels.length > 0) {
+        const orderChanged = newOrderedChannels.some((c, i) => c.id !== channels[i]?.id);
+        if (orderChanged || stateChanged) {
+            // Если скрыли канал, который сейчас был активным на главной странице
+            const currentActive = channels.find(c => c.id === currentChannelId);
+            if (currentActive && currentActive.hidden) {
+                const firstVisible = newOrderedChannels.find(c => !c.hidden);
+                if (firstVisible) {
+                    currentChannelId = firstVisible.id;
+                } else {
+                    const hasNoChannelVideos = videos.some(v => !v.deleted && (!v.channelId || !channels.some(ch => ch.id === v.channelId)));
+                    currentChannelId = hasNoChannelVideos ? "no_channel" : null;
                 }
-                saveChannels();
-                renderSettingsChannels();
-                renderChannelSwitcher();
-            });
-
-            // Кнопка видимости канала (глазик)
-            const visibilityBtn = document.createElement("button");
-            visibilityBtn.type = "button";
-            visibilityBtn.className = "btn-toggle-channel-visibility" + (ch.hidden ? " is-hidden" : "");
-            visibilityBtn.title = ch.hidden ? "Показать канал на главной" : "Скрыть канал с главной (в архив)";
-            visibilityBtn.setAttribute("aria-label", visibilityBtn.title);
-
-            if (ch.hidden) {
-                // Перечеркнутый глазик (скрыт)
-                visibilityBtn.innerHTML = `
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>`;
-            } else {
-                // Открытый глазик (видим)
-                visibilityBtn.innerHTML = `
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                </svg>`;
-            }
-
-            visibilityBtn.addEventListener("click", () => {
-                ch.hidden = !ch.hidden;
-
-                // Если скрыли канал, который сейчас был активным на главной странице
-                if (ch.hidden && currentChannelId === ch.id) {
-                    const firstVisible = channels.find(c => !c.hidden);
-                    if (firstVisible) {
-                        currentChannelId = firstVisible.id;
-                    } else {
-                        const hasNoChannelVideos = videos.some(v => !v.deleted && (!v.channelId || !channels.some(ch => ch.id === v.channelId)));
-                        currentChannelId = hasNoChannelVideos ? "no_channel" : null;
-                    }
-                    localStorage.setItem("creatorhub_current_channel_id", currentChannelId || "");
+                localStorage.setItem("creatorhub_current_channel_id", currentChannelId || "");
+                updateHashRoute(currentFilter, currentChannelId);
+            } else if (!currentChannelId || currentChannelId === "no_channel") {
+                const firstVisible = newOrderedChannels.find(c => !c.hidden);
+                if (firstVisible) {
+                    currentChannelId = firstVisible.id;
+                    localStorage.setItem("creatorhub_current_channel_id", currentChannelId);
                     updateHashRoute(currentFilter, currentChannelId);
-                } else if (!ch.hidden && (!currentChannelId || currentChannelId === "no_channel")) {
-                    const visibleList = channels.filter(c => !c.hidden);
-                    if (visibleList.length === 1) {
-                        currentChannelId = ch.id;
-                        localStorage.setItem("creatorhub_current_channel_id", currentChannelId);
-                        updateHashRoute(currentFilter, currentChannelId);
-                    }
                 }
+            }
 
+            channels = newOrderedChannels;
+            saveChannels();
+            renderChannelSwitcher();
+            renderSettingsChannels();
+            renderVideosList();
+            updateStatsCounters();
+        } else {
+            renderSettingsChannels();
+        }
+    }
+}
+
+function createChannelSettingsItem(ch, container) {
+    const item = document.createElement("div");
+    item.className = "channel-settings-item" + (ch.hidden ? " is-hidden" : "");
+    item.setAttribute("data-channel-id", ch.id);
+    item.setAttribute("draggable", "true");
+    item.style.display = "flex";
+    item.style.alignItems = "center";
+    item.style.justifyContent = "space-between";
+    item.style.padding = "6px 12px";
+    item.style.border = "1px solid var(--ch-border)";
+    item.style.borderRadius = "10px";
+    item.style.backgroundColor = "var(--ch-bg)";
+
+    // HTML5 Drag and Drop события для элемента
+    item.addEventListener("dragstart", (e) => {
+        if (e.target.closest("input, button, .channel-avatar-edit-wrapper")) {
+            e.preventDefault();
+            return;
+        }
+        draggedChannelItem = item;
+        item.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", ch.id);
+    });
+
+    item.addEventListener("dragend", () => {
+        item.classList.remove("dragging");
+        draggedChannelItem = null;
+        applyNewChannelsOrder();
+    });
+
+    const avatarWrapper = document.createElement("div");
+    avatarWrapper.className = "channel-avatar-edit-wrapper";
+    avatarWrapper.style.position = "relative";
+    avatarWrapper.style.width = "32px";
+    avatarWrapper.style.height = "32px";
+    avatarWrapper.style.borderRadius = "50%";
+    avatarWrapper.style.overflow = "hidden";
+    avatarWrapper.style.cursor = "pointer";
+    avatarWrapper.style.border = "1px solid var(--ch-border)";
+    avatarWrapper.style.flexShrink = "0";
+
+    if (ch.avatarUrl) {
+        const img = document.createElement("img");
+        img.src = ch.avatarUrl;
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "cover";
+        avatarWrapper.appendChild(img);
+    } else {
+        const placeholder = document.createElement("div");
+        placeholder.className = "channel-pill-avatar-placeholder";
+        placeholder.style.width = "100%";
+        placeholder.style.height = "100%";
+        placeholder.style.display = "flex";
+        placeholder.style.alignItems = "center";
+        placeholder.style.justifyContent = "center";
+        placeholder.style.fontSize = "0.82rem";
+        placeholder.textContent = ch.name ? ch.name.charAt(0) : "?";
+        avatarWrapper.appendChild(placeholder);
+    }
+
+    const overlay = document.createElement("div");
+    overlay.className = "channel-avatar-overlay";
+    overlay.style.position = "absolute";
+    overlay.style.inset = "0";
+    overlay.style.background = "rgba(0,0,0,0.5)";
+    overlay.style.display = "flex";
+    overlay.style.alignItems = "center";
+    overlay.style.justifyContent = "center";
+    overlay.style.opacity = "0";
+    overlay.style.transition = "opacity 0.2s";
+    overlay.style.color = "#ffffff";
+    overlay.style.fontSize = "0.68rem";
+    overlay.style.fontWeight = "600";
+    overlay.textContent = "Изменить";
+    avatarWrapper.appendChild(overlay);
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.style.display = "none";
+    avatarWrapper.appendChild(fileInput);
+
+    avatarWrapper.addEventListener("click", () => {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async function (evt) {
+            try {
+                overlay.style.opacity = "1";
+                overlay.textContent = "Загрузка...";
+
+                // 1. Сжатие и кроп до 128x128
+                const compressedBase64 = await resizeAndCompressImage(evt.target.result, 128, 128);
+
+                // 2. Загрузка на ImgBB
+                const imgUrl = await uploadToImgBB(compressedBase64);
+
+                ch.avatarUrl = imgUrl;
                 saveChannels();
                 renderSettingsChannels();
                 renderChannelSwitcher();
                 renderVideosList();
-                updateStatsCounters();
-            });
+            } catch (err) {
+                console.error("Ошибка загрузки аватара:", err);
+                alert("Не удалось загрузить аватарку. Попробуйте еще раз.");
+            } finally {
+                overlay.style.opacity = "";
+                overlay.textContent = "Изменить";
+            }
+        };
+        reader.readAsDataURL(file);
+    });
 
-            actionsWrap.appendChild(visibilityBtn);
+    const leftWrap = document.createElement("div");
+    leftWrap.style.display = "flex";
+    leftWrap.style.alignItems = "center";
+    leftWrap.style.gap = "10px";
+    leftWrap.style.flexGrow = "1";
+    leftWrap.style.marginRight = "10px";
 
-            const deleteBtn = document.createElement("button");
-            deleteBtn.type = "button";
-            deleteBtn.className = "btn-delete-channel";
-            deleteBtn.title = "Удалить канал";
-            deleteBtn.style.background = "none";
-            deleteBtn.style.border = "none";
-            deleteBtn.style.color = "#dc2626";
-            deleteBtn.style.padding = "6px";
-            deleteBtn.style.cursor = "pointer";
-            deleteBtn.style.display = "flex";
-            deleteBtn.style.alignItems = "center";
-            deleteBtn.style.borderRadius = "8px";
-            deleteBtn.style.transition = "background-color 0.2s";
-
-            deleteBtn.innerHTML = `
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+    const dragHandle = document.createElement("div");
+    dragHandle.className = "channel-drag-handle";
+    dragHandle.title = "Перетащите, чтобы изменить порядок";
+    dragHandle.setAttribute("aria-label", "Перетащить канал");
+    dragHandle.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="9" cy="5" r="1.6"></circle>
+                <circle cx="15" cy="5" r="1.6"></circle>
+                <circle cx="9" cy="12" r="1.6"></circle>
+                <circle cx="15" cy="12" r="1.6"></circle>
+                <circle cx="9" cy="19" r="1.6"></circle>
+                <circle cx="15" cy="19" r="1.6"></circle>
             </svg>
         `;
-            actionsWrap.appendChild(deleteBtn);
 
-            deleteBtn.addEventListener("click", async () => {
-                const result = await showCustomConfirm(
-                    "Удалить канал?",
-                    `Вы действительно хотите удалить канал "${ch.name}"? Выберите вариант обработки видео этого канала:`,
-                    [
-                        { text: "Оставить видео без канала", val: "keep", style: { background: "var(--ch-purple)", borderColor: "var(--ch-purple)" } },
-                        { text: "Удалить канал и все его видео", val: "delete", style: { background: "#dc2626", borderColor: "#dc2626" } },
-                        { text: "Отмена", val: "cancel", type: "cancel" }
-                    ]
-                );
+    // Touch-события для сенсорных устройств
+    dragHandle.addEventListener("touchstart", (e) => {
+        touchDraggedChannelItem = item;
+        item.classList.add("dragging");
+    }, { passive: true });
 
-                if (result === "cancel" || !result) return;
-
-                // Удаляем канал из списка
-                channels.splice(idx, 1);
-                if (currentChannelId === ch.id) {
-                    const firstVisible = channels.find(c => !c.hidden);
-                    currentChannelId = firstVisible ? firstVisible.id : null;
-                    localStorage.setItem("creatorhub_current_channel_id", currentChannelId || "");
-                    updateHashRoute(currentFilter, currentChannelId);
-                }
-
-                // Обработка видео в канале
-                if (result === "delete") {
-                    const videosToDelete = videos.filter(v => v.channelId === ch.id);
-                    for (const v of videosToDelete) {
-                        v.deleted = true;
-                        v.deletedAt = new Date().toISOString();
-                        if (currentUid && db) {
-                            try {
-                                await updateDoc(doc(db, "users", currentUid, "videos", v.id), {
-                                    deleted: true,
-                                    deletedAt: serverTimestamp()
-                                });
-                            } catch (e) {
-                                console.error("Error updating deleted status:", e);
-                            }
-                        }
-                    }
-                    if (!currentUid) {
-                        localStorage.setItem("local_videos", JSON.stringify(videos));
-                    }
-                } else if (result === "keep") {
-                    const videosToKeep = videos.filter(v => v.channelId === ch.id);
-                    for (const v of videosToKeep) {
-                        v.channelId = "";
-                        if (currentUid && db) {
-                            try {
-                                await updateDoc(doc(db, "users", currentUid, "videos", v.id), {
-                                    channelId: ""
-                                });
-                            } catch (e) {
-                                console.error("Error updating channelId:", e);
-                            }
-                        }
-                    }
-                    if (!currentUid) {
-                        localStorage.setItem("local_videos", JSON.stringify(videos));
-                    }
-                }
-
-                saveChannels();
-                renderSettingsChannels();
-                renderChannelSwitcher();
-                renderVideosList();
-                updateStatsCounters();
-            });
-
-            item.appendChild(actionsWrap);
-            container.appendChild(item);
-        });
-    }
-
-    function saveChannels() {
-        localStorage.setItem("creatorhub_channels", JSON.stringify(channels));
-        if (currentUid && db) {
-            updateDoc(doc(db, "users", currentUid), {
-                channels: channels
-            }).catch(err => console.error("Error saving channels to Firestore:", err));
-        }
-    }
-
-    // === Инициализация событий каналов ===
-
-    function updateBulkActionsToolbar() {
-        const toolbar = document.getElementById("bulkActionsToolbar");
-        const countSpan = document.getElementById("bulkSelectedCount");
-        const listEl = document.getElementById("videosListContainer");
-        const bulkSelectAllContainer = document.getElementById("bulkSelectAllContainer");
-        if (!toolbar) return;
-
-        if (isBulkSelectionMode) {
-            if (listEl) listEl.classList.add("bulk-mode");
-            if (bulkSelectAllContainer) bulkSelectAllContainer.style.display = "flex";
-            if (countSpan) countSpan.textContent = bulkSelectedVideoIds.length;
-            toolbar.style.display = "flex";
+    dragHandle.addEventListener("touchmove", (e) => {
+        if (!touchDraggedChannelItem) return;
+        const touch = e.touches[0];
+        if (!touch) return;
+        const afterElement = getDragAfterChannelElement(container, touch.clientY);
+        if (afterElement) {
+            container.insertBefore(touchDraggedChannelItem, afterElement);
         } else {
-            if (listEl) listEl.classList.remove("bulk-mode");
-            if (bulkSelectAllContainer) bulkSelectAllContainer.style.display = "none";
-
-            bulkSelectedVideoIds = [];
-            const checkboxes = document.querySelectorAll(".video-bulk-checkbox");
-            checkboxes.forEach(cb => cb.checked = false);
-            const bulkSelectAllCheckbox = document.getElementById("bulkSelectAllCheckbox");
-            if (bulkSelectAllCheckbox) bulkSelectAllCheckbox.checked = false;
-
-            toolbar.style.display = "none";
+            container.appendChild(touchDraggedChannelItem);
         }
-    }
+    }, { passive: true });
 
-    document.addEventListener("DOMContentLoaded", () => {
-        renderChannelSwitcher();
-
-        const btnChannelPageBack = document.getElementById("btnChannelPageBack");
-        if (btnChannelPageBack) {
-            btnChannelPageBack.addEventListener("click", () => {
-                closeChannelPage();
-            });
-        }
-
-        const btnHeaderGear = document.getElementById("btnHeaderGear");
-        if (btnHeaderGear) {
-            btnHeaderGear.addEventListener("click", (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                openSettingsModal();
-            });
-        }
-
-        const btnSettingsAddChannel = document.getElementById("btnSettingsAddChannel");
-        if (btnSettingsAddChannel) {
-            btnSettingsAddChannel.addEventListener("click", async (e) => {
-                e.stopPropagation();
-                const newName = await showCustomPrompt("Создать канал", "Название канала");
-                if (newName && newName.trim()) {
-                    const newCh = {
-                        id: "ch_" + Date.now(),
-                        name: newName.trim(),
-                        avatarUrl: "",
-                        hidden: false
-                    };
-                    channels.push(newCh);
-                    if (!currentChannelId || currentChannelId === "no_channel") {
-                        currentChannelId = newCh.id;
-                        localStorage.setItem("creatorhub_current_channel_id", newCh.id);
-                    }
-                    saveChannels();
-                    renderSettingsChannels();
-                    renderChannelSwitcher();
-                    renderVideosList();
-                    updateStatsCounters();
-                }
-            });
-        }
-
-        // Слушатели массовых действий
-        const bulkSelectAllCheckbox = document.getElementById("bulkSelectAllCheckbox");
-        if (bulkSelectAllCheckbox) {
-            bulkSelectAllCheckbox.addEventListener("change", (e) => {
-                const filtered = getFilteredVideos();
-                if (e.target.checked) {
-                    filtered.forEach(v => {
-                        if (!bulkSelectedVideoIds.includes(v.id)) {
-                            bulkSelectedVideoIds.push(v.id);
-                        }
-                    });
-                } else {
-                    const filteredIds = filtered.map(v => v.id);
-                    bulkSelectedVideoIds = bulkSelectedVideoIds.filter(id => !filteredIds.includes(id));
-                }
-
-                // Синхронизация всех видимых чекбоксов в списке
-                const checkboxes = document.querySelectorAll(".video-bulk-checkbox");
-                checkboxes.forEach(cb => {
-                    const id = cb.getAttribute("data-id");
-                    cb.checked = bulkSelectedVideoIds.includes(id);
-                });
-
-                updateBulkActionsToolbar();
-            });
-        }
-
-        const btnBulkCancel = document.getElementById("btnBulkCancel");
-        if (btnBulkCancel) {
-            btnBulkCancel.addEventListener("click", () => {
-                isBulkSelectionMode = false;
-                updateBulkActionsToolbar();
-                renderVideosList();
-            });
-        }
-
-        const btnBulkMove = document.getElementById("btnBulkMove");
-        if (btnBulkMove) {
-            btnBulkMove.addEventListener("click", async () => {
-                if (bulkSelectedVideoIds.length === 0) return;
-
-                const customButtons = channels.map(ch => ({
-                    text: ch.name,
-                    val: ch.id,
-                    style: { background: "var(--ch-purple)", borderColor: "var(--ch-purple)" }
-                }));
-                customButtons.push({
-                    text: "Без канала",
-                    val: "no_channel",
-                    style: { background: "var(--ch-text-gray)", borderColor: "var(--ch-text-gray)" }
-                });
-                customButtons.push({
-                    text: "Отмена",
-                    val: "cancel",
-                    type: "cancel"
-                });
-
-                const targetChId = await showCustomConfirm(
-                    "Переместить видео",
-                    `Выберите целевой канал для перемещения ${bulkSelectedVideoIds.length} видео:`,
-                    customButtons
-                );
-
-                if (targetChId === "cancel" || !targetChId) return;
-
-                const finalChId = targetChId === "no_channel" ? "" : targetChId;
-
-                for (const vidId of bulkSelectedVideoIds) {
-                    const v = videos.find(item => item.id === vidId);
-                    if (v) {
-                        v.channelId = finalChId;
-                        if (currentUid && db) {
-                            try {
-                                await updateDoc(doc(db, "users", currentUid, "videos", vidId), {
-                                    channelId: finalChId
-                                });
-                            } catch (e) {
-                                console.error("Error moving video in bulk:", e);
-                            }
-                        }
-                    }
-                }
-
-                if (!currentUid) {
-                    localStorage.setItem("local_videos", JSON.stringify(videos));
-                }
-
-                isBulkSelectionMode = false;
-                updateBulkActionsToolbar();
-                renderVideosList();
-                updateStatsCounters();
-                renderChannelSwitcher();
-            });
-        }
-
-        const btnBulkAddTags = document.getElementById("btnBulkAddTags");
-        if (btnBulkAddTags) {
-            btnBulkAddTags.addEventListener("click", async () => {
-                if (bulkSelectedVideoIds.length === 0) return;
-
-                const tagsStr = await showCustomPrompt(
-                    "Добавить теги",
-                    "Введите теги через запятую (например: Стрим, Игры):"
-                );
-
-                if (!tagsStr || !tagsStr.trim()) return;
-
-                const newTags = tagsStr.split(",").map(t => t.trim()).filter(t => t.length > 0);
-                if (newTags.length === 0) return;
-
-                for (const vidId of bulkSelectedVideoIds) {
-                    const v = videos.find(item => item.id === vidId);
-                    if (v) {
-                        if (!v.tags) v.tags = [];
-                        const merged = Array.from(new Set([...v.tags, ...newTags]));
-                        v.tags = merged;
-                        if (currentUid && db) {
-                            try {
-                                await updateDoc(doc(db, "users", currentUid, "videos", vidId), {
-                                    tags: merged
-                                });
-                            } catch (e) {
-                                console.error("Error bulk adding tags:", e);
-                            }
-                        }
-                    }
-                }
-
-                if (!currentUid) {
-                    localStorage.setItem("local_videos", JSON.stringify(videos));
-                }
-
-                isBulkSelectionMode = false;
-                updateBulkActionsToolbar();
-                renderVideosList();
-            });
-        }
-
-        const btnBulkRemoveTags = document.getElementById("btnBulkRemoveTags");
-        if (btnBulkRemoveTags) {
-            btnBulkRemoveTags.addEventListener("click", async () => {
-                if (bulkSelectedVideoIds.length === 0) return;
-
-                const tagsStr = await showCustomPrompt(
-                    "Удалить теги",
-                    "Введите теги через запятую для их удаления у выбранных видео:"
-                );
-
-                if (!tagsStr || !tagsStr.trim()) return;
-
-                const tagsToRemove = tagsStr.split(",").map(t => t.trim()).filter(t => t.length > 0);
-                if (tagsToRemove.length === 0) return;
-
-                for (const vidId of bulkSelectedVideoIds) {
-                    const v = videos.find(item => item.id === vidId);
-                    if (v) {
-                        if (v.tags) {
-                            const filteredTags = v.tags.filter(t => !tagsToRemove.includes(t));
-                            v.tags = filteredTags;
-                            if (currentUid && db) {
-                                try {
-                                    await updateDoc(doc(db, "users", currentUid, "videos", vidId), {
-                                        tags: filteredTags
-                                    });
-                                } catch (e) {
-                                    console.error("Error bulk removing tags:", e);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (!currentUid) {
-                    localStorage.setItem("local_videos", JSON.stringify(videos));
-                }
-
-                isBulkSelectionMode = false;
-                updateBulkActionsToolbar();
-                renderVideosList();
-            });
-        }
-
-        const btnBulkDelete = document.getElementById("btnBulkDelete");
-        if (btnBulkDelete) {
-            btnBulkDelete.addEventListener("click", async () => {
-                if (bulkSelectedVideoIds.length === 0) return;
-
-                const confirmed = await showCustomConfirm(
-                    "Удалить выбранные видео?",
-                    `Вы уверены, что хотите переместить ${bulkSelectedVideoIds.length} видео в корзину?`
-                );
-
-                if (!confirmed) return;
-
-                const nowStr = new Date().toISOString();
-
-                for (const vidId of bulkSelectedVideoIds) {
-                    const v = videos.find(item => item.id === vidId);
-                    if (v) {
-                        v.deleted = true;
-                        v.deletedAt = nowStr;
-                        if (currentUid && db) {
-                            try {
-                                await updateDoc(doc(db, "users", currentUid, "videos", vidId), {
-                                    deleted: true,
-                                    deletedAt: serverTimestamp()
-                                });
-                            } catch (e) {
-                                console.error("Error bulk deleting videos:", e);
-                            }
-                        }
-                    }
-                }
-
-                if (!currentUid) {
-                    localStorage.setItem("local_videos", JSON.stringify(videos));
-                }
-
-                isBulkSelectionMode = false;
-                updateBulkActionsToolbar();
-                renderVideosList();
-                updateStatsCounters();
-            });
+    dragHandle.addEventListener("touchend", () => {
+        if (touchDraggedChannelItem) {
+            touchDraggedChannelItem.classList.remove("dragging");
+            touchDraggedChannelItem = null;
+            applyNewChannelsOrder();
         }
     });
 
-    // Дополнительный вызов для инициализации при первом проходе JS
+    leftWrap.appendChild(dragHandle);
+    leftWrap.appendChild(avatarWrapper);
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.className = "channel-item-name-input";
+    nameInput.value = ch.name;
+    nameInput.placeholder = "Название канала";
+    nameInput.style.border = "1px solid transparent";
+    nameInput.style.background = "transparent";
+    nameInput.style.fontFamily = "inherit";
+    nameInput.style.fontSize = "0.9rem";
+    nameInput.style.fontWeight = "600";
+    nameInput.style.color = "var(--ch-text-dark)";
+    nameInput.style.padding = "4px 8px";
+    nameInput.style.borderRadius = "8px";
+    nameInput.style.flexGrow = "1";
+    nameInput.style.transition = "all 0.2s";
+
+    leftWrap.appendChild(nameInput);
+
+    if (ch.hidden) {
+        const hiddenBadge = document.createElement("span");
+        hiddenBadge.className = "channel-hidden-badge";
+        hiddenBadge.textContent = "Скрыт";
+        hiddenBadge.style.fontSize = "0.68rem";
+        hiddenBadge.style.fontWeight = "600";
+        hiddenBadge.style.padding = "1px 6px";
+        hiddenBadge.style.borderRadius = "6px";
+        hiddenBadge.style.backgroundColor = "rgba(148, 163, 184, 0.15)";
+        hiddenBadge.style.color = "var(--ch-text-gray)";
+        hiddenBadge.style.marginLeft = "4px";
+        hiddenBadge.style.flexShrink = "0";
+        leftWrap.appendChild(hiddenBadge);
+    }
+
+    item.appendChild(leftWrap);
+
+    const actionsWrap = document.createElement("div");
+    actionsWrap.style.display = "flex";
+    actionsWrap.style.alignItems = "center";
+    actionsWrap.style.gap = "4px";
+
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.className = "btn-save-channel-name";
+    saveBtn.textContent = "Сохранить";
+    saveBtn.style.display = "none";
+    saveBtn.style.background = "var(--ch-purple)";
+    saveBtn.style.color = "#ffffff";
+    saveBtn.style.border = "none";
+    saveBtn.style.padding = "5px 10px";
+    saveBtn.style.borderRadius = "8px";
+    saveBtn.style.fontSize = "0.8rem";
+    saveBtn.style.fontWeight = "600";
+    saveBtn.style.cursor = "pointer";
+    actionsWrap.appendChild(saveBtn);
+
+    nameInput.addEventListener("input", () => {
+        saveBtn.style.display = "inline-block";
+    });
+
+    saveBtn.addEventListener("click", () => {
+        ch.name = nameInput.value.trim() || "Без названия";
+        if (ch.whiteboardId) {
+            syncChannelWhiteboardTitle(ch.id, `Доска: ${ch.name}`);
+        }
+        saveChannels();
+        renderSettingsChannels();
+        renderChannelSwitcher();
+    });
+
+    // Кнопка видимости канала (глазик)
+    const visibilityBtn = document.createElement("button");
+    visibilityBtn.type = "button";
+    visibilityBtn.className = "btn-toggle-channel-visibility" + (ch.hidden ? " is-hidden" : "");
+    visibilityBtn.title = ch.hidden ? "Показать канал на главной" : "Скрыть канал с главной (в архив)";
+    visibilityBtn.setAttribute("aria-label", visibilityBtn.title);
+
+    if (ch.hidden) {
+        // Перечеркнутый глазик (скрыт)
+        visibilityBtn.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>`;
+    } else {
+        // Открытый глазик (видим)
+        visibilityBtn.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>`;
+    }
+
+    visibilityBtn.addEventListener("click", () => {
+        ch.hidden = !ch.hidden;
+
+        // Если скрыли канал, который сейчас был активным на главной странице
+        if (ch.hidden && currentChannelId === ch.id) {
+            const firstVisible = channels.find(c => !c.hidden);
+            if (firstVisible) {
+                currentChannelId = firstVisible.id;
+            } else {
+                const hasNoChannelVideos = videos.some(v => !v.deleted && (!v.channelId || !channels.some(ch => ch.id === v.channelId)));
+                currentChannelId = hasNoChannelVideos ? "no_channel" : null;
+            }
+            localStorage.setItem("creatorhub_current_channel_id", currentChannelId || "");
+            updateHashRoute(currentFilter, currentChannelId);
+        } else if (!ch.hidden && (!currentChannelId || currentChannelId === "no_channel")) {
+            const visibleList = channels.filter(c => !c.hidden);
+            if (visibleList.length === 1) {
+                currentChannelId = ch.id;
+                localStorage.setItem("creatorhub_current_channel_id", currentChannelId);
+                updateHashRoute(currentFilter, currentChannelId);
+            }
+        }
+
+        saveChannels();
+        renderSettingsChannels();
+        renderChannelSwitcher();
+        renderVideosList();
+        updateStatsCounters();
+    });
+
+    actionsWrap.appendChild(visibilityBtn);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "btn-delete-channel";
+    deleteBtn.title = "Удалить канал";
+    deleteBtn.style.background = "none";
+    deleteBtn.style.border = "none";
+    deleteBtn.style.color = "#dc2626";
+    deleteBtn.style.padding = "4px";
+    deleteBtn.style.cursor = "pointer";
+    deleteBtn.style.display = "flex";
+    deleteBtn.style.alignItems = "center";
+    deleteBtn.style.borderRadius = "8px";
+    deleteBtn.style.transition = "background-color 0.2s";
+
+    deleteBtn.innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+    `;
+    actionsWrap.appendChild(deleteBtn);
+
+    deleteBtn.addEventListener("click", async () => {
+        const result = await showCustomConfirm(
+            "Удалить канал?",
+            `Вы действительно хотите удалить канал "${ch.name}"? Выберите вариант обработки видео этого канала:`,
+            [
+                { text: "Оставить видео без канала", val: "keep", style: { background: "var(--ch-purple)", borderColor: "var(--ch-purple)" } },
+                { text: "Удалить канал и все его видео", val: "delete", style: { background: "#dc2626", borderColor: "#dc2626" } },
+                { text: "Отмена", val: "cancel", type: "cancel" }
+            ]
+        );
+
+        if (result === "cancel" || !result) return;
+
+        const idx = channels.findIndex(c => c.id === ch.id);
+        if (idx !== -1) {
+            channels.splice(idx, 1);
+        }
+        if (currentChannelId === ch.id) {
+            const firstVisible = channels.find(c => !c.hidden);
+            currentChannelId = firstVisible ? firstVisible.id : null;
+            localStorage.setItem("creatorhub_current_channel_id", currentChannelId || "");
+            updateHashRoute(currentFilter, currentChannelId);
+        }
+
+        // Обработка видео в канале
+        if (result === "delete") {
+            const videosToDelete = videos.filter(v => v.channelId === ch.id);
+            for (const v of videosToDelete) {
+                v.deleted = true;
+                v.deletedAt = new Date().toISOString();
+                if (currentUid && db) {
+                    try {
+                        await updateDoc(doc(db, "users", currentUid, "videos", v.id), {
+                            deleted: true,
+                            deletedAt: serverTimestamp()
+                        });
+                    } catch (e) {
+                        console.error("Error updating deleted status:", e);
+                    }
+                }
+            }
+            if (!currentUid) {
+                localStorage.setItem("local_videos", JSON.stringify(videos));
+            }
+        } else if (result === "keep") {
+            const videosToKeep = videos.filter(v => v.channelId === ch.id);
+            for (const v of videosToKeep) {
+                v.channelId = "";
+                if (currentUid && db) {
+                    try {
+                        await updateDoc(doc(db, "users", currentUid, "videos", v.id), {
+                            channelId: ""
+                        });
+                    } catch (e) {
+                        console.error("Error updating channelId:", e);
+                    }
+                }
+            }
+            if (!currentUid) {
+                localStorage.setItem("local_videos", JSON.stringify(videos));
+            }
+        }
+
+        saveChannels();
+        renderSettingsChannels();
+        renderChannelSwitcher();
+        renderVideosList();
+        updateStatsCounters();
+    });
+
+    item.appendChild(actionsWrap);
+    return item;
+}
+
+function renderSettingsChannels() {
+    const container = document.getElementById("settingsChannelsList");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (!container._channelsDndInit) {
+        container._channelsDndInit = true;
+        container.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            if (!draggedChannelItem) return;
+            e.dataTransfer.dropEffect = "move";
+            const afterElement = getDragAfterChannelElement(container, e.clientY);
+            if (afterElement) {
+                container.insertBefore(draggedChannelItem, afterElement);
+            } else {
+                container.appendChild(draggedChannelItem);
+            }
+        });
+
+        container.addEventListener("drop", (e) => {
+            e.preventDefault();
+            applyNewChannelsOrder();
+        });
+    }
+
+    const visibleChannels = channels.filter(c => !c.hidden);
+    const hiddenChannels = channels.filter(c => c.hidden);
+
+    // 1. Активные каналы
+    visibleChannels.forEach(ch => {
+        const item = createChannelSettingsItem(ch, container);
+        container.appendChild(item);
+    });
+
+    if (visibleChannels.length === 0) {
+        const emptyVisible = document.createElement("div");
+        emptyVisible.className = "channels-empty-notice";
+        emptyVisible.style.padding = "10px";
+        emptyVisible.style.fontSize = "0.82rem";
+        emptyVisible.style.color = "var(--ch-text-gray)";
+        emptyVisible.style.textAlign = "center";
+        emptyVisible.style.borderRadius = "10px";
+        emptyVisible.style.border = "1.5px dashed var(--ch-border)";
+        emptyVisible.textContent = "Нет активных каналов. Перетащите канал сюда снизу.";
+        container.appendChild(emptyVisible);
+    }
+
+    // 2. Разделитель: Скрытые каналы
+    const divider = document.createElement("div");
+    divider.className = "channels-hidden-divider";
+    divider.id = "channelsHiddenDivider";
+    divider.style.display = "flex";
+    divider.style.alignItems = "center";
+    divider.style.gap = "10px";
+    divider.style.margin = "10px 0 4px 0";
+    divider.style.padding = "4px 2px";
+    divider.style.userSelect = "none";
+
+    divider.innerHTML = `
+            <div style="flex: 1; height: 1px; background: var(--ch-border);"></div>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; color: var(--ch-text-gray); text-transform: uppercase; letter-spacing: 0.4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+                <span>Скрытые каналы</span>
+                <span style="font-size: 0.72rem; padding: 1px 7px; border-radius: 8px; background: rgba(148, 163, 184, 0.18); font-weight: 700; color: var(--ch-text-gray);">${hiddenChannels.length}</span>
+            </div>
+            <div style="flex: 1; height: 1px; background: var(--ch-border);"></div>
+        `;
+    container.appendChild(divider);
+
+    // 3. Скрытые каналы
+    hiddenChannels.forEach(ch => {
+        const item = createChannelSettingsItem(ch, container);
+        container.appendChild(item);
+    });
+
+    if (hiddenChannels.length === 0) {
+        const emptyDropzone = document.createElement("div");
+        emptyDropzone.id = "channelsHiddenEmptyDropzone";
+        emptyDropzone.style.padding = "10px";
+        emptyDropzone.style.fontSize = "0.8rem";
+        emptyDropzone.style.color = "var(--ch-text-gray)";
+        emptyDropzone.style.textAlign = "center";
+        emptyDropzone.style.borderRadius = "10px";
+        emptyDropzone.style.border = "1.5px dashed var(--ch-border)";
+        emptyDropzone.style.userSelect = "none";
+        emptyDropzone.textContent = "Перетащите канал сюда, чтобы скрыть";
+        container.appendChild(emptyDropzone);
+    }
+}
+
+function saveChannels() {
+    localStorage.setItem("creatorhub_channels", JSON.stringify(channels));
+    if (currentUid && db) {
+        updateDoc(doc(db, "users", currentUid), {
+            channels: channels
+        }).catch(err => console.error("Error saving channels to Firestore:", err));
+    }
+}
+
+// === Инициализация событий каналов ===
+
+function updateBulkActionsToolbar() {
+    const toolbar = document.getElementById("bulkActionsToolbar");
+    const countSpan = document.getElementById("bulkSelectedCount");
+    const listEl = document.getElementById("videosListContainer");
+    const bulkSelectAllContainer = document.getElementById("bulkSelectAllContainer");
+    if (!toolbar) return;
+
+    if (isBulkSelectionMode) {
+        if (listEl) listEl.classList.add("bulk-mode");
+        if (bulkSelectAllContainer) bulkSelectAllContainer.style.display = "flex";
+        if (countSpan) countSpan.textContent = bulkSelectedVideoIds.length;
+        toolbar.style.display = "flex";
+    } else {
+        if (listEl) listEl.classList.remove("bulk-mode");
+        if (bulkSelectAllContainer) bulkSelectAllContainer.style.display = "none";
+
+        bulkSelectedVideoIds = [];
+        const checkboxes = document.querySelectorAll(".video-bulk-checkbox");
+        checkboxes.forEach(cb => cb.checked = false);
+        const bulkSelectAllCheckbox = document.getElementById("bulkSelectAllCheckbox");
+        if (bulkSelectAllCheckbox) bulkSelectAllCheckbox.checked = false;
+
+        toolbar.style.display = "none";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
     renderChannelSwitcher();
 
-    // === Вспомогательные функции кастомных диалогов ===
+    const btnChannelPageBack = document.getElementById("btnChannelPageBack");
+    if (btnChannelPageBack) {
+        btnChannelPageBack.addEventListener("click", () => {
+            closeChannelPage();
+        });
+    }
 
-    function showCustomConfirm(title, desc, customButtons = null) {
-        return new Promise((resolve) => {
-            const modal = document.getElementById("chCustomModal");
-            if (!modal) {
-                resolve(confirm(desc));
-                return;
-            }
-            const titleEl = document.getElementById("chCustomModalTitle");
-            const descEl = document.getElementById("chCustomModalDesc");
-            const inputContainer = document.getElementById("chCustomModalInputContainer");
-            const actionsContainer = document.getElementById("chCustomModalActions");
+    const btnHeaderGear = document.getElementById("btnHeaderGear");
+    if (btnHeaderGear) {
+        btnHeaderGear.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openSettingsModal();
+        });
+    }
 
-            titleEl.textContent = title;
-            descEl.textContent = desc;
-            descEl.style.display = "block";
-            inputContainer.style.display = "none";
-
-            modal.style.display = "flex";
-
-            if (customButtons) {
-                actionsContainer.className = "confirm-modal-actions vertical-actions";
-                actionsContainer.innerHTML = "";
-                customButtons.forEach(btnConfig => {
-                    const btn = document.createElement("button");
-                    btn.type = "button";
-                    btn.textContent = btnConfig.text;
-                    if (btnConfig.type === "cancel") {
-                        btn.className = "confirm-btn-cancel";
-                    } else {
-                        btn.className = "confirm-btn-danger";
-                        if (btnConfig.style) {
-                            Object.assign(btn.style, btnConfig.style);
-                        }
-                    }
-                    btn.addEventListener("click", () => {
-                        modal.style.display = "none";
-                        resolve(btnConfig.val);
-                    });
-                    actionsContainer.appendChild(btn);
-                });
-            } else {
-                actionsContainer.className = "confirm-modal-actions";
-                actionsContainer.innerHTML = `
-                <button class="confirm-btn-cancel" id="btnChCustomModalCancel">Отмена</button>
-                <button class="confirm-btn-danger" id="btnChCustomModalConfirm">Да, удалить</button>
-            `;
-                const cancelBtn = document.getElementById("btnChCustomModalCancel");
-                const confirmBtn = document.getElementById("btnChCustomModalConfirm");
-
-                confirmBtn.style.background = "#dc2626";
-
-                function cleanup() {
-                    modal.style.display = "none";
-                    cancelBtn.removeEventListener("click", onCancel);
-                    confirmBtn.removeEventListener("click", onConfirm);
+    const btnSettingsAddChannel = document.getElementById("btnSettingsAddChannel");
+    if (btnSettingsAddChannel) {
+        btnSettingsAddChannel.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const newName = await showCustomPrompt("Создать канал", "Название канала");
+            if (newName && newName.trim()) {
+                const newCh = {
+                    id: "ch_" + Date.now(),
+                    name: newName.trim(),
+                    avatarUrl: "",
+                    hidden: false
+                };
+                channels.push(newCh);
+                if (!currentChannelId || currentChannelId === "no_channel") {
+                    currentChannelId = newCh.id;
+                    localStorage.setItem("creatorhub_current_channel_id", newCh.id);
                 }
-
-                function onCancel() {
-                    cleanup();
-                    resolve(false);
-                }
-
-                function onConfirm() {
-                    cleanup();
-                    resolve(true);
-                }
-
-                cancelBtn.addEventListener("click", onCancel);
-                confirmBtn.addEventListener("click", onConfirm);
+                saveChannels();
+                renderSettingsChannels();
+                renderChannelSwitcher();
+                renderVideosList();
+                updateStatsCounters();
             }
         });
     }
 
-    function showCustomPrompt(title, placeholder) {
-        return new Promise((resolve) => {
-            const modal = document.getElementById("chCustomModal");
-            if (!modal) {
-                resolve(prompt(title));
-                return;
+    // Слушатели массовых действий
+    const bulkSelectAllCheckbox = document.getElementById("bulkSelectAllCheckbox");
+    if (bulkSelectAllCheckbox) {
+        bulkSelectAllCheckbox.addEventListener("change", (e) => {
+            const filtered = getFilteredVideos();
+            if (e.target.checked) {
+                filtered.forEach(v => {
+                    if (!bulkSelectedVideoIds.includes(v.id)) {
+                        bulkSelectedVideoIds.push(v.id);
+                    }
+                });
+            } else {
+                const filteredIds = filtered.map(v => v.id);
+                bulkSelectedVideoIds = bulkSelectedVideoIds.filter(id => !filteredIds.includes(id));
             }
-            const titleEl = document.getElementById("chCustomModalTitle");
-            const descEl = document.getElementById("chCustomModalDesc");
-            const inputContainer = document.getElementById("chCustomModalInputContainer");
-            const inputEl = document.getElementById("chCustomModalInput");
+
+            // Синхронизация всех видимых чекбоксов в списке
+            const checkboxes = document.querySelectorAll(".video-bulk-checkbox");
+            checkboxes.forEach(cb => {
+                const id = cb.getAttribute("data-id");
+                cb.checked = bulkSelectedVideoIds.includes(id);
+            });
+
+            updateBulkActionsToolbar();
+        });
+    }
+
+    const btnBulkCancel = document.getElementById("btnBulkCancel");
+    if (btnBulkCancel) {
+        btnBulkCancel.addEventListener("click", () => {
+            isBulkSelectionMode = false;
+            updateBulkActionsToolbar();
+            renderVideosList();
+        });
+    }
+
+    const btnBulkMove = document.getElementById("btnBulkMove");
+    if (btnBulkMove) {
+        btnBulkMove.addEventListener("click", async () => {
+            if (bulkSelectedVideoIds.length === 0) return;
+
+            const customButtons = channels.map(ch => ({
+                text: ch.name,
+                val: ch.id,
+                style: { background: "var(--ch-purple)", borderColor: "var(--ch-purple)" }
+            }));
+            customButtons.push({
+                text: "Без канала",
+                val: "no_channel",
+                style: { background: "var(--ch-text-gray)", borderColor: "var(--ch-text-gray)" }
+            });
+            customButtons.push({
+                text: "Отмена",
+                val: "cancel",
+                type: "cancel"
+            });
+
+            const targetChId = await showCustomConfirm(
+                "Переместить видео",
+                `Выберите целевой канал для перемещения ${bulkSelectedVideoIds.length} видео:`,
+                customButtons
+            );
+
+            if (targetChId === "cancel" || !targetChId) return;
+
+            const finalChId = targetChId === "no_channel" ? "" : targetChId;
+
+            for (const vidId of bulkSelectedVideoIds) {
+                const v = videos.find(item => item.id === vidId);
+                if (v) {
+                    v.channelId = finalChId;
+                    if (currentUid && db) {
+                        try {
+                            await updateDoc(doc(db, "users", currentUid, "videos", vidId), {
+                                channelId: finalChId
+                            });
+                        } catch (e) {
+                            console.error("Error moving video in bulk:", e);
+                        }
+                    }
+                }
+            }
+
+            if (!currentUid) {
+                localStorage.setItem("local_videos", JSON.stringify(videos));
+            }
+
+            isBulkSelectionMode = false;
+            updateBulkActionsToolbar();
+            renderVideosList();
+            updateStatsCounters();
+            renderChannelSwitcher();
+        });
+    }
+
+    const btnBulkAddTags = document.getElementById("btnBulkAddTags");
+    if (btnBulkAddTags) {
+        btnBulkAddTags.addEventListener("click", async () => {
+            if (bulkSelectedVideoIds.length === 0) return;
+
+            const tagsStr = await showCustomPrompt(
+                "Добавить теги",
+                "Введите теги через запятую (например: Стрим, Игры):"
+            );
+
+            if (!tagsStr || !tagsStr.trim()) return;
+
+            const newTags = tagsStr.split(",").map(t => t.trim()).filter(t => t.length > 0);
+            if (newTags.length === 0) return;
+
+            for (const vidId of bulkSelectedVideoIds) {
+                const v = videos.find(item => item.id === vidId);
+                if (v) {
+                    if (!v.tags) v.tags = [];
+                    const merged = Array.from(new Set([...v.tags, ...newTags]));
+                    v.tags = merged;
+                    if (currentUid && db) {
+                        try {
+                            await updateDoc(doc(db, "users", currentUid, "videos", vidId), {
+                                tags: merged
+                            });
+                        } catch (e) {
+                            console.error("Error bulk adding tags:", e);
+                        }
+                    }
+                }
+            }
+
+            if (!currentUid) {
+                localStorage.setItem("local_videos", JSON.stringify(videos));
+            }
+
+            isBulkSelectionMode = false;
+            updateBulkActionsToolbar();
+            renderVideosList();
+        });
+    }
+
+    const btnBulkRemoveTags = document.getElementById("btnBulkRemoveTags");
+    if (btnBulkRemoveTags) {
+        btnBulkRemoveTags.addEventListener("click", async () => {
+            if (bulkSelectedVideoIds.length === 0) return;
+
+            const tagsStr = await showCustomPrompt(
+                "Удалить теги",
+                "Введите теги через запятую для их удаления у выбранных видео:"
+            );
+
+            if (!tagsStr || !tagsStr.trim()) return;
+
+            const tagsToRemove = tagsStr.split(",").map(t => t.trim()).filter(t => t.length > 0);
+            if (tagsToRemove.length === 0) return;
+
+            for (const vidId of bulkSelectedVideoIds) {
+                const v = videos.find(item => item.id === vidId);
+                if (v) {
+                    if (v.tags) {
+                        const filteredTags = v.tags.filter(t => !tagsToRemove.includes(t));
+                        v.tags = filteredTags;
+                        if (currentUid && db) {
+                            try {
+                                await updateDoc(doc(db, "users", currentUid, "videos", vidId), {
+                                    tags: filteredTags
+                                });
+                            } catch (e) {
+                                console.error("Error bulk removing tags:", e);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!currentUid) {
+                localStorage.setItem("local_videos", JSON.stringify(videos));
+            }
+
+            isBulkSelectionMode = false;
+            updateBulkActionsToolbar();
+            renderVideosList();
+        });
+    }
+
+    const btnBulkDelete = document.getElementById("btnBulkDelete");
+    if (btnBulkDelete) {
+        btnBulkDelete.addEventListener("click", async () => {
+            if (bulkSelectedVideoIds.length === 0) return;
+
+            const confirmed = await showCustomConfirm(
+                "Удалить выбранные видео?",
+                `Вы уверены, что хотите переместить ${bulkSelectedVideoIds.length} видео в корзину?`
+            );
+
+            if (!confirmed) return;
+
+            const nowStr = new Date().toISOString();
+
+            for (const vidId of bulkSelectedVideoIds) {
+                const v = videos.find(item => item.id === vidId);
+                if (v) {
+                    v.deleted = true;
+                    v.deletedAt = nowStr;
+                    if (currentUid && db) {
+                        try {
+                            await updateDoc(doc(db, "users", currentUid, "videos", vidId), {
+                                deleted: true,
+                                deletedAt: serverTimestamp()
+                            });
+                        } catch (e) {
+                            console.error("Error bulk deleting videos:", e);
+                        }
+                    }
+                }
+            }
+
+            if (!currentUid) {
+                localStorage.setItem("local_videos", JSON.stringify(videos));
+            }
+
+            isBulkSelectionMode = false;
+            updateBulkActionsToolbar();
+            renderVideosList();
+            updateStatsCounters();
+        });
+    }
+});
+
+// Дополнительный вызов для инициализации при первом проходе JS
+renderChannelSwitcher();
+
+// === Вспомогательные функции кастомных диалогов ===
+
+function showCustomConfirm(title, desc, customButtons = null) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById("chCustomModal");
+        if (!modal) {
+            resolve(confirm(desc));
+            return;
+        }
+        const titleEl = document.getElementById("chCustomModalTitle");
+        const descEl = document.getElementById("chCustomModalDesc");
+        const inputContainer = document.getElementById("chCustomModalInputContainer");
+        const actionsContainer = document.getElementById("chCustomModalActions");
+
+        titleEl.textContent = title;
+        descEl.textContent = desc;
+        descEl.style.display = "block";
+        inputContainer.style.display = "none";
+
+        modal.style.display = "flex";
+
+        if (customButtons) {
+            actionsContainer.className = "confirm-modal-actions vertical-actions";
+            actionsContainer.innerHTML = "";
+            customButtons.forEach(btnConfig => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.textContent = btnConfig.text;
+                if (btnConfig.type === "cancel") {
+                    btn.className = "confirm-btn-cancel";
+                } else {
+                    btn.className = "confirm-btn-danger";
+                    if (btnConfig.style) {
+                        Object.assign(btn.style, btnConfig.style);
+                    }
+                }
+                btn.addEventListener("click", () => {
+                    modal.style.display = "none";
+                    resolve(btnConfig.val);
+                });
+                actionsContainer.appendChild(btn);
+            });
+        } else {
+            actionsContainer.className = "confirm-modal-actions";
+            actionsContainer.innerHTML = `
+                <button class="confirm-btn-cancel" id="btnChCustomModalCancel">Отмена</button>
+                <button class="confirm-btn-danger" id="btnChCustomModalConfirm">Да, удалить</button>
+            `;
             const cancelBtn = document.getElementById("btnChCustomModalCancel");
             const confirmBtn = document.getElementById("btnChCustomModalConfirm");
 
-            titleEl.textContent = title;
-            descEl.style.display = "none";
-            inputContainer.style.display = "block";
-            inputEl.value = "";
-            inputEl.placeholder = placeholder || "Введите значение...";
-            confirmBtn.textContent = "Создать";
-            confirmBtn.style.background = "var(--ch-purple)";
-
-            modal.style.display = "flex";
-            setTimeout(() => inputEl.focus(), 50);
+            confirmBtn.style.background = "#dc2626";
 
             function cleanup() {
                 modal.style.display = "none";
@@ -8774,695 +8791,742 @@ if (btnSelectButtonToAdd) {
 
             function onCancel() {
                 cleanup();
-                resolve(null);
+                resolve(false);
             }
 
             function onConfirm() {
-                const val = inputEl.value;
                 cleanup();
-                resolve(val);
+                resolve(true);
             }
 
             cancelBtn.addEventListener("click", onCancel);
             confirmBtn.addEventListener("click", onConfirm);
+        }
+    });
+}
 
-            inputEl.onkeydown = (e) => {
-                if (e.key === "Enter") {
-                    onConfirm();
-                }
-            };
-        });
-    }
+function showCustomPrompt(title, placeholder) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById("chCustomModal");
+        if (!modal) {
+            resolve(prompt(title));
+            return;
+        }
+        const titleEl = document.getElementById("chCustomModalTitle");
+        const descEl = document.getElementById("chCustomModalDesc");
+        const inputContainer = document.getElementById("chCustomModalInputContainer");
+        const inputEl = document.getElementById("chCustomModalInput");
+        const cancelBtn = document.getElementById("btnChCustomModalCancel");
+        const confirmBtn = document.getElementById("btnChCustomModalConfirm");
 
-    function resizeAndCompressImage(base64Image, targetWidth = 128, targetHeight = 128) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = function () {
-                const canvas = document.createElement("canvas");
-                canvas.width = targetWidth;
-                canvas.height = targetHeight;
-                const ctx = canvas.getContext("2d");
+        titleEl.textContent = title;
+        descEl.style.display = "none";
+        inputContainer.style.display = "block";
+        inputEl.value = "";
+        inputEl.placeholder = placeholder || "Введите значение...";
+        confirmBtn.textContent = "Создать";
+        confirmBtn.style.background = "var(--ch-purple)";
 
-                // Cover fit: масштабирование с заполнением без искажения пропорций
-                const sourceRatio = img.width / img.height;
-                const targetRatio = targetWidth / targetHeight;
-                let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height;
+        modal.style.display = "flex";
+        setTimeout(() => inputEl.focus(), 50);
 
-                if (sourceRatio > targetRatio) {
-                    sWidth = img.height * targetRatio;
-                    sx = (img.width - sWidth) / 2;
-                } else {
-                    sHeight = img.width / targetRatio;
-                    sy = (img.height - sHeight) / 2;
-                }
-
-                ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
-                resolve(canvas.toDataURL("image/jpeg", 0.85));
-            };
-            img.onerror = function (err) {
-                reject(err);
-            };
-            img.src = base64Image;
-        });
-    }
-
-    // ========================================================
-    // ИНТЕГРАЦИЯ ИНТЕРАКТИВНОЙ ДОСКИ (WHITEBOARD) С ВИДЕО
-    // ========================================================
-    async function getOrCreateVideoFolder() {
-        const FOLDER_NAME = "Видео";
-
-        // 1. Проверяем в localStorage
-        let localFolders = JSON.parse(localStorage.getItem('whiteboard_folders') || '[]');
-        let videoFolder = localFolders.find(f => f.title === FOLDER_NAME);
-
-        // 2. Если авторизован, проверяем также в Firestore
-        if (currentUid && db) {
-            try {
-                const snap = await getDocs(collection(db, "users", currentUid, "whiteboard_folders"));
-                let fireFolder = null;
-                snap.forEach(d => {
-                    const data = d.data();
-                    if (data.title === FOLDER_NAME) {
-                        fireFolder = { id: d.id, ...data };
-                    }
-                });
-                if (fireFolder) {
-                    videoFolder = fireFolder;
-                    if (!localFolders.some(f => f.id === fireFolder.id)) {
-                        localFolders.push(fireFolder);
-                        localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
-                    }
-                } else if (!videoFolder) {
-                    // Создаем новую папку "Видео" в Firestore
-                    const newFolderId = "folder_" + Math.random().toString(36).substring(2, 11);
-                    const newFolderData = {
-                        id: newFolderId,
-                        title: FOLDER_NAME,
-                        createdAt: Date.now(),
-                        updatedAt: Date.now()
-                    };
-                    await setDoc(doc(db, "users", currentUid, "whiteboard_folders", newFolderId), newFolderData);
-                    localFolders.push(newFolderData);
-                    localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
-                    return newFolderId;
-                } else {
-                    // Есть локально, синхронизируем в Firestore
-                    await setDoc(doc(db, "users", currentUid, "whiteboard_folders", videoFolder.id), videoFolder);
-                }
-            } catch (e) {
-                console.warn("Ошибка проверки папки 'Видео' в Firestore:", e);
-            }
+        function cleanup() {
+            modal.style.display = "none";
+            cancelBtn.removeEventListener("click", onCancel);
+            confirmBtn.removeEventListener("click", onConfirm);
         }
 
-        // Если оффлайн и папки еще нет
-        if (!videoFolder) {
-            const newFolderId = "folder_" + Math.random().toString(36).substring(2, 11);
-            videoFolder = {
-                id: newFolderId,
-                title: FOLDER_NAME,
-                createdAt: Date.now(),
-                updatedAt: Date.now()
-            };
-            localFolders.push(videoFolder);
-            localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
+        function onCancel() {
+            cleanup();
+            resolve(null);
         }
 
-        return videoFolder.id;
-    }
-
-    async function syncAllVideoBoardsToVideoFolder() {
-        try {
-            const videosWithBoards = videos.filter(v => v.whiteboardId);
-            const channelsWithBoards = (channels || []).filter(c => c.whiteboardId);
-            if (videosWithBoards.length === 0 && channelsWithBoards.length === 0) return;
-
-            const videoFolderId = await getOrCreateVideoFolder();
-            if (!videoFolderId) return;
-
-            // Локальная синхронизация
-            const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
-            let localChanged = false;
-            videosWithBoards.forEach(v => {
-                const b = localBoards.find(item => item.id === v.whiteboardId);
-                if (b && b.folderId !== videoFolderId) {
-                    b.folderId = videoFolderId;
-                    b.updatedAt = Date.now();
-                    localChanged = true;
-                }
-            });
-            channelsWithBoards.forEach(c => {
-                const b = localBoards.find(item => item.id === c.whiteboardId);
-                if (b && b.folderId !== videoFolderId) {
-                    b.folderId = videoFolderId;
-                    b.updatedAt = Date.now();
-                    localChanged = true;
-                }
-            });
-            if (localChanged) {
-                localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
-            }
-
-            // Облачная синхронизация Firestore
-            if (currentUid && db) {
-                videosWithBoards.forEach(async (v) => {
-                    try {
-                        const boardRef = doc(db, "users", currentUid, "whiteboards", v.whiteboardId);
-                        const snap = await getDoc(boardRef);
-                        if (snap.exists() && snap.data().folderId !== videoFolderId) {
-                            await updateDoc(boardRef, {
-                                folderId: videoFolderId,
-                                updatedAt: Date.now()
-                            });
-                        }
-                    } catch (e) { }
-                });
-                channelsWithBoards.forEach(async (c) => {
-                    try {
-                        const boardRef = doc(db, "users", currentUid, "whiteboards", c.whiteboardId);
-                        const snap = await getDoc(boardRef);
-                        if (snap.exists() && snap.data().folderId !== videoFolderId) {
-                            await updateDoc(boardRef, {
-                                folderId: videoFolderId,
-                                updatedAt: Date.now()
-                            });
-                        }
-                    } catch (e) { }
-                });
-            }
-        } catch (err) {
-            console.warn("Ошибка синхронизации досок видео с папкой 'Видео':", err);
+        function onConfirm() {
+            const val = inputEl.value;
+            cleanup();
+            resolve(val);
         }
-    }
 
-    async function getOrCreateVideoWhiteboard(videoId) {
-        const video = videos.find(v => v.id === videoId);
-        if (!video) return null;
+        cancelBtn.addEventListener("click", onCancel);
+        confirmBtn.addEventListener("click", onConfirm);
 
-        const videoFolderId = await getOrCreateVideoFolder();
-        let boardId = video.whiteboardId || null;
+        inputEl.onkeydown = (e) => {
+            if (e.key === "Enter") {
+                onConfirm();
+            }
+        };
+    });
+}
 
-        // 1. Проверяем, существует ли уже привязанная доска
-        if (boardId) {
-            let boardExists = false;
-            if (currentUid && db) {
-                try {
-                    const snap = await getDoc(doc(db, "users", currentUid, "whiteboards", boardId));
-                    if (snap.exists()) {
-                        boardExists = true;
-                        const data = snap.data();
-                        const updates = {};
-                        if (data.title !== video.title) {
-                            updates.title = video.title || "Доска видео";
-                        }
-                        if (data.folderId !== videoFolderId) {
-                            updates.folderId = videoFolderId;
-                        }
-                        if (Object.keys(updates).length > 0) {
-                            updates.updatedAt = Date.now();
-                            updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), updates).catch(() => { });
-                        }
-                    }
-                } catch (e) {
-                    console.warn("Ошибка проверки доски в Firestore:", e);
-                    boardExists = true;
-                }
+function resizeAndCompressImage(base64Image, targetWidth = 128, targetHeight = 128) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = function () {
+            const canvas = document.createElement("canvas");
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            const ctx = canvas.getContext("2d");
+
+            // Cover fit: масштабирование с заполнением без искажения пропорций
+            const sourceRatio = img.width / img.height;
+            const targetRatio = targetWidth / targetHeight;
+            let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height;
+
+            if (sourceRatio > targetRatio) {
+                sWidth = img.height * targetRatio;
+                sx = (img.width - sWidth) / 2;
             } else {
-                const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
-                const found = localBoards.find(b => b.id === boardId);
-                if (found) {
-                    boardExists = true;
-                    let changed = false;
-                    if (found.title !== video.title) {
-                        found.title = video.title || "Доска видео";
-                        changed = true;
-                    }
-                    if (found.folderId !== videoFolderId) {
-                        found.folderId = videoFolderId;
-                        changed = true;
-                    }
-                    if (changed) {
-                        found.updatedAt = Date.now();
-                        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
-                    }
+                sHeight = img.width / targetRatio;
+                sy = (img.height - sHeight) / 2;
+            }
+
+            ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
+            resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        img.onerror = function (err) {
+            reject(err);
+        };
+        img.src = base64Image;
+    });
+}
+
+// ========================================================
+// ИНТЕГРАЦИЯ ИНТЕРАКТИВНОЙ ДОСКИ (WHITEBOARD) С ВИДЕО
+// ========================================================
+async function getOrCreateVideoFolder() {
+    const FOLDER_NAME = "Видео";
+
+    // 1. Проверяем в localStorage
+    let localFolders = JSON.parse(localStorage.getItem('whiteboard_folders') || '[]');
+    let videoFolder = localFolders.find(f => f.title === FOLDER_NAME);
+
+    // 2. Если авторизован, проверяем также в Firestore
+    if (currentUid && db) {
+        try {
+            const snap = await getDocs(collection(db, "users", currentUid, "whiteboard_folders"));
+            let fireFolder = null;
+            snap.forEach(d => {
+                const data = d.data();
+                if (data.title === FOLDER_NAME) {
+                    fireFolder = { id: d.id, ...data };
                 }
+            });
+            if (fireFolder) {
+                videoFolder = fireFolder;
+                if (!localFolders.some(f => f.id === fireFolder.id)) {
+                    localFolders.push(fireFolder);
+                    localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
+                }
+            } else if (!videoFolder) {
+                // Создаем новую папку "Видео" в Firestore
+                const newFolderId = "folder_" + Math.random().toString(36).substring(2, 11);
+                const newFolderData = {
+                    id: newFolderId,
+                    title: FOLDER_NAME,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                };
+                await setDoc(doc(db, "users", currentUid, "whiteboard_folders", newFolderId), newFolderData);
+                localFolders.push(newFolderData);
+                localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
+                return newFolderId;
+            } else {
+                // Есть локально, синхронизируем в Firestore
+                await setDoc(doc(db, "users", currentUid, "whiteboard_folders", videoFolder.id), videoFolder);
             }
-            if (boardExists) {
-                return boardId;
-            }
+        } catch (e) {
+            console.warn("Ошибка проверки папки 'Видео' в Firestore:", e);
         }
+    }
 
-        // 2. Поищем существующую доску по videoId
-        if (currentUid && db) {
-            try {
-                const q = query(collection(db, "users", currentUid, "whiteboards"), where("videoId", "==", videoId));
-                const snap = await getDocs(q);
-                if (!snap.empty) {
-                    const foundDoc = snap.docs[0];
-                    const foundId = foundDoc.id;
-                    video.whiteboardId = foundId;
-                    const updates = { whiteboardId: foundId };
-                    updateDoc(doc(db, "users", currentUid, "videos", videoId), updates).catch(() => { });
-
-                    if (foundDoc.data().folderId !== videoFolderId) {
-                        updateDoc(doc(db, "users", currentUid, "whiteboards", foundId), {
-                            folderId: videoFolderId,
-                            updatedAt: Date.now()
-                        }).catch(() => { });
-                    }
-                    return foundId;
-                }
-            } catch (e) {
-                console.warn("Поиск существующей доски по videoId:", e);
-            }
-        } else {
-            const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
-            const found = localBoards.find(b => b.videoId === videoId);
-            if (found) {
-                video.whiteboardId = found.id;
-                if (found.folderId !== videoFolderId) {
-                    found.folderId = videoFolderId;
-                    found.updatedAt = Date.now();
-                    localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
-                }
-                localStorage.setItem("local_videos", JSON.stringify(videos));
-                return found.id;
-            }
-        }
-
-        // 3. Создаем новую доску с названием видео в папке "Видео"!
-        const newBoardId = "board_" + Math.random().toString(36).substring(2, 11);
-        const newBoardData = {
-            id: newBoardId,
-            title: video.title || "Доска видео",
-            videoId: videoId,
-            folderId: videoFolderId,
-            width: 2400,
-            height: 1600,
+    // Если оффлайн и папки еще нет
+    if (!videoFolder) {
+        const newFolderId = "folder_" + Math.random().toString(36).substring(2, 11);
+        videoFolder = {
+            id: newFolderId,
+            title: FOLDER_NAME,
             createdAt: Date.now(),
             updatedAt: Date.now()
         };
-
-        if (currentUid && db) {
-            try {
-                await setDoc(doc(db, "users", currentUid, "whiteboards", newBoardId), newBoardData);
-            } catch (e) {
-                console.error("Ошибка сохранения новой доски в Firestore:", e);
-            }
-        }
-
-        // Сохраняем в localStorage для оффлайна и списка досок в whiteboard.html
-        const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
-        const existingIdx = localBoards.findIndex(b => b.id === newBoardId);
-        if (existingIdx !== -1) {
-            localBoards[existingIdx] = newBoardData;
-        } else {
-            localBoards.push(newBoardData);
-        }
-        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
-
-        // Привязываем к видео
-        video.whiteboardId = newBoardId;
-        if (currentUid && db) {
-            try {
-                await updateDoc(doc(db, "users", currentUid, "videos", videoId), {
-                    whiteboardId: newBoardId
-                });
-            } catch (e) {
-                console.error("Ошибка привязки whiteboardId к видео:", e);
-            }
-        } else {
-            localStorage.setItem("local_videos", JSON.stringify(videos));
-        }
-
-        return newBoardId;
+        localFolders.push(videoFolder);
+        localStorage.setItem('whiteboard_folders', JSON.stringify(localFolders));
     }
 
-    async function openVideoWhiteboardModal(videoId) {
-        const video = videos.find(v => v.id === videoId);
-        if (!video) return;
+    return videoFolder.id;
+}
 
-        const modal = document.getElementById('videoWhiteboardModal');
-        const titleEl = document.getElementById('videoWhiteboardModalTitle');
-        const openExtBtn = document.getElementById('videoWhiteboardOpenExternalBtn');
-        const loader = document.getElementById('videoWhiteboardLoader');
-        const iframe = document.getElementById('videoWhiteboardIframe');
-        if (!modal || !iframe) return;
-
-        titleEl.textContent = video.title ? `Доска: ${video.title}` : 'Доска видео';
-        if (loader) loader.style.display = 'flex';
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-
-        try {
-            const boardId = await getOrCreateVideoWhiteboard(videoId);
-            if (!boardId) {
-                closeVideoWhiteboardModal();
-                return;
-            }
-
-            if (openExtBtn) {
-                openExtBtn.href = `whiteboard.html?id=${encodeURIComponent(boardId)}`;
-            }
-
-            iframe.onload = () => {
-                if (loader) loader.style.display = 'none';
-            };
-
-            iframe.src = `whiteboard.html?id=${encodeURIComponent(boardId)}&embed=1`;
-        } catch (err) {
-            console.error("Ошибка при открытии доски видео:", err);
-            if (loader) loader.style.display = 'none';
-        }
-    }
-
-    function closeVideoWhiteboardModal() {
-        const modal = document.getElementById('videoWhiteboardModal');
-        const iframe = document.getElementById('videoWhiteboardIframe');
-        if (modal) modal.style.display = 'none';
-        if (iframe) iframe.src = 'about:blank';
-        document.body.style.overflow = '';
-    }
-
-    function syncVideoWhiteboardTitle(videoId, newTitle) {
-        if (!videoId || !newTitle) return;
-        const video = videos.find(v => v.id === videoId);
-        if (!video || !video.whiteboardId) return;
-
-        const boardId = video.whiteboardId;
-        if (currentUid && db) {
-            updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), {
-                title: newTitle,
-                updatedAt: Date.now()
-            }).catch(() => { });
-        }
-
-        const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
-        const idx = localBoards.findIndex(b => b.id === boardId);
-        if (idx !== -1) {
-            localBoards[idx].title = newTitle;
-            localBoards[idx].updatedAt = Date.now();
-            localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
-        }
-    }
-
-    async function getOrCreateChannelWhiteboard(channelId) {
-        const ch = channels.find(c => c.id === channelId);
-        if (!ch) return null;
+async function syncAllVideoBoardsToVideoFolder() {
+    try {
+        const videosWithBoards = videos.filter(v => v.whiteboardId);
+        const channelsWithBoards = (channels || []).filter(c => c.whiteboardId);
+        if (videosWithBoards.length === 0 && channelsWithBoards.length === 0) return;
 
         const videoFolderId = await getOrCreateVideoFolder();
-        let boardId = ch.whiteboardId || null;
-        const boardTitle = ch.name ? `Доска: ${ch.name}` : "Доска канала";
+        if (!videoFolderId) return;
 
-        // 1. Проверяем, существует ли уже привязанная доска
-        if (boardId) {
-            let boardExists = false;
-            if (currentUid && db) {
-                try {
-                    const snap = await getDoc(doc(db, "users", currentUid, "whiteboards", boardId));
-                    if (snap.exists()) {
-                        boardExists = true;
-                        const data = snap.data();
-                        const updates = {};
-                        if (data.title !== boardTitle) {
-                            updates.title = boardTitle;
-                        }
-                        if (data.folderId !== videoFolderId) {
-                            updates.folderId = videoFolderId;
-                        }
-                        if (Object.keys(updates).length > 0) {
-                            updates.updatedAt = Date.now();
-                            updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), updates).catch(() => { });
-                        }
-                    }
-                } catch (e) {
-                    console.warn("Ошибка проверки доски канала в Firestore:", e);
-                    boardExists = true;
-                }
-            } else {
-                const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
-                const found = localBoards.find(b => b.id === boardId);
-                if (found) {
-                    boardExists = true;
-                    let changed = false;
-                    if (found.title !== boardTitle) {
-                        found.title = boardTitle;
-                        changed = true;
-                    }
-                    if (found.folderId !== videoFolderId) {
-                        found.folderId = videoFolderId;
-                        changed = true;
-                    }
-                    if (changed) {
-                        found.updatedAt = Date.now();
-                        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
-                    }
-                }
+        // Локальная синхронизация
+        const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+        let localChanged = false;
+        videosWithBoards.forEach(v => {
+            const b = localBoards.find(item => item.id === v.whiteboardId);
+            if (b && b.folderId !== videoFolderId) {
+                b.folderId = videoFolderId;
+                b.updatedAt = Date.now();
+                localChanged = true;
             }
-            if (boardExists) {
-                return boardId;
+        });
+        channelsWithBoards.forEach(c => {
+            const b = localBoards.find(item => item.id === c.whiteboardId);
+            if (b && b.folderId !== videoFolderId) {
+                b.folderId = videoFolderId;
+                b.updatedAt = Date.now();
+                localChanged = true;
             }
+        });
+        if (localChanged) {
+            localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
         }
 
-        // 2. Поищем существующую доску по channelId
+        // Облачная синхронизация Firestore
+        if (currentUid && db) {
+            videosWithBoards.forEach(async (v) => {
+                try {
+                    const boardRef = doc(db, "users", currentUid, "whiteboards", v.whiteboardId);
+                    const snap = await getDoc(boardRef);
+                    if (snap.exists() && snap.data().folderId !== videoFolderId) {
+                        await updateDoc(boardRef, {
+                            folderId: videoFolderId,
+                            updatedAt: Date.now()
+                        });
+                    }
+                } catch (e) { }
+            });
+            channelsWithBoards.forEach(async (c) => {
+                try {
+                    const boardRef = doc(db, "users", currentUid, "whiteboards", c.whiteboardId);
+                    const snap = await getDoc(boardRef);
+                    if (snap.exists() && snap.data().folderId !== videoFolderId) {
+                        await updateDoc(boardRef, {
+                            folderId: videoFolderId,
+                            updatedAt: Date.now()
+                        });
+                    }
+                } catch (e) { }
+            });
+        }
+    } catch (err) {
+        console.warn("Ошибка синхронизации досок видео с папкой 'Видео':", err);
+    }
+}
+
+async function getOrCreateVideoWhiteboard(videoId) {
+    const video = videos.find(v => v.id === videoId);
+    if (!video) return null;
+
+    const videoFolderId = await getOrCreateVideoFolder();
+    let boardId = video.whiteboardId || null;
+
+    // 1. Проверяем, существует ли уже привязанная доска
+    if (boardId) {
+        let boardExists = false;
         if (currentUid && db) {
             try {
-                const q = query(collection(db, "users", currentUid, "whiteboards"), where("channelId", "==", channelId));
-                const snap = await getDocs(q);
-                if (!snap.empty) {
-                    const foundDoc = snap.docs[0];
-                    const foundId = foundDoc.id;
-                    ch.whiteboardId = foundId;
-                    saveChannels();
-
-                    if (foundDoc.data().folderId !== videoFolderId || foundDoc.data().title !== boardTitle) {
-                        updateDoc(doc(db, "users", currentUid, "whiteboards", foundId), {
-                            folderId: videoFolderId,
-                            title: boardTitle,
-                            updatedAt: Date.now()
-                        }).catch(() => { });
+                const snap = await getDoc(doc(db, "users", currentUid, "whiteboards", boardId));
+                if (snap.exists()) {
+                    boardExists = true;
+                    const data = snap.data();
+                    const updates = {};
+                    if (data.title !== video.title) {
+                        updates.title = video.title || "Доска видео";
                     }
-                    return foundId;
+                    if (data.folderId !== videoFolderId) {
+                        updates.folderId = videoFolderId;
+                    }
+                    if (Object.keys(updates).length > 0) {
+                        updates.updatedAt = Date.now();
+                        updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), updates).catch(() => { });
+                    }
                 }
             } catch (e) {
-                console.warn("Поиск существующей доски по channelId:", e);
+                console.warn("Ошибка проверки доски в Firestore:", e);
+                boardExists = true;
             }
         } else {
             const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
-            const found = localBoards.find(b => b.channelId === channelId);
+            const found = localBoards.find(b => b.id === boardId);
             if (found) {
-                ch.whiteboardId = found.id;
-                saveChannels();
+                boardExists = true;
                 let changed = false;
-                if (found.folderId !== videoFolderId) {
-                    found.folderId = videoFolderId;
+                if (found.title !== video.title) {
+                    found.title = video.title || "Доска видео";
                     changed = true;
                 }
-                if (found.title !== boardTitle) {
-                    found.title = boardTitle;
+                if (found.folderId !== videoFolderId) {
+                    found.folderId = videoFolderId;
                     changed = true;
                 }
                 if (changed) {
                     found.updatedAt = Date.now();
                     localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
                 }
-                return found.id;
             }
         }
+        if (boardExists) {
+            return boardId;
+        }
+    }
 
-        // 3. Создаем новую доску с названием канала в папке "Видео"
-        const newBoardId = "board_" + Math.random().toString(36).substring(2, 11);
-        const newBoardData = {
-            id: newBoardId,
-            title: boardTitle,
-            channelId: channelId,
-            folderId: videoFolderId,
-            width: 2400,
-            height: 1600,
-            createdAt: Date.now(),
-            updatedAt: Date.now()
+    // 2. Поищем существующую доску по videoId
+    if (currentUid && db) {
+        try {
+            const q = query(collection(db, "users", currentUid, "whiteboards"), where("videoId", "==", videoId));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                const foundDoc = snap.docs[0];
+                const foundId = foundDoc.id;
+                video.whiteboardId = foundId;
+                const updates = { whiteboardId: foundId };
+                updateDoc(doc(db, "users", currentUid, "videos", videoId), updates).catch(() => { });
+
+                if (foundDoc.data().folderId !== videoFolderId) {
+                    updateDoc(doc(db, "users", currentUid, "whiteboards", foundId), {
+                        folderId: videoFolderId,
+                        updatedAt: Date.now()
+                    }).catch(() => { });
+                }
+                return foundId;
+            }
+        } catch (e) {
+            console.warn("Поиск существующей доски по videoId:", e);
+        }
+    } else {
+        const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+        const found = localBoards.find(b => b.videoId === videoId);
+        if (found) {
+            video.whiteboardId = found.id;
+            if (found.folderId !== videoFolderId) {
+                found.folderId = videoFolderId;
+                found.updatedAt = Date.now();
+                localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+            }
+            localStorage.setItem("local_videos", JSON.stringify(videos));
+            return found.id;
+        }
+    }
+
+    // 3. Создаем новую доску с названием видео в папке "Видео"!
+    const newBoardId = "board_" + Math.random().toString(36).substring(2, 11);
+    const newBoardData = {
+        id: newBoardId,
+        title: video.title || "Доска видео",
+        videoId: videoId,
+        folderId: videoFolderId,
+        width: 2400,
+        height: 1600,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+    };
+
+    if (currentUid && db) {
+        try {
+            await setDoc(doc(db, "users", currentUid, "whiteboards", newBoardId), newBoardData);
+        } catch (e) {
+            console.error("Ошибка сохранения новой доски в Firestore:", e);
+        }
+    }
+
+    // Сохраняем в localStorage для оффлайна и списка досок в whiteboard.html
+    const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+    const existingIdx = localBoards.findIndex(b => b.id === newBoardId);
+    if (existingIdx !== -1) {
+        localBoards[existingIdx] = newBoardData;
+    } else {
+        localBoards.push(newBoardData);
+    }
+    localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+
+    // Привязываем к видео
+    video.whiteboardId = newBoardId;
+    if (currentUid && db) {
+        try {
+            await updateDoc(doc(db, "users", currentUid, "videos", videoId), {
+                whiteboardId: newBoardId
+            });
+        } catch (e) {
+            console.error("Ошибка привязки whiteboardId к видео:", e);
+        }
+    } else {
+        localStorage.setItem("local_videos", JSON.stringify(videos));
+    }
+
+    return newBoardId;
+}
+
+async function openVideoWhiteboardModal(videoId) {
+    const video = videos.find(v => v.id === videoId);
+    if (!video) return;
+
+    const modal = document.getElementById('videoWhiteboardModal');
+    const titleEl = document.getElementById('videoWhiteboardModalTitle');
+    const openExtBtn = document.getElementById('videoWhiteboardOpenExternalBtn');
+    const loader = document.getElementById('videoWhiteboardLoader');
+    const iframe = document.getElementById('videoWhiteboardIframe');
+    if (!modal || !iframe) return;
+
+    titleEl.textContent = video.title ? `Доска: ${video.title}` : 'Доска видео';
+    if (loader) loader.style.display = 'flex';
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    try {
+        const boardId = await getOrCreateVideoWhiteboard(videoId);
+        if (!boardId) {
+            closeVideoWhiteboardModal();
+            return;
+        }
+
+        if (openExtBtn) {
+            openExtBtn.href = `whiteboard.html?id=${encodeURIComponent(boardId)}`;
+        }
+
+        iframe.onload = () => {
+            if (loader) loader.style.display = 'none';
         };
 
+        iframe.src = `whiteboard.html?id=${encodeURIComponent(boardId)}&embed=1`;
+    } catch (err) {
+        console.error("Ошибка при открытии доски видео:", err);
+        if (loader) loader.style.display = 'none';
+    }
+}
+
+function closeVideoWhiteboardModal() {
+    const modal = document.getElementById('videoWhiteboardModal');
+    const iframe = document.getElementById('videoWhiteboardIframe');
+    if (modal) modal.style.display = 'none';
+    if (iframe) iframe.src = 'about:blank';
+    document.body.style.overflow = '';
+}
+
+function syncVideoWhiteboardTitle(videoId, newTitle) {
+    if (!videoId || !newTitle) return;
+    const video = videos.find(v => v.id === videoId);
+    if (!video || !video.whiteboardId) return;
+
+    const boardId = video.whiteboardId;
+    if (currentUid && db) {
+        updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), {
+            title: newTitle,
+            updatedAt: Date.now()
+        }).catch(() => { });
+    }
+
+    const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+    const idx = localBoards.findIndex(b => b.id === boardId);
+    if (idx !== -1) {
+        localBoards[idx].title = newTitle;
+        localBoards[idx].updatedAt = Date.now();
+        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+    }
+}
+
+async function getOrCreateChannelWhiteboard(channelId) {
+    const ch = channels.find(c => c.id === channelId);
+    if (!ch) return null;
+
+    const videoFolderId = await getOrCreateVideoFolder();
+    let boardId = ch.whiteboardId || null;
+    const boardTitle = ch.name ? `Доска: ${ch.name}` : "Доска канала";
+
+    // 1. Проверяем, существует ли уже привязанная доска
+    if (boardId) {
+        let boardExists = false;
         if (currentUid && db) {
             try {
-                await setDoc(doc(db, "users", currentUid, "whiteboards", newBoardId), newBoardData);
+                const snap = await getDoc(doc(db, "users", currentUid, "whiteboards", boardId));
+                if (snap.exists()) {
+                    boardExists = true;
+                    const data = snap.data();
+                    const updates = {};
+                    if (data.title !== boardTitle) {
+                        updates.title = boardTitle;
+                    }
+                    if (data.folderId !== videoFolderId) {
+                        updates.folderId = videoFolderId;
+                    }
+                    if (Object.keys(updates).length > 0) {
+                        updates.updatedAt = Date.now();
+                        updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), updates).catch(() => { });
+                    }
+                }
             } catch (e) {
-                console.error("Ошибка сохранения новой доски канала в Firestore:", e);
+                console.warn("Ошибка проверки доски канала в Firestore:", e);
+                boardExists = true;
             }
-        }
-
-        const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
-        const existingIdx = localBoards.findIndex(b => b.id === newBoardId);
-        if (existingIdx !== -1) {
-            localBoards[existingIdx] = newBoardData;
         } else {
-            localBoards.push(newBoardData);
+            const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+            const found = localBoards.find(b => b.id === boardId);
+            if (found) {
+                boardExists = true;
+                let changed = false;
+                if (found.title !== boardTitle) {
+                    found.title = boardTitle;
+                    changed = true;
+                }
+                if (found.folderId !== videoFolderId) {
+                    found.folderId = videoFolderId;
+                    changed = true;
+                }
+                if (changed) {
+                    found.updatedAt = Date.now();
+                    localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+                }
+            }
         }
-        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
-
-        ch.whiteboardId = newBoardId;
-        saveChannels();
-
-        return newBoardId;
+        if (boardExists) {
+            return boardId;
+        }
     }
 
-    async function openChannelWhiteboardModal(channelId) {
-        const ch = channels.find(c => c.id === channelId);
-        if (!ch) return;
-
-        const modal = document.getElementById('videoWhiteboardModal');
-        const titleEl = document.getElementById('videoWhiteboardModalTitle');
-        const openExtBtn = document.getElementById('videoWhiteboardOpenExternalBtn');
-        const loader = document.getElementById('videoWhiteboardLoader');
-        const iframe = document.getElementById('videoWhiteboardIframe');
-        if (!modal || !iframe) return;
-
-        titleEl.textContent = ch.name ? `Доска канала: ${ch.name}` : 'Доска канала';
-        if (loader) loader.style.display = 'flex';
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-
+    // 2. Поищем существующую доску по channelId
+    if (currentUid && db) {
         try {
-            const boardId = await getOrCreateChannelWhiteboard(channelId);
-            if (!boardId) {
-                closeVideoWhiteboardModal();
-                return;
+            const q = query(collection(db, "users", currentUid, "whiteboards"), where("channelId", "==", channelId));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                const foundDoc = snap.docs[0];
+                const foundId = foundDoc.id;
+                ch.whiteboardId = foundId;
+                saveChannels();
+
+                if (foundDoc.data().folderId !== videoFolderId || foundDoc.data().title !== boardTitle) {
+                    updateDoc(doc(db, "users", currentUid, "whiteboards", foundId), {
+                        folderId: videoFolderId,
+                        title: boardTitle,
+                        updatedAt: Date.now()
+                    }).catch(() => { });
+                }
+                return foundId;
             }
-
-            if (openExtBtn) {
-                openExtBtn.href = `whiteboard.html?id=${encodeURIComponent(boardId)}`;
-            }
-
-            iframe.onload = () => {
-                if (loader) loader.style.display = 'none';
-            };
-
-            iframe.src = `whiteboard.html?id=${encodeURIComponent(boardId)}&embed=1`;
-        } catch (err) {
-            console.error("Ошибка при открытии доски канала:", err);
-            if (loader) loader.style.display = 'none';
+        } catch (e) {
+            console.warn("Поиск существующей доски по channelId:", e);
         }
-    }
-
-    function syncChannelWhiteboardTitle(channelId, newTitle) {
-        if (!channelId || !newTitle) return;
-        const ch = channels.find(c => c.id === channelId);
-        if (!ch || !ch.whiteboardId) return;
-
-        const boardId = ch.whiteboardId;
-        if (currentUid && db) {
-            updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), {
-                title: newTitle,
-                updatedAt: Date.now()
-            }).catch(() => { });
-        }
-
+    } else {
         const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
-        const idx = localBoards.findIndex(b => b.id === boardId);
-        if (idx !== -1) {
-            localBoards[idx].title = newTitle;
-            localBoards[idx].updatedAt = Date.now();
-            localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+        const found = localBoards.find(b => b.channelId === channelId);
+        if (found) {
+            ch.whiteboardId = found.id;
+            saveChannels();
+            let changed = false;
+            if (found.folderId !== videoFolderId) {
+                found.folderId = videoFolderId;
+                changed = true;
+            }
+            if (found.title !== boardTitle) {
+                found.title = boardTitle;
+                changed = true;
+            }
+            if (changed) {
+                found.updatedAt = Date.now();
+                localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+            }
+            return found.id;
         }
     }
 
-    function initVideoWhiteboardModalHandlers() {
-        const closeBtn = document.getElementById('videoWhiteboardCloseBtn');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
+    // 3. Создаем новую доску с названием канала в папке "Видео"
+    const newBoardId = "board_" + Math.random().toString(36).substring(2, 11);
+    const newBoardData = {
+        id: newBoardId,
+        title: boardTitle,
+        channelId: channelId,
+        folderId: videoFolderId,
+        width: 2400,
+        height: 1600,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+    };
+
+    if (currentUid && db) {
+        try {
+            await setDoc(doc(db, "users", currentUid, "whiteboards", newBoardId), newBoardData);
+        } catch (e) {
+            console.error("Ошибка сохранения новой доски канала в Firestore:", e);
+        }
+    }
+
+    const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+    const existingIdx = localBoards.findIndex(b => b.id === newBoardId);
+    if (existingIdx !== -1) {
+        localBoards[existingIdx] = newBoardData;
+    } else {
+        localBoards.push(newBoardData);
+    }
+    localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+
+    ch.whiteboardId = newBoardId;
+    saveChannels();
+
+    return newBoardId;
+}
+
+async function openChannelWhiteboardModal(channelId) {
+    const ch = channels.find(c => c.id === channelId);
+    if (!ch) return;
+
+    const modal = document.getElementById('videoWhiteboardModal');
+    const titleEl = document.getElementById('videoWhiteboardModalTitle');
+    const openExtBtn = document.getElementById('videoWhiteboardOpenExternalBtn');
+    const loader = document.getElementById('videoWhiteboardLoader');
+    const iframe = document.getElementById('videoWhiteboardIframe');
+    if (!modal || !iframe) return;
+
+    titleEl.textContent = ch.name ? `Доска канала: ${ch.name}` : 'Доска канала';
+    if (loader) loader.style.display = 'flex';
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    try {
+        const boardId = await getOrCreateChannelWhiteboard(channelId);
+        if (!boardId) {
+            closeVideoWhiteboardModal();
+            return;
+        }
+
+        if (openExtBtn) {
+            openExtBtn.href = `whiteboard.html?id=${encodeURIComponent(boardId)}`;
+        }
+
+        iframe.onload = () => {
+            if (loader) loader.style.display = 'none';
+        };
+
+        iframe.src = `whiteboard.html?id=${encodeURIComponent(boardId)}&embed=1`;
+    } catch (err) {
+        console.error("Ошибка при открытии доски канала:", err);
+        if (loader) loader.style.display = 'none';
+    }
+}
+
+function syncChannelWhiteboardTitle(channelId, newTitle) {
+    if (!channelId || !newTitle) return;
+    const ch = channels.find(c => c.id === channelId);
+    if (!ch || !ch.whiteboardId) return;
+
+    const boardId = ch.whiteboardId;
+    if (currentUid && db) {
+        updateDoc(doc(db, "users", currentUid, "whiteboards", boardId), {
+            title: newTitle,
+            updatedAt: Date.now()
+        }).catch(() => { });
+    }
+
+    const localBoards = JSON.parse(localStorage.getItem('whiteboards_list') || '[]');
+    const idx = localBoards.findIndex(b => b.id === boardId);
+    if (idx !== -1) {
+        localBoards[idx].title = newTitle;
+        localBoards[idx].updatedAt = Date.now();
+        localStorage.setItem('whiteboards_list', JSON.stringify(localBoards));
+    }
+}
+
+function initVideoWhiteboardModalHandlers() {
+    const closeBtn = document.getElementById('videoWhiteboardCloseBtn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeVideoWhiteboardModal();
+        });
+    }
+
+    const modal = document.getElementById('videoWhiteboardModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'videoWhiteboardModal') {
                 closeVideoWhiteboardModal();
-            });
-        }
-
-        const modal = document.getElementById('videoWhiteboardModal');
-        if (modal) {
-            modal.addEventListener('click', (e) => {
-                if (e.target.id === 'videoWhiteboardModal') {
-                    closeVideoWhiteboardModal();
-                }
-            });
-        }
-
-        const fullscreenBtn = document.getElementById('videoWhiteboardFullscreenBtn');
-        if (fullscreenBtn) {
-            fullscreenBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const card = document.querySelector('.video-whiteboard-modal-card');
-                if (!card) return;
-                const isFull = card.classList.toggle('is-fullscreen');
-                const iconExpand = fullscreenBtn.querySelector('.icon-expand');
-                const iconCompress = fullscreenBtn.querySelector('.icon-compress');
-                if (iconExpand && iconCompress) {
-                    iconExpand.style.display = isFull ? 'none' : 'block';
-                    iconCompress.style.display = isFull ? 'block' : 'none';
-                }
-                fullscreenBtn.title = isFull ? 'Восстановить размер' : 'Развернуть на весь экран';
-            });
-        }
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                const m = document.getElementById('videoWhiteboardModal');
-                if (m && m.style.display === 'flex') {
-                    closeVideoWhiteboardModal();
-                }
             }
         });
+    }
 
-        window.addEventListener('message', (e) => {
-            if (e.data && e.data.type === 'closeWhiteboardModal') {
-                closeVideoWhiteboardModal();
+    const fullscreenBtn = document.getElementById('videoWhiteboardFullscreenBtn');
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const card = document.querySelector('.video-whiteboard-modal-card');
+            if (!card) return;
+            const isFull = card.classList.toggle('is-fullscreen');
+            const iconExpand = fullscreenBtn.querySelector('.icon-expand');
+            const iconCompress = fullscreenBtn.querySelector('.icon-compress');
+            if (iconExpand && iconCompress) {
+                iconExpand.style.display = isFull ? 'none' : 'block';
+                iconCompress.style.display = isFull ? 'block' : 'none';
             }
+            fullscreenBtn.title = isFull ? 'Восстановить размер' : 'Развернуть на весь экран';
         });
+    }
 
-        // Проброс вставки изображения (Ctrl+V / Cmd+V) в открытое модальное окно доски
-        window.addEventListener('paste', (e) => {
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
             const m = document.getElementById('videoWhiteboardModal');
-            if (!m || m.style.display !== 'flex') return;
+            if (m && m.style.display === 'flex') {
+                closeVideoWhiteboardModal();
+            }
+        }
+    });
 
-            const clipboardData = e.clipboardData || window.clipboardData;
-            if (!clipboardData) return;
+    window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'closeWhiteboardModal') {
+            closeVideoWhiteboardModal();
+        }
+    });
 
-            let imageFile = null;
-            if (clipboardData.items) {
-                for (let i = 0; i < clipboardData.items.length; i++) {
-                    const item = clipboardData.items[i];
-                    if (item.type && item.type.startsWith('image/')) {
-                        imageFile = item.getAsFile();
-                        break;
-                    }
+    // Проброс вставки изображения (Ctrl+V / Cmd+V) в открытое модальное окно доски
+    window.addEventListener('paste', (e) => {
+        const m = document.getElementById('videoWhiteboardModal');
+        if (!m || m.style.display !== 'flex') return;
+
+        const clipboardData = e.clipboardData || window.clipboardData;
+        if (!clipboardData) return;
+
+        let imageFile = null;
+        if (clipboardData.items) {
+            for (let i = 0; i < clipboardData.items.length; i++) {
+                const item = clipboardData.items[i];
+                if (item.type && item.type.startsWith('image/')) {
+                    imageFile = item.getAsFile();
+                    break;
                 }
             }
-            if (!imageFile && clipboardData.files && clipboardData.files.length > 0) {
-                for (let i = 0; i < clipboardData.files.length; i++) {
-                    const file = clipboardData.files[i];
-                    if (file.type && file.type.startsWith('image/')) {
-                        imageFile = file;
-                        break;
-                    }
+        }
+        if (!imageFile && clipboardData.files && clipboardData.files.length > 0) {
+            for (let i = 0; i < clipboardData.files.length; i++) {
+                const file = clipboardData.files[i];
+                if (file.type && file.type.startsWith('image/')) {
+                    imageFile = file;
+                    break;
                 }
             }
+        }
 
-            if (imageFile) {
-                e.preventDefault();
-                e.stopPropagation();
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    const iframe = document.getElementById('videoWhiteboardIframe');
-                    if (iframe && iframe.contentWindow) {
-                        iframe.contentWindow.postMessage({ type: 'pasteImage', dataUrl: ev.target.result }, '*');
-                    }
-                };
-                reader.readAsDataURL(imageFile);
-            }
-        });
-    }
+        if (imageFile) {
+            e.preventDefault();
+            e.stopPropagation();
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const iframe = document.getElementById('videoWhiteboardIframe');
+                if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({ type: 'pasteImage', dataUrl: ev.target.result }, '*');
+                }
+            };
+            reader.readAsDataURL(imageFile);
+        }
+    });
+}
 
-    initVideoWhiteboardModalHandlers();
-    setTimeout(() => {
-        syncAllVideoBoardsToVideoFolder();
-    }, 400);
+initVideoWhiteboardModalHandlers();
+setTimeout(() => {
+    syncAllVideoBoardsToVideoFolder();
+}, 400);
 
 
 

@@ -59,6 +59,20 @@
             --card-bg: #202022;
             --border: rgba(255, 255, 255, 0.08);
         }
+
+        .logo-img.logo-dark {
+            display: none !important;
+        }
+
+        body.dark .logo-img.logo-light,
+        html.dark .logo-img.logo-light {
+            display: none !important;
+        }
+
+        body.dark .logo-img.logo-dark,
+        html.dark .logo-img.logo-dark {
+            display: block !important;
+        }
     </style>
 
     <!-- Критический загрузчик собственного фона (предотвращает вспышку) -->
@@ -145,9 +159,8 @@
         <div class="vk-header-content">
             <div class="header-left">
                 <a href="#inbox" class="vk-header-logo" title="Входящие">
-                    <img src="img/Retools_logo.png" alt="Retools" class="logo-img">
                     <img src="img/Retools_logo.png" alt="Retools" class="logo-img logo-light">
-                    <img src="img/Retools_logo_dark.png" alt="Retools" class="logo-img logo-dark">
+                    <img src="img/Retools_logo_dark.png" alt="Retools" class="logo-img logo-dark" style="display: none;">
                 </a>
             </div>
             <div class="header-right">

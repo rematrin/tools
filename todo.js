@@ -1153,12 +1153,26 @@ function calculateNextDueDate(currentDateStr, repeatCode) {
                 dateObj.setDate(dateObj.getDate() + 1);
             }
             break;
-        case 'monthly':
-            dateObj.setMonth(dateObj.getMonth() + 1);
+        case 'monthly': {
+            const originalDay = day;
+            const targetMonth = dateObj.getMonth() + 1;
+            dateObj.setDate(1);
+            dateObj.setMonth(targetMonth);
+            const daysInMonth = new Date(dateObj.getFullYear(), dateObj.getMonth() + 1, 0).getDate();
+            dateObj.setDate(Math.min(originalDay, daysInMonth));
             break;
-        case 'yearly':
-            dateObj.setFullYear(dateObj.getFullYear() + 1);
+        }
+        case 'yearly': {
+            const originalDay = day;
+            const targetYear = dateObj.getFullYear() + 1;
+            const originalMonth = month - 1;
+            dateObj.setDate(1);
+            dateObj.setFullYear(targetYear);
+            dateObj.setMonth(originalMonth);
+            const daysInMonth = new Date(targetYear, originalMonth + 1, 0).getDate();
+            dateObj.setDate(Math.min(originalDay, daysInMonth));
             break;
+        }
         default:
             return null;
     }
@@ -4234,6 +4248,8 @@ async function toggleTaskCompleted(taskId, currentStatus) {
                 nextDateFormatted = formatDueDateDisplay(nextDateStr, task.dueTime || null, null, nextEndDateStr, task.dueEndTime || null);
                 addPromise = addDoc(collection(db, 'users', currentUid, 'tasks'), {
                     title: task.title,
+                    description: task.description || '',
+                    priority: task.priority !== undefined ? task.priority : 0,
                     completed: false,
                     dueDate: nextDateStr,
                     dueTime: task.dueTime || null,
@@ -15700,6 +15716,19 @@ async function syncTasksFromGCal(allowInteractive = false, force = false) {
             await window.GCalendarService.cleanupAllDuplicateEvents(calendarIds, allowInteractive);
         }
 
+        // Автоматическая очистка задач во Входящих/проектах, ошибочно созданных из обратного отсчета
+        const phantomTasks = (allTasks || []).filter(t =>
+            !t.deleted && (
+                t.description === 'Обратный отсчет' ||
+                ((countdownsList || []).some(cd => cd.gcal_event_id && cd.gcal_event_id === t.gcal_event_id))
+            )
+        );
+        for (const pt of phantomTasks) {
+            console.log(`[GCal->Todo] Очистка ошибочно созданной задачи обратного отсчета "${pt.title}" (${pt.id})`);
+            pt.deleted = true;
+            deleteDoc(doc(db, 'users', currentUid, 'tasks', pt.id)).catch(console.error);
+        }
+
         // Диапазон: запрашиваем от начала сегодняшнего дня до +60 дней вперед
         const todayObj = new Date();
         const startOfToday = new Date(todayObj.getFullYear(), todayObj.getMonth(), todayObj.getDate(), 0, 0, 0);
@@ -15726,24 +15755,61 @@ async function syncTasksFromGCal(allowInteractive = false, force = false) {
                     // 1. ЗАЩИТА ОТ ПРОШЛЫХ ДАТ: Игнорируем события за прошедшие дни
                     if (parsed.dueDate < todayStr) continue;
 
-                    // Находим существующую задачу в Todo (сверяем gcal_event_id и recurringEventId)
-                    const existingTask = (allTasks || []).find(t =>
-                        t.gcal_event_id === event.id ||
-                        (event.recurringEventId && t.gcal_event_id === event.recurringEventId)
+                    // 2. ИГНОРИРУЕМ ОБРАТНЫЙ ОТСЧЕТ (COUNTDOWN):
+                    // События обратного отсчета не должны импортироваться как задачи в Todo (и во Входящие)
+                    const isCountdownDesc = Boolean(event.description && event.description.trim() === 'Обратный отсчет');
+                    const matchedCountdown = (countdownsList || []).find(cd =>
+                        cd.gcal_event_id === event.id ||
+                        (isCountdownDesc && (
+                            event.summary === cd.title ||
+                            event.summary === `${cd.icon || '⏳'} ${cd.title}` ||
+                            (cd.title && event.summary && event.summary.includes(cd.title))
+                        )) ||
+                        (cd.targetDate === parsed.dueDate && (
+                            event.summary === cd.title ||
+                            event.summary === `${cd.icon || '⏳'} ${cd.title}`
+                        ))
                     );
+
+                    if (matchedCountdown || isCountdownDesc) {
+                        if (matchedCountdown && (!matchedCountdown.gcal_event_id || matchedCountdown.targetDate !== parsed.dueDate)) {
+                            const updates = {};
+                            if (!matchedCountdown.gcal_event_id) updates.gcal_event_id = event.id;
+                            if (matchedCountdown.targetDate !== parsed.dueDate && parsed.dueDate) updates.targetDate = parsed.dueDate;
+                            if (Object.keys(updates).length > 0) {
+                                updateDoc(doc(db, 'users', currentUid, 'countdowns', matchedCountdown.id), updates).catch(console.error);
+                                Object.assign(matchedCountdown, updates);
+                            }
+                        }
+                        continue;
+                    }
+
+                    // 3. ЗАЩИТА ОТ РЕГУЛЯРНЫХ СОБЫТИЙ (RRULE):
+                    // Инстансы повторяющихся событий календаря (recurringEventId) не должны перезаписывать дату существующей задачи
+                    // и не должны импортироваться как новые задачи!
+                    if (event.recurringEventId || /_\d{8}T/.test(event.id) || (event.recurrence && event.recurrence.length > 0)) {
+                        continue;
+                    }
+
+                    // Находим существующую задачу в Todo (строго по gcal_event_id)
+                    const existingTask = (allTasks || []).find(t => t.gcal_event_id === event.id);
 
                     if (existingTask) {
                         if (existingTask.deleted || existingTask.completed) continue;
+
+                        // Дополнительная защита: если задача в Todo является повторяющейся (dueRepeat),
+                        // её расписанием управляет Todo, календарь не должен сдвигать dueDate/dueTime/dueEndDate/dueEndTime
+                        const isRecurringTask = Boolean(existingTask.dueRepeat);
 
                         // Обновляем существующую задачу при изменениях в Google Календаре
                         const hasAsteriskPrefix = Boolean(existingTask.title && existingTask.title.startsWith('* '));
                         const cleanExistingTitle = hasAsteriskPrefix ? existingTask.title.slice(2).trim() : (existingTask.title || '');
                         const titleChanged = parsed.title && (parsed.title.trim() !== cleanExistingTitle);
                         const descChanged = parsed.description !== undefined && parsed.description !== (existingTask.description || '');
-                        const dueDateChanged = parsed.dueDate !== existingTask.dueDate;
-                        const dueTimeChanged = parsed.dueTime !== (existingTask.dueTime || null);
-                        const dueEndDateChanged = parsed.dueEndDate !== (existingTask.dueEndDate || null);
-                        const dueEndTimeChanged = parsed.dueEndTime !== (existingTask.dueEndTime || null);
+                        const dueDateChanged = !isRecurringTask && (parsed.dueDate !== existingTask.dueDate);
+                        const dueTimeChanged = !isRecurringTask && (parsed.dueTime !== (existingTask.dueTime || null));
+                        const dueEndDateChanged = !isRecurringTask && (parsed.dueEndDate !== (existingTask.dueEndDate || null));
+                        const dueEndTimeChanged = !isRecurringTask && (parsed.dueEndTime !== (existingTask.dueEndTime || null));
                         const effectiveCurrentColor = getEffectiveTaskGCalColorId(existingTask);
                         const incomingColor = parsed.colorId || null;
                         const colorChanged = incomingColor !== effectiveCurrentColor;

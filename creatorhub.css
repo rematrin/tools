@@ -1,9 +1,9 @@
 /* creatorhub.css */
 
 :root {
-    --ch-purple: #6366f1;
-    --ch-purple-hover: #4f46e5;
-    --ch-purple-light: #eef2ff;
+    --ch-purple: #3770b1;
+    --ch-purple-hover: #2b588c;
+    --ch-purple-light: #eaf1f9;
     --ch-bg: #f8fafc;
     --ch-border: #f1f5f9;
     --ch-card-bg: #ffffff;
@@ -15,9 +15,9 @@
 }
 
 body.dark {
-    --ch-purple: #818cf8;
-    --ch-purple-hover: #6366f1;
-    --ch-purple-light: #1e1b4b;
+    --ch-purple: #4d89cf;
+    --ch-purple-hover: #3770b1;
+    --ch-purple-light: #16253b;
     --ch-bg: #090d16;
     --ch-border: #1e293b;
     --ch-card-bg: #131c2e;
@@ -502,9 +502,15 @@ body.dark .published .change {
 }
 
 .tab-btn.active {
-    background: var(--ch-purple);
+    background: #3770b1;
     color: #ffffff;
-    border-color: var(--ch-purple);
+    border-color: #4d7db3;
+}
+
+.tab-btn.active:hover {
+    background: #2b588c;
+    border-color: #2b588c;
+    color: #ffffff;
 }
 
 .tab-btn-trash {
@@ -1085,7 +1091,7 @@ body.dark .status-badge.archive {
     display: block;
     font-size: 0.85rem;
     font-weight: 500;
-    color: #8b949e;
+    color: #3770b1;
     margin-bottom: 6px;
     text-transform: none;
     letter-spacing: normal;
@@ -3509,7 +3515,7 @@ body.dark .video-drag-placeholder {
     background-color: var(--ch-purple) !important;
     color: white !important;
     font-weight: 700;
-    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 4px 10px rgba(55, 112, 177, 0.35);
 }
 
 .cal-nav-btn {
@@ -3591,7 +3597,7 @@ body.dark .video-drag-placeholder {
 }
 
 .sort-dropdown-item.selected {
-    background-color: rgba(99, 102, 241, 0.1);
+    background-color: rgba(55, 112, 177, 0.1);
     color: var(--ch-purple);
     font-weight: 600;
 }
@@ -3679,7 +3685,7 @@ body.dark .video-drag-placeholder {
 }
 
 .group-dropdown-item.selected {
-    background-color: rgba(99, 102, 241, 0.1);
+    background-color: rgba(55, 112, 177, 0.1);
     color: var(--ch-purple);
     font-weight: 600;
 }
@@ -3809,7 +3815,7 @@ body.dark .video-drag-placeholder {
 }
 
 .btn-add-rule-btn {
-    background: rgba(99, 102, 241, 0.08);
+    background: rgba(55, 112, 177, 0.08);
     border: none;
     color: var(--ch-purple);
     padding: 6px 12px;
@@ -3824,7 +3830,7 @@ body.dark .video-drag-placeholder {
 }
 
 .btn-add-rule-btn:hover {
-    background-color: rgba(99, 102, 241, 0.15);
+    background-color: rgba(55, 112, 177, 0.15);
 }
 
 .btn-clear-rules-btn {
@@ -3932,7 +3938,7 @@ body.dark .video-drag-placeholder {
 }
 
 .period-dropdown-item.selected {
-    background-color: rgba(99, 102, 241, 0.1);
+    background-color: rgba(55, 112, 177, 0.1);
     color: var(--ch-purple);
     font-weight: 600;
 }
@@ -4055,7 +4061,7 @@ body.dark .video-drag-placeholder {
 }
 
 .cv-today {
-    background: linear-gradient(135deg, var(--ch-purple), #7c3aed);
+    background: linear-gradient(135deg, var(--ch-purple), #2b588c);
     color: white;
     border: none;
 }
@@ -4991,7 +4997,7 @@ body.dark .global-button-item:hover {
 
 .btn-global-btn-more:hover {
     color: var(--ch-purple);
-    background: rgba(139, 92, 246, 0.08);
+    background: rgba(55, 112, 177, 0.08);
 }
 
 /* Кнопка переключения добавления кнопки в видео (+ / ✓) */
@@ -5011,7 +5017,7 @@ body.dark .global-button-item:hover {
 
 .btn-global-btn-toggle:hover {
     color: var(--ch-purple);
-    background: rgba(139, 92, 246, 0.08);
+    background: rgba(55, 112, 177, 0.08);
 }
 
 .btn-global-btn-toggle.is-added {
@@ -5073,7 +5079,7 @@ body.dark .global-button-item:hover {
 }
 
 .video-modal-button-item:hover {
-    border-color: rgba(139, 92, 246, 0.3);
+    border-color: rgba(55, 112, 177, 0.3);
 }
 
 .video-modal-button-icon-box {
@@ -5287,13 +5293,13 @@ body.dark .existing-icon-btn {
 
 body.dark .existing-icon-btn:hover {
     border-color: var(--ch-purple);
-    background-color: rgba(99, 102, 241, 0.15);
+    background-color: rgba(55, 112, 177, 0.15);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
 }
 
 body.dark .existing-icon-btn.is-active {
     border-color: var(--ch-purple);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 0 0 2px rgba(55, 112, 177, 0.35);
 }
 
 .btn-clear-date:hover {
@@ -5404,7 +5410,7 @@ body.dark .status-pill-badge:hover {
     border-color: var(--ch-purple);
     background-color: var(--ch-card-bg);
     transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 4px 10px rgba(55, 112, 177, 0.1);
 }
 
 .video-grid-btn:active {
@@ -5489,7 +5495,7 @@ body.dark .video-grid-btn {
 
 body.dark .video-grid-btn:hover {
     border-color: var(--ch-purple);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+    box-shadow: 0 4px 12px rgba(55, 112, 177, 0.2);
 }
 
 /* Metadata row adjustments */
@@ -5558,9 +5564,9 @@ body.dark .video-grid-btn:hover {
 }
 
 .channel-pill-btn.active {
-    border-color: #6366f1;
-    background: rgba(99, 102, 241, 0.08);
-    color: #4f46e5;
+    border-color: #3770b1;
+    background: rgba(55, 112, 177, 0.08);
+    color: #2b588c;
 }
 
 .channel-pill-count {
@@ -5573,8 +5579,8 @@ body.dark .video-grid-btn:hover {
 }
 
 .channel-pill-btn.active .channel-pill-count {
-    background: rgba(99, 102, 241, 0.12);
-    color: #4f46e5;
+    background: rgba(55, 112, 177, 0.12);
+    color: #2b588c;
 }
 
 /* Вертикальное расположение кнопок для предотвращения обрезки */
@@ -5629,9 +5635,9 @@ body.dark .video-grid-btn:hover {
 
 .channel-settings-item.dragging {
     opacity: 0.45;
-    background: var(--ch-purple-light, rgba(139, 92, 246, 0.08)) !important;
-    border: 1.5px dashed var(--ch-purple, #8b5cf6) !important;
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+    background: var(--ch-purple-light, rgba(55, 112, 177, 0.08)) !important;
+    border: 1.5px dashed var(--ch-purple, #3770b1) !important;
+    box-shadow: 0 4px 12px rgba(55, 112, 177, 0.15);
     cursor: grabbing !important;
 }
 
@@ -5650,8 +5656,8 @@ body.dark .video-grid-btn:hover {
 }
 
 .channel-drag-handle:hover {
-    color: var(--ch-purple, #8b5cf6);
-    background: rgba(139, 92, 246, 0.08);
+    color: var(--ch-purple, #3770b1);
+    background: rgba(55, 112, 177, 0.08);
 }
 
 .channel-drag-handle:active {
@@ -5818,7 +5824,7 @@ body.dark .bulk-actions-toolbar {
 .bulk-action-btn:hover {
     border-color: var(--ch-purple);
     color: var(--ch-purple);
-    background: rgba(99, 102, 241, 0.04);
+    background: rgba(55, 112, 177, 0.04);
 }
 
 .bulk-action-btn.danger {
@@ -6133,13 +6139,13 @@ body.dark .bulk-actions-toolbar {
 .btn-channel-notion-action:hover {
     opacity: 0.92;
     transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(139, 92, 246, 0.35) !important;
+    box-shadow: 0 6px 18px rgba(55, 112, 177, 0.35) !important;
 }
 
 .btn-channel-whiteboard-action:hover {
-    border-color: var(--ch-purple, #8b5cf6) !important;
-    color: var(--ch-purple, #8b5cf6) !important;
-    background: var(--ch-purple-light, #eef2ff) !important;
+    border-color: var(--ch-purple, #3770b1) !important;
+    color: var(--ch-purple, #3770b1) !important;
+    background: var(--ch-purple-light, #eaf1f9) !important;
     transform: translateY(-2px);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08) !important;
 }
@@ -6151,9 +6157,9 @@ body.dark .btn-channel-whiteboard-action {
 }
 
 body.dark .btn-channel-whiteboard-action:hover {
-    border-color: var(--ch-purple, #818cf8) !important;
-    color: var(--ch-purple, #818cf8) !important;
-    background: rgba(129, 140, 248, 0.12) !important;
+    border-color: var(--ch-purple, #4d89cf) !important;
+    color: var(--ch-purple, #4d89cf) !important;
+    background: rgba(77, 137, 207, 0.12) !important;
 }
 
 .channel-card:hover {
@@ -6228,8 +6234,8 @@ body.dark .btn-channel-whiteboard-action:hover {
 
 /* Акцентная карточка: Цель / Миссия */
 .channel-card.card-mission {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.04) 0%, rgba(139, 92, 246, 0.08) 100%);
-    border-color: rgba(99, 102, 241, 0.18);
+    background: linear-gradient(135deg, rgba(55, 112, 177, 0.04) 0%, rgba(55, 112, 177, 0.08) 100%);
+    border-color: rgba(55, 112, 177, 0.18);
 }
 
 .channel-card-icon-target {
@@ -6248,13 +6254,13 @@ body.dark .btn-channel-whiteboard-action:hover {
 
 .channel-quote-box {
     background: var(--ch-card-bg);
-    border: 1px solid rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(55, 112, 177, 0.15);
     border-radius: 12px;
     padding: 12px 14px;
     font-size: 0.85rem;
     font-style: italic;
     color: var(--ch-purple);
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.05);
+    box-shadow: 0 2px 8px rgba(55, 112, 177, 0.05);
 }
 
 /* Ключевые цели */
@@ -6553,8 +6559,8 @@ body.dark .video-whiteboard-header {
     width: 28px;
     height: 28px;
     border-radius: 8px;
-    background: rgba(99, 102, 241, 0.12);
-    color: var(--ch-purple, #6366f1);
+    background: rgba(55, 112, 177, 0.12);
+    color: var(--ch-purple, #3770b1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -6562,8 +6568,8 @@ body.dark .video-whiteboard-header {
 }
 
 body.dark .video-whiteboard-icon-box {
-    background: rgba(99, 102, 241, 0.22);
-    color: #818cf8;
+    background: rgba(77, 137, 207, 0.22);
+    color: #4d89cf;
 }
 
 .video-whiteboard-modal-title {
@@ -6581,15 +6587,15 @@ body.dark .video-whiteboard-icon-box {
     font-weight: 600;
     padding: 2px 7px;
     border-radius: 6px;
-    background: rgba(99, 102, 241, 0.1);
-    color: var(--ch-purple, #6366f1);
+    background: rgba(55, 112, 177, 0.1);
+    color: var(--ch-purple, #3770b1);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 body.dark .video-whiteboard-badge {
-    background: rgba(99, 102, 241, 0.2);
-    color: #a5b4fc;
+    background: rgba(77, 137, 207, 0.2);
+    color: #8eb8e6;
 }
 
 .video-whiteboard-header-right {
@@ -6673,8 +6679,8 @@ body.dark .video-whiteboard-loader {
 .video-whiteboard-spinner {
     width: 32px;
     height: 32px;
-    border: 3px solid rgba(99, 102, 241, 0.2);
-    border-top-color: var(--ch-purple, #6366f1);
+    border: 3px solid rgba(55, 112, 177, 0.2);
+    border-top-color: var(--ch-purple, #3770b1);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
@@ -6696,54 +6702,44 @@ body.dark .video-whiteboard-loader {
     }
 }
 
-/* Кнопка "Свойства" возле заголовка "Описание" */
+/* Кнопка "Свойства видео" */
 .btn-properties-trigger {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: var(--ch-bg);
-    border: 1px solid var(--ch-border);
+    background: #3770b1;
+    border: 1px solid #4d7db3;
     border-radius: 8px;
     padding: 4px 10px;
     font-size: 0.8rem;
     font-weight: 500;
-    color: var(--ch-text-gray);
+    color: #ffffff;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
-.btn-properties-trigger:hover {
-    background: var(--ch-card-bg);
-    border-color: var(--ch-purple);
-    color: var(--ch-purple);
-}
-
-body.dark .btn-properties-trigger:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-/* Кнопка "Свойства" возле заголовка "Описание" */
-.btn-properties-trigger {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--ch-bg);
-    border: 1px solid var(--ch-border);
-    border-radius: 8px;
-    padding: 4px 10px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--ch-text-gray);
-    cursor: pointer;
-    transition: all 0.2s ease;
+.btn-properties-trigger svg {
+    stroke: #ffffff;
 }
 
 .btn-properties-trigger:hover {
-    background: var(--ch-card-bg);
-    border-color: var(--ch-purple);
-    color: var(--ch-purple);
+    background: #2b588c;
+    border-color: #2b588c;
+    color: #ffffff;
+}
+
+body.dark .btn-properties-trigger {
+    background: #3770b1;
+    border-color: #4d7db3;
+    color: #ffffff;
+}
+
+body.dark .btn-properties-trigger svg {
+    stroke: #ffffff;
 }
 
 body.dark .btn-properties-trigger:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: #2b588c;
+    border-color: #2b588c;
+    color: #ffffff;
 }

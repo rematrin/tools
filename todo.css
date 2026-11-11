@@ -12577,6 +12577,12 @@ body.dark .subproject-card:hover {
         stroke: currentColor;
     }
 
+    html.nav-in-header .header-nav-icon svg text,
+    body.nav-in-header .header-nav-icon svg text {
+        fill: currentColor !important;
+        stroke: none !important;
+    }
+
     html.nav-in-header .header-nav-label-wrapper,
     body.nav-in-header .header-nav-label-wrapper {
         display: inline-flex;

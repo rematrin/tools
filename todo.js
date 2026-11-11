@@ -136,6 +136,13 @@ if (mobileNavTodayEl) {
         todayIconEl.innerHTML = getCalendarSvg(new Date().getDate());
     }
 }
+const headerNavTodayEl = document.getElementById('headerNavToday');
+if (headerNavTodayEl) {
+    const todayIconEl = headerNavTodayEl.querySelector('.header-nav-icon');
+    if (todayIconEl) {
+        todayIconEl.innerHTML = getCalendarSvg(new Date().getDate());
+    }
+}
 
 let currentUid = null;
 let unsubscribeTasks = null;
@@ -2144,6 +2151,13 @@ function applyNavLocationClasses(val) {
     if (val !== 'sidebar') {
         root.classList.add('nav-in-header');
         if (body) body.classList.add('nav-in-header');
+        const headerNavTodayEl = document.getElementById('headerNavToday');
+        if (headerNavTodayEl && typeof getCalendarSvg === 'function') {
+            const todayIconEl = headerNavTodayEl.querySelector('.header-nav-icon');
+            if (todayIconEl) {
+                todayIconEl.innerHTML = getCalendarSvg(new Date().getDate());
+            }
+        }
     }
 }
 

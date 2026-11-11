@@ -153,6 +153,16 @@
 
     <!-- Загрузка сохраненной темы (предотвращает вспышку белого) -->
     <script src="theme-loader.js"></script>
+    <script>
+        (function() {
+            try {
+                var navLoc = localStorage.getItem('todo_pref_nav_location') || 'sidebar';
+                if (navLoc !== 'sidebar') {
+                    document.documentElement.classList.add('nav-in-header');
+                }
+            } catch (e) {}
+        })();
+    </script>
 
     <!-- Шапка страницы с логотипом Retools и круглой аватаркой профиля (как на Music) -->
     <header class="vk-header">
@@ -163,6 +173,100 @@
                     <img src="img/Retools_logo_dark.png" alt="Retools" class="logo-img logo-dark" style="display: none;">
                 </a>
             </div>
+
+            <nav class="header-nav" id="headerNav" aria-label="Меню навигации">
+                <a href="#inbox" class="header-nav-item active" id="headerNavInbox" data-route="inbox" title="Входящие">
+                    <span class="header-nav-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                            <path
+                                d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z">
+                            </path>
+                        </svg>
+                    </span>
+                    <span class="header-nav-label-wrapper">
+                        <span class="header-nav-label">Входящие</span>
+                        <span class="header-nav-counter" id="headerInboxCounter" style="display:none">0</span>
+                    </span>
+                </a>
+                <a href="#today" class="header-nav-item" id="headerNavToday" data-route="today" title="Сегодня">
+                    <span class="header-nav-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </span>
+                    <span class="header-nav-label-wrapper">
+                        <span class="header-nav-label">Сегодня</span>
+                        <span class="header-nav-counter" id="headerTodayCounter" style="display:none">0</span>
+                    </span>
+                </a>
+                <a href="#tomorrow" class="header-nav-item" id="headerNavTomorrow" data-route="tomorrow" title="Завтра">
+                    <span class="header-nav-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="4"></circle>
+                            <line x1="12" y1="2" x2="12" y2="4"></line>
+                            <line x1="12" y1="20" x2="12" y2="22"></line>
+                            <line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line>
+                            <line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line>
+                            <line x1="2" y1="12" x2="4" y2="12"></line>
+                            <line x1="20" y1="12" x2="22" y2="12"></line>
+                            <line x1="6.34" y1="17.66" x2="4.93" y2="19.07"></line>
+                            <line x1="19.07" y1="4.93" x2="17.66" y2="6.34"></line>
+                        </svg>
+                    </span>
+                    <span class="header-nav-label-wrapper">
+                        <span class="header-nav-label">Завтра</span>
+                        <span class="header-nav-counter" id="headerTomorrowCounter" style="display:none">0</span>
+                    </span>
+                </a>
+                <a href="#calendar" class="header-nav-item nav-item-collapsible" id="headerNavCalendar" data-route="calendar" title="Календарь">
+                    <span class="header-nav-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </span>
+                    <span class="header-nav-label-wrapper">
+                        <span class="header-nav-label">Календарь</span>
+                        <span class="header-nav-counter" id="headerCalendarCounter" style="display:none">0</span>
+                    </span>
+                </a>
+                <a href="#habit" class="header-nav-item nav-item-collapsible" id="headerNavHabit" data-route="habit" title="Отслеживание">
+                    <span class="header-nav-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </span>
+                    <span class="header-nav-label-wrapper">
+                        <span class="header-nav-label">Отслеживание</span>
+                        <span class="header-nav-counter" id="headerHabitCounter" style="display:none">0</span>
+                    </span>
+                </a>
+                <a href="#pomodoro" class="header-nav-item nav-item-collapsible" id="headerNavPomodoro" data-route="pomodoro" title="Помодоро">
+                    <span class="header-nav-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="8"></circle>
+                            <circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle>
+                        </svg>
+                    </span>
+                    <span class="header-nav-label-wrapper">
+                        <span class="header-nav-label">Помодоро</span>
+                        <span class="header-nav-counter" id="headerPomodoroCounter" style="display:none">0</span>
+                    </span>
+                </a>
+            </nav>
             <div class="header-right">
                 <div class="vk-profile" id="profile-container" title="Профиль"
                     onclick="event.stopPropagation(); const menu = document.getElementById('userProfileMenu'); if (menu) { const opening = menu.style.display !== 'flex'; const rect = this.getBoundingClientRect(); menu.style.position = 'fixed'; menu.style.top = (rect.bottom + 8) + 'px'; menu.style.right = Math.max(16, window.innerWidth - rect.right) + 'px'; menu.style.left = 'auto'; menu.style.zIndex = '99999'; menu.style.display = opening ? 'flex' : 'none'; }">
@@ -1248,7 +1352,7 @@
                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                             <line x1="9" y1="3" x2="9" y2="21"></line>
                         </svg>
-                        <span>Боковая панель</span>
+                        <span>Боковая панель и меню</span>
                     </button>
                     <button class="settings-menu-item" data-tab="wallpaper">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -1332,13 +1436,26 @@
                                     style="display: block; font-weight: 600; font-size: 0.95rem; color: var(--text); margin-bottom: 2px;">Тема
                                     оформления</label>
                                 <span style="font-size: 0.82rem; color: var(--text-secondary);">Выберите светлую, темную
-                                    или системную тему</span>
+                                     или системную тему</span>
                             </div>
                             <select id="prefThemeMode"
                                 style="background: var(--hover-bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-weight: 600; outline: none; cursor: pointer;">
                                 <option value="system">Системная</option>
                                 <option value="light">Светлая</option>
                                 <option value="dark">Темная</option>
+                            </select>
+                        </div>
+                        <div class="settings-field"
+                            style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--border);">
+                            <div class="settings-field-info">
+                                <label
+                                    style="display: block; font-weight: 600; font-size: 0.95rem; color: var(--text); margin-bottom: 2px;">Расположение меню на ПК <span style="font-size: 0.72rem; font-weight: 600; color: #4b84d1; background: rgba(75, 132, 209, 0.12); padding: 1px 6px; border-radius: 8px; margin-left: 4px;">Эксперимент</span></label>
+                                <span style="font-size: 0.82rem; color: var(--text-secondary);">Отображать меню слева в панели или по центру в шапке</span>
+                            </div>
+                            <select id="prefNavLocationSelect"
+                                style="background: var(--hover-bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-weight: 600; outline: none; cursor: pointer;">
+                                <option value="sidebar">Слева в панели (стандартно)</option>
+                                <option value="header-center">В шапке (по центру)</option>
                             </select>
                         </div>
                         <div class="settings-field"
@@ -1450,6 +1567,62 @@
                                 </div>
                             </div>
                             <div class="appearance-card-label">Скрыть (Все)</div>
+                            <div class="appearance-card-check">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" width="10"
+                                    height="10">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 28px; font-size: 1.1rem; font-weight: 600; color: var(--text);">
+                        Расположение меню на ПК <span style="font-size: 0.72rem; font-weight: 600; color: #4b84d1; background: rgba(75, 132, 209, 0.12); padding: 2px 7px; border-radius: 10px; margin-left: 6px;">Эксперимент</span>
+                    </h3>
+                    <div class="appearance-settings-grid" id="prefNavLocationGrid">
+                        <div class="appearance-card" id="pref-nav-sidebar" data-nav="sidebar">
+                            <div class="pref-nav-preview-box">
+                                <div class="preview-nav-header-bar">
+                                    <span style="width: 12px; height: 5px; border-radius: 2px; background: #94a3b8;"></span>
+                                </div>
+                                <div class="preview-nav-body-area">
+                                    <div class="preview-nav-sidebar-box">
+                                        <span class="preview-mini-line active"></span>
+                                        <span class="preview-mini-line"></span>
+                                        <span class="preview-mini-line"></span>
+                                    </div>
+                                    <div class="preview-nav-content-box"></div>
+                                </div>
+                            </div>
+                            <div class="appearance-card-label">В меню слева</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-align: center; margin-top: 2px;">Стандартно</div>
+                            <div class="appearance-card-check">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" width="10"
+                                    height="10">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="appearance-card" id="pref-nav-header-center" data-nav="header-center">
+                            <div class="pref-nav-preview-box">
+                                <div class="preview-nav-header-bar" style="justify-content: center; gap: 3px; position: relative;">
+                                    <span style="width: 10px; height: 5px; border-radius: 2px; background: #94a3b8; position: absolute; left: 8px;"></span>
+                                    <span class="preview-mini-pill active"></span>
+                                    <span class="preview-mini-pill"></span>
+                                    <span class="preview-mini-pill"></span>
+                                    <span style="width: 5px; height: 5px; border-radius: 50%; background: #94a3b8; position: absolute; right: 8px;"></span>
+                                </div>
+                                <div class="preview-nav-body-area">
+                                    <div class="preview-nav-sidebar-box">
+                                        <span class="preview-mini-line"></span>
+                                        <span class="preview-mini-line"></span>
+                                    </div>
+                                    <div class="preview-nav-content-box"></div>
+                                </div>
+                            </div>
+                            <div class="appearance-card-label">В шапке</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-align: center; margin-top: 2px;">По центру</div>
                             <div class="appearance-card-check">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" width="10"
                                     height="10">

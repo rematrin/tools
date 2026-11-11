@@ -2003,6 +2003,24 @@ function openSettingsModal() {
         }
     }
 
+    // Подсвечиваем сохраненную карточку настройки расположения меню на ПК
+    let currentNavLoc = localStorage.getItem('todo_pref_nav_location') || 'sidebar';
+    if (currentNavLoc !== 'sidebar') currentNavLoc = 'header-center';
+
+    const selectNav = document.getElementById('prefNavLocationSelect');
+    if (selectNav) selectNav.value = currentNavLoc;
+    const navCards = [
+        { id: 'pref-nav-sidebar', key: 'sidebar' },
+        { id: 'pref-nav-header-center', key: 'header-center' }
+    ];
+    navCards.forEach(c => {
+        const el = document.getElementById(c.id);
+        if (el) {
+            if (c.key === currentNavLoc) el.classList.add('selected');
+            else el.classList.remove('selected');
+        }
+    });
+
     if (typeof updateGCalSettingsUI === 'function') {
         updateGCalSettingsUI();
     }
@@ -2115,6 +2133,70 @@ if (prefProjectTodaySection) {
         renderTasks(true);
     });
 }
+
+// === Управление настройкой расположения меню на ПК (Эксперимент) ===
+function applyNavLocationClasses(val) {
+    const root = document.documentElement;
+    const body = document.body;
+    root.classList.remove('nav-in-header', 'nav-align-left', 'nav-align-center', 'nav-align-right', 'nav-header-classic', 'nav-header-dock', 'hide-header-dividers');
+    if (body) body.classList.remove('nav-in-header', 'nav-align-left', 'nav-align-center', 'nav-align-right', 'nav-header-classic', 'nav-header-dock', 'hide-header-dividers');
+
+    if (val !== 'sidebar') {
+        root.classList.add('nav-in-header');
+        if (body) body.classList.add('nav-in-header');
+    }
+}
+
+function updateNavLocationPreference(val) {
+    if (val !== 'header-center' && val !== 'header') {
+        val = 'sidebar';
+    } else {
+        val = 'header-center';
+    }
+    localStorage.setItem('todo_pref_nav_location', val);
+
+    const select = document.getElementById('prefNavLocationSelect');
+    if (select) select.value = val;
+
+    const cards = [
+        { id: 'pref-nav-sidebar', key: 'sidebar' },
+        { id: 'pref-nav-header-center', key: 'header-center' }
+    ];
+    cards.forEach(c => {
+        const el = document.getElementById(c.id);
+        if (el) {
+            if (c.key === val) el.classList.add('selected');
+            else el.classList.remove('selected');
+        }
+    });
+
+    applyNavLocationClasses(val);
+
+    if (typeof handleRoute === 'function') handleRoute();
+    if (typeof renderTasks === 'function') renderTasks();
+}
+
+// Привязка кликов в настройках
+const prefNavSidebar = document.getElementById('pref-nav-sidebar');
+const prefNavHeaderCenter = document.getElementById('pref-nav-header-center');
+const prefNavLocationSelect = document.getElementById('prefNavLocationSelect');
+
+if (prefNavSidebar) {
+    prefNavSidebar.addEventListener('click', () => updateNavLocationPreference('sidebar'));
+}
+if (prefNavHeaderCenter) {
+    prefNavHeaderCenter.addEventListener('click', () => updateNavLocationPreference('header-center'));
+}
+if (prefNavLocationSelect) {
+    prefNavLocationSelect.addEventListener('change', (e) => updateNavLocationPreference(e.target.value));
+}
+
+// Инициализация при загрузке скрипта
+try {
+    let initialNavLoc = localStorage.getItem('todo_pref_nav_location') || 'sidebar';
+    if (initialNavLoc !== 'sidebar') initialNavLoc = 'header-center';
+    applyNavLocationClasses(initialNavLoc);
+} catch (e) {}
 
 const prefCalendarCompactHours = document.getElementById('prefCalendarCompactHours');
 const prefCalendarDayStart = document.getElementById('prefCalendarDayStart');
@@ -2982,6 +3064,23 @@ function handleRoute() {
         if (currentRoute === 'trash') menuTrash.classList.add('active');
         else menuTrash.classList.remove('active');
     }
+
+    // Обновляем подсветку пунктов меню в шапке (для ПК)
+    const headerNavMap = {
+        'inbox': document.getElementById('headerNavInbox'),
+        'today': document.getElementById('headerNavToday'),
+        'tomorrow': document.getElementById('headerNavTomorrow'),
+        'calendar': document.getElementById('headerNavCalendar'),
+        'habit': document.getElementById('headerNavHabit'),
+        'pomodoro': document.getElementById('headerNavPomodoro')
+    };
+    Object.keys(headerNavMap).forEach(key => {
+        const item = headerNavMap[key];
+        if (item) {
+            if (currentRoute === key) item.classList.add('active');
+            else item.classList.remove('active');
+        }
+    });
 
     // Обновляем подсветку кнопок нижнего меню
     const bottomNavCalendar = document.getElementById('bottomNavCalendar');
@@ -5612,6 +5711,39 @@ function doRenderTasks() {
     if (trashCounter) {
         trashCounter.textContent = trashActiveCount;
         trashCounter.style.display = trashActiveCount > 0 ? 'inline-block' : 'none';
+    }
+
+    // Обновляем счетчики в шапке (для ПК)
+    const headerInboxCounter = document.getElementById('headerInboxCounter');
+    const headerTodayCounter = document.getElementById('headerTodayCounter');
+    const headerTomorrowCounter = document.getElementById('headerTomorrowCounter');
+    const headerCalendarCounter = document.getElementById('headerCalendarCounter');
+    const headerHabitCounter = document.getElementById('headerHabitCounter');
+    const headerPomodoroCounter = document.getElementById('headerPomodoroCounter');
+
+    if (headerInboxCounter) {
+        headerInboxCounter.textContent = inboxActiveCount;
+        headerInboxCounter.style.display = (showCounters && !hideInboxCount && inboxActiveCount > 0) ? 'inline-block' : 'none';
+    }
+    if (headerTodayCounter) {
+        headerTodayCounter.textContent = todayActiveCount;
+        headerTodayCounter.style.display = (showCounters && !hideTodayCount && todayActiveCount > 0) ? 'inline-block' : 'none';
+    }
+    if (headerTomorrowCounter) {
+        headerTomorrowCounter.textContent = tomorrowActiveCount;
+        headerTomorrowCounter.style.display = (showCounters && !hideTomorrowCount && tomorrowActiveCount > 0) ? 'inline-block' : 'none';
+    }
+    if (headerCalendarCounter) {
+        headerCalendarCounter.textContent = calendarActiveCount;
+        headerCalendarCounter.style.display = (showCounters && !hideCalendarCount && calendarActiveCount > 0) ? 'inline-block' : 'none';
+    }
+    if (headerHabitCounter) {
+        headerHabitCounter.textContent = habitsList.length;
+        headerHabitCounter.style.display = (showCounters && !hideHabitCount && habitsList.length > 0) ? 'inline-block' : 'none';
+    }
+    if (headerPomodoroCounter) {
+        headerPomodoroCounter.textContent = pomodoroActiveCount;
+        headerPomodoroCounter.style.display = (showCounters && !hidePomodoroCount && pomodoroActiveCount > 0) ? 'inline-block' : 'none';
     }
 
     // Переключаем отображение баннера Корзины и формы быстрого добавления

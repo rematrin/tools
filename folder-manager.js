@@ -317,12 +317,12 @@ export class FolderManager {
             return window.isAppOnMain ? window.isAppOnMain(app) : !app._explicitNoMain;
         });
 
-                // Добавляем класс, если в папке больше 12 элементов (13 и более), либо в комбинированном режиме всегда
-                if (items.length > 12 || document.body.classList.contains('combined-mode-enabled')) {
-                    document.body.classList.add('folder-large');
-                } else {
-                    document.body.classList.remove('folder-large');
-                }
+        // Добавляем класс, если в папке больше 12 элементов (13 и более), либо в комбинированном режиме всегда
+        if (items.length > 12 || document.body.classList.contains('combined-mode-enabled')) {
+            document.body.classList.add('folder-large');
+        } else {
+            document.body.classList.remove('folder-large');
+        }
 
         items.forEach((app, idx) => {
             const item = document.createElement('div');

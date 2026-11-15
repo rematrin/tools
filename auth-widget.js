@@ -161,6 +161,7 @@ function initAuthWidget() {
         }
     }
     window.db = db; // Экспортируем для сервиса диска и todo.js
+    window.firebaseDb = db;
 
     const provider = new GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/drive.file');
@@ -538,6 +539,28 @@ function initAuthWidget() {
                                 if (data.google_youtube_refresh_token) {
                                     localStorage.setItem('google_youtube_refresh_token', data.google_youtube_refresh_token);
                                 }
+                            }
+                            if (data.notion_config) {
+                                if (data.notion_config.token) {
+                                    localStorage.setItem('todo_pref_notion_token', data.notion_config.token);
+                                }
+                                if (data.notion_config.database_id) {
+                                    localStorage.setItem('todo_pref_notion_db_id', data.notion_config.database_id);
+                                }
+                                if (data.notion_config.enabled !== undefined) {
+                                    localStorage.setItem('todo_pref_notion_enabled', data.notion_config.enabled ? 'true' : 'false');
+                                }
+                                if (window.NotionLevels && typeof window.NotionLevels.applyConfig === 'function') {
+                                    window.NotionLevels.applyConfig(data.notion_config);
+                                }
+                            } else if (localStorage.getItem('todo_pref_notion_token') && localStorage.getItem('todo_pref_notion_db_id')) {
+                                setDoc(doc(db, "users", user.uid), {
+                                    notion_config: {
+                                        enabled: localStorage.getItem('todo_pref_notion_enabled') === 'true',
+                                        token: localStorage.getItem('todo_pref_notion_token'),
+                                        database_id: localStorage.getItem('todo_pref_notion_db_id')
+                                    }
+                                }, { merge: true }).catch(err => console.warn('Ошибка начальной синхронизации Notion:', err));
                             }
                         }
                     } catch (e) {

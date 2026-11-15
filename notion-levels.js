@@ -741,15 +741,42 @@
         }
     }
 
+    // Применение настроек из облака
+    function applyConfig(cfg) {
+        if (!cfg) return;
+        let changed = false;
+        if (cfg.token && cfg.token !== state.token) {
+            state.token = cfg.token;
+            localStorage.setItem('todo_pref_notion_token', cfg.token);
+            changed = true;
+        }
+        if (cfg.database_id && cfg.database_id !== state.databaseId) {
+            state.databaseId = cfg.database_id;
+            localStorage.setItem('todo_pref_notion_db_id', cfg.database_id);
+            changed = true;
+        }
+        if (cfg.enabled !== undefined && cfg.enabled !== state.enabled) {
+            state.enabled = Boolean(cfg.enabled);
+            localStorage.setItem('todo_pref_notion_enabled', state.enabled ? 'true' : 'false');
+            changed = true;
+        }
+        if (changed || !state.schema.titleProp) {
+            syncUIFromState();
+            updateMenuVisibility();
+        }
+    }
+
     // Сохранение настроек в Firestore (если пользователь авторизован)
     async function syncSettingsToFirestore() {
         try {
             const auth = window.firebaseAuth || (window.firebase && window.firebase.auth ? window.firebase.auth() : null);
-            const user = auth ? auth.currentUser : null;
-            if (user && window.firebaseDb) {
-                const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-                const userRef = doc(window.firebaseDb, "users", user.uid);
-                await setDoc(userRef, {
+            const user = (auth ? auth.currentUser : null) || window.currentUser;
+            const firestoreDb = window.db || window.firebaseDb;
+            if (user && firestoreDb) {
+                const docFn = window.doc || (await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js")).doc;
+                const setDocFn = window.setDoc || (await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js")).setDoc;
+                const userRef = docFn(firestoreDb, "users", user.uid);
+                await setDocFn(userRef, {
                     notion_config: {
                         enabled: state.enabled,
                         token: state.token,
@@ -765,30 +792,25 @@
 
     // Загрузка настроек из Firestore
     async function loadSettingsFromFirestore(user) {
-        if (!user || !window.firebaseDb) return;
+        const auth = window.firebaseAuth || (window.firebase && window.firebase.auth ? window.firebase.auth() : null);
+        const currentUser = user || (auth ? auth.currentUser : null) || window.currentUser;
+        const firestoreDb = window.db || window.firebaseDb;
+        if (!currentUser || !firestoreDb) return;
         try {
-            const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-            const userRef = doc(window.firebaseDb, "users", user.uid);
-            const snap = await getDoc(userRef);
+            const docFn = window.doc || (await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js")).doc;
+            const getDocFn = window.getDoc || (await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js")).getDoc;
+            const userRef = docFn(firestoreDb, "users", currentUser.uid);
+            const snap = await getDocFn(userRef);
             if (snap.exists()) {
                 const data = snap.data();
                 if (data.notion_config) {
-                    const cfg = data.notion_config;
-                    if (cfg.token) {
-                        state.token = cfg.token;
-                        localStorage.setItem('todo_pref_notion_token', cfg.token);
-                    }
-                    if (cfg.database_id) {
-                        state.databaseId = cfg.database_id;
-                        localStorage.setItem('todo_pref_notion_db_id', cfg.database_id);
-                    }
-                    if (cfg.enabled !== undefined) {
-                        state.enabled = Boolean(cfg.enabled);
-                        localStorage.setItem('todo_pref_notion_enabled', state.enabled ? 'true' : 'false');
-                    }
-                    syncUIFromState();
-                    updateMenuVisibility();
+                    applyConfig(data.notion_config);
+                } else if (state.token && state.databaseId) {
+                    // Если в облаке еще нет настроек, но они есть локально на этом устройстве — отправляем в Firestore
+                    await syncSettingsToFirestore();
                 }
+            } else if (state.token && state.databaseId) {
+                await syncSettingsToFirestore();
             }
         } catch (e) {
             console.warn('Не удалось загрузить настройки Notion из Firestore:', e);
@@ -947,15 +969,32 @@
             statusBox.textContent = text;
         }
 
-        // Подписка на авторизацию Firebase
+        // Подписка на авторизацию Firebase и проверка готовности
         window.addEventListener('authChanged', (e) => {
             if (e.detail && e.detail.user) {
                 loadSettingsFromFirestore(e.detail.user);
             }
         });
 
-        if (window.currentUser) {
-            loadSettingsFromFirestore(window.currentUser);
+        function checkAndSyncAuth() {
+            const auth = window.firebaseAuth || (window.firebase && window.firebase.auth ? window.firebase.auth() : null);
+            const user = (auth ? auth.currentUser : null) || window.currentUser;
+            const firestoreDb = window.db || window.firebaseDb;
+            if (user && firestoreDb) {
+                loadSettingsFromFirestore(user);
+                return true;
+            }
+            return false;
+        }
+
+        if (!checkAndSyncAuth()) {
+            let attempts = 0;
+            const timer = setInterval(() => {
+                attempts++;
+                if (checkAndSyncAuth() || attempts > 20) {
+                    clearInterval(timer);
+                }
+            }, 500);
         }
     }
 
@@ -964,6 +1003,8 @@
         open: openLevelsModal,
         close: closeLevelsModal,
         refresh: refreshLevels,
+        applyConfig,
+        syncSettings: syncSettingsToFirestore,
         state
     };
 

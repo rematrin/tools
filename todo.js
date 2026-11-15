@@ -3656,8 +3656,14 @@ function startTodoForUser(uid) {
     // Слушатель настроек пользователя (включая обои) в реальном времени
     try {
         unsubscribeUserDoc = onSnapshot(doc(db, 'users', uid), (docSnap) => {
-            if (docSnap.exists() && window.todoWallpaperManager) {
-                window.todoWallpaperManager.loadFromCloud(docSnap.data());
+            if (docSnap.exists()) {
+                const uData = docSnap.data();
+                if (window.todoWallpaperManager) {
+                    window.todoWallpaperManager.loadFromCloud(uData);
+                }
+                if (uData.notion_config && window.NotionLevels && typeof window.NotionLevels.applyConfig === 'function') {
+                    window.NotionLevels.applyConfig(uData.notion_config);
+                }
             }
         }, (err) => {
             console.warn("Ошибка подписки на профиль пользователя:", err);

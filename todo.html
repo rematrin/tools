@@ -150,12 +150,19 @@
     <!-- Фоновые слои для объединенного фона (как в home.html) -->
     <div class="global-wallpaper-blurred" id="globalWallpaperBlurred"></div>
     <div class="folder-backdrop" id="globalFolderBackdrop"></div>
+    <div class="mobile-wallpaper-blurred" id="mobileWallpaperBlurred"></div>
+    <div class="mobile-folder-backdrop" id="mobileFolderBackdrop"></div>
 
     <!-- Загрузка сохраненной темы (предотвращает вспышку белого) -->
     <script src="theme-loader.js"></script>
     <script>
         (function() {
             try {
+                var mobileWp = localStorage.getItem('todo_pref_custom_background_mobile');
+                if (mobileWp === null || mobileWp === 'true') {
+                    document.documentElement.classList.add('custom-wallpaper-mobile-enabled');
+                    if (document.body) document.body.classList.add('custom-wallpaper-mobile-enabled');
+                }
                 var navLoc = localStorage.getItem('todo_pref_nav_location') || 'sidebar';
                 if (navLoc !== 'sidebar') {
                     document.documentElement.classList.add('nav-in-header');
@@ -1653,6 +1660,20 @@
                             </div>
                             <label class="switch-container">
                                 <input type="checkbox" id="prefCustomBackground">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="settings-field"
+                            style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--border);">
+                            <div class="settings-field-info">
+                                <label
+                                    style="display: block; font-weight: 600; font-size: 0.95rem; color: var(--text); margin-bottom: 2px;">Собственный
+                                    фон для телефонов</label>
+                                <span style="font-size: 0.82rem; color: var(--text-secondary);">Использовать
+                                    персональный фон на телефоне вместо стандартного серого</span>
+                            </div>
+                            <label class="switch-container">
+                                <input type="checkbox" id="prefCustomBackgroundMobile">
                                 <span class="slider round"></span>
                             </label>
                         </div>

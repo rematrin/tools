@@ -20,6 +20,15 @@ import {
 
 const db = window.db || getFirestore();
 
+var lastRenderTime = 0;
+var renderTasksTimer = null;
+var tasksRetryTimer = null;
+var projectsRetryTimer = null;
+var countdownsRetryTimer = null;
+var sectionsRetryTimer = null;
+var habitsRetryTimer = null;
+var todayViewToggleBtn = null;
+
 // Safe mutation wrappers that automatically attach accurate client timestamps (updatedAt / clientCreatedAt)
 // to prevent stale offline writes from overwriting newer changes on other devices
 const updateDoc = (docRef, data, ...rest) => {
@@ -2250,6 +2259,8 @@ class TodoWallpaperManager {
     constructor() {
         this.STORAGE_KEY = 'todo_custom_wallpaper_settings_v1';
         this.PREF_KEY = 'todo_pref_custom_background';
+        this.MOBILE_PREF_KEY = 'todo_pref_custom_background_mobile';
+        this.DEFAULT_MOBILE_URL = 'https://i.ibb.co/Ps0ntx5Y/9d792efca2c0.png';
         this.defaultSettings = {
             url: 'https://i.ibb.co/qFV3RdfY/29e2c667e908.png',
             blur: 0,
@@ -2257,6 +2268,7 @@ class TodoWallpaperManager {
         };
         this.settings = this.loadSettings();
         this.isEnabled = this.loadEnabled();
+        this.isMobileEnabled = this.loadMobileEnabled();
         this.applySettings();
         this.initUI();
     }
@@ -2274,6 +2286,11 @@ class TodoWallpaperManager {
         return localStorage.getItem(this.PREF_KEY) === 'true';
     }
 
+    loadMobileEnabled() {
+        const saved = localStorage.getItem(this.MOBILE_PREF_KEY);
+        return saved === null ? true : saved === 'true';
+    }
+
     saveSettings() {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.settings));
     }
@@ -2283,11 +2300,17 @@ class TodoWallpaperManager {
         localStorage.setItem(this.PREF_KEY, this.isEnabled ? 'true' : 'false');
     }
 
+    saveMobileEnabled(enabled) {
+        this.isMobileEnabled = !!enabled;
+        localStorage.setItem(this.MOBILE_PREF_KEY, this.isMobileEnabled ? 'true' : 'false');
+    }
+
     saveToCloud() {
         if (typeof currentUid !== 'undefined' && currentUid) {
             setDoc(doc(db, "users", currentUid), {
                 todoWallpaper: this.settings,
-                todoCustomBackground: this.isEnabled
+                todoCustomBackground: this.isEnabled,
+                todoCustomBackgroundMobile: this.isMobileEnabled
             }, { merge: true }).catch((err) => {
                 console.warn("Ошибка сохранения обоев в облако:", err);
             });
@@ -2306,6 +2329,10 @@ class TodoWallpaperManager {
             this.saveEnabled(userData.todoCustomBackground);
             changed = true;
         }
+        if (userData.todoCustomBackgroundMobile !== undefined) {
+            this.saveMobileEnabled(userData.todoCustomBackgroundMobile);
+            changed = true;
+        }
         if (changed) {
             this.applySettings();
             this.refreshUI();
@@ -2315,6 +2342,7 @@ class TodoWallpaperManager {
     applySettings() {
         const bgElement = document.getElementById('globalWallpaperBlurred');
         const dimElement = document.getElementById('globalFolderBackdrop');
+        const mobileBgElement = document.getElementById('mobileWallpaperBlurred');
 
         if (this.isEnabled) {
             document.documentElement.classList.add('custom-wallpaper-enabled');
@@ -2347,10 +2375,27 @@ class TodoWallpaperManager {
                 dimElement.style.removeProperty('background');
             }
         }
+
+        // Собственный фон для телефонов
+        if (this.isMobileEnabled) {
+            document.documentElement.classList.add('custom-wallpaper-mobile-enabled');
+            document.body.classList.add('custom-wallpaper-mobile-enabled');
+            document.documentElement.style.setProperty('--mobile-wallpaper-url', `url('${this.DEFAULT_MOBILE_URL}')`);
+            if (mobileBgElement) {
+                mobileBgElement.style.setProperty('background-image', `url('${this.DEFAULT_MOBILE_URL}')`, 'important');
+            }
+        } else {
+            document.documentElement.classList.remove('custom-wallpaper-mobile-enabled');
+            document.body.classList.remove('custom-wallpaper-mobile-enabled');
+            if (mobileBgElement) {
+                mobileBgElement.style.removeProperty('background-image');
+            }
+        }
     }
 
     refreshUI() {
         const toggle = document.getElementById('prefCustomBackground');
+        const toggleMobile = document.getElementById('prefCustomBackgroundMobile');
         const controls = document.getElementById('todoWallpaperControls');
         const preview = document.getElementById('todoWallpaperPreviewBg');
         const sliderDim = document.getElementById('sliderTodoDim');
@@ -2359,6 +2404,7 @@ class TodoWallpaperManager {
         const labelBlur = document.getElementById('todoBlurValueLabel');
 
         if (toggle) toggle.checked = this.isEnabled;
+        if (toggleMobile) toggleMobile.checked = this.isMobileEnabled;
         if (controls) controls.classList.toggle('disabled', !this.isEnabled);
         if (preview) preview.style.backgroundImage = `url('${this.settings.url}')`;
         if (sliderDim) sliderDim.value = this.settings.dim;
@@ -2369,6 +2415,7 @@ class TodoWallpaperManager {
 
     initUI() {
         const toggle = document.getElementById('prefCustomBackground');
+        const toggleMobile = document.getElementById('prefCustomBackgroundMobile');
         const sliderDim = document.getElementById('sliderTodoDim');
         const sliderBlur = document.getElementById('sliderTodoBlur');
         const btnChange = document.getElementById('btnChangeTodoWallpaper');
@@ -2376,6 +2423,15 @@ class TodoWallpaperManager {
         if (toggle) {
             toggle.addEventListener('change', (e) => {
                 this.saveEnabled(e.target.checked);
+                this.applySettings();
+                this.refreshUI();
+                this.saveToCloud();
+            });
+        }
+
+        if (toggleMobile) {
+            toggleMobile.addEventListener('change', (e) => {
+                this.saveMobileEnabled(e.target.checked);
                 this.applySettings();
                 this.refreshUI();
                 this.saveToCloud();
@@ -2845,6 +2901,8 @@ const applySidebarCollapsedState = () => {
         }
         todoSidebar.classList.remove('mobile-open');
         sidebarOverlay.classList.remove('active');
+        document.body.classList.remove('mobile-sidebar-open');
+        document.documentElement.classList.remove('mobile-sidebar-open');
     } else {
         todoSidebar.classList.remove('collapsed');
         if (todoContentEl) todoContentEl.classList.remove('sidebar-collapsed');
@@ -2864,6 +2922,9 @@ if (contentSidebarToggle && todoSidebar && sidebarOverlay) {
         if (window.innerWidth <= 768) {
             todoSidebar.classList.toggle('mobile-open');
             sidebarOverlay.classList.toggle('active');
+            const isOpen = todoSidebar.classList.contains('mobile-open');
+            document.body.classList.toggle('mobile-sidebar-open', isOpen);
+            document.documentElement.classList.toggle('mobile-sidebar-open', isOpen);
             if (typeof updateMobileBottomNavActiveState === 'function') {
                 updateMobileBottomNavActiveState();
             }
@@ -3146,6 +3207,8 @@ function handleRoute() {
     if (todoSidebar && todoSidebar.classList.contains('mobile-open')) {
         todoSidebar.classList.remove('mobile-open');
         if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+        document.body.classList.remove('mobile-sidebar-open');
+        document.documentElement.classList.remove('mobile-sidebar-open');
     }
 
     if (currentRoute.startsWith('project/')) {
@@ -3573,7 +3636,7 @@ function getTaskVisualHash(task) {
     return `${task.title || ''}|${task.dueDate || ''}|${task.dueTime || ''}|${task.dueRepeat || ''}|${task.dueEndDate || ''}|${task.dueEndTime || ''}|${task.completed ? '1' : '0'}|${task.deleted ? '1' : '0'}|${task.projectId || ''}|${task.order ?? 0}|${task.description || ''}|${task.parentId || ''}|${subTotal}|${subDone}`;
 }
 
-let tasksRetryTimer = null;
+// tasksRetryTimer объявлен глобально вверху файла
 
 // Загрузка данных пользователя
 function startTodoForUser(uid) {
@@ -5556,8 +5619,7 @@ window.addEventListener('offline', () => {
 setTimeout(updateNetworkStatus, 100);
 
 // Отрендерить задачи в UI с троттлингом (предотвращает мерцание DOM при фоновом обновлении)
-let renderTasksTimer = null;
-let lastRenderTime = 0;
+// renderTasksTimer и lastRenderTime объявлены глобально вверху файла
 
 function renderTasks(immediate = false) {
     const now = Date.now();
@@ -8489,7 +8551,7 @@ window.addEventListener('resize', () => {
 
 let previousProjectGCalColors = {};
 
-let projectsRetryTimer = null;
+// projectsRetryTimer объявлен вверху файла
 
 function startProjectsForUser(uid) {
     if (unsubscribeProjects) {
@@ -8591,7 +8653,7 @@ function stopProjectsForUser() {
     if (projectsListContainer) projectsListContainer.innerHTML = '';
 }
 
-let countdownsRetryTimer = null;
+// countdownsRetryTimer объявлен вверху файла
 
 function startCountdownsForUser(uid) {
     if (unsubscribeCountdowns) {
@@ -8668,7 +8730,7 @@ function stopCountdownsForUser() {
     if (grid) grid.innerHTML = '';
 }
 
-let sectionsRetryTimer = null;
+// sectionsRetryTimer объявлен вверху файла
 
 function startSectionsForUser(uid) {
     if (unsubscribeSections) {
@@ -9376,22 +9438,23 @@ if (btnAddProject) {
 // === ЛОГИКА ОТОБРАЖЕНИЯ (VIEW DISPLAY MODAL) ===
 const viewDisplayBtn = document.getElementById('viewDisplayBtn');
 const viewDisplayDropdown = document.getElementById('viewDisplayDropdown');
-const todayViewToggleBtn = document.getElementById('todayViewToggleBtn');
+todayViewToggleBtn = document.getElementById('todayViewToggleBtn');
 
 function getTodayViewMode() {
     return localStorage.getItem('todo_today_view_mode') === 'day' ? 'day' : 'list';
 }
 
 function syncTodayViewToggleButton() {
-    if (!todayViewToggleBtn) return;
+    const btn = todayViewToggleBtn || document.getElementById('todayViewToggleBtn');
+    if (!btn) return;
 
     const isTodayRoute = currentRoute === 'today';
     const isDayView = isTodayRoute && getTodayViewMode() === 'day';
-    todayViewToggleBtn.style.display = isTodayRoute ? 'flex' : 'none';
-    todayViewToggleBtn.classList.toggle('active', isDayView);
-    todayViewToggleBtn.setAttribute('aria-pressed', isDayView ? 'true' : 'false');
-    todayViewToggleBtn.setAttribute('aria-label', isDayView ? 'Показать списком' : 'Показать по часам');
-    todayViewToggleBtn.title = isDayView ? 'Показать списком' : 'Показать по часам';
+    btn.style.display = isTodayRoute ? 'flex' : 'none';
+    btn.classList.toggle('active', isDayView);
+    btn.setAttribute('aria-pressed', isDayView ? 'true' : 'false');
+    btn.setAttribute('aria-label', isDayView ? 'Показать списком' : 'Показать по часам');
+    btn.title = isDayView ? 'Показать списком' : 'Показать по часам';
 }
 
 if (todayViewToggleBtn) {
@@ -12720,6 +12783,8 @@ if (todoSidebar) {
             if (todoSidebar.classList.contains('mobile-open')) {
                 todoSidebar.classList.remove('mobile-open');
                 if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+                document.body.classList.remove('mobile-sidebar-open');
+                document.documentElement.classList.remove('mobile-sidebar-open');
                 if (typeof updateMobileBottomNavActiveState === 'function') {
                     updateMobileBottomNavActiveState();
                 }
@@ -12740,6 +12805,8 @@ if (mobileBottomNavEl) {
             if (todoSidebar && todoSidebar.classList.contains('mobile-open')) {
                 todoSidebar.classList.remove('mobile-open');
                 if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+                document.body.classList.remove('mobile-sidebar-open');
+                document.documentElement.classList.remove('mobile-sidebar-open');
                 if (typeof updateMobileBottomNavActiveState === 'function') {
                     updateMobileBottomNavActiveState();
                 }
@@ -18133,7 +18200,7 @@ function renderCountdownEventsBanner() {
 
 window.renderCountdownEventsBanner = renderCountdownEventsBanner;
 
-let habitsRetryTimer = null;
+// habitsRetryTimer объявлен вверху файла
 
 function updateHabitSidebarCounter() {
     const counter = document.getElementById('habitCounter');

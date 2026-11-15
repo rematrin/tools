@@ -1840,21 +1840,46 @@ body.dark .completed-tasks-container {
         display: none !important;
     }
 
-    /* Заголовок секции Проектов */
+    /* Белая карточка Проектов на мобильных (как на ПК: надпись Проекты и плюсик внутри карточки) */
+    .todo-sidebar .sidebar-card.sidebar-projects-card {
+        background: var(--card-bg, #ffffff) !important;
+        border-radius: 20px !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+        padding: 14px 12px 10px 12px !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        margin-bottom: 6px !important;
+    }
+
+    body.dark .todo-sidebar .sidebar-card.sidebar-projects-card {
+        background: var(--card-bg, #202022) !important;
+        border-color: var(--border, rgba(255, 255, 255, 0.08)) !important;
+    }
+
+    /* Заголовок секции Проектов: внутри белой карточки */
     .todo-sidebar .sidebar-section-title {
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
-        border-top: none !important;
-        margin-top: 0 !important;
-        padding: 4px 4px 2px 4px !important;
+        border: none !important;
+        margin: 0 0 6px 0 !important;
+        padding: 2px 4px 6px 6px !important;
     }
 
     .todo-sidebar .sidebar-section-title-left {
         display: flex !important;
         align-items: center !important;
         gap: 6px !important;
-        font-size: 17px !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        color: var(--text) !important;
+    }
+
+    .todo-sidebar .sidebar-section-title-left span {
+        font-size: 16px !important;
         font-weight: 700 !important;
         color: var(--text) !important;
     }
@@ -1869,27 +1894,36 @@ body.dark .completed-tasks-container {
         gap: 8px !important;
     }
 
+    /* Кнопка создания проекта: синий плюс как на ПК */
     .todo-sidebar .btn-add-project {
-        width: 32px !important;
-        height: 32px !important;
+        width: 28px !important;
+        height: 28px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         background: transparent !important;
-        color: var(--text-secondary) !important;
+        color: #4b84d1 !important;
         border: none !important;
-        border-radius: 50% !important;
+        border-radius: 6px !important;
+        padding: 0 !important;
+        cursor: pointer;
     }
 
-    /* Белый закругленный блок списка проектов */
+    .todo-sidebar .btn-add-project svg {
+        width: 20px !important;
+        height: 20px !important;
+        stroke-width: 2.5 !important;
+    }
+
+    /* Внутренний контейнер списка: прозрачный, без рамок */
     .todo-sidebar .projects-list-wrapper {
-        background: var(--card-bg) !important;
-        border-radius: 24px !important;
-        border: 1px solid var(--border) !important;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
-        overflow: hidden !important;
+        background: transparent !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
         padding: 0 !important;
-        margin-bottom: 4px !important;
+        margin-bottom: 0 !important;
         height: auto !important;
         flex: none !important;
     }
@@ -1900,8 +1934,10 @@ body.dark .completed-tasks-container {
         height: auto !important;
     }
 
+    /* Пункты проектов: без разделяющих линий, аккуратные отступы */
     .todo-sidebar .project-item-container {
-        border-bottom: 1px solid var(--border) !important;
+        border-bottom: none !important;
+        margin-bottom: 1px !important;
     }
 
     .todo-sidebar .project-item-container:last-child {
@@ -1909,23 +1945,47 @@ body.dark .completed-tasks-container {
     }
 
     .todo-sidebar .project-item-container .menu-item {
-        padding: 14px 18px !important;
+        padding: 7px 10px !important;
         font-size: 15px !important;
-        font-weight: 600 !important;
+        font-weight: 500 !important;
         color: var(--text) !important;
-        border-radius: 0 !important;
+        border-radius: 10px !important;
         background: transparent !important;
+        transition: background-color 0.15s ease, color 0.15s ease !important;
     }
 
-    /* Цифры задач без овала/фона как на референсе */
+    .todo-sidebar .project-item-container .menu-item:hover {
+        background-color: var(--hover-bg) !important;
+    }
+
+    .todo-sidebar .project-item-container .menu-item.active {
+        background-color: transparent !important;
+        color: #4b84d1 !important;
+        font-weight: 600 !important;
+    }
+
+    .todo-sidebar .project-item-container .menu-item.active .menu-icon {
+        color: #4b84d1 !important;
+    }
+
+    body.dark .todo-sidebar .project-item-container .menu-item.active {
+        background-color: transparent !important;
+        color: #4b84d1 !important;
+    }
+
+    body.dark .todo-sidebar .project-item-container .menu-item.active .menu-icon {
+        color: #4b84d1 !important;
+    }
+
+    /* Цифры задач без овала/фона */
     .todo-sidebar .menu-counter,
     .project-item-container .menu-counter {
         background: transparent !important;
         border: none !important;
         border-radius: 0 !important;
         padding: 0 !important;
-        color: var(--text-secondary) !important;
-        font-size: 15px !important;
+        color: #9ca3af !important;
+        font-size: 14px !important;
         font-weight: 500 !important;
         box-shadow: none !important;
     }
@@ -1935,34 +1995,111 @@ body.dark .completed-tasks-container {
         align-items: center !important;
         gap: 10px !important;
         width: 100% !important;
-        padding: 14px 18px !important;
+        padding: 10px 10px !important;
         background: transparent !important;
         border: none !important;
-        border-top: 1px solid var(--border) !important;
         color: var(--text-secondary) !important;
-        font-size: 15px !important;
-        font-weight: 600 !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
         cursor: pointer;
         text-align: left;
     }
 
-    /* Белый закругленный блок вместо "Добавить команду": Отслеж, Помодоро, Отчёт */
+    /* Нижняя карточка: Календарь, Помодоро и др. */
     .todo-sidebar .sidebar-footer-menu {
         padding-bottom: 0 !important;
-        margin-top: 14px !important;
+        margin-top: 10px !important;
         flex: none !important;
     }
 
     .todo-sidebar .sidebar-bottom-bar {
-        background: var(--card-bg) !important;
+        background: var(--card-bg, #ffffff) !important;
         border: 1px solid var(--border) !important;
-        border-radius: 24px !important;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
         padding: 0 !important;
-        margin: 0 !important;
+        margin: 0 0 24px 0 !important;
         display: flex !important;
         flex-direction: column !important;
         overflow: hidden !important;
+    }
+
+    body.dark .todo-sidebar .sidebar-bottom-bar {
+        background: var(--card-bg, #202022) !important;
+        border-color: var(--border, rgba(255, 255, 255, 0.08)) !important;
+    }
+
+    /* Неподвижные фоновые обои для телефонов */
+    .mobile-wallpaper-blurred {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        z-index: 90;
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center center;
+        background-image: var(--mobile-wallpaper-url, url('https://i.ibb.co/Ps0ntx5Y/9d792efca2c0.png'));
+        pointer-events: none;
+    }
+
+    .mobile-folder-backdrop {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        z-index: 91;
+        background: rgba(20, 20, 20, 0.15);
+        pointer-events: none;
+    }
+
+    /* Когда открыт сайдбар (мобильное меню), скрываем контент задач под ним, чтобы он не просвечивал */
+    body.mobile-sidebar-open .todo-content,
+    body:has(#todoSidebar.mobile-open) .todo-content,
+    html.mobile-sidebar-open .todo-content {
+        display: none !important;
+    }
+
+    /* Когда открыто мобильное меню и включен мобильный фон: отображаем фиксированные обои */
+    html.custom-wallpaper-mobile-enabled body.mobile-sidebar-open .mobile-wallpaper-blurred,
+    html.custom-wallpaper-mobile-enabled body:has(#todoSidebar.mobile-open) .mobile-wallpaper-blurred,
+    body.custom-wallpaper-mobile-enabled.mobile-sidebar-open .mobile-wallpaper-blurred,
+    body.custom-wallpaper-mobile-enabled:has(#todoSidebar.mobile-open) .mobile-wallpaper-blurred {
+        display: block !important;
+    }
+
+    html.custom-wallpaper-mobile-enabled body.mobile-sidebar-open .mobile-folder-backdrop,
+    html.custom-wallpaper-mobile-enabled body:has(#todoSidebar.mobile-open) .mobile-folder-backdrop,
+    body.custom-wallpaper-mobile-enabled.mobile-sidebar-open .mobile-folder-backdrop,
+    body.custom-wallpaper-mobile-enabled:has(#todoSidebar.mobile-open) .mobile-folder-backdrop {
+        display: block !important;
+    }
+
+    body.custom-wallpaper-mobile-enabled .todo-sidebar.mobile-open,
+    html.custom-wallpaper-mobile-enabled .todo-sidebar.mobile-open,
+    body.custom-wallpaper-mobile-enabled.mobile-sidebar-open .todo-sidebar,
+    html.custom-wallpaper-mobile-enabled.mobile-sidebar-open .todo-sidebar {
+        background-color: transparent !important;
+        background: transparent !important;
+        transform: none !important;
+    }
+
+    /* Прозрачность todo-app на мобильных при открытом меню, чтобы не перекрывать обои */
+    html.custom-wallpaper-mobile-enabled body.mobile-sidebar-open:not(.dark) .todo-app,
+    body.custom-wallpaper-mobile-enabled.mobile-sidebar-open:not(.dark) .todo-app,
+    body.custom-wallpaper-mobile-enabled:has(#todoSidebar.mobile-open):not(.dark) .todo-app {
+        background-color: transparent !important;
+        background: transparent !important;
     }
 
     .todo-sidebar .bottom-bar-item {
@@ -11139,6 +11276,11 @@ body.dark .ios-slider::-webkit-slider-thumb {
 }
 
 @media (min-width: 769px) {
+    .mobile-wallpaper-blurred,
+    .mobile-folder-backdrop {
+        display: none !important;
+    }
+
     body {
         position: relative !important;
         padding-top: 76px !important;

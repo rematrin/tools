@@ -218,3 +218,64 @@ exports.googleCalendarCallback = onRequest({ cors: true }, async (req, res) => {
     }
 });
 
+// Универсальный CORS-прокси для Notion API
+exports.notionProxy = onRequest({ cors: true }, async (req, res) => {
+    // Обработка предварительного запроса CORS (OPTIONS)
+    if (req.method === "OPTIONS") {
+        res.set("Access-Control-Allow-Origin", "*");
+        res.set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
+        res.set("Access-Control-Allow-Headers", "Content-Type, Authorization, Notion-Version");
+        return res.status(204).send("");
+    }
+
+    res.set("Access-Control-Allow-Origin", "*");
+
+    try {
+        const { endpoint, method = "POST", body, token } = req.body || {};
+
+        if (!token) {
+            return res.status(400).json({ error: "Не передан Notion API токен (token)" });
+        }
+        if (!endpoint) {
+            return res.status(400).json({ error: "Не указан endpoint Notion API" });
+        }
+
+        const cleanEndpoint = endpoint.replace(/^\//, "");
+        const notionUrl = `https://api.notion.com/v1/${cleanEndpoint}`;
+
+        const fetchHeaders = {
+            "Authorization": `Bearer ${token.trim()}`,
+            "Notion-Version": "2022-06-28",
+            "Content-Type": "application/json"
+        };
+
+        const fetchOptions = {
+            method: method.toUpperCase(),
+            headers: fetchHeaders
+        };
+
+        const hasBodyMethod = ["POST", "PATCH", "PUT"].includes(fetchOptions.method);
+        if (hasBodyMethod && body !== undefined && body !== null) {
+            fetchOptions.body = typeof body === "string" ? body : JSON.stringify(body);
+        }
+
+        const notionResponse = await fetch(notionUrl, fetchOptions);
+        const text = await notionResponse.text();
+
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            data = { raw: text };
+        }
+
+        return res.status(notionResponse.status).json(data);
+    } catch (err) {
+        console.error("Ошибка в notionProxy:", err);
+        return res.status(500).json({
+            error: "Внутренняя ошибка прокси Notion: " + err.message
+        });
+    }
+});
+
+

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tools-pwa-v32';
+const CACHE_NAME = 'tools-pwa-v37';
 const DYNAMIC_CACHE = 'tools-dynamic-image-cache-v1';
 const ASSETS = [
     './fx_converter.html',
@@ -30,6 +30,8 @@ const ASSETS = [
     './sidebar.html',
     './left-sidebar.js',
     './gcalendar-service.js',
+    './notion-levels.css',
+    './notion-levels.js',
     './completed.mp3',
     './img/exchange.png',
     './img/exchange2.png',

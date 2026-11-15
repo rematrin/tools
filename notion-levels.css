@@ -1,0 +1,964 @@
+/* notion-levels.css - Стили для модального окна «Уровни» (Notion) и настроек */
+
+/* Меню профиля: бейдж/иконка */
+#btnUserMenuLevels svg {
+    color: var(--accent, #3b82f6);
+}
+
+/* =========================================================
+   1. ВКЛАДКА НАСТРОЕК NOTION
+   ========================================================= */
+.notion-settings-card {
+    background: var(--hover-bg, rgba(0, 0, 0, 0.04));
+    border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 20px;
+    transition: border-color 0.2s ease;
+}
+
+body.dark .notion-settings-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.notion-field-group {
+    margin-bottom: 16px;
+}
+
+.notion-field-group:last-child {
+    margin-bottom: 0;
+}
+
+.notion-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text, #111);
+    margin-bottom: 6px;
+}
+
+.notion-hint {
+    font-size: 0.8rem;
+    color: var(--text-secondary, #666);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.notion-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border, #ccc);
+    background: var(--card-bg, #fff);
+    color: var(--text, #111);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: inherit;
+}
+
+.notion-input:focus {
+    border-color: var(--accent, #3b82f6);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.notion-btn-primary {
+    padding: 9px 18px;
+    border-radius: 8px;
+    background: var(--accent, #3b82f6);
+    color: #fff;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+.notion-btn-primary:hover {
+    opacity: 0.9;
+}
+
+.notion-btn-primary:active {
+    transform: scale(0.98);
+}
+
+.notion-status-box {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 0.86rem;
+    display: none;
+    line-height: 1.45;
+}
+
+.notion-status-box.success {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #16a34a;
+}
+
+body.dark .notion-status-box.success {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+}
+
+.notion-status-box.error {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #dc2626;
+}
+
+body.dark .notion-status-box.error {
+    background: rgba(239, 68, 68, 0.16);
+    color: #f87171;
+}
+
+.notion-status-box.loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    color: #2563eb;
+}
+
+body.dark .notion-status-box.loading {
+    color: #60a5fa;
+}
+
+/* =========================================================
+   2. ГЛАВНОЕ МОДАЛЬНОЕ ОКНО «УРОВНИ» (КАЛЕНДАРЬ NOTION)
+   ========================================================= */
+.levels-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 10060;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+    animation: fadeInFade 0.2s ease;
+}
+
+.levels-modal-card {
+    background: var(--card-bg, #ffffff);
+    color: var(--text, #111827);
+    width: 96vw;
+    height: 94vh;
+    max-width: 1560px;
+    border-radius: 16px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    animation: scaleBounce 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+}
+
+body.dark .levels-modal-card {
+    background: #191919;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Хедер модального окна */
+.levels-modal-header {
+    height: 56px;
+    min-height: 56px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: var(--card-bg, #ffffff);
+    user-select: none;
+}
+
+body.dark .levels-modal-header {
+    background: #1f1f1f;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.levels-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.levels-brand-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--accent, #3b82f6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.levels-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.levels-main-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+}
+
+.levels-db-pill {
+    font-size: 0.78rem;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: var(--hover-bg, rgba(0, 0, 0, 0.05));
+    border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Центральная навигация по календарю */
+.levels-header-center {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.levels-nav-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+    border: 1px solid var(--border, #ccc);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.levels-nav-btn:hover {
+    background: var(--hover-bg);
+}
+
+.levels-today-btn {
+    padding: 0 12px;
+    height: 32px;
+    border-radius: 7px;
+    border: 1px solid var(--border, #ccc);
+    background: transparent;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.84rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.levels-today-btn:hover {
+    background: var(--hover-bg);
+}
+
+.levels-current-period {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-left: 12px;
+}
+
+/* Правая часть хедера */
+.levels-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.levels-nav-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.levels-btn-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.levels-btn-close:hover {
+    background: var(--hover-bg);
+    color: var(--text);
+}
+
+/* =========================================================
+   3. КАЛЕНДАРНАЯ СЕТКА (КАК В NOTION)
+   ========================================================= */
+.levels-calendar-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    position: relative;
+    background: var(--card-bg, #ffffff);
+}
+
+body.dark .levels-calendar-body {
+    background: #191919;
+}
+
+/* Дни недели */
+.levels-weekdays-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 1px solid var(--border);
+    background: var(--card-bg);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+body.dark .levels-weekdays-row {
+    background: #191919;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.levels-weekday-cell {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary, #888);
+    text-align: center;
+    border-right: 1px solid var(--border);
+}
+
+.levels-weekday-cell:last-child {
+    border-right: none;
+}
+
+body.dark .levels-weekday-cell {
+    border-right-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Сетка дней месяца */
+.levels-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    flex: 1;
+    min-height: 600px;
+}
+
+/* Режим недели (точно как на скриншоте Notion) */
+.levels-grid.week-mode {
+    min-height: 0;
+    height: 100%;
+    overflow-y: hidden;
+}
+
+.levels-grid.week-mode .levels-day-cell {
+    min-height: 0;
+    height: 100%;
+    border-bottom: none;
+    overflow-y: hidden;
+    padding: 10px 10px 16px 10px;
+}
+
+.levels-grid.week-mode .levels-day-header {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+body.dark .levels-grid.week-mode .levels-day-header {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.levels-day-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.levels-day-weekday-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.levels-grid.week-mode .levels-day-cards {
+    overflow-y: auto;
+    padding-right: 4px;
+    gap: 8px;
+}
+
+.levels-grid.week-mode .levels-day-cards::-webkit-scrollbar {
+    width: 4px;
+}
+
+.levels-grid.week-mode .levels-day-cards::-webkit-scrollbar-thumb {
+    background: rgba(150, 150, 150, 0.3);
+    border-radius: 4px;
+}
+
+.levels-day-cell {
+    min-height: 130px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: var(--card-bg);
+    transition: background 0.15s ease;
+}
+
+.levels-day-cell:nth-child(7n) {
+    border-right: none;
+}
+
+body.dark .levels-day-cell {
+    background: #191919;
+    border-right-color: rgba(255, 255, 255, 0.08);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.levels-day-cell.other-month {
+    opacity: 0.38;
+    background: rgba(0, 0, 0, 0.015);
+}
+
+body.dark .levels-day-cell.other-month {
+    background: rgba(255, 255, 255, 0.01);
+}
+
+.levels-day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.levels-day-num {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Сегодняшний день (красный кружок как в Notion) */
+.levels-day-cell.is-today .levels-day-num {
+    background: #eb5757;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+/* Кнопка добавления на день */
+.levels-day-quick-add {
+    opacity: 0.6;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1;
+    transition: opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+body.dark .levels-day-quick-add {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: #252525;
+}
+
+.levels-day-cell:hover .levels-day-quick-add {
+    opacity: 0.9;
+}
+
+.levels-day-quick-add:hover {
+    opacity: 1 !important;
+    background: var(--accent, #3b82f6) !important;
+    border-color: var(--accent, #3b82f6) !important;
+    color: #ffffff !important;
+    transform: scale(1.08);
+}
+
+/* Карточки задач внутри дня */
+.levels-day-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.levels-card {
+    background: #ffffff;
+    border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+    border-radius: 6px;
+    padding: 7px 9px;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+body.dark .levels-card {
+    background: #252525;
+    border-color: rgba(255, 255, 255, 0.09);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.levels-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border-color: var(--accent, #3b82f6);
+}
+
+body.dark .levels-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.levels-card-title {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+/* Тег / Категория карточки (цвета Notion) */
+.levels-card-tag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 4px;
+    max-width: fit-content;
+    line-height: 1.25;
+}
+
+/* Цветовая палитра Notion */
+.notion-tag-gray {
+    background: #e3e2e0;
+    color: #32302c;
+}
+body.dark .notion-tag-gray {
+    background: #37352f;
+    color: #9b9a97;
+}
+
+.notion-tag-brown {
+    background: #eee0da;
+    color: #442a1e;
+}
+body.dark .notion-tag-brown {
+    background: #492f24;
+    color: #ba856f;
+}
+
+.notion-tag-orange {
+    background: #fadec9;
+    color: #49290e;
+}
+body.dark .notion-tag-orange {
+    background: #593822;
+    color: #c77d48;
+}
+
+.notion-tag-yellow {
+    background: #fbf3db;
+    color: #403212;
+}
+body.dark .notion-tag-yellow {
+    background: #56431f;
+    color: #ca9849;
+}
+
+.notion-tag-green {
+    background: #ddedea;
+    color: #0f3b2e;
+}
+body.dark .notion-tag-green {
+    background: #243d35;
+    color: #529e72;
+}
+
+.notion-tag-blue {
+    background: #ddebf1;
+    color: #0b3447;
+}
+body.dark .notion-tag-blue {
+    background: #143a4e;
+    color: #5e87c9;
+}
+
+.notion-tag-purple {
+    background: #eae4f2;
+    color: #2b1742;
+}
+body.dark .notion-tag-purple {
+    background: #3c2d49;
+    color: #9d68d3;
+}
+
+.notion-tag-pink {
+    background: #f4dfeb;
+    color: #421832;
+}
+body.dark .notion-tag-pink {
+    background: #4e2c3c;
+    color: #cf6297;
+}
+
+.notion-tag-red {
+    background: #fbe4e4;
+    color: #441717;
+}
+body.dark .notion-tag-red {
+    background: #522e2a;
+    color: #e16b61;
+}
+
+.notion-tag-default {
+    background: var(--hover-bg, #eee);
+    color: var(--text-secondary, #555);
+}
+
+/* Лоадер для модалки уровней */
+.levels-loader-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.levels-spinner {
+    width: 34px;
+    height: 34px;
+    border: 3px solid rgba(255, 255, 255, 0.25);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* =========================================================
+   4. МОДАЛКА СОЗДАНИЯ / РЕДАКТИРОВАНИЯ КАРТОЧКИ
+   ========================================================= */
+.levels-card-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 10080;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.levels-card-modal {
+    background: var(--card-bg, #ffffff);
+    color: var(--text);
+    width: 100%;
+    max-width: 480px;
+    border-radius: 14px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--border);
+    overflow: visible;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    animation: scaleBounce 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+}
+
+body.dark .levels-card-modal {
+    background: #222222;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.levels-card-modal-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+}
+
+body.dark .levels-card-modal-header {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.levels-card-modal-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.levels-card-modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: visible;
+}
+
+.levels-card-modal-footer {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+    background: var(--hover-bg, rgba(0, 0, 0, 0.02));
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+}
+
+body.dark .levels-card-modal-footer {
+    border-top-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.levels-btn-delete {
+    background: transparent;
+    color: #ef4444;
+    border: none;
+    font-size: 0.86rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+}
+
+.levels-btn-delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.levels-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.levels-btn-cancel {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 0.86rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.levels-btn-cancel:hover {
+    background: var(--hover-bg);
+}
+
+/* =========================================================
+   5. КАСТОМНЫЙ ВЫПАДАЮЩИЙ СПИСОК ТЕГОВ (NOTION STYLE)
+   ========================================================= */
+.notion-custom-select-container {
+    position: relative;
+    width: 100%;
+}
+
+.notion-custom-select-trigger {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border, #ccc);
+    background: var(--card-bg, #fff);
+    color: var(--text, #111);
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
+    min-height: 40px;
+}
+
+body.dark .notion-custom-select-trigger {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: #1e1e1e;
+}
+
+.notion-custom-select-trigger:focus,
+.notion-custom-select-trigger.active {
+    border-color: var(--accent, #3b82f6);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.notion-select-selected-val {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.notion-select-arrow {
+    opacity: 0.5;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.notion-custom-select-trigger.active .notion-select-arrow {
+    transform: rotate(180deg);
+}
+
+.notion-custom-select-dropdown {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    width: 100%;
+    max-height: 250px;
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
+    border-radius: 10px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+    z-index: 10100;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: fadeInFade 0.15s ease;
+}
+
+body.dark .notion-custom-select-dropdown {
+    background: #252525;
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
+}
+
+.notion-custom-select-options {
+    overflow-y: auto;
+    padding: 6px 0;
+    max-height: 250px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.notion-custom-select-options::-webkit-scrollbar {
+    width: 4px;
+}
+
+.notion-custom-select-options::-webkit-scrollbar-thumb {
+    background: rgba(150, 150, 150, 0.3);
+    border-radius: 4px;
+}
+
+.notion-select-option {
+    padding: 6px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.12s ease;
+}
+
+.notion-select-option:hover,
+.notion-select-option.is-hovered {
+    background: var(--hover-bg, rgba(0, 0, 0, 0.05));
+}
+
+body.dark .notion-select-option:hover,
+body.dark .notion-select-option.is-hovered {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.notion-select-option.selected {
+    background: rgba(59, 130, 246, 0.08);
+}
+
+body.dark .notion-select-option.selected {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 820px) {
+    .levels-modal-card {
+        width: 100vw;
+        height: 100vh;
+        max-width: 100vw;
+        border-radius: 0;
+    }
+    
+    .levels-grid {
+        grid-template-columns: repeat(7, minmax(110px, 1fr));
+        overflow-x: auto;
+    }
+    
+    .levels-weekdays-row {
+        grid-template-columns: repeat(7, minmax(110px, 1fr));
+        overflow-x: auto;
+    }
+}

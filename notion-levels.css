@@ -1,10 +1,5 @@
 /* notion-levels.css - Стили для модального окна «Уровни» (Notion) и настроек */
 
-/* Меню профиля: бейдж/иконка */
-#btnUserMenuLevels svg {
-    color: var(--accent, #3b82f6);
-}
-
 /* =========================================================
    1. ВКЛАДКА НАСТРОЕК NOTION
    ========================================================= */
@@ -285,7 +280,7 @@ body.dark .levels-modal-header {
     font-size: 1.05rem;
     font-weight: 700;
     color: var(--text);
-    margin-left: 12px;
+    margin-left: 0;
 }
 
 /* Правая часть хедера */
@@ -445,6 +440,15 @@ body.dark .levels-grid.week-mode .levels-day-header {
 
 .levels-day-cell:nth-child(7n) {
     border-right: none;
+}
+
+/* Выходные дни (Суббота и Воскресенье) - мягкий оттенок фона как в Notion */
+.levels-day-cell.is-weekend {
+    background: #f7f7f6;
+}
+
+body.dark .levels-day-cell.is-weekend {
+    background: #141414;
 }
 
 body.dark .levels-day-cell {

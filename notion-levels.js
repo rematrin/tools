@@ -402,18 +402,19 @@
             dayDate.setDate(monday.getDate() + i);
             const dateStr = formatDateKey(dayDate);
             const isToday = dateStr === todayStr;
+            const isWeekend = i === 5 || i === 6; // Суббота (5) и Воскресенье (6)
             const weekdayName = WEEKDAYS_SHORT[i];
             const dayNum = dayDate.getDate();
 
-            const cell = createWeekColumnCell(weekdayName, dayNum, dateStr, isToday, cardsByDate[dateStr] || []);
+            const cell = createWeekColumnCell(weekdayName, dayNum, dateStr, isToday, isWeekend, cardsByDate[dateStr] || []);
             gridEl.appendChild(cell);
         }
     }
 
     // Создание колонки для режима "Неделя" (точно как на скриншоте Notion)
-    function createWeekColumnCell(weekdayName, dayNum, dateStr, isToday, cards) {
+    function createWeekColumnCell(weekdayName, dayNum, dateStr, isToday, isWeekend, cards) {
         const cell = document.createElement('div');
-        cell.className = `levels-day-cell${isToday ? ' is-today' : ''}`;
+        cell.className = `levels-day-cell${isToday ? ' is-today' : ''}${isWeekend ? ' is-weekend' : ''}`;
         cell.dataset.date = dateStr;
 
         const header = document.createElement('div');
@@ -671,7 +672,7 @@
     }
 
     // Лоадер в календаре
-    function showLoader(show, text = 'Загрузка из Notion...') {
+    function showLoader(show, text = 'Получаем записи из Notion...') {
         const loader = document.getElementById('levelsLoader');
         const loaderText = document.getElementById('levelsLoaderText');
         if (!loader) return;
@@ -691,7 +692,7 @@
             return;
         }
 
-        showLoader(true, 'Загрузка записей из Notion...');
+        showLoader(true, 'Получаем записи из Notion...');
         try {
             await fetchDatabaseSchema();
             await fetchDatabasePages(force);

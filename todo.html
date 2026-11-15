@@ -2512,18 +2512,7 @@
             <!-- Шапка -->
             <div class="levels-modal-header">
                 <div class="levels-header-left">
-                    <div class="levels-brand-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
-                            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                            <polyline points="2 17 12 22 22 17"></polyline>
-                            <polyline points="2 12 12 17 22 12"></polyline>
-                        </svg>
-                    </div>
-                    <div class="levels-title-wrap">
-                        <h2 class="levels-main-title">Уровни</h2>
-                        <span class="levels-db-pill" id="levelsDbPill">Notion</span>
-                    </div>
-                    <div class="levels-current-period" id="levelsCurrentPeriod" style="margin-left: 8px;">9 — 15 Ноября 2026</div>
+                    <div class="levels-current-period" id="levelsCurrentPeriod">9 — 15 Ноября 2026</div>
                 </div>
 
                 <div class="levels-header-right">
@@ -2549,7 +2538,7 @@
                 <!-- Лоадер -->
                 <div class="levels-loader-overlay" id="levelsLoader" style="display: none;">
                     <div class="levels-spinner"></div>
-                    <span id="levelsLoaderText">Загрузка из Notion...</span>
+                    <span id="levelsLoaderText">Получаем записи из Notion...</span>
                 </div>
 
                 <!-- Сетка дней недели -->
@@ -2567,11 +2556,11 @@
             </div>
             <div class="levels-card-modal-body">
                 <div>
-                    <label class="notion-label" for="levelsCardTitleInput">Что сделано / запланировано</label>
+                    <label class="notion-label" for="levelsCardTitleInput">Что сделано</label>
                     <input type="text" id="levelsCardTitleInput" class="notion-input" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false" autofocus>
                 </div>
                 <div>
-                    <label class="notion-label">Категория (Уровень)</label>
+                    <label class="notion-label">Категория</label>
                     <div class="notion-custom-select-container" id="levelsCardCategoryContainer">
                         <div class="notion-custom-select-trigger" id="levelsCardCategoryTrigger" tabindex="0">
                             <span class="notion-select-selected-val" id="levelsCardCategoryDisplay">

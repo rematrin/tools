@@ -22,10 +22,28 @@ export class FolderManager {
         this.initSortable();
 
         this.overlay.addEventListener('click', (e) => {
-            if (e.target === this.overlay || 
-                e.target.classList.contains('fake-blur-bg') || 
-                e.target.classList.contains('real-backdrop-layer') || 
-                e.target.classList.contains('glass-tint') || 
+            const isEditing = this.gridEl.classList.contains('edit-mode') ||
+                document.body.classList.contains('edit-mode-folder') ||
+                document.body.classList.contains('edit-mode');
+
+            if (isEditing) {
+                // В режиме редактирования клик вне элементов отключает режим редактирования,
+                // но НЕ закрывает саму папку (для закрытия потребуется повторный клик)
+                if (!e.target.closest('.btn-del') && !e.target.closest('.btn-edit') && !e.target.closest('.ios-modal-overlay')) {
+                    this.disableEditMode();
+                    if (typeof window.disableEditMode === 'function') {
+                        window.disableEditMode();
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+            }
+
+            if (e.target === this.overlay ||
+                e.target.classList.contains('fake-blur-bg') ||
+                e.target.classList.contains('real-backdrop-layer') ||
+                e.target.classList.contains('glass-tint') ||
                 !e.target.closest('.folder-content')) {
                 this.close();
             }
@@ -193,8 +211,16 @@ export class FolderManager {
     open(folderData, indexOrRef) {
         this.targetFolderRef = (typeof indexOrRef === 'object' && indexOrRef !== null) ? indexOrRef : null;
         this.activeFolderIndex = typeof indexOrRef === 'number' ? indexOrRef : -1;
+        this.originalFolderName = folderData ? folderData.name : '';
         this.isOpen = true;
         this.currentFolderData = JSON.parse(JSON.stringify(folderData));
+
+        if (this.activeFolderIndex === -1 && this.targetFolderRef && !this.currentFolderData._isVirtualCategory) {
+            const currentList = this.ctx.getApps();
+            if (Array.isArray(currentList)) {
+                this.activeFolderIndex = currentList.findIndex(a => a === this.targetFolderRef || (a && a.type === 'folder' && a.name === folderData.name));
+            }
+        }
 
         if (this.titleConvertBtn) {
             this.titleConvertBtn.style.display = this.currentFolderData._isVirtualCategory ? 'none' : '';
@@ -233,15 +259,28 @@ export class FolderManager {
 
         if (this.activeFolderIndex >= 0 && this.activeFolderIndex < allApps.length) {
             const candidate = allApps[this.activeFolderIndex];
-            if (candidate && candidate.type === 'folder' && candidate.name === this.currentFolderData.name) {
+            if (candidate && candidate.type === 'folder' &&
+                (candidate.name === this.currentFolderData.name || (this.originalFolderName && candidate.name === this.originalFolderName))) {
                 return this.activeFolderIndex;
             }
         }
-        return allApps.findIndex(a => a && a.type === 'folder' && a.name === this.currentFolderData.name);
+        const byName = allApps.findIndex(a => a && a.type === 'folder' &&
+            (a.name === this.currentFolderData.name || (this.originalFolderName && a.name === this.originalFolderName) || (this.targetFolderRef && a.name === this.targetFolderRef.name)));
+        if (byName !== -1) return byName;
+
+        // Если имя папки было изменено, ищем по входящим в неё элементам
+        if (Array.isArray(this.currentFolderData.items) && this.currentFolderData.items.length > 0) {
+            const sampleItem = this.currentFolderData.items[0];
+            return allApps.findIndex(a => a && a.type === 'folder' && Array.isArray(a.items) &&
+                a.items.some(it => it.name === sampleItem.name && (it.url || '') === (sampleItem.url || '')));
+        }
+
+        return -1;
     }
 
     close() {
         if (!this.isOpen) return;
+        this.disableEditMode();
         this.isOpen = false;
         this.activeFolderIndex = -1;
         this.targetFolderRef = null;
@@ -261,7 +300,6 @@ export class FolderManager {
         this.header.style.opacity = '1';
         this.header.style.pointerEvents = 'auto';
 
-        this.disableEditMode();
         if (this.removeZone) this.removeZone.classList.remove('visible', 'hover');
     }
 
@@ -279,12 +317,12 @@ export class FolderManager {
             return window.isAppOnMain ? window.isAppOnMain(app) : !app._explicitNoMain;
         });
 
-        // Добавляем класс, если в папке больше 12 элементов (13 и более)
-        if (items.length > 12) {
-            document.body.classList.add('folder-large');
-        } else {
-            document.body.classList.remove('folder-large');
-        }
+                // Добавляем класс, если в папке больше 12 элементов (13 и более), либо в комбинированном режиме всегда
+                if (items.length > 12 || document.body.classList.contains('combined-mode-enabled')) {
+                    document.body.classList.add('folder-large');
+                } else {
+                    document.body.classList.remove('folder-large');
+                }
 
         items.forEach((app, idx) => {
             const item = document.createElement('div');
@@ -442,6 +480,7 @@ export class FolderManager {
             fallbackClass: "sortable-drag",
             fallbackOnBody: true,
             swapThreshold: 0.5,
+            invertSwap: true,
             direction: 'horizontal',
             onStart: () => {
                 if (this.animationController) this.animationController.disable();
@@ -548,22 +587,34 @@ export class FolderManager {
         document.body.classList.add('edit-mode-folder');
         this.sortable.option("disabled", false);
 
-        const outsideClick = (e) => {
-            // Если клик по модалке подтверждения - не закрываем режим редактирования
-            if (e.target.closest('.ios-modal-overlay')) return;
+        if (this._outsideClickHandler) {
+            document.removeEventListener('click', this._outsideClickHandler, true);
+        }
+
+        this._outsideClickHandler = (e) => {
+            // Если клик по модалке подтверждения или кнопкам действий - не отключаем
+            if (e.target.closest('.ios-modal-overlay') || e.target.closest('.btn-del') || e.target.closest('.btn-edit')) return;
 
             if (!e.target.closest('.app-item')) {
                 this.disableEditMode();
-                document.removeEventListener('click', outsideClick);
+                if (typeof window.disableEditMode === 'function') {
+                    window.disableEditMode();
+                }
+                e.preventDefault();
+                e.stopPropagation();
             }
         };
-        setTimeout(() => document.addEventListener('click', outsideClick), 0);
+        setTimeout(() => document.addEventListener('click', this._outsideClickHandler, true), 50);
     }
 
     disableEditMode() {
         this.gridEl.classList.remove('edit-mode');
         document.body.classList.remove('edit-mode-folder');
         this.sortable.option("disabled", true);
+        if (this._outsideClickHandler) {
+            document.removeEventListener('click', this._outsideClickHandler, true);
+            this._outsideClickHandler = null;
+        }
     }
 
     deleteItem(index) {
@@ -604,9 +655,7 @@ export class FolderManager {
     }
 
     saveOrderFromDOM() {
-        if (this.currentFolderData && this.currentFolderData._isVirtualCategory) {
-            return;
-        }
+        if (!this.currentFolderData) return;
 
         const domItems = this.gridEl.querySelectorAll('.app-item');
         const subRenderedList = [];
@@ -616,21 +665,96 @@ export class FolderManager {
             }
         });
 
-        if (subRenderedList.length > 0 && this.currentFolderData && Array.isArray(this.currentFolderData.items)) {
+        if (subRenderedList.length === 0) return;
+
+        const isMatch = (a, b) => {
+            if (!a || !b) return false;
+            if (a === b) return true;
+            return a.name === b.name && (a.url || '') === (b.url || '');
+        };
+
+        // 1. Для виртуальных категорий (App Library)
+        if (this.currentFolderData._isVirtualCategory) {
+            this.currentFolderData.items = [...subRenderedList];
+            const allApps = this.ctx.getApps();
+
+            const containerMap = new Map();
+            subRenderedList.forEach(appObj => {
+                let foundContainer = null;
+                let foundIndex = -1;
+                let realObj = null;
+
+                // Поиск на верхнем уровне
+                for (let i = 0; i < allApps.length; i++) {
+                    if (isMatch(allApps[i], appObj)) {
+                        foundContainer = allApps;
+                        foundIndex = i;
+                        realObj = allApps[i];
+                        break;
+                    }
+                }
+
+                // Поиск внутри папок
+                if (!foundContainer) {
+                    for (let i = 0; i < allApps.length; i++) {
+                        const item = allApps[i];
+                        if (item && item.type === 'folder' && Array.isArray(item.items)) {
+                            for (let j = 0; j < item.items.length; j++) {
+                                if (isMatch(item.items[j], appObj)) {
+                                    foundContainer = item.items;
+                                    foundIndex = j;
+                                    realObj = item.items[j];
+                                    break;
+                                }
+                            }
+                            if (foundContainer) break;
+                        }
+                    }
+                }
+
+                if (foundContainer && foundIndex !== -1) {
+                    if (!containerMap.has(foundContainer)) {
+                        containerMap.set(foundContainer, []);
+                    }
+                    containerMap.get(foundContainer).push({ index: foundIndex, realObj: realObj });
+                }
+            });
+
+            containerMap.forEach((matchedList, parentArray) => {
+                const originalIndices = matchedList.map(m => m.index);
+                const sortedIndices = [...originalIndices].sort((a, b) => a - b);
+
+                matchedList.forEach((m, idx) => {
+                    if (idx < sortedIndices.length) {
+                        parentArray[sortedIndices[idx]] = m.realObj;
+                    }
+                });
+            });
+
+            this.ctx.saveApps(allApps);
+            if (this.ctx.renderMain) {
+                this.ctx.renderMain(allApps, true);
+            }
+            return;
+        }
+
+        // 2. Для обычных папок
+        if (Array.isArray(this.currentFolderData.items)) {
             const allItems = this.currentFolderData.items;
 
-            // 1. Находим исходные индексы всех отображаемых элементов
+            // Находим исходные индексы всех отображаемых элементов
             const originalIndices = subRenderedList
-                .map(appObj => allItems.indexOf(appObj))
+                .map(appObj => allItems.findIndex(it => isMatch(it, appObj)))
                 .filter(idx => idx !== -1);
 
-            // 2. Сортируем позиции по возрастанию
+            // Сортируем позиции по возрастанию
             const sortedIndices = [...originalIndices].sort((a, b) => a - b);
 
-            // 3. Расставляем объекты в их новые позиции
+            // Расставляем объекты в новые позиции
             subRenderedList.forEach((appObj, i) => {
                 if (i < sortedIndices.length) {
-                    allItems[sortedIndices[i]] = appObj;
+                    const realItem = allItems.find(it => isMatch(it, appObj)) || appObj;
+                    allItems[sortedIndices[i]] = realItem;
                 }
             });
 

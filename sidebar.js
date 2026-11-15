@@ -480,12 +480,27 @@ export function initSidebarManager(context) {
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
-                    <span style="font-size: 14px; flex: 1; padding-right: 10px;">Корпус iPhone (на ПК)</span>
-                    <label class="switch" style="transform: scale(0.85); transform-origin: right;">
-                        <input type="checkbox" id="iphoneMockupToggle" ${localStorage.getItem('iphoneMockupMode') === null || localStorage.getItem('iphoneMockupMode') === 'true' ? 'checked' : ''}>
-                        <span class="slider-toggle"></span>
-                    </label>
+                <div style="margin-top: 10px; margin-bottom: 8px;">
+                    <div style="font-size: 14px; margin-bottom: 7px; color: var(--text-color, #ffffff);">
+                        Отображение на ПК
+                    </div>
+                    <div class="ios-segmented-control" id="desktopViewModeSegmented">
+                        <button type="button" class="segment-btn ${(() => {
+                            let m = localStorage.getItem('desktopViewMode');
+                            if (!m) m = (localStorage.getItem('iphoneMockupMode') === 'false') ? 'tabs' : 'iphone';
+                            return m === 'tabs' ? 'active' : '';
+                        })()}" data-mode="tabs">Вкладки</button>
+                        <button type="button" class="segment-btn ${(() => {
+                            let m = localStorage.getItem('desktopViewMode');
+                            if (!m) m = (localStorage.getItem('iphoneMockupMode') === 'false') ? 'tabs' : 'iphone';
+                            return m === 'iphone' ? 'active' : '';
+                        })()}" data-mode="iphone">Корпус iPhone</button>
+                        <button type="button" class="segment-btn ${(() => {
+                            let m = localStorage.getItem('desktopViewMode');
+                            if (!m) m = (localStorage.getItem('iphoneMockupMode') === 'false') ? 'tabs' : 'iphone';
+                            return m === 'combined' ? 'active' : '';
+                        })()}" data-mode="combined">Комбинированный</button>
+                    </div>
                 </div>
                 <div class="slider-group" style="margin-top: 8px;">
                     <div class="slider-header" style="margin-bottom: 2px; display:flex; justify-content:space-between; font-size: 14px;">
@@ -671,17 +686,51 @@ export function initSidebarManager(context) {
             };
         }
 
-        // Корпус iPhone (макет)
-        const iphoneMockupToggle = document.getElementById('iphoneMockupToggle');
-        if (iphoneMockupToggle) {
-            iphoneMockupToggle.onchange = (e) => {
-                const isEnabled = e.target.checked;
-                localStorage.setItem('iphoneMockupMode', isEnabled.toString());
-                if (auth.currentUser) window.dbApi.saveSettings({ iphoneMockupMode: isEnabled });
-                if (isEnabled) document.body.classList.add('iphone-mockup-enabled');
-                else document.body.classList.remove('iphone-mockup-enabled');
-                if (context.onLayoutChange) context.onLayoutChange();
-            };
+        // Режим отображения на ПК (Вкладки / Корпус iPhone / Комбинированный)
+        const segControl = document.getElementById('desktopViewModeSegmented');
+        if (segControl) {
+            const buttons = segControl.querySelectorAll('.segment-btn');
+            buttons.forEach(btn => {
+                btn.onclick = () => {
+                    const mode = btn.dataset.mode;
+                    buttons.forEach(b => b.classList.toggle('active', b === btn));
+                    localStorage.setItem('desktopViewMode', mode);
+                    localStorage.setItem('iphoneMockupMode', (mode === 'iphone').toString());
+
+                    if (mode === 'iphone') {
+                        document.body.classList.add('iphone-mockup-enabled');
+                        document.body.classList.remove('combined-mode-enabled');
+                    } else if (mode === 'combined') {
+                        document.body.classList.remove('iphone-mockup-enabled');
+                        document.body.classList.add('combined-mode-enabled');
+                    } else {
+                        document.body.classList.remove('iphone-mockup-enabled');
+                        document.body.classList.remove('combined-mode-enabled');
+                    }
+
+                    const searchWidget = document.getElementById('desktopSearchWidget');
+                    if (searchWidget) {
+                        searchWidget.style.transform = '';
+                        searchWidget.style.opacity = '';
+                        searchWidget.style.pointerEvents = '';
+                    }
+                    document.body.classList.remove('on-app-library-page');
+
+                    if (auth.currentUser) {
+                        window.dbApi.saveSettings({
+                            desktopViewMode: mode,
+                            iphoneMockupMode: (mode === 'iphone')
+                        });
+                    }
+
+                    if (mode === 'combined' && typeof window.currentCategoryFilter !== 'undefined') {
+                        window.currentCategoryFilter = null;
+                    }
+
+                    if (window.renderCategoryBar) window.renderCategoryBar();
+                    if (context.onLayoutChange) context.onLayoutChange();
+                };
+            });
         }
 
         // Колонки
@@ -926,11 +975,33 @@ export function initSidebarManager(context) {
                                 else document.body.classList.remove('expanded-folders');
                             }
 
-                            // Импорт режима корпуса iPhone
-                            if (typeof data.iphoneMockupMode !== 'undefined') {
-                                localStorage.setItem('iphoneMockupMode', data.iphoneMockupMode.toString());
-                                if (data.iphoneMockupMode) document.body.classList.add('iphone-mockup-enabled');
-                                else document.body.classList.remove('iphone-mockup-enabled');
+                            // Импорт режима отображения на ПК
+                            if (typeof data.desktopViewMode !== 'undefined') {
+                                const dMode = data.desktopViewMode;
+                                localStorage.setItem('desktopViewMode', dMode);
+                                localStorage.setItem('iphoneMockupMode', (dMode === 'iphone').toString());
+                                if (dMode === 'iphone') {
+                                    document.body.classList.add('iphone-mockup-enabled');
+                                    document.body.classList.remove('combined-mode-enabled');
+                                } else if (dMode === 'combined') {
+                                    document.body.classList.remove('iphone-mockup-enabled');
+                                    document.body.classList.add('combined-mode-enabled');
+                                } else {
+                                    document.body.classList.remove('iphone-mockup-enabled');
+                                    document.body.classList.remove('combined-mode-enabled');
+                                }
+                            } else if (typeof data.iphoneMockupMode !== 'undefined') {
+                                const isMock = data.iphoneMockupMode === true || data.iphoneMockupMode === 'true';
+                                const dMode = isMock ? 'iphone' : 'tabs';
+                                localStorage.setItem('desktopViewMode', dMode);
+                                localStorage.setItem('iphoneMockupMode', isMock.toString());
+                                if (isMock) {
+                                    document.body.classList.add('iphone-mockup-enabled');
+                                    document.body.classList.remove('combined-mode-enabled');
+                                } else {
+                                    document.body.classList.remove('iphone-mockup-enabled');
+                                    document.body.classList.remove('combined-mode-enabled');
+                                }
                             }
 
                             // Импорт настроек поиска

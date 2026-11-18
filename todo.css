@@ -12918,3 +12918,50 @@ body.dark .preview-nav-content-box {
 .preview-mini-line.active {
     background: #4b84d1;
 }
+
+/* ==========================================================================
+   СОСТОЯНИЕ НЕАВТОРИЗОВАННОГО ПОЛЬЗОВАТЕЛЯ
+   - Скрываем меню и проекты слева (весь сайдбар)
+   - Скрываем аватарку профиля в шапке
+   - Растягиваем блок авторизации влево на всю ширину
+   ========================================================================== */
+html.not-authenticated #todoSidebar,
+html.not-authenticated .todo-sidebar,
+body.not-authenticated #todoSidebar,
+body.not-authenticated .todo-sidebar {
+    display: none !important;
+}
+
+html.not-authenticated #profile-container,
+html.not-authenticated .vk-profile,
+body.not-authenticated #profile-container,
+body.not-authenticated .vk-profile {
+    display: none !important;
+}
+
+html.not-authenticated #headerNav,
+body.not-authenticated #headerNav {
+    display: none !important;
+}
+
+html.not-authenticated .todo-content,
+body.not-authenticated .todo-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    flex: 1 !important;
+}
+
+html.not-authenticated .auth-required-state,
+body.not-authenticated .auth-required-state {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+html.not-authenticated .todo-main-layout,
+body.not-authenticated .todo-main-layout {
+    display: none !important;
+}

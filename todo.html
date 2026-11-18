@@ -74,6 +74,40 @@
         html.dark .logo-img.logo-dark {
             display: block !important;
         }
+
+        /* Неавторизованный пользователь: скрываем сайдбар (меню и проекты) и аватарку в шапке, растягиваем блок авторизации влево */
+        html.not-authenticated #todoSidebar,
+        html.not-authenticated .todo-sidebar,
+        body.not-authenticated #todoSidebar,
+        body.not-authenticated .todo-sidebar,
+        html.not-authenticated #profile-container,
+        html.not-authenticated .vk-profile,
+        body.not-authenticated #profile-container,
+        body.not-authenticated .vk-profile,
+        html.not-authenticated #headerNav,
+        body.not-authenticated #headerNav {
+            display: none !important;
+        }
+
+        html.not-authenticated .todo-content,
+        body.not-authenticated .todo-content {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin-left: 0 !important;
+            flex: 1 !important;
+        }
+
+        html.not-authenticated .auth-required-state,
+        body.not-authenticated .auth-required-state {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        html.not-authenticated .todo-main-layout,
+        body.not-authenticated .todo-main-layout {
+            display: none !important;
+        }
     </style>
 
     <!-- Критический загрузчик собственного фона (предотвращает вспышку) -->
@@ -597,7 +631,7 @@
             </div>
 
             <!-- Состояние: Пользователь вошел (Основной экран списка задач) -->
-            <div class="todo-main-layout" id="todoMainLayout" style="display:none; flex-direction:column;">
+            <div class="todo-main-layout" id="todoMainLayout" style="display:flex; flex-direction:column;">
 
                 <div class="list-header">
                     <button class="content-nav-toggle" id="contentSidebarToggle" aria-label="Меню навигации">

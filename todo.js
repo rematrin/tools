@@ -3511,6 +3511,26 @@ window.addEventListener('hashchange', handleRoute);
 // Функция инициализации пользовательской сессии (поддерживает мгновенный оффлайн-запуск)
 let isAuthVerified = false;
 
+function setUnauthorizedUI() {
+    document.documentElement.classList.add('not-authenticated');
+    if (document.body) document.body.classList.add('not-authenticated');
+    if (todoMainLayout) todoMainLayout.style.setProperty('display', 'none', 'important');
+    if (authRequiredState) authRequiredState.style.display = 'block';
+    if (sidebarName) sidebarName.textContent = "Войти";
+    if (sidebarAvatar) sidebarAvatar.style.display = 'none';
+    const headerAvatar = document.getElementById('headerAvatar');
+    if (headerAvatar) headerAvatar.src = "https://i.ibb.co/Z6vRKK9x/0000000.jpg";
+    const userProfileMenu = document.getElementById('userProfileMenu');
+    if (userProfileMenu) userProfileMenu.style.display = 'none';
+}
+
+function setAuthorizedUI() {
+    document.documentElement.classList.remove('not-authenticated');
+    if (document.body) document.body.classList.remove('not-authenticated');
+    if (authRequiredState) authRequiredState.style.setProperty('display', 'none', 'important');
+    if (todoMainLayout) todoMainLayout.style.display = 'flex';
+}
+
 // Функция инициализации пользовательской сессии (поддерживает мгновенный оффлайн-запуск)
 function initUserSession(user, verifiedAuth = false) {
     if (!user || !user.uid) return;
@@ -3541,9 +3561,8 @@ function initUserSession(user, verifiedAuth = false) {
         }
     }
 
-    // Мгновенно показываем интерфейс
-    if (authRequiredState) authRequiredState.style.setProperty('display', 'none', 'important');
-    if (todoMainLayout) todoMainLayout.style.display = 'flex';
+    // Мгновенно показываем авторизованный интерфейс
+    setAuthorizedUI();
 
     // Загружаем локальный слепок для 0мс отображения при любом запуске
     loadCachedSnapshots(currentUid);
@@ -3580,9 +3599,6 @@ try {
         }
     } else if (window.currentUser) {
         initUserSession(window.currentUser, true);
-    } else if (window.currentUser === null) {
-        if (todoMainLayout) todoMainLayout.style.setProperty('display', 'none', 'important');
-        if (authRequiredState) authRequiredState.style.display = 'block';
     }
 } catch (e) {
     console.warn("Ошибка разбора кэшированного пользователя:", e);
@@ -3591,11 +3607,9 @@ try {
 // Защитный таймер: если пользователь не вошел и нет кэша, отображаем карточку входа
 setTimeout(() => {
     if (!currentUid && !isAuthVerified) {
-        if (todoMainLayout) todoMainLayout.style.setProperty('display', 'none', 'important');
-        if (authRequiredState) authRequiredState.style.display = 'block';
-        if (sidebarName) sidebarName.textContent = "Войти";
+        setUnauthorizedUI();
     }
-}, 400);
+}, 500);
 
 // Слушатель состояния авторизации от Firebase Auth
 window.addEventListener('authChanged', (e) => {
@@ -3606,13 +3620,8 @@ window.addEventListener('authChanged', (e) => {
     } else {
         currentUid = null;
         isAuthVerified = false;
-        // Скрываем интерфейс
-        if (todoMainLayout) todoMainLayout.style.setProperty('display', 'none', 'important');
-        if (authRequiredState) authRequiredState.style.display = 'block';
-        if (sidebarName) sidebarName.textContent = "Войти";
-        if (sidebarAvatar) sidebarAvatar.style.display = 'none';
-        const headerAvatar = document.getElementById('headerAvatar');
-        if (headerAvatar) headerAvatar.src = "https://i.ibb.co/Z6vRKK9x/0000000.jpg";
+        // Скрываем интерфейс и показываем экран входа
+        setUnauthorizedUI();
 
         stopTodoForUser();
         stopProjectsForUser();

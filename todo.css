@@ -1219,7 +1219,6 @@ body.dark .task-title-link {
 }
 
 /* Выпадающее меню действий для задач */
-/* Выпадающее меню действий для задач */
 .task-actions-dropdown {
     position: absolute;
     right: 0;
@@ -1235,6 +1234,40 @@ body.dark .task-title-link {
     display: none;
     flex-direction: column;
     gap: 2px;
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+    transform-origin: top right;
+    transition: opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1), transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+
+.task-actions-dropdown.opens-up {
+    transform: scale(0.96) translateY(4px);
+    transform-origin: bottom right;
+}
+
+.task-actions-dropdown.opens-left {
+    transform-origin: top left;
+}
+
+.task-actions-dropdown.opens-up.opens-left {
+    transform-origin: bottom left;
+}
+
+.task-actions-dropdown.menu-visible {
+    opacity: 1 !important;
+    transform: scale(1) translateY(0) !important;
+    pointer-events: auto !important;
+}
+
+.task-actions-dropdown.menu-closing {
+    opacity: 0 !important;
+    transform: scale(0.96) translateY(-4px) !important;
+    pointer-events: none !important;
+}
+
+.task-actions-dropdown.opens-up.menu-closing {
+    transform: scale(0.96) translateY(4px) !important;
 }
 
 @media (min-width: 769px) {
@@ -4850,7 +4883,11 @@ body.dark .gcal-color-opt-btn:hover {
     opacity: 1 !important;
 }
 
-.task-actions-dropdown,
+.task-actions-dropdown {
+    background-color: var(--card-bg) !important;
+}
+
+.task-actions-dropdown.menu-visible,
 .custom-context-menu {
     opacity: 1 !important;
     background-color: var(--card-bg) !important;

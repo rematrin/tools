@@ -543,7 +543,15 @@ document.addEventListener('click', (e) => {
             const taskActions = dropdown.closest('.task-actions');
             if (taskActions && !taskActions.contains(e.target)) {
                 dropdown.style.display = 'none';
-                taskActions.closest('.task-item')?.classList.remove('menu-open');
+                dropdown.style.position = '';
+                dropdown.style.left = '';
+                dropdown.style.right = '';
+                dropdown.style.top = '';
+                dropdown.style.bottom = '';
+                dropdown.style.maxHeight = '';
+                dropdown.style.overflowY = '';
+                dropdown.classList.remove('opens-up', 'opens-left');
+                taskActions.closest('.task-item, .modal-subtask-item')?.classList.remove('menu-open');
             }
         }
     });
@@ -554,6 +562,11 @@ document.addEventListener('click', (e) => {
             const wrapper = dropdown.closest('.section-actions-wrapper');
             if (wrapper && !wrapper.contains(e.target)) {
                 dropdown.style.display = 'none';
+                dropdown.style.position = '';
+                dropdown.style.left = '';
+                dropdown.style.right = '';
+                dropdown.style.top = '';
+                dropdown.style.bottom = '';
                 dropdown.closest('.project-section-header')?.classList.remove('menu-open');
             }
         }
@@ -599,6 +612,66 @@ document.addEventListener('click', (e) => {
         userProfileMenuEl.style.display = 'none';
     }
 });
+
+// Закрытие выпадающих меню при скролле страницы или изменении размера окна
+window.addEventListener('scroll', (e) => {
+    if (e.target && e.target.closest && e.target.closest('.task-actions-dropdown, .section-actions-dropdown')) {
+        return;
+    }
+    document.querySelectorAll('.task-actions-dropdown').forEach(dropdown => {
+        if (dropdown.style.display !== 'none') {
+            dropdown.style.display = 'none';
+            dropdown.style.position = '';
+            dropdown.style.left = '';
+            dropdown.style.right = '';
+            dropdown.style.top = '';
+            dropdown.style.bottom = '';
+            dropdown.style.maxHeight = '';
+            dropdown.style.overflowY = '';
+            dropdown.classList.remove('opens-up', 'opens-left');
+            dropdown.closest('.task-item, .modal-subtask-item')?.classList.remove('menu-open');
+        }
+    });
+    document.querySelectorAll('.section-actions-dropdown').forEach(dropdown => {
+        if (dropdown.style.display !== 'none') {
+            dropdown.style.display = 'none';
+            dropdown.style.position = '';
+            dropdown.style.left = '';
+            dropdown.style.right = '';
+            dropdown.style.top = '';
+            dropdown.style.bottom = '';
+            dropdown.closest('.project-section-header')?.classList.remove('menu-open');
+        }
+    });
+}, { passive: true, capture: true });
+
+window.addEventListener('resize', () => {
+    document.querySelectorAll('.task-actions-dropdown').forEach(dropdown => {
+        if (dropdown.style.display !== 'none') {
+            dropdown.style.display = 'none';
+            dropdown.style.position = '';
+            dropdown.style.left = '';
+            dropdown.style.right = '';
+            dropdown.style.top = '';
+            dropdown.style.bottom = '';
+            dropdown.style.maxHeight = '';
+            dropdown.style.overflowY = '';
+            dropdown.classList.remove('opens-up', 'opens-left');
+            dropdown.closest('.task-item, .modal-subtask-item')?.classList.remove('menu-open');
+        }
+    });
+    document.querySelectorAll('.section-actions-dropdown').forEach(dropdown => {
+        if (dropdown.style.display !== 'none') {
+            dropdown.style.display = 'none';
+            dropdown.style.position = '';
+            dropdown.style.left = '';
+            dropdown.style.right = '';
+            dropdown.style.top = '';
+            dropdown.style.bottom = '';
+            dropdown.closest('.project-section-header')?.classList.remove('menu-open');
+        }
+    });
+}, { passive: true });
 
 // Умное позиционирование подменю проектов (чтобы не вылезало за границы экрана)
 document.addEventListener('mouseenter', (e) => {
@@ -6930,9 +7003,10 @@ function doRenderTasks() {
                                 const menuWidth = dropdown.offsetWidth || 170;
                                 const menuHeight = dropdown.offsetHeight || 120;
 
+                                dropdown.style.position = 'fixed';
+                                dropdown.style.zIndex = '10000';
+
                                 if (clickEvent) {
-                                    dropdown.style.position = 'fixed';
-                                    dropdown.style.zIndex = '10000';
                                     let x = clickEvent.clientX;
                                     let y = clickEvent.clientY;
 
@@ -6947,6 +7021,9 @@ function doRenderTasks() {
                                         if (y < 10) y = Math.max(10, window.innerHeight - menuHeight - 10);
                                     } else {
                                         y = clickEvent.clientY;
+                                        if (y + menuHeight > window.innerHeight - 10) {
+                                            y = Math.max(10, window.innerHeight - menuHeight - 10);
+                                        }
                                     }
 
                                     dropdown.style.left = `${x}px`;
@@ -6954,18 +7031,31 @@ function doRenderTasks() {
                                     dropdown.style.right = 'auto';
                                     dropdown.style.bottom = 'auto';
                                 } else {
-                                    dropdown.style.position = 'absolute';
-                                    dropdown.style.left = 'auto';
-                                    dropdown.style.right = '0';
                                     const rect = actionsBtn.getBoundingClientRect();
                                     const spaceBelow = window.innerHeight - rect.bottom;
-                                    if (spaceBelow < menuHeight + 10 && rect.top > spaceBelow) {
-                                        dropdown.style.top = 'auto';
-                                        dropdown.style.bottom = 'calc(100% + 4px)';
-                                    } else {
-                                        dropdown.style.top = 'calc(100% + 4px)';
-                                        dropdown.style.bottom = 'auto';
+                                    const spaceAbove = rect.top;
+
+                                    let x = rect.right - menuWidth;
+                                    if (x + menuWidth > window.innerWidth - 10) {
+                                        x = Math.max(10, window.innerWidth - menuWidth - 10);
                                     }
+                                    if (x < 10) x = 10;
+
+                                    let y;
+                                    if (spaceBelow >= menuHeight + 10 || spaceBelow >= spaceAbove) {
+                                        y = rect.bottom + 4;
+                                        if (y + menuHeight > window.innerHeight - 10) {
+                                            y = Math.max(10, window.innerHeight - menuHeight - 10);
+                                        }
+                                    } else {
+                                        y = rect.top - menuHeight - 4;
+                                        if (y < 10) y = 10;
+                                    }
+
+                                    dropdown.style.left = `${x}px`;
+                                    dropdown.style.top = `${y}px`;
+                                    dropdown.style.right = 'auto';
+                                    dropdown.style.bottom = 'auto';
                                 }
                             } else {
                                 dropdown.style.display = 'none';
@@ -8014,27 +8104,93 @@ function createTaskRowElement(task, isStandalone = false) {
         toggleTaskCompleted(task.id, task.completed);
     });
 
-    // Клик на три точки
+    let openHoverTimer = null;
+    let closeHoverTimer = null;
+
+    const closeActionsDropdownInstant = () => {
+        clearTimeout(openHoverTimer);
+        clearTimeout(closeHoverTimer);
+        actionsDropdown.style.display = 'none';
+        actionsDropdown.classList.remove('menu-visible', 'menu-closing', 'opens-up', 'opens-left');
+        item.classList.remove('menu-open');
+        actionsDropdown.style.position = '';
+        actionsDropdown.style.left = '';
+        actionsDropdown.style.right = '';
+        actionsDropdown.style.top = '';
+        actionsDropdown.style.bottom = '';
+        actionsDropdown.style.overflow = '';
+        actionsDropdown.style.maxHeight = '';
+        actionsDropdown.style.overflowY = '';
+    };
+
+    const closeActionsDropdownSmooth = () => {
+        clearTimeout(openHoverTimer);
+        clearTimeout(closeHoverTimer);
+        if (actionsDropdown.style.display === 'none' || actionsDropdown.classList.contains('menu-closing')) {
+            return;
+        }
+        actionsDropdown.classList.remove('menu-visible');
+        actionsDropdown.classList.add('menu-closing');
+        setTimeout(() => {
+            if (actionsDropdown.classList.contains('menu-closing')) {
+                actionsDropdown.style.display = 'none';
+                actionsDropdown.classList.remove('menu-closing', 'opens-up', 'opens-left');
+                item.classList.remove('menu-open');
+                actionsDropdown.style.position = '';
+                actionsDropdown.style.left = '';
+                actionsDropdown.style.right = '';
+                actionsDropdown.style.top = '';
+                actionsDropdown.style.bottom = '';
+                actionsDropdown.style.overflow = '';
+                actionsDropdown.style.maxHeight = '';
+                actionsDropdown.style.overflowY = '';
+            }
+        }, 160);
+    };
+
+    const scheduleOpen = (delay = 300) => {
+        clearTimeout(closeHoverTimer);
+        clearTimeout(openHoverTimer);
+        openHoverTimer = setTimeout(() => {
+            openActionsDropdown();
+        }, delay);
+    };
+
+    const scheduleClose = (delay = 180) => {
+        clearTimeout(openHoverTimer);
+        clearTimeout(closeHoverTimer);
+        closeHoverTimer = setTimeout(() => {
+            closeActionsDropdownSmooth();
+        }, delay);
+    };
+
+    // Клик и ховер на три точки
     const openActionsDropdown = (clickEvent = null) => {
+        clearTimeout(openHoverTimer);
+        clearTimeout(closeHoverTimer);
+
         // Закрываем другие открытые меню действий перед тем, как открыть это
         document.querySelectorAll('.task-item').forEach(taskItem => {
             if (taskItem !== item) {
                 taskItem.classList.remove('menu-open');
                 const dropdown = taskItem.querySelector('.task-actions-dropdown');
-                if (dropdown) {
+                if (dropdown && dropdown.style.display !== 'none') {
                     dropdown.style.display = 'none';
-                    dropdown.classList.remove('opens-up', 'opens-left');
+                    dropdown.classList.remove('menu-visible', 'menu-closing', 'opens-up', 'opens-left');
                     dropdown.style.position = '';
                     dropdown.style.left = '';
                     dropdown.style.right = '';
                     dropdown.style.top = '';
                     dropdown.style.bottom = '';
+                    dropdown.style.maxHeight = '';
+                    dropdown.style.overflowY = '';
                 }
             }
         });
 
-        const isHidden = actionsDropdown.style.display === 'none';
-        if (isHidden) {
+        const isClosedOrClosing = actionsDropdown.style.display === 'none' || actionsDropdown.classList.contains('menu-closing');
+        if (isClosedOrClosing || clickEvent) {
+            actionsDropdown.classList.remove('menu-closing', 'menu-visible');
             actionsDropdown.style.display = 'flex';
             actionsDropdown.style.overflow = 'visible';
             actionsDropdown.scrollLeft = 0;
@@ -8046,17 +8202,21 @@ function createTaskRowElement(task, isStandalone = false) {
             const menuWidth = actionsDropdown.offsetWidth || 230;
             const menuHeight = actionsDropdown.offsetHeight || (task.completed ? 100 : 440);
 
+            actionsDropdown.style.position = 'fixed';
+            actionsDropdown.style.zIndex = '10000';
+
             // Если передан клик ПКМ, позиционируем меню на месте курсора
             if (clickEvent) {
-                actionsDropdown.style.position = 'fixed';
-                actionsDropdown.style.zIndex = '10000';
-
                 let x = clickEvent.clientX;
                 const spaceRight = window.innerWidth - clickEvent.clientX;
                 if (spaceRight < menuWidth + 10) {
                     x = clickEvent.clientX - menuWidth;
                     actionsDropdown.classList.add('opens-left');
                     if (x < 10) x = Math.max(10, window.innerWidth - menuWidth - 10);
+                } else if (x + menuWidth + 180 > window.innerWidth) {
+                    actionsDropdown.classList.add('opens-left');
+                } else {
+                    actionsDropdown.classList.remove('opens-left');
                 }
 
                 let y = clickEvent.clientY;
@@ -8070,7 +8230,20 @@ function createTaskRowElement(task, isStandalone = false) {
                         y = Math.max(10, window.innerHeight - menuHeight - 10);
                     }
                 } else {
+                    actionsDropdown.classList.remove('opens-up');
                     y = clickEvent.clientY;
+                    if (y + menuHeight > window.innerHeight - 10) {
+                        y = Math.max(10, window.innerHeight - menuHeight - 10);
+                    }
+                }
+
+                if (menuHeight > window.innerHeight - 20) {
+                    actionsDropdown.style.maxHeight = `${window.innerHeight - 20}px`;
+                    actionsDropdown.style.overflowY = 'auto';
+                    y = 10;
+                } else {
+                    actionsDropdown.style.maxHeight = '';
+                    actionsDropdown.style.overflowY = 'visible';
                 }
 
                 actionsDropdown.style.left = `${x}px`;
@@ -8078,39 +8251,105 @@ function createTaskRowElement(task, isStandalone = false) {
                 actionsDropdown.style.right = 'auto';
                 actionsDropdown.style.bottom = 'auto';
             } else {
-                // Позиционирование относительно кнопки трех точек
-                actionsDropdown.style.position = 'absolute';
-                actionsDropdown.style.left = 'auto';
-                actionsDropdown.style.right = '0';
-
+                // Позиционирование относительно кнопки трех точек через position: fixed,
+                // чтобы не растягивать документ и не вызывать полосу прокрутки страницы
                 const rect = btnMore.getBoundingClientRect();
                 const spaceBelow = window.innerHeight - rect.bottom;
-                // Если под кнопкой недостаточно места, открываем меню вверх
-                if (spaceBelow < menuHeight + 10 && rect.top > spaceBelow) {
-                    actionsDropdown.classList.add('opens-up');
-                    actionsDropdown.style.top = 'auto';
-                    actionsDropdown.style.bottom = 'calc(100% + 4px)';
-                } else {
-                    actionsDropdown.style.top = 'calc(100% + 4px)';
-                    actionsDropdown.style.bottom = 'auto';
+                const spaceAbove = rect.top;
+
+                let x = rect.right - menuWidth;
+                if (x + menuWidth > window.innerWidth - 10) {
+                    x = Math.max(10, window.innerWidth - menuWidth - 10);
                 }
+                if (x < 10) {
+                    x = 10;
+                }
+
+                // Проверяем подменю: если справа нет места, открываем его слева
+                if (x + menuWidth + 180 > window.innerWidth) {
+                    actionsDropdown.classList.add('opens-left');
+                } else {
+                    actionsDropdown.classList.remove('opens-left');
+                }
+
+                let y;
+                if (spaceBelow >= menuHeight + 10 || spaceBelow >= spaceAbove) {
+                    actionsDropdown.classList.remove('opens-up');
+                    y = rect.bottom + 4;
+                    // Если меню снизу немного не влезает в экран, сдвигаем вверх
+                    if (y + menuHeight > window.innerHeight - 10) {
+                        y = Math.max(10, window.innerHeight - menuHeight - 10);
+                    }
+                } else {
+                    actionsDropdown.classList.add('opens-up');
+                    y = rect.top - menuHeight - 4;
+                    if (y < 10) {
+                        y = 10;
+                    }
+                }
+
+                // Если высота экрана меньше высоты меню, добавляем аккуратный внутренний скролл
+                if (menuHeight > window.innerHeight - 20) {
+                    actionsDropdown.style.maxHeight = `${window.innerHeight - 20}px`;
+                    actionsDropdown.style.overflowY = 'auto';
+                    y = 10;
+                } else {
+                    actionsDropdown.style.maxHeight = '';
+                    actionsDropdown.style.overflowY = 'visible';
+                }
+
+                actionsDropdown.style.left = `${x}px`;
+                actionsDropdown.style.top = `${y}px`;
+                actionsDropdown.style.right = 'auto';
+                actionsDropdown.style.bottom = 'auto';
             }
+
+            // Запускаем плавную CSS-анимацию
+            void actionsDropdown.offsetHeight;
+            actionsDropdown.classList.add('menu-visible');
         } else {
-            actionsDropdown.style.display = 'none';
-            item.classList.remove('menu-open');
-            actionsDropdown.classList.remove('opens-up', 'opens-left');
-            actionsDropdown.style.position = '';
-            actionsDropdown.style.left = '';
-            actionsDropdown.style.right = '';
-            actionsDropdown.style.top = '';
-            actionsDropdown.style.bottom = '';
-            actionsDropdown.style.overflow = '';
+            closeActionsDropdownSmooth();
         }
     };
 
+    btnMore.addEventListener('mouseenter', () => {
+        if (window.matchMedia('(hover: hover)').matches) {
+            scheduleOpen(300);
+        }
+    });
+
+    btnMore.addEventListener('mouseleave', () => {
+        if (window.matchMedia('(hover: hover)').matches) {
+            scheduleClose(180);
+        }
+    });
+
+    actionsDropdown.addEventListener('mouseenter', () => {
+        if (window.matchMedia('(hover: hover)').matches) {
+            clearTimeout(closeHoverTimer);
+            clearTimeout(openHoverTimer);
+            if (actionsDropdown.style.display !== 'none') {
+                actionsDropdown.classList.remove('menu-closing');
+                actionsDropdown.classList.add('menu-visible');
+            }
+        }
+    });
+
+    actionsDropdown.addEventListener('mouseleave', () => {
+        if (window.matchMedia('(hover: hover)').matches) {
+            scheduleClose(180);
+        }
+    });
+
     btnMore.addEventListener('click', (e) => {
         e.stopPropagation();
-        openActionsDropdown();
+        clearTimeout(openHoverTimer);
+        clearTimeout(closeHoverTimer);
+        if (actionsDropdown.style.display === 'none' || actionsDropdown.classList.contains('menu-closing')) {
+            openActionsDropdown();
+        } else {
+            closeActionsDropdownSmooth();
+        }
     });
 
     // Открытие меню по правому клику мыши (contextmenu) на десктопе
@@ -8139,8 +8378,7 @@ function createTaskRowElement(task, isStandalone = false) {
         if (btnDueToday) {
             btnDueToday.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                actionsDropdown.style.display = 'none';
-                item.classList.remove('menu-open');
+                closeActionsDropdownInstant();
                 try {
                     await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                         dueDate: todayStr
@@ -8154,8 +8392,7 @@ function createTaskRowElement(task, isStandalone = false) {
         if (btnDueTomorrow) {
             btnDueTomorrow.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                actionsDropdown.style.display = 'none';
-                item.classList.remove('menu-open');
+                closeActionsDropdownInstant();
                 try {
                     await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                         dueDate: tomorrowStr
@@ -8169,8 +8406,7 @@ function createTaskRowElement(task, isStandalone = false) {
         if (btnDueSelect) {
             btnDueSelect.addEventListener('click', (e) => {
                 e.stopPropagation();
-                actionsDropdown.style.display = 'none';
-                item.classList.remove('menu-open');
+                closeActionsDropdownInstant();
 
                 calendarTargetTask = {
                     id: task.id,
@@ -8188,8 +8424,7 @@ function createTaskRowElement(task, isStandalone = false) {
         if (btnDueNone) {
             btnDueNone.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                actionsDropdown.style.display = 'none';
-                item.classList.remove('menu-open');
+                closeActionsDropdownInstant();
                 try {
                     await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                         dueDate: null,
@@ -8209,8 +8444,7 @@ function createTaskRowElement(task, isStandalone = false) {
             prioBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const priorityVal = parseInt(prioBtn.getAttribute('data-priority'), 10);
-                actionsDropdown.style.display = 'none';
-                item.classList.remove('menu-open');
+                closeActionsDropdownInstant();
                 try {
                     await updateDoc(doc(db, 'users', currentUid, 'tasks', task.id), {
                         priority: priorityVal
@@ -8227,8 +8461,7 @@ function createTaskRowElement(task, isStandalone = false) {
     if (btnDuplicate) {
         btnDuplicate.addEventListener('click', async (e) => {
             e.stopPropagation();
-            actionsDropdown.style.display = 'none';
-            item.classList.remove('menu-open');
+            closeActionsDropdownInstant();
             await duplicateTask(task);
         });
     }
@@ -8239,8 +8472,7 @@ function createTaskRowElement(task, isStandalone = false) {
         if (btnAddSubtask) {
             btnAddSubtask.addEventListener('click', (e) => {
                 e.stopPropagation();
-                actionsDropdown.style.display = 'none';
-                item.classList.remove('menu-open');
+                closeActionsDropdownInstant();
                 showInlineSubtaskInput(item, task.id, task.projectId);
             });
         }
@@ -8269,8 +8501,7 @@ function createTaskRowElement(task, isStandalone = false) {
     if (btnEdit) {
         btnEdit.addEventListener('click', (e) => {
             e.stopPropagation();
-            actionsDropdown.style.display = 'none';
-            item.classList.remove('menu-open');
+            closeActionsDropdownInstant();
             enableInlineEdit(item, task, titleSpan);
         });
     }
@@ -8279,8 +8510,7 @@ function createTaskRowElement(task, isStandalone = false) {
     if (btnTogglePomodoro) {
         btnTogglePomodoro.addEventListener('click', async (e) => {
             e.stopPropagation();
-            actionsDropdown.style.display = 'none';
-            item.classList.remove('menu-open');
+            closeActionsDropdownInstant();
 
             const newInPomo = !task.inPomodoro;
             task.inPomodoro = newInPomo;
@@ -8317,8 +8547,7 @@ function createTaskRowElement(task, isStandalone = false) {
     // Клик на удаление из меню
     btnDelete.addEventListener('click', (e) => {
         e.stopPropagation();
-        actionsDropdown.style.display = 'none';
-        item.classList.remove('menu-open');
+        closeActionsDropdownInstant();
         showCustomConfirm(
             "Переместить в корзину?",
             `Задача <strong>${escapeHtml(task.title)}</strong> будет перемещена в корзину.`,
@@ -8335,8 +8564,7 @@ function createTaskRowElement(task, isStandalone = false) {
             e.stopPropagation();
             const targetProjId = projBtn.getAttribute('data-project-id') || null;
 
-            actionsDropdown.style.display = 'none';
-            item.classList.remove('menu-open');
+            closeActionsDropdownInstant();
 
             if (targetProjId !== task.projectId) {
                 // Локально обновляем проект у задачи в allTasks, чтобы рендер произошел мгновенно
@@ -14004,22 +14232,92 @@ function createSubtaskElement(subtask) {
     const btnMore = itemEl.querySelector('.btn-more');
     const actionsDropdown = itemEl.querySelector('.task-actions-dropdown');
 
+    let openSubtaskHoverTimer = null;
+    let closeSubtaskHoverTimer = null;
+
+    const closeSubtaskActionsDropdownInstant = () => {
+        clearTimeout(openSubtaskHoverTimer);
+        clearTimeout(closeSubtaskHoverTimer);
+        actionsDropdown.style.display = 'none';
+        actionsDropdown.classList.remove('menu-visible', 'menu-closing', 'opens-up', 'opens-left');
+        itemEl.classList.remove('menu-open');
+        actionsDropdown.style.position = '';
+        actionsDropdown.style.left = '';
+        actionsDropdown.style.right = '';
+        actionsDropdown.style.top = '';
+        actionsDropdown.style.bottom = '';
+        actionsDropdown.style.overflow = '';
+        actionsDropdown.style.maxHeight = '';
+        actionsDropdown.style.overflowY = '';
+        updateModalOverflow();
+    };
+
+    const closeSubtaskActionsDropdownSmooth = () => {
+        clearTimeout(openSubtaskHoverTimer);
+        clearTimeout(closeSubtaskHoverTimer);
+        if (actionsDropdown.style.display === 'none' || actionsDropdown.classList.contains('menu-closing')) {
+            return;
+        }
+        actionsDropdown.classList.remove('menu-visible');
+        actionsDropdown.classList.add('menu-closing');
+        setTimeout(() => {
+            if (actionsDropdown.classList.contains('menu-closing')) {
+                actionsDropdown.style.display = 'none';
+                actionsDropdown.classList.remove('menu-closing', 'opens-up', 'opens-left');
+                itemEl.classList.remove('menu-open');
+                actionsDropdown.style.position = '';
+                actionsDropdown.style.left = '';
+                actionsDropdown.style.right = '';
+                actionsDropdown.style.top = '';
+                actionsDropdown.style.bottom = '';
+                actionsDropdown.style.overflow = '';
+                actionsDropdown.style.maxHeight = '';
+                actionsDropdown.style.overflowY = '';
+                updateModalOverflow();
+            }
+        }, 160);
+    };
+
+    const scheduleSubtaskOpen = (delay = 300) => {
+        clearTimeout(closeSubtaskHoverTimer);
+        clearTimeout(openSubtaskHoverTimer);
+        openSubtaskHoverTimer = setTimeout(() => {
+            openSubtaskActionsDropdown();
+        }, delay);
+    };
+
+    const scheduleSubtaskClose = (delay = 180) => {
+        clearTimeout(openSubtaskHoverTimer);
+        clearTimeout(closeSubtaskHoverTimer);
+        closeSubtaskHoverTimer = setTimeout(() => {
+            closeSubtaskActionsDropdownSmooth();
+        }, delay);
+    };
+
     const openSubtaskActionsDropdown = (clickEvent = null) => {
+        clearTimeout(openSubtaskHoverTimer);
+        clearTimeout(closeSubtaskHoverTimer);
+
         // Закрываем все остальные меню
         document.querySelectorAll('.due-date-dropdown, .priority-dropdown, .project-dropdown, .task-actions-dropdown').forEach(dd => {
-            if (dd !== actionsDropdown) dd.style.display = 'none';
+            if (dd !== actionsDropdown) {
+                dd.style.display = 'none';
+                dd.classList.remove('menu-visible', 'menu-closing', 'opens-up', 'opens-left');
+            }
         });
         document.querySelectorAll('.modal-subtask-item').forEach(subItem => {
             if (subItem !== itemEl) subItem.classList.remove('menu-open');
         });
 
-        const isHidden = actionsDropdown.style.display === 'none';
-        if (isHidden || clickEvent) {
+        const isClosedOrClosing = actionsDropdown.style.display === 'none' || actionsDropdown.classList.contains('menu-closing');
+        if (isClosedOrClosing || clickEvent) {
+            actionsDropdown.classList.remove('menu-closing', 'menu-visible');
             actionsDropdown.style.display = 'flex';
             actionsDropdown.style.overflow = 'visible';
             actionsDropdown.scrollLeft = 0;
             actionsDropdown.scrollTop = 0;
             itemEl.classList.add('menu-open');
+            actionsDropdown.classList.remove('opens-up', 'opens-left');
 
             if (clickEvent) {
                 actionsDropdown.style.position = 'fixed';
@@ -14033,6 +14331,8 @@ function createSubtaskElement(subtask) {
                     x = clickEvent.clientX - menuWidth;
                     actionsDropdown.classList.add('opens-left');
                     if (x < 10) x = Math.max(10, window.innerWidth - menuWidth - 10);
+                } else {
+                    actionsDropdown.classList.remove('opens-left');
                 }
 
                 let y = clickEvent.clientY;
@@ -14042,7 +14342,20 @@ function createSubtaskElement(subtask) {
                     y = clickEvent.clientY - menuHeight;
                     if (y < 10) y = Math.max(10, window.innerHeight - menuHeight - 10);
                 } else {
+                    actionsDropdown.classList.remove('opens-up');
                     y = clickEvent.clientY;
+                    if (y + menuHeight > window.innerHeight - 10) {
+                        y = Math.max(10, window.innerHeight - menuHeight - 10);
+                    }
+                }
+
+                if (menuHeight > window.innerHeight - 20) {
+                    actionsDropdown.style.maxHeight = `${window.innerHeight - 20}px`;
+                    actionsDropdown.style.overflowY = 'auto';
+                    y = 10;
+                } else {
+                    actionsDropdown.style.maxHeight = '';
+                    actionsDropdown.style.overflowY = 'visible';
                 }
 
                 actionsDropdown.style.left = `${x}px`;
@@ -14050,40 +14363,96 @@ function createSubtaskElement(subtask) {
                 actionsDropdown.style.right = 'auto';
                 actionsDropdown.style.bottom = 'auto';
             } else {
-                actionsDropdown.style.position = 'absolute';
-                actionsDropdown.style.left = 'auto';
-                actionsDropdown.style.right = '0';
+                actionsDropdown.style.position = 'fixed';
+                actionsDropdown.style.zIndex = '10000';
 
                 const rect = btnMore.getBoundingClientRect();
                 const spaceBelow = window.innerHeight - rect.bottom;
+                const spaceAbove = rect.top;
+                const menuWidth = actionsDropdown.offsetWidth || 230;
                 const dropdownHeight = actionsDropdown.offsetHeight || (subtask.completed ? 80 : 260);
-                if (spaceBelow < dropdownHeight + 10 && rect.top > spaceBelow) {
-                    actionsDropdown.classList.add('opens-up');
-                    actionsDropdown.style.top = 'auto';
-                    actionsDropdown.style.bottom = 'calc(100% + 4px)';
-                } else {
-                    actionsDropdown.style.top = 'calc(100% + 4px)';
-                    actionsDropdown.style.bottom = 'auto';
+
+                let x = rect.right - menuWidth;
+                if (x + menuWidth > window.innerWidth - 10) {
+                    x = Math.max(10, window.innerWidth - menuWidth - 10);
                 }
+                if (x < 10) x = 10;
+
+                let y;
+                if (spaceBelow >= dropdownHeight + 10 || spaceBelow >= spaceAbove) {
+                    actionsDropdown.classList.remove('opens-up');
+                    y = rect.bottom + 4;
+                    if (y + dropdownHeight > window.innerHeight - 10) {
+                        y = Math.max(10, window.innerHeight - dropdownHeight - 10);
+                    }
+                } else {
+                    actionsDropdown.classList.add('opens-up');
+                    y = rect.top - dropdownHeight - 4;
+                    if (y < 10) y = 10;
+                }
+
+                if (dropdownHeight > window.innerHeight - 20) {
+                    actionsDropdown.style.maxHeight = `${window.innerHeight - 20}px`;
+                    actionsDropdown.style.overflowY = 'auto';
+                    y = 10;
+                } else {
+                    actionsDropdown.style.maxHeight = '';
+                    actionsDropdown.style.overflowY = 'visible';
+                }
+
+                actionsDropdown.style.left = `${x}px`;
+                actionsDropdown.style.top = `${y}px`;
+                actionsDropdown.style.right = 'auto';
+                actionsDropdown.style.bottom = 'auto';
             }
+
+            void actionsDropdown.offsetHeight;
+            actionsDropdown.classList.add('menu-visible');
         } else {
-            actionsDropdown.style.display = 'none';
-            itemEl.classList.remove('menu-open');
-            actionsDropdown.classList.remove('opens-up', 'opens-left');
-            actionsDropdown.style.position = '';
-            actionsDropdown.style.left = '';
-            actionsDropdown.style.right = '';
-            actionsDropdown.style.top = '';
-            actionsDropdown.style.bottom = '';
-            actionsDropdown.style.overflow = '';
+            closeSubtaskActionsDropdownSmooth();
         }
         updateModalOverflow();
     };
 
     if (btnMore && actionsDropdown) {
+        btnMore.addEventListener('mouseenter', () => {
+            if (window.matchMedia('(hover: hover)').matches) {
+                scheduleSubtaskOpen(300);
+            }
+        });
+
+        btnMore.addEventListener('mouseleave', () => {
+            if (window.matchMedia('(hover: hover)').matches) {
+                scheduleSubtaskClose(180);
+            }
+        });
+
+        actionsDropdown.addEventListener('mouseenter', () => {
+            if (window.matchMedia('(hover: hover)').matches) {
+                clearTimeout(closeSubtaskHoverTimer);
+                clearTimeout(openSubtaskHoverTimer);
+                if (actionsDropdown.style.display !== 'none') {
+                    actionsDropdown.classList.remove('menu-closing');
+                    actionsDropdown.classList.add('menu-visible');
+                }
+            }
+        });
+
+        actionsDropdown.addEventListener('mouseleave', () => {
+            if (window.matchMedia('(hover: hover)').matches) {
+                scheduleSubtaskClose(180);
+            }
+        });
+
         btnMore.addEventListener('click', (e) => {
             e.stopPropagation();
-            openSubtaskActionsDropdown();
+            clearTimeout(openSubtaskHoverTimer);
+            clearTimeout(closeSubtaskHoverTimer);
+            if (actionsDropdown.style.display === 'none' || actionsDropdown.classList.contains('menu-closing')) {
+                openSubtaskActionsDropdown();
+            } else {
+                closeSubtaskActionsDropdownSmooth();
+            }
         });
     }
 

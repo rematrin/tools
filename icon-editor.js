@@ -439,7 +439,7 @@ export class IconEditor {
                     const fastImg = new Image();
                     fastImg.onload = () => {
                         if (this.activeLoadToken !== loadToken) return;
-                        if (!this.isCleanImageLoaded) {
+                        if (!this.isCleanImageLoaded && !this.isImageModified) {
                             this.uploadedImage = fastImg;
                             this.resetImageState();
                             this.draw();
@@ -447,65 +447,68 @@ export class IconEditor {
                     };
                     fastImg.src = initialIconUrl;
                     if (fastImg.complete && fastImg.naturalWidth !== 0) {
-                        this.uploadedImage = fastImg;
-                        this.resetImageState();
-                        this.draw();
+                        if (!this.isCleanImageLoaded && !this.isImageModified) {
+                            this.uploadedImage = fastImg;
+                            this.resetImageState();
+                            this.draw();
+                        }
+                    }
+
+                    if (isDataUrl) {
+                        this.isCleanImageLoaded = true;
+                    } else {
+                        // 2. ФОНОВАЯ ЗАГРУЗКА CORS-чистой версии (на случай, если пользователь изменит значок)
+                        this.cleanImagePromise = (async () => {
+                            const tryLoad = (src) => new Promise((resolve, reject) => {
+                                const img = new Image();
+                                img.crossOrigin = "anonymous";
+                                img.onload = () => resolve(img);
+                                img.onerror = reject;
+                                img.src = src;
+                                if (img.complete && img.naturalWidth !== 0) resolve(img);
+                            });
+
+                            let cleanImg = null;
+
+                            // Попытка 1: напрямую с cache-buster (работает для ImgBB, GitHub, Firebase, CDN без обращения к прокси)
+                            try {
+                                const sep = initialIconUrl.includes('?') ? '&' : '?';
+                                cleanImg = await tryLoad(`${initialIconUrl}${sep}_c=${Date.now()}`);
+                            } catch (e) {
+                                // Прямой CORS не поддерживается (например, favicons Google)
                             }
 
-                            if (isDataUrl) {
+                            // Попытка 2: через wsrv.nl (быстрый легкий прокси)
+                            if (!cleanImg) {
+                                try {
+                                    const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(initialIconUrl)}&output=png`;
+                                    cleanImg = await tryLoad(proxyUrl);
+                                } catch (e) { }
+                            }
+
+                            // Попытка 3: резервный corsproxy.io
+                            if (!cleanImg) {
+                                try {
+                                    const fallbackUrl = `https://corsproxy.io/?url=${encodeURIComponent(initialIconUrl)}`;
+                                    cleanImg = await tryLoad(fallbackUrl);
+                                } catch (e) { }
+                            }
+
+                            if (cleanImg && this.activeLoadToken === loadToken && !this.isImageModified) {
+                                const prevImg = this.uploadedImage;
+                                this.resetCanvasElement();
+                                this.uploadedImage = cleanImg;
                                 this.isCleanImageLoaded = true;
-                            } else {
-                                // 2. ФОНОВАЯ ЗАГРУЗКА CORS-чистой версии (на случай, если пользователь изменит значок)
-                                this.cleanImagePromise = (async () => {
-                                    const tryLoad = (src) => new Promise((resolve, reject) => {
-                                        const img = new Image();
-                                        img.crossOrigin = "anonymous";
-                                        img.onload = () => resolve(img);
-                                        img.onerror = reject;
-                                        img.src = src;
-                                        if (img.complete && img.naturalWidth !== 0) resolve(img);
-                                    });
 
-                                    let cleanImg = null;
-
-                                    // Попытка 1: напрямую с cache-buster (работает для ImgBB, GitHub, Firebase, CDN без обращения к прокси)
-                                    try {
-                                        const sep = initialIconUrl.includes('?') ? '&' : '?';
-                                        cleanImg = await tryLoad(`${initialIconUrl}${sep}_c=${Date.now()}`);
-                                    } catch (e) {
-                                        // Прямой CORS не поддерживается (например, favicons Google)
-                                    }
-
-                                        // Попытка 2: через wsrv.nl (быстрый легкий прокси)
-                                        if (!cleanImg) {
-                                            try {
-                                                const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(initialIconUrl)}&output=png`;
-                                                cleanImg = await tryLoad(proxyUrl);
-                                            } catch (e) { }
-                                        }
-
-                                            // Попытка 3: резервный corsproxy.io
-                                            if (!cleanImg) {
-                                                try {
-                                                    const fallbackUrl = `https://corsproxy.io/?url=${encodeURIComponent(initialIconUrl)}`;
-                                                    cleanImg = await tryLoad(fallbackUrl);
-                                                } catch (e) { }
-                                            }
-
-                                        if (cleanImg && this.activeLoadToken === loadToken) {
-                                            const prevImg = this.uploadedImage;
-                                            this.uploadedImage = cleanImg;
-                                            this.isCleanImageLoaded = true;
-
-                                            // Корректируем масштаб, если размеры быстрой и чистой картинок отличаются
-                                            if (prevImg && prevImg.naturalWidth && cleanImg.naturalWidth && prevImg.naturalWidth !== cleanImg.naturalWidth) {
-                                                const ratio = prevImg.naturalWidth / cleanImg.naturalWidth;
-                                                this.state.scale *= ratio;
-                                            }
-                                            this.draw();
-                                        }
-                                    }) ();
+                                // Корректируем масштаб, если размеры быстрой и чистой картинок отличаются
+                                if (prevImg && prevImg.naturalWidth && cleanImg.naturalWidth && prevImg.naturalWidth !== cleanImg.naturalWidth) {
+                                    const ratio = prevImg.naturalWidth / cleanImg.naturalWidth;
+                                    this.state.scale *= ratio;
                                 }
+                                this.draw();
+                            }
+                        }) ();
+                    }
                             } else {
                                 this.uploadedImage = null;
                                 this.draw();
@@ -1017,6 +1020,10 @@ export class IconEditor {
                                 fetchBtn.innerHTML = `<span>Загрузка...</span>`;
                                 fetchBtn.style.opacity = 0.7;
 
+                                this.isImageModified = true;
+                                this.isCleanImageLoaded = true;
+                                this.resetCanvasElement();
+
                                 this.uploadedImage = new Image();
                                 this.uploadedImage.crossOrigin = "anonymous";
                                 this.uploadedImage.onload = () => {
@@ -1115,6 +1122,8 @@ export class IconEditor {
 
                                                 div.addEventListener('click', () => {
                                                     this.isImageModified = true;
+                                                    this.isCleanImageLoaded = true;
+                                                    this.resetCanvasElement();
                                                     const finalUrl = `${baseUrl}?color=${encodeURIComponent(currentSearchColor)}`;
 
                                                     this.uploadedImage = new Image();
@@ -1179,6 +1188,8 @@ export class IconEditor {
                                         const imgUrl = input.value;
                                         if (imgUrl && imgUrl.trim() !== '') {
                                             this.isImageModified = true;
+                                            this.isCleanImageLoaded = true;
+                                            this.resetCanvasElement();
                                             const originalBtnContent = btnLoadFromImgUrl.innerHTML;
                                             btnLoadFromImgUrl.innerHTML = `<span>Загрузка...</span>`;
                                             btnLoadFromImgUrl.style.opacity = 0.7;
@@ -1270,7 +1281,24 @@ export class IconEditor {
 
                     initCanvas() {
                         this.canvas = document.getElementById('editorCanvas');
-                        this.ctx = this.canvas.getContext('2d');
+                        if (this.canvas) {
+                            this.ctx = this.canvas.getContext('2d');
+                            this.ctx.imageSmoothingEnabled = true;
+                            this.ctx.imageSmoothingQuality = 'high';
+                        }
+                    }
+
+                    resetCanvasElement() {
+                        if (!this.canvas || !this.canvas.parentNode) return;
+                        const parent = this.canvas.parentNode;
+                        const newCanvas = document.createElement('canvas');
+                        newCanvas.id = this.canvas.id;
+                        newCanvas.width = this.canvas.width || 512;
+                        newCanvas.height = this.canvas.height || 512;
+                        if (this.canvas.className) newCanvas.className = this.canvas.className;
+                        parent.replaceChild(newCanvas, this.canvas);
+                        this.canvas = newCanvas;
+                        this.ctx = newCanvas.getContext('2d');
                         this.ctx.imageSmoothingEnabled = true;
                         this.ctx.imageSmoothingQuality = 'high';
                     }
@@ -1279,8 +1307,10 @@ export class IconEditor {
                         const file = e.target.files[0];
                         if (file) {
                             this.isImageModified = true;
+                            this.isCleanImageLoaded = true;
                             const reader = new FileReader();
                             reader.onload = (event) => {
+                                this.resetCanvasElement();
                                 this.uploadedImage = new Image();
                                 this.uploadedImage.onload = () => { this.resetImageState(); this.draw(); };
                                 this.uploadedImage.src = event.target.result;
@@ -1306,6 +1336,7 @@ export class IconEditor {
                     }
 
                     resetEditor(fullClear = false) {
+                        this.resetCanvasElement();
                         this.state.bgColor = '#ffffff';
                         this.state.rotation = 0;
                         this.state.offsetX = 0;
@@ -1407,17 +1438,39 @@ export class IconEditor {
                                         offCtx.fillRect(0, 0, 256, 256);
                                     }
 
-                                    offCtx.drawImage(this.canvas, 0, 0, 256, 256);
+                                    if (this.uploadedImage) {
+                                        const scaleFactor = 256 / this.canvas.width;
+                                        offCtx.save();
+                                        offCtx.translate(
+                                            (offscreenCanvas.width / 2) + this.state.offsetX * scaleFactor,
+                                            (offscreenCanvas.height / 2) + this.state.offsetY * scaleFactor
+                                        );
+                                        offCtx.rotate(this.state.rotation * Math.PI / 180);
+                                        offCtx.scale(this.state.scale * scaleFactor, this.state.scale * scaleFactor);
+                                        offCtx.imageSmoothingEnabled = true;
+                                        offCtx.imageSmoothingQuality = 'high';
+                                        offCtx.drawImage(this.uploadedImage, -this.uploadedImage.width / 2, -this.uploadedImage.height / 2);
+                                        offCtx.restore();
+                                    }
 
+                                    let dataUrl = null;
                                     try {
-                                        const dataUrl = offscreenCanvas.toDataURL('image/png');
-                                        hostedUrl = await this.uploadToImgBB(dataUrl);
+                                        dataUrl = offscreenCanvas.toDataURL('image/png');
                                     } catch (taintErr) {
-                                        console.warn('Canvas export failed (tainted), preserving original icon:', taintErr);
-                                        if (this.originalIconUrl) {
+                                        console.warn('Canvas export failed (tainted):', taintErr);
+                                        if (this.originalIconUrl && !this.isCleanImageLoaded) {
                                             hostedUrl = this.originalIconUrl;
                                         } else {
                                             throw taintErr;
+                                        }
+                                    }
+
+                                    if (dataUrl) {
+                                        try {
+                                            hostedUrl = await this.uploadToImgBB(dataUrl);
+                                        } catch (uploadErr) {
+                                            console.warn('ImgBB upload failed, falling back to dataUrl:', uploadErr);
+                                            hostedUrl = dataUrl;
                                         }
                                     }
                                 }

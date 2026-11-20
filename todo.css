@@ -2192,11 +2192,10 @@ body.dark .completed-tasks-container {
 
     .todo-content {
         margin-left: 0;
-        padding: 32px 16px 24px 16px;
+        padding: max(32px, calc(env(safe-area-inset-top, 0px) + 16px)) 16px calc(max(20px, env(safe-area-inset-bottom, 0px)) + 180px) 16px !important;
         flex: 1;
         overflow-y: auto;
         overflow-x: hidden !important;
-        padding-bottom: 180px;
         display: block;
         -webkit-overflow-scrolling: touch;
         max-width: 100%;
@@ -10987,7 +10986,7 @@ body.route-calendar .todo-app {
 body.route-calendar .todo-content {
     height: 100vh !important;
     max-height: 100vh !important;
-    padding: 8px 12px !important;
+    padding: max(8px, calc(env(safe-area-inset-top, 0px) + 8px)) 12px !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
     display: flex !important;
@@ -11313,6 +11312,7 @@ body.dark .ios-slider::-webkit-slider-thumb {
 }
 
 @media (min-width: 769px) {
+
     .mobile-wallpaper-blurred,
     .mobile-folder-backdrop {
         display: none !important;

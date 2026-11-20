@@ -1773,7 +1773,7 @@ body.dark .completed-tasks-container {
         top: 0 !important;
         transition: none !important;
         background-color: var(--sidebar-bg) !important;
-        padding: max(16px, env(safe-area-inset-top, 0px)) 16px calc(max(20px, env(safe-area-inset-bottom, 0px)) + 180px) 16px !important;
+        padding: max(32px, calc(env(safe-area-inset-top, 0px) + 16px)) 16px calc(max(20px, env(safe-area-inset-bottom, 0px)) + 180px) 16px !important;
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch;
         box-sizing: border-box;

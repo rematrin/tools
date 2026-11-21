@@ -88,14 +88,27 @@ html, body {
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.08);
 }
 
-/* === ШАПКА: ПЕРЕКЛЮЧАТЕЛЬ ВКЛАДОК «СПИСОК ПОКУПОК» / «МОИ ТОВАРЫ» === */
+/* === ШАПКА: ПЕРЕКЛЮЧАТЕЛЬ ВКЛАДОК И ОТДЕЛЬНАЯ КРУГЛАЯ КНОПКА НАСТРОЕК === */
+.game-header-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    width: 100%;
+}
+
+.game-header-nav .main-tabs-nav {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
+}
+
 .main-tabs-nav {
     position: relative;
     display: flex;
     background: #eae9f2;
     padding: 4px;
     border-radius: 9999px;
-    margin-bottom: 14px;
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
     user-select: none;
     -webkit-user-select: none;
@@ -104,6 +117,40 @@ html, body {
 
 body.dark .main-tabs-nav {
     background: #252342;
+}
+
+/* Отдельная круглая кнопка шестеренки настроек справа (как лупа на референсе) */
+.btn-settings-tab {
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #eae9f2;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.22s ease, color 0.22s ease, box-shadow 0.22s ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+body.dark .btn-settings-tab {
+    background: #252342;
+    color: #a1a1aa;
+}
+
+.btn-settings-tab:hover {
+    color: var(--text-primary);
+}
+
+.btn-settings-tab.active {
+    background: var(--purple-primary);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(98, 84, 234, 0.35);
 }
 
 /* Переезжающий пальцем / кликом ползунок */
@@ -701,89 +748,6 @@ body.add-modal-open .shopping-fab {
     stroke-width: 2;
 }
 
-/* === ПРОСТОЙ МОДАЛ ДОБАВЛЕНИЯ ТОВАРА === */
-.add-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    z-index: 2500;
-    display: none;
-    align-items: flex-end;
-    justify-content: center;
-}
-
-.add-modal-overlay.open {
-    display: flex;
-}
-
-.add-modal-sheet {
-    width: 100%;
-    max-width: var(--app-max-width);
-    background: var(--card-bg);
-    border-top-left-radius: 26px;
-    border-top-right-radius: 26px;
-    padding: 16px 20px calc(var(--safe-bottom) + 20px) 20px;
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
-    animation: sheetUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes sheetUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-}
-
-.sheet-handle {
-    width: 40px;
-    height: 5px;
-    background: #d1d5db;
-    border-radius: 3px;
-    margin: 0 auto 16px auto;
-}
-
-.sheet-title {
-    font-size: 1.15rem;
-    font-weight: 800;
-    margin-bottom: 14px;
-    color: var(--text-primary);
-}
-
-.add-input {
-    width: 100%;
-    height: 48px;
-    border-radius: 14px;
-    border: 2px solid #e5e7eb;
-    background: var(--app-bg);
-    padding: 0 16px;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    outline: none;
-    margin-bottom: 16px;
-    font-family: var(--font);
-}
-
-.add-input:focus {
-    border-color: var(--purple-primary);
-}
-
-.btn-confirm-add {
-    width: 100%;
-    height: 50px;
-    border-radius: 9999px;
-    background: var(--purple-primary);
-    color: #ffffff;
-    font-size: 1rem;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-}
-
-.btn-confirm-add:active {
-    transform: scale(0.97);
-}
-
 /* === МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ТОВАРА В БАЗУ (ЕДИНЫЙ СТАНДАРТ) === */
 .product-modal-overlay {
     position: fixed;
@@ -1148,4 +1112,234 @@ body.dark .btn-cancel-product {
 
 .toast-undo-btn:active {
     transform: scale(0.95);
+}
+
+/* === СТИЛИ ВКЛАДКИ НАСТРОЕК (SCREEN SETTINGS) === */
+.settings-view-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    padding-bottom: 24px;
+}
+
+.settings-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+body.dark .settings-card {
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.settings-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.settings-card-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.settings-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.settings-card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.settings-card-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+}
+
+/* Переключатель темы (Светлая / Тёмная / Системная) */
+.settings-theme-selector {
+    display: flex;
+    background: #eae9f2;
+    padding: 4px;
+    border-radius: 14px;
+    gap: 4px;
+}
+
+body.dark .settings-theme-selector {
+    background: #252342;
+}
+
+.theme-choice-btn {
+    flex: 1;
+    height: 38px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.theme-choice-btn:hover {
+    color: var(--text-primary);
+}
+
+.theme-choice-btn.active {
+    background: var(--purple-primary);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(98, 84, 234, 0.35);
+}
+
+/* Тумблер в настройках */
+.settings-toggle-header {
+    align-items: center;
+}
+
+.settings-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.settings-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.settings-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #d1d5db;
+    transition: background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 9999px;
+}
+
+body.dark .settings-slider {
+    background-color: #3b3861;
+}
+
+.settings-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #ffffff;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.settings-switch input:checked + .settings-slider {
+    background-color: var(--purple-primary);
+}
+
+.settings-switch input:checked + .settings-slider:before {
+    transform: translateX(22px);
+}
+
+/* === ПРИБЛИЖЕННЫЙ РЕЖИМ КРОПА КАРТИНОК (100% ПО ВЕРТИКАЛИ В СПИСКЕ) === */
+/* 1. Список покупок */
+body.list-crop-edge .items-wrapper.view-list .shopping-card {
+    padding: 0 18px;
+    align-items: center;
+    overflow: hidden;
+    min-height: 64px;
+    height: 64px;
+}
+
+body.list-crop-edge .items-wrapper.view-list .card-left {
+    padding: 0;
+    flex: 1;
+    min-width: 0;
+}
+
+body.list-crop-edge .items-wrapper.view-list .card-img-wrap {
+    width: 64px;
+    height: 100%;
+    align-self: stretch;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: transparent !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.list-crop-edge .items-wrapper.view-list .card-img {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    object-fit: cover;
+    filter: none;
+    display: block;
+}
+
+/* 2. Список «Мои товары» */
+body.list-crop-edge .products-wrapper.view-list .product-catalog-card {
+    padding: 0 18px;
+    align-items: center;
+    overflow: hidden;
+    min-height: 64px;
+    height: 64px;
+}
+
+body.list-crop-edge .products-wrapper.view-list .card-left {
+    height: 100%;
+    align-self: stretch;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+
+body.list-crop-edge .products-wrapper.view-list .card-img-wrap {
+    width: 64px;
+    height: 100%;
+    align-self: stretch;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: transparent !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.list-crop-edge .products-wrapper.view-list .card-img {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    object-fit: cover;
+    filter: none;
+    display: block;
 }

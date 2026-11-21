@@ -56,8 +56,11 @@
             tabsSliderIndicator: document.getElementById('tabsSliderIndicator'),
             tabShoppingList: document.getElementById('tabShoppingList'),
             tabMyProducts: document.getElementById('tabMyProducts'),
+            tabSettings: document.getElementById('tabSettings'),
             screenShoppingList: document.getElementById('screenShoppingList'),
             screenMyProducts: document.getElementById('screenMyProducts'),
+            screenSettings: document.getElementById('screenSettings'),
+            toggleListCropMode: document.getElementById('toggleListCropMode'),
             catalogFilters: document.getElementById('catalogFilters'),
             catalogProductsGrid: document.getElementById('catalogProductsGrid'),
             viewTogglePill: document.getElementById('viewTogglePill'),
@@ -71,10 +74,6 @@
             testModeBanner: document.getElementById('testModeBanner'),
             bottomAction: document.getElementById('btnOpenAddModal'),
             btnOpenAddModal: document.getElementById('btnOpenAddModal'),
-            addModalOverlay: document.getElementById('addModalOverlay'),
-            modalSheetTitle: document.querySelector('.sheet-title'),
-            modalItemInput: document.getElementById('modalItemInput'),
-            btnConfirmAdd: document.getElementById('btnConfirmAdd'),
             btnExitTestMode: document.getElementById('btnExitTestMode'),
 
             // Стандартное модальное окно добавления товара в базу
@@ -96,14 +95,50 @@
         };
     }
 
-    // === ПЕРЕКЛЮЧЕНИЕ ГЛАВНЫХ ВКЛАДОК («СПИСОК ПОКУПОК» / «МОИ ТОВАРЫ») ===
+    // === ПЕРЕКЛЮЧЕНИЕ ГЛАВНЫХ ВКЛАДОК («СПИСОК ПОКУПОК» / «МОИ ТОВАРЫ» / «НАСТРОЙКИ») ===
     function setMainTab(tab) {
         currentMainTab = tab;
         const els = getEls();
         if (!els.tabShoppingList || !els.tabMyProducts) return;
 
-        // Плавное перемещение ползунка (0% или 100%)
+        if (tab === 'settings') {
+            if (els.tabSettings) {
+                els.tabSettings.classList.add('active');
+                els.tabSettings.setAttribute('aria-selected', 'true');
+            }
+            els.tabShoppingList.classList.remove('active');
+            els.tabShoppingList.setAttribute('aria-selected', 'false');
+            els.tabMyProducts.classList.remove('active');
+            els.tabMyProducts.setAttribute('aria-selected', 'false');
+
+            // Скрываем ползунок в левой плашке
+            if (els.tabsSliderIndicator) {
+                els.tabsSliderIndicator.style.opacity = '0';
+            }
+
+            if (els.screenShoppingList) els.screenShoppingList.style.display = 'none';
+            if (els.screenMyProducts) els.screenMyProducts.style.display = 'none';
+            if (els.screenSettings) els.screenSettings.style.display = 'block';
+
+            if (els.viewTogglePill) els.viewTogglePill.style.display = 'none';
+            if (els.btnOpenAddModal) els.btnOpenAddModal.style.display = 'none';
+            if (els.catalogFilters) els.catalogFilters.style.display = 'none';
+
+            renderSettingsView();
+            return;
+        }
+
+        // Возврат к табам слева
+        if (els.tabSettings) {
+            els.tabSettings.classList.remove('active');
+            els.tabSettings.setAttribute('aria-selected', 'false');
+        }
+
+        if (els.screenSettings) els.screenSettings.style.display = 'none';
+
+        // Восстанавливаем видимость ползунка и перемещаем его
         if (els.tabsSliderIndicator) {
+            els.tabsSliderIndicator.style.opacity = '1';
             els.tabsSliderIndicator.style.transform = (tab === 'myProducts') ? 'translateX(100%)' : 'translateX(0%)';
         }
 
@@ -116,6 +151,7 @@
             if (els.screenShoppingList) els.screenShoppingList.style.display = 'none';
             if (els.screenMyProducts) els.screenMyProducts.style.display = 'flex';
             if (els.viewTogglePill) els.viewTogglePill.style.display = 'inline-flex';
+            if (els.btnOpenAddModal) els.btnOpenAddModal.style.display = 'grid';
 
             // В настоящем режиме фильтры категорий скрыты — они отображаются только в тестовом режиме (#test)
             if (els.catalogFilters) {
@@ -132,8 +168,30 @@
             if (els.screenShoppingList) els.screenShoppingList.style.display = 'flex';
             if (els.screenMyProducts) els.screenMyProducts.style.display = 'none';
             if (els.viewTogglePill) els.viewTogglePill.style.display = 'inline-flex';
+            if (els.btnOpenAddModal) els.btnOpenAddModal.style.display = 'none';
 
             renderItems();
+        }
+    }
+
+    // Режим кропа картинок в списке (обычный или приближенный от края до края 100% по вертикали)
+    function applyListCropMode(isEdge) {
+        document.body.classList.toggle('list-crop-edge', !!isEdge);
+        localStorage.setItem('shopping_list_crop_mode', isEdge ? 'edge' : 'default');
+    }
+
+    // Обновление состояния экрана настроек
+    function renderSettingsView() {
+        const els = getEls();
+        const currentTheme = localStorage.getItem('themeMode_shopping') || 'system';
+        document.querySelectorAll('.theme-choice-btn').forEach(btn => {
+            const mode = btn.dataset.themeMode;
+            btn.classList.toggle('active', mode === currentTheme);
+        });
+
+        // Тумблер режима кропа картинок
+        if (els.toggleListCropMode) {
+            els.toggleListCropMode.checked = (localStorage.getItem('shopping_list_crop_mode') === 'edge');
         }
     }
 
@@ -190,6 +248,12 @@
                 if (deltaX > 6 && deltaX > deltaY) {
                     hasMoved = true;
                     indicator.classList.add('dragging');
+                    indicator.style.opacity = '1';
+                    if (els.tabSettings) {
+                        els.tabSettings.classList.remove('active');
+                        els.tabSettings.setAttribute('aria-selected', 'false');
+                    }
+                    if (els.screenSettings) els.screenSettings.style.display = 'none';
                 } else if (deltaY > 6) {
                     isDragging = false;
                     return;
@@ -355,7 +419,7 @@
                         try {
                             const itemRef = window.doc(window.db, 'users', currentUid, 'shopping_items', removed.id);
                             window.deleteDoc(itemRef);
-                        } catch (e) {}
+                        } catch (e) { }
                     }
                     return;
                 }
@@ -385,7 +449,7 @@
                                 createdAt: item.createdAt,
                                 updatedAt: Date.now()
                             });
-                        } catch (e) {}
+                        } catch (e) { }
                     }
                     return;
                 }
@@ -415,8 +479,8 @@
                             completedAt: null,
                             createdAt: newItem.createdAt,
                             updatedAt: Date.now()
-                        }).catch(() => {});
-                    } catch (e) {}
+                        }).catch(() => { });
+                    } catch (e) { }
                 }
             });
         });
@@ -427,7 +491,7 @@
         currentViewMode = mode;
         try {
             localStorage.setItem('shopping_view_mode', mode);
-        } catch (e) {}
+        } catch (e) { }
 
         const els = getEls();
         if (!els.btnViewList || !els.btnViewGrid) return;
@@ -806,7 +870,7 @@
                             createdAt: existing.createdAt,
                             updatedAt: Date.now()
                         });
-                    } catch (e) {}
+                    } catch (e) { }
                 }
                 return existing;
             } else {
@@ -969,7 +1033,7 @@
         try {
             localStorage.setItem('shopping_items_cache', JSON.stringify(shoppingItems));
             localStorage.setItem('shopping_products_cache', JSON.stringify(userProducts));
-        } catch (e) {}
+        } catch (e) { }
     }
 
     // === СЛУШАТЕЛЬ FIREBASE ===
@@ -991,7 +1055,7 @@
                         } else {
                             // Очищаем пустые/битые документы в Firestore
                             if (typeof window.deleteDoc === 'function') {
-                                window.deleteDoc(docSnap.ref).catch(() => {});
+                                window.deleteDoc(docSnap.ref).catch(() => { });
                             }
                         }
                     });
@@ -1001,7 +1065,7 @@
                         shoppingItems.forEach(item => {
                             if (item && item.name && item.name.trim()) {
                                 const docRef = window.doc(window.db, 'users', uid, 'shopping_items', item.id);
-                                window.setDoc(docRef, item).catch(() => {});
+                                window.setDoc(docRef, item).catch(() => { });
                             }
                         });
                     } else {
@@ -1026,7 +1090,7 @@
                             loaded.push({ id: docSnap.id, ...data });
                         } else {
                             if (typeof window.deleteDoc === 'function') {
-                                window.deleteDoc(docSnap.ref).catch(() => {});
+                                window.deleteDoc(docSnap.ref).catch(() => { });
                             }
                         }
                     });
@@ -1036,7 +1100,7 @@
                         userProducts.forEach(prod => {
                             if (prod && prod.name && prod.name.trim()) {
                                 const docRef = window.doc(window.db, 'users', uid, 'shopping_products', prod.id);
-                                window.setDoc(docRef, prod).catch(() => {});
+                                window.setDoc(docRef, prod).catch(() => { });
                             }
                         });
                     } else if (loaded.length > 0) {
@@ -1069,12 +1133,40 @@
     function init() {
         const els = getEls();
 
-        // Главные вкладки («Список покупок» / «Мои товары»)
+        // Главные вкладки («Список покупок» / «Мои товары» / «Настройки»)
         if (els.tabShoppingList) {
             els.tabShoppingList.onclick = () => setMainTab('shoppingList');
         }
         if (els.tabMyProducts) {
             els.tabMyProducts.onclick = () => setMainTab('myProducts');
+        }
+        if (els.tabSettings) {
+            els.tabSettings.onclick = () => setMainTab('settings');
+        }
+
+        // Переключение тем в настройках
+        document.querySelectorAll('.theme-choice-btn').forEach(btn => {
+            btn.onclick = () => {
+                const mode = btn.dataset.themeMode;
+                if (window.setTheme) {
+                    window.setTheme(mode);
+                } else {
+                    localStorage.setItem('themeMode_shopping', mode);
+                    document.body.classList.toggle('dark', mode === 'dark');
+                }
+                document.querySelectorAll('.theme-choice-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            };
+        });
+
+        // Применяем сохраненный режим кропа картинок в списке
+        applyListCropMode(localStorage.getItem('shopping_list_crop_mode') === 'edge');
+
+        // Тумблер кропа картинок
+        if (els.toggleListCropMode) {
+            els.toggleListCropMode.onchange = (e) => {
+                applyListCropMode(e.target.checked);
+            };
         }
 
         // Фильтры категорий во вкладке «Мои товары»
@@ -1110,35 +1202,7 @@
         let currentUploadedImageUrl = null;
         let currentUploadTab = 'file';
 
-        // 1. Быстрая шторка добавления товара в список покупок
-        function openAddModal() {
-            if (!els.addModalOverlay) return;
-            if (els.modalItemInput) {
-                els.modalItemInput.value = '';
-            }
-            document.body.classList.add('add-modal-open');
-            els.addModalOverlay.classList.add('open');
-            setTimeout(() => {
-                if (els.modalItemInput) els.modalItemInput.focus();
-            }, 100);
-        }
-
-        function closeAddModal() {
-            if (els.addModalOverlay) {
-                els.addModalOverlay.classList.remove('open');
-            }
-            document.body.classList.remove('add-modal-open');
-        }
-
-        function submitAddModal() {
-            const val = els.modalItemInput ? els.modalItemInput.value : '';
-            if (val && val.trim()) {
-                handleAddItem(val);
-                closeAddModal();
-            }
-        }
-
-        // 2. Стандартное модальное окно добавления товара в базу (файл, drag & drop, вставка, ссылка)
+        // Стандартное модальное окно добавления товара в базу (файл, drag & drop, вставка, ссылка)
         function openProductModal() {
             const currentEls = getEls();
             if (!currentEls.productModalOverlay) return;
@@ -1247,33 +1311,9 @@
             }
         }
 
-        // Клик по круглому плюсу (FAB)
+        // Клик по круглому плюсу (FAB во вкладке «Мои товары»)
         if (els.btnOpenAddModal) {
-            els.btnOpenAddModal.onclick = () => {
-                if (currentMainTab === 'myProducts') {
-                    openProductModal();
-                } else {
-                    openAddModal();
-                }
-            };
-        }
-
-        // Слушатели шторки списка покупок
-        if (els.addModalOverlay) {
-            els.addModalOverlay.onclick = (e) => {
-                if (e.target === els.addModalOverlay) closeAddModal();
-            };
-        }
-        if (els.btnConfirmAdd) {
-            els.btnConfirmAdd.onclick = submitAddModal;
-        }
-        if (els.modalItemInput) {
-            els.modalItemInput.onkeydown = (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    submitAddModal();
-                }
-            };
+            els.btnOpenAddModal.onclick = openProductModal;
         }
 
         // Слушатели модалки базы товаров («Мои товары»)
@@ -1419,7 +1459,7 @@
                                     completedAt: null,
                                     updatedAt: Date.now()
                                 });
-                            } catch (e) {}
+                            } catch (e) { }
                         }
                     }
                 }
@@ -1464,6 +1504,9 @@
             if (unsubItems) unsubItems();
             if (unsubProducts) unsubProducts();
             loadItems();
+        }
+        if (currentMainTab === 'settings') {
+            renderSettingsView();
         }
     });
 

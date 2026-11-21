@@ -34,12 +34,20 @@
     <div class="game-viewport">
         <main class="game-app-container">
 
-            <!-- Верхняя панель: Переключатель вкладок «Список покупок» / «Мои товары» с интерактивным ползунком -->
-            <nav class="main-tabs-nav" id="mainTabsNav" role="tablist" aria-label="Основные разделы">
-                <div class="tabs-slider-indicator" id="tabsSliderIndicator"></div>
-                <button class="main-tab-btn active" id="tabShoppingList" type="button" role="tab" aria-selected="true">Список покупок</button>
-                <button class="main-tab-btn" id="tabMyProducts" type="button" role="tab" aria-selected="false">Мои товары</button>
-            </nav>
+            <!-- Верхняя панель: Переключатель вкладок «Список покупок» / «Мои товары» и отдельная круглая кнопка настроек -->
+            <div class="game-header-nav">
+                <nav class="main-tabs-nav" id="mainTabsNav" role="tablist" aria-label="Основные разделы">
+                    <div class="tabs-slider-indicator" id="tabsSliderIndicator"></div>
+                    <button class="main-tab-btn active" id="tabShoppingList" type="button" role="tab" aria-selected="true">Список покупок</button>
+                    <button class="main-tab-btn" id="tabMyProducts" type="button" role="tab" aria-selected="false">Мои товары</button>
+                </nav>
+                <button class="btn-settings-tab" id="tabSettings" type="button" role="tab" aria-selected="false" aria-label="Настройки" title="Настройки">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </button>
+            </div>
 
             <!-- Верхняя подпанель: Индикатор демо-режима и переключатель вида (Список / Сетка) -->
             <header class="game-top-bar" id="gameTopBar">
@@ -84,7 +92,7 @@
                 <div class="empty-game-state" id="emptyState" style="display: none;">
                     <img src="img/lowpoly-food.svg" alt="Пусто" class="empty-game-icon">
                     <h2 class="empty-game-title">Список пуст</h2>
-                    <p class="empty-game-desc">Нажмите кнопку внизу, чтобы добавить первый товар</p>
+                    <p class="empty-game-desc">Перейдите во вкладку «Мои товары», чтобы добавить товары в список</p>
                 </div>
 
                 <!-- Контейнер активных товаров (класс view-list или view-grid) -->
@@ -119,22 +127,59 @@
                 <div class="products-wrapper view-list" id="catalogProductsGrid"></div>
             </section>
 
-            <!-- Круглая плавающая кнопка «+» (FAB) справа внизу, как в todo.html -->
-            <button class="shopping-fab" id="btnOpenAddModal" type="button" aria-label="Добавить" aria-haspopup="dialog">
+            <!-- ВКЛАДКА 3: Настройки (открывается по нажатию на круглую шестеренку) -->
+            <section class="game-content" id="screenSettings" style="display: none;">
+                <div class="settings-view-container">
+
+                    <!-- Блок темы оформления -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <span class="settings-card-icon">🎨</span>
+                            <div class="settings-card-info">
+                                <h3 class="settings-card-title">Тема оформления</h3>
+                                <p class="settings-card-desc">Внешний вид списка покупок</p>
+                            </div>
+                        </div>
+                        <div class="settings-theme-selector" role="radiogroup" aria-label="Выбор темы">
+                            <button class="theme-choice-btn" data-theme-mode="system" type="button">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                                <span>Системная</span>
+                            </button>
+                            <button class="theme-choice-btn" data-theme-mode="light" type="button">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                                <span>Светлая</span>
+                            </button>
+                            <button class="theme-choice-btn" data-theme-mode="dark" type="button">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                                <span>Тёмная</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Блок режима кропа картинок в списке -->
+                    <div class="settings-card">
+                        <div class="settings-card-header settings-toggle-header">
+                            <span class="settings-card-icon">📐</span>
+                            <div class="settings-card-info">
+                                <h3 class="settings-card-title">Кроп картинок в списке</h3>
+                                <p class="settings-card-desc">Приближать изображение от края до края (100% по вертикали) в списке</p>
+                            </div>
+                            <label class="settings-switch" title="Переключить режим кропа картинок" for="toggleListCropMode">
+                                <input type="checkbox" id="toggleListCropMode">
+                                <span class="settings-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Круглая плавающая кнопка «+» (FAB) справа внизу (только во вкладке «Мои товары») -->
+            <button class="shopping-fab" id="btnOpenAddModal" type="button" aria-label="Добавить товар в базу" aria-haspopup="dialog" style="display: none;">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M12 5v14M5 12h14"></path>
                 </svg>
             </button>
-
-            <!-- Простая шторка добавления товара в список покупок -->
-            <div class="add-modal-overlay" id="addModalOverlay">
-                <div class="add-modal-sheet">
-                    <div class="sheet-handle"></div>
-                    <h3 class="sheet-title">Новый товар в список</h3>
-                    <input type="text" id="modalItemInput" class="add-input" placeholder="Название товара..." autocomplete="off">
-                    <button class="btn-confirm-add" id="btnConfirmAdd" type="button">Добавить в список</button>
-                </div>
-            </div>
 
             <!-- Стандартное модальное окно добавления товара в базу (с загрузкой, вставкой, drag&drop и по ссылке) -->
             <div class="product-modal-overlay" id="productModalOverlay" style="display: none;">

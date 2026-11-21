@@ -13220,6 +13220,7 @@ function openTaskDetailsModal(taskId) {
         if (card) {
             card.classList.remove('expanded', 'is-dragging');
             card.classList.add('collapsed');
+            card.style.height = '';
             card.style.transform = ''; // reset inline drag transform
             card.style.transition = '';
         }
@@ -13249,6 +13250,7 @@ function closeTaskDetailsModal() {
         const card = taskDetailsModal.querySelector('.task-details-modal-card');
         if (card) {
             card.classList.remove('expanded', 'collapsed', 'is-dragging');
+            card.style.height = '';
             card.style.transform = ''; // reset inline drag transform
             card.style.transition = '';
         }
@@ -13276,6 +13278,7 @@ function initMobileBottomSheet() {
     let startY = 0;
     let startX = 0;
     let currentY = 0;
+    let startHeight = 0;
     let startTranslateY = 0;
     let isTracking = false;
     let isDragging = false;
@@ -13286,8 +13289,12 @@ function initMobileBottomSheet() {
     let lastTime = 0;
     let velocityY = 0;
 
-    function getCollapsedY() {
-        return window.innerHeight * 0.40;
+    function getCollapsedHeight() {
+        return Math.round(window.innerHeight * 0.48);
+    }
+
+    function getExpandedHeight() {
+        return Math.round(Math.min(window.innerHeight * 0.88, window.innerHeight - 80));
     }
 
     function getCurrentTranslateY() {
@@ -13304,7 +13311,7 @@ function initMobileBottomSheet() {
                 }
             }
         }
-        return card.classList.contains('expanded') ? 0 : getCollapsedY();
+        return 0;
     }
 
     function snapToState(targetState) {
@@ -13313,18 +13320,22 @@ function initMobileBottomSheet() {
             snapTimeout = null;
         }
 
-        const collapsedY = getCollapsedY();
+        const collapsedHeight = getCollapsedHeight();
+        const expandedHeight = getExpandedHeight();
+
         card.classList.remove('is-dragging');
-        card.style.transition = 'transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        card.style.transition = 'height 0.32s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1)';
         taskDetailsModal.style.transition = 'background-color 0.32s ease';
 
         if (targetState === 'expanded') {
+            card.style.height = `${expandedHeight}px`;
             card.style.transform = 'translateY(0px)';
             taskDetailsModal.style.backgroundColor = 'rgba(0, 0, 0, 0.45)';
             snapTimeout = setTimeout(() => {
                 if (currentModalTaskId !== null && card) {
                     card.classList.remove('collapsed');
                     card.classList.add('expanded');
+                    card.style.height = '';
                     card.style.transform = '';
                     card.style.transition = '';
                     taskDetailsModal.style.backgroundColor = '';
@@ -13333,12 +13344,14 @@ function initMobileBottomSheet() {
                 snapTimeout = null;
             }, 320);
         } else if (targetState === 'collapsed') {
-            card.style.transform = `translateY(${collapsedY}px)`;
+            card.style.height = `${collapsedHeight}px`;
+            card.style.transform = 'translateY(0px)';
             taskDetailsModal.style.backgroundColor = 'rgba(0, 0, 0, 0.45)';
             snapTimeout = setTimeout(() => {
                 if (currentModalTaskId !== null && card) {
                     card.classList.remove('expanded');
                     card.classList.add('collapsed');
+                    card.style.height = '';
                     card.style.transform = '';
                     card.style.transition = '';
                     taskDetailsModal.style.backgroundColor = '';
@@ -13347,11 +13360,12 @@ function initMobileBottomSheet() {
                 snapTimeout = null;
             }, 320);
         } else if (targetState === 'close') {
-            card.style.transform = 'translateY(100%)';
+            card.style.transform = 'translateY(calc(100% + 40px))';
             taskDetailsModal.style.backgroundColor = 'rgba(0, 0, 0, 0)';
             snapTimeout = setTimeout(() => {
                 closeTaskDetailsModal();
                 if (card) {
+                    card.style.height = '';
                     card.style.transform = '';
                     card.style.transition = '';
                 }
@@ -13392,6 +13406,7 @@ function initMobileBottomSheet() {
             return;
         }
 
+        startHeight = card.getBoundingClientRect().height;
         startTranslateY = getCurrentTranslateY();
         isTracking = true;
         isDragging = false;
@@ -13434,22 +13449,49 @@ function initMobileBottomSheet() {
             e.preventDefault();
         }
 
-        let newTranslateY = startTranslateY + deltaY;
+        const collapsedHeight = getCollapsedHeight();
+        const expandedHeight = getExpandedHeight();
 
-        // Rubber-band resistance when pulling above expanded state
-        if (newTranslateY < 0) {
-            newTranslateY = newTranslateY * 0.25;
-        }
-
-        card.style.transform = `translateY(${newTranslateY}px)`;
-
-        // Smooth backdrop fade when dragging down past collapsed
-        const collapsedY = getCollapsedY();
-        if (newTranslateY > collapsedY) {
-            const progress = Math.min(1, Math.max(0, (newTranslateY - collapsedY) / (window.innerHeight - collapsedY)));
-            taskDetailsModal.style.backgroundColor = `rgba(0, 0, 0, ${(1 - progress) * 0.45})`;
+        if (startHeight >= expandedHeight - 15) {
+            // Started from expanded
+            if (deltaY <= 0) {
+                // Dragging UP beyond expanded (rubber-band)
+                const rubber = Math.abs(deltaY) * 0.25;
+                card.style.height = `${expandedHeight + rubber}px`;
+                card.style.transform = 'translateY(0px)';
+            } else {
+                // Dragging DOWN from expanded
+                const targetHeight = startHeight - deltaY;
+                if (targetHeight >= collapsedHeight) {
+                    card.style.height = `${targetHeight}px`;
+                    card.style.transform = 'translateY(0px)';
+                    taskDetailsModal.style.backgroundColor = 'rgba(0, 0, 0, 0.45)';
+                } else {
+                    card.style.height = `${collapsedHeight}px`;
+                    const downY = collapsedHeight - targetHeight;
+                    card.style.transform = `translateY(${downY}px)`;
+                    const progress = Math.min(1, Math.max(0, downY / (window.innerHeight * 0.4)));
+                    taskDetailsModal.style.backgroundColor = `rgba(0, 0, 0, ${(1 - progress) * 0.45})`;
+                }
+            }
         } else {
-            taskDetailsModal.style.backgroundColor = 'rgba(0, 0, 0, 0.45)';
+            // Started from collapsed
+            if (deltaY <= 0) {
+                // Dragging UP from collapsed towards expanded
+                let targetHeight = startHeight - deltaY;
+                if (targetHeight > expandedHeight) {
+                    targetHeight = expandedHeight + (targetHeight - expandedHeight) * 0.25;
+                }
+                card.style.height = `${targetHeight}px`;
+                card.style.transform = 'translateY(0px)';
+                taskDetailsModal.style.backgroundColor = 'rgba(0, 0, 0, 0.45)';
+            } else {
+                // Dragging DOWN from collapsed towards close
+                card.style.height = `${collapsedHeight}px`;
+                card.style.transform = `translateY(${deltaY}px)`;
+                const progress = Math.min(1, Math.max(0, deltaY / (window.innerHeight * 0.4)));
+                taskDetailsModal.style.backgroundColor = `rgba(0, 0, 0, ${(1 - progress) * 0.45})`;
+            }
         }
 
         const now = Date.now();
@@ -13468,7 +13510,6 @@ function initMobileBottomSheet() {
         const touchEndClientY = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientY : currentY;
         const totalDeltaY = touchEndClientY - startY;
         const totalDistance = Math.abs(totalDeltaY);
-        const collapsedY = getCollapsedY();
 
         card.classList.remove('is-dragging');
 
@@ -13485,16 +13526,25 @@ function initMobileBottomSheet() {
         if (!isDragging) return;
         isDragging = false;
 
+        const currentHeight = card.getBoundingClientRect().height;
         const currentTranslateY = getCurrentTranslateY();
+        const collapsedHeight = getCollapsedHeight();
+        const expandedHeight = getExpandedHeight();
 
-        // 1. High-velocity gestures (flick)
+        // 1. If pulled down significantly (past threshold): close
+        if (currentTranslateY > 80) {
+            snapToState('close');
+            return;
+        }
+
+        // 2. High-velocity gestures (flick)
         if (velocityY < -0.35) {
             // Flick up -> expand
             snapToState('expanded');
             return;
         } else if (velocityY > 0.35) {
             // Flick down
-            if (startTranslateY === 0 && currentTranslateY < collapsedY + 50) {
+            if (startHeight >= expandedHeight - 15 && currentTranslateY < 30) {
                 snapToState('collapsed');
             } else {
                 snapToState('close');
@@ -13502,13 +13552,11 @@ function initMobileBottomSheet() {
             return;
         }
 
-        // 2. Position-based snapping
-        const midPoint = collapsedY * 0.45;
-        const closePoint = collapsedY + 90;
-
-        if (currentTranslateY < midPoint) {
+        // 3. Position-based snapping
+        const midHeight = (collapsedHeight + expandedHeight) / 2;
+        if (currentHeight >= midHeight && currentTranslateY < 30) {
             snapToState('expanded');
-        } else if (currentTranslateY >= midPoint && currentTranslateY < closePoint) {
+        } else if (currentTranslateY < 60) {
             snapToState('collapsed');
         } else {
             snapToState('close');

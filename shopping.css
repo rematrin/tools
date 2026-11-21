@@ -1,0 +1,841 @@
+/* shopping.css - Игровой низкополигональный дизайн списка покупок (iOS / ПК) */
+
+:root {
+    --app-bg: #f4f3f9;
+    --card-bg: #ffffff;
+    --card-shadow: 0 4px 14px rgba(0, 0, 0, 0.035);
+    --card-radius-list: 20px;
+    --card-radius-grid: 22px;
+    
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --text-muted: #9ca3af;
+    
+    --purple-primary: #6254ea;
+    --purple-active: #5345dd;
+    --purple-shadow: 0 8px 24px rgba(98, 84, 234, 0.32);
+    
+    --green-checked: #65a30d;
+    --checkbox-border: #8e8e93;
+    
+    --app-max-width: 440px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif;
+}
+
+body.dark,
+html.dark {
+    --app-bg: #111022;
+    --card-bg: #1c1a32;
+    --card-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --text-muted: #6b7280;
+    --checkbox-border: #6b7280;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    width: 100%;
+    min-height: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    padding-top: 0 !important;
+    background-color: var(--app-bg);
+    color: var(--text-primary);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* === ЦЕНТРИРОВАНИЕ ДЛЯ ПК / ПОЛНОЭКРАННЫЙ ВИД НА ТЕЛЕФОНЕ === */
+.game-viewport {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex;
+    justify-content: center;
+    background-color: #0d0c18;
+}
+
+@media (min-width: 460px) {
+    body:not(.dark) .game-viewport {
+        background-color: #e5e3f0;
+    }
+}
+
+.game-app-container {
+    width: 100%;
+    max-width: var(--app-max-width);
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: var(--app-bg);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + 90px) 16px;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.08);
+}
+
+/* === ШАПКА: ПЕРЕКЛЮЧАТЕЛЬ ВКЛАДОК «СПИСОК ПОКУПОК» / «МОИ ТОВАРЫ» === */
+.main-tabs-nav {
+    position: relative;
+    display: flex;
+    background: #eae9f2;
+    padding: 4px;
+    border-radius: 9999px;
+    margin-bottom: 14px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: pan-y;
+}
+
+body.dark .main-tabs-nav {
+    background: #252342;
+}
+
+/* Переезжающий пальцем / кликом ползунок */
+.tabs-slider-indicator {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    border-radius: 9999px;
+    background: var(--purple-primary);
+    box-shadow: 0 4px 12px rgba(98, 84, 234, 0.3);
+    transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.tabs-slider-indicator.dragging {
+    transition: none !important;
+}
+
+.main-tab-btn {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    height: 42px;
+    border-radius: 9999px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.main-tab-btn.active {
+    color: #ffffff;
+    background: transparent;
+    box-shadow: none;
+}
+
+/* === ПОДШАПКА С ПЕРЕКЛЮЧАТЕЛЕМ ВИДА (СПИСОК / СЕТКА) === */
+.game-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+    position: relative;
+    gap: 10px;
+}
+
+.test-mode-badge {
+    margin-right: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(98, 84, 234, 0.12);
+    color: var(--purple-primary);
+    padding: 5px 12px;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.btn-exit-test {
+    background: transparent;
+    border: none;
+    color: var(--purple-primary);
+    text-decoration: underline;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0;
+}
+
+.view-toggle-pill {
+    display: inline-flex;
+    align-items: center;
+    background: #eae9f2;
+    padding: 3px;
+    border-radius: 12px;
+    gap: 2px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+body.dark .view-toggle-pill {
+    background: #252342;
+}
+
+.toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 34px;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toggle-btn svg {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.15s ease;
+}
+
+.toggle-btn:active svg {
+    transform: scale(0.9);
+}
+
+.toggle-btn.active {
+    background: var(--purple-primary);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(98, 84, 234, 0.35);
+}
+
+/* === КОНТЕНТ СО СПИСКАМИ ТОВАРОВ === */
+.game-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* === РЕЖИМ 1: СПИСОК (VIEW-LIST) === */
+.items-wrapper.view-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.items-wrapper.view-list .shopping-card {
+    background: var(--card-bg);
+    border-radius: var(--card-radius-list);
+    box-shadow: var(--card-shadow);
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.items-wrapper.view-list .shopping-card:active {
+    transform: scale(0.985);
+}
+
+.items-wrapper.view-list .card-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.items-wrapper.view-list .card-img-wrap {
+    width: 58px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.items-wrapper.view-list .card-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+}
+
+.items-wrapper.view-list .card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+/* === РЕЖИМ 2: СЕТКА (VIEW-GRID) === */
+.items-wrapper.view-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.items-wrapper.view-grid .shopping-card {
+    background: var(--card-bg);
+    border-radius: var(--card-radius-grid);
+    box-shadow: var(--card-shadow);
+    padding: 14px 12px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.items-wrapper.view-grid .shopping-card:active {
+    transform: scale(0.98);
+}
+
+.items-wrapper.view-grid .card-img-wrap {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    margin-bottom: 6px;
+}
+
+.items-wrapper.view-grid .card-img {
+    max-width: 82%;
+    max-height: 82%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.08));
+}
+
+.items-wrapper.view-grid .card-bottom-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.items-wrapper.view-grid .card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* === ФИЛЬТРЫ КАТЕГОРИЙ ВО ВКЛАДКЕ «МОИ ТОВАРЫ» === */
+.category-filters-scroll {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 2px 14px 2px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.category-filters-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    background: var(--card-bg);
+    border: none;
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: var(--card-shadow);
+    transition: all 0.18s ease;
+}
+
+.filter-pill:active {
+    transform: scale(0.96);
+}
+
+.filter-pill.active {
+    background: var(--purple-primary);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(98, 84, 234, 0.3);
+}
+
+/* === ТОВАРЫ В КАТАЛОГЕ «МОИ ТОВАРЫ» (РЕЖИМ СЕТКИ И РЕЖИМ СПИСКА) === */
+.products-wrapper.view-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.products-wrapper.view-grid .product-catalog-card {
+    background: var(--card-bg);
+    border-radius: var(--card-radius-grid);
+    box-shadow: var(--card-shadow);
+    padding: 14px 12px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.products-wrapper.view-grid .product-catalog-card:active {
+    transform: scale(0.98);
+}
+
+.products-wrapper.view-grid .card-img-wrap {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    margin-bottom: 6px;
+}
+
+.products-wrapper.view-grid .card-img {
+    max-width: 82%;
+    max-height: 82%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.08));
+}
+
+.products-wrapper.view-grid .card-bottom-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.products-wrapper.view-grid .card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Вид списка во вкладке «Мои товары» (картинка слева, название в центре, плюс справа) */
+.products-wrapper.view-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.products-wrapper.view-list .product-catalog-card {
+    background: var(--card-bg);
+    border-radius: var(--card-radius-list);
+    box-shadow: var(--card-shadow);
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    aspect-ratio: auto;
+    width: 100%;
+    min-height: 64px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.products-wrapper.view-list .product-catalog-card:active {
+    transform: scale(0.985);
+}
+
+.products-wrapper.view-list .card-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
+}
+
+.products-wrapper.view-list .card-img-wrap {
+    width: 56px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.products-wrapper.view-list .card-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+}
+
+.products-wrapper.view-list .card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Круглая кнопка добавления / статус добавлен */
+.btn-product-add {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(98, 84, 234, 0.12);
+    color: var(--purple-primary);
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-product-add:active {
+    transform: scale(0.9);
+}
+
+.btn-product-add svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 3;
+}
+
+.btn-product-add.is-added {
+    background: rgba(101, 163, 13, 0.18);
+    color: #65a30d;
+}
+
+/* === ЧЕКБОКС В СТИЛЕ МАКЕТА С АНИМАЦИЕЙ === */
+.game-checkbox {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 2px solid var(--checkbox-border);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.3);
+}
+
+.game-checkbox:active {
+    transform: scale(0.85);
+}
+
+.game-checkbox svg {
+    width: 13px;
+    height: 13px;
+    stroke: #ffffff;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+    transform: scale(0.3) rotate(-15deg);
+    transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.35);
+}
+
+/* Состояние купленного товара (галочка нажата) и промежуточная анимация */
+.shopping-card.is-checked .game-checkbox,
+.shopping-card.is-completing .game-checkbox {
+    background: var(--green-checked);
+    border-color: var(--green-checked);
+    transform: scale(1.1);
+}
+
+.shopping-card.is-checked .game-checkbox svg,
+.shopping-card.is-completing .game-checkbox svg {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+}
+
+/* Карточка в момент завершения (галочка зафиксирована, карточка задерживается) */
+.shopping-card {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+}
+
+.shopping-card.is-completing {
+    transform: scale(0.98);
+}
+
+/* Исчезновение карточки со сдвигом вниз */
+.shopping-card.is-disappearing {
+    transform: translateY(18px) scale(0.92);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* === СЕКЦИЯ «КУПЛЕННЫЕ» === */
+.bought-section {
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+.bought-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 4px 12px 4px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.bought-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.bought-chevron {
+    width: 18px;
+    height: 18px;
+    color: var(--text-secondary);
+    transition: transform 0.2s ease;
+}
+
+.bought-section.collapsed .bought-chevron {
+    transform: rotate(-90deg);
+}
+
+.bought-section.collapsed .items-wrapper {
+    display: none !important;
+}
+
+/* === ПУСТОЕ СОСТОЯНИЕ (ИЗНАЧАЛЬНО ПУСТО) === */
+.empty-game-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.empty-game-icon {
+    width: 110px;
+    height: 110px;
+    margin-bottom: 16px;
+    opacity: 0.95;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.08));
+}
+
+.empty-game-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.empty-game-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    max-width: 240px;
+    line-height: 1.4;
+}
+
+/* === КРУГЛАЯ ПЛАВАЮЩАЯ КНОПКА «+» (FAB) СПРАВА ВНИЗУ (КАК В TODO.HTML) === */
+.shopping-fab {
+    display: grid;
+    place-items: center;
+    position: fixed;
+    right: 18px;
+    right: max(18px, calc(50% - (var(--app-max-width) / 2) + 18px));
+    bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 16px);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: var(--purple-primary);
+    color: #ffffff;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    z-index: 999;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body.add-modal-open .shopping-fab {
+    display: none !important;
+}
+
+.shopping-fab svg {
+    width: 28px;
+    height: 28px;
+    stroke-width: 2;
+}
+
+/* === ПРОСТОЙ МОДАЛ ДОБАВЛЕНИЯ ТОВАРА === */
+.add-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 2500;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.add-modal-overlay.open {
+    display: flex;
+}
+
+.add-modal-sheet {
+    width: 100%;
+    max-width: var(--app-max-width);
+    background: var(--card-bg);
+    border-top-left-radius: 26px;
+    border-top-right-radius: 26px;
+    padding: 16px 20px calc(var(--safe-bottom) + 20px) 20px;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+    animation: sheetUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes sheetUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.sheet-handle {
+    width: 40px;
+    height: 5px;
+    background: #d1d5db;
+    border-radius: 3px;
+    margin: 0 auto 16px auto;
+}
+
+.sheet-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin-bottom: 14px;
+    color: var(--text-primary);
+}
+
+.add-input {
+    width: 100%;
+    height: 48px;
+    border-radius: 14px;
+    border: 2px solid #e5e7eb;
+    background: var(--app-bg);
+    padding: 0 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    outline: none;
+    margin-bottom: 16px;
+    font-family: var(--font);
+}
+
+.add-input:focus {
+    border-color: var(--purple-primary);
+}
+
+.btn-confirm-add {
+    width: 100%;
+    height: 50px;
+    border-radius: 9999px;
+    background: var(--purple-primary);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-confirm-add:active {
+    transform: scale(0.97);
+}
+
+/* === ТОСТ УВЕДОМЛЕНИЯ О ВЫПОЛНЕНИИ / ПОКУПКЕ ТОВАРА (ИДЕНТИЧНО TODO.HTML) === */
+.toast-notification {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background-color: #2b2d31;
+    color: #ffffff;
+    padding: 12px 18px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    z-index: 11000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+    transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.toast-notification.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+    .toast-notification {
+        bottom: calc(max(10px, calc(env(safe-area-inset-bottom, 0px) - 10px)) + 74px);
+    }
+}
+
+.toast-undo-btn {
+    background: transparent;
+    border: none;
+    color: #f59e0b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    transition: color 0.15s, transform 0.1s;
+}
+
+.toast-undo-btn:hover {
+    color: #d97706;
+    transform: scale(1.1);
+}
+
+.toast-undo-btn:active {
+    transform: scale(0.95);
+}

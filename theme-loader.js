@@ -12,6 +12,8 @@
     let defaultMode = 'system';
     if (pagePath.endsWith('/todo.html') || pagePath.endsWith('/todo') || pagePath.includes('todo.html')) {
         themeStorageKey = 'themeMode_todo';
+    } else if (pagePath.endsWith('/shopping.html') || pagePath.endsWith('/shopping') || pagePath.includes('shopping.html')) {
+        themeStorageKey = 'themeMode_shopping';
     } else if (pagePath.endsWith('/music.html') || pagePath.endsWith('/music') || pagePath.includes('music.html')) {
         themeStorageKey = 'themeMode_music';
         defaultMode = 'light';

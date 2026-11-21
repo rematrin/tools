@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tools-pwa-v43';
+const CACHE_NAME = 'tools-pwa-v46';
 const DYNAMIC_CACHE = 'tools-dynamic-image-cache-v1';
 const ASSETS = [
     './fx_converter.html',
@@ -8,6 +8,13 @@ const ASSETS = [
     './todo.js',
     './todo.css',
     './todo_manifest.json',
+    './shopping.html',
+    './shopping.js',
+    './shopping.css',
+    './shopping_manifest.json',
+    './img/shopping-icon.svg',
+    './img/shopping128.png',
+    './img/shopping256.png',
     './creatorhub.html',
     './creatorhub.js',
     './creatorhub.css',

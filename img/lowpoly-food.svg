@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <!-- Soft shadow under the 3D low poly model -->
+    <radialGradient id="shadowGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Ground contact shadow -->
+  <ellipse cx="100" cy="172" rx="65" ry="16" fill="url(#shadowGrad)"/>
+
+  <!-- Low Poly 3D Apple -->
+  <g id="lowpoly-mesh" stroke="#e02424" stroke-width="0.5" stroke-linejoin="round">
+    <!-- Base / Bottom facets (dark red / shadow) -->
+    <polygon points="100,165 72,150 90,162" fill="#770c0c"/>
+    <polygon points="100,165 90,162 110,162" fill="#881010"/>
+    <polygon points="100,165 110,162 128,150" fill="#991515"/>
+    <polygon points="72,150 48,128 70,135" fill="#881010"/>
+    <polygon points="72,150 70,135 90,162" fill="#991515"/>
+    <polygon points="128,150 110,162 130,135" fill="#aa1818"/>
+    <polygon points="128,150 130,135 152,128" fill="#881010"/>
+
+    <!-- Mid lower facets -->
+    <polygon points="48,128 35,98 62,108" fill="#aa1b1b"/>
+    <polygon points="48,128 62,108 70,135" fill="#c02525"/>
+    <polygon points="70,135 62,108 100,120" fill="#cf2a2a"/>
+    <polygon points="70,135 100,120 90,162" fill="#b92222"/>
+    <polygon points="110,162 100,120 130,135" fill="#d83030"/>
+    <polygon points="130,135 100,120 138,108" fill="#e23838"/>
+    <polygon points="130,135 138,108 152,128" fill="#c82828"/>
+    <polygon points="152,128 138,108 165,98" fill="#b02020"/>
+
+    <!-- Mid upper facets -->
+    <polygon points="35,98 42,65 68,75" fill="#c52828"/>
+    <polygon points="35,98 68,75 62,108" fill="#db3434"/>
+    <polygon points="62,108 68,75 100,85" fill="#ee4242"/>
+    <polygon points="62,108 100,85 100,120" fill="#e53939"/>
+    <polygon points="100,120 100,85 132,75" fill="#f45252"/>
+    <polygon points="100,120 132,75 138,108" fill="#ec4545"/>
+    <polygon points="138,108 132,75 158,65" fill="#dd3737"/>
+    <polygon points="138,108 158,65 165,98" fill="#c82929"/>
+
+    <!-- Top shoulder facets (highlights) -->
+    <polygon points="42,65 65,42 80,58" fill="#e84545"/>
+    <polygon points="42,65 80,58 68,75" fill="#f05353"/>
+    <polygon points="68,75 80,58 100,68" fill="#ff6b6b"/>
+    <polygon points="68,75 100,68 100,85" fill="#f85a5a"/>
+    <polygon points="100,85 100,68 120,58" fill="#ff7575"/>
+    <polygon points="100,85 120,58 132,75" fill="#fa6060"/>
+    <polygon points="132,75 120,58 135,42" fill="#f25555"/>
+    <polygon points="132,75 135,42 158,65" fill="#e24444"/>
+
+    <!-- Apple top cavity dip -->
+    <polygon points="65,42 85,38 80,58" fill="#d23232"/>
+    <polygon points="85,38 100,48 80,58" fill="#b82525"/>
+    <polygon points="80,58 100,48 100,68" fill="#d63535"/>
+    <polygon points="100,68 100,48 115,38" fill="#cc3030"/>
+    <polygon points="100,68 115,38 120,58" fill="#ea4a4a"/>
+    <polygon points="120,58 115,38 135,42" fill="#d93838"/>
+  </g>
+
+  <!-- Apple Stem (brown 3D low poly cylinder) -->
+  <polygon points="98,48 103,48 106,24 100,24" fill="#583115" stroke="#3d1f0a" stroke-width="0.5"/>
+  <polygon points="100,24 106,24 112,14 107,14" fill="#7a4721" stroke="#3d1f0a" stroke-width="0.5"/>
+
+  <!-- Low Poly Green Leaf -->
+  <polygon points="106,24 125,18 138,24" fill="#48bb78" stroke="#2f855a" stroke-width="0.5"/>
+  <polygon points="106,24 138,24 126,34" fill="#38a169" stroke="#2f855a" stroke-width="0.5"/>
+  <polygon points="125,18 148,15 138,24" fill="#68d391" stroke="#2f855a" stroke-width="0.5"/>
+  <polygon points="138,24 148,15 142,30" fill="#48bb78" stroke="#2f855a" stroke-width="0.5"/>
+</svg>

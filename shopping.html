@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Покупки">
+    <meta name="theme-color" content="#f4f3f9">
+    <title>Список покупок</title>
+
+    <link rel="icon" type="image/svg+xml" href="img/lowpoly-food.svg">
+    <link rel="icon" type="image/png" href="img/shopping128.png">
+    <link rel="apple-touch-icon" href="img/shopping256.png">
+    <link rel="manifest" href="shopping_manifest.json">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- CSS Стили -->
+    <link rel="stylesheet" href="auth-widget.css">
+    <link rel="stylesheet" href="shopping.css">
+
+    <!-- Загрузчик темы -->
+    <script src="theme-loader.js"></script>
+</head>
+
+<body>
+
+    <div class="game-viewport">
+        <main class="game-app-container">
+
+            <!-- Верхняя панель: Переключатель вкладок «Список покупок» / «Мои товары» с интерактивным ползунком -->
+            <nav class="main-tabs-nav" id="mainTabsNav" role="tablist" aria-label="Основные разделы">
+                <div class="tabs-slider-indicator" id="tabsSliderIndicator"></div>
+                <button class="main-tab-btn active" id="tabShoppingList" type="button" role="tab" aria-selected="true">Список покупок</button>
+                <button class="main-tab-btn" id="tabMyProducts" type="button" role="tab" aria-selected="false">Мои товары</button>
+            </nav>
+
+            <!-- Верхняя подпанель: Индикатор демо-режима и переключатель вида (Список / Сетка) -->
+            <header class="game-top-bar" id="gameTopBar">
+                <!-- Индикатор тестового режима #test -->
+                <div class="test-mode-badge" id="testModeBanner" style="display: none;">
+                    <span>🎮 Демо-режим (#test)</span>
+                    <button id="btnExitTestMode" type="button" class="btn-exit-test">Выйти</button>
+                </div>
+
+                <!-- Ссылка в профиль / меню виджета auth -->
+                <div id="profile-container" style="display: none;"></div>
+
+                <!-- Переключатель Список / Сетка (для списка покупок) -->
+                <div class="view-toggle-pill" id="viewTogglePill" role="tablist" aria-label="Переключение вида">
+                    <button class="toggle-btn active" id="btnViewList" title="Вид списком" type="button" role="tab" aria-selected="true">
+                        <!-- Иконка списка (строки с точками) -->
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="9" y1="6" x2="20" y2="6"></line>
+                            <line x1="9" y1="12" x2="20" y2="12"></line>
+                            <line x1="9" y1="18" x2="20" y2="18"></line>
+                            <circle cx="4" cy="6" r="1.5" fill="currentColor"></circle>
+                            <circle cx="4" cy="12" r="1.5" fill="currentColor"></circle>
+                            <circle cx="4" cy="18" r="1.5" fill="currentColor"></circle>
+                        </svg>
+                    </button>
+                    <button class="toggle-btn" id="btnViewGrid" title="Вид сеткой" type="button" role="tab" aria-selected="false">
+                        <!-- Иконка сетки (2x2 квадрата) -->
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7.5" height="7.5" rx="2"></rect>
+                            <rect x="13.5" y="3" width="7.5" height="7.5" rx="2"></rect>
+                            <rect x="3" y="13.5" width="7.5" height="7.5" rx="2"></rect>
+                            <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"></rect>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- ВКЛАДКА 1: Список покупок -->
+            <section class="game-content" id="screenShoppingList">
+
+                <!-- Пустое состояние (когда товаров еще нет) -->
+                <div class="empty-game-state" id="emptyState" style="display: none;">
+                    <img src="img/lowpoly-food.svg" alt="Пусто" class="empty-game-icon">
+                    <h2 class="empty-game-title">Список пуст</h2>
+                    <p class="empty-game-desc">Нажмите кнопку внизу, чтобы добавить первый товар</p>
+                </div>
+
+                <!-- Контейнер активных товаров (класс view-list или view-grid) -->
+                <div class="items-wrapper view-list" id="activeItemsList"></div>
+
+                <!-- Секция «Купленные» -->
+                <div class="bought-section" id="boughtSection" style="display: none;">
+                    <div class="bought-header" id="boughtToggleHeader">
+                        <span class="bought-title">Купленные</span>
+                        <svg class="bought-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+
+                    <!-- Контейнер купленных товаров (также переключается в view-list или view-grid) -->
+                    <div class="items-wrapper view-list" id="boughtItemsList"></div>
+                </div>
+
+            </section>
+
+            <!-- ВКЛАДКА 2: Мои товары (База товаров пользователя) -->
+            <section class="game-content" id="screenMyProducts" style="display: none;">
+                <!-- Фильтры по категориям (как на скриншоте) -->
+                <nav class="category-filters-scroll" id="catalogFilters" aria-label="Фильтры категорий">
+                    <button class="filter-pill active" data-cat="all" type="button">Все</button>
+                    <button class="filter-pill" data-cat="vegetables" type="button">🥦 Овощи</button>
+                    <button class="filter-pill" data-cat="fruits" type="button">🍎 Фрукты</button>
+                    <button class="filter-pill" data-cat="dairy" type="button">🥛 Молочное</button>
+                </nav>
+
+                <!-- Список / Сетка товаров (переключается классами view-list / view-grid) -->
+                <div class="products-wrapper view-list" id="catalogProductsGrid"></div>
+            </section>
+
+            <!-- Круглая плавающая кнопка «+» (FAB) справа внизу, как в todo.html -->
+            <button class="shopping-fab" id="btnOpenAddModal" type="button" aria-label="Добавить" aria-haspopup="dialog">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14"></path>
+                </svg>
+            </button>
+
+            <!-- Простая шторка добавления товара -->
+            <div class="add-modal-overlay" id="addModalOverlay">
+                <div class="add-modal-sheet">
+                    <div class="sheet-handle"></div>
+                    <h3 class="sheet-title">Новый товар</h3>
+                    <input type="text" id="modalItemInput" class="add-input" placeholder="Название товара..." autocomplete="off">
+                    <button class="btn-confirm-add" id="btnConfirmAdd" type="button">Добавить в список</button>
+                </div>
+            </div>
+
+            <!-- Всплывающее уведомление о покупке товара (как в todo.html) -->
+            <div class="toast-notification" id="itemCompletionToast" style="display: none;">
+                <div class="toast-content-wrapper" style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+                    <span class="toast-text" style="font-weight: 700;">Товар куплен</span>
+                </div>
+                <button class="toast-undo-btn" id="btnToastUndo" aria-label="Отменить покупку">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                        <path d="M3 7v6h6"></path>
+                        <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+                    </svg>
+                </button>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Общие скрипты экосистемы -->
+    <script type="module" src="nav-widget.js"></script>
+    <script type="module" src="auth-widget.js"></script>
+    <!-- Логика покупок в игровом стиле -->
+    <script src="shopping.js"></script>
+
+</body>
+
+</html>

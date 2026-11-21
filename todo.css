@@ -5856,6 +5856,12 @@ body.dark .modal-task-title-display .task-title-link {
     }
 
     .task-details-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10000 !important;
         padding: 0 8px calc(10px + env(safe-area-inset-bottom, 0px)) 8px !important;
         align-items: flex-end;
         justify-content: center;
@@ -5872,7 +5878,7 @@ body.dark .modal-task-title-display .task-title-link {
         flex-direction: column;
         width: 100% !important;
         max-width: 100% !important;
-        height: 48vh;
+        height: 52vh;
         max-height: calc(88vh - env(safe-area-inset-bottom, 0px));
         min-height: 0;
         border-radius: 28px !important;
@@ -5888,7 +5894,7 @@ body.dark .modal-task-title-display .task-title-link {
 
     .task-details-modal-overlay.active .task-details-modal-card {
         transform: translateY(0);
-        height: 48vh;
+        height: 52vh;
         /* collapsed state by default */
     }
 
@@ -5900,7 +5906,7 @@ body.dark .modal-task-title-display .task-title-link {
 
     .task-details-modal-overlay.active .task-details-modal-card.collapsed,
     .task-details-modal-card.collapsed {
-        height: 48vh;
+        height: 52vh;
         transform: translateY(0);
     }
 

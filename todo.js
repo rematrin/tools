@@ -13280,6 +13280,7 @@ function initMobileBottomSheet() {
     let currentY = 0;
     let startHeight = 0;
     let startTranslateY = 0;
+    let isStartingExpanded = false;
     let isTracking = false;
     let isDragging = false;
     let isHandleTouch = false;
@@ -13290,11 +13291,11 @@ function initMobileBottomSheet() {
     let velocityY = 0;
 
     function getCollapsedHeight() {
-        return Math.round(window.innerHeight * 0.48);
+        return Math.round(window.innerHeight * 0.52);
     }
 
     function getExpandedHeight() {
-        return Math.round(Math.min(window.innerHeight * 0.88, window.innerHeight - 80));
+        return Math.round(Math.min(window.innerHeight * 0.88, window.innerHeight - 70));
     }
 
     function getCurrentTranslateY() {
@@ -13406,6 +13407,7 @@ function initMobileBottomSheet() {
             return;
         }
 
+        isStartingExpanded = card.classList.contains('expanded');
         startHeight = card.getBoundingClientRect().height;
         startTranslateY = getCurrentTranslateY();
         isTracking = true;
@@ -13452,11 +13454,11 @@ function initMobileBottomSheet() {
         const collapsedHeight = getCollapsedHeight();
         const expandedHeight = getExpandedHeight();
 
-        if (startHeight >= expandedHeight - 15) {
+        if (isStartingExpanded) {
             // Started from expanded
             if (deltaY <= 0) {
                 // Dragging UP beyond expanded (rubber-band)
-                const rubber = Math.abs(deltaY) * 0.25;
+                const rubber = Math.abs(deltaY) * 0.2;
                 card.style.height = `${expandedHeight + rubber}px`;
                 card.style.transform = 'translateY(0px)';
             } else {
@@ -13480,7 +13482,7 @@ function initMobileBottomSheet() {
                 // Dragging UP from collapsed towards expanded
                 let targetHeight = startHeight - deltaY;
                 if (targetHeight > expandedHeight) {
-                    targetHeight = expandedHeight + (targetHeight - expandedHeight) * 0.25;
+                    targetHeight = expandedHeight + (targetHeight - expandedHeight) * 0.2;
                 }
                 card.style.height = `${targetHeight}px`;
                 card.style.transform = 'translateY(0px)';
@@ -13531,35 +13533,34 @@ function initMobileBottomSheet() {
         const collapsedHeight = getCollapsedHeight();
         const expandedHeight = getExpandedHeight();
 
-        // 1. If pulled down significantly (past threshold): close
-        if (currentTranslateY > 80) {
-            snapToState('close');
-            return;
-        }
-
-        // 2. High-velocity gestures (flick)
-        if (velocityY < -0.35) {
-            // Flick up -> expand
-            snapToState('expanded');
-            return;
-        } else if (velocityY > 0.35) {
-            // Flick down
-            if (startHeight >= expandedHeight - 15 && currentTranslateY < 30) {
+        if (isStartingExpanded) {
+            // User was expanded and dragged down:
+            if (currentTranslateY > 100) {
+                // Dragged way past collapsed -> close
+                snapToState('close');
+            } else if (velocityY > 0.3) {
+                // Flicked down -> collapse!
+                snapToState('collapsed');
+            } else if (currentHeight < (collapsedHeight + expandedHeight) * 0.6) {
+                // More than halfway down -> collapse
                 snapToState('collapsed');
             } else {
-                snapToState('close');
+                // Return back to expanded
+                snapToState('expanded');
             }
             return;
         }
 
-        // 3. Position-based snapping
-        const midHeight = (collapsedHeight + expandedHeight) / 2;
-        if (currentHeight >= midHeight && currentTranslateY < 30) {
-            snapToState('expanded');
-        } else if (currentTranslateY < 60) {
-            snapToState('collapsed');
-        } else {
+        // User was collapsed:
+        if (currentTranslateY > 60 || velocityY > 0.3) {
+            // Dragged or flicked down from collapsed -> close
             snapToState('close');
+        } else if (velocityY < -0.3 || currentHeight > (collapsedHeight + expandedHeight) * 0.4) {
+            // Dragged or flicked up from collapsed -> expand
+            snapToState('expanded');
+        } else {
+            // Return back to collapsed
+            snapToState('collapsed');
         }
     }
 

@@ -13218,13 +13218,16 @@ function openTaskDetailsModal(taskId) {
         updateMobileFabVisibility();
         const card = taskDetailsModal.querySelector('.task-details-modal-card');
         if (card) {
-            card.classList.remove('expanded');
+            card.classList.remove('expanded', 'is-dragging');
             card.classList.add('collapsed');
             card.style.transform = ''; // reset inline drag transform
+            card.style.transition = '';
         }
         // Force reflow
         taskDetailsModal.offsetHeight;
         taskDetailsModal.classList.add('active');
+        taskDetailsModal.style.backgroundColor = '';
+        taskDetailsModal.style.transition = '';
     }
 
     if (btnModalAddSubtask) btnModalAddSubtask.style.display = 'inline-flex';
@@ -13245,9 +13248,12 @@ function closeTaskDetailsModal() {
         taskDetailsModal.classList.remove('active');
         const card = taskDetailsModal.querySelector('.task-details-modal-card');
         if (card) {
-            card.classList.remove('expanded', 'collapsed');
+            card.classList.remove('expanded', 'collapsed', 'is-dragging');
             card.style.transform = ''; // reset inline drag transform
+            card.style.transition = '';
         }
+        taskDetailsModal.style.backgroundColor = '';
+        taskDetailsModal.style.transition = '';
         setTimeout(() => {
             if (currentModalTaskId === null) {
                 taskDetailsModal.style.display = 'none';
@@ -13263,106 +13269,280 @@ function initMobileBottomSheet() {
     const card = taskDetailsModal.querySelector('.task-details-modal-card');
     const dragHandleContainer = taskDetailsModal.querySelector('.task-details-drag-handle-container');
     const mainContent = taskDetailsModal.querySelector('.task-details-main-content');
+    const titleRow = taskDetailsModal.querySelector('.task-details-title-row');
 
     if (!card || !dragHandleContainer) return;
 
     let startY = 0;
+    let startX = 0;
     let currentY = 0;
     let startTranslateY = 0;
+    let isTracking = false;
     let isDragging = false;
+    let isHandleTouch = false;
+    let isContentTouch = false;
+    let snapTimeout = null;
+    let lastY = 0;
+    let lastTime = 0;
+    let velocityY = 0;
+
+    function getCollapsedY() {
+        return window.innerHeight * 0.40;
+    }
+
+    function getCurrentTranslateY() {
+        const transform = window.getComputedStyle(card).transform;
+        if (transform && transform !== 'none') {
+            try {
+                const matrix = new DOMMatrixReadOnly(transform);
+                return matrix.m42;
+            } catch (err) {
+                const values = transform.match(/matrix.*\((.+)\)/);
+                if (values && values[1]) {
+                    const parts = values[1].split(', ');
+                    if (parts.length >= 6) return parseFloat(parts[5]);
+                }
+            }
+        }
+        return card.classList.contains('expanded') ? 0 : getCollapsedY();
+    }
+
+    function snapToState(targetState) {
+        if (snapTimeout) {
+            clearTimeout(snapTimeout);
+            snapTimeout = null;
+        }
+
+        const collapsedY = getCollapsedY();
+        card.classList.remove('is-dragging');
+        card.style.transition = 'transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        taskDetailsModal.style.transition = 'background-color 0.32s ease';
+
+        if (targetState === 'expanded') {
+            card.style.transform = 'translateY(0px)';
+            taskDetailsModal.style.backgroundColor = 'rgba(0, 0, 0, 0.45)';
+            snapTimeout = setTimeout(() => {
+                if (currentModalTaskId !== null && card) {
+                    card.classList.remove('collapsed');
+                    card.classList.add('expanded');
+                    card.style.transform = '';
+                    card.style.transition = '';
+                    taskDetailsModal.style.backgroundColor = '';
+                    taskDetailsModal.style.transition = '';
+                }
+                snapTimeout = null;
+            }, 320);
+        } else if (targetState === 'collapsed') {
+            card.style.transform = `translateY(${collapsedY}px)`;
+            taskDetailsModal.style.backgroundColor = 'rgba(0, 0, 0, 0.45)';
+            snapTimeout = setTimeout(() => {
+                if (currentModalTaskId !== null && card) {
+                    card.classList.remove('expanded');
+                    card.classList.add('collapsed');
+                    card.style.transform = '';
+                    card.style.transition = '';
+                    taskDetailsModal.style.backgroundColor = '';
+                    taskDetailsModal.style.transition = '';
+                }
+                snapTimeout = null;
+            }, 320);
+        } else if (targetState === 'close') {
+            card.style.transform = 'translateY(100%)';
+            taskDetailsModal.style.backgroundColor = 'rgba(0, 0, 0, 0)';
+            snapTimeout = setTimeout(() => {
+                closeTaskDetailsModal();
+                if (card) {
+                    card.style.transform = '';
+                    card.style.transition = '';
+                }
+                taskDetailsModal.style.backgroundColor = '';
+                taskDetailsModal.style.transition = '';
+                snapTimeout = null;
+            }, 300);
+        }
+    }
 
     function onTouchStart(e) {
-        if (window.innerWidth > 768) return; // Only mobile
+        if (window.innerWidth > 768) return; // Only mobile bottom sheet
 
-        const isHandle = e.target.closest('.task-details-drag-handle-container') || e.target.closest('.task-details-title-row');
-        const isMainContent = e.target.closest('.task-details-main-content');
-
-        if (!isHandle && isMainContent && mainContent.scrollTop > 0) {
+        // Don't intercept clicks on specific interactive controls
+        if (e.target.closest('#btnTaskDetailsMobileClose, #btnTaskDetailsMobileMore, .modal-actions-dropdown, .custom-checkbox, input, textarea, select, .due-date-wrapper, .btn-modal-add-subtask, .btn-save-subtask, .subtask-item-checkbox, .subtask-menu-btn')) {
             return;
         }
 
-        startY = e.touches[0].clientY;
-        currentY = startY;
-
-        if (card.classList.contains('expanded')) {
-            startTranslateY = 0;
-        } else {
-            startTranslateY = window.innerHeight * 0.40;
+        if (snapTimeout) {
+            clearTimeout(snapTimeout);
+            snapTimeout = null;
         }
 
-        isDragging = true;
+        const touch = e.touches ? e.touches[0] : e;
+        startY = touch.clientY;
+        startX = touch.clientX;
+        currentY = startY;
+        lastY = startY;
+        lastTime = Date.now();
+        velocityY = 0;
+
+        isHandleTouch = Boolean(e.target.closest('.task-details-drag-handle-container'));
+        isContentTouch = Boolean(e.target.closest('.task-details-main-content'));
+
+        // If expanded and touching content, only allow drag down when content is at top
+        if (isContentTouch && card.classList.contains('expanded') && mainContent && mainContent.scrollTop > 2) {
+            isTracking = false;
+            return;
+        }
+
+        startTranslateY = getCurrentTranslateY();
+        isTracking = true;
+        isDragging = false;
+
         card.style.transition = 'none';
+        taskDetailsModal.style.transition = 'none';
     }
 
     function onTouchMove(e) {
+        if (!isTracking) return;
+
+        const touch = e.touches ? e.touches[0] : e;
+        currentY = touch.clientY;
+        const deltaX = touch.clientX - startX;
+        const deltaY = currentY - startY;
+
+        if (!isDragging) {
+            // Check if this is a horizontal gesture
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 8) {
+                isTracking = false;
+                return;
+            }
+
+            // If touching content while expanded, only allow pulling down
+            if (isContentTouch && card.classList.contains('expanded') && deltaY < 0) {
+                isTracking = false;
+                return;
+            }
+
+            // Engage drag if moved more than 5px or if dragging handle
+            if (Math.abs(deltaY) > 5 || (isHandleTouch && Math.abs(deltaY) > 2)) {
+                isDragging = true;
+                card.classList.add('is-dragging');
+            }
+        }
+
         if (!isDragging) return;
 
-        currentY = e.touches[0].clientY;
-        const deltaY = currentY - startY;
+        if (e.cancelable) {
+            e.preventDefault();
+        }
 
         let newTranslateY = startTranslateY + deltaY;
 
+        // Rubber-band resistance when pulling above expanded state
         if (newTranslateY < 0) {
-            newTranslateY = newTranslateY * 0.3; // Rubber-band effect
+            newTranslateY = newTranslateY * 0.25;
         }
 
         card.style.transform = `translateY(${newTranslateY}px)`;
 
-        if (newTranslateY > window.innerHeight * 0.40) {
-            const progress = Math.max(0, Math.min(1, (newTranslateY - window.innerHeight * 0.40) / (window.innerHeight * 0.52)));
-            taskDetailsModal.style.backgroundColor = `rgba(0, 0, 0, ${0.45 * (1 - progress)})`;
+        // Smooth backdrop fade when dragging down past collapsed
+        const collapsedY = getCollapsedY();
+        if (newTranslateY > collapsedY) {
+            const progress = Math.min(1, Math.max(0, (newTranslateY - collapsedY) / (window.innerHeight - collapsedY)));
+            taskDetailsModal.style.backgroundColor = `rgba(0, 0, 0, ${(1 - progress) * 0.45})`;
+        } else {
+            taskDetailsModal.style.backgroundColor = 'rgba(0, 0, 0, 0.45)';
+        }
+
+        const now = Date.now();
+        const dt = now - lastTime;
+        if (dt > 10) {
+            velocityY = (touch.clientY - lastY) / dt;
+            lastY = touch.clientY;
+            lastTime = now;
         }
     }
 
     function onTouchEnd(e) {
+        if (!isTracking) return;
+        isTracking = false;
+
+        const touchEndClientY = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientY : currentY;
+        const totalDeltaY = touchEndClientY - startY;
+        const totalDistance = Math.abs(totalDeltaY);
+        const collapsedY = getCollapsedY();
+
+        card.classList.remove('is-dragging');
+
+        // Tap on drag handle container without dragging: toggle between expanded and collapsed!
+        if (!isDragging && totalDistance < 8 && isHandleTouch) {
+            if (card.classList.contains('expanded')) {
+                snapToState('collapsed');
+            } else {
+                snapToState('expanded');
+            }
+            return;
+        }
+
         if (!isDragging) return;
         isDragging = false;
 
-        card.style.transition = '';
-        taskDetailsModal.style.backgroundColor = '';
+        const currentTranslateY = getCurrentTranslateY();
 
-        const deltaY = currentY - startY;
-        const viewportHeight = window.innerHeight;
-
-        if (startTranslateY === 0) {
-            if (deltaY > 100) {
-                if (deltaY > viewportHeight * 0.35) {
-                    closeTaskDetailsModal();
-                } else {
-                    card.classList.remove('expanded');
-                    card.classList.add('collapsed');
-                    card.style.transform = '';
-                }
+        // 1. High-velocity gestures (flick)
+        if (velocityY < -0.35) {
+            // Flick up -> expand
+            snapToState('expanded');
+            return;
+        } else if (velocityY > 0.35) {
+            // Flick down
+            if (startTranslateY === 0 && currentTranslateY < collapsedY + 50) {
+                snapToState('collapsed');
             } else {
-                card.classList.add('expanded');
-                card.classList.remove('collapsed');
-                card.style.transform = '';
+                snapToState('close');
             }
+            return;
+        }
+
+        // 2. Position-based snapping
+        const midPoint = collapsedY * 0.45;
+        const closePoint = collapsedY + 90;
+
+        if (currentTranslateY < midPoint) {
+            snapToState('expanded');
+        } else if (currentTranslateY >= midPoint && currentTranslateY < closePoint) {
+            snapToState('collapsed');
         } else {
-            if (deltaY < -60) {
-                card.classList.add('expanded');
-                card.classList.remove('collapsed');
-                card.style.transform = '';
-            } else if (deltaY > 100) {
-                closeTaskDetailsModal();
-            } else {
-                card.classList.remove('expanded');
-                card.classList.add('collapsed');
-                card.style.transform = '';
-            }
+            snapToState('close');
         }
     }
 
+    // Touch event listeners
     dragHandleContainer.addEventListener('touchstart', onTouchStart, { passive: true });
-    dragHandleContainer.addEventListener('touchmove', onTouchMove, { passive: true });
-    dragHandleContainer.addEventListener('touchend', onTouchEnd);
-
-    const titleRow = taskDetailsModal.querySelector('.task-details-title-row');
     if (titleRow) {
         titleRow.addEventListener('touchstart', onTouchStart, { passive: true });
-        titleRow.addEventListener('touchmove', onTouchMove, { passive: true });
-        titleRow.addEventListener('touchend', onTouchEnd);
     }
+    // Main content touchstart: allows dragging when collapsed, or pulling down from top when expanded
+    if (mainContent) {
+        mainContent.addEventListener('touchstart', onTouchStart, { passive: true });
+    }
+
+    // Global move/end listeners so drag never breaks when finger moves fast
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+    // Mouse support for desktop / browser responsive mode testing
+    dragHandleContainer.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        onTouchStart(e);
+        const onMouseMove = (ev) => onTouchMove(ev);
+        const onMouseUp = (ev) => {
+            onTouchEnd(ev);
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        };
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+    });
 }
 
 function syncModalIfOpen() {

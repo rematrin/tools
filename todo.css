@@ -5888,12 +5888,18 @@ body.dark .modal-task-title-display .task-title-link {
         /* collapsed state by default */
     }
 
+    .task-details-modal-overlay.active .task-details-modal-card.expanded,
     .task-details-modal-card.expanded {
-        transform: translateY(0vh) !important;
+        transform: translateY(0vh);
     }
 
+    .task-details-modal-overlay.active .task-details-modal-card.collapsed,
     .task-details-modal-card.collapsed {
-        transform: translateY(40vh) !important;
+        transform: translateY(40vh);
+    }
+
+    .task-details-modal-card.is-dragging {
+        transition: none !important;
     }
 
     .task-details-drag-handle-container {

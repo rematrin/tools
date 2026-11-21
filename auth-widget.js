@@ -24,6 +24,7 @@ import {
     getDoc,
     deleteDoc,
     collection,
+    addDoc,
     getDocs,
     onSnapshot,
     serverTimestamp
@@ -42,6 +43,7 @@ const firebaseConfig = {
 // Экспортируем функции для других модулей
 window.doc = doc;
 window.setDoc = setDoc;
+window.addDoc = addDoc;
 window.getDoc = getDoc;
 window.deleteDoc = deleteDoc;
 window.collection = collection;

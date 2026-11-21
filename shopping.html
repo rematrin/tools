@@ -126,13 +126,65 @@
                 </svg>
             </button>
 
-            <!-- Простая шторка добавления товара -->
+            <!-- Простая шторка добавления товара в список покупок -->
             <div class="add-modal-overlay" id="addModalOverlay">
                 <div class="add-modal-sheet">
                     <div class="sheet-handle"></div>
-                    <h3 class="sheet-title">Новый товар</h3>
+                    <h3 class="sheet-title">Новый товар в список</h3>
                     <input type="text" id="modalItemInput" class="add-input" placeholder="Название товара..." autocomplete="off">
                     <button class="btn-confirm-add" id="btnConfirmAdd" type="button">Добавить в список</button>
+                </div>
+            </div>
+
+            <!-- Стандартное модальное окно добавления товара в базу (с загрузкой, вставкой, drag&drop и по ссылке) -->
+            <div class="product-modal-overlay" id="productModalOverlay" style="display: none;">
+                <div class="product-modal-card">
+                    <div class="product-modal-header">
+                        <h3 class="product-modal-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                            Новый товар в базу
+                        </h3>
+                        <button class="product-modal-close" id="btnProductModalClose" type="button" aria-label="Закрыть">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+
+                    <div class="product-modal-body">
+                        <label class="product-input-label" for="catalogProdNameInput">Название товара</label>
+                        <input type="text" id="catalogProdNameInput" class="product-name-input" placeholder="Например: Авокадо..." autocomplete="off">
+
+                        <div class="product-modal-tabs">
+                            <button type="button" class="product-tab-btn active" data-tab="file">Из файла</button>
+                            <button type="button" class="product-tab-btn" data-tab="url">По ссылке</button>
+                        </div>
+
+                        <!-- Вкладка 1: Из файла -->
+                        <div id="tabProductFile" class="product-tab-content">
+                            <p class="product-tab-hint">Загрузите изображение, вставьте из буфера обмена (Ctrl + V) или перетащите файл в область ниже.</p>
+                            <div id="productDropzone" class="icon-dropzone product-dropzone">
+                                <div class="dropzone-preview" id="dropzonePreview">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6;"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+                                </div>
+                                <div class="dropzone-text" id="dropzoneText">Кликните для выбора файла или перетащите его сюда</div>
+                            </div>
+                            <input type="file" id="productFileInput" accept="image/*" style="display: none;">
+                            <button type="button" class="btn-choose-file" id="btnProductSelectFile">Выбрать файл...</button>
+                        </div>
+
+                        <!-- Вкладка 2: По ссылке -->
+                        <div id="tabProductUrl" class="product-tab-content" style="display: none;">
+                            <p class="product-tab-hint">Вставьте прямую ссылку на изображение в поле ниже.</p>
+                            <input type="url" id="productUrlInput" class="product-url-input" placeholder="https://i.ibb.co/... или https://site.com/image.png" autocomplete="off">
+                            <div class="product-url-preview-wrap" id="urlPreviewWrap" style="display: none;">
+                                <img id="urlPreviewImg" src="" alt="Превью" class="product-url-preview">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="product-modal-footer">
+                        <button type="button" class="btn-save-product" id="btnSaveCatalogProduct">Сохранить в базу</button>
+                        <button type="button" class="btn-cancel-product" id="btnCancelCatalogProduct">Отмена</button>
+                    </div>
                 </div>
             </div>
 

@@ -1138,6 +1138,87 @@ body.dark .settings-card {
     border-color: rgba(255, 255, 255, 0.05);
 }
 
+/* Блок профиля в настройках (на самом первом месте) */
+.settings-profile-card {
+    padding: 16px 18px;
+}
+
+.settings-profile-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+}
+
+.settings-profile-avatar {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+body.dark .settings-profile-avatar {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.settings-profile-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
+.settings-profile-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    margin: 0;
+}
+
+.settings-logout-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 10px;
+    border: none;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.settings-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.18);
+}
+
+.settings-logout-btn:active {
+    transform: scale(0.97);
+}
+
+.settings-logout-btn.login-mode {
+    background: rgba(98, 84, 234, 0.12);
+    color: var(--purple-primary);
+}
+
+.settings-logout-btn.login-mode:hover {
+    background: rgba(98, 84, 234, 0.2);
+}
+
 .settings-card-header {
     display: flex;
     align-items: flex-start;

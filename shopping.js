@@ -183,13 +183,47 @@
     // Обновление состояния экрана настроек
     function renderSettingsView() {
         const els = getEls();
+
+        // 1. Блок профиля
+        const cachedUserStr = localStorage.getItem('todo_cached_user');
+        let user = (window.firebaseAuth && window.firebaseAuth.currentUser) || window.currentUser;
+        if (!user && cachedUserStr) {
+            try { user = JSON.parse(cachedUserStr); } catch (e) {}
+        }
+
+        const avatarEl = document.getElementById('settingsUserAvatar');
+        const nameEl = document.getElementById('settingsUserName');
+        const logoutBtn = document.getElementById('btnSettingsLogout');
+        const logoutBtnText = document.getElementById('settingsLogoutBtnText');
+
+        if (user && (user.uid || user.email || user.displayName)) {
+            if (nameEl) nameEl.textContent = user.displayName || user.email || 'Пользователь';
+            if (avatarEl) {
+                avatarEl.src = user.photoURL || 'https://i.ibb.co/Z6vRKK9x/0000000.jpg';
+            }
+            if (logoutBtn && logoutBtnText) {
+                logoutBtn.classList.remove('login-mode');
+                logoutBtnText.textContent = 'Выйти';
+            }
+        } else {
+            if (nameEl) nameEl.textContent = 'Гость';
+            if (avatarEl) {
+                avatarEl.src = 'https://i.ibb.co/Z6vRKK9x/0000000.jpg';
+            }
+            if (logoutBtn && logoutBtnText) {
+                logoutBtn.classList.add('login-mode');
+                logoutBtnText.textContent = 'Войти';
+            }
+        }
+
+        // 2. Тема оформления
         const currentTheme = localStorage.getItem('themeMode_shopping') || 'system';
         document.querySelectorAll('.theme-choice-btn').forEach(btn => {
             const mode = btn.dataset.themeMode;
             btn.classList.toggle('active', mode === currentTheme);
         });
 
-        // Тумблер режима кропа картинок
+        // 3. Тумблер режима кропа картинок
         if (els.toggleListCropMode) {
             els.toggleListCropMode.checked = (localStorage.getItem('shopping_list_crop_mode') === 'edge');
         }
@@ -1142,6 +1176,39 @@
         }
         if (els.tabSettings) {
             els.tabSettings.onclick = () => setMainTab('settings');
+        }
+
+        // Кнопка выхода / входа в блоке профиля
+        const btnLogout = document.getElementById('btnSettingsLogout');
+        if (btnLogout) {
+            btnLogout.onclick = () => {
+                const cachedUserStr = localStorage.getItem('todo_cached_user');
+                let user = (window.firebaseAuth && window.firebaseAuth.currentUser) || window.currentUser;
+                if (!user && cachedUserStr) {
+                    try { user = JSON.parse(cachedUserStr); } catch (e) {}
+                }
+
+                if (user && (user.uid || user.email || user.displayName)) {
+                    // Выход из аккаунта
+                    const authLogoutBtn = document.getElementById('btnLogout');
+                    if (authLogoutBtn) {
+                        authLogoutBtn.click();
+                    } else if (window.firebaseAuth && typeof window.firebaseAuth.signOut === 'function') {
+                        window.firebaseAuth.signOut();
+                    } else {
+                        localStorage.removeItem('todo_cached_user');
+                        window.dispatchEvent(new CustomEvent('authChanged', { detail: { user: null } }));
+                    }
+                } else {
+                    // Вход в аккаунт через auth-widget
+                    if (typeof window.openAuthModal === 'function') {
+                        window.openAuthModal(btnLogout, 'login');
+                    } else {
+                        const loginBtn = document.getElementById('auth-login-btn');
+                        if (loginBtn) loginBtn.click();
+                    }
+                }
+            };
         }
 
         // Переключение тем в настройках

@@ -131,6 +131,24 @@
             <section class="game-content" id="screenSettings" style="display: none;">
                 <div class="settings-view-container">
 
+                    <!-- Блок профиля пользователя (на самом первом месте) -->
+                    <div class="settings-card settings-profile-card" id="settingsProfileCard">
+                        <div class="settings-profile-row">
+                            <img class="settings-profile-avatar" id="settingsUserAvatar" src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" alt="Аватар профиля" draggable="false">
+                            <div class="settings-profile-details">
+                                <h3 class="settings-profile-name" id="settingsUserName">Пользователь</h3>
+                                <button class="settings-logout-btn" id="btnSettingsLogout" type="button">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                        <polyline points="16 17 21 12 16 7"></polyline>
+                                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                                    </svg>
+                                    <span id="settingsLogoutBtnText">Выйти</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Блок темы оформления -->
                     <div class="settings-card">
                         <div class="settings-card-header">

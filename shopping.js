@@ -1308,6 +1308,7 @@
         if (els.productDetailsCard) {
             els.productDetailsCard.style.transition = 'transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1)';
             els.productDetailsCard.style.transform = 'translateY(100%)';
+            els.productDetailsCard.style.height = '';
         }
         setTimeout(() => {
             if (!els.productDetailsModal.classList.contains('active')) {
@@ -1315,6 +1316,7 @@
                 if (els.productDetailsCard) {
                     els.productDetailsCard.style.transform = '';
                     els.productDetailsCard.style.transition = '';
+                    els.productDetailsCard.style.height = '';
                 }
             }
         }, 300);
@@ -1858,8 +1860,10 @@
         if (!card || !overlay) return;
 
         let isDragging = false;
+        let isPullingUp = false;
         let startY = 0;
         let startX = 0;
+        let startHeight = 0;
         let currentY = 0;
         let lastY = 0;
         let lastTime = 0;
@@ -1878,7 +1882,9 @@
             lastY = startY;
             lastTime = Date.now();
             velocityY = 0;
+            startHeight = card.getBoundingClientRect().height;
             isDragging = true;
+            isPullingUp = false;
 
             card.classList.add('is-dragging');
             card.style.transition = 'none';
@@ -1891,11 +1897,20 @@
             const deltaX = touch.clientX - startX;
             const deltaY = currentY - startY;
 
-            if (deltaY > 0) {
+            if (deltaY < 0) {
+                // Тянем вверх: растягиваем карточку в высоту (нижний край остаётся прижат к низу экрана, пустоты нет)
+                isPullingUp = true;
                 if (e.cancelable) e.preventDefault();
-                card.style.transform = `translateY(${deltaY}px)`;
-            } else {
+                const overscroll = Math.abs(deltaY);
+                const rubber = Math.round(overscroll * 0.45);
                 card.style.transform = 'translateY(0px)';
+                card.style.height = `${startHeight + rubber}px`;
+            } else {
+                // Тянем вниз: сдвигаем карточку вниз
+                isPullingUp = false;
+                if (e.cancelable) e.preventDefault();
+                card.style.height = '';
+                card.style.transform = `translateY(${deltaY}px)`;
             }
 
             const now = Date.now();
@@ -1913,21 +1928,37 @@
             card.classList.remove('is-dragging');
             const deltaY = currentY - startY;
 
-            if (deltaY > 50 || velocityY > 0.25) {
+            if (deltaY <= 0 || isPullingUp) {
+                // Тянули вверх: НИ В КОЕМ СЛУЧАЕ НЕ ЗАКРЫВАЕТСЯ! Пружинно падает обратно в исходную высоту
+                card.style.transition = 'height 0.36s cubic-bezier(0.175, 0.885, 0.32, 1.25)';
+                card.style.height = '';
+                card.style.transform = 'translateY(0px)';
+                setTimeout(() => {
+                    if (card && !isDragging) {
+                        card.style.transform = '';
+                        card.style.transition = '';
+                        card.style.height = '';
+                    }
+                }, 360);
+            } else if (deltaY > 60 || (deltaY > 30 && velocityY > 0.32)) {
+                // Осознанный свайп вниз: закрытие
                 card.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)';
                 card.style.transform = 'translateY(100%)';
                 setTimeout(() => {
                     closeProductDetailsModal();
                 }, 250);
             } else {
-                card.style.transition = 'transform 0.2s ease';
+                // Небольшое смещение вниз: возврат в исходное положение
+                card.style.transition = 'transform 0.22s ease, height 0.22s ease';
                 card.style.transform = 'translateY(0px)';
+                card.style.height = '';
                 setTimeout(() => {
                     if (card && !isDragging) {
                         card.style.transform = '';
                         card.style.transition = '';
+                        card.style.height = '';
                     }
-                }, 200);
+                }, 220);
             }
         }
 
@@ -2206,15 +2237,13 @@
             };
         }
 
-        // Клик по блоку изображения или иконке карандаша для открытия меню замены/удаления
+        // Клик по иконке карандаша (с комфортным радиусом вокруг нее) для открытия меню замены/удаления
         if (els.btnEditProductImage) {
             els.btnEditProductImage.onclick = (e) => {
-                e.stopPropagation();
-                openEditImageModal();
-            };
-        }
-        if (els.productDetailsImageCard) {
-            els.productDetailsImageCard.onclick = () => {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
                 openEditImageModal();
             };
         }

@@ -13582,6 +13582,7 @@ function initMobileBottomSheet() {
     // Mouse support for desktop / browser responsive mode testing
     dragHandleContainer.addEventListener('mousedown', (e) => {
         if (e.button !== 0) return;
+        if (e.target.closest('#btnTaskDetailsMobileClose, #btnTaskDetailsMobileMore, .modal-actions-dropdown')) return;
         onTouchStart(e);
         const onMouseMove = (ev) => onTouchMove(ev);
         const onMouseUp = (ev) => {
@@ -13714,30 +13715,12 @@ function populateModalActionsDropdown(task) {
             <span>Удалить</span>
         </button>
     ` : `
-        <button class="dropdown-item btn-edit">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            <span>Изменить</span>
-        </button>
-
         <button class="dropdown-item btn-toggle-pomodoro">
             <svg viewBox="0 0 24 24" fill="currentColor" style="margin-right: 2.5px;" width="14" height="14">
                 <path d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12 14.5 13.3807 13.3807 14.5 12 14.5 10.6193 14.5 9.5 13.3807 9.5 12 9.5 10.6193 10.6193 9.5 12 9.5ZM12 2C17.5228 2 22 6.47715 22 12 22 17.5228 17.5228 22 12 22 6.47715 22 2 17.5228 2 12 2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12 4 16.4183 7.58172 20 12 20 16.4183 20 20 16.4183 20 12 20 7.58172 16.4183 4 12 4Z"></path>
             </svg>
             <span>${task.inPomodoro ? 'Удалить из Помодоро' : 'Добавить в Помодоро'}</span>
         </button>
-        
-        ${!isSubtask ? `
-        <button class="dropdown-item btn-add-subtask">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            <span>Добавить подзадачу</span>
-        </button>
-        ` : ''}
         
         <div class="dropdown-divider"></div>
         
@@ -15022,20 +15005,26 @@ if (btnTaskDetailsMobileMore && modalActionsDropdown) {
             if (card && !card.classList.contains('expanded')) {
                 card.classList.add('expanded');
                 card.classList.remove('collapsed');
+                card.style.height = '';
                 card.style.transform = ''; // reset touch-drag inline styles
                 card.style.transition = ''; // restore default CSS transition animation
             }
         }
 
-        const isHidden = modalActionsDropdown.style.display === 'none';
+        const isHidden = modalActionsDropdown.style.display === 'none' || !modalActionsDropdown.classList.contains('menu-visible');
         if (isHidden) {
             // Close other dropdowns globally
             document.querySelectorAll('.due-date-dropdown, .priority-dropdown, .project-dropdown, .task-actions-dropdown').forEach(d => {
-                if (d !== modalActionsDropdown) d.style.display = 'none';
+                if (d !== modalActionsDropdown) {
+                    d.style.display = 'none';
+                    d.classList.remove('menu-visible');
+                }
             });
             modalActionsDropdown.style.display = 'flex';
+            modalActionsDropdown.classList.add('menu-visible');
         } else {
             modalActionsDropdown.style.display = 'none';
+            modalActionsDropdown.classList.remove('menu-visible');
         }
     });
 }
@@ -15601,6 +15590,7 @@ document.addEventListener('click', (e) => {
         const modalActionsDropdown = document.getElementById('modalActionsDropdown');
         if (modalActionsDropdown && !e.target.closest('.task-details-mobile-more-wrapper')) {
             modalActionsDropdown.style.display = 'none';
+            modalActionsDropdown.classList.remove('menu-visible');
         }
 
         updateModalOverflow();

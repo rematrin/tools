@@ -6000,8 +6000,19 @@ body.dark .modal-task-title-display .task-title-link {
         top: calc(100% + 8px) !important;
         right: 0 !important;
         left: auto !important;
-        z-index: 1001 !important;
+        z-index: 10001 !important;
         width: 230px !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        transform: none !important;
+    }
+
+    .modal-actions-dropdown.menu-visible,
+    .modal-actions-dropdown[style*="display: flex"] {
+        display: flex !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        transform: none !important;
     }
 
     .task-details-close-btn {

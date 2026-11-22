@@ -189,6 +189,27 @@
                         </div>
                     </div>
 
+                    <!-- Блок пользовательских категорий -->
+                    <div class="settings-card settings-categories-card">
+                        <div class="settings-categories-header">
+                            <div class="settings-categories-left">
+                                <span class="settings-card-icon">🏷️</span>
+                                <div class="settings-card-info">
+                                    <h3 class="settings-card-title">Категории</h3>
+                                    <p class="settings-card-desc" id="settingsCategoriesCountText">0 категорий</p>
+                                </div>
+                            </div>
+                            <button class="btn-settings-add-category" id="btnOpenAddCategoryModal" type="button">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                <span>Создать</span>
+                            </button>
+                        </div>
+                        <div class="settings-categories-list" id="settingsCategoriesList"></div>
+                    </div>
+
                     <!-- Блок перехода в корзину (как в todo.html) -->
                     <div class="settings-card settings-trash-card" id="btnOpenTrashSettings">
                         <div class="settings-trash-row">
@@ -411,6 +432,35 @@
                             </svg>
                             Удалить изображение
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Модальное окно выбора иконки (эмодзи) для категории -->
+            <div class="product-modal-overlay" id="categoryEmojiPickerModal" style="display: none;">
+                <div class="product-modal-card category-emoji-modal-card">
+                    <div class="category-emoji-modal-header">
+                        <button class="modal-header-circle-btn" id="btnCloseEmojiPickerModal" type="button" aria-label="Закрыть">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                        <h3 class="category-emoji-modal-title">Иконка категории</h3>
+                        <button class="modal-header-circle-btn modal-header-circle-btn-save" id="btnSaveCategoryEmoji" type="button" aria-label="Сохранить">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" width="16" height="16">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="category-icon-picker-group">
+                        <div class="category-icon-picker-row">
+                            <div class="category-icon-preview" id="categoryIconPreview" title="Текущий эмодзи">🏷️</div>
+                            <div class="category-icon-input-wrap">
+                                <input type="text" class="category-emoji-input" id="categoryEmojiInput" placeholder="Введите эмодзи..." maxlength="8" autocomplete="off">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

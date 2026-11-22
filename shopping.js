@@ -35,9 +35,12 @@
     // Глобальное состояние
     let shoppingItems = [];
     let userProducts = [];
+    let userCategories = [];
     let currentUid = null;
     let unsubItems = null;
     let unsubProducts = null;
+    let unsubCategories = null;
+    let editingCategoryForEmojiId = null;
 
     let currentMainTab = 'shoppingList'; // 'shoppingList' или 'myProducts'
     let currentCategoryFilter = 'all';  // 'all', 'vegetables', 'fruits', 'dairy'
@@ -140,7 +143,17 @@
             confirmModalDesc: document.getElementById('confirmModalDesc'),
             confirmModalItemTitle: document.getElementById('confirmModalItemTitle'),
             btnConfirmDeleteCancel: document.getElementById('btnConfirmDeleteCancel'),
-            btnConfirmDeleteSubmit: document.getElementById('btnConfirmDeleteSubmit')
+            btnConfirmDeleteSubmit: document.getElementById('btnConfirmDeleteSubmit'),
+
+            // Пользовательские категории в настройках
+            settingsCategoriesList: document.getElementById('settingsCategoriesList'),
+            settingsCategoriesCountText: document.getElementById('settingsCategoriesCountText'),
+            btnOpenAddCategoryModal: document.getElementById('btnOpenAddCategoryModal'),
+            categoryEmojiPickerModal: document.getElementById('categoryEmojiPickerModal'),
+            btnCloseEmojiPickerModal: document.getElementById('btnCloseEmojiPickerModal'),
+            btnSaveCategoryEmoji: document.getElementById('btnSaveCategoryEmoji'),
+            categoryIconPreview: document.getElementById('categoryIconPreview'),
+            categoryEmojiInput: document.getElementById('categoryEmojiInput')
         };
     }
 
@@ -286,6 +299,228 @@
             const word = count === 1 ? 'товар' : ((count >= 2 && count <= 4) ? 'товара' : 'товаров');
             els.settingsTrashCountText.textContent = `${count} ${word}`;
         }
+
+        // 5. Список пользовательских категорий
+        renderCategoriesList();
+    }
+
+    // === УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЬСКИМИ КАТЕГОРИЯМИ В НАСТРОЙКАХ ===
+    function getCategoryCountWord(count) {
+        const c10 = count % 10;
+        const c100 = count % 100;
+        if (c100 >= 11 && c100 <= 19) return `${count} категорий`;
+        if (c10 === 1) return `${count} категория`;
+        if (c10 >= 2 && c10 <= 4) return `${count} категории`;
+        return `${count} категорий`;
+    }
+
+    function renderCategoriesList() {
+        const els = getEls();
+        if (els.settingsCategoriesCountText) {
+            els.settingsCategoriesCountText.textContent = getCategoryCountWord(userCategories.length);
+        }
+        if (!els.settingsCategoriesList) return;
+
+        if (userCategories.length === 0) {
+            els.settingsCategoriesList.innerHTML = `
+                <div class="categories-empty-state">Категорий пока нет. Нажмите «Создать», чтобы добавить первую категорию.</div>
+            `;
+            return;
+        }
+
+        els.settingsCategoriesList.innerHTML = userCategories.map(cat => {
+            const icon = cat.icon || '🏷️';
+            return `
+                <div class="settings-category-row" data-id="${cat.id}">
+                    <button type="button" class="category-row-icon-btn" data-id="${cat.id}" title="Изменить иконку">
+                        <span class="category-row-icon">${escapeHtml(icon)}</span>
+                    </button>
+                    <div class="category-row-name-wrap">
+                        <input type="text" class="category-inline-name-input" data-id="${cat.id}" value="${escapeHtml(cat.name || '')}" placeholder="Название категории" maxlength="40" autocomplete="off">
+                    </div>
+                    <div class="category-row-actions">
+                        <button type="button" class="btn-cat-action btn-cat-delete" data-id="${cat.id}" title="Удалить категорию">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Слушатели для каждой строки
+        els.settingsCategoriesList.querySelectorAll('.settings-category-row').forEach(row => {
+            const id = row.getAttribute('data-id');
+            const iconBtn = row.querySelector('.category-row-icon-btn');
+            const nameInput = row.querySelector('.category-inline-name-input');
+            const deleteBtn = row.querySelector('.btn-cat-delete');
+
+            if (iconBtn) {
+                iconBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    openEmojiPickerModal(id);
+                };
+            }
+
+            if (nameInput) {
+                const saveName = () => {
+                    const val = nameInput.value.trim();
+                    const cat = userCategories.find(c => String(c.id) === String(id));
+                    if (cat && cat.name !== val) {
+                        cat.name = val;
+                        cat.updatedAt = Date.now();
+                        saveLocalCache();
+                        if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.updateDoc === 'function') {
+                            try {
+                                const catRef = window.doc(window.db, 'users', currentUid, 'shopping_categories', String(cat.id));
+                                window.updateDoc(catRef, {
+                                    name: cat.name,
+                                    updatedAt: cat.updatedAt
+                                });
+                            } catch (e) {
+                                console.warn('[Shopping] Ошибка обновления категории в Firebase:', e);
+                            }
+                        }
+                    }
+                };
+
+                nameInput.addEventListener('blur', saveName);
+                nameInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        nameInput.blur();
+                    }
+                });
+            }
+
+            if (deleteBtn) {
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    handleDeleteCategory(id);
+                };
+            }
+        });
+    }
+
+    function handleCreateCategoryInline() {
+        const newCat = {
+            id: 'cat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            name: '',
+            icon: '🏷️',
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+        userCategories.push(newCat);
+        saveLocalCache();
+
+        if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.setDoc === 'function') {
+            try {
+                const catRef = window.doc(window.db, 'users', currentUid, 'shopping_categories', newCat.id);
+                window.setDoc(catRef, newCat);
+            } catch (e) {
+                console.warn('[Shopping] Ошибка сохранения категории в Firebase:', e);
+            }
+        }
+
+        renderCategoriesList();
+
+        // Автофокус на поле ввода новой категории
+        const inputEl = document.querySelector(`.settings-category-row[data-id="${newCat.id}"] .category-inline-name-input`);
+        if (inputEl) {
+            inputEl.focus();
+        }
+    }
+
+    function openEmojiPickerModal(catId) {
+        const els = getEls();
+        if (!els.categoryEmojiPickerModal) return;
+
+        editingCategoryForEmojiId = catId;
+        const cat = userCategories.find(c => String(c.id) === String(catId));
+        const currentIcon = (cat ? cat.icon : '🏷️') || '🏷️';
+
+        if (els.categoryEmojiInput) els.categoryEmojiInput.value = currentIcon;
+        if (els.categoryIconPreview) els.categoryIconPreview.textContent = currentIcon;
+
+        els.categoryEmojiPickerModal.style.display = 'flex';
+        els.categoryEmojiPickerModal.offsetHeight;
+        els.categoryEmojiPickerModal.classList.add('active');
+        if (els.categoryEmojiInput) {
+            setTimeout(() => {
+                els.categoryEmojiInput.focus();
+                els.categoryEmojiInput.select();
+            }, 80);
+        }
+    }
+
+    function closeEmojiPickerModal() {
+        const els = getEls();
+        if (!els.categoryEmojiPickerModal) return;
+        els.categoryEmojiPickerModal.classList.remove('active');
+        setTimeout(() => {
+            if (!els.categoryEmojiPickerModal.classList.contains('active')) {
+                els.categoryEmojiPickerModal.style.display = 'none';
+            }
+        }, 250);
+        editingCategoryForEmojiId = null;
+    }
+
+    function applyEmojiToCategory(emoji) {
+        if (!editingCategoryForEmojiId) {
+            closeEmojiPickerModal();
+            return;
+        }
+        const cat = userCategories.find(c => String(c.id) === String(editingCategoryForEmojiId));
+        if (cat) {
+            cat.icon = emoji || '🏷️';
+            cat.updatedAt = Date.now();
+            saveLocalCache();
+
+            if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.updateDoc === 'function') {
+                try {
+                    const catRef = window.doc(window.db, 'users', currentUid, 'shopping_categories', String(cat.id));
+                    window.updateDoc(catRef, {
+                        icon: cat.icon,
+                        updatedAt: cat.updatedAt
+                    });
+                } catch (e) {
+                    console.warn('[Shopping] Ошибка обновления иконки категории в Firebase:', e);
+                }
+            }
+
+            const rowIconEl = document.querySelector(`.settings-category-row[data-id="${cat.id}"] .category-row-icon`);
+            if (rowIconEl) {
+                rowIconEl.textContent = cat.icon;
+            }
+        }
+        closeEmojiPickerModal();
+    }
+
+    function handleDeleteCategory(catId) {
+        const cat = userCategories.find(c => String(c.id) === String(catId));
+        if (!cat) return;
+
+        const catName = cat.name ? `«${cat.name}»` : 'категорию';
+        showCustomConfirm(
+            `Удалить категорию?`,
+            `Вы действительно хотите удалить ${catName}?`,
+            `Удалить`,
+            () => {
+                userCategories = userCategories.filter(c => String(c.id) !== String(catId));
+                saveLocalCache();
+                renderCategoriesList();
+
+                if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.deleteDoc === 'function') {
+                    try {
+                        const catRef = window.doc(window.db, 'users', currentUid, 'shopping_categories', String(catId));
+                        window.deleteDoc(catRef);
+                    } catch (e) {
+                        console.warn('[Shopping] Ошибка удаления категории в Firebase:', e);
+                    }
+                }
+            }
+        );
     }
 
     // === ИНТЕРАКТИВНЫЙ ЖЕСТ СВАЙПА / ПЕРЕТАСКИВАНИЯ ПОЛЗУНКА ПАЛЬЦЕМ (КАК В TODO.HTML) ===
@@ -1477,6 +1712,14 @@
             userProducts = [];
         }
 
+        try {
+            const cachedCats = localStorage.getItem('shopping_categories_cache');
+            userCategories = cachedCats ? JSON.parse(cachedCats) : [];
+            if (!Array.isArray(userCategories)) userCategories = [];
+        } catch (e) {
+            userCategories = [];
+        }
+
         if (currentMainTab === 'myProducts') {
             renderCatalog();
         } else {
@@ -1489,6 +1732,7 @@
         try {
             localStorage.setItem('shopping_items_cache', JSON.stringify(shoppingItems));
             localStorage.setItem('shopping_products_cache', JSON.stringify(userProducts));
+            localStorage.setItem('shopping_categories_cache', JSON.stringify(userCategories));
         } catch (e) { }
     }
 
@@ -1497,6 +1741,7 @@
         if (!uid || !window.db || isTestMode()) return;
         if (unsubItems) unsubItems();
         if (unsubProducts) unsubProducts();
+        if (unsubCategories) unsubCategories();
 
         try {
             if (typeof window.collection === 'function' && typeof window.onSnapshot === 'function') {
@@ -1549,6 +1794,32 @@
                     if (currentMainTab === 'myProducts') renderCatalog();
                 }, (err) => {
                     console.error('[Shopping] Ошибка подписки на базу товаров Firestore:', err);
+                });
+
+                // Подписка на пользовательские категории в Firestore
+                const catsColRef = window.collection(window.db, 'users', uid, 'shopping_categories');
+                unsubCategories = window.onSnapshot(catsColRef, (snapshot) => {
+                    if (isTestMode()) return;
+                    const loaded = [];
+                    snapshot.forEach(docSnap => {
+                        const data = docSnap.data();
+                        if (data && typeof data === 'object') {
+                            loaded.push({ ...data, id: String(docSnap.id), name: data.name || '', icon: data.icon || '🏷️' });
+                        }
+                    });
+
+                    loaded.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                    userCategories = loaded;
+                    saveLocalCache();
+
+                    // Не перерендериваем если сейчас активен ввод в одном из инпутов категорий
+                    const activeEl = document.activeElement;
+                    const isEditingCategoryInput = activeEl && activeEl.classList && activeEl.classList.contains('category-inline-name-input');
+                    if (currentMainTab === 'settings' && !isEditingCategoryInput) {
+                        renderCategoriesList();
+                    }
+                }, (err) => {
+                    console.error('[Shopping] Ошибка подписки на категории Firestore:', err);
                 });
             }
         } catch (e) {
@@ -2901,6 +3172,61 @@
             };
         }
 
+        // Кнопка "+ Создать" в настройках категорий (инлайн создание без модалки)
+        if (els.btnOpenAddCategoryModal) {
+            els.btnOpenAddCategoryModal.onclick = () => {
+                handleCreateCategoryInline();
+            };
+        }
+
+        if (els.btnCloseEmojiPickerModal) {
+            els.btnCloseEmojiPickerModal.onclick = () => {
+                closeEmojiPickerModal();
+            };
+        }
+
+        if (els.btnSaveCategoryEmoji) {
+            els.btnSaveCategoryEmoji.onclick = () => {
+                const emoji = els.categoryEmojiInput ? els.categoryEmojiInput.value.trim() : '';
+                applyEmojiToCategory(emoji || '🏷️');
+            };
+        }
+
+        if (els.categoryEmojiPickerModal) {
+            els.categoryEmojiPickerModal.onclick = (e) => {
+                if (e.target === els.categoryEmojiPickerModal) {
+                    closeEmojiPickerModal();
+                }
+            };
+        }
+
+        // Ввод эмодзи пользователем
+        if (els.categoryEmojiInput) {
+            els.categoryEmojiInput.addEventListener('input', () => {
+                const val = els.categoryEmojiInput.value.trim();
+                let emoji = '';
+                if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+                    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+                    const segments = Array.from(segmenter.segment(val));
+                    emoji = segments.length > 0 ? segments[0].segment : '';
+                } else {
+                    emoji = val ? Array.from(val)[0] : '';
+                }
+                els.categoryEmojiInput.value = emoji;
+                if (els.categoryIconPreview) {
+                    els.categoryIconPreview.textContent = emoji || '🏷️';
+                }
+            });
+
+            els.categoryEmojiInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const emoji = els.categoryEmojiInput.value.trim();
+                    applyEmojiToCategory(emoji || '🏷️');
+                }
+            });
+        }
+
         setViewMode(currentViewMode);
         setMainTab('shoppingList');
         initTabsDragGesture();
@@ -2931,6 +3257,7 @@
             currentUid = null;
             if (unsubItems) unsubItems();
             if (unsubProducts) unsubProducts();
+            if (unsubCategories) unsubCategories();
             loadItems();
         }
         if (currentMainTab === 'settings') {

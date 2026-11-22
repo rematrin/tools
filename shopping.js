@@ -743,17 +743,25 @@
         } else {
             // Режим списка
             return `
-                <div class="shopping-card ${checkedClass}" data-id="${item.id}">
-                    <div class="card-left">
-                        <button class="game-checkbox" data-action="toggle" type="button" aria-label="${isChecked ? 'Снять отметку' : 'Куплено'}">
-                            <svg viewBox="0 0 24 24" fill="none">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                        </button>
-                        <span class="card-title">${escapeHtml(item.name)}</span>
+                <div class="swipe-item-container" data-id="${item.id}">
+                    <div class="swipe-delete-background" data-action="delete-item" aria-label="Удалить из списка">
+                        <svg class="swipe-trash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
                     </div>
-                    <div class="card-img-wrap">
-                        <img src="${itemImg}" alt="${escapeHtml(item.name)}" class="card-img" draggable="false">
+                    <div class="shopping-card ${checkedClass}" data-id="${item.id}">
+                        <div class="card-left">
+                            <button class="game-checkbox" data-action="toggle" type="button" aria-label="${isChecked ? 'Снять отметку' : 'Куплено'}">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </button>
+                            <span class="card-title">${escapeHtml(item.name)}</span>
+                        </div>
+                        <div class="card-img-wrap">
+                            <img src="${itemImg}" alt="${escapeHtml(item.name)}" class="card-img" draggable="false">
+                        </div>
                     </div>
                 </div>
             `;
@@ -847,8 +855,330 @@
     }
 
     function showCompletionToast(itemId) {
+        lastDeletedShoppingItem = null;
+        lastDeletedShoppingIndex = -1;
         lastCompletedItemId = itemId;
         showItemCompletedToast();
+    }
+
+    // Всплывающее уведомление об удалении товара из списка покупок (с возможностью Отменить)
+    let lastDeletedShoppingItem = null;
+    let lastDeletedShoppingIndex = -1;
+
+    function showItemDeletedToast(itemName) {
+        lastCompletedItemId = null;
+        const toast = document.getElementById('itemCompletionToast');
+        if (!toast) return;
+
+        const textEl = toast.querySelector('.toast-text');
+        const undoBtn = document.getElementById('btnToastUndo');
+
+        if (textEl) {
+            textEl.textContent = itemName ? `«${itemName}» удален из списка` : 'Товар удален из списка';
+        }
+        if (undoBtn) undoBtn.style.display = 'inline-flex';
+
+        if (toastTimeout) {
+            clearTimeout(toastTimeout);
+        }
+
+        toast.style.display = 'flex';
+        toast.offsetHeight;
+        toast.classList.add('show');
+
+        toastTimeout = setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                if (!toast.classList.contains('show')) {
+                    toast.style.display = 'none';
+                }
+            }, 350);
+        }, 4500);
+    }
+
+    // Удаление товара ТОЛЬКО из списка покупок (база товаров shopping_products не затрагивается!)
+    function removeItemFromShoppingList(itemId) {
+        let idx = shoppingItems.findIndex(i => String(i.id) === String(itemId));
+        if (idx === -1) {
+            idx = shoppingItems.findIndex(i => i.name === itemId);
+        }
+        if (idx === -1) return;
+
+        const removedItem = shoppingItems[idx];
+        lastDeletedShoppingItem = { ...removedItem };
+        lastDeletedShoppingIndex = idx;
+        lastCompletedItemId = null;
+
+        // Удаляем из массива списка покупок
+        shoppingItems.splice(idx, 1);
+        saveLocalCache();
+
+        renderItems();
+        if (currentMainTab === 'myProducts') renderCatalog();
+
+        // Удаляем только документ из коллекции shopping_items в Firestore
+        if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.deleteDoc === 'function') {
+            try {
+                const itemRef = window.doc(window.db, 'users', currentUid, 'shopping_items', String(removedItem.id));
+                window.deleteDoc(itemRef);
+            } catch (e) {
+                console.warn('[Shopping] Ошибка удаления товара из списка в Firebase:', e);
+            }
+        }
+
+        showItemDeletedToast(removedItem.name);
+    }
+
+    // Анимация вылета и схлопывания карточки при удалении свайпом
+    function triggerItemDelete(container, itemId) {
+        if (!container) return;
+        const card = container.querySelector('.shopping-card');
+
+        // 1. Вылет белой карточки влево за границу экрана
+        if (card) {
+            card.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            card.style.transform = 'translateX(-105%)';
+        }
+
+        // 2. Плавное схлопывание контейнера по высоте
+        setTimeout(() => {
+            container.style.transition = 'max-height 0.24s cubic-bezier(0.4, 0, 0.2, 1), margin 0.24s ease, opacity 0.2s ease, padding 0.24s ease';
+            container.style.maxHeight = '0px';
+            container.style.marginTop = '0px';
+            container.style.marginBottom = '0px';
+            container.style.paddingTop = '0px';
+            container.style.paddingBottom = '0px';
+            container.style.opacity = '0';
+            container.style.pointerEvents = 'none';
+
+            if (currentSwipedContainer === container) {
+                currentSwipedContainer = null;
+            }
+
+            setTimeout(() => {
+                removeItemFromShoppingList(itemId);
+            }, 230);
+        }, 120);
+    }
+
+    // === ЖЕСТ СВАЙПА ВЛЕВО ДЛЯ УДАЛЕНИЯ ИЗ СПИСКА ПОКУПОК ===
+    let currentSwipedContainer = null;
+    let swipeState = null;
+
+    function initShoppingItemsSwipe() {
+        if (window._shoppingSwipeInitialized) return;
+        window._shoppingSwipeInitialized = true;
+
+        function closeCurrentSwiped(animate = true) {
+            if (!currentSwipedContainer) return;
+            const c = currentSwipedContainer;
+            currentSwipedContainer = null;
+            const card = c.querySelector('.shopping-card');
+            if (card) {
+                if (animate) {
+                    card.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                } else {
+                    card.style.transition = 'none';
+                }
+                card.style.transform = 'translateX(0)';
+            }
+            c.classList.remove('is-open');
+        }
+
+        // Закрытие открытого свайпа при клике вне него
+        document.addEventListener('click', (e) => {
+            if (currentSwipedContainer && !currentSwipedContainer.contains(e.target)) {
+                closeCurrentSwiped(true);
+            }
+        }, true);
+
+        function onPointerStart(e) {
+            if (e.type === 'mousedown' && e.button !== 0) return;
+
+            // Не перехватываем клики по чекбоксу
+            if (e.target.closest('.game-checkbox')) return;
+
+            // Клик по красной кнопке удаления (иконке корзины)
+            const deleteBtn = e.target.closest('.swipe-delete-background');
+            if (deleteBtn) {
+                const container = deleteBtn.closest('.swipe-item-container');
+                if (container) {
+                    const id = container.getAttribute('data-id');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    triggerItemDelete(container, id);
+                }
+                return;
+            }
+
+            const container = e.target.closest('.swipe-item-container');
+            if (!container) return;
+
+            const card = container.querySelector('.shopping-card');
+            if (!card) return;
+            if (card.classList.contains('is-completing') || card.classList.contains('is-disappearing')) return;
+
+            // Если открыт другой элемент — закрываем его
+            if (currentSwipedContainer && currentSwipedContainer !== container) {
+                closeCurrentSwiped(true);
+            }
+
+            const isTouch = e.type.startsWith('touch');
+            const point = isTouch ? e.touches[0] : e;
+            const currentOffset = container.classList.contains('is-open') ? -74 : 0;
+
+            swipeState = {
+                container,
+                card,
+                id: container.getAttribute('data-id'),
+                startX: point.clientX,
+                startY: point.clientY,
+                startTime: Date.now(),
+                currentOffset,
+                isLockedHorizontal: false,
+                isLockedVertical: false,
+                isTouch,
+                moved: false,
+                lastX: currentOffset
+            };
+
+            if (!isTouch) {
+                window.addEventListener('mousemove', onPointerMove, { passive: false });
+                window.addEventListener('mouseup', onPointerEnd, { passive: false });
+            }
+        }
+
+        function onPointerMove(e) {
+            if (!swipeState) return;
+
+            const point = swipeState.isTouch ? e.touches[0] : e;
+            if (!point) return;
+
+            const deltaX = point.clientX - swipeState.startX;
+            const deltaY = point.clientY - swipeState.startY;
+
+            // Блокировка направления (вертикальный скролл vs горизонтальный свайп)
+            if (!swipeState.isLockedHorizontal && !swipeState.isLockedVertical) {
+                if (Math.abs(deltaY) > 6 && Math.abs(deltaY) >= Math.abs(deltaX)) {
+                    swipeState.isLockedVertical = true;
+                    return;
+                } else if (Math.abs(deltaX) > 6 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                    // Если карточка закрыта (currentOffset === 0) и тянут вправо (deltaX > 0) — строго запрещаем!
+                    if (swipeState.currentOffset === 0 && deltaX > 0) {
+                        return;
+                    }
+                    swipeState.isLockedHorizontal = true;
+                    swipeState.card.style.transition = 'none';
+                    swipeState.container.classList.add('is-swiping');
+                } else {
+                    return;
+                }
+            }
+
+            if (swipeState.isLockedVertical) return;
+
+            if (swipeState.isLockedHorizontal) {
+                if (e.cancelable) e.preventDefault();
+                swipeState.moved = true;
+
+                let newX = swipeState.currentOffset + deltaX;
+
+                // Движение вправо СТРОГО запрещено (нельзя уйти правее нуля)
+                if (newX > 0) {
+                    newX = 0;
+                }
+
+                // ПЕРВЫЙ СВАЙП (когда карточка была закрыта: currentOffset === 0):
+                // Первый свайп короткий — открывает только позицию кнопки корзины (-74px)
+                if (swipeState.currentOffset === 0) {
+                    if (newX < -74) {
+                        newX = -74 + (newX + 74) * 0.12;
+                    }
+                }
+
+                swipeState.lastX = newX;
+                swipeState.card.style.transform = `translateX(${newX}px)`;
+            }
+        }
+
+        function onPointerEnd(e) {
+            if (!swipeState) return;
+
+            const state = swipeState;
+            swipeState = null;
+
+            if (!state.isTouch) {
+                window.removeEventListener('mousemove', onPointerMove);
+                window.removeEventListener('mouseup', onPointerEnd);
+            }
+
+            state.container.classList.remove('is-swiping');
+
+            // Если не было горизонтального движения
+            if (!state.isLockedHorizontal || !state.moved) {
+                if (state.container.classList.contains('is-open')) {
+                    closeCurrentSwiped(true);
+                }
+                return;
+            }
+
+            const point = state.isTouch ? (e.changedTouches ? e.changedTouches[0] : null) : e;
+            const elapsed = Math.max(Date.now() - state.startTime, 1);
+            const deltaX = point ? (point.clientX - state.startX) : (state.lastX - state.currentOffset);
+            const velocityX = deltaX / elapsed;
+
+            // ВЕТКА 1: Карточка УЖЕ была открыта (currentOffset < 0, то есть -74px)
+            if (state.currentOffset < 0) {
+                // Если пользователь продолжает свайпать влево (deltaX < -30 или velocityX < -0.28):
+                // ВОТ ТЕПЕРЬ ОНА УЛЕТАЕТ ВЛЕВО И УДАЛЯЕТСЯ
+                if (deltaX < -30 || (deltaX < -15 && velocityX < -0.28)) {
+                    triggerItemDelete(state.container, state.id);
+                    return;
+                }
+
+                // Если смахнул вправо обратно к 0
+                if (deltaX > 25) {
+                    state.card.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                    state.card.style.transform = 'translateX(0)';
+                    state.container.classList.remove('is-open');
+                    if (currentSwipedContainer === state.container) {
+                        currentSwipedContainer = null;
+                    }
+                    return;
+                }
+
+                // Иначе удерживаем в открытом положении -74px
+                state.card.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                state.card.style.transform = 'translateX(-74px)';
+                state.container.classList.add('is-open');
+                currentSwipedContainer = state.container;
+                return;
+            }
+
+            // ВЕТКА 2: Карточка была закрыта (currentOffset === 0) — ПЕРВЫЙ СВАЙП
+            // При первом свайпе карточка ТОЛЬКО открывает кнопку (-74px), но НЕ улетает
+            if (state.lastX <= -25) {
+                state.card.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                state.card.style.transform = 'translateX(-74px)';
+                state.container.classList.add('is-open');
+                currentSwipedContainer = state.container;
+                return;
+            }
+
+            // Если свайп был слишком слабым — закрываем обратно
+            state.card.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            state.card.style.transform = 'translateX(0)';
+            state.container.classList.remove('is-open');
+            if (currentSwipedContainer === state.container) {
+                currentSwipedContainer = null;
+            }
+        }
+
+        document.addEventListener('touchstart', onPointerStart, { passive: true });
+        document.addEventListener('touchmove', onPointerMove, { passive: false });
+        document.addEventListener('touchend', onPointerEnd, { passive: true });
+        document.addEventListener('touchcancel', onPointerEnd, { passive: true });
+        document.addEventListener('mousedown', onPointerStart);
     }
 
     // Смена статуса: куплен / не куплен (улетает вниз в «Купленные» или обратно)
@@ -1177,7 +1507,7 @@
                     snapshot.forEach(docSnap => {
                         const data = docSnap.data();
                         if (data && data.name && typeof data.name === 'string' && data.name.trim().length > 0) {
-                            loaded.push({ id: docSnap.id, ...data });
+                            loaded.push({ ...data, id: String(docSnap.id) });
                         } else {
                             // Очищаем пустые/битые документы в Firestore
                             if (typeof window.deleteDoc === 'function') {
@@ -1186,20 +1516,10 @@
                         }
                     });
 
-                    // Если в облаке пока пусто, а в локальном кэше есть товары — сохраняем их в облако
-                    if (loaded.length === 0 && shoppingItems.length > 0) {
-                        shoppingItems.forEach(item => {
-                            if (item && item.name && item.name.trim()) {
-                                const docRef = window.doc(window.db, 'users', uid, 'shopping_items', item.id);
-                                window.setDoc(docRef, item).catch(() => { });
-                            }
-                        });
-                    } else {
-                        loaded.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                        shoppingItems = loaded;
-                        cleanupExpiredBoughtItems();
-                        saveLocalCache();
-                    }
+                    loaded.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                    shoppingItems = loaded;
+                    cleanupExpiredBoughtItems();
+                    saveLocalCache();
 
                     if (currentMainTab === 'shoppingList') renderItems();
                 }, (err) => {
@@ -1213,7 +1533,7 @@
                     snapshot.forEach(docSnap => {
                         const data = docSnap.data();
                         if (data && data.name && typeof data.name === 'string' && data.name.trim().length > 0) {
-                            loaded.push({ id: docSnap.id, ...data });
+                            loaded.push({ ...data, id: String(docSnap.id) });
                         } else {
                             if (typeof window.deleteDoc === 'function') {
                                 window.deleteDoc(docSnap.ref).catch(() => { });
@@ -1221,19 +1541,10 @@
                         }
                     });
 
-                    // Если в облаке пока пусто, а в локальной базе есть товары — сохраняем их в облако
-                    if (loaded.length === 0 && userProducts.length > 0) {
-                        userProducts.forEach(prod => {
-                            if (prod && prod.name && prod.name.trim()) {
-                                const docRef = window.doc(window.db, 'users', uid, 'shopping_products', prod.id);
-                                window.setDoc(docRef, prod).catch(() => { });
-                            }
-                        });
-                    } else if (loaded.length > 0) {
-                        loaded.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                        userProducts = loaded;
-                        saveLocalCache();
-                    }
+                    loaded.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                    userProducts = loaded;
+                    cleanupExpiredTrashProducts();
+                    saveLocalCache();
 
                     if (currentMainTab === 'myProducts') renderCatalog();
                 }, (err) => {
@@ -2532,11 +2843,33 @@
             };
         }
 
-        // Кнопка отмены покупки в уведомлении (Undo, как в todo.js)
+        // Кнопка отмены покупки или удаления в уведомлении (Undo, как в todo.js)
         const btnToastUndo = document.getElementById('btnToastUndo');
         if (btnToastUndo) {
             btnToastUndo.onclick = () => {
-                if (lastCompletedItemId) {
+                // 1. Отмена удаления из списка покупок
+                if (lastDeletedShoppingItem) {
+                    const restoredItem = { ...lastDeletedShoppingItem };
+                    const insertIdx = (lastDeletedShoppingIndex >= 0 && lastDeletedShoppingIndex <= shoppingItems.length)
+                        ? lastDeletedShoppingIndex
+                        : 0;
+                    shoppingItems.splice(insertIdx, 0, restoredItem);
+                    lastDeletedShoppingItem = null;
+                    lastDeletedShoppingIndex = -1;
+
+                    renderItems();
+                    if (currentMainTab === 'myProducts') renderCatalog();
+                    saveLocalCache();
+
+                    if (!isTestMode() && currentUid && window.db && typeof window.setDoc === 'function' && typeof window.doc === 'function') {
+                        try {
+                            const itemRef = window.doc(window.db, 'users', currentUid, 'shopping_items', restoredItem.id);
+                            window.setDoc(itemRef, restoredItem);
+                        } catch (e) { }
+                    }
+                }
+                // 2. Отмена завершения покупки
+                else if (lastCompletedItemId) {
                     const item = shoppingItems.find(i => i.id === lastCompletedItemId);
                     if (item && item.completed) {
                         item.completed = false;
@@ -2571,6 +2904,7 @@
         setViewMode(currentViewMode);
         setMainTab('shoppingList');
         initTabsDragGesture();
+        initShoppingItemsSwipe();
         loadItems();
 
         // Фоновая периодическая проверка автоочистки купленных товаров (5 часов) и корзины (30 дней)

@@ -281,6 +281,36 @@ body.dark .view-toggle-pill {
     flex-direction: column;
 }
 
+/* Запрет выделения текста на карточках товаров в списках и галерее/сетке */
+.items-wrapper,
+.products-wrapper,
+.trash-list,
+.shopping-card,
+.product-catalog-card,
+.trash-item-card,
+.card-title,
+.card-left,
+.card-bottom-row,
+.card-img-wrap,
+.swipe-item-container {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+.items-wrapper img,
+.products-wrapper img,
+.trash-list img,
+.shopping-card img,
+.product-catalog-card img {
+    -webkit-user-drag: none;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+}
+
 /* === РЕЖИМ 1: СПИСОК (VIEW-LIST) === */
 .items-wrapper.view-list {
     display: flex;
@@ -288,7 +318,95 @@ body.dark .view-toggle-pill {
     gap: 12px;
 }
 
-.items-wrapper.view-list .shopping-card {
+/* Контейнер свайпа для элементов списка покупок */
+.items-wrapper.view-list .swipe-item-container {
+    position: relative;
+    border-radius: var(--card-radius-list);
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    background: transparent;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+    max-height: 140px;
+    box-sizing: border-box;
+}
+
+.items-wrapper.view-list .swipe-item-container.is-open,
+.items-wrapper.view-list .swipe-item-container.is-swiping {
+    background: #e5433d;
+}
+
+.items-wrapper.view-list .swipe-delete-background {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    background: #e5433d;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 26px;
+    z-index: 1;
+    cursor: pointer;
+    border-radius: var(--card-radius-list);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.items-wrapper.view-list .swipe-item-container.is-open .swipe-delete-background,
+.items-wrapper.view-list .swipe-item-container.is-swiping .swipe-delete-background {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.items-wrapper.view-list .swipe-trash-icon {
+    width: 22px;
+    height: 22px;
+    color: #ffffff;
+    stroke: #ffffff;
+    stroke-width: 2.2;
+    transition: transform 0.15s ease;
+}
+
+.items-wrapper.view-list .swipe-item-container.is-open .swipe-trash-icon {
+    transform: scale(1.05);
+}
+
+.items-wrapper.view-list .swipe-item-container .shopping-card {
+    position: relative;
+    z-index: 2;
+    background: var(--card-bg);
+    border-radius: var(--card-radius-list);
+    box-shadow: none;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 64px;
+    box-sizing: border-box;
+    will-change: transform;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+                border-top-right-radius 0.12s ease,
+                border-bottom-right-radius 0.12s ease;
+}
+
+.items-wrapper.view-list .swipe-item-container.is-open .shopping-card,
+.items-wrapper.view-list .swipe-item-container.is-swiping .shopping-card {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.items-wrapper.view-list .swipe-item-container .shopping-card:active {
+    transform: none;
+}
+
+.items-wrapper.view-list > .shopping-card {
     background: var(--card-bg);
     border-radius: var(--card-radius-list);
     box-shadow: var(--card-shadow);
@@ -299,7 +417,7 @@ body.dark .view-toggle-pill {
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.items-wrapper.view-list .shopping-card:active {
+.items-wrapper.view-list > .shopping-card:active {
     transform: scale(0.985);
 }
 
@@ -307,6 +425,8 @@ body.dark .view-toggle-pill {
     display: flex;
     align-items: center;
     gap: 14px;
+    flex: 1;
+    min-width: 0;
 }
 
 .items-wrapper.view-list .card-img-wrap {
@@ -330,6 +450,8 @@ body.dark .view-toggle-pill {
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.01em;
+    line-height: 1.3;
+    word-break: break-word;
 }
 
 /* === РЕЖИМ 2: СЕТКА (VIEW-GRID) === */
@@ -1350,12 +1472,21 @@ body.dark .settings-slider {
 
 /* === ПРИБЛИЖЕННЫЙ РЕЖИМ КРОПА КАРТИНОК (100% ПО ВЕРТИКАЛИ В СПИСКЕ) === */
 /* 1. Список покупок */
+body.list-crop-edge .items-wrapper.view-list .swipe-item-container {
+    min-height: 64px;
+    height: 64px;
+}
+
 body.list-crop-edge .items-wrapper.view-list .shopping-card {
     padding: 0 18px;
     align-items: center;
     overflow: hidden;
     min-height: 64px;
     height: 64px;
+}
+
+body.list-crop-edge .items-wrapper.view-list .swipe-item-container .shopping-card {
+    height: 100%;
 }
 
 body.list-crop-edge .items-wrapper.view-list .card-left {

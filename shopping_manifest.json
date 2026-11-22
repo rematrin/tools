@@ -5,8 +5,8 @@
     "start_url": "./shopping.html",
     "scope": "./",
     "display": "standalone",
-    "background_color": "#0f172a",
-    "theme_color": "#0f172a",
+    "background_color": "#f4f3f9",
+    "theme_color": "#6254ea",
     "icons": [
         {
             "src": "img/shopping128.png",
@@ -17,11 +17,6 @@
             "src": "img/shopping256.png",
             "sizes": "256x256",
             "type": "image/png"
-        },
-        {
-            "src": "img/shopping-icon.svg",
-            "sizes": "any",
-            "type": "image/svg+xml"
         }
     ]
 }

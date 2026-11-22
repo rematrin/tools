@@ -11,10 +11,22 @@
     <meta name="theme-color" content="#f4f3f9">
     <title>Список покупок</title>
 
-    <link rel="icon" type="image/svg+xml" href="img/lowpoly-food.svg">
-    <link rel="icon" type="image/png" href="img/shopping128.png">
-    <link rel="apple-touch-icon" href="img/shopping256.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="img/shopping128.png">
+    <link rel="shortcut icon" href="img/shopping128.png">
+    <link rel="apple-touch-icon" sizes="256x256" href="img/shopping256.png">
     <link rel="manifest" href="shopping_manifest.json">
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
+                    console.log('SW зарегистрирован для Shopping PWA:', reg.scope);
+                }).catch(err => {
+                    console.warn('Ошибка регистрации SW:', err);
+                });
+            });
+        }
+    </script>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,13 +50,19 @@
             <div class="game-header-nav">
                 <nav class="main-tabs-nav" id="mainTabsNav" role="tablist" aria-label="Основные разделы">
                     <div class="tabs-slider-indicator" id="tabsSliderIndicator"></div>
-                    <button class="main-tab-btn active" id="tabShoppingList" type="button" role="tab" aria-selected="true">Список покупок</button>
-                    <button class="main-tab-btn" id="tabMyProducts" type="button" role="tab" aria-selected="false">Мои товары</button>
+                    <button class="main-tab-btn active" id="tabShoppingList" type="button" role="tab"
+                        aria-selected="true">Список покупок</button>
+                    <button class="main-tab-btn" id="tabMyProducts" type="button" role="tab" aria-selected="false">Мои
+                        товары</button>
                 </nav>
-                <button class="btn-settings-tab" id="tabSettings" type="button" role="tab" aria-selected="false" aria-label="Настройки" title="Настройки">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="btn-settings-tab" id="tabSettings" type="button" role="tab" aria-selected="false"
+                    aria-label="Настройки" title="Настройки">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
                     </svg>
                 </button>
             </div>
@@ -62,9 +80,11 @@
 
                 <!-- Переключатель Список / Сетка (для списка покупок) -->
                 <div class="view-toggle-pill" id="viewTogglePill" role="tablist" aria-label="Переключение вида">
-                    <button class="toggle-btn active" id="btnViewList" title="Вид списком" type="button" role="tab" aria-selected="true">
+                    <button class="toggle-btn active" id="btnViewList" title="Вид списком" type="button" role="tab"
+                        aria-selected="true">
                         <!-- Иконка списка (строки с точками) -->
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <line x1="9" y1="6" x2="20" y2="6"></line>
                             <line x1="9" y1="12" x2="20" y2="12"></line>
                             <line x1="9" y1="18" x2="20" y2="18"></line>
@@ -73,9 +93,11 @@
                             <circle cx="4" cy="18" r="1.5" fill="currentColor"></circle>
                         </svg>
                     </button>
-                    <button class="toggle-btn" id="btnViewGrid" title="Вид сеткой" type="button" role="tab" aria-selected="false">
+                    <button class="toggle-btn" id="btnViewGrid" title="Вид сеткой" type="button" role="tab"
+                        aria-selected="false">
                         <!-- Иконка сетки (2x2 квадрата) -->
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="3" width="7.5" height="7.5" rx="2"></rect>
                             <rect x="13.5" y="3" width="7.5" height="7.5" rx="2"></rect>
                             <rect x="3" y="13.5" width="7.5" height="7.5" rx="2"></rect>
@@ -102,7 +124,8 @@
                 <div class="bought-section" id="boughtSection" style="display: none;">
                     <div class="bought-header" id="boughtToggleHeader">
                         <span class="bought-title">Купленные</span>
-                        <svg class="bought-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="bought-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                     </div>
@@ -134,11 +157,13 @@
                     <!-- Блок профиля пользователя (на самом первом месте) -->
                     <div class="settings-card settings-profile-card" id="settingsProfileCard">
                         <div class="settings-profile-row">
-                            <img class="settings-profile-avatar" id="settingsUserAvatar" src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" alt="Аватар профиля" draggable="false">
+                            <img class="settings-profile-avatar" id="settingsUserAvatar"
+                                src="https://i.ibb.co/Z6vRKK9x/0000000.jpg" alt="Аватар профиля" draggable="false">
                             <div class="settings-profile-details">
                                 <h3 class="settings-profile-name" id="settingsUserName">Пользователь</h3>
                                 <button class="settings-logout-btn" id="btnSettingsLogout" type="button">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                                         <polyline points="16 17 21 12 16 7"></polyline>
                                         <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -160,15 +185,34 @@
                         </div>
                         <div class="settings-theme-selector" role="radiogroup" aria-label="Выбор темы">
                             <button class="theme-choice-btn" data-theme-mode="system" type="button">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
                                 <span>Системная</span>
                             </button>
                             <button class="theme-choice-btn" data-theme-mode="light" type="button">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="5"></circle>
+                                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                                </svg>
                                 <span>Светлая</span>
                             </button>
                             <button class="theme-choice-btn" data-theme-mode="dark" type="button">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                                </svg>
                                 <span>Тёмная</span>
                             </button>
                         </div>
@@ -180,9 +224,11 @@
                             <span class="settings-card-icon">📐</span>
                             <div class="settings-card-info">
                                 <h3 class="settings-card-title">Кроп картинок в списке</h3>
-                                <p class="settings-card-desc">Приближать изображение от края до края (100% по вертикали) в списке</p>
+                                <p class="settings-card-desc">Приближать изображение от края до края (100% по вертикали)
+                                    в списке</p>
                             </div>
-                            <label class="settings-switch" title="Переключить режим кропа картинок" for="toggleListCropMode">
+                            <label class="settings-switch" title="Переключить режим кропа картинок"
+                                for="toggleListCropMode">
                                 <input type="checkbox" id="toggleListCropMode">
                                 <span class="settings-slider"></span>
                             </label>
@@ -200,7 +246,8 @@
                                 </div>
                             </div>
                             <button class="btn-settings-add-category" id="btnOpenAddCategoryModal" type="button">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
@@ -220,7 +267,8 @@
                                     <p class="settings-card-desc" id="settingsTrashCountText">0 товаров</p>
                                 </div>
                             </div>
-                            <svg class="settings-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="settings-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </div>
@@ -233,7 +281,8 @@
             <section class="game-content" id="screenTrash" style="display: none;">
                 <div class="trash-view-header">
                     <button class="btn-back-trash" id="btnBackFromTrash" type="button">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                         Назад
@@ -244,9 +293,11 @@
                 <div class="trash-notice-banner" id="trashNoticeBanner" style="display: none;">
                     <span class="trash-notice-text">Товары в корзине окончательно удаляются через 30 дней.</span>
                     <button class="btn-empty-trash" id="btnEmptyTrash" type="button">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" width="14" height="14">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" width="14"
+                            height="14">
                             <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                            </path>
                         </svg>
                         Очистить
                     </button>
@@ -256,14 +307,18 @@
 
                 <div class="empty-game-state" id="trashEmptyState" style="display: none; margin-top: 40px;">
                     <div class="empty-icon" style="font-size: 3rem; margin-bottom: 8px;">🗑️</div>
-                    <h3 class="empty-title" style="margin: 0 0 4px 0; font-size: 1.15rem; font-weight: 700;">Корзина пуста</h3>
-                    <p class="empty-subtitle" style="margin: 0; font-size: 0.9rem; opacity: 0.65;">Удаленные из каталога товары будут храниться здесь 30 дней</p>
+                    <h3 class="empty-title" style="margin: 0 0 4px 0; font-size: 1.15rem; font-weight: 700;">Корзина
+                        пуста</h3>
+                    <p class="empty-subtitle" style="margin: 0; font-size: 0.9rem; opacity: 0.65;">Удаленные из каталога
+                        товары будут храниться здесь 30 дней</p>
                 </div>
             </section>
 
             <!-- Круглая плавающая кнопка «+» (FAB) справа внизу (только во вкладке «Мои товары») -->
-            <button class="shopping-fab" id="btnOpenAddModal" type="button" aria-label="Добавить товар в базу" aria-haspopup="dialog" style="display: none;">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <button class="shopping-fab" id="btnOpenAddModal" type="button" aria-label="Добавить товар в базу"
+                aria-haspopup="dialog" style="display: none;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
                     <path d="M12 5v14M5 12h14"></path>
                 </svg>
             </button>
@@ -273,17 +328,28 @@
                 <div class="product-modal-card">
                     <div class="product-modal-header">
                         <h3 class="product-modal-title">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
                             Новый товар в базу
                         </h3>
-                        <button class="product-modal-close" id="btnProductModalClose" type="button" aria-label="Закрыть">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        <button class="product-modal-close" id="btnProductModalClose" type="button"
+                            aria-label="Закрыть">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
                         </button>
                     </div>
 
                     <div class="product-modal-body">
                         <label class="product-input-label" for="catalogProdNameInput">Название товара</label>
-                        <input type="text" id="catalogProdNameInput" class="product-name-input" placeholder="Например: Авокадо..." autocomplete="off">
+                        <input type="text" id="catalogProdNameInput" class="product-name-input"
+                            placeholder="Например: Авокадо..." autocomplete="off">
 
                         <div class="product-modal-tabs">
                             <button type="button" class="product-tab-btn active" data-tab="file">Из файла</button>
@@ -292,21 +358,31 @@
 
                         <!-- Вкладка 1: Из файла -->
                         <div id="tabProductFile" class="product-tab-content">
-                            <p class="product-tab-hint">Загрузите изображение, вставьте из буфера обмена (Ctrl + V) или перетащите файл в область ниже.</p>
+                            <p class="product-tab-hint">Загрузите изображение, вставьте из буфера обмена (Ctrl + V) или
+                                перетащите файл в область ниже.</p>
                             <div id="productDropzone" class="icon-dropzone product-dropzone">
                                 <div class="dropzone-preview" id="dropzonePreview">
-                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6;"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        style="opacity: 0.6;">
+                                        <path d="M12 3v12" />
+                                        <path d="m17 8-5-5-5 5" />
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    </svg>
                                 </div>
-                                <div class="dropzone-text" id="dropzoneText">Кликните для выбора файла или перетащите его сюда</div>
+                                <div class="dropzone-text" id="dropzoneText">Кликните для выбора файла или перетащите
+                                    его сюда</div>
                             </div>
                             <input type="file" id="productFileInput" accept="image/*" style="display: none;">
-                            <button type="button" class="btn-choose-file" id="btnProductSelectFile">Выбрать файл...</button>
+                            <button type="button" class="btn-choose-file" id="btnProductSelectFile">Выбрать
+                                файл...</button>
                         </div>
 
                         <!-- Вкладка 2: По ссылке -->
                         <div id="tabProductUrl" class="product-tab-content" style="display: none;">
                             <p class="product-tab-hint">Вставьте прямую ссылку на изображение в поле ниже.</p>
-                            <input type="url" id="productUrlInput" class="product-url-input" placeholder="https://i.ibb.co/... или https://site.com/image.png" autocomplete="off">
+                            <input type="url" id="productUrlInput" class="product-url-input"
+                                placeholder="https://i.ibb.co/... или https://site.com/image.png" autocomplete="off">
                             <div class="product-url-preview-wrap" id="urlPreviewWrap" style="display: none;">
                                 <img id="urlPreviewImg" src="" alt="Превью" class="product-url-preview">
                             </div>
@@ -314,7 +390,8 @@
                     </div>
 
                     <div class="product-modal-footer">
-                        <button type="button" class="btn-save-product" id="btnSaveCatalogProduct">Сохранить в базу</button>
+                        <button type="button" class="btn-save-product" id="btnSaveCatalogProduct">Сохранить в
+                            базу</button>
                         <button type="button" class="btn-cancel-product" id="btnCancelCatalogProduct">Отмена</button>
                     </div>
                 </div>
@@ -325,16 +402,20 @@
                 <div class="product-details-modal-card" id="productDetailsCard">
                     <!-- Верхняя плашка со свайп-ручкой, крестиком слева и тремя точками справа -->
                     <div class="product-details-drag-handle-container" id="productDetailsDragContainer">
-                        <button class="product-details-mobile-close-btn" id="btnProductDetailsClose" type="button" aria-label="Закрыть">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                        <button class="product-details-mobile-close-btn" id="btnProductDetailsClose" type="button"
+                            aria-label="Закрыть">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
+                                height="16">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
                         </button>
                         <div class="product-details-drag-handle"></div>
                         <div class="product-details-mobile-more-wrapper">
-                            <button class="product-details-mobile-more-btn" id="btnProductDetailsMore" type="button" aria-label="Действия">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                            <button class="product-details-mobile-more-btn" id="btnProductDetailsMore" type="button"
+                                aria-label="Действия">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
+                                    height="16">
                                     <circle cx="5" cy="12" r="1.5"></circle>
                                     <circle cx="12" cy="12" r="1.5"></circle>
                                     <circle cx="19" cy="12" r="1.5"></circle>
@@ -342,9 +423,13 @@
                             </button>
                             <div class="product-actions-dropdown" id="productActionsDropdown" style="display: none;">
                                 <button class="dropdown-item btn-delete" id="btnDeleteProductFromModal" type="button">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        style="margin-right: 4px;">
                                         <polyline points="3 6 5 6 21 6"></polyline>
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <path
+                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                        </path>
                                     </svg>
                                     <span>Удалить</span>
                                 </button>
@@ -358,17 +443,21 @@
                         <div class="product-details-title-row">
                             <div class="modal-product-title-wrapper">
                                 <div id="modalProductTitleDisplay" class="modal-product-title-display"></div>
-                                <textarea id="modalProductTitleInput" class="modal-product-title-input" placeholder="Название товара" style="display: none;" rows="1"></textarea>
+                                <textarea id="modalProductTitleInput" class="modal-product-title-input"
+                                    placeholder="Название товара" style="display: none;" rows="1"></textarea>
                             </div>
                         </div>
 
                         <!-- Блок 2: Карточка с изображением товара и кнопкой карандаша -->
                         <div class="product-details-image-card" id="productDetailsImageCard">
                             <div class="product-details-image-wrapper">
-                                <img id="modalProductImageDisplay" src="" alt="Изображение товара" class="modal-product-image">
+                                <img id="modalProductImageDisplay" src="" alt="Изображение товара"
+                                    class="modal-product-image">
                             </div>
-                            <button class="product-details-edit-img-btn" id="btnEditProductImage" type="button" aria-label="Изменить изображение" title="Изменить изображение">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16">
+                            <button class="product-details-edit-img-btn" id="btnEditProductImage" type="button"
+                                aria-label="Изменить изображение" title="Изменить изображение">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16"
+                                    height="16">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                 </svg>
@@ -379,41 +468,64 @@
             </div>
 
             <!-- Модальное окно замены/удаления изображения товара (единый стандарт с дропзоной и ссылкой) -->
-            <div class="product-modal-overlay edit-image-modal-overlay" id="editImageModalOverlay" style="display: none;">
+            <div class="product-modal-overlay edit-image-modal-overlay" id="editImageModalOverlay"
+                style="display: none;">
                 <div class="product-modal-card">
                     <div class="product-modal-header">
                         <h3 class="product-modal-title">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
                             Изображение товара
                         </h3>
-                        <button class="product-modal-close" id="btnEditImageModalClose" type="button" aria-label="Закрыть">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        <button class="product-modal-close" id="btnEditImageModalClose" type="button"
+                            aria-label="Закрыть">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
                         </button>
                     </div>
 
                     <div class="product-modal-body">
                         <div class="product-modal-tabs">
-                            <button type="button" class="product-tab-btn active" id="tabBtnEditFile" data-tab="file">Из файла</button>
-                            <button type="button" class="product-tab-btn" id="tabBtnEditUrl" data-tab="url">По ссылке</button>
+                            <button type="button" class="product-tab-btn active" id="tabBtnEditFile" data-tab="file">Из
+                                файла</button>
+                            <button type="button" class="product-tab-btn" id="tabBtnEditUrl" data-tab="url">По
+                                ссылке</button>
                         </div>
 
                         <!-- Вкладка 1: Из файла -->
                         <div id="tabEditProductFile" class="product-tab-content">
-                            <p class="product-tab-hint">Загрузите новое изображение, вставьте из буфера (Ctrl + V) или перетащите файл.</p>
+                            <p class="product-tab-hint">Загрузите новое изображение, вставьте из буфера (Ctrl + V) или
+                                перетащите файл.</p>
                             <div id="editProductDropzone" class="icon-dropzone product-dropzone">
                                 <div class="dropzone-preview" id="editDropzonePreview">
-                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6;"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        style="opacity: 0.6;">
+                                        <path d="M12 3v12" />
+                                        <path d="m17 8-5-5-5 5" />
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    </svg>
                                 </div>
-                                <div class="dropzone-text" id="editDropzoneText">Кликните для выбора файла или перетащите его сюда</div>
+                                <div class="dropzone-text" id="editDropzoneText">Кликните для выбора файла или
+                                    перетащите его сюда</div>
                             </div>
                             <input type="file" id="editProductFileInput" accept="image/*" style="display: none;">
-                            <button type="button" class="btn-choose-file" id="btnEditProductSelectFile">Выбрать файл...</button>
+                            <button type="button" class="btn-choose-file" id="btnEditProductSelectFile">Выбрать
+                                файл...</button>
                         </div>
 
                         <!-- Вкладка 2: По ссылке -->
                         <div id="tabEditProductUrl" class="product-tab-content" style="display: none;">
                             <p class="product-tab-hint">Вставьте прямую ссылку на изображение в поле ниже.</p>
-                            <input type="url" id="editProductUrlInput" class="product-url-input" placeholder="https://i.ibb.co/... или https://site.com/image.png" autocomplete="off">
+                            <input type="url" id="editProductUrlInput" class="product-url-input"
+                                placeholder="https://i.ibb.co/... или https://site.com/image.png" autocomplete="off">
                             <div class="product-url-preview-wrap" id="editUrlPreviewWrap" style="display: none;">
                                 <img id="editUrlPreviewImg" src="" alt="Превью" class="product-url-preview">
                             </div>
@@ -422,13 +534,19 @@
 
                     <div class="product-modal-footer" style="display: flex; flex-direction: column; gap: 8px;">
                         <div style="display: flex; gap: 8px; width: 100%;">
-                            <button type="button" class="btn-save-product" id="btnSaveEditedImage" style="flex: 1;">Сохранить</button>
-                            <button type="button" class="btn-cancel-product" id="btnCancelEditedImage" style="flex: 1;">Отмена</button>
+                            <button type="button" class="btn-save-product" id="btnSaveEditedImage"
+                                style="flex: 1;">Сохранить</button>
+                            <button type="button" class="btn-cancel-product" id="btnCancelEditedImage"
+                                style="flex: 1;">Отмена</button>
                         </div>
-                        <button type="button" class="btn-delete-product-image" id="btnDeleteProductImage" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 11px; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.25); background: rgba(239, 68, 68, 0.08); color: #ef4444; font-weight: 600; font-size: 0.92rem; cursor: pointer;">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <button type="button" class="btn-delete-product-image" id="btnDeleteProductImage"
+                            style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 11px; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.25); background: rgba(239, 68, 68, 0.08); color: #ef4444; font-weight: 600; font-size: 0.92rem; cursor: pointer;">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.2">
                                 <polyline points="3 6 5 6 21 6"></polyline>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                <path
+                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                </path>
                             </svg>
                             Удалить изображение
                         </button>
@@ -440,15 +558,19 @@
             <div class="product-modal-overlay" id="categoryEmojiPickerModal" style="display: none;">
                 <div class="product-modal-card category-emoji-modal-card">
                     <div class="category-emoji-modal-header">
-                        <button class="modal-header-circle-btn" id="btnCloseEmojiPickerModal" type="button" aria-label="Закрыть">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                        <button class="modal-header-circle-btn" id="btnCloseEmojiPickerModal" type="button"
+                            aria-label="Закрыть">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
+                                height="16">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
                         </button>
                         <h3 class="category-emoji-modal-title">Иконка категории</h3>
-                        <button class="modal-header-circle-btn modal-header-circle-btn-save" id="btnSaveCategoryEmoji" type="button" aria-label="Сохранить">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" width="16" height="16">
+                        <button class="modal-header-circle-btn modal-header-circle-btn-save" id="btnSaveCategoryEmoji"
+                            type="button" aria-label="Сохранить">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" width="16"
+                                height="16">
                                 <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
                         </button>
@@ -458,7 +580,8 @@
                         <div class="category-icon-picker-row">
                             <div class="category-icon-preview" id="categoryIconPreview" title="Текущий эмодзи">🏷️</div>
                             <div class="category-icon-input-wrap">
-                                <input type="text" class="category-emoji-input" id="categoryEmojiInput" placeholder="Введите эмодзи..." maxlength="8" autocomplete="off">
+                                <input type="text" class="category-emoji-input" id="categoryEmojiInput"
+                                    placeholder="Введите эмодзи..." maxlength="8" autocomplete="off">
                             </div>
                         </div>
                     </div>
@@ -471,19 +594,23 @@
                     <h3 class="confirm-modal-title" id="confirmModalTitle">Удалить товар?</h3>
                     <p class="confirm-modal-desc" id="confirmModalDesc">Вы действительно хотите удалить этот товар?</p>
                     <div class="confirm-modal-buttons">
-                        <button type="button" class="confirm-btn confirm-btn-cancel" id="btnConfirmDeleteCancel">Отмена</button>
-                        <button type="button" class="confirm-btn confirm-btn-danger" id="btnConfirmDeleteSubmit">Удалить</button>
+                        <button type="button" class="confirm-btn confirm-btn-cancel"
+                            id="btnConfirmDeleteCancel">Отмена</button>
+                        <button type="button" class="confirm-btn confirm-btn-danger"
+                            id="btnConfirmDeleteSubmit">Удалить</button>
                     </div>
                 </div>
             </div>
 
             <!-- Всплывающее уведомление о покупке товара (как в todo.html) -->
             <div class="toast-notification" id="itemCompletionToast" style="display: none;">
-                <div class="toast-content-wrapper" style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+                <div class="toast-content-wrapper"
+                    style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
                     <span class="toast-text" style="font-weight: 700;">Товар куплен</span>
                 </div>
                 <button class="toast-undo-btn" id="btnToastUndo" aria-label="Отменить покупку">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16"
+                        height="16">
                         <path d="M3 7v6h6"></path>
                         <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
                     </svg>

@@ -91,7 +91,56 @@
             urlPreviewWrap: document.getElementById('urlPreviewWrap'),
             urlPreviewImg: document.getElementById('urlPreviewImg'),
             btnSaveCatalogProduct: document.getElementById('btnSaveCatalogProduct'),
-            btnCancelCatalogProduct: document.getElementById('btnCancelCatalogProduct')
+            btnCancelCatalogProduct: document.getElementById('btnCancelCatalogProduct'),
+
+            // Модальное окно просмотра / редактирования товара в базе (как в todo.html)
+            productDetailsModal: document.getElementById('productDetailsModal'),
+            productDetailsCard: document.getElementById('productDetailsCard'),
+            productDetailsDragContainer: document.getElementById('productDetailsDragContainer'),
+            btnProductDetailsClose: document.getElementById('btnProductDetailsClose'),
+            btnProductDetailsMore: document.getElementById('btnProductDetailsMore'),
+            productActionsDropdown: document.getElementById('productActionsDropdown'),
+            btnDeleteProductFromModal: document.getElementById('btnDeleteProductFromModal'),
+            modalProductTitleDisplay: document.getElementById('modalProductTitleDisplay'),
+            modalProductTitleInput: document.getElementById('modalProductTitleInput'),
+            productDetailsImageCard: document.getElementById('productDetailsImageCard'),
+            modalProductImageDisplay: document.getElementById('modalProductImageDisplay'),
+            btnEditProductImage: document.getElementById('btnEditProductImage'),
+
+            // Окно редактирования изображения товара (замена / удаление)
+            editImageModalOverlay: document.getElementById('editImageModalOverlay'),
+            btnEditImageModalClose: document.getElementById('btnEditImageModalClose'),
+            tabBtnEditFile: document.getElementById('tabBtnEditFile'),
+            tabBtnEditUrl: document.getElementById('tabBtnEditUrl'),
+            tabEditProductFile: document.getElementById('tabEditProductFile'),
+            tabEditProductUrl: document.getElementById('tabEditProductUrl'),
+            editProductDropzone: document.getElementById('editProductDropzone'),
+            editDropzonePreview: document.getElementById('editDropzonePreview'),
+            editDropzoneText: document.getElementById('editDropzoneText'),
+            editProductFileInput: document.getElementById('editProductFileInput'),
+            btnEditProductSelectFile: document.getElementById('btnEditProductSelectFile'),
+            editProductUrlInput: document.getElementById('editProductUrlInput'),
+            editUrlPreviewWrap: document.getElementById('editUrlPreviewWrap'),
+            editUrlPreviewImg: document.getElementById('editUrlPreviewImg'),
+            btnSaveEditedImage: document.getElementById('btnSaveEditedImage'),
+            btnCancelEditedImage: document.getElementById('btnCancelEditedImage'),
+            btnDeleteProductImage: document.getElementById('btnDeleteProductImage'),
+
+            // Корзина и подтверждение удаления (как в todo.html)
+            btnOpenTrashSettings: document.getElementById('btnOpenTrashSettings'),
+            settingsTrashCountText: document.getElementById('settingsTrashCountText'),
+            screenTrash: document.getElementById('screenTrash'),
+            btnBackFromTrash: document.getElementById('btnBackFromTrash'),
+            trashNoticeBanner: document.getElementById('trashNoticeBanner'),
+            btnEmptyTrash: document.getElementById('btnEmptyTrash'),
+            trashItemsList: document.getElementById('trashItemsList'),
+            trashEmptyState: document.getElementById('trashEmptyState'),
+            confirmDeleteModal: document.getElementById('confirmDeleteModal'),
+            confirmModalTitle: document.getElementById('confirmModalTitle'),
+            confirmModalDesc: document.getElementById('confirmModalDesc'),
+            confirmModalItemTitle: document.getElementById('confirmModalItemTitle'),
+            btnConfirmDeleteCancel: document.getElementById('btnConfirmDeleteCancel'),
+            btnConfirmDeleteSubmit: document.getElementById('btnConfirmDeleteSubmit')
         };
     }
 
@@ -119,6 +168,7 @@
             if (els.screenShoppingList) els.screenShoppingList.style.display = 'none';
             if (els.screenMyProducts) els.screenMyProducts.style.display = 'none';
             if (els.screenSettings) els.screenSettings.style.display = 'block';
+            if (els.screenTrash) els.screenTrash.style.display = 'none';
 
             if (els.viewTogglePill) els.viewTogglePill.style.display = 'none';
             if (els.btnOpenAddModal) els.btnOpenAddModal.style.display = 'none';
@@ -135,6 +185,7 @@
         }
 
         if (els.screenSettings) els.screenSettings.style.display = 'none';
+        if (els.screenTrash) els.screenTrash.style.display = 'none';
 
         // Восстанавливаем видимость ползунка и перемещаем его
         if (els.tabsSliderIndicator) {
@@ -226,6 +277,14 @@
         // 3. Тумблер режима кропа картинок
         if (els.toggleListCropMode) {
             els.toggleListCropMode.checked = (localStorage.getItem('shopping_list_crop_mode') === 'edge');
+        }
+
+        // 4. Счетчик корзины (удаленные товары)
+        if (els.settingsTrashCountText) {
+            const trashed = userProducts.filter(p => p.deleted);
+            const count = trashed.length;
+            const word = count === 1 ? 'товар' : ((count >= 2 && count <= 4) ? 'товара' : 'товаров');
+            els.settingsTrashCountText.textContent = `${count} ${word}`;
         }
     }
 
@@ -355,7 +414,9 @@
         const els = getEls();
         if (!els.catalogProductsGrid) return;
 
-        if (userProducts.length === 0) {
+        const activeProducts = userProducts.filter(p => !p.deleted);
+
+        if (activeProducts.length === 0) {
             els.catalogProductsGrid.innerHTML = `
                 <div class="empty-game-state" style="display: flex; margin-top: 40px; width: 100%; grid-column: 1 / -1;">
                     <img src="${PLACEHOLDER_IMG}" alt="Пусто" class="empty-game-icon">
@@ -366,7 +427,7 @@
             return;
         }
 
-        let items = userProducts;
+        let items = activeProducts;
         if (currentCategoryFilter !== 'all') {
             items = items.filter(p => p.category === currentCategoryFilter);
         }
@@ -515,6 +576,18 @@
                             updatedAt: Date.now()
                         }).catch(() => { });
                     } catch (e) { }
+                }
+            });
+        });
+
+        // Клики по карточке товара в каталоге для открытия деталей (как в todo.html)
+        els.catalogProductsGrid.querySelectorAll('.product-catalog-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.btn-product-add')) return;
+                const id = card.getAttribute('data-id');
+                const prod = userProducts.find(p => p.id === id);
+                if (prod) {
+                    openProductDetailsModal(prod);
                 }
             });
         });
@@ -732,14 +805,27 @@
         }
     }
 
-    // Всплывающее уведомление о покупке товара (Toast, идентично todo.js)
+    // Всплывающее уведомление о покупке товара / действиях (Toast, идентично todo.js)
     let lastCompletedItemId = null;
     let toastTimeout = null;
 
-    function showCompletionToast(itemId) {
-        lastCompletedItemId = itemId;
+    function showItemCompletedToast(data) {
         const toast = document.getElementById('itemCompletionToast');
         if (!toast) return;
+
+        const textEl = toast.querySelector('.toast-text');
+        const undoBtn = document.getElementById('btnToastUndo');
+
+        if (typeof data === 'string') {
+            if (textEl) textEl.textContent = data;
+            if (undoBtn) undoBtn.style.display = 'none';
+        } else if (data && data.name) {
+            if (textEl) textEl.textContent = data.name;
+            if (undoBtn) undoBtn.style.display = 'none';
+        } else {
+            if (textEl) textEl.textContent = 'Товар куплен';
+            if (undoBtn) undoBtn.style.display = 'inline-flex';
+        }
 
         if (toastTimeout) {
             clearTimeout(toastTimeout);
@@ -757,7 +843,12 @@
                     toast.style.display = 'none';
                 }
             }, 350);
-        }, 5000);
+        }, 4000);
+    }
+
+    function showCompletionToast(itemId) {
+        lastCompletedItemId = itemId;
+        showItemCompletedToast();
     }
 
     // Смена статуса: куплен / не куплен (улетает вниз в «Купленные» или обратно)
@@ -1051,6 +1142,7 @@
             userProducts = cachedProds ? JSON.parse(cachedProds) : [];
             // Фильтруем битые элементы без названия
             userProducts = userProducts.filter(p => p && p.name && typeof p.name === 'string' && p.name.trim().length > 0);
+            cleanupExpiredTrashProducts();
         } catch (e) {
             userProducts = [];
         }
@@ -1163,6 +1255,697 @@
             .replace(/'/g, '&#039;');
     }
 
+    // === МОДАЛЬНОЕ ОКНО ПРОСМОТРА / РЕДАКТИРОВАНИЯ ТОВАРА В БАЗЕ (КАК В TODO) ===
+    let currentDetailsProductId = null;
+
+    function autoResizeModalInput(el) {
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+    }
+
+    function openProductDetailsModal(prod) {
+        if (!prod) return;
+        currentDetailsProductId = prod.id;
+        const els = getEls();
+        if (!els.productDetailsModal) return;
+
+        if (els.modalProductTitleDisplay) {
+            els.modalProductTitleDisplay.textContent = prod.name;
+            els.modalProductTitleDisplay.style.display = 'block';
+        }
+        if (els.modalProductTitleInput) {
+            els.modalProductTitleInput.value = prod.name;
+            els.modalProductTitleInput.style.display = 'none';
+        }
+        if (els.modalProductImageDisplay) {
+            els.modalProductImageDisplay.src = prod.imageUrl || PLACEHOLDER_IMG;
+            els.modalProductImageDisplay.alt = prod.name;
+        }
+        if (els.productActionsDropdown) {
+            els.productActionsDropdown.style.display = 'none';
+        }
+
+        if (els.productDetailsCard) {
+            els.productDetailsCard.style.transform = '';
+            els.productDetailsCard.style.transition = '';
+        }
+
+        document.body.classList.add('add-modal-open');
+        els.productDetailsModal.style.display = 'flex';
+        els.productDetailsModal.offsetHeight; // reflow
+        els.productDetailsModal.classList.add('active');
+    }
+
+    function closeProductDetailsModal() {
+        const els = getEls();
+        closeEditImageModal();
+        if (!els.productDetailsModal) return;
+        els.productDetailsModal.classList.remove('active');
+        if (els.productActionsDropdown) {
+            els.productActionsDropdown.style.display = 'none';
+        }
+        if (els.productDetailsCard) {
+            els.productDetailsCard.style.transition = 'transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1)';
+            els.productDetailsCard.style.transform = 'translateY(100%)';
+        }
+        setTimeout(() => {
+            if (!els.productDetailsModal.classList.contains('active')) {
+                els.productDetailsModal.style.display = 'none';
+                if (els.productDetailsCard) {
+                    els.productDetailsCard.style.transform = '';
+                    els.productDetailsCard.style.transition = '';
+                }
+            }
+        }, 300);
+        document.body.classList.remove('add-modal-open');
+        currentDetailsProductId = null;
+    }
+
+    function saveProductDetailsTitle() {
+        const els = getEls();
+        if (!els.modalProductTitleInput || !currentDetailsProductId) return;
+        const newName = els.modalProductTitleInput.value.trim();
+        const prod = userProducts.find(p => p.id === currentDetailsProductId);
+
+        if (prod && newName && newName !== prod.name) {
+            const oldName = prod.name;
+            prod.name = newName;
+            prod.updatedAt = Date.now();
+
+            let itemsChanged = false;
+            shoppingItems.forEach(item => {
+                if (item.name.toLowerCase() === oldName.toLowerCase()) {
+                    item.name = newName;
+                    item.updatedAt = Date.now();
+                    itemsChanged = true;
+                    if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.setDoc === 'function') {
+                        try {
+                            const itemRef = window.doc(window.db, 'users', currentUid, 'shopping_items', item.id);
+                            window.setDoc(itemRef, { name: newName, updatedAt: item.updatedAt }, { merge: true });
+                        } catch (e) { }
+                    }
+                }
+            });
+
+            saveLocalCache();
+            renderCatalog();
+            if (itemsChanged && currentMainTab === 'shoppingList') renderItems();
+
+            if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.setDoc === 'function') {
+                try {
+                    const prodRef = window.doc(window.db, 'users', currentUid, 'shopping_products', prod.id);
+                    window.setDoc(prodRef, { name: newName, updatedAt: prod.updatedAt }, { merge: true });
+                } catch (e) {
+                    console.warn('[Shopping] Ошибка обновления названия товара:', e);
+                }
+            }
+        }
+
+        const finalName = prod ? prod.name : newName;
+        if (els.modalProductTitleDisplay) {
+            els.modalProductTitleDisplay.textContent = finalName;
+            els.modalProductTitleDisplay.style.display = 'block';
+        }
+        els.modalProductTitleInput.style.display = 'none';
+    }
+
+    // Универсальная логика модального окна подтверждения (как в todo.html)
+    let customConfirmCallback = null;
+
+    function showCustomConfirm(title, descHtml, actionText, onConfirm) {
+        const els = getEls();
+        if (!els.confirmDeleteModal) return;
+
+        if (els.confirmModalTitle) els.confirmModalTitle.textContent = title;
+        if (els.confirmModalDesc) els.confirmModalDesc.innerHTML = descHtml;
+        if (els.btnConfirmDeleteSubmit) els.btnConfirmDeleteSubmit.textContent = actionText;
+
+        customConfirmCallback = onConfirm;
+        els.confirmDeleteModal.style.display = 'flex';
+    }
+
+    function hideCustomConfirm() {
+        customConfirmCallback = null;
+        const els = getEls();
+        if (els.confirmDeleteModal) els.confirmDeleteModal.style.display = 'none';
+    }
+
+    // Перемещение товара в корзину (Soft delete)
+    function moveProductToTrash(prodId) {
+        const prod = userProducts.find(p => p.id === prodId);
+        if (!prod) return;
+
+        prod.deleted = true;
+        prod.deletedAt = Date.now();
+        prod.updatedAt = Date.now();
+
+        saveLocalCache();
+        renderCatalog();
+        renderSettingsView();
+
+        if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.setDoc === 'function') {
+            try {
+                const prodRef = window.doc(window.db, 'users', currentUid, 'shopping_products', prod.id);
+                window.setDoc(prodRef, {
+                    deleted: true,
+                    deletedAt: prod.deletedAt,
+                    updatedAt: prod.updatedAt
+                }, { merge: true }).catch(e => console.warn('[Shopping] Ошибка перемещения товара в корзину:', e));
+            } catch (e) {
+                console.warn('[Shopping] Ошибка сохранения в Firebase:', e);
+            }
+        }
+
+        showItemCompletedToast({ name: `Товар «${prod.name}» перемещен в корзину` });
+    }
+
+    // Восстановление товара из корзины обратно в «Мои товары»
+    function restoreProductFromTrash(prodId) {
+        const prod = userProducts.find(p => p.id === prodId);
+        if (!prod) return;
+
+        prod.deleted = false;
+        delete prod.deletedAt;
+        prod.updatedAt = Date.now();
+
+        saveLocalCache();
+        renderCatalog();
+        renderTrashView();
+        renderSettingsView();
+
+        if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.setDoc === 'function') {
+            try {
+                const prodRef = window.doc(window.db, 'users', currentUid, 'shopping_products', prod.id);
+                window.setDoc(prodRef, {
+                    deleted: false,
+                    deletedAt: null,
+                    updatedAt: prod.updatedAt
+                }, { merge: true }).catch(e => console.warn('[Shopping] Ошибка восстановления товара:', e));
+            } catch (e) {
+                console.warn('[Shopping] Ошибка сохранения в Firebase:', e);
+            }
+        }
+
+        showItemCompletedToast({ name: `Товар «${prod.name}» восстановлен` });
+    }
+
+    // Окончательное удаление товара из корзины навсегда
+    function deleteProductPermanently(prodId) {
+        const idx = userProducts.findIndex(p => p.id === prodId);
+        if (idx === -1) return;
+        const removed = userProducts.splice(idx, 1)[0];
+
+        saveLocalCache();
+        renderCatalog();
+        renderTrashView();
+        renderSettingsView();
+
+        if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.deleteDoc === 'function') {
+            try {
+                const prodRef = window.doc(window.db, 'users', currentUid, 'shopping_products', prodId);
+                window.deleteDoc(prodRef).catch(e => console.warn('[Shopping] Ошибка безвозвратного удаления товара:', e));
+            } catch (e) {
+                console.warn('[Shopping] Ошибка удаления из Firebase:', e);
+            }
+        }
+
+        showItemCompletedToast({ name: `Товар «${removed.name}» удален навсегда` });
+    }
+
+    // Очистить всю корзину навсегда
+    function emptyTrash() {
+        const trashed = userProducts.filter(p => p.deleted);
+        if (trashed.length === 0) return;
+
+        const trashedIds = trashed.map(p => p.id);
+        userProducts = userProducts.filter(p => !p.deleted);
+
+        saveLocalCache();
+        renderCatalog();
+        renderTrashView();
+        renderSettingsView();
+
+        if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.deleteDoc === 'function') {
+            trashedIds.forEach(id => {
+                try {
+                    const prodRef = window.doc(window.db, 'users', currentUid, 'shopping_products', id);
+                    window.deleteDoc(prodRef).catch(() => {});
+                } catch (e) {}
+            });
+        }
+
+        showItemCompletedToast({ name: 'Корзина полностью очищена' });
+    }
+
+    // Автоочистка корзины: удаление товаров, которые находятся в корзине дольше 30 дней
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+    function cleanupExpiredTrashProducts() {
+        const now = Date.now();
+        const expiredIds = [];
+
+        userProducts = userProducts.filter(prod => {
+            if (prod.deleted && prod.deletedAt) {
+                const elapsed = now - prod.deletedAt;
+                if (elapsed >= THIRTY_DAYS_MS) {
+                    expiredIds.push(prod.id);
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        if (expiredIds.length > 0) {
+            saveLocalCache();
+            if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.deleteDoc === 'function') {
+                expiredIds.forEach(id => {
+                    try {
+                        const prodRef = window.doc(window.db, 'users', currentUid, 'shopping_products', id);
+                        window.deleteDoc(prodRef).catch(() => {});
+                    } catch (e) {}
+                });
+            }
+        }
+    }
+
+    // Рендер экрана корзины
+    function renderTrashView() {
+        const els = getEls();
+        if (!els.trashItemsList) return;
+
+        cleanupExpiredTrashProducts();
+        const trashed = userProducts.filter(p => p.deleted);
+
+        if (trashed.length === 0) {
+            els.trashItemsList.innerHTML = '';
+            if (els.trashEmptyState) els.trashEmptyState.style.display = 'flex';
+            if (els.trashNoticeBanner) els.trashNoticeBanner.style.display = 'none';
+            return;
+        }
+
+        if (els.trashEmptyState) els.trashEmptyState.style.display = 'none';
+        if (els.trashNoticeBanner) els.trashNoticeBanner.style.display = 'flex';
+
+        const now = Date.now();
+        els.trashItemsList.innerHTML = trashed.map(prod => {
+            const prodImg = prod.imageUrl || PLACEHOLDER_IMG;
+            const elapsedDays = Math.floor((now - (prod.deletedAt || now)) / (24 * 60 * 60 * 1000));
+            const daysLeft = Math.max(1, 30 - elapsedDays);
+            const daysWord = daysLeft === 1 ? 'день' : ((daysLeft >= 2 && daysLeft <= 4) ? 'дня' : 'дней');
+
+            return `
+                <div class="trash-item-card" data-id="${prod.id}">
+                    <div class="trash-item-left">
+                        <div class="trash-item-img-wrap">
+                            <img src="${prodImg}" alt="${escapeHtml(prod.name)}" class="trash-item-img" draggable="false">
+                        </div>
+                        <div class="trash-item-info">
+                            <span class="trash-item-title">${escapeHtml(prod.name)}</span>
+                            <span class="trash-item-days">Осталось ${daysLeft} ${daysWord}</span>
+                        </div>
+                    </div>
+                    <div class="trash-item-actions">
+                        <button class="trash-action-btn btn-restore" type="button" title="Восстановить в Мои товары" data-action="restore">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" width="16" height="16">
+                                <polyline points="1 4 1 10 7 10"></polyline>
+                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                            </svg>
+                        </button>
+                        <button class="trash-action-btn btn-delete-perm" type="button" title="Удалить навсегда" data-action="delete-perm">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" width="16" height="16">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Клики по кнопкам в карточках корзины
+        els.trashItemsList.querySelectorAll('.trash-action-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const card = btn.closest('.trash-item-card');
+                if (!card) return;
+                const prodId = card.getAttribute('data-id');
+                const action = btn.getAttribute('data-action');
+                const prod = userProducts.find(p => p.id === prodId);
+                if (!prod) return;
+
+                if (action === 'restore') {
+                    restoreProductFromTrash(prodId);
+                } else if (action === 'delete-perm') {
+                    showCustomConfirm(
+                        "Удалить навсегда?",
+                        `Товар <strong>${escapeHtml(prod.name)}</strong> будет удален навсегда без возможности восстановления.`,
+                        "Удалить",
+                        () => {
+                            deleteProductPermanently(prodId);
+                        }
+                    );
+                }
+            };
+        });
+    }
+
+    // Состояние загрузки изображения для модалки базы товаров
+    let currentUploadedImageUrl = null;
+    let currentUploadTab = 'file';
+
+    // Стандартное модальное окно добавления товара в базу (файл, drag & drop, вставка, ссылка)
+    function openProductModal() {
+        const currentEls = getEls();
+        if (!currentEls.productModalOverlay) return;
+
+        currentUploadedImageUrl = null;
+        currentUploadTab = 'file';
+
+        if (currentEls.catalogProdNameInput) currentEls.catalogProdNameInput.value = '';
+        if (currentEls.productUrlInput) currentEls.productUrlInput.value = '';
+        if (currentEls.urlPreviewWrap) currentEls.urlPreviewWrap.style.display = 'none';
+
+        // Сброс дропзоны
+        if (currentEls.dropzonePreview) {
+            currentEls.dropzonePreview.innerHTML = `
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6;"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+            `;
+        }
+        if (currentEls.dropzoneText) {
+            currentEls.dropzoneText.textContent = 'Кликните для выбора файла или перетащите его сюда';
+        }
+
+        switchUploadTab('file');
+
+        document.body.classList.add('add-modal-open');
+        currentEls.productModalOverlay.style.display = 'flex';
+        currentEls.productModalOverlay.classList.add('open');
+        setTimeout(() => {
+            if (currentEls.catalogProdNameInput) currentEls.catalogProdNameInput.focus();
+        }, 100);
+    }
+
+    function closeProductModal() {
+        const currentEls = getEls();
+        if (currentEls.productModalOverlay) {
+            currentEls.productModalOverlay.style.display = 'none';
+            currentEls.productModalOverlay.classList.remove('open');
+        }
+        document.body.classList.remove('add-modal-open');
+    }
+
+    function switchUploadTab(tab) {
+        currentUploadTab = tab;
+        const currentEls = getEls();
+        if (!currentEls.productModalOverlay) return;
+
+        currentEls.productModalOverlay.querySelectorAll('.product-tab-btn').forEach(btn => {
+            if (btn.getAttribute('data-tab') === tab) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        if (tab === 'file') {
+            if (currentEls.tabProductFile) currentEls.tabProductFile.style.display = 'flex';
+            if (currentEls.tabProductUrl) currentEls.tabProductUrl.style.display = 'none';
+        } else {
+            if (currentEls.tabProductFile) currentEls.tabProductFile.style.display = 'none';
+            if (currentEls.tabProductUrl) currentEls.tabProductUrl.style.display = 'flex';
+            if (currentEls.productUrlInput) {
+                setTimeout(() => currentEls.productUrlInput.focus(), 80);
+            }
+        }
+    }
+
+    // Обработка загруженного файла (сжатие в WebP 256x256 и отправка на ImgBB)
+    async function handleImageFile(file) {
+        if (!file || !file.type.startsWith('image/')) return;
+        const currentEls = getEls();
+
+        if (currentEls.dropzonePreview) {
+            currentEls.dropzonePreview.innerHTML = `
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: spin 1s linear infinite; color: var(--purple-primary);">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-dasharray="32" stroke-dashoffset="8" fill="none" opacity="0.3"></circle>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path>
+                </svg>
+            `;
+        }
+        if (currentEls.dropzoneText) currentEls.dropzoneText.textContent = 'Сжатие в 256x256 WebP...';
+        if (currentEls.btnSaveCatalogProduct) currentEls.btnSaveCatalogProduct.disabled = true;
+
+        try {
+            // 1. Конвертируем в 256x256 WebP
+            const { blob, dataUrl } = await processImageToWebpBlob(file, 256);
+            currentUploadedImageUrl = dataUrl;
+
+            if (currentEls.dropzoneText) currentEls.dropzoneText.textContent = 'Отправка на ImgBB...';
+
+            // 2. Отправляем на ImgBB
+            try {
+                const imgbbUrl = await uploadToImgBB(blob);
+                currentUploadedImageUrl = imgbbUrl;
+            } catch (netErr) {
+                console.warn('[Shopping] Не удалось отправить на ImgBB, сохранено локально:', netErr);
+            }
+
+            if (currentEls.dropzonePreview) {
+                currentEls.dropzonePreview.innerHTML = `<img src="${currentUploadedImageUrl}" alt="Превью" style="width: 100%; height: 100%; object-fit: contain;">`;
+            }
+            if (currentEls.dropzoneText) currentEls.dropzoneText.textContent = 'Изображение готово (256x256 WebP)';
+        } catch (err) {
+            console.error('[Shopping] Ошибка обработки изображения:', err);
+            if (currentEls.dropzoneText) currentEls.dropzoneText.textContent = 'Ошибка загрузки файла';
+        } finally {
+            if (currentEls.btnSaveCatalogProduct) currentEls.btnSaveCatalogProduct.disabled = false;
+        }
+    }
+
+    // Модальное окно замены / удаления изображения товара
+    let currentEditUploadedImageUrl = null;
+    let currentEditUploadTab = 'file';
+
+    function openEditImageModal() {
+        if (!currentDetailsProductId) return;
+        const prod = userProducts.find(p => p.id === currentDetailsProductId);
+        if (!prod) return;
+
+        const currentEls = getEls();
+        if (!currentEls.editImageModalOverlay) return;
+
+        currentEditUploadedImageUrl = prod.imageUrl || null;
+        currentEditUploadTab = 'file';
+
+        if (currentEls.editProductUrlInput) {
+            currentEls.editProductUrlInput.value = prod.imageUrl || '';
+        }
+
+        if (currentEls.editUrlPreviewWrap && currentEls.editUrlPreviewImg) {
+            if (prod.imageUrl) {
+                currentEls.editUrlPreviewImg.src = prod.imageUrl;
+                currentEls.editUrlPreviewWrap.style.display = 'flex';
+            } else {
+                currentEls.editUrlPreviewWrap.style.display = 'none';
+            }
+        }
+
+        // Настройка дропзоны с текущим изображением
+        if (currentEls.editDropzonePreview) {
+            if (prod.imageUrl) {
+                currentEls.editDropzonePreview.innerHTML = `<img src="${prod.imageUrl}" alt="Превью" style="width: 100%; height: 100%; object-fit: contain;">`;
+            } else {
+                currentEls.editDropzonePreview.innerHTML = `
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6;"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+                `;
+            }
+        }
+        if (currentEls.editDropzoneText) {
+            currentEls.editDropzoneText.textContent = prod.imageUrl
+                ? 'Текущее изображение (кликните для замены)'
+                : 'Кликните для выбора файла или перетащите его сюда';
+        }
+
+        // Кнопка удаления изображения
+        if (currentEls.btnDeleteProductImage) {
+            currentEls.btnDeleteProductImage.style.display = prod.imageUrl ? 'flex' : 'none';
+        }
+
+        switchEditUploadTab('file');
+
+        currentEls.editImageModalOverlay.style.display = 'flex';
+        currentEls.editImageModalOverlay.classList.add('open');
+    }
+
+    function closeEditImageModal() {
+        const currentEls = getEls();
+        if (currentEls.editImageModalOverlay) {
+            currentEls.editImageModalOverlay.style.display = 'none';
+            currentEls.editImageModalOverlay.classList.remove('open');
+        }
+    }
+
+    function switchEditUploadTab(tab) {
+        currentEditUploadTab = tab;
+        const currentEls = getEls();
+        if (!currentEls.editImageModalOverlay) return;
+
+        if (currentEls.tabBtnEditFile) {
+            currentEls.tabBtnEditFile.classList.toggle('active', tab === 'file');
+        }
+        if (currentEls.tabBtnEditUrl) {
+            currentEls.tabBtnEditUrl.classList.toggle('active', tab === 'url');
+        }
+
+        if (tab === 'file') {
+            if (currentEls.tabEditProductFile) currentEls.tabEditProductFile.style.display = 'flex';
+            if (currentEls.tabEditProductUrl) currentEls.tabEditProductUrl.style.display = 'none';
+        } else {
+            if (currentEls.tabEditProductFile) currentEls.tabEditProductFile.style.display = 'none';
+            if (currentEls.tabEditProductUrl) currentEls.tabEditProductUrl.style.display = 'flex';
+            if (currentEls.editProductUrlInput) {
+                setTimeout(() => currentEls.editProductUrlInput.focus(), 80);
+            }
+        }
+    }
+
+    async function handleEditImageFile(file) {
+        if (!file || !file.type.startsWith('image/')) return;
+        const currentEls = getEls();
+
+        if (currentEls.editDropzonePreview) {
+            currentEls.editDropzonePreview.innerHTML = `
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: spin 1s linear infinite; color: var(--purple-primary);">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-dasharray="32" stroke-dashoffset="8" fill="none" opacity="0.3"></circle>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path>
+                </svg>
+            `;
+        }
+        if (currentEls.editDropzoneText) currentEls.editDropzoneText.textContent = 'Сжатие в 256x256 WebP...';
+        if (currentEls.btnSaveEditedImage) currentEls.btnSaveEditedImage.disabled = true;
+
+        try {
+            const { blob, dataUrl } = await processImageToWebpBlob(file, 256);
+            currentEditUploadedImageUrl = dataUrl;
+
+            if (currentEls.editDropzoneText) currentEls.editDropzoneText.textContent = 'Отправка на ImgBB...';
+
+            try {
+                const imgbbUrl = await uploadToImgBB(blob);
+                currentEditUploadedImageUrl = imgbbUrl;
+            } catch (netErr) {
+                console.warn('[Shopping] Не удалось отправить на ImgBB, сохранено локально:', netErr);
+            }
+
+            if (currentEls.editDropzonePreview) {
+                currentEls.editDropzonePreview.innerHTML = `<img src="${currentEditUploadedImageUrl}" alt="Превью" style="width: 100%; height: 100%; object-fit: contain;">`;
+            }
+            if (currentEls.editDropzoneText) currentEls.editDropzoneText.textContent = 'Изображение готово (256x256 WebP)';
+            if (currentEls.btnDeleteProductImage) currentEls.btnDeleteProductImage.style.display = 'flex';
+        } catch (err) {
+            console.error('[Shopping] Ошибка обработки изображения:', err);
+            if (currentEls.editDropzoneText) currentEls.editDropzoneText.textContent = 'Ошибка загрузки файла';
+        } finally {
+            if (currentEls.btnSaveEditedImage) currentEls.btnSaveEditedImage.disabled = false;
+        }
+    }
+
+    function initProductDetailsDrag() {
+        const els = getEls();
+        const card = els.productDetailsCard;
+        const container = els.productDetailsDragContainer;
+        const overlay = els.productDetailsModal;
+        if (!card || !overlay) return;
+
+        let isDragging = false;
+        let startY = 0;
+        let startX = 0;
+        let currentY = 0;
+        let lastY = 0;
+        let lastTime = 0;
+        let velocityY = 0;
+
+        function onStart(e) {
+            if (e.target.closest('#btnProductDetailsClose, #btnProductDetailsMore, .product-actions-dropdown, textarea, input, #btnEditProductImage, .product-details-edit-img-btn')) {
+                return;
+            }
+            if (e.type === 'mousedown' && e.button !== 0) return;
+
+            const touch = e.touches ? e.touches[0] : e;
+            startY = touch.clientY;
+            startX = touch.clientX;
+            currentY = startY;
+            lastY = startY;
+            lastTime = Date.now();
+            velocityY = 0;
+            isDragging = true;
+
+            card.classList.add('is-dragging');
+            card.style.transition = 'none';
+        }
+
+        function onMove(e) {
+            if (!isDragging) return;
+            const touch = e.touches ? e.touches[0] : e;
+            currentY = touch.clientY;
+            const deltaX = touch.clientX - startX;
+            const deltaY = currentY - startY;
+
+            if (deltaY > 0) {
+                if (e.cancelable) e.preventDefault();
+                card.style.transform = `translateY(${deltaY}px)`;
+            } else {
+                card.style.transform = 'translateY(0px)';
+            }
+
+            const now = Date.now();
+            const dt = now - lastTime;
+            if (dt > 10) {
+                velocityY = (touch.clientY - lastY) / dt;
+                lastY = touch.clientY;
+                lastTime = now;
+            }
+        }
+
+        function onEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            card.classList.remove('is-dragging');
+            const deltaY = currentY - startY;
+
+            if (deltaY > 50 || velocityY > 0.25) {
+                card.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)';
+                card.style.transform = 'translateY(100%)';
+                setTimeout(() => {
+                    closeProductDetailsModal();
+                }, 250);
+            } else {
+                card.style.transition = 'transform 0.2s ease';
+                card.style.transform = 'translateY(0px)';
+                setTimeout(() => {
+                    if (card && !isDragging) {
+                        card.style.transform = '';
+                        card.style.transition = '';
+                    }
+                }, 200);
+            }
+        }
+
+        if (container) {
+            container.addEventListener('touchstart', onStart, { passive: true });
+            container.addEventListener('mousedown', onStart);
+        }
+        card.addEventListener('touchstart', onStart, { passive: true });
+        card.addEventListener('mousedown', onStart);
+
+        window.addEventListener('touchmove', onMove, { passive: false });
+        window.addEventListener('mousemove', onMove);
+
+        window.addEventListener('touchend', onEnd);
+        window.addEventListener('touchcancel', onEnd);
+        window.addEventListener('mouseup', onEnd);
+    }
+
     // === ИНИЦИАЛИЗАЦИЯ И СЛУШАТЕЛИ ===
     function init() {
         const els = getEls();
@@ -1265,119 +2048,6 @@
             };
         }
 
-        // Состояние загрузки изображения для модалки базы товаров
-        let currentUploadedImageUrl = null;
-        let currentUploadTab = 'file';
-
-        // Стандартное модальное окно добавления товара в базу (файл, drag & drop, вставка, ссылка)
-        function openProductModal() {
-            const currentEls = getEls();
-            if (!currentEls.productModalOverlay) return;
-
-            currentUploadedImageUrl = null;
-            currentUploadTab = 'file';
-
-            if (currentEls.catalogProdNameInput) currentEls.catalogProdNameInput.value = '';
-            if (currentEls.productUrlInput) currentEls.productUrlInput.value = '';
-            if (currentEls.urlPreviewWrap) currentEls.urlPreviewWrap.style.display = 'none';
-
-            // Сброс дропзоны
-            if (currentEls.dropzonePreview) {
-                currentEls.dropzonePreview.innerHTML = `
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6;"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
-                `;
-            }
-            if (currentEls.dropzoneText) {
-                currentEls.dropzoneText.textContent = 'Кликните для выбора файла или перетащите его сюда';
-            }
-
-            switchUploadTab('file');
-
-            document.body.classList.add('add-modal-open');
-            currentEls.productModalOverlay.style.display = 'flex';
-            currentEls.productModalOverlay.classList.add('open');
-            setTimeout(() => {
-                if (currentEls.catalogProdNameInput) currentEls.catalogProdNameInput.focus();
-            }, 100);
-        }
-
-        function closeProductModal() {
-            const currentEls = getEls();
-            if (currentEls.productModalOverlay) {
-                currentEls.productModalOverlay.style.display = 'none';
-                currentEls.productModalOverlay.classList.remove('open');
-            }
-            document.body.classList.remove('add-modal-open');
-        }
-
-        function switchUploadTab(tab) {
-            currentUploadTab = tab;
-            const currentEls = getEls();
-            if (!currentEls.productModalOverlay) return;
-
-            currentEls.productModalOverlay.querySelectorAll('.product-tab-btn').forEach(btn => {
-                if (btn.getAttribute('data-tab') === tab) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-
-            if (tab === 'file') {
-                if (currentEls.tabProductFile) currentEls.tabProductFile.style.display = 'flex';
-                if (currentEls.tabProductUrl) currentEls.tabProductUrl.style.display = 'none';
-            } else {
-                if (currentEls.tabProductFile) currentEls.tabProductFile.style.display = 'none';
-                if (currentEls.tabProductUrl) currentEls.tabProductUrl.style.display = 'flex';
-                if (currentEls.productUrlInput) {
-                    setTimeout(() => currentEls.productUrlInput.focus(), 80);
-                }
-            }
-        }
-
-        // Обработка загруженного файла (сжатие в WebP 256x256 и отправка на ImgBB)
-        async function handleImageFile(file) {
-            if (!file || !file.type.startsWith('image/')) return;
-            const currentEls = getEls();
-
-            if (currentEls.dropzonePreview) {
-                currentEls.dropzonePreview.innerHTML = `
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: spin 1s linear infinite; color: var(--purple-primary);">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-dasharray="32" stroke-dashoffset="8" fill="none" opacity="0.3"></circle>
-                        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path>
-                    </svg>
-                `;
-            }
-            if (currentEls.dropzoneText) currentEls.dropzoneText.textContent = 'Сжатие в 256x256 WebP...';
-            if (currentEls.btnSaveCatalogProduct) currentEls.btnSaveCatalogProduct.disabled = true;
-
-            try {
-                // 1. Конвертируем в 256x256 WebP
-                const { blob, dataUrl } = await processImageToWebpBlob(file, 256);
-                currentUploadedImageUrl = dataUrl;
-
-                if (currentEls.dropzoneText) currentEls.dropzoneText.textContent = 'Отправка на ImgBB...';
-
-                // 2. Отправляем на ImgBB
-                try {
-                    const imgbbUrl = await uploadToImgBB(blob);
-                    currentUploadedImageUrl = imgbbUrl;
-                } catch (netErr) {
-                    console.warn('[Shopping] Не удалось отправить на ImgBB, сохранено локально:', netErr);
-                }
-
-                if (currentEls.dropzonePreview) {
-                    currentEls.dropzonePreview.innerHTML = `<img src="${currentUploadedImageUrl}" alt="Превью" style="width: 100%; height: 100%; object-fit: contain;">`;
-                }
-                if (currentEls.dropzoneText) currentEls.dropzoneText.textContent = 'Изображение готово (256x256 WebP)';
-            } catch (err) {
-                console.error('[Shopping] Ошибка обработки изображения:', err);
-                if (currentEls.dropzoneText) currentEls.dropzoneText.textContent = 'Ошибка загрузки файла';
-            } finally {
-                if (currentEls.btnSaveCatalogProduct) currentEls.btnSaveCatalogProduct.disabled = false;
-            }
-        }
-
         // Клик по круглому плюсу (FAB во вкладке «Мои товары»)
         if (els.btnOpenAddModal) {
             els.btnOpenAddModal.onclick = openProductModal;
@@ -1427,9 +2097,24 @@
         // Вставка изображения из буфера обмена (Ctrl + V / Cmd + V)
         window.addEventListener('paste', (e) => {
             const currentEls = getEls();
-            if (!currentEls.productModalOverlay || currentEls.productModalOverlay.style.display === 'none') return;
             const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
             if (!items) return;
+
+            if (currentEls.editImageModalOverlay && currentEls.editImageModalOverlay.style.display !== 'none') {
+                for (const item of items) {
+                    if (item.type && item.type.indexOf('image') === 0) {
+                        const file = item.getAsFile();
+                        if (file) {
+                            switchEditUploadTab('file');
+                            handleEditImageFile(file);
+                        }
+                        break;
+                    }
+                }
+                return;
+            }
+
+            if (!currentEls.productModalOverlay || currentEls.productModalOverlay.style.display === 'none') return;
             for (const item of items) {
                 if (item.type && item.type.indexOf('image') === 0) {
                     const file = item.getAsFile();
@@ -1493,11 +2178,322 @@
 
         // Закрытие по Escape
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && document.body.classList.contains('add-modal-open')) {
+            if (e.key === 'Escape') {
+                hideCustomConfirm();
+                closeEditImageModal();
                 closeAddModal();
                 closeProductModal();
+                closeProductDetailsModal();
             }
         });
+
+        // Слушатели модального окна деталей товара (как в todo.html)
+        if (els.btnProductDetailsClose) {
+            els.btnProductDetailsClose.onclick = (e) => {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                closeProductDetailsModal();
+            };
+        }
+
+        if (els.productDetailsModal) {
+            els.productDetailsModal.onclick = (e) => {
+                if (e.target === els.productDetailsModal) {
+                    closeProductDetailsModal();
+                }
+            };
+        }
+
+        // Клик по блоку изображения или иконке карандаша для открытия меню замены/удаления
+        if (els.btnEditProductImage) {
+            els.btnEditProductImage.onclick = (e) => {
+                e.stopPropagation();
+                openEditImageModal();
+            };
+        }
+        if (els.productDetailsImageCard) {
+            els.productDetailsImageCard.onclick = () => {
+                openEditImageModal();
+            };
+        }
+
+        // Слушатели модального окна редактирования изображения товара
+        if (els.btnEditImageModalClose) els.btnEditImageModalClose.onclick = closeEditImageModal;
+        if (els.btnCancelEditedImage) els.btnCancelEditedImage.onclick = closeEditImageModal;
+        if (els.editImageModalOverlay) {
+            els.editImageModalOverlay.onclick = (e) => {
+                if (e.target === els.editImageModalOverlay) closeEditImageModal();
+            };
+        }
+
+        if (els.tabBtnEditFile) {
+            els.tabBtnEditFile.onclick = () => switchEditUploadTab('file');
+        }
+        if (els.tabBtnEditUrl) {
+            els.tabBtnEditUrl.onclick = () => switchEditUploadTab('url');
+        }
+
+        if (els.btnEditProductSelectFile && els.editProductFileInput) {
+            els.btnEditProductSelectFile.onclick = () => els.editProductFileInput.click();
+        }
+        if (els.editProductDropzone && els.editProductFileInput) {
+            els.editProductDropzone.onclick = () => els.editProductFileInput.click();
+            els.editProductDropzone.ondragover = (e) => {
+                e.preventDefault();
+                els.editProductDropzone.classList.add('dragover');
+            };
+            els.editProductDropzone.ondragleave = () => {
+                els.editProductDropzone.classList.remove('dragover');
+            };
+            els.editProductDropzone.ondrop = (e) => {
+                e.preventDefault();
+                els.editProductDropzone.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) handleEditImageFile(file);
+            };
+        }
+        if (els.editProductFileInput) {
+            els.editProductFileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) handleEditImageFile(file);
+            };
+        }
+
+        if (els.editProductUrlInput) {
+            els.editProductUrlInput.oninput = () => {
+                const url = els.editProductUrlInput.value.trim();
+                if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:'))) {
+                    if (els.editUrlPreviewWrap && els.editUrlPreviewImg) {
+                        els.editUrlPreviewImg.src = url;
+                        els.editUrlPreviewWrap.style.display = 'flex';
+                    }
+                } else {
+                    if (els.editUrlPreviewWrap) els.editUrlPreviewWrap.style.display = 'none';
+                }
+            };
+            els.editProductUrlInput.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (els.btnSaveEditedImage) els.btnSaveEditedImage.click();
+                }
+            };
+        }
+
+        if (els.btnSaveEditedImage) {
+            els.btnSaveEditedImage.onclick = () => {
+                if (!currentDetailsProductId) return;
+                const prod = userProducts.find(p => p.id === currentDetailsProductId);
+                if (!prod) return;
+
+                let finalImg = currentEditUploadedImageUrl;
+                if (currentEditUploadTab === 'url' && els.editProductUrlInput && els.editProductUrlInput.value.trim()) {
+                    finalImg = els.editProductUrlInput.value.trim();
+                }
+
+                prod.imageUrl = finalImg || null;
+                prod.updatedAt = Date.now();
+
+                let itemsChanged = false;
+                shoppingItems.forEach(item => {
+                    if (item.name.toLowerCase() === prod.name.toLowerCase()) {
+                        item.imageUrl = prod.imageUrl;
+                        item.updatedAt = Date.now();
+                        itemsChanged = true;
+                        if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.setDoc === 'function') {
+                            try {
+                                const itemRef = window.doc(window.db, 'users', currentUid, 'shopping_items', item.id);
+                                window.setDoc(itemRef, { imageUrl: item.imageUrl, updatedAt: item.updatedAt }, { merge: true });
+                            } catch (e) { }
+                        }
+                    }
+                });
+
+                saveLocalCache();
+                renderCatalog();
+                if (itemsChanged && currentMainTab === 'shoppingList') renderItems();
+
+                if (els.modalProductImageDisplay) {
+                    els.modalProductImageDisplay.src = prod.imageUrl || PLACEHOLDER_IMG;
+                }
+
+                if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.setDoc === 'function') {
+                    try {
+                        const prodRef = window.doc(window.db, 'users', currentUid, 'shopping_products', prod.id);
+                        window.setDoc(prodRef, { imageUrl: prod.imageUrl, updatedAt: prod.updatedAt }, { merge: true });
+                    } catch (e) { }
+                }
+
+                closeEditImageModal();
+                showItemCompletedToast({ name: 'Изображение обновлено' });
+            };
+        }
+
+        if (els.btnDeleteProductImage) {
+            els.btnDeleteProductImage.onclick = () => {
+                if (!currentDetailsProductId) return;
+                const prod = userProducts.find(p => p.id === currentDetailsProductId);
+                if (!prod) return;
+
+                prod.imageUrl = null;
+                prod.updatedAt = Date.now();
+
+                let itemsChanged = false;
+                shoppingItems.forEach(item => {
+                    if (item.name.toLowerCase() === prod.name.toLowerCase()) {
+                        item.imageUrl = null;
+                        item.updatedAt = Date.now();
+                        itemsChanged = true;
+                        if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.setDoc === 'function') {
+                            try {
+                                const itemRef = window.doc(window.db, 'users', currentUid, 'shopping_items', item.id);
+                                window.setDoc(itemRef, { imageUrl: null, updatedAt: item.updatedAt }, { merge: true });
+                            } catch (e) { }
+                        }
+                    }
+                });
+
+                saveLocalCache();
+                renderCatalog();
+                if (itemsChanged && currentMainTab === 'shoppingList') renderItems();
+
+                if (els.modalProductImageDisplay) {
+                    els.modalProductImageDisplay.src = PLACEHOLDER_IMG;
+                }
+
+                if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.setDoc === 'function') {
+                    try {
+                        const prodRef = window.doc(window.db, 'users', currentUid, 'shopping_products', prod.id);
+                        window.setDoc(prodRef, { imageUrl: null, updatedAt: prod.updatedAt }, { merge: true });
+                    } catch (e) { }
+                }
+
+                closeEditImageModal();
+                showItemCompletedToast({ name: 'Изображение удалено' });
+            };
+        }
+
+        if (els.btnProductDetailsMore && els.productActionsDropdown) {
+            els.btnProductDetailsMore.onclick = (e) => {
+                e.stopPropagation();
+                const isHidden = els.productActionsDropdown.style.display === 'none';
+                els.productActionsDropdown.style.display = isHidden ? 'flex' : 'none';
+            };
+        }
+
+        window.addEventListener('click', (e) => {
+            if (els.productActionsDropdown && !e.target.closest('#btnProductDetailsMore') && !e.target.closest('.product-actions-dropdown')) {
+                els.productActionsDropdown.style.display = 'none';
+            }
+        });
+
+        if (els.btnDeleteProductFromModal) {
+            els.btnDeleteProductFromModal.onclick = (e) => {
+                e.stopPropagation();
+                if (els.productActionsDropdown) els.productActionsDropdown.style.display = 'none';
+                if (!currentDetailsProductId) return;
+                const prod = userProducts.find(p => p.id === currentDetailsProductId);
+                if (!prod) return;
+
+                showCustomConfirm(
+                    "Переместить в корзину?",
+                    `Товар <strong>${escapeHtml(prod.name)}</strong> будет перемещен в корзину.`,
+                    "Удалить",
+                    () => {
+                        moveProductToTrash(prod.id);
+                        closeProductDetailsModal();
+                    }
+                );
+            };
+        }
+
+        // Слушатели окна подтверждения удаления (confirmDeleteModal, как в todo.html)
+        if (els.btnConfirmDeleteCancel) {
+            els.btnConfirmDeleteCancel.onclick = hideCustomConfirm;
+        }
+
+        if (els.btnConfirmDeleteSubmit) {
+            els.btnConfirmDeleteSubmit.onclick = () => {
+                const cb = customConfirmCallback;
+                hideCustomConfirm();
+                if (cb) {
+                    try {
+                        cb();
+                    } catch (err) {
+                        console.error('[Shopping] Ошибка в callback подтверждения:', err);
+                    }
+                }
+            };
+        }
+
+        if (els.confirmDeleteModal) {
+            els.confirmDeleteModal.onclick = (e) => {
+                if (e.target === els.confirmDeleteModal) {
+                    hideCustomConfirm();
+                }
+            };
+        }
+
+        // Слушатели экрана корзины в настройках
+        if (els.btnOpenTrashSettings) {
+            els.btnOpenTrashSettings.onclick = () => {
+                if (els.screenSettings) els.screenSettings.style.display = 'none';
+                if (els.screenTrash) els.screenTrash.style.display = 'block';
+                renderTrashView();
+            };
+        }
+
+        if (els.btnBackFromTrash) {
+            els.btnBackFromTrash.onclick = () => {
+                if (els.screenTrash) els.screenTrash.style.display = 'none';
+                if (els.screenSettings) els.screenSettings.style.display = 'block';
+                renderSettingsView();
+            };
+        }
+
+        if (els.btnEmptyTrash) {
+            els.btnEmptyTrash.onclick = () => {
+                const trashed = userProducts.filter(p => p.deleted);
+                if (trashed.length === 0) return;
+                showCustomConfirm(
+                    "Очистить корзину?",
+                    `Все товары в корзине (${trashed.length}) будут удалены навсегда. Это действие нельзя отменить.`,
+                    "Очистить",
+                    () => {
+                        emptyTrash();
+                    }
+                );
+            };
+        }
+
+        // Инлайн редактирование названия при клике (как в todo.html)
+        if (els.modalProductTitleDisplay && els.modalProductTitleInput) {
+            els.modalProductTitleDisplay.onclick = () => {
+                els.modalProductTitleDisplay.style.display = 'none';
+                els.modalProductTitleInput.style.display = 'block';
+                autoResizeModalInput(els.modalProductTitleInput);
+                els.modalProductTitleInput.focus();
+                els.modalProductTitleInput.select();
+            };
+
+            els.modalProductTitleInput.onblur = () => {
+                saveProductDetailsTitle();
+            };
+
+            els.modalProductTitleInput.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    els.modalProductTitleInput.blur();
+                }
+            };
+
+            els.modalProductTitleInput.oninput = () => {
+                autoResizeModalInput(els.modalProductTitleInput);
+            };
+        }
+
+        initProductDetailsDrag();
 
         if (els.btnExitTestMode) {
             els.btnExitTestMode.onclick = (e) => {
@@ -1548,10 +2544,12 @@
         initTabsDragGesture();
         loadItems();
 
-        // Фоновая периодическая проверка автоочистки купленных товаров (каждые 60 сек)
+        // Фоновая периодическая проверка автоочистки купленных товаров (5 часов) и корзины (30 дней)
         setInterval(() => {
             cleanupExpiredBoughtItems();
+            cleanupExpiredTrashProducts();
             if (currentMainTab === 'shoppingList') renderItems();
+            if (currentMainTab === 'settings') renderSettingsView();
         }, 60000);
     }
 

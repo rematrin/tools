@@ -88,32 +88,50 @@ html, body {
     display: flex;
     flex-direction: column;
     position: relative;
-    padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + 90px) 16px;
+    padding: calc(var(--safe-top) + 14px) 16px calc(var(--safe-bottom) + 80px) 16px;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.08);
     box-sizing: border-box;
     overflow-x: hidden;
 }
 
-/* === ШАПКА: ПЕРЕКЛЮЧАТЕЛЬ ВКЛАДОК И ОТДЕЛЬНАЯ КРУГЛАЯ КНОПКА НАСТРОЕК === */
-.game-header-nav {
+/* === ВЕРХНЯЯ ПОДШАПКА С ПЕРЕКЛЮЧАТЕЛЕМ ВИДА (СПИСОК / СЕТКА) === */
+.game-top-bar {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+    position: relative;
     gap: 10px;
-    margin-bottom: 14px;
-    width: 100%;
+    min-height: 40px;
 }
 
-.game-header-nav .main-tabs-nav {
+/* === НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ (ВКЛАДКИ И КРУГЛАЯ КНОПКА НАСТРОЕК) === */
+.game-bottom-nav {
+    position: fixed;
+    bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: calc(var(--app-max-width) - 32px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 1000;
+    box-sizing: border-box;
+}
+
+.game-bottom-nav .main-tabs-nav {
     flex: 1;
     min-width: 0;
     margin-bottom: 0;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08), inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .main-tabs-nav {
     position: relative;
     display: flex;
     background: #eae9f2;
-    padding: 4px;
+    padding: 3px;
     border-radius: 9999px;
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
     user-select: none;
@@ -127,8 +145,8 @@ body.dark .main-tabs-nav {
 
 /* Отдельная круглая кнопка шестеренки настроек справа (как лупа на референсе) */
 .btn-settings-tab {
-    width: 50px;
-    height: 50px;
+    width: 44px;
+    height: 44px;
     flex-shrink: 0;
     border-radius: 50%;
     background: #eae9f2;
@@ -138,10 +156,19 @@ body.dark .main-tabs-nav {
     justify-content: center;
     color: var(--text-secondary);
     cursor: pointer;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
-    transition: background-color 0.22s ease, color 0.22s ease, box-shadow 0.22s ease;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08), inset 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.22s ease, color 0.22s ease, box-shadow 0.22s ease, transform 0.12s ease;
     user-select: none;
     -webkit-user-select: none;
+}
+
+.btn-settings-tab svg {
+    width: 20px;
+    height: 20px;
+}
+
+.btn-settings-tab:active {
+    transform: scale(0.94);
 }
 
 body.dark .btn-settings-tab {
@@ -162,14 +189,14 @@ body.dark .btn-settings-tab {
 /* Переезжающий пальцем / кликом ползунок */
 .tabs-slider-indicator {
     position: absolute;
-    top: 4px;
-    bottom: 4px;
-    left: 4px;
-    width: calc(50% - 4px);
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    width: calc(50% - 3px);
     border-radius: 9999px;
     background: var(--purple-primary);
     box-shadow: 0 4px 12px rgba(98, 84, 234, 0.3);
-    transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
     z-index: 1;
     pointer-events: none;
 }
@@ -182,34 +209,40 @@ body.dark .btn-settings-tab {
     position: relative;
     z-index: 2;
     flex: 1;
-    height: 42px;
+    min-width: 0;
+    height: 38px;
+    padding: 0 6px;
     border-radius: 9999px;
     border: none;
     background: transparent;
     color: var(--text-secondary);
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     font-weight: 700;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
     cursor: pointer;
     transition: color 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 360px) {
+    .main-tab-btn {
+        font-size: 0.82rem;
+        padding: 0 4px;
+    }
+    .btn-settings-tab {
+        width: 40px;
+        height: 40px;
+    }
 }
 
 .main-tab-btn.active {
     color: #ffffff;
     background: transparent;
     box-shadow: none;
-}
-
-/* === ПОДШАПКА С ПЕРЕКЛЮЧАТЕЛЕМ ВИДА (СПИСОК / СЕТКА) === */
-.game-top-bar {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    margin-bottom: 16px;
-    position: relative;
-    gap: 10px;
 }
 
 .test-mode-badge {
@@ -885,7 +918,7 @@ body.dark .view-toggle-pill {
     position: fixed;
     right: 18px;
     right: max(18px, calc(50% - (var(--app-max-width) / 2) + 18px));
-    bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 16px);
+    bottom: calc(max(12px, calc(env(safe-area-inset-bottom, 0px) + 8px)) + 58px);
     width: 56px;
     height: 56px;
     border-radius: 50%;
@@ -896,6 +929,7 @@ body.dark .view-toggle-pill {
     z-index: 999;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
 body.add-modal-open .shopping-fab {

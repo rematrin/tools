@@ -46,27 +46,6 @@
     <div class="game-viewport">
         <main class="game-app-container">
 
-            <!-- Верхняя панель: Переключатель вкладок «Список покупок» / «Мои товары» и отдельная круглая кнопка настроек -->
-            <div class="game-header-nav">
-                <nav class="main-tabs-nav" id="mainTabsNav" role="tablist" aria-label="Основные разделы">
-                    <div class="tabs-slider-indicator" id="tabsSliderIndicator"></div>
-                    <button class="main-tab-btn active" id="tabShoppingList" type="button" role="tab"
-                        aria-selected="true">Список покупок</button>
-                    <button class="main-tab-btn" id="tabMyProducts" type="button" role="tab" aria-selected="false">Мои
-                        товары</button>
-                </nav>
-                <button class="btn-settings-tab" id="tabSettings" type="button" role="tab" aria-selected="false"
-                    aria-label="Настройки" title="Настройки">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path
-                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
-                        </path>
-                    </svg>
-                </button>
-            </div>
-
             <!-- Верхняя подпанель: Индикатор демо-режима и переключатель вида (Список / Сетка) -->
             <header class="game-top-bar" id="gameTopBar">
                 <!-- Индикатор тестового режима #test -->
@@ -613,6 +592,27 @@
                         height="16">
                         <path d="M3 7v6h6"></path>
                         <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Нижняя панель навигации: вкладки «Список покупок» / «Мои товары» и кнопка настроек -->
+            <div class="game-bottom-nav" id="gameBottomNav">
+                <nav class="main-tabs-nav" id="mainTabsNav" role="tablist" aria-label="Основные разделы">
+                    <div class="tabs-slider-indicator" id="tabsSliderIndicator"></div>
+                    <button class="main-tab-btn active" id="tabShoppingList" type="button" role="tab"
+                        aria-selected="true">Список покупок</button>
+                    <button class="main-tab-btn" id="tabMyProducts" type="button" role="tab" aria-selected="false">Мои
+                        товары</button>
+                </nav>
+                <button class="btn-settings-tab" id="tabSettings" type="button" role="tab" aria-selected="false"
+                    aria-label="Настройки" title="Настройки">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
                     </svg>
                 </button>
             </div>

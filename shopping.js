@@ -103,6 +103,7 @@
             btnProductDetailsClose: document.getElementById('btnProductDetailsClose'),
             btnProductDetailsMore: document.getElementById('btnProductDetailsMore'),
             productActionsDropdown: document.getElementById('productActionsDropdown'),
+            btnEditImageFromModal: document.getElementById('btnEditImageFromModal'),
             btnDeleteProductFromModal: document.getElementById('btnDeleteProductFromModal'),
             modalProductTitleDisplay: document.getElementById('modalProductTitleDisplay'),
             modalProductTitleInput: document.getElementById('modalProductTitleInput'),
@@ -1199,6 +1200,7 @@
     // === ЖЕСТ СВАЙПА ВЛЕВО ДЛЯ УДАЛЕНИЯ ИЗ СПИСКА ПОКУПОК ===
     let currentSwipedContainer = null;
     let swipeState = null;
+    let closeCurrentSwipedFn = null;
 
     function initShoppingItemsSwipe() {
         if (window._shoppingSwipeInitialized) return;
@@ -1219,6 +1221,7 @@
             }
             c.classList.remove('is-open');
         }
+        closeCurrentSwipedFn = closeCurrentSwiped;
 
         // Закрытие открытого свайпа при клике вне него
         document.addEventListener('click', (e) => {
@@ -1228,6 +1231,7 @@
         }, true);
 
         function onPointerStart(e) {
+            if (window._isReorderDragging) return;
             if (e.type === 'mousedown' && e.button !== 0) return;
 
             // Не перехватываем клики по чекбоксу
@@ -1284,6 +1288,10 @@
         }
 
         function onPointerMove(e) {
+            if (window._isReorderDragging) {
+                if (swipeState) swipeState = null;
+                return;
+            }
             if (!swipeState) return;
 
             const point = swipeState.isTouch ? e.touches[0] : e;
@@ -1414,6 +1422,367 @@
         document.addEventListener('touchend', onPointerEnd, { passive: true });
         document.addEventListener('touchcancel', onPointerEnd, { passive: true });
         document.addEventListener('mousedown', onPointerStart);
+    }
+
+    // === СИНХРОНИЗАЦИЯ ПОРЯДКА В FIRESTORE ===
+    function syncShoppingItemsOrderToFirestore(items) {
+        if (isTestMode() || !currentUid || !window.db || typeof window.setDoc !== 'function' || typeof window.doc !== 'function') return;
+        items.forEach((item, index) => {
+            try {
+                const itemRef = window.doc(window.db, 'users', currentUid, 'shopping_items', item.id);
+                window.setDoc(itemRef, { order: index, updatedAt: Date.now() }, { merge: true }).catch(() => { });
+            } catch (e) { }
+        });
+    }
+
+    function syncUserProductsOrderToFirestore(products) {
+        if (isTestMode() || !currentUid || !window.db || typeof window.setDoc !== 'function' || typeof window.doc !== 'function') return;
+        products.forEach((prod, index) => {
+            try {
+                const prodRef = window.doc(window.db, 'users', currentUid, 'shopping_products', prod.id);
+                window.setDoc(prodRef, { order: index, updatedAt: Date.now() }, { merge: true }).catch(() => { });
+            } catch (e) { }
+        });
+    }
+
+    // === DRAG & DROP ПЕРЕМЕЩЕНИЕ КАРТОЧЕК ПАЛЬЦЕМ / МЫШЬЮ (В СПИСКЕ И СЕТКЕ/ГАЛЕРЕЕ) ===
+    function initReorderDragAndDrop() {
+        let holdTimer = null;
+        let isDragging = false;
+        let hasMoved = false;
+        let startX = 0;
+        let startY = 0;
+        let currentX = 0;
+        let currentY = 0;
+        let startClientX = 0;
+        let startClientY = 0;
+        let draggedItem = null;
+        let placeholder = null;
+        let container = null;
+        let origRect = null;
+        let autoScrollRaf = null;
+
+        function getItemFromTarget(target) {
+            if (!target) return null;
+            if (target.closest('.game-checkbox, button, input, textarea, a, .swipe-delete-background, .btn-product-add')) {
+                return null;
+            }
+
+            const activeList = document.getElementById('activeItemsList');
+            const catalogGrid = document.getElementById('catalogProductsGrid');
+
+            if (activeList && activeList.contains(target)) {
+                if (activeList.classList.contains('view-list')) {
+                    return target.closest('.swipe-item-container');
+                } else {
+                    return target.closest('.shopping-card');
+                }
+            }
+
+            if (catalogGrid && catalogGrid.contains(target)) {
+                return target.closest('.product-catalog-card');
+            }
+
+            return null;
+        }
+
+        function onPointerDown(e) {
+            if (e.type === 'mousedown' && e.button !== 0) return;
+            if (isDragging) return;
+
+            const item = getItemFromTarget(e.target);
+            if (!item) return;
+
+            const parent = item.parentElement;
+            if (!parent || parent.children.length <= 1) return;
+
+            const point = e.touches ? e.touches[0] : e;
+            startX = point.clientX;
+            startY = point.clientY;
+            currentX = startX;
+            currentY = startY;
+            hasMoved = false;
+
+            clearTimeout(holdTimer);
+            holdTimer = setTimeout(() => {
+                startDrag(item, parent, point);
+            }, 240);
+
+            if (!e.touches) {
+                window.addEventListener('mousemove', onPointerMove, { passive: false });
+                window.addEventListener('mouseup', onPointerUp, { passive: false });
+            }
+        }
+
+        function startDrag(item, parent, point) {
+            isDragging = true;
+            window._isReorderDragging = true;
+            draggedItem = item;
+            container = parent;
+
+            if (typeof closeCurrentSwipedFn === 'function') {
+                try { closeCurrentSwipedFn(false); } catch (err) { }
+            }
+
+            if (navigator.vibrate) {
+                try { navigator.vibrate(28); } catch (err) { }
+            }
+
+            origRect = item.getBoundingClientRect();
+            startClientX = point.clientX;
+            startClientY = point.clientY;
+
+            placeholder = document.createElement('div');
+            placeholder.className = 'drag-placeholder';
+            placeholder.style.width = `${origRect.width}px`;
+            placeholder.style.height = `${origRect.height}px`;
+
+            item.before(placeholder);
+
+            item.classList.add('is-dragging-card');
+            item.style.width = `${origRect.width}px`;
+            item.style.height = `${origRect.height}px`;
+            item.style.left = `${origRect.left}px`;
+            item.style.top = `${origRect.top}px`;
+            item.style.margin = '0';
+            item.style.transform = 'translate3d(0, 0, 0) scale(1.04)';
+
+            document.body.classList.add('is-reordering');
+            startAutoScroll();
+        }
+
+        function onPointerMove(e) {
+            const point = e.touches ? e.touches[0] : e;
+            if (!point) return;
+
+            currentX = point.clientX;
+            currentY = point.clientY;
+
+            if (!isDragging) {
+                const dist = Math.hypot(currentX - startX, currentY - startY);
+                if (dist > 7) {
+                    clearTimeout(holdTimer);
+                    holdTimer = null;
+                }
+                return;
+            }
+
+            if (e.cancelable) e.preventDefault();
+
+            hasMoved = true;
+            const dx = currentX - startClientX;
+            const dy = currentY - startClientY;
+            draggedItem.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(1.04)`;
+
+            checkReorderTarget(currentX, currentY);
+        }
+
+        function checkReorderTarget(x, y) {
+            if (!placeholder || !container) return;
+
+            const target = document.elementFromPoint(x, y);
+            if (!target) return;
+
+            let sibling = null;
+            if (container.id === 'catalogProductsGrid') {
+                sibling = target.closest('.product-catalog-card');
+            } else if (container.id === 'activeItemsList') {
+                if (container.classList.contains('view-list')) {
+                    sibling = target.closest('.swipe-item-container');
+                } else {
+                    sibling = target.closest('.shopping-card');
+                }
+            } else {
+                sibling = target.closest('.product-catalog-card') || target.closest('.swipe-item-container') || target.closest('.shopping-card');
+            }
+
+            if (!sibling || sibling === placeholder || sibling === draggedItem || !container.contains(sibling)) {
+                return;
+            }
+
+            const rect = sibling.getBoundingClientRect();
+
+            if (container.classList.contains('view-list')) {
+                const middleY = rect.top + rect.height / 2;
+                if (y < middleY) {
+                    if (sibling.previousElementSibling !== placeholder) {
+                        sibling.before(placeholder);
+                    }
+                } else {
+                    if (sibling.nextElementSibling !== placeholder) {
+                        sibling.after(placeholder);
+                    }
+                }
+            } else {
+                const all = Array.from(container.children).filter(el => el !== draggedItem);
+                const pIdx = all.indexOf(placeholder);
+                const sIdx = all.indexOf(sibling);
+                const middleY = rect.top + rect.height / 2;
+
+                if (pIdx < sIdx) {
+                    if (x > rect.left + rect.width * 0.25 || y > middleY) {
+                        sibling.after(placeholder);
+                    }
+                } else {
+                    if (x < rect.right - rect.width * 0.25 || y < middleY) {
+                        sibling.before(placeholder);
+                    }
+                }
+            }
+        }
+
+        function startAutoScroll() {
+            cancelAnimationFrame(autoScrollRaf);
+            function loop() {
+                if (!isDragging) return;
+                const threshold = 80;
+                const maxSpeed = 10;
+                if (currentY < threshold) {
+                    const ratio = (threshold - currentY) / threshold;
+                    window.scrollBy(0, -Math.round(ratio * maxSpeed));
+                } else if (currentY > window.innerHeight - threshold) {
+                    const ratio = (currentY - (window.innerHeight - threshold)) / threshold;
+                    window.scrollBy(0, Math.round(ratio * maxSpeed));
+                }
+                autoScrollRaf = requestAnimationFrame(loop);
+            }
+            autoScrollRaf = requestAnimationFrame(loop);
+        }
+
+        function onPointerUp(e) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+
+            if (!e.touches) {
+                window.removeEventListener('mousemove', onPointerMove);
+                window.removeEventListener('mouseup', onPointerUp);
+            }
+
+            if (!isDragging) return;
+            isDragging = false;
+            cancelAnimationFrame(autoScrollRaf);
+
+            if (!draggedItem || !placeholder) {
+                cleanupDrag();
+                return;
+            }
+
+            const pRect = placeholder.getBoundingClientRect();
+            const targetDx = pRect.left - origRect.left;
+            const targetDy = pRect.top - origRect.top;
+
+            draggedItem.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+            draggedItem.style.transform = `translate3d(${targetDx}px, ${targetDy}px, 0) scale(1)`;
+
+            setTimeout(() => {
+                if (placeholder && placeholder.parentNode && draggedItem) {
+                    placeholder.replaceWith(draggedItem);
+                }
+                cleanupDrag();
+                finalizeReorder(container);
+            }, 220);
+        }
+
+        function cleanupDrag() {
+            if (draggedItem) {
+                draggedItem.classList.remove('is-dragging-card');
+                draggedItem.style.position = '';
+                draggedItem.style.width = '';
+                draggedItem.style.height = '';
+                draggedItem.style.left = '';
+                draggedItem.style.top = '';
+                draggedItem.style.margin = '';
+                draggedItem.style.transform = '';
+                draggedItem.style.transition = '';
+                draggedItem.style.zIndex = '';
+            }
+            if (placeholder && placeholder.parentNode) {
+                placeholder.remove();
+            }
+            placeholder = null;
+            draggedItem = null;
+            document.body.classList.remove('is-reordering');
+
+            if (hasMoved) {
+                const preventClick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.removeEventListener('click', preventClick, true);
+                };
+                window.addEventListener('click', preventClick, true);
+                setTimeout(() => window.removeEventListener('click', preventClick, true), 120);
+            }
+
+            setTimeout(() => {
+                window._isReorderDragging = false;
+            }, 150);
+        }
+
+        function finalizeReorder(targetContainer) {
+            if (!targetContainer) return;
+
+            if (navigator.vibrate) {
+                try { navigator.vibrate(18); } catch (err) { }
+            }
+
+            const ids = Array.from(targetContainer.children)
+                .map(c => c.getAttribute('data-id'))
+                .filter(Boolean);
+
+            if (targetContainer.id === 'activeItemsList') {
+                const bought = shoppingItems.filter(i => i.completed);
+                const activeMap = new Map(shoppingItems.filter(i => !i.completed).map(i => [i.id, i]));
+                const newActive = [];
+
+                ids.forEach((id, index) => {
+                    const item = activeMap.get(id);
+                    if (item) {
+                        item.order = index;
+                        newActive.push(item);
+                        activeMap.delete(id);
+                    }
+                });
+
+                activeMap.forEach((item) => {
+                    item.order = newActive.length;
+                    newActive.push(item);
+                });
+
+                shoppingItems = [...newActive, ...bought];
+                saveLocalCache();
+                syncShoppingItemsOrderToFirestore(newActive);
+            } else if (targetContainer.id === 'catalogProductsGrid') {
+                const prodMap = new Map(userProducts.map(p => [p.id, p]));
+                const reorderedSublist = ids.map(id => prodMap.get(id)).filter(Boolean);
+
+                if (ids.length >= userProducts.length) {
+                    userProducts = reorderedSublist;
+                } else {
+                    // Если включен фильтр по категориям: заменяем только позиции отфильтрованных товаров
+                    const idSet = new Set(ids);
+                    let subIdx = 0;
+                    userProducts = userProducts.map(p => {
+                        if (idSet.has(p.id)) {
+                            return reorderedSublist[subIdx++];
+                        }
+                        return p;
+                    });
+                }
+
+                userProducts.forEach((p, idx) => {
+                    p.order = idx;
+                });
+
+                saveLocalCache();
+                syncUserProductsOrderToFirestore(userProducts);
+            }
+        }
+
+        window.addEventListener('touchstart', onPointerDown, { passive: true });
+        window.addEventListener('touchmove', onPointerMove, { passive: false });
+        window.addEventListener('touchend', onPointerUp, { passive: false });
+        window.addEventListener('touchcancel', onPointerUp, { passive: false });
+        window.addEventListener('mousedown', onPointerDown);
     }
 
     // Смена статуса: куплен / не куплен (улетает вниз в «Купленные» или обратно)
@@ -1697,6 +2066,12 @@
             shoppingItems = cached ? JSON.parse(cached) : [];
             // Фильтруем битые элементы без названия
             shoppingItems = shoppingItems.filter(i => i && i.name && typeof i.name === 'string' && i.name.trim().length > 0);
+            shoppingItems.sort((a, b) => {
+                if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+                if (a.order !== undefined) return -1;
+                if (b.order !== undefined) return 1;
+                return (b.createdAt || 0) - (a.createdAt || 0);
+            });
             cleanupExpiredBoughtItems();
         } catch (e) {
             shoppingItems = [];
@@ -1707,6 +2082,12 @@
             userProducts = cachedProds ? JSON.parse(cachedProds) : [];
             // Фильтруем битые элементы без названия
             userProducts = userProducts.filter(p => p && p.name && typeof p.name === 'string' && p.name.trim().length > 0);
+            userProducts.sort((a, b) => {
+                if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+                if (a.order !== undefined) return -1;
+                if (b.order !== undefined) return 1;
+                return (b.createdAt || 0) - (a.createdAt || 0);
+            });
             cleanupExpiredTrashProducts();
         } catch (e) {
             userProducts = [];
@@ -1761,7 +2142,12 @@
                         }
                     });
 
-                    loaded.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                    loaded.sort((a, b) => {
+                        if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+                        if (a.order !== undefined) return -1;
+                        if (b.order !== undefined) return 1;
+                        return (b.createdAt || 0) - (a.createdAt || 0);
+                    });
                     shoppingItems = loaded;
                     cleanupExpiredBoughtItems();
                     saveLocalCache();
@@ -1786,7 +2172,12 @@
                         }
                     });
 
-                    loaded.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                    loaded.sort((a, b) => {
+                        if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+                        if (a.order !== undefined) return -1;
+                        if (b.order !== undefined) return 1;
+                        return (b.createdAt || 0) - (a.createdAt || 0);
+                    });
                     userProducts = loaded;
                     cleanupExpiredTrashProducts();
                     saveLocalCache();
@@ -2999,6 +3390,14 @@
             }
         });
 
+        if (els.btnEditImageFromModal) {
+            els.btnEditImageFromModal.onclick = (e) => {
+                e.stopPropagation();
+                if (els.productActionsDropdown) els.productActionsDropdown.style.display = 'none';
+                openEditImageModal();
+            };
+        }
+
         if (els.btnDeleteProductFromModal) {
             els.btnDeleteProductFromModal.onclick = (e) => {
                 e.stopPropagation();
@@ -3231,6 +3630,7 @@
         setMainTab('shoppingList');
         initTabsDragGesture();
         initShoppingItemsSwipe();
+        initReorderDragAndDrop();
         loadItems();
 
         // Фоновая периодическая проверка автоочистки купленных товаров (5 часов) и корзины (30 дней)

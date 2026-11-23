@@ -354,6 +354,51 @@ body.dark .view-toggle-pill {
     pointer-events: none;
 }
 
+/* === DRAG & DROP ПЕРЕМЕЩЕНИЕ КАРТОЧЕК В СПИСКЕ И СЕТКЕ/ГАЛЕРЕЕ === */
+.drag-placeholder {
+    background: #eaedf2 !important;
+    border: 1.5px solid #d1d5db !important;
+    border-radius: var(--card-radius-list, 20px) !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    opacity: 0.9 !important;
+    pointer-events: none !important;
+    transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+body.dark .drag-placeholder,
+html.dark .drag-placeholder {
+    background: #232238 !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.14) !important;
+}
+
+.items-wrapper.view-grid .drag-placeholder,
+.products-wrapper.view-grid .drag-placeholder {
+    border-radius: var(--card-radius-grid, 22px) !important;
+    aspect-ratio: 1 / 1 !important;
+}
+
+.is-dragging-card {
+    position: fixed !important;
+    z-index: 99999 !important;
+    pointer-events: none !important;
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.12) !important;
+    transform-origin: center center !important;
+    will-change: transform !important;
+    opacity: 0.98 !important;
+    transition: none !important;
+}
+
+body.is-reordering {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    touch-action: none !important;
+}
+
+body.is-reordering * {
+    cursor: grabbing !important;
+}
+
 /* === РЕЖИМ 1: СПИСОК (VIEW-LIST) === */
 .items-wrapper.view-list {
     display: flex;
@@ -1762,7 +1807,9 @@ body.dark .product-details-mobile-more-btn {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     padding: 6px;
     z-index: 10001;
-    width: 170px;
+    min-width: 216px;
+    width: max-content;
+    max-width: 260px;
     display: flex;
     flex-direction: column;
     animation: fadeInDropdown 0.15s ease;
@@ -1795,11 +1842,23 @@ body.dark .product-actions-dropdown {
     gap: 8px;
     font-size: 0.92rem;
     font-weight: 600;
+    color: var(--text-primary);
     border-radius: 10px;
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease;
     box-sizing: border-box;
     font-family: inherit;
+    white-space: nowrap;
+}
+
+.product-actions-dropdown .dropdown-item:hover,
+.product-actions-dropdown .dropdown-item:active {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+body.dark .product-actions-dropdown .dropdown-item:hover,
+body.dark .product-actions-dropdown .dropdown-item:active {
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 .product-actions-dropdown .dropdown-item.btn-delete {
@@ -1809,6 +1868,7 @@ body.dark .product-actions-dropdown {
 .product-actions-dropdown .dropdown-item.btn-delete:hover,
 .product-actions-dropdown .dropdown-item.btn-delete:active {
     background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
 }
 
 /* Контент модалки: карточка с названием */

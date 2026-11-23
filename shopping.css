@@ -479,6 +479,7 @@ body.is-reordering * {
     min-height: 64px;
     box-sizing: border-box;
     will-change: transform;
+    cursor: pointer;
     transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
                 border-top-right-radius 0.12s ease,
                 border-bottom-right-radius 0.12s ease;
@@ -506,7 +507,7 @@ body.is-reordering * {
 }
 
 .items-wrapper.view-list > .shopping-card:active {
-    transform: scale(0.985);
+    transform: none;
 }
 
 .items-wrapper.view-list .card-left {
@@ -566,11 +567,12 @@ body.is-reordering * {
     max-width: 100%;
     box-sizing: border-box;
     overflow: hidden;
+    cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .items-wrapper.view-grid .shopping-card:active {
-    transform: scale(0.98);
+    transform: none;
 }
 
 .items-wrapper.view-grid .card-img-wrap {
@@ -689,7 +691,7 @@ body.is-reordering * {
 }
 
 .products-wrapper.view-grid .product-catalog-card:active {
-    transform: scale(0.98);
+    transform: none;
 }
 
 .products-wrapper.view-grid .card-img-wrap {
@@ -720,6 +722,29 @@ body.is-reordering * {
     flex-shrink: 0;
     min-width: 0;
     overflow: hidden;
+}
+
+/* Карточка без изображения в режиме сетки */
+.card-no-img-content {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px 4px;
+    box-sizing: border-box;
+}
+
+.card-no-img-content .card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
 }
 
 .products-wrapper.view-grid .card-title {
@@ -754,10 +779,15 @@ body.is-reordering * {
     min-height: 64px;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     cursor: pointer;
+    will-change: transform;
+}
+
+.product-catalog-card.is-adding-to-cart {
+    pointer-events: none !important;
 }
 
 .products-wrapper.view-list .product-catalog-card:active {
-    transform: scale(0.985);
+    transform: none;
 }
 
 .products-wrapper.view-list .card-left {
@@ -860,15 +890,15 @@ body.is-reordering * {
 /* Состояние купленного товара (галочка нажата) и промежуточная анимация */
 .shopping-card.is-checked .game-checkbox,
 .shopping-card.is-completing .game-checkbox {
-    background: var(--green-checked);
-    border-color: var(--green-checked);
+    background: var(--green-checked) !important;
+    border-color: var(--green-checked) !important;
     transform: scale(1.1);
 }
 
 .shopping-card.is-checked .game-checkbox svg,
 .shopping-card.is-completing .game-checkbox svg {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
+    opacity: 1 !important;
+    transform: scale(1) rotate(0deg) !important;
 }
 
 /* Карточка в момент завершения (галочка зафиксирована, карточка задерживается) */
@@ -891,6 +921,11 @@ body.is-reordering * {
 .bought-section {
     margin-top: 24px;
     margin-bottom: 24px;
+}
+
+#boughtItemsList .card-title,
+.bought-section .shopping-card .card-title {
+    text-decoration: line-through;
 }
 
 .bought-header {
@@ -1300,7 +1335,7 @@ body.dark .btn-cancel-product {
 /* === ТОСТ УВЕДОМЛЕНИЯ О ВЫПОЛНЕНИИ / ПОКУПКЕ ТОВАРА (ИДЕНТИЧНО TODO.HTML) === */
 .toast-notification {
     position: fixed;
-    bottom: 24px;
+    bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 86px);
     left: 50%;
     transform: translateX(-50%) translateY(100px);
     background-color: #2b2d31;
@@ -1328,8 +1363,16 @@ body.dark .btn-cancel-product {
 
 @media (max-width: 768px) {
     .toast-notification {
-        bottom: calc(max(10px, calc(env(safe-area-inset-bottom, 0px) - 10px)) + 74px);
+        bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 86px);
     }
+}
+
+.swipe-item-container.is-disappearing,
+.shopping-card.is-disappearing {
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+    pointer-events: none !important;
 }
 
 .toast-undo-btn {

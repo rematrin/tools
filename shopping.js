@@ -1,9 +1,6 @@
 // shopping.js - Логика игрового низкополигонального списка покупок и базы товаров
 
 (function () {
-    // Единственная заглушка для низкополигональных 3D продуктов
-    const PLACEHOLDER_IMG = 'img/lowpoly-food.svg';
-
     // 5 часов до автоочистки купленных товаров (купленные исчезают через 5 часов после покупки)
     const AUTO_CLEANUP_HOURS_MS = 5 * 60 * 60 * 1000;
 
@@ -42,14 +39,17 @@
     let unsubCategories = null;
     let editingCategoryForEmojiId = null;
 
-    let currentMainTab = 'shoppingList'; // 'shoppingList' или 'myProducts'
+    let currentMainTab = 'shoppingList'; // 'shoppingList', 'myProducts', 'settings', 'trash'
     let currentCategoryFilter = 'all';  // 'all', 'vegetables', 'fruits', 'dairy'
     let currentViewMode = localStorage.getItem('shopping_view_mode') || 'list';
 
+    let _isTestModeActive = (window.location.hash || '').toLowerCase().includes('test') ||
+                            (window.location.search || '').toLowerCase().includes('test');
+
     function isTestMode() {
-        const hash = (window.location.hash || '').toLowerCase();
-        const search = (window.location.search || '').toLowerCase();
-        return hash.includes('test') || search.includes('test');
+        return _isTestModeActive ||
+            (window.location.hash || '').toLowerCase().includes('test') ||
+            (window.location.search || '').toLowerCase().includes('test');
     }
 
     // Получение DOM-элементов
@@ -158,12 +158,67 @@
         };
     }
 
-    // === ПЕРЕКЛЮЧЕНИЕ ГЛАВНЫХ ВКЛАДОК («СПИСОК ПОКУПОК» / «МОИ ТОВАРЫ» / «НАСТРОЙКИ») ===
-    function setMainTab(tab) {
+    // === ПЕРЕКЛЮЧЕНИЕ ГЛАВНЫХ ВКЛАДОК («СПИСОК ПОКУПОК» / «МОИ ТОВАРЫ» / «НАСТРОЙКИ» / «КОРЗИНА») ===
+    function setMainTab(tab, updateHash = true) {
         currentMainTab = tab;
         const els = getEls();
+
+        // Канонический URL-хэш и заголовок документа (как в Todo)
+        let canonicalHash = 'shopping';
+        let pageTitle = 'Список покупок';
+
+        if (tab === 'myProducts') {
+            canonicalHash = 'products';
+            pageTitle = 'Мои товары';
+        } else if (tab === 'settings') {
+            canonicalHash = 'settings';
+            pageTitle = 'Настройки';
+        } else if (tab === 'trash') {
+            canonicalHash = 'trash';
+            pageTitle = 'Корзина';
+        }
+
+        document.title = pageTitle;
+
+        if (updateHash) {
+            const finalHash = _isTestModeActive ? `#test/${canonicalHash}` : `#${canonicalHash}`;
+            if (window.location.hash !== finalHash) {
+                window.location.hash = finalHash;
+                return;
+            }
+        }
+
         if (!els.tabShoppingList || !els.tabMyProducts) return;
 
+        // 1. Экран Корзины
+        if (tab === 'trash') {
+            if (els.tabSettings) {
+                els.tabSettings.classList.remove('active');
+                els.tabSettings.setAttribute('aria-selected', 'false');
+            }
+            els.tabShoppingList.classList.remove('active');
+            els.tabShoppingList.setAttribute('aria-selected', 'false');
+            els.tabMyProducts.classList.remove('active');
+            els.tabMyProducts.setAttribute('aria-selected', 'false');
+
+            if (els.tabsSliderIndicator) {
+                els.tabsSliderIndicator.style.opacity = '0';
+            }
+
+            if (els.screenShoppingList) els.screenShoppingList.style.display = 'none';
+            if (els.screenMyProducts) els.screenMyProducts.style.display = 'none';
+            if (els.screenSettings) els.screenSettings.style.display = 'none';
+            if (els.screenTrash) els.screenTrash.style.display = 'block';
+
+            if (els.viewTogglePill) els.viewTogglePill.style.display = 'none';
+            if (els.btnOpenAddModal) els.btnOpenAddModal.style.display = 'none';
+            if (els.catalogFilters) els.catalogFilters.style.display = 'none';
+
+            renderTrashView();
+            return;
+        }
+
+        // 2. Экран Настроек
         if (tab === 'settings') {
             if (els.tabSettings) {
                 els.tabSettings.classList.add('active');
@@ -192,7 +247,7 @@
             return;
         }
 
-        // Возврат к табам слева
+        // 3. Возврат к основным вкладкам (Список покупок / Мои товары)
         if (els.tabSettings) {
             els.tabSettings.classList.remove('active');
             els.tabSettings.setAttribute('aria-selected', 'false');
@@ -237,6 +292,36 @@
 
             renderItems();
         }
+    }
+
+    // === МАРШРУТИЗАЦИЯ ПО ХЭШАМ URL (СПИСОК / ТОВАРЫ / НАСТРОЙКИ / КОРЗИНА) ===
+    function handleRoute() {
+        const rawHash = (window.location.hash || '').replace('#', '').toLowerCase();
+
+        if (rawHash.includes('test')) {
+            _isTestModeActive = true;
+        }
+
+        const cleanRoute = rawHash.replace(/^test\/?/, '').split('?')[0].split('/')[0];
+
+        let targetTab = 'shoppingList';
+        if (cleanRoute === 'products' || cleanRoute === 'catalog' || cleanRoute === 'myproducts') {
+            targetTab = 'myProducts';
+        } else if (cleanRoute === 'settings' || cleanRoute === 'preferences') {
+            targetTab = 'settings';
+        } else if (cleanRoute === 'trash' || cleanRoute === 'bin') {
+            targetTab = 'trash';
+        } else if (cleanRoute === 'shopping' || cleanRoute === 'list' || cleanRoute === 'shoppinglist') {
+            targetTab = 'shoppingList';
+        } else {
+            targetTab = 'shoppingList';
+            if (!window.location.hash || window.location.hash === '#' || window.location.hash === '#test') {
+                const defaultHash = _isTestModeActive ? '#test/shopping' : '#shopping';
+                history.replaceState(null, null, defaultHash);
+            }
+        }
+
+        setMainTab(targetTab, false);
     }
 
     // Режим кропа картинок в списке (обычный или приближенный от края до края 100% по вертикали)
@@ -650,12 +735,12 @@
         const els = getEls();
         if (!els.catalogProductsGrid) return;
 
-        const activeProducts = userProducts.filter(p => !p.deleted);
+        const allBaseProducts = userProducts.filter(p => !p.deleted);
 
-        if (activeProducts.length === 0) {
+        if (allBaseProducts.length === 0) {
             els.catalogProductsGrid.innerHTML = `
                 <div class="empty-game-state" style="display: flex; margin-top: 40px; width: 100%; grid-column: 1 / -1;">
-                    <img src="${PLACEHOLDER_IMG}" alt="Пусто" class="empty-game-icon">
+                    <div style="font-size: 2.8rem; margin-bottom: 8px;">📦</div>
                     <h2 class="empty-game-title">База товаров пуста</h2>
                     <p class="empty-game-desc">Нажмите на плюс внизу, чтобы добавить первый товар в базу</p>
                 </div>
@@ -663,7 +748,31 @@
             return;
         }
 
-        let items = activeProducts;
+        // Проверка: находится ли товар уже в АКТИВНОМ списке покупок (не куплен)
+        const isProductInActiveShopping = (prod) => {
+            const prodName = (prod.name || '').toLowerCase().trim();
+            return shoppingItems.some(i => {
+                if (i.completed) return false; // если куплен — он доступен в «Моих товарах»
+                if (i.productId && prod.id && i.productId === prod.id) return true;
+                return (i.name || '').toLowerCase().trim() === prodName;
+            });
+        };
+
+        // Скрываем со страницы «Мои товары» те, что уже добавлены в активный список покупок
+        const availableProducts = allBaseProducts.filter(p => !isProductInActiveShopping(p));
+
+        if (availableProducts.length === 0 && currentCategoryFilter === 'all') {
+            els.catalogProductsGrid.innerHTML = `
+                <div class="empty-game-state" style="display: flex; margin-top: 40px; width: 100%; grid-column: 1 / -1;">
+                    <div style="font-size: 2.8rem; margin-bottom: 8px;">🛒</div>
+                    <h2 class="empty-game-title">Все товары в списке</h2>
+                    <p class="empty-game-desc">Все добавленные товары сейчас находятся в активном списке покупок</p>
+                </div>
+            `;
+            return;
+        }
+
+        let items = availableProducts;
         if (currentCategoryFilter !== 'all') {
             items = items.filter(p => p.category === currentCategoryFilter);
         }
@@ -671,54 +780,55 @@
         if (items.length === 0) {
             els.catalogProductsGrid.innerHTML = `
                 <div style="grid-column: 1 / -1; width: 100%; text-align: center; padding: 40px 10px; color: var(--text-muted); font-size: 0.95rem;">
-                    В этой категории нет товаров
+                    В этой категории нет доступных товаров
                 </div>
             `;
             return;
         }
 
         els.catalogProductsGrid.innerHTML = items.map(prod => {
-            // Проверяем, добавлен ли уже этот товар в список покупок (активный)
-            const isAlreadyAdded = shoppingItems.some(i => i.name.toLowerCase() === prod.name.toLowerCase() && !i.completed);
-
             const actionBtnHtml = `
-                <button class="btn-product-add ${isAlreadyAdded ? 'is-added' : ''}" type="button" aria-label="${isAlreadyAdded ? 'Уже в списке' : 'Добавить в список'}">
-                    ${isAlreadyAdded ? `
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    ` : `
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                    `}
+                <button class="btn-product-add" type="button" aria-label="Добавить в список">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
                 </button>
             `;
-
-            const prodImg = prod.imageUrl || PLACEHOLDER_IMG;
 
             if (currentViewMode === 'grid') {
                 // Вид сетки (квадраты 1:1)
                 return `
-                    <div class="product-catalog-card" data-id="${prod.id}" data-name="${escapeHtml(prod.name)}">
-                        <div class="card-img-wrap">
-                            <img src="${prodImg}" alt="${escapeHtml(prod.name)}" class="card-img" draggable="false">
-                        </div>
-                        <div class="card-bottom-row">
-                            <span class="card-title">${escapeHtml(prod.name)}</span>
-                            ${actionBtnHtml}
-                        </div>
+                    <div class="product-catalog-card ${prod.imageUrl ? '' : 'no-image'}" data-id="${prod.id}" data-name="${escapeHtml(prod.name)}">
+                        ${prod.imageUrl ? `
+                            <div class="card-img-wrap">
+                                <img src="${prod.imageUrl}" alt="${escapeHtml(prod.name)}" class="card-img" draggable="false">
+                            </div>
+                            <div class="card-bottom-row">
+                                <span class="card-title">${escapeHtml(prod.name)}</span>
+                                ${actionBtnHtml}
+                            </div>
+                        ` : `
+                            <div class="card-no-img-content">
+                                <span class="card-title">${escapeHtml(prod.name)}</span>
+                            </div>
+                            <div class="card-bottom-row">
+                                <span></span>
+                                ${actionBtnHtml}
+                            </div>
+                        `}
                     </div>
                 `;
             } else {
-                // Вид списка (картинка слева, название в центре, кнопка справа как на скриншоте)
+                // Вид списка
                 return `
-                    <div class="product-catalog-card" data-id="${prod.id}" data-name="${escapeHtml(prod.name)}">
+                    <div class="product-catalog-card ${prod.imageUrl ? '' : 'no-image'}" data-id="${prod.id}" data-name="${escapeHtml(prod.name)}">
                         <div class="card-left">
-                            <div class="card-img-wrap">
-                                <img src="${prodImg}" alt="${escapeHtml(prod.name)}" class="card-img" draggable="false">
-                            </div>
+                            ${prod.imageUrl ? `
+                                <div class="card-img-wrap">
+                                    <img src="${prod.imageUrl}" alt="${escapeHtml(prod.name)}" class="card-img" draggable="false">
+                                </div>
+                            ` : ''}
                             <span class="card-title">${escapeHtml(prod.name)}</span>
                         </div>
                         ${actionBtnHtml}
@@ -727,99 +837,168 @@
             }
         }).join('');
 
-        // Клики по кнопкам добавления в каталог
+        // Клики по кнопкам добавления в каталог с двухфазной анимацией исчезновения и слайда карточек
         els.catalogProductsGrid.querySelectorAll('.btn-product-add').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const card = btn.closest('.product-catalog-card');
-                if (!card) return;
+                if (!card || card.classList.contains('is-adding-to-cart')) return;
+                card.classList.add('is-adding-to-cart');
+
                 const name = card.getAttribute('data-name');
                 if (!name) return;
+                const nameLower = name.toLowerCase().trim();
+                const prodId = card.getAttribute('data-id');
 
-                const nameLower = name.toLowerCase();
-
-                // 1. Если товар уже активен (в некупленных) — при повторном клике убираем его из списка покупок
-                const activeIndex = shoppingItems.findIndex(i => i.name.toLowerCase() === nameLower && !i.completed);
-                if (activeIndex !== -1) {
-                    const removed = shoppingItems.splice(activeIndex, 1)[0];
-                    saveLocalCache();
-                    renderCatalog();
-                    if (currentMainTab === 'shoppingList') renderItems();
-
-                    if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.deleteDoc === 'function') {
-                        try {
-                            const itemRef = window.doc(window.db, 'users', currentUid, 'shopping_items', removed.id);
-                            window.deleteDoc(itemRef);
-                        } catch (e) { }
-                    }
-                    return;
+                if (navigator.vibrate) {
+                    try { navigator.vibrate(24); } catch (err) { }
                 }
 
-                // 2. Если товар есть в купленных — НЕ дублируем, а перемещаем из купленных обратно в некупленные (наверх)!
-                const boughtIndex = shoppingItems.findIndex(i => i.name.toLowerCase() === nameLower && i.completed);
-                if (boughtIndex !== -1) {
-                    const item = shoppingItems[boughtIndex];
-                    item.completed = false;
-                    item.completedAt = null;
-                    item.createdAt = Date.now();
+                function applyAddToCart() {
+                    const boughtIndex = shoppingItems.findIndex(i => {
+                        if (!i.completed) return false;
+                        if (i.productId && prodId && i.productId === prodId) return true;
+                        return (i.name || '').toLowerCase().trim() === nameLower;
+                    });
 
-                    // Переносим в начало списка покупок
-                    shoppingItems.splice(boughtIndex, 1);
-                    shoppingItems.unshift(item);
+                    let itemToSave = null;
+                    if (boughtIndex !== -1) {
+                        itemToSave = shoppingItems[boughtIndex];
+                        itemToSave.completed = false;
+                        itemToSave.completedAt = null;
+                        itemToSave.createdAt = Date.now();
+                        if (prodId && !itemToSave.productId) itemToSave.productId = prodId;
 
-                    saveLocalCache();
-                    renderCatalog();
-                    if (currentMainTab === 'shoppingList') renderItems();
+                        shoppingItems.splice(boughtIndex, 1);
+                        shoppingItems.unshift(itemToSave);
 
-                    if (!isTestMode() && currentUid && window.db && typeof window.updateDoc === 'function' && typeof window.doc === 'function') {
-                        try {
-                            const itemRef = window.doc(window.db, 'users', currentUid, 'shopping_items', item.id);
-                            window.updateDoc(itemRef, {
-                                completed: false,
-                                completedAt: null,
-                                createdAt: item.createdAt,
-                                updatedAt: Date.now()
-                            });
-                        } catch (e) { }
-                    }
-                    return;
-                }
-
-                // 3. Если товара вообще нет в списке покупок — создаем новый
-                const prodObj = userProducts.find(p => p.name.toLowerCase() === nameLower);
-                const newItem = {
-                    id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                    name: name,
-                    imageUrl: prodObj && prodObj.imageUrl ? prodObj.imageUrl : null,
-                    completed: false,
-                    createdAt: Date.now()
-                };
-
-                shoppingItems.unshift(newItem);
-                saveLocalCache();
-                renderCatalog();
-                if (currentMainTab === 'shoppingList') renderItems();
-
-                if (!isTestMode() && currentUid && window.db && typeof window.setDoc === 'function' && typeof window.doc === 'function') {
-                    try {
-                        const itemRef = window.doc(window.db, 'users', currentUid, 'shopping_items', newItem.id);
-                        window.setDoc(itemRef, {
+                        if (!isTestMode() && currentUid && window.db && typeof window.updateDoc === 'function' && typeof window.doc === 'function') {
+                            try {
+                                const itemRef = window.doc(window.db, 'users', currentUid, 'shopping_items', itemToSave.id);
+                                window.updateDoc(itemRef, {
+                                    completed: false,
+                                    completedAt: null,
+                                    createdAt: itemToSave.createdAt,
+                                    updatedAt: Date.now()
+                                });
+                            } catch (e) { }
+                        }
+                    } else {
+                        const prodObj = userProducts.find(p => p.id === prodId || (p.name || '').toLowerCase().trim() === nameLower);
+                        itemToSave = {
+                            id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                            productId: prodObj ? prodObj.id : prodId || null,
                             name: name,
-                            imageUrl: newItem.imageUrl || null,
+                            imageUrl: prodObj && prodObj.imageUrl ? prodObj.imageUrl : null,
                             completed: false,
-                            completedAt: null,
-                            createdAt: newItem.createdAt,
-                            updatedAt: Date.now()
-                        }).catch(() => { });
-                    } catch (e) { }
+                            createdAt: Date.now()
+                        };
+
+                        shoppingItems.unshift(itemToSave);
+
+                        if (!isTestMode() && currentUid && window.db && typeof window.setDoc === 'function' && typeof window.doc === 'function') {
+                            try {
+                                const itemRef = window.doc(window.db, 'users', currentUid, 'shopping_items', itemToSave.id);
+                                window.setDoc(itemRef, {
+                                    name: name,
+                                    productId: itemToSave.productId || null,
+                                    imageUrl: itemToSave.imageUrl || null,
+                                    completed: false,
+                                    completedAt: null,
+                                    createdAt: itemToSave.createdAt,
+                                    updatedAt: Date.now()
+                                }).catch(() => { });
+                            } catch (e) { }
+                        }
+                    }
+
+                    saveLocalCache();
+                    renderCatalog();
+                    if (currentMainTab === 'shoppingList') renderItems();
                 }
+
+                // Фаза 1: Уменьшение карточки в центр (scale down & fade out)
+                card.style.transition = 'transform 0.20s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.16s ease, box-shadow 0.14s ease';
+                card.style.transform = 'scale(0.05)';
+                card.style.opacity = '0';
+                card.style.boxShadow = 'none';
+                card.style.pointerEvents = 'none';
+
+                // Фаза 2: Плавный слайд нижних карточек вверх на освободившееся место
+                setTimeout(() => {
+                    const grid = els.catalogProductsGrid;
+                    if (!grid) {
+                        applyAddToCart();
+                        return;
+                    }
+
+                    const isListView = grid.classList.contains('view-list');
+                    if (isListView) {
+                        // В режиме списка плавно схлопываем высоту карточки: нижние карточки наглядно скользят вверх
+                        card.style.transition = 'min-height 0.24s cubic-bezier(0.2, 0.9, 0.3, 1), max-height 0.24s cubic-bezier(0.2, 0.9, 0.3, 1), margin-bottom 0.24s cubic-bezier(0.2, 0.9, 0.3, 1), padding 0.2s ease';
+                        card.style.minHeight = '0px';
+                        card.style.maxHeight = '0px';
+                        card.style.marginBottom = '-12px';
+                        card.style.padding = '0px';
+                        card.style.boxShadow = 'none';
+                        card.style.border = 'none';
+                        card.style.overflow = 'hidden';
+
+                        setTimeout(() => {
+                            applyAddToCart();
+                        }, 240);
+                    } else {
+                        // В режиме сетки (view-grid): используем надежный FLIP с принудительным reflow
+                        const remainingCards = Array.from(grid.querySelectorAll('.product-catalog-card:not(.is-adding-to-cart)'));
+                        const prevPositions = new Map();
+                        remainingCards.forEach(c => {
+                            const id = c.getAttribute('data-id');
+                            if (id) prevPositions.set(id, c.getBoundingClientRect());
+                        });
+
+                        applyAddToCart();
+
+                        const newCards = Array.from(grid.querySelectorAll('.product-catalog-card'));
+                        const animatingCards = [];
+
+                        newCards.forEach(c => {
+                            const id = c.getAttribute('data-id');
+                            const oldRect = prevPositions.get(id);
+                            if (oldRect) {
+                                const newRect = c.getBoundingClientRect();
+                                const dx = oldRect.left - newRect.left;
+                                const dy = oldRect.top - newRect.top;
+                                if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+                                    c.style.transition = 'none';
+                                    c.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+                                    void c.offsetWidth;
+                                    animatingCards.push(c);
+                                }
+                            }
+                        });
+
+                        if (animatingCards.length > 0) {
+                            requestAnimationFrame(() => {
+                                animatingCards.forEach(c => {
+                                    c.style.transition = 'transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1)';
+                                    c.style.transform = '';
+                                });
+                                setTimeout(() => {
+                                    animatingCards.forEach(c => {
+                                        c.style.transition = '';
+                                    });
+                                }, 300);
+                            });
+                        }
+                    }
+                }, 180);
             });
         });
 
         // Клики по карточке товара в каталоге для открытия деталей (как в todo.html)
         els.catalogProductsGrid.querySelectorAll('.product-catalog-card').forEach(card => {
             card.addEventListener('click', (e) => {
-                if (e.target.closest('.btn-product-add')) return;
+                if (e.target.closest('.btn-product-add') || card.classList.contains('is-adding-to-cart')) return;
                 const id = card.getAttribute('data-id');
                 const prod = userProducts.find(p => p.id === id);
                 if (prod) {
@@ -921,6 +1100,9 @@
     function renderItems() {
         cleanupExpiredBoughtItems();
 
+        // Очищаем возможные зависшие плейсхолдеры drag-and-drop
+        document.querySelectorAll('.drag-placeholder').forEach(p => p.remove());
+
         const els = getEls();
         if (!els.activeItemsList || !els.boughtItemsList) return;
 
@@ -952,28 +1134,44 @@
 
         // Привязываем клик ТОЛЬКО по галочке (чекбоксу)
         attachCheckboxEvents();
+
+        // Привязываем клик по самой карточке для открытия свойств товара
+        attachShoppingCardClickEvents();
     }
 
     // Генерация HTML карточки в списке покупок
     function renderCard(item, isChecked) {
         const checkedClass = isChecked ? 'is-checked' : '';
-        const itemImg = item.imageUrl || PLACEHOLDER_IMG;
 
         if (currentViewMode === 'grid') {
             // Режим сетки 1:1 (квадрат)
             return `
-                <div class="shopping-card ${checkedClass}" data-id="${item.id}">
-                    <div class="card-img-wrap">
-                        <img src="${itemImg}" alt="${escapeHtml(item.name)}" class="card-img" draggable="false">
-                    </div>
-                    <div class="card-bottom-row">
-                        <button class="game-checkbox" data-action="toggle" type="button" aria-label="${isChecked ? 'Снять отметку' : 'Куплено'}">
-                            <svg viewBox="0 0 24 24" fill="none">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                        </button>
-                        <span class="card-title">${escapeHtml(item.name)}</span>
-                    </div>
+                <div class="shopping-card ${checkedClass} ${item.imageUrl ? '' : 'no-image'}" data-id="${item.id}">
+                    ${item.imageUrl ? `
+                        <div class="card-img-wrap">
+                            <img src="${item.imageUrl}" alt="${escapeHtml(item.name)}" class="card-img" draggable="false">
+                        </div>
+                        <div class="card-bottom-row">
+                            <button class="game-checkbox" data-action="toggle" type="button" aria-label="${isChecked ? 'Снять отметку' : 'Куплено'}">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </button>
+                            <span class="card-title">${escapeHtml(item.name)}</span>
+                        </div>
+                    ` : `
+                        <div class="card-no-img-content">
+                            <span class="card-title">${escapeHtml(item.name)}</span>
+                        </div>
+                        <div class="card-bottom-row">
+                            <button class="game-checkbox" data-action="toggle" type="button" aria-label="${isChecked ? 'Снять отметку' : 'Куплено'}">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </button>
+                            <span></span>
+                        </div>
+                    `}
                 </div>
             `;
         } else {
@@ -986,7 +1184,7 @@
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                         </svg>
                     </div>
-                    <div class="shopping-card ${checkedClass}" data-id="${item.id}">
+                    <div class="shopping-card ${checkedClass} ${item.imageUrl ? '' : 'no-image'}" data-id="${item.id}">
                         <div class="card-left">
                             <button class="game-checkbox" data-action="toggle" type="button" aria-label="${isChecked ? 'Снять отметку' : 'Куплено'}">
                                 <svg viewBox="0 0 24 24" fill="none">
@@ -995,9 +1193,11 @@
                             </button>
                             <span class="card-title">${escapeHtml(item.name)}</span>
                         </div>
-                        <div class="card-img-wrap">
-                            <img src="${itemImg}" alt="${escapeHtml(item.name)}" class="card-img" draggable="false">
-                        </div>
+                        ${item.imageUrl ? `
+                            <div class="card-img-wrap">
+                                <img src="${item.imageUrl}" alt="${escapeHtml(item.name)}" class="card-img" draggable="false">
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -1020,29 +1220,199 @@
         });
     }
 
-    // Обработка клика с сочной анимацией установки галочки и задержкой перед переносом вниз
+    // Открытие модального окна свойств товара прямо из списка покупок (как в Моих товарах)
+    function openShoppingItemDetails(item) {
+        if (!item) return;
+        const nameLower = (item.name || '').toLowerCase().trim();
+        let prod = userProducts.find(p => !p.deleted && (
+            (item.productId && p.id === item.productId) ||
+            ((p.name || '').toLowerCase().trim() === nameLower)
+        ));
+
+        if (!prod) {
+            // Если товара еще нет в каталоге — автосоздаем его в userProducts
+            prod = {
+                id: 'prod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                name: item.name || '',
+                category: 'all',
+                imageUrl: item.imageUrl || null,
+                deleted: false,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                order: userProducts.length
+            };
+            userProducts.push(prod);
+            item.productId = prod.id;
+            saveLocalCache();
+
+            if (!isTestMode() && currentUid && window.db && typeof window.setDoc === 'function' && typeof window.doc === 'function') {
+                try {
+                    const prodRef = window.doc(window.db, 'users', currentUid, 'shopping_products', prod.id);
+                    window.setDoc(prodRef, prod).catch(() => {});
+                } catch (e) {}
+            }
+        } else if (!item.productId) {
+            item.productId = prod.id;
+            saveLocalCache();
+        }
+
+        openProductDetailsModal(prod);
+    }
+
+    // Привязываем клик по карточке товара в списке покупок (активные и купленные)
+    function attachShoppingCardClickEvents() {
+        const attachTo = (containerEl) => {
+            if (!containerEl) return;
+            containerEl.querySelectorAll('.shopping-card').forEach(card => {
+                if (card._hasDetailsClickListener) return;
+                card._hasDetailsClickListener = true;
+
+                card.addEventListener('click', (e) => {
+                    // Игнорируем клики по чекбоксу, кнопке удаления свайпа, ссылкам, кнопкам и инпутам
+                    if (e.target.closest('.game-checkbox, .swipe-delete-background, button, input, textarea, a')) {
+                        return;
+                    }
+
+                    // Игнорируем, если открыт свайп или идет перетаскивание / завершение
+                    const swipeContainer = card.closest('.swipe-item-container');
+                    if (swipeContainer && (swipeContainer.classList.contains('is-open') || swipeContainer.classList.contains('is-swiping'))) {
+                        return;
+                    }
+                    if (window._isReorderDragging || document.body.classList.contains('is-reordering')) {
+                        return;
+                    }
+                    if (card.classList.contains('is-completing') || card.classList.contains('is-disappearing')) {
+                        return;
+                    }
+
+                    const id = card.getAttribute('data-id') || (swipeContainer && swipeContainer.getAttribute('data-id'));
+                    if (!id) return;
+
+                    const item = shoppingItems.find(i => i.id === id);
+                    if (item) {
+                        openShoppingItemDetails(item);
+                    }
+                });
+            });
+        };
+
+        const els = getEls();
+        attachTo(els.activeItemsList);
+        attachTo(els.boughtItemsList);
+    }
+
+    // Обработка клика с сочной анимацией установки галочки и плавным слайдом нижних карточек вверх
     function handleCheckboxClick(item, cardEl) {
         if (cardEl.classList.contains('is-completing') || cardEl.classList.contains('is-disappearing')) {
             return;
         }
 
         if (!item.completed) {
-            // 1. Моментально ставим галочку с визуальным эффектом прямо на глазах у пользователя
+            // 1. Моментально фиксируем зелёную галочку прямо на глазах у пользователя
             cardEl.classList.add('is-completing');
 
-            // 2. Звук покупки
+            // 2. Звук покупки и виброотклик
             const completedSound = new Audio('completed.mp3');
             completedSound.play().catch(err => console.log('Audio playback failed:', err));
 
-            // 3. Держим карточку с видимой установленной галочкой 450мс
-            setTimeout(() => {
-                // 4. Запускаем анимацию улетания вниз (200мс)
-                cardEl.classList.add('is-disappearing');
+            if (navigator.vibrate) {
+                try { navigator.vibrate(22); } catch (err) { }
+            }
 
+            const activeList = document.getElementById('activeItemsList');
+            const isListView = activeList && activeList.classList.contains('view-list');
+            const container = isListView ? (cardEl.closest('.swipe-item-container') || cardEl) : cardEl;
+
+            // Короткая пауза (150мс), чтобы пользователь отчетливо увидел появление галочки
+            setTimeout(() => {
+                cardEl.classList.add('is-disappearing');
+                if (container !== cardEl) container.classList.add('is-disappearing');
+
+                // Фаза 1: Уменьшение карточки в центр (scale down & fade out) и скрытие тени
+                cardEl.style.transition = 'transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.15s ease';
+                cardEl.style.transform = 'scale(0.05)';
+                cardEl.style.opacity = '0';
+                cardEl.style.pointerEvents = 'none';
+
+                container.style.transition = 'transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.15s ease, box-shadow 0.12s ease';
+                container.style.transform = 'scale(0.05)';
+                container.style.opacity = '0';
+                container.style.boxShadow = 'none';
+                container.style.pointerEvents = 'none';
+
+                // Фаза 2: Слайд нижних карточек вверх на освободившееся место
                 setTimeout(() => {
-                    toggleItemStatus(item, true);
-                }, 200);
-            }, 450);
+                    if (isListView) {
+                        // В режиме списка плавно схлопываем высоту контейнера: нижние карточки наглядно скользят вверх
+                        cardEl.style.transition = 'height 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), min-height 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), max-height 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), padding 0.18s ease';
+                        cardEl.style.setProperty('height', '0px', 'important');
+                        cardEl.style.setProperty('min-height', '0px', 'important');
+                        cardEl.style.setProperty('max-height', '0px', 'important');
+                        cardEl.style.padding = '0px';
+                        cardEl.style.overflow = 'hidden';
+                        cardEl.style.boxShadow = 'none';
+
+                        container.style.transition = 'height 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), min-height 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), max-height 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), margin-bottom 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), padding 0.18s ease';
+                        container.style.setProperty('height', '0px', 'important');
+                        container.style.setProperty('min-height', '0px', 'important');
+                        container.style.setProperty('max-height', '0px', 'important');
+                        container.style.setProperty('margin-bottom', '-12px', 'important'); // компенсируем flex gap
+                        container.style.padding = '0px';
+                        container.style.opacity = '0';
+                        container.style.boxShadow = 'none';
+                        container.style.border = 'none';
+                        container.style.overflow = 'hidden';
+
+                        setTimeout(() => {
+                            toggleItemStatus(item, true);
+                        }, 220);
+                    } else {
+                        // В режиме сетки (view-grid): используем надежный FLIP с принудительным reflow
+                        const otherCards = Array.from(activeList.querySelectorAll('.shopping-card'))
+                            .filter(c => c !== cardEl);
+                        const prevPositions = new Map();
+                        otherCards.forEach(c => {
+                            const id = c.getAttribute('data-id');
+                            if (id) prevPositions.set(id, c.getBoundingClientRect());
+                        });
+
+                        toggleItemStatus(item, true);
+
+                        const newCards = Array.from(activeList.querySelectorAll('.shopping-card'));
+                        const animatingCards = [];
+
+                        newCards.forEach(c => {
+                            const id = c.getAttribute('data-id');
+                            const oldRect = prevPositions.get(id);
+                            if (oldRect) {
+                                const newRect = c.getBoundingClientRect();
+                                const dx = oldRect.left - newRect.left;
+                                const dy = oldRect.top - newRect.top;
+                                if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+                                    c.style.transition = 'none';
+                                    c.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+                                    void c.offsetWidth;
+                                    animatingCards.push(c);
+                                }
+                            }
+                        });
+
+                        if (animatingCards.length > 0) {
+                            requestAnimationFrame(() => {
+                                animatingCards.forEach(c => {
+                                    c.style.transition = 'transform 0.26s cubic-bezier(0.2, 0.9, 0.3, 1)';
+                                    c.style.transform = '';
+                                });
+                                setTimeout(() => {
+                                    animatingCards.forEach(c => {
+                                        c.style.transition = '';
+                                    });
+                                }, 280);
+                            });
+                        }
+                    }
+                }, 160);
+            }, 150);
         } else {
             // Снятие отметки из купленных: сразу возвращаем наверх
             toggleItemStatus(item, false);
@@ -1464,7 +1834,7 @@
 
         function getItemFromTarget(target) {
             if (!target) return null;
-            if (target.closest('.game-checkbox, button, input, textarea, a, .swipe-delete-background, .btn-product-add')) {
+            if (target.closest('.game-checkbox, button, input, textarea, a, .swipe-delete-background, .btn-product-add, .is-completing, .is-disappearing, .is-adding-to-cart')) {
                 return null;
             }
 
@@ -1472,15 +1842,19 @@
             const catalogGrid = document.getElementById('catalogProductsGrid');
 
             if (activeList && activeList.contains(target)) {
-                if (activeList.classList.contains('view-list')) {
-                    return target.closest('.swipe-item-container');
-                } else {
-                    return target.closest('.shopping-card');
-                }
+                const el = activeList.classList.contains('view-list')
+                    ? target.closest('.swipe-item-container')
+                    : target.closest('.shopping-card');
+                if (!el || el.classList.contains('is-completing') || el.classList.contains('is-disappearing')) return null;
+                const innerCard = el.classList.contains('shopping-card') ? el : el.querySelector('.shopping-card');
+                if (innerCard && (innerCard.classList.contains('is-completing') || innerCard.classList.contains('is-disappearing'))) return null;
+                return el;
             }
 
             if (catalogGrid && catalogGrid.contains(target)) {
-                return target.closest('.product-catalog-card');
+                const el = target.closest('.product-catalog-card');
+                if (!el || el.classList.contains('is-adding-to-cart')) return null;
+                return el;
             }
 
             return null;
@@ -1991,15 +2365,19 @@
         const cleanName = name.trim();
 
         // Проверяем, есть ли уже такой товар в каталоге
-        const existing = userProducts.find(p => p.name.toLowerCase() === cleanName.toLowerCase());
+        const existing = userProducts.find(p => (p.name || '').toLowerCase().trim() === cleanName.toLowerCase());
         if (existing) {
+            if (existing.deleted) {
+                existing.deleted = false;
+                existing.deletedAt = null;
+            }
             if (imageUrl) {
                 existing.imageUrl = imageUrl;
-                saveLocalCache();
             }
-            // Добавляем его в список покупок
-            handleAddItem(existing.name, existing.imageUrl);
+            existing.updatedAt = Date.now();
+            saveLocalCache();
             renderCatalog();
+            showItemCompletedToast({ name: `Товар «${existing.name}» уже есть в Моих товарах` });
             return;
         }
 
@@ -2008,15 +2386,17 @@
             name: cleanName,
             category: 'other',
             imageUrl: imageUrl || null,
-            createdAt: Date.now()
+            deleted: false,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            order: userProducts.length
         };
 
         userProducts.unshift(newProd);
         saveLocalCache();
         renderCatalog();
 
-        // Также сразу добавляем новый товар в список покупок с картинкой
-        handleAddItem(newProd.name, newProd.imageUrl);
+        showItemCompletedToast({ name: `Товар «${newProd.name}» добавлен в Мои товары` });
 
         if (isTestMode()) return;
 
@@ -2027,8 +2407,10 @@
                     name: cleanName,
                     category: 'other',
                     imageUrl: imageUrl || null,
+                    deleted: false,
                     createdAt: newProd.createdAt,
-                    updatedAt: Date.now()
+                    updatedAt: newProd.updatedAt,
+                    order: newProd.order
                 }).catch(e => console.warn('[Shopping] Ошибка сохранения товара в Firebase:', e));
             } catch (e) {
                 console.warn('[Shopping] Ошибка добавления товара в базу Firebase:', e);
@@ -2051,6 +2433,10 @@
 
             if (currentMainTab === 'myProducts') {
                 renderCatalog();
+            } else if (currentMainTab === 'settings') {
+                renderSettingsView();
+            } else if (currentMainTab === 'trash') {
+                renderTrashView();
             } else {
                 renderItems();
             }
@@ -2103,6 +2489,10 @@
 
         if (currentMainTab === 'myProducts') {
             renderCatalog();
+        } else if (currentMainTab === 'settings') {
+            renderSettingsView();
+        } else if (currentMainTab === 'trash') {
+            renderTrashView();
         } else {
             renderItems();
         }
@@ -2251,9 +2641,23 @@
             els.modalProductTitleInput.value = prod.name;
             els.modalProductTitleInput.style.display = 'none';
         }
-        if (els.modalProductImageDisplay) {
-            els.modalProductImageDisplay.src = prod.imageUrl || PLACEHOLDER_IMG;
-            els.modalProductImageDisplay.alt = prod.name;
+        if (els.productDetailsImageCard) {
+            if (prod.imageUrl) {
+                els.productDetailsImageCard.style.display = 'flex';
+                if (els.modalProductImageDisplay) {
+                    els.modalProductImageDisplay.src = prod.imageUrl;
+                    els.modalProductImageDisplay.alt = prod.name;
+                }
+            } else {
+                els.productDetailsImageCard.style.display = 'none';
+                if (els.modalProductImageDisplay) {
+                    els.modalProductImageDisplay.src = '';
+                }
+            }
+        }
+        const btnEditImgSpan = els.btnEditImageFromModal ? els.btnEditImageFromModal.querySelector('span') : null;
+        if (btnEditImgSpan) {
+            btnEditImgSpan.textContent = prod.imageUrl ? 'Изменить изображение' : 'Добавить изображение';
         }
         if (els.productActionsDropdown) {
             els.productActionsDropdown.style.display = 'none';
@@ -2375,8 +2779,17 @@
         prod.deletedAt = Date.now();
         prod.updatedAt = Date.now();
 
+        // Удаляем связанные элементы из списка покупок (активные и купленные)
+        const prodNameLower = (prod.name || '').toLowerCase().trim();
+        shoppingItems = shoppingItems.filter(item => {
+            if (item.productId && item.productId === prodId) return false;
+            if ((item.name || '').toLowerCase().trim() === prodNameLower) return false;
+            return true;
+        });
+
         saveLocalCache();
         renderCatalog();
+        renderItems();
         renderSettingsView();
 
         if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.setDoc === 'function') {
@@ -2523,7 +2936,6 @@
 
         const now = Date.now();
         els.trashItemsList.innerHTML = trashed.map(prod => {
-            const prodImg = prod.imageUrl || PLACEHOLDER_IMG;
             const elapsedDays = Math.floor((now - (prod.deletedAt || now)) / (24 * 60 * 60 * 1000));
             const daysLeft = Math.max(1, 30 - elapsedDays);
             const daysWord = daysLeft === 1 ? 'день' : ((daysLeft >= 2 && daysLeft <= 4) ? 'дня' : 'дней');
@@ -2531,9 +2943,11 @@
             return `
                 <div class="trash-item-card" data-id="${prod.id}">
                     <div class="trash-item-left">
-                        <div class="trash-item-img-wrap">
-                            <img src="${prodImg}" alt="${escapeHtml(prod.name)}" class="trash-item-img" draggable="false">
-                        </div>
+                        ${prod.imageUrl ? `
+                            <div class="trash-item-img-wrap">
+                                <img src="${prod.imageUrl}" alt="${escapeHtml(prod.name)}" class="trash-item-img" draggable="false">
+                            </div>
+                        ` : ''}
                         <div class="trash-item-info">
                             <span class="trash-item-title">${escapeHtml(prod.name)}</span>
                             <span class="trash-item-days">Осталось ${daysLeft} ${daysWord}</span>
@@ -3316,8 +3730,18 @@
                 renderCatalog();
                 if (itemsChanged && currentMainTab === 'shoppingList') renderItems();
 
-                if (els.modalProductImageDisplay) {
-                    els.modalProductImageDisplay.src = prod.imageUrl || PLACEHOLDER_IMG;
+                if (els.modalProductImageDisplay && els.productDetailsImageCard) {
+                    if (prod.imageUrl) {
+                        els.modalProductImageDisplay.src = prod.imageUrl;
+                        els.productDetailsImageCard.style.display = 'flex';
+                    } else {
+                        els.modalProductImageDisplay.src = '';
+                        els.productDetailsImageCard.style.display = 'none';
+                    }
+                }
+                const btnEditImgSpan = els.btnEditImageFromModal ? els.btnEditImageFromModal.querySelector('span') : null;
+                if (btnEditImgSpan) {
+                    btnEditImgSpan.textContent = prod.imageUrl ? 'Изменить изображение' : 'Добавить изображение';
                 }
 
                 if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.setDoc === 'function') {
@@ -3360,8 +3784,13 @@
                 renderCatalog();
                 if (itemsChanged && currentMainTab === 'shoppingList') renderItems();
 
-                if (els.modalProductImageDisplay) {
-                    els.modalProductImageDisplay.src = PLACEHOLDER_IMG;
+                if (els.modalProductImageDisplay && els.productDetailsImageCard) {
+                    els.modalProductImageDisplay.src = '';
+                    els.productDetailsImageCard.style.display = 'none';
+                }
+                const btnEditImgSpan = els.btnEditImageFromModal ? els.btnEditImageFromModal.querySelector('span') : null;
+                if (btnEditImgSpan) {
+                    btnEditImgSpan.textContent = 'Добавить изображение';
                 }
 
                 if (!isTestMode() && currentUid && window.db && typeof window.doc === 'function' && typeof window.setDoc === 'function') {
@@ -3448,17 +3877,13 @@
         // Слушатели экрана корзины в настройках
         if (els.btnOpenTrashSettings) {
             els.btnOpenTrashSettings.onclick = () => {
-                if (els.screenSettings) els.screenSettings.style.display = 'none';
-                if (els.screenTrash) els.screenTrash.style.display = 'block';
-                renderTrashView();
+                setMainTab('trash');
             };
         }
 
         if (els.btnBackFromTrash) {
             els.btnBackFromTrash.onclick = () => {
-                if (els.screenTrash) els.screenTrash.style.display = 'none';
-                if (els.screenSettings) els.screenSettings.style.display = 'block';
-                renderSettingsView();
+                setMainTab('settings');
             };
         }
 
@@ -3627,7 +4052,7 @@
         }
 
         setViewMode(currentViewMode);
-        setMainTab('shoppingList');
+        handleRoute();
         initTabsDragGesture();
         initShoppingItemsSwipe();
         initReorderDragAndDrop();
@@ -3639,11 +4064,13 @@
             cleanupExpiredTrashProducts();
             if (currentMainTab === 'shoppingList') renderItems();
             if (currentMainTab === 'settings') renderSettingsView();
+            if (currentMainTab === 'trash') renderTrashView();
         }, 60000);
     }
 
-    // Слушатели смены hash
+    // Слушатели смены hash (роутинг по страницам, как в Todo)
     window.addEventListener('hashchange', () => {
+        handleRoute();
         loadItems();
     });
 
@@ -3662,6 +4089,8 @@
         }
         if (currentMainTab === 'settings') {
             renderSettingsView();
+        } else if (currentMainTab === 'trash') {
+            renderTrashView();
         }
     });
 

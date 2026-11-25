@@ -1258,6 +1258,14 @@
                                     <button class="cal-switch-btn" data-view="week" id="calViewWeekBtn">Неделя</button>
                                     <button class="cal-switch-btn" data-view="day" id="calViewDayBtn">День</button>
                                 </div>
+                                <button class="calendar-filter-btn" id="calSplitSettingsBtn"
+                                    title="Настройка колонок: События и Задачи">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="12" y1="3" x2="12" y2="21"></line>
+                                    </svg>
+                                </button>
                                 <button class="calendar-filter-btn active" id="calToggleCompletedBtn"
                                     title="Показывать выполненные задачи">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1989,6 +1997,41 @@
             </div>
             <div class="gcal-modal-footer">
                 <button class="gcal-btn-primary" id="btnGCalShowEventsModalSave">Готово</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно настройки категорий (События и Задачи) -->
+    <div class="gcal-modal-overlay" id="calendarCategoriesModal" style="display: none;">
+        <div class="gcal-modal-card" style="max-width: 480px; width: 92%;">
+            <button class="gcal-modal-close" id="btnCalCategoriesModalClose" aria-label="Закрыть">&times;</button>
+            <div class="gcal-modal-header">
+                <h3>События и Задачи</h3>
+            </div>
+            <div class="gcal-modal-body" style="display: flex; flex-direction: column; gap: 14px; max-height: 70vh; overflow-y: auto;">
+                <p class="gcal-modal-desc" style="font-size: 13px; line-height: 1.45; color: var(--text-secondary); margin: 0;">
+                    Выберите категорию для каждого источника. Элементы <b>«Событий»</b> отображаются в левой половине каждого дня, а <b>«Задачи»</b> — в правой.
+                </p>
+
+                <!-- Секция 1: Проекты -->
+                <div class="cal-category-section">
+                    <div class="cal-category-section-title">Проекты Todo</div>
+                    <div class="cal-category-list" id="calCatProjectsList">
+                        <!-- Список проектов со свитчами -->
+                    </div>
+                </div>
+
+                <!-- Секция 2: Google Календарь -->
+                <div class="cal-category-section">
+                    <div class="cal-category-section-title">Google Календарь</div>
+                    <div class="cal-category-list" id="calCatGCalList">
+                        <!-- Список календарей Google со свитчами -->
+                    </div>
+                </div>
+            </div>
+            <div class="gcal-modal-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                <button type="button" class="gcal-btn-secondary" id="btnCalCategoriesReset" style="font-size: 12px; padding: 7px 12px; background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); cursor: pointer;">Сбросить всё на Задачи</button>
+                <button type="button" class="gcal-btn-primary" id="btnCalCategoriesSave">Готово</button>
             </div>
         </div>
     </div>

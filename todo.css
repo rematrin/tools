@@ -10929,6 +10929,196 @@ body.dark .cal-filter-chevron-btn:hover {
     font-style: italic;
 }
 
+/* Calendar Split Column & Categories Styles */
+.cal-category-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cal-category-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.cal-category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cal-category-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.06));
+    transition: background 0.15s ease;
+}
+
+.cal-category-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+body.dark .cal-category-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: var(--border, rgba(255, 255, 255, 0.08));
+}
+
+body.dark .cal-category-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.cal-category-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.cal-category-badge.task {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.cal-category-badge.event {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.switch-container.event-switch input:checked + .slider {
+    background-color: #10b981 !important;
+}
+
+/* Month View: Split Day Cell */
+.cal-cell-split-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+}
+
+.cal-cell-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0 2px 2px;
+    overflow: hidden;
+    position: relative;
+}
+
+.cal-cell-events {
+    border-right: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+}
+
+body.dark .cal-cell-events {
+    border-right-color: var(--border, rgba(255, 255, 255, 0.08));
+}
+
+.cal-col-header {
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1px 2px 2px;
+    line-height: 1;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.cal-col-header.events {
+    color: #10b981;
+}
+
+.cal-col-header.tasks {
+    color: #3b82f6;
+}
+
+.cal-col-items {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+    flex: 1;
+}
+
+/* Week & Day View: Split Timed Column */
+.cal-day-column-view {
+    position: relative;
+}
+
+.cal-day-column-view::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background-color: var(--border-color, rgba(0, 0, 0, 0.06));
+    pointer-events: none;
+    z-index: 1;
+}
+
+body.dark .cal-day-column-view::before {
+    background-color: var(--border, rgba(255, 255, 255, 0.06));
+}
+
+/* Split All-Day Row Cell */
+.cal-split-all-day-cell {
+    display: flex !important;
+    flex-direction: row !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+.cal-split-all-day-cell .cal-cell-col {
+    padding: 2px 3px;
+    max-height: 110px;
+    overflow-y: auto;
+}
+
+/* Day View Column Header (above timeline) */
+.cal-day-split-header {
+    display: flex;
+    width: 100%;
+    border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+    background: var(--card-bg);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.cal-day-split-col-title {
+    flex: 1;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.cal-day-split-col-title.events {
+    color: #10b981;
+    border-right: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+}
+
+.cal-day-split-col-title.tasks {
+    color: #3b82f6;
+}
+
 /* Sticky Header & All-Day Section */
 .cal-sticky-header {
     position: sticky;

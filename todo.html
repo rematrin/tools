@@ -202,6 +202,10 @@
                 if (navLoc !== 'sidebar') {
                     document.documentElement.classList.add('nav-in-header');
                 }
+                var earlyHash = (window.location.hash || '').replace('#', '');
+                if (earlyHash === 'calendar') {
+                    document.documentElement.classList.add('route-calendar');
+                }
             } catch (e) {}
         })();
     </script>

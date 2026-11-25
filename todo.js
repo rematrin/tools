@@ -3175,6 +3175,11 @@ function handleRoute() {
         }
     }
 
+    document.documentElement.classList.toggle('route-calendar', currentRoute === 'calendar');
+    if (document.body) {
+        document.body.classList.toggle('route-calendar', currentRoute === 'calendar');
+    }
+
     // Обновляем подсветку пунктов меню в сайдбаре
     const menuInbox = document.getElementById('menuInbox');
     const menuToday = document.getElementById('menuToday');
@@ -20713,6 +20718,13 @@ function getRangeForCalendarView(view, date) {
         const endDayOfWeek = (lastDayOfMonth.getDay() + 6) % 7;
         const endDate = new Date(lastDayOfMonth);
         endDate.setDate(endDate.getDate() + (6 - endDayOfWeek));
+
+        // Всегда заполняем ровно 6 недель (42 дня, сетка 7x6), чтобы в месяцах не оставалось пустых строк
+        const totalDays = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        if (totalDays < 42) {
+            endDate.setDate(endDate.getDate() + (42 - totalDays));
+        }
+
         endDate.setHours(23, 59, 59, 999);
         return { start: startDate, end: endDate };
     } else if (view === 'week') {

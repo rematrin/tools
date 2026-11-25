@@ -10779,91 +10779,10 @@ input:checked+.view-slider:before {
     display: none;
 }
 
-/* Mini Calendar */
-.cal-mini-calendar {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.cal-mini-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 4px;
-}
-
-.cal-mini-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.cal-mini-nav {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.cal-mini-btn {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 4px;
-    font-size: 12px;
-}
-
-.cal-mini-btn:hover {
-    background: rgba(0, 0, 0, 0.06);
-    color: var(--text-primary);
-}
-
-.cal-mini-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 2px;
-    text-align: center;
-}
-
-.cal-mini-weekday {
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--text-secondary);
-    padding: 4px 0;
-}
-
-.cal-mini-day {
-    font-size: 11.5px;
-    font-weight: 500;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    cursor: pointer;
-    color: var(--text-primary);
-    transition: background 0.15s ease;
-}
-
-.cal-mini-day:hover {
-    background: rgba(66, 133, 244, 0.15);
-}
-
-.cal-mini-day.other-month {
-    opacity: 0.35;
-}
-
-.cal-mini-day.today {
-    font-weight: 700;
-    color: var(--accent, #4285f4);
-}
-
-.cal-mini-day.selected {
-    background: var(--accent, #4285f4) !important;
-    color: #fff !important;
-    font-weight: 700;
+/* Mini Calendar (скрыт) */
+.cal-mini-calendar,
+#calMiniCalendar {
+    display: none !important;
 }
 
 /* Calendar Project Filters */
@@ -10871,8 +10790,8 @@ input:checked+.view-slider:before {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    border-top: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
-    padding-top: 14px;
+    border-top: none !important;
+    padding-top: 0 !important;
 }
 
 .cal-filter-title {
@@ -11007,19 +10926,24 @@ body.route-calendar {
 }
 
 body.route-calendar .todo-app {
-    height: 100vh !important;
-    max-height: 100vh !important;
+    height: calc(100vh - 90px) !important;
+    height: calc(100dvh - 90px) !important;
+    max-height: calc(100vh - 90px) !important;
+    max-height: calc(100dvh - 90px) !important;
     overflow: hidden !important;
+    border-radius: 12px !important;
 }
 
 body.route-calendar .todo-content {
-    height: 100vh !important;
-    max-height: 100vh !important;
-    padding: max(8px, calc(env(safe-area-inset-top, 0px) + 8px)) 12px !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
+    border-radius: 12px !important;
 }
 
 body.route-calendar .todo-main-layout {
@@ -11033,6 +10957,7 @@ body.route-calendar .todo-main-layout {
     flex-direction: column !important;
     flex: 1 !important;
     min-height: 0 !important;
+    border-radius: 12px !important;
 }
 
 body.route-calendar #calendar {
@@ -12839,6 +12764,126 @@ body.dark .subproject-card:hover {
         body.nav-in-header .header-nav-item.nav-item-collapsible {
             padding: 5px 8px !important;
         }
+    }
+
+    /* Когда меню в шапке и открыт Календарь:
+       скрываем левую панель с проектами, поднимаем календарь выше и растягиваем ровно по ширине шапки */
+    html.nav-in-header.route-calendar .todo-sidebar,
+    body.nav-in-header.route-calendar .todo-sidebar,
+    html.nav-in-header body.route-calendar .todo-sidebar,
+    html.route-calendar body.nav-in-header .todo-sidebar {
+        display: none !important;
+    }
+
+    html.nav-in-header.route-calendar .todo-app,
+    body.nav-in-header.route-calendar .todo-app,
+    html.nav-in-header body.route-calendar .todo-app,
+    html.route-calendar body.nav-in-header .todo-app,
+    body.route-calendar .todo-app {
+        width: calc(100% - 40px) !important;
+        max-width: 1040px !important;
+        padding: 0 !important;
+        margin: 0 auto !important;
+        height: calc(100vh - 90px) !important;
+        height: calc(100dvh - 90px) !important;
+        max-height: calc(100vh - 90px) !important;
+        max-height: calc(100dvh - 90px) !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+    }
+
+    html.nav-in-header.route-calendar .todo-content,
+    body.nav-in-header.route-calendar .todo-content,
+    html.nav-in-header body.route-calendar .todo-content,
+    html.route-calendar body.nav-in-header .todo-content,
+    body.route-calendar .todo-content {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+    }
+
+    /* Единая цельная карточка календаря с чистым скруглением 12px, в точности как у шапки */
+    html.nav-in-header.route-calendar .todo-main-layout,
+    body.nav-in-header.route-calendar .todo-main-layout,
+    html.nav-in-header body.route-calendar .todo-main-layout,
+    html.route-calendar body.nav-in-header .todo-main-layout,
+    body.route-calendar .todo-main-layout {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+        background: var(--card-bg, #ffffff) !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        isolation: isolate;
+    }
+
+    body.dark.route-calendar .todo-main-layout,
+    body.dark.nav-in-header.route-calendar .todo-main-layout,
+    html.dark.nav-in-header body.route-calendar .todo-main-layout {
+        background: var(--card-bg, #202022) !important;
+        border-color: var(--border, rgba(255, 255, 255, 0.08)) !important;
+    }
+
+    /* Убираем внутренние зазоры и задаем угловые скругления для надежного рендеринга во всех браузерах */
+    body.route-calendar #calendarContainer {
+        gap: 0 !important;
+        height: 100% !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+    }
+
+    body.route-calendar .calendar-main-area {
+        gap: 0 !important;
+        height: 100% !important;
+        border-radius: 0 12px 12px 0 !important;
+        overflow: hidden !important;
+    }
+
+    body.route-calendar .calendar-left-sidebar {
+        border: none !important;
+        border-right: 1px solid var(--border) !important;
+        border-radius: 12px 0 0 12px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        height: 100% !important;
+    }
+
+    body.route-calendar .calendar-toolbar {
+        border: none !important;
+        border-bottom: 1px solid var(--border) !important;
+        border-radius: 0 12px 0 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+    }
+
+    body.route-calendar .calendar-grid-container {
+        border: none !important;
+        border-radius: 0 0 12px 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        overflow: hidden !important;
+    }
+
+    body.route-calendar .cal-month-grid {
+        grid-template-rows: repeat(6, 1fr) !important;
+        grid-auto-rows: 1fr !important;
+        overflow: hidden !important;
+        height: 100% !important;
     }
 }
 
